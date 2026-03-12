@@ -3,77 +3,149 @@ parameters (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_HIV/parameters.csv>`
 
-====  ====================================================================================  =======  ===============================================================================================================================================================================================================================  =================
-  ..  parameter\_name                                                                       value    Source                                                                                                                                                                                                                           Unnamed: 3
-====  ====================================================================================  =======  ===============================================================================================================================================================================================================================  =================
-   0  beta                                                                                  0.14379  calibrated                                                                                                                                                                                                                       previously\_0.115
-   1  unaids\_prevalence\_adjustment\_factor                                                1.1
-   2  prob\_mtct\_untreated                                                                 0.22     rollins
-   3  prob\_mtct\_treated                                                                   0        rollins
-   4  prob\_mtct\_incident\_preg                                                            0.3      rollins
-   5  monthly\_prob\_mtct\_bf\_untreated                                                    0.01     rollins
-   6  monthly\_prob\_mtct\_bf\_treated                                                      0        rollins
-   7  rr\_fsw                                                                               25
-   8  rr\_circumcision                                                                      0.4      hallett2008
-   9  rr\_rural                                                                             0.52     wingston\_dhs\_analysis
-  10  rr\_windex\_poorer                                                                    0.96     wingston\_dhs\_analysis
-  11  rr\_windex\_middle                                                                    1.18     wingston\_dhs\_analysis
-  12  rr\_windex\_richer                                                                    1.19     wingston\_dhs\_analysis
-  13  rr\_windex\_richest                                                                   1.56     wingston\_dhs\_analysis
-  14  rr\_sex\_f                                                                            1.43     wingston\_dhs\_analysis
-  15  rr\_edlevel\_primary                                                                  1.18     wingston\_dhs\_analysis
-  16  rr\_edlevel\_secondary                                                                1.15     wingston\_dhs\_analysis
-  17  rr\_edlevel\_higher                                                                   1        wingston\_dhs\_analysis
-  18  rr\_schisto                                                                           2.3      Patel et al 2021
-  19  rr\_behaviour\_change                                                                 0.75
-  20  proportion\_reduction\_in\_risk\_of\_hiv\_aq\_if\_on\_prep                            0.9
-  21  mean\_months\_between\_aids\_and\_death                                               18       Assumption
-  22  mean\_months\_between\_aids\_and\_death\_infant                                       6        Assumption
-  23  infection\_to\_death\_weibull\_shape\_1519                                            2        Todd et al. 2007 & Hallett et al 2008 PLoS Med
-  24  infection\_to\_death\_weibull\_shape\_2024                                            2
-  25  infection\_to\_death\_weibull\_shape\_2529                                            2
-  26  infection\_to\_death\_weibull\_shape\_3034                                            2
-  27  infection\_to\_death\_weibull\_shape\_3539                                            2
-  28  infection\_to\_death\_weibull\_shape\_4044                                            2
-  29  infection\_to\_death\_weibull\_shape\_4549                                            2
-  30  infection\_to\_death\_weibull\_scale\_1519                                            16
-  31  infection\_to\_death\_weibull\_scale\_2024                                            15.4
-  32  infection\_to\_death\_weibull\_scale\_2529                                            14.1
-  33  infection\_to\_death\_weibull\_scale\_3034                                            12.1
-  34  infection\_to\_death\_weibull\_scale\_3539                                            11
-  35  infection\_to\_death\_weibull\_scale\_4044                                            10.01
-  36  infection\_to\_death\_weibull\_scale\_4549                                            7.9
-  37  art\_default\_to\_aids\_mean\_years                                                   5
-  38  prop\_delayed\_aids\_onset                                                            0.3
-  39  mean\_survival\_for\_infants\_infected\_prior\_to\_birth                              1.08     ferrand
-  40  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_scale                 16       ferrand
-  41  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_shape                 2.7      ferrand
-  42  rr\_test\_hiv\_positive                                                               1.1
-  43  hiv\_testing\_rate\_adjustment                                                        0.75
-  44  treatment\_initiation\_adjustment                                                     1
-  45  vs\_adjustment                                                                        1
-  46  prob\_hiv\_test\_at\_anc\_or\_delivery                                                0.95
-  47  prob\_hiv\_test\_for\_newborn\_infant                                                 0.95
-  48  prob\_behav\_chg\_after\_hiv\_test                                                    0.5
-  49  prob\_prep\_for\_fsw\_after\_hiv\_test                                                0.05
-  50  prob\_prep\_for\_agyw                                                                 0
-  51  prob\_circ\_after\_hiv\_test                                                          0.05
-  52  increase\_in\_prob\_circ\_2019                                                        3
-  53  probability\_of\_being\_retained\_on\_prep\_every\_3\_months                          0.5
-  54  probability\_of\_being\_retained\_on\_art\_every\_3\_months                           0.95
-  55  probability\_of\_seeking\_further\_art\_appointment\_if\_drug\_not\_available         0.9
-  56  probability\_of\_seeking\_further\_art\_appointment\_if\_appointment\_not\_available  0.9
-  57  prep\_start\_year                                                                     2018
-  58  ART\_age\_cutoff\_young\_child                                                        1
-  59  ART\_age\_cutoff\_older\_child                                                        10
-  60  rel\_probability\_art\_baseline\_aids                                                 10
-  61  aids\_tb\_treatment\_adjustment                                                       0.5
-  62  prob\_circ\_for\_child\_before\_2020                                                  0.0128   This is estimated using DHIS2 vmmc cases and world bank population data 2015-2019.
-  63  prob\_circ\_for\_child\_from\_2020                                                    0.0008   From 2020 on, as indicated by DHIS2 data and PEPFAR 2020 Country Operational Plan, the <15 yrs circ cases should decline dramatically. The probability derived from 2020-2022 data is 0.0008, using the same estimation method.
-  64  hiv\_healthseekingbehaviour\_cap                                                      5
-  65  dispensation\_period\_months                                                          3
-  66  length\_of\_inpatient\_stay\_if\_terminal                                             [14,20]
-  67  type\_of\_scaleup                                                                     none
-  68  scaleup\_start\_year                                                                  2025
-  69  interval\_for\_viral\_load\_measurement\_months                                       24
-====  ====================================================================================  =======  ===============================================================================================================================================================================================================================  =================
+====  ====================================================================================  ========  ==============  ============  ============  ===============  ==============================================  ============================================================================================================================================================================================================================
+  ..  parameter\_name                                                                       value     param\_label    prior\_min    prior\_max    prior\_note      reference                                       Unnamed: 7
+====  ====================================================================================  ========  ==============  ============  ============  ===============  ==============================================  ============================================================================================================================================================================================================================
+   0  beta                                                                                  0.14379   undetermined    0             1             calibration                                                      previously\_0.115
+   1  unaids\_prevalence\_adjustment\_factor                                                1.1       local           0.01          100           vague prior
+   2  prob\_mtct\_untreated                                                                 0.22      universal       0             1             vague prior      rollins
+   3  prob\_mtct\_treated                                                                   0         universal       0             1             vague prior      rollins
+   4  prob\_mtct\_incident\_preg                                                            0.3       universal       0             1             vague prior      rollins
+   5  monthly\_prob\_mtct\_bf\_untreated                                                    0.01      universal       0             1             vague prior      rollins
+   6  monthly\_prob\_mtct\_bf\_treated                                                      0         universal       0             1             vague prior      rollins
+   7  rr\_fsw                                                                               7.8       universal       0.01          100           vague prior
+   8  rr\_circumcision                                                                      0.4       local           0.01          100           vague prior      hallett2008
+   9  rr\_rural                                                                             0.52      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  10  rr\_windex\_poorer                                                                    0.96      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  11  rr\_windex\_middle                                                                    1.18      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  12  rr\_windex\_richer                                                                    1.19      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  13  rr\_windex\_richest                                                                   1.56      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  14  rr\_sex\_f                                                                            1.43      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  15  rr\_edlevel\_primary                                                                  1.18      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  16  rr\_edlevel\_secondary                                                                1.15      local           0.01          100           vague prior      wingston\_dhs\_analysis
+  17  rr\_edlevel\_higher                                                                   1         local           0.01          100           vague prior      wingston\_dhs\_analysis
+  18  rr\_schisto                                                                           2.3       universal       0.01          100           vague prior      Patel et al 2021
+  19  rr\_behaviour\_change                                                                 0.75      local           0.01          100           vague prior
+  20  proportion\_reduction\_in\_risk\_of\_hiv\_aq\_if\_on\_oral\_prep                      0.6       universal       0             1             vague prior
+  21  proportion\_reduction\_in\_risk\_of\_hiv\_aq\_if\_on\_inj\_prep                       0.95      universal       0             1             vague prior
+  22  mean\_months\_between\_aids\_and\_death                                               18        universal       1             24            vague prior      Assumption
+  23  min\_months\_between\_aids\_and\_death                                                0         universal       0             12            vague prior
+  24  mean\_months\_between\_aids\_and\_death\_infant                                       6         universal       1             24            vague prior      Assumption
+  25  infection\_to\_death\_weibull\_shape\_1519                                            2         local           0.01          100           vague prior      Todd et al. 2007 & Hallett et al 2008 PLoS Med
+  26  infection\_to\_death\_weibull\_shape\_2024                                            2         local           0.01          100           vague prior
+  27  infection\_to\_death\_weibull\_shape\_2529                                            2         local           0.01          100           vague prior
+  28  infection\_to\_death\_weibull\_shape\_3034                                            2         local           0.01          100           vague prior
+  29  infection\_to\_death\_weibull\_shape\_3539                                            2         local           0.01          100           vague prior
+  30  infection\_to\_death\_weibull\_shape\_4044                                            2         local           0.01          100           vague prior
+  31  infection\_to\_death\_weibull\_shape\_4549                                            2         local           0.01          100           vague prior
+  32  infection\_to\_death\_weibull\_scale\_1519                                            16        local           0.01          100           vague prior
+  33  infection\_to\_death\_weibull\_scale\_2024                                            15.4      local           0.01          100           vague prior
+  34  infection\_to\_death\_weibull\_scale\_2529                                            14.1      local           0.01          100           vague prior
+  35  infection\_to\_death\_weibull\_scale\_3034                                            12.1      local           0.01          100           vague prior
+  36  infection\_to\_death\_weibull\_scale\_3539                                            11        local           0.01          100           vague prior
+  37  infection\_to\_death\_weibull\_scale\_4044                                            10.01     local           0.01          100           vague prior
+  38  infection\_to\_death\_weibull\_scale\_4549                                            7.9       local           0.01          100           vague prior
+  39  art\_default\_to\_aids\_mean\_years                                                   5         universal       0.01          100           vague prior
+  40  prop\_delayed\_aids\_onset                                                            0.3       local           0             1             vague prior
+  41  mean\_survival\_for\_infants\_infected\_prior\_to\_birth                              1.08      local           0.01          100           vague prior      ferrand
+  42  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_scale                 16        local           0.01          100           vague prior      ferrand
+  43  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_shape                 2.7       local           0.01          100           vague prior      ferrand
+  44  rr\_test\_hiv\_positive                                                               1.1       local           0.01          100           vague prior
+  45  hiv\_testing\_rate\_adjustment                                                        0.75      undetermined    0.01          100           calibration
+  46  prob\_hiv\_test\_at\_anc\_or\_delivery                                                0.95      local           0             1             vague prior
+  47  prob\_hiv\_test\_for\_newborn\_infant                                                 0.95      local           0             1             vague prior
+  48  prob\_behav\_chg\_after\_hiv\_test                                                    0.5       local           0             1             vague prior
+  49  prob\_prep\_for\_fsw\_after\_hiv\_test                                                0.11      undetermined    0             1             calibration
+  50  prob\_prep\_for\_agyw                                                                 0.01      undetermined    0             1             calibration
+  51  prob\_circ\_after\_hiv\_test                                                          0.05      undetermined    0             1             calibration
+  52  increase\_in\_prob\_circ\_2019                                                        3         undetermined    0.01          100           calibration
+  53  prob\_circ\_for\_child\_before\_2020                                                  0.0128    undetermined    0             1             calibration                                                      This is estimated using DHIS2 vmmc cases and world bank population data 2015-2019.
+  54  prob\_circ\_for\_child\_from\_2020                                                    0.0008    undetermined    0             1             calibration                                                      From 2020 on as indicated by DHIS2 data and PEPFAR 2020 Country Operational Plan the <15 yrs circ cases should decline dramatically. The probability derived from 2020-2022 data is 0.0008 using the same estimation method.
+  55  probability\_of\_being\_retained\_on\_prep\_every\_3\_months                          0.9       undetermined    0             1             calibration
+  56  probability\_of\_being\_retained\_on\_art\_every\_3\_months                           0.95      local           0             1             vague prior
+  57  probability\_of\_seeking\_further\_art\_appointment\_if\_drug\_not\_available         0.9       local           0             1             vague prior
+  58  probability\_of\_seeking\_further\_art\_appointment\_if\_appointment\_not\_available  0.9       local           0             1             vague prior
+  59  prep\_start\_year                                                                     2018      scenario        2010          2050          vague prior
+  60  ART\_age\_cutoff\_young\_child                                                        1         local           0             20            vague prior
+  61  ART\_age\_cutoff\_older\_child                                                        10        local           0             20            vague prior
+  62  rel\_probability\_art\_baseline\_aids                                                 10        local           0.01          100           vague prior
+  63  aids\_tb\_death\_rate\_with\_tb\_treatment                                            0.15      undetermined    0.01          100           calibration
+  64  aids\_tb\_death\_rate\_no\_tb\_treatment                                              0.5       undetermined    0.01          100           calibration
+  65  hiv\_healthseekingbehaviour\_cap                                                      5         local           1             10            vague prior
+  66  initial\_dispensation\_period\_months                                                 3         local           1             24            vague prior
+  67  dispensation\_min\_days                                                               1         local           1             14            vague prior
+  68  length\_of\_inpatient\_stay\_if\_terminal                                             [14,20]   local           [1,2]         [50,51]       vague prior
+  69  type\_of\_scaleup                                                                     none      scenario        NA            NA            vague prior
+  70  selftest\_start\_year                                                                 2023      local           2010          2050          vague prior
+  71  scaleup\_start\_year                                                                  2025      scenario        2010          2050          vague prior
+  72  interval\_for\_viral\_load\_measurement\_months                                       24        local           1             24            vague prior
+  73  annual\_rate\_selftest                                                                0.07      local           0             1             calibration                                                      need 800,000 in population of 19m (0.04), half are children, lm excludes on ART
+  74  selftest\_available                                                                   TRUE      local           NA            NA            design decision
+  75  young\_adult\_vls\_factor                                                             0.08      local           0             1             vague prior                                                      data from MOH MW
+  76  proportion\_young\_adult\_on\_art                                                     0.15      local           0             1             vague prior                                                      mphia report
+  77  prob\_receive\_viral\_load\_test\_result                                              0.6       local           0             1             vague prior                                                      data from MOH MW
+  78  sensitivity\_viral\_load\_test                                                        0.6       local           0             1             vague prior                                                      data from MOH MW
+  79  prob\_of\_viral\_suppression\_following\_VL\_test                                     0.5816    local           0             1             vague prior
+  80  viral\_load\_testing\_start\_year                                                     2016      local           0             1             vague prior                                                      data from MOH MW
+  81  delay\_from\_viral\_load\_to\_result\_months\_min                                     3         local           0             5             vague prior
+  82  delay\_from\_viral\_load\_to\_result\_months\_max                                     7         local           0             12            vague prior
+  83  tdf\_test\_replace\_vl\_test                                                          FALSE     scenario        NA            NA            vague prior
+  84  targeted\_adherence\_monitoring                                                       FALSE     scenario        NA            NA            vague prior
+  85  p\_tdf\_positive\_given\_suppressed                                                   0.939     universal       0             1             vague prior                                                      https://pmc.ncbi.nlm.nih.gov/articles/PMC10514373/
+  86  p\_tdf\_positive\_given\_not\_suppressed                                              0.353     universal       0             1             vague prior
+  87  injectable\_prep\_allowed                                                             FALSE     scenario        NA            NA            vague prior
+  88  prob\_injectable\_prep\_vs\_oral                                                      0.7       scenario        0             1             vague prior
+  89  linked\_to\_care\_after\_selftest                                                     0.563     local           0             1             vague prior                                                      https://journals.plos.org/plosmedicine/article?id=10.1371%2Fjournal.pmed.1001873#sec019
+  90  selftest\_sensitivity                                                                 0.9       universal       0             1             vague prior                                                      https://gh.bmj.com/content/8/7/e012664#ref-10
+  91  delay\_from\_selftest\_to\_facility\_weibull\_shape                                   0.454     local           0             1             vague prior                                                      fitted distr using data from https://peercommunityjournal.org/articles/10.24072/pcjournal.428/
+  92  delay\_from\_selftest\_to\_facility\_weibull\_scale                                   13        local           0             1             vague prior
+  93  hiv\_regular\_polling\_event\_frequency\_months                                       12        undetermined    1             12            design decision
+  94  regular\_polling\_event\_initialisation\_delay\_days                                  0         undetermined    0             7             design decision
+  95  hiv\_check\_properties\_event\_delay\_months                                          1         undetermined    1             12            design decision
+  96  baseline\_year                                                                        2010      undetermined    2000          2020          design decision
+  97  end\_year\_circumcision\_data                                                         2020      local           2010          2050          vague prior
+  98  end\_year\_treatment\_data                                                            2025      local           2010          2050          vague prior
+  99  end\_year\_testing\_data                                                              2020      local           2010          2050          vague prior
+ 100  years\_since\_infection\_threshold\_for\_higher\_art\_probability                     10        local           0             100           vague prior
+ 101  years\_offset\_for\_dummy\_test\_date\_at\_baseline                                   3         local           0             100           vague prior
+ 102  age\_threshold\_child\_adult\_distinction                                             15        local           0             20            vague prior
+ 103  age\_max\_adult                                                                       80        local           0             100           vague prior
+ 104  age\_max\_infant                                                                      5         local           0             20            vague prior
+ 105  age\_default\_adult                                                                   20        local           0             100           vague prior
+ 106  age\_default\_children                                                                5         local           0             20            vague prior
+ 107  age\_min\_agyw                                                                        15        local           10            20            vague prior
+ 108  age\_max\_agyw                                                                        30        local           20            40            vague prior
+ 109  age\_max\_prep                                                                        30        local           20            40            vague prior
+ 110  age\_max\_hiv\_early\_infant\_test\_years                                             1         local           0             5             vague prior
+ 111  age\_max\_prophylaxis\_years                                                          1.5       local           0             3             vague prior
+ 112  hiv\_infection\_to\_aids\_untreated\_threshold\_years                                 10        universal       5             20            vague prior
+ 113  prop\_aids\_death\_is\_tb\_coinfection                                                0.3       universal       0             1             vague prior
+ 114  aids\_death\_beddays\_default                                                         17        local           5             50            vague prior
+ 115  hiv\_early\_infant\_test\_sensitivity                                                 0.999999  universal       0             1             vague prior
+ 116  hiv\_early\_infant\_test\_specificity                                                 0.999999  universal       0             1             vague prior
+ 117  hv\_min\_test\_interval\_days                                                         7         local           0             14            vague prior
+ 118  infant\_hiv\_test\_first\_weeks                                                       6         local           1             52            vague prior
+ 119  infant\_hiv\_test\_second\_months                                                     9         local           1             24            vague prior
+ 120  infant\_hiv\_test\_third\_months                                                      18        local           1             24            vague prior
+ 121  hiv\_testing\_initial\_window\_for\_individuals\_with\_aids\_at\_init\_days           60        local           1             365           vague prior
+ 122  hiv\_testing\_close\_window\_for\_individuals\_with\_aids\_at\_init\_days             365       local           1             365           vague prior
+ 123  odds\_ratio\_health\_seeking\_aids\_symptoms\_adults                                  10        local           0.01          100           vague prior
+ 124  odds\_ratio\_health\_seeking\_aids\_symptoms\_children                                10        local           0.01          100           vague prior
+ 125  hiv\_prep\_refill\_appointment\_window\_days                                          7         local           1             365           vague prior
+ 126  prep\_continuation\_reevaluation\_period\_months                                      3         local           0             6             vague prior
+ 127  prep\_cons\_notavailable\_retry\_days                                                 7         local           0             14            vague prior
+ 128  art\_continuation\_appointment\_window\_days                                          14        local           1             100           vague prior
+ 129  art\_restart\_appointment\_delay\_months                                              1         local           1             12            vague prior
+ 130  art\_drug\_notavailable\_default\_retry\_months                                       6         local           0             12            vague prior
+ 131  art\_level1a\_healthseekingbehaviour\_cap                                             2         local           0             12            vague prior
+ 132  art\_level1a\_appointment\_delay\_months                                              1         local           0             12            vague prior
+ 133  art\_level1b\_appointment\_delay\_days                                                1         local           0             12            vague prior
+ 134  seek\_further\_art\_appointment\_if\_appointment\_not\_available\_min\_delay\_days    14        local           0             30            vague prior
+ 135  seek\_further\_art\_appointment\_if\_appointment\_not\_available\_max\_delay\_days    21        local           10            50            vague prior
+ 136  hiv\_circ\_procedure\_first\_followup\_days                                           3         local           0             14            vague prior
+ 137  hiv\_circ\_procedure\_second\_followup\_days                                          7         local           0             14            vague prior
+ 138  hiv\_circ\_cons\_notavailable\_retry\_procedure\_weeks                                1         local           0             14            vague prior
+ 139  infant\_prophylaxis\_followup\_months                                                 3         local           0             6             vague prior
+ 140  infant\_prophylaxis\_cons\_notavailable\_retry\_days                                  7         local           0             14            vague prior
+ 141  proportion\_on\_treatment\_not\_lost\_to\_follow\_up                                  0.99      local           0             1             vague prior
+====  ====================================================================================  ========  ==============  ============  ============  ===============  ==============================================  ============================================================================================================================================================================================================================

@@ -3,38 +3,38 @@ cfr (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Measles/cfr.csv>`
 
-====  =====  =============
-  ..    age    probability
-====  =====  =============
-   0      0     0.03
-   1      1     0.03
-   2      2     0.03
-   3      3     0.03
-   4      4     0.03
-   5      5     0.01
-   6      6     0.01
-   7      7     0.01
-   8      8     0.01
-   9      9     0.01
-  10     10     0.00333333
-  11     11     0.00333333
-  12     12     0.00333333
-  13     13     0.00333333
-  14     14     0.00333333
-  15     15     0.00333333
-  16     16     0.00333333
-  17     17     0.00333333
-  18     18     0.00333333
-  19     19     0.00333333
-  20     20     0.00333333
-  21     21     0.00333333
-  22     22     0.00333333
-  23     23     0.00333333
-  24     24     0.00333333
-  25     25     0.00333333
-  26     26     0.00333333
-  27     27     0.00333333
-  28     28     0.00333333
-  29     29     0.00333333
-  30     30     0.00333333
-====  =====  =============
+====  =====  =============  ==============  ============  ============  =============  ===========
+  ..    age    probability  param\_label      prior\_min    prior\_max  prior\_note    reference
+====  =====  =============  ==============  ============  ============  =============  ===========
+   0      0     0.03        local                      0             1                 Missing
+   1      1     0.03        local                      0             1                 Missing
+   2      2     0.03        local                      0             1                 Missing
+   3      3     0.03        local                      0             1                 Missing
+   4      4     0.03        local                      0             1                 Missing
+   5      5     0.01        local                      0             1                 Missing
+   6      6     0.01        local                      0             1                 Missing
+   7      7     0.01        local                      0             1                 Missing
+   8      8     0.01        local                      0             1                 Missing
+   9      9     0.01        local                      0             1                 Missing
+  10     10     0.00333333  local                      0             1                 Missing
+  11     11     0.00333333  local                      0             1                 Missing
+  12     12     0.00333333  local                      0             1                 Missing
+  13     13     0.00333333  local                      0             1                 Missing
+  14     14     0.00333333  local                      0             1                 Missing
+  15     15     0.00333333  local                      0             1                 Missing
+  16     16     0.00333333  local                      0             1                 Missing
+  17     17     0.00333333  local                      0             1                 Missing
+  18     18     0.00333333  local                      0             1                 Missing
+  19     19     0.00333333  local                      0             1                 Missing
+  20     20     0.00333333  local                      0             1                 Missing
+  21     21     0.00333333  local                      0             1                 Missing
+  22     22     0.00333333  local                      0             1                 Missing
+  23     23     0.00333333  local                      0             1                 Missing
+  24     24     0.00333333  local                      0             1                 Missing
+  25     25     0.00333333  local                      0             1                 Missing
+  26     26     0.00333333  local                      0             1                 Missing
+  27     27     0.00333333  local                      0             1                 Missing
+  28     28     0.00333333  local                      0             1                 Missing
+  29     29     0.00333333  local                      0             1                 Missing
+  30     30     0.00333333  local                      0             1                 Missing
+====  =====  =============  ==============  ============  ============  =============  ===========

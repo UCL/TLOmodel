@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>parameters (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>parameters (.csv) &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -65,6 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_IndividualHistoryTracker/index.html">ResourceFile_IndividualHistoryTracker</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
@@ -121,6 +122,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_RecordSummaryStats.csv.html">RecordSummaryStats (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
 </ul>
 </li>
@@ -168,124 +170,454 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>sensitivity_rdt</p></td>
 <td><p>0.95</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
-<td><p>cfr</p></td>
+<td><p>cfr_severe_malaria</p></td>
 <td><p>0.15</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>dur_asym</p></td>
 <td><p>110</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>365</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>dur_clin</p></td>
 <td><p>5</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>dur_clin_para</p></td>
 <td><p>195</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>365</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>treatment_adjustment</p></td>
 <td><p>0.5</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>p_sev_anaemia_preg</p></td>
 <td><p>0.075</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>mortality_adjust</p></td>
 <td><p>10</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>data_end</p></td>
 <td><p>2018</p></td>
+<td><p>scenario</p></td>
+<td><p>2010</p></td>
+<td><p>2030</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>irs_rates_boundary</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>irs_rates_upper</p></td>
 <td><p>0.8</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>irs_rates_lower</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>prob_malaria_case_tests</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>itn</p></td>
 <td><p>0.6</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>scaling_factor_for_rdt_availability</p></td>
 <td><p>1.2</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>10</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>duration_iptp_protection_weeks</p></td>
 <td><p>6</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>52</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>rr_clinical_malaria_hiv_under5</p></td>
 <td><p>1.7</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>rr_clinical_malaria_hiv_over5</p></td>
 <td><p>2.6</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>rr_clinical_malaria_hiv_pregnant</p></td>
 <td><p>3.96</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>rr_clinical_malaria_cotrimoxazole</p></td>
 <td><p>0.58</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>rr_clinical_malaria_art</p></td>
 <td><p>0.74</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>rr_clinical_malaria_iptp</p></td>
 <td><p>0.54</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>rr_severe_malaria_hiv_under5</p></td>
 <td><p>9.69</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>rr_severe_malaria_hiv_over5</p></td>
 <td><p>2.68</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>rr_severe_malaria_hiv_pregnant</p></td>
 <td><p>2.8</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>rr_severe_malaria_iptp</p></td>
 <td><p>0.6</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
 <td><p>prob_of_treatment_success</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>type_of_scaleup</p></td>
 <td><p>none</p></td>
+<td><p>scenario</p></td>
+<td><p>none</p></td>
+<td><p>max</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
 <td><p>scaleup_start_year</p></td>
 <td><p>2025</p></td>
+<td><p>scenario</p></td>
+<td><p>2020</p></td>
+<td><p>2050</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>temp_max_itn_coverage</p></td>
+<td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0.5</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>max_age_incidence_data</p></td>
+<td><p>80</p></td>
+<td><p>universal</p></td>
+<td><p>70</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>max_year_rdt_data</p></td>
+<td><p>2024</p></td>
+<td><p>scenario</p></td>
+<td><p>2020</p></td>
+<td><p>2030</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>symptom_onset_delay_days</p></td>
+<td><p>7</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>death_delay_min_days</p></td>
+<td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>7</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>death_delay_max_days</p></td>
+<td><p>7</p></td>
+<td><p>universal</p></td>
+<td><p>1</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>rdt_followup_days</p></td>
+<td><p>7</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>clinical_treatment_duration_days</p></td>
+<td><p>5</p></td>
+<td><p>universal</p></td>
+<td><p>3</p></td>
+<td><p>10</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>severe_clinical_treatment_duration_days</p></td>
+<td><p>7</p></td>
+<td><p>universal</p></td>
+<td><p>5</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>self_cure_duration_days</p></td>
+<td><p>6</p></td>
+<td><p>universal</p></td>
+<td><p>3</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>rdt_scheduling_retry_days</p></td>
+<td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>7</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>rdt_scheduling_max_delay_days</p></td>
+<td><p>4</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>MalariaParasiteClearanceEvent_frequency_days</p></td>
+<td><p>30.5</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>60</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>MalariaUpdateEvent_frequency_days</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>5</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>MalariaPollingEventDistrict_frequency_months</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>30</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>MalariaPollingEventDistrict_delay_days</p></td>
+<td><p>0</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>30</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>MalariaUpdateEvent_delay_days</p></td>
+<td><p>0</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>30</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>MalariaParasiteClearanceEvent_delay_months</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>MalariaIPTp_frequency_months</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>60</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>MalariaIPTp_delay_days</p></td>
+<td><p>30.5</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>60</p></td>
+<td><p>design decision</p></td>
+<td></td>
 </tr>
 </tbody>
 </table>

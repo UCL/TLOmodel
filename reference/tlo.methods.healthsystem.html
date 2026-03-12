@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -94,7 +94,7 @@
 <span id="tlo-methods-healthsystem-module"></span><h1>tlo.methods.healthsystem module<a class="headerlink" href="#module-tlo.methods.healthsystem" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beds_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomise_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_squeeze_factor_to_district_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event_count_log_period</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'month'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HealthSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beds_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomise_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event_count_log_period</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'month'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem" title="Link to this definition"></a></dt>
 <dd><p>This is the Health System Module.
 The execution of all health systems interactions are controlled through this module.</p>
 <dl class="field-list simple">
@@ -104,9 +104,8 @@ The execution of all health systems interactions are controlled through this mod
 <li><p><strong>service_availability</strong> – A list of treatment IDs to allow.</p></li>
 <li><p><strong>mode_appt_constraints</strong> – Integer code in <code class="docutils literal notranslate"><span class="pre">{1,</span> <span class="pre">2}</span></code> determining mode of
 constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
-events run with squeeze factor provided officers required have nonzero capabilities,
-2: hard constraints, only HSI events with
-no squeeze factor run.</p></li>
+events run provided officers required have nonzero capabilities,
+2: hard constraints, only HSI events for which capabilities are available run.</p></li>
 <li><p><strong>cons_availability</strong> – If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then</p></li>
 </ul>
 </dd>
@@ -138,8 +137,6 @@ so as to allow each appointment type to run at each facility_level in each distr
 logging) and every HSI event runs.</p></li>
 <li><p><strong>disable_and_reject_all</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, disable health system and no HSI
 events run</p></li>
-<li><p><strong>compute_squeeze_factor_to_district_level</strong> – Whether to compute squeeze_factors to the district level, or
-the national level (which effectively pools the resources across all districts).</p></li>
 <li><p><strong>hsi_event_count_log_period</strong> – Period over which to accumulate counts of HSI
 events that have run before logging and reseting counters. Should be on of
 strings <code class="docutils literal notranslate"><span class="pre">'day'</span></code>, <code class="docutils literal notranslate"><span class="pre">'month'</span></code>, <code class="docutils literal notranslate"><span class="pre">'year'</span></code>. <code class="docutils literal notranslate"><span class="pre">'simulation'</span></code> to log at the
@@ -186,7 +183,7 @@ event details and frequencies.</p></li>
 </tr>
 <tr class="row-odd"><td><p>Daily_Capabilities_actual</p></td>
 <td><p>DATA_FRAME</p></td>
-<td><p>The capabilities (minutes of time available of each type of officer in each facility) based on the _estimated <a href="#id3"><span class="problematic" id="id4">current_</span></a> number and distribution of staff estimated.</p></td>
+<td><p>The capabilities (minutes of time available of each type of officer in each facility) based on the _estimated <a href="#id1"><span class="problematic" id="id2">current_</span></a> number and distribution of staff estimated.</p></td>
 </tr>
 <tr class="row-even"><td><p>Daily_Capabilities_funded</p></td>
 <td><p>DATA_FRAME</p></td>
@@ -208,135 +205,139 @@ event details and frequencies.</p></li>
 <td><p>DATA_FRAME</p></td>
 <td><p>Look-up table for the designations of consumables (whether diagnostic, medicine, or other</p></td>
 </tr>
-<tr class="row-odd"><td><p>availability_estimates</p></td>
-<td><p>DATA_FRAME</p></td>
-<td><p>Estimated availability of consumables in the LMIS dataset.</p></td>
+<tr class="row-odd"><td><p>data_source_for_cons_availability_estimates</p></td>
+<td><p>STRING</p></td>
+<td><p>Source of data on consumable availability. Options are: <cite>original</cite> or <cite>updated</cite>.The original source was used in the calibration and presented in the overview paper. The updated source introduced in PR #1743 and better reflects the average availability of consumables in the merged 1b/2 facility level.</p></td>
 </tr>
-<tr class="row-even"><td><p>cons_availability</p></td>
+<tr class="row-even"><td><p>availability_estimates</p></td>
+<td><p>DICT</p></td>
+<td><p>Estimated availability of consumables in the LMIS dataset. Dict contains all the databases that might be selected using <cite>data_source_for_cons_availability_estimates</cite></p></td>
+</tr>
+<tr class="row-odd"><td><p>cons_availability</p></td>
 <td><p>STRING</p></td>
 <td><p>Availability of consumables. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no consumable be  ever be available; if ‘all’, then all consumables are always available. When using ‘all’ or ‘none’, requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.Note that other options are also available: see the <cite>Consumables</cite> class.</p></td>
 </tr>
-<tr class="row-odd"><td><p>cons_override_treatment_ids</p></td>
+<tr class="row-even"><td><p>cons_override_treatment_ids</p></td>
 <td><p>LIST</p></td>
 <td><p>Consumable availability within any treatment ids listed in this parameter will be set at to a given probabilty stored in override_treatment_ids_avail. By default this list is empty</p></td>
 </tr>
-<tr class="row-even"><td><p>cons_override_treatment_ids_prob_avail</p></td>
+<tr class="row-odd"><td><p>cons_override_treatment_ids_prob_avail</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that consumables for treatment ids listed in cons_override_treatment_ids will be available</p></td>
 </tr>
-<tr class="row-odd"><td><p>BedCapacity</p></td>
+<tr class="row-even"><td><p>BedCapacity</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on the number of beds available of each type by facility_id</p></td>
 </tr>
-<tr class="row-even"><td><p>beds_availability</p></td>
+<tr class="row-odd"><td><p>beds_availability</p></td>
 <td><p>STRING</p></td>
 <td><p>Availability of beds. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no beds be  ever be available; if ‘all’, then all beds are always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-odd"><td><p>EquipmentCatalogue</p></td>
+<tr class="row-even"><td><p>EquipmentCatalogue</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on equipment items and packages.</p></td>
 </tr>
-<tr class="row-even"><td><p>equipment_availability_estimates</p></td>
+<tr class="row-odd"><td><p>equipment_availability_estimates</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on the availability of equipment items and packages.</p></td>
 </tr>
-<tr class="row-odd"><td><p>equip_availability</p></td>
+<tr class="row-even"><td><p>equip_availability</p></td>
 <td><p>STRING</p></td>
 <td><p>What to assume about the availability of equipment. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no equipment ever be available; if ‘all’, then all equipment is always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-even"><td><p>equip_availability_postSwitch</p></td>
+<tr class="row-odd"><td><p>equip_availability_postSwitch</p></td>
 <td><p>STRING</p></td>
 <td><p>What to assume about the availability of equipment after the switch (see <cite>year_equip_availability_switch</cite>). The options for this are the same as <cite>equip_availability</cite>.</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_equip_availability_switch</p></td>
+<tr class="row-even"><td><p>year_equip_availability_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which the assumption for <cite>equip_availability</cite> changes (The change happens on 1st January of that year.)</p></td>
 </tr>
-<tr class="row-even"><td><p>Service_Availability</p></td>
+<tr class="row-odd"><td><p>Service_Availability</p></td>
 <td><p>LIST</p></td>
 <td><p>List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-odd"><td><p>policy_name</p></td>
+<tr class="row-even"><td><p>policy_name</p></td>
 <td><p>STRING</p></td>
 <td><p>Name of priority policy adopted</p></td>
 </tr>
-<tr class="row-even"><td><p>year_mode_switch</p></td>
+<tr class="row-odd"><td><p>year_mode_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which mode switch is enforced</p></td>
 </tr>
-<tr class="row-odd"><td><p>scale_to_effective_capabilities</p></td>
+<tr class="row-even"><td><p>scale_to_effective_capabilities</p></td>
 <td><p>BOOL</p></td>
 <td><p>In year in which mode switch takes place, will rescale available capabilities to match thosethat were effectively used (on average) in the past year if this is set to True. This way,we can approximate overtime and rushing of appts even in mode 2.</p></td>
 </tr>
-<tr class="row-even"><td><p>year_cons_availability_switch</p></td>
+<tr class="row-odd"><td><p>year_cons_availability_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which consumable availability switch is enforced. The change happenson 1st January of that year.)</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_use_funded_or_actual_staffing_switch</p></td>
+<tr class="row-even"><td><p>year_use_funded_or_actual_staffing_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which switch for <cite>use_funded_or_actual_staffing</cite> is enforced. (The change happenson 1st January of that year.)</p></td>
 </tr>
-<tr class="row-even"><td><p>priority_rank</p></td>
+<tr class="row-odd"><td><p>priority_rank</p></td>
 <td><p>DICT</p></td>
 <td><p>Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments</p></td>
 </tr>
-<tr class="row-odd"><td><p>HR_scaling_by_level_and_officer_type_table</p></td>
+<tr class="row-even"><td><p>HR_scaling_by_level_and_officer_type_table</p></td>
 <td><p>DICT</p></td>
 <td><p>Factors by which capabilities of medical officer types at different levels will bescaled at the start of the year specified by <cite>year_HR_scaling_by_level_and_officer_type</cite>. Thisserves to simulate a number of effects (e.g. absenteeism, boosting capabilities of specific medical cadres, etc). This is the imported from an Excel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding worksheets to this workbook: the value of <cite>HR_scaling_by_level_and_officer_type_mode</cite> indicates which sheet is used.</p></td>
 </tr>
-<tr class="row-even"><td><p>year_HR_scaling_by_level_and_officer_type</p></td>
+<tr class="row-odd"><td><p>year_HR_scaling_by_level_and_officer_type</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which one-off constant HR scaling will take place. (The change happenson 1st January of that year.)</p></td>
 </tr>
-<tr class="row-odd"><td><p>HR_scaling_by_level_and_officer_type_mode</p></td>
+<tr class="row-even"><td><p>HR_scaling_by_level_and_officer_type_mode</p></td>
 <td><p>STRING</p></td>
 <td><p>Mode of HR scaling considered at the start of the simulation. This corresponds to the nameof the worksheet in <cite>ResourceFile_HR_scaling_by_level_and_officer_type.xlsx</cite> that should be used. Options are: <cite>default</cite> (capabilities are scaled by a constaint factor of 1); <cite>data</cite> (factors informed by survey data); and, <cite>custom</cite> (user can freely set these factors as parameters in the analysis).</p></td>
 </tr>
-<tr class="row-even"><td><p>HR_scaling_by_district_table</p></td>
+<tr class="row-odd"><td><p>HR_scaling_by_district_table</p></td>
 <td><p>DICT</p></td>
 <td><p>Factors by which daily capabilities in different districts will bescaled at the start of the year specified by year_HR_scaling_by_district to simulate(e.g., through catastrophic event disrupting delivery of services in particular district(s)).This is the import of an Excel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding worksheets to this workbook: the value of <cite>HR_scaling_by_district_mode</cite> indicates whichsheet is used.</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_HR_scaling_by_district</p></td>
+<tr class="row-even"><td><p>year_HR_scaling_by_district</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which scaling of daily capabilities by district will take place. (The change happenson 1st January of that year.)</p></td>
 </tr>
-<tr class="row-even"><td><p>HR_scaling_by_district_mode</p></td>
+<tr class="row-odd"><td><p>HR_scaling_by_district_mode</p></td>
 <td><p>STRING</p></td>
 <td><p>Mode of scaling of daily capabilities by district. This corresponds to the name of the worksheet in the file <cite>ResourceFile_HR_scaling_by_district.xlsx</cite>.</p></td>
 </tr>
-<tr class="row-odd"><td><p>yearly_HR_scaling</p></td>
+<tr class="row-even"><td><p>yearly_HR_scaling</p></td>
 <td><p>DICT</p></td>
 <td><p>Factors by which HR capabilities are scaled. Each sheet specifies a ‘mode’ for dynamic HR scaling. The mode to use is determined by the parameter <cite>yearly_HR_scaling_mode</cite>. Each sheet must have the same format, including the same column headers. On each sheet, the first row (for <cite>2010</cite>, when the simulation starts) specifies the initial configuration: <cite>dynamic_HR_scaling_factor</cite> (float) is the factor by which all human resoucres capabilities and multiplied; <cite>scale_HR_by_popsize</cite> (bool) specifies whether the capabilities should (also) grow by the factor by which the population has grown in the last year. Each subsequent row specifies a year where there should be a CHANGE in the configuration. If there are no further rows, then there is no change. But, for example, an additional row of the form <code class="docutils literal notranslate"><span class="pre">`2015,</span> <span class="pre">1.05,</span> <span class="pre">TRUE`</span></code> would mean that on 1st January of 2015, 2016, 2017, ….(and the rest of the simulation), the capabilities would increase by the product of 1.05 and by the ratio of the population size to that in the year previous.</p></td>
 </tr>
-<tr class="row-even"><td><p>yearly_HR_scaling_mode</p></td>
+<tr class="row-odd"><td><p>yearly_HR_scaling_mode</p></td>
 <td><p>STRING</p></td>
 <td><p>Specifies which of the policies in yearly_HR_scaling should be adopted. This corresponds toa worksheet of the file <cite>ResourceFile_dynamic_HR_scaling.xlsx</cite>.</p></td>
 </tr>
-<tr class="row-odd"><td><p>tclose_overwrite</p></td>
+<tr class="row-even"><td><p>tclose_overwrite</p></td>
 <td><p>INT</p></td>
 <td><p>Decide whether to overwrite tclose variables assigned by disease modules</p></td>
 </tr>
-<tr class="row-even"><td><p>tclose_days_offset_overwrite</p></td>
+<tr class="row-odd"><td><p>tclose_days_offset_overwrite</p></td>
 <td><p>INT</p></td>
 <td><p>Offset in days from topen at which tclose will be set by the healthsystem for all HSIsif tclose_overwrite is set to True.</p></td>
 </tr>
-<tr class="row-odd"><td><p>mode_appt_constraints</p></td>
+<tr class="row-even"><td><p>mode_appt_constraints</p></td>
 <td><p>INT</p></td>
-<td><p>Integer code in <cite>{1, 2}</cite> determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run with squeeze factor, provided officers required to deliver the HSI have capabilities &gt; 02: hard constraints, only HSI events with no squeeze factor run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.</p></td>
+<td><p>Integer code in <cite>{1, 2}</cite> determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run, provided officers required to deliver the HSI have capabilities &gt; 02: hard constraints, only HSI events for which capabilities are available run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-even"><td><p>mode_appt_constraints_postSwitch</p></td>
+<tr class="row-odd"><td><p>mode_appt_constraints_postSwitch</p></td>
 <td><p>INT</p></td>
 <td><p>Mode considered after a mode switch in year_mode_switch.</p></td>
 </tr>
-<tr class="row-odd"><td><p>cons_availability_postSwitch</p></td>
+<tr class="row-even"><td><p>cons_availability_postSwitch</p></td>
 <td><p>STRING</p></td>
 <td><p>Consumables availability after switch in <cite>year_cons_availability_switch</cite>. Acceptable valuesare the same as those for Parameter <cite>cons_availability</cite>.</p></td>
 </tr>
-<tr class="row-even"><td><p>use_funded_or_actual_staffing_postSwitch</p></td>
+<tr class="row-odd"><td><p>use_funded_or_actual_staffing_postSwitch</p></td>
 <td><p>STRING</p></td>
 <td><p>Staffing availability after switch in <cite>year_use_funded_or_actual_staffing_switch</cite>. Acceptable values are the same as those for Parameter <cite>use_funded_or_actual_staffing</cite>.</p></td>
 </tr>
-<tr class="row-odd"><td><p>clinic_configuration_name</p></td>
+<tr class="row-even"><td><p>clinic_configuration_name</p></td>
 <td><p>STRING</p></td>
 <td><p>Name of configuration of clinics to use.</p></td>
 </tr>
@@ -365,14 +366,14 @@ event details and frequencies.</p></li>
 <p><strong>Class attributes:</strong></p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>__annotations__ : {}</p>
-<p>capabilities_today : &lt;property object at 0x3337b7a60&gt;</p>
-<p>hsi_event_counts : &lt;property object at 0x3337b7c40&gt;</p>
-<p>never_ran_hsi_event_counts : &lt;property object at 0x3337b7c90&gt;</p>
-<p>use_funded_or_actual_staffing : &lt;property object at 0x3337b7b50&gt;</p>
+<p>capabilities_today : &lt;property object at 0x1390a6e30&gt;</p>
+<p>hsi_event_counts : &lt;property object at 0x1390a7010&gt;</p>
+<p>never_ran_hsi_event_counts : &lt;property object at 0x1390a7060&gt;</p>
+<p>use_funded_or_actual_staffing : &lt;property object at 0x1390a6f20&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSystem):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beds_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomise_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_squeeze_factor_to_district_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event_count_log_period</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'month'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beds_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomise_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event_count_log_period</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'month'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.__init__" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -380,9 +381,8 @@ event details and frequencies.</p></li>
 <li><p><strong>service_availability</strong> – A list of treatment IDs to allow.</p></li>
 <li><p><strong>mode_appt_constraints</strong> – Integer code in <code class="docutils literal notranslate"><span class="pre">{1,</span> <span class="pre">2}</span></code> determining mode of
 constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
-events run with squeeze factor provided officers required have nonzero capabilities,
-2: hard constraints, only HSI events with
-no squeeze factor run.</p></li>
+events run provided officers required have nonzero capabilities,
+2: hard constraints, only HSI events for which capabilities are available run.</p></li>
 <li><p><strong>cons_availability</strong> – If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then</p></li>
 </ul>
 </dd>
@@ -414,8 +414,6 @@ so as to allow each appointment type to run at each facility_level in each distr
 logging) and every HSI event runs.</p></li>
 <li><p><strong>disable_and_reject_all</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, disable health system and no HSI
 events run</p></li>
-<li><p><strong>compute_squeeze_factor_to_district_level</strong> – Whether to compute squeeze_factors to the district level, or
-the national level (which effectively pools the resources across all districts).</p></li>
 <li><p><strong>hsi_event_count_log_period</strong> – Period over which to accumulate counts of HSI
 events that have run before logging and reseting counters. Should be on of
 strings <code class="docutils literal notranslate"><span class="pre">'day'</span></code>, <code class="docutils literal notranslate"><span class="pre">'month'</span></code>, <code class="docutils literal notranslate"><span class="pre">'year'</span></code>. <code class="docutils literal notranslate"><span class="pre">'simulation'</span></code> to log at the
@@ -676,16 +674,16 @@ checks for each individual HSI event of the shared type will be redundant.</p></
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_treatment_id_allowed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_treatment_id_allowed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed" title="Link to this definition"></a></dt>
 <dd><p>Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
 treatments, given by <cite>self.service_availability</cite>. The rules are as follows:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>An empty list means nothing is allowed</p></li>
 <li><p>A list that contains only an asteriks [‘*’] means run anything</p></li>
-<li><p>If the list is not empty, then a treatment_id with a first part “<a href="#id5"><span class="problematic" id="id6">FirstAttendance_</span></a>” is also allowed</p></li>
+<li><p>If the list is not empty, then a treatment_id with a first part “<a href="#id3"><span class="problematic" id="id4">FirstAttendance_</span></a>” is also allowed</p></li>
 <li><p>An entry in the list of the form “A_B_C” means a treatment_id that matches exactly is allowed</p></li>
-<li><p>An entry in the list of the form “A_B_*” means that a treatment_id that begins “<a href="#id7"><span class="problematic" id="id8">A_B_</span></a>” or “A_B” is allowed</p></li>
+<li><p>An entry in the list of the form “A_B_*” means that a treatment_id that begins “<a href="#id5"><span class="problematic" id="id6">A_B_</span></a>” or “A_B” is allowed</p></li>
 </ul>
 </div></blockquote>
 </dd></dl>
@@ -754,58 +752,17 @@ as is used in Daily_Capabilities.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">
-<span class="sig-name descname"><span class="pre">get_squeeze_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">footprints_per_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_footprint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_capabilities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_squeeze_factor_to_district_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_clinic_squeeze_factors">
-<span class="sig-name descname"><span class="pre">get_clinic_squeeze_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clinic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">footprints_per_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_footprint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_capabilities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_squeeze_factor_to_district_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_clinic_squeeze_factors" title="Link to this definition"></a></dt>
-<dd><p>This will compute the squeeze factors for each HSI event from the list of all
-the calls on health system resources for the day.
-The squeeze factor is defined as (call/available - 1). ie. the highest
-fractional over-demand among any type of officer that is called-for in the
-appt_footprint of an HSI event.
-A value of 0.0 signifies that there is no squeezing (sufficient resources for
-the EXPECTED_APPT_FOOTPRINT).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>footprints_per_event</strong> – List, one entry per HSI event, containing the
-minutes required from each health officer in each health facility as a
-Counter (using the standard index)</p></li>
-<li><p><strong>total_footprint</strong> – Counter, containing the total minutes required from
-each health officer in each health facility when non-zero, (using the
-standard index)</p></li>
-<li><p><strong>current_capabilities</strong> – Series giving the amount of time available for
-each health officer in each health facility (using the standard index)</p></li>
-<li><p><strong>compute_squeeze_factor_to_district_level</strong> – Boolean indicating whether
-the computation of squeeze_factors should be specific to each district
-(when <cite>True</cite>), or if the computation of squeeze_factors should be on
-the basis that resources from all districts can be effectively “pooled”
-(when <a href="#id1"><span class="problematic" id="id2">`</span></a>False).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>squeeze_factors: an array of the squeeze factors for each HSI event
-(position in array matches that in the all_call_today list).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.record_hsi_event">
-<span class="sig-name descname"><span class="pre">record_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clinic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.record_hsi_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">record_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clinic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.record_hsi_event" title="Link to this definition"></a></dt>
 <dd><p>Record the processing of an HSI event.
 It will also record the actual appointment footprint.
 :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
-:param actual_appt_footprint: The actual Appointment Footprint (if individual event)
-:param squeeze_factor: The squeeze factor (if individual event)</p>
+:param actual_appt_footprint: The actual Appointment Footprint (if individual event)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.write_to_hsi_log">
-<span class="sig-name descname"><span class="pre">write_to_hsi_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventDetails</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clinic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">write_to_hsi_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventDetails</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clinic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log" title="Link to this definition"></a></dt>
 <dd><p>Write the log <cite>HSI_Event</cite> and add to the summary counter.</p>
 </dd></dl>
 
@@ -825,12 +782,7 @@ If this is an individual-level HSI_Event, it will also record the actual appoint
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage">
-<span class="sig-name descname"><span class="pre">log_current_capabilities_and_usage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.log_clinic_current_capabilities_and_usage">
-<span class="sig-name descname"><span class="pre">log_clinic_current_capabilities_and_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clinic_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.log_clinic_current_capabilities_and_usage" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">log_current_capabilities_and_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clinic_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage" title="Link to this definition"></a></dt>
 <dd><p>This will log the percentage of the current capabilities that is used at each Facility Type, according the
 <cite>runnning_total_footprint</cite>. This runs every day.</p>
 </dd></dl>
@@ -925,6 +877,12 @@ be overridden and to provide a probability of availability.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.do_all_required_officers_have_nonzero_capabilities">
+<span class="sig-name descname"><span class="pre">do_all_required_officers_have_nonzero_capabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_time_requests</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clinic</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.do_all_required_officers_have_nonzero_capabilities" title="Link to this definition"></a></dt>
+<dd><p>Check if all officers required by the appt footprint are available to perform the HSI</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_1">
 <span class="sig-name descname"><span class="pre">run_individual_level_events_in_mode_1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_list_of_individual_hsi_event_tuples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">HSIEventQueueItem</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_1" title="Link to this definition"></a></dt>
 <dd><p>Run a list of individual level events. Returns: list of events that did not run (maybe an empty list).</p>
@@ -941,7 +899,7 @@ facility_id.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystemScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><span class="pre">HealthSystem</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HealthSystemScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><span class="pre">HealthSystem</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler" title="Link to this definition"></a></dt>
 <dd><p>This is the HealthSystemScheduler. It is an event that occurs every day and must be the LAST event of the day.
 It inspects the calls on the healthsystem and commissions event to occur that are consistent with the
 healthsystem’s capabilities for the following day, given assumptions about how this decision is made.</p>
@@ -995,12 +953,12 @@ healthsystem’s capabilities for the following day, given assumptions about how
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_year">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_last_day_of_the_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_year" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_is_last_day_of_the_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_year" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_month">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_last_day_of_the_month</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_month" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_is_last_day_of_the_month</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_month" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1035,14 +993,10 @@ healthsystem’s capabilities for the following day, given assumptions about how
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemChangeParameters">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystemChangeParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><span class="pre">HealthSystem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeParameters" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HealthSystemChangeParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><span class="pre">HealthSystem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters_to_change</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeParameters" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Event that causes certain internal parameters of the HealthSystem to be changed; specifically:</dt><dd><ul class="simple">
-<li><p><cite>mode_appt_constraints</cite></p></li>
-<li><p><cite>ignore_priority</cite></p></li>
-<li><p><cite>capabilities_coefficient</cite></p></li>
 <li><p><cite>cons_availability</cite></p></li>
-<li><p><cite>beds_availability</cite></p></li>
 <li><p><cite>equip_availability</cite></p></li>
 <li><p><cite>use_funded_or_actual_staffing</cite></p></li>
 </ul>
@@ -1068,7 +1022,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class HealthSystemChangeParameters):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemChangeParameters.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><span class="pre">HealthSystem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><span class="pre">HealthSystem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters_to_change</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1100,7 +1054,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DynamicRescalingHRCapabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.DynamicRescalingHRCapabilities" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">DynamicRescalingHRCapabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.DynamicRescalingHRCapabilities" title="Link to this definition"></a></dt>
 <dd><p>This event exists to scale the daily capabilities assumed at fixed time intervals</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">
@@ -1115,7 +1069,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>current_pop_size : &lt;property object at 0x3337b7fb0&gt;</p>
+<p>current_pop_size : &lt;property object at 0x1390a7330&gt;</p>
 <p><strong>Functions (defined or overridden in class DynamicRescalingHRCapabilities):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__">
@@ -1148,7 +1102,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.ConstantRescalingHRCapabilities">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConstantRescalingHRCapabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.ConstantRescalingHRCapabilities" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ConstantRescalingHRCapabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.ConstantRescalingHRCapabilities" title="Link to this definition"></a></dt>
 <dd><p>This event exists to scale the daily capabilities, with a factor for each Officer Type at each Facility_Level.</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
@@ -1201,7 +1155,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.RescaleHRCapabilities_ByDistrict">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RescaleHRCapabilities_ByDistrict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.RescaleHRCapabilities_ByDistrict" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">RescaleHRCapabilities_ByDistrict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.RescaleHRCapabilities_ByDistrict" title="Link to this definition"></a></dt>
 <dd><p>This event exists to scale the daily capabilities, with a factor for each district.</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
@@ -1254,7 +1208,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemChangeMode">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystemChangeMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeMode" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HealthSystemChangeMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeMode" title="Link to this definition"></a></dt>
 <dd><p>This event exists to change the priority policy adopted by the
 HealthSystem at a given year.</p>
 <p>Create a new regular event.</p>
@@ -1302,7 +1256,7 @@ HealthSystem at a given year.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemLogger">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystemLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemLogger" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HealthSystemLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemLogger" title="Link to this definition"></a></dt>
 <dd><p>This event runs at the start of each year and does any logging jobs for the HealthSystem module.</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">

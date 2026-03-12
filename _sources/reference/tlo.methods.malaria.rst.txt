@@ -24,13 +24,10 @@ tlo.methods.malaria module
         * - irs_district
           - REAL
           - data frame of IRS usage rates by district
-        * - sev_symp_prob
-          - REAL
-          - probabilities of each symptom for severe malaria cases
         * - sensitivity_rdt
           - REAL
           - Sensitivity of rdt
-        * - cfr
+        * - cfr_severe_malaria
           - REAL
           - case-fatality rate for severe malaria
         * - dur_asym
@@ -48,9 +45,6 @@ tlo.methods.malaria module
         * - p_sev_anaemia_preg
           - REAL
           - probability of severe anaemia in pregnant women with clinical malaria
-        * - itn_proj
-          - REAL
-          - coverage of ITN for projections 2020 onwards
         * - mortality_adjust
           - REAL
           - adjustment of case-fatality rate to match WHO/MAP
@@ -71,7 +65,7 @@ tlo.methods.malaria module
           - probability that a malaria case will have a scheduled rdt
         * - itn
           - REAL
-          - projected future itn coverage
+          - projected future itn coverage after data end
         * - rdt_testing_rates
           - REAL
           - per capita rdt testing rate of general population
@@ -123,6 +117,69 @@ tlo.methods.malaria module
         * - scaleup_parameters
           - DATA_FRAME
           - the parameters and values changed in scenario analysis
+        * - temp_max_itn_coverage
+          - REAL
+          - Temp maximum ITN coverage allowed; To reduce the lookup table file size, the malaria team has cut off the entries at this point as coverage of bednets above this value was highly unlikely 
+        * - max_age_incidence_data
+          - INT
+          - maximum age for which incidence data is available
+        * - max_year_rdt_data
+          - INT
+          - maximum year for RDT testing data
+        * - symptom_onset_delay_days
+          - INT
+          - delay in days from infection to symptom onset
+        * - death_delay_min_days
+          - INT
+          - minimum delay in days from symptom onset to death
+        * - death_delay_max_days
+          - INT
+          - maximum delay in days from symptom onset to death
+        * - rdt_followup_days
+          - INT
+          - days for RDT followup
+        * - clinical_treatment_duration_days
+          - INT
+          - duration in days for clinical malaria treatment
+        * - severe_clinical_treatment_duration_days
+          - INT
+          - duration in days for severe malaria treatment
+        * - self_cure_duration_days
+          - INT
+          - days for self-cure of untreated malaria
+        * - rdt_scheduling_retry_days
+          - INT
+          - Days to retry RDT scheduling if not received
+        * - rdt_scheduling_max_delay_days
+          - INT
+          - maximum delay in days for RDT scheduling
+        * - polling_frequency_months
+          - INT
+          - frequency in months for polling events
+        * - MalariaParasiteClearanceEvent_frequency_days
+          - REAL
+          - frequency in days for parasite clearance events
+        * - MalariaUpdateEvent_frequency_days
+          - INT
+          - frequency in days for MalariaUpdateEvent
+        * - MalariaPollingEventDistrict_frequency_months
+          - INT
+          - frequency in months for MalariaPollingEventDistrict
+        * - MalariaIPTp_frequency_months
+          - REAL
+          - frequency in days for MalariaIPTp
+        * - MalariaPollingEventDistrict_delay_days
+          - INT
+          - delay in days for MalariaPollingEventDistrict
+        * - MalariaUpdateEvent_delay_days
+          - INT
+          - delay in days for MalariaUpdateEvent
+        * - MalariaParasiteClearanceEvent_delay_months
+          - INT
+          - delay in months for MalariaParasiteClearanceEvent
+        * - MalariaIPTp_delay_days
+          - REAL
+          - delay in days for MalariaIPTp
 
 
      **PROPERTIES:**
@@ -178,13 +235,13 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x3340b1850>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x1399dfe90>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x3340b3250>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x1399dfdd0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Contraception', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem', 'Contraception'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
@@ -213,6 +270,8 @@ tlo.methods.malaria module
      .. automethod:: on_birth
 
      .. automethod:: report_daly_values
+
+     .. automethod:: report_summary_stats
 
      .. automethod:: check_if_fever_is_caused_by_malaria
 

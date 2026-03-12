@@ -20,4 +20,5 @@ cmd
     ResourceFile_cmd_events_hsi/index.rst
     ResourceFile_cmd_events_symptoms/index.rst
     ResourceFile_cmd_parameters.csv
+    parameter_values.csv
 

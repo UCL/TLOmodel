@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.measles module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>tlo.methods.measles module &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -94,7 +94,7 @@
 <span id="tlo-methods-measles-module"></span><h1>tlo.methods.measles module<a class="headerlink" href="#module-tlo.methods.measles" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.Measles">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Measles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.Measles" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Measles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.Measles" title="Link to this definition"></a></dt>
 <dd><p>This module represents measles infections and disease.</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -143,21 +143,73 @@ generator.</p>
 <td><p>REAL</p></td>
 <td><p>Efficacy of second measles vaccine dose against measles infection</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_severe</p></td>
-<td><p>REAL</p></td>
-<td><p>Probability of severe measles infection, requiring hospitalisation</p></td>
-</tr>
-<tr class="row-odd"><td><p>risk_death_on_treatment</p></td>
-<td><p>REAL</p></td>
-<td><p>Risk of scheduled death occurring if on treatment for measles complications</p></td>
-</tr>
 <tr class="row-even"><td><p>symptom_prob</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Probability of each symptom with measles infection</p></td>
 </tr>
-<tr class="row-odd"><td><p>case_fatality_rate</p></td>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_in_children_rash</p></td>
+<td><p>REAL</p></td>
+<td><p>Odds ratio seeking care in children rash</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_in_adults_rash</p></td>
+<td><p>REAL</p></td>
+<td><p>Odds ratio seeking care in adults rash</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_in_children_otitis_media</p></td>
+<td><p>REAL</p></td>
+<td><p>Odds ratio seeking care in children otitis media</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_in_adults_otitis_media</p></td>
+<td><p>REAL</p></td>
+<td><p>Odds ratio seeking care in adults otitis media</p></td>
+</tr>
+<tr class="row-odd"><td><p>reduction_in_death_risk_measle_treated</p></td>
+<td><p>REAL</p></td>
+<td><p>Reduction in death risk when measles are treated</p></td>
+</tr>
+<tr class="row-even"><td><p>maternal_immunity_age_threshold</p></td>
+<td><p>REAL</p></td>
+<td><p>Age threshold below which children are protected by maternal immunity</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_min_symptoms_constant_rate</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum age for measles symptom probability lookup</p></td>
+</tr>
+<tr class="row-even"><td><p>death_timing_min_days</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum days from symptom onset to death</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_timing_max_days</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum days from symptom onset to death</p></td>
+</tr>
+<tr class="row-even"><td><p>natural_resolution_min_days</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum days from symptom onset to natural resolution</p></td>
+</tr>
+<tr class="row-odd"><td><p>natural_resolution_max_days</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum days from symptom onset to natural resolution</p></td>
+</tr>
+<tr class="row-even"><td><p>symptom_onset_min_days</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum days from infection to symptom onset (incubation period)</p></td>
+</tr>
+<tr class="row-odd"><td><p>symptom_onset_max_days</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum days from infection to symptom onset (incubation period)</p></td>
+</tr>
+<tr class="row-even"><td><p>sympt_resolution_after_treatment</p></td>
+<td><p>INT</p></td>
+<td><p>Days until symptom resolution after treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>INT</p></td>
+<td><p>Measles main polling event frequency months</p></td>
+</tr>
+<tr class="row-even"><td><p>case_fatality_rate</p></td>
 <td><p>DICT</p></td>
-<td><p>Probability that case of measles will result in death if not treated</p></td>
+<td><p>Case fatality rate for measles infection</p></td>
 </tr>
 </tbody>
 </table>
@@ -190,10 +242,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Measles’: &lt;tlo.methods.causes.Cause object at 0x334063550&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Measles’: &lt;tlo.methods.causes.Cause object at 0x334063c90&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Measles’: &lt;tlo.methods.causes.Cause object at 0x139ace010&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Measles’: &lt;tlo.methods.causes.Cause object at 0x139acd510&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.REPORTS_DISEASE_NUMBERS: 5&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Measles):</strong></p>
@@ -259,6 +311,11 @@ assume all newborns are uninfected</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.measles.Measles.report_summary_stats">
+<span class="sig-name descname"><span class="pre">report_summary_stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.Measles.report_summary_stats" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.measles.Measles.process_parameters">
 <span class="sig-name descname"><span class="pre">process_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.Measles.process_parameters" title="Link to this definition"></a></dt>
 <dd><p>Process the parameters (following being read-in) prior to the simulation starting.
@@ -309,7 +366,7 @@ appointment.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesEvent" title="Link to this definition"></a></dt>
 <dd><p>MeaslesEvent runs every month and creates a number of new infections which are scattered across the month.
 * Seasonality is captured by the risk of infection changing according to the month.
 * Vaccination lowers an individual’s likelihood of getting the infection (one dose will be 85% protective and two</p>
@@ -361,7 +418,7 @@ appointment.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesOnsetEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesOnsetEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesOnsetEvent" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -418,7 +475,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesSymptomResolveEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesSymptomResolveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesSymptomResolveEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesSymptomResolveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesSymptomResolveEvent" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -462,7 +519,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesDeathEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesDeathEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>Performs the Death operation on an individual and logs it.</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
@@ -513,7 +570,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.HSI_Measles_Treatment">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Measles_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.HSI_Measles_Treatment" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HSI_Measles_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.HSI_Measles_Treatment" title="Link to this definition"></a></dt>
 <dd><p>Health System Interaction Event
 It is the event when a person with diagnosed measles receives treatment</p>
 <p>Create a new event.</p>
@@ -563,7 +620,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesLoggingEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesLoggingEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -603,7 +660,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesLoggingFortnightEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesLoggingFortnightEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesLoggingFortnightEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesLoggingFortnightEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesLoggingFortnightEvent" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -643,7 +700,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.measles.MeaslesLoggingAnnualEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesLoggingAnnualEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesLoggingAnnualEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MeaslesLoggingAnnualEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.measles.MeaslesLoggingAnnualEvent" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>hypertension (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>hypertension (.csv) &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -65,6 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_IndividualHistoryTracker/index.html">ResourceFile_IndividualHistoryTracker</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
@@ -103,6 +104,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../ResourceFile_cmd_events_hsi/index.html">ResourceFile_cmd_events_hsi</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../ResourceFile_cmd_events_symptoms/index.html">ResourceFile_cmd_events_symptoms</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../ResourceFile_cmd_parameters.csv.html">cmd parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../parameter_values.csv.html">parameter values (.csv)</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../contraception/index.html">contraception</a></li>
@@ -117,6 +119,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_RecordSummaryStats.csv.html">RecordSummaryStats (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
 </ul>
 </li>
@@ -164,12 +167,13 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
-<th class="head"><p>lower</p></th>
-<th class="head"><p>upper</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
 <th class="head"><p>steps_value</p></th>
 <th class="head"><p>steps_lower</p></th>
 <th class="head"><p>steps_upper</p></th>
-<th class="head"><p>Unnamed: 7</p></th>
+<th class="head"><p>prior_note</p></th>
 <th class="head"><p>“value” source:</p></th>
 <th class="head"><p>Price et al., 2018</p></th>
 </tr>
@@ -178,6 +182,7 @@
 <tr class="row-even"><td><p>0</p></td>
 <td><p>m_0-4</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -190,6 +195,7 @@
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>m_5-9</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -202,6 +208,7 @@
 <tr class="row-even"><td><p>2</p></td>
 <td><p>m_10-14</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -214,6 +221,7 @@
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>m_15-19</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -226,210 +234,228 @@
 <tr class="row-even"><td><p>4</p></td>
 <td><p>m_20-24</p></td>
 <td><p>0.0468696</p></td>
-<td><p>0.044808719999999996</p></td>
-<td><p>0.055152200000000005</p></td>
+<td><p>local</p></td>
+<td><p>0.0448087</p></td>
+<td><p>0.0551522</p></td>
 <td><p>0.15</p></td>
 <td><p>0.074</p></td>
 <td><p>0.227</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>m_25-29</p></td>
 <td><p>0.0468696</p></td>
-<td><p>0.044808719999999996</p></td>
-<td><p>0.055152200000000005</p></td>
+<td><p>local</p></td>
+<td><p>0.0448087</p></td>
+<td><p>0.0551522</p></td>
 <td><p>0.15</p></td>
 <td><p>0.074</p></td>
 <td><p>0.227</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>m_30-34</p></td>
-<td><p>0.10177828</p></td>
-<td><p>0.09515219999999999</p></td>
+<td><p>0.101778</p></td>
+<td><p>local</p></td>
+<td><p>0.0951522</p></td>
 <td><p>0.118587</p></td>
 <td><p>0.124</p></td>
 <td><p>0.089</p></td>
 <td><p>0.159</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>m_35-39</p></td>
-<td><p>0.10177828</p></td>
-<td><p>0.09515219999999999</p></td>
+<td><p>0.101778</p></td>
+<td><p>local</p></td>
+<td><p>0.0951522</p></td>
 <td><p>0.118587</p></td>
 <td><p>0.124</p></td>
 <td><p>0.089</p></td>
 <td><p>0.159</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>m_40-44</p></td>
-<td><p>0.1288914</p></td>
-<td><p>0.1230327</p></td>
-<td><p>0.1706088</p></td>
+<td><p>0.128891</p></td>
+<td><p>local</p></td>
+<td><p>0.123033</p></td>
+<td><p>0.170609</p></td>
 <td><p>0.124</p></td>
 <td><p>0.089</p></td>
 <td><p>0.159</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>m_45-49</p></td>
-<td><p>0.1288914</p></td>
-<td><p>0.1230327</p></td>
-<td><p>0.1706088</p></td>
+<td><p>0.128891</p></td>
+<td><p>local</p></td>
+<td><p>0.123033</p></td>
+<td><p>0.170609</p></td>
 <td><p>0.276</p></td>
 <td><p>0.183</p></td>
 <td><p>0.37</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>m_50-54</p></td>
-<td><p>0.23434800000000003</p></td>
-<td><p>0.21677190000000002</p></td>
-<td><p>0.2895002</p></td>
+<td><p>0.234348</p></td>
+<td><p>local</p></td>
+<td><p>0.216772</p></td>
+<td><p>0.2895</p></td>
 <td><p>0.276</p></td>
 <td><p>0.183</p></td>
 <td><p>0.37</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>m_55-59</p></td>
-<td><p>0.23434800000000003</p></td>
-<td><p>0.21677190000000002</p></td>
-<td><p>0.2895002</p></td>
+<td><p>0.234348</p></td>
+<td><p>local</p></td>
+<td><p>0.216772</p></td>
+<td><p>0.2895</p></td>
 <td><p>0.276</p></td>
 <td><p>0.183</p></td>
 <td><p>0.37</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>m_60-64</p></td>
-<td><p>0.4009132</p></td>
-<td><p>0.36091320000000005</p></td>
+<td><p>0.400913</p></td>
+<td><p>local</p></td>
+<td><p>0.360913</p></td>
 <td><p>0.474348</p></td>
 <td><p>0.279</p></td>
 <td><p>0.17</p></td>
 <td><p>0.388</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>m_65-69</p></td>
-<td><p>0.4009132</p></td>
-<td><p>0.36091320000000005</p></td>
+<td><p>0.400913</p></td>
+<td><p>local</p></td>
+<td><p>0.360913</p></td>
 <td><p>0.474348</p></td>
 <td><p>0.279</p></td>
 <td><p>0.17</p></td>
 <td><p>0.388</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>m_70-74</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>m_75-79</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>m_80-84</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>m_85-89</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>m_90-94</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>m_95-99</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>m_100+</p></td>
-<td><p>0.5009132</p></td>
+<td><p>0.500913</p></td>
+<td><p>local</p></td>
 <td><p>0.455761</p></td>
-<td><p>0.5795002</p></td>
+<td><p>0.5795</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>f_0-4</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -442,6 +468,7 @@
 <tr class="row-even"><td><p>22</p></td>
 <td><p>f_5-9</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -454,6 +481,7 @@
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>f_10-14</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -466,6 +494,7 @@
 <tr class="row-even"><td><p>24</p></td>
 <td><p>f_15-19</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -478,204 +507,221 @@
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>f_20-24</p></td>
 <td><p>0.0134348</p></td>
+<td><p>local</p></td>
 <td><p>0.0125761</p></td>
 <td><p>0.0242935</p></td>
 <td><p>0.081</p></td>
 <td><p>0.058</p></td>
 <td><p>0.105</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
 <td><p>f_25-29</p></td>
 <td><p>0.0134348</p></td>
+<td><p>local</p></td>
 <td><p>0.0125761</p></td>
 <td><p>0.0242935</p></td>
 <td><p>0.081</p></td>
 <td><p>0.058</p></td>
 <td><p>0.105</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>f_30-34</p></td>
-<td><p>0.05202179999999999</p></td>
+<td><p>0.0520218</p></td>
+<td><p>local</p></td>
 <td><p>0.0437392</p></td>
-<td><p>0.055456599999999995</p></td>
+<td><p>0.0554566</p></td>
 <td><p>0.138</p></td>
 <td><p>0.101</p></td>
 <td><p>0.174</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
 <td><p>f_35-39</p></td>
-<td><p>0.05202179999999999</p></td>
+<td><p>0.0520218</p></td>
+<td><p>local</p></td>
 <td><p>0.0437392</p></td>
-<td><p>0.055456599999999995</p></td>
+<td><p>0.0554566</p></td>
 <td><p>0.138</p></td>
 <td><p>0.101</p></td>
 <td><p>0.174</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
 <td><p>f_40-44</p></td>
-<td><p>0.1374784</p></td>
-<td><p>0.12582188</p></td>
-<td><p>0.17091320000000002</p></td>
+<td><p>0.137478</p></td>
+<td><p>local</p></td>
+<td><p>0.125822</p></td>
+<td><p>0.170913</p></td>
 <td><p>0.138</p></td>
 <td><p>0.101</p></td>
 <td><p>0.174</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>30</p></td>
 <td><p>f_45-49</p></td>
-<td><p>0.1374784</p></td>
-<td><p>0.12582188</p></td>
-<td><p>0.17091320000000002</p></td>
+<td><p>0.137478</p></td>
+<td><p>local</p></td>
+<td><p>0.125822</p></td>
+<td><p>0.170913</p></td>
 <td><p>0.386</p></td>
 <td><p>0.313</p></td>
 <td><p>0.458</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>31</p></td>
 <td><p>f_50-54</p></td>
-<td><p>0.3526306</p></td>
-<td><p>0.30202179999999995</p></td>
-<td><p>0.38434799999999997</p></td>
+<td><p>0.352631</p></td>
+<td><p>local</p></td>
+<td><p>0.302022</p></td>
+<td><p>0.384348</p></td>
 <td><p>0.386</p></td>
 <td><p>0.313</p></td>
 <td><p>0.458</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>32</p></td>
 <td><p>f_55-59</p></td>
-<td><p>0.3526306</p></td>
-<td><p>0.30202179999999995</p></td>
-<td><p>0.38434799999999997</p></td>
+<td><p>0.352631</p></td>
+<td><p>local</p></td>
+<td><p>0.302022</p></td>
+<td><p>0.384348</p></td>
 <td><p>0.386</p></td>
 <td><p>0.313</p></td>
 <td><p>0.458</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>33</p></td>
 <td><p>f_60-64</p></td>
-<td><p>0.5074784</p></td>
-<td><p>0.4640436</p></td>
-<td><p>0.5609132</p></td>
+<td><p>0.507478</p></td>
+<td><p>local</p></td>
+<td><p>0.464044</p></td>
+<td><p>0.560913</p></td>
 <td><p>0.419</p></td>
 <td><p>0.331</p></td>
 <td><p>0.508</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>34</p></td>
 <td><p>f_65-69</p></td>
-<td><p>0.5074784</p></td>
-<td><p>0.4640436</p></td>
-<td><p>0.5609132</p></td>
+<td><p>0.507478</p></td>
+<td><p>local</p></td>
+<td><p>0.464044</p></td>
+<td><p>0.560913</p></td>
 <td><p>0.419</p></td>
 <td><p>0.331</p></td>
 <td><p>0.508</p></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>35</p></td>
 <td><p>f_70-74</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>36</p></td>
 <td><p>f_75-79</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>37</p></td>
 <td><p>f_80-84</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>38</p></td>
 <td><p>f_85-89</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>39</p></td>
 <td><p>f_90-94</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>40</p></td>
 <td><p>f_95-99</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>41</p></td>
 <td><p>f_100+</p></td>
-<td><p>0.6774784</p></td>
-<td><p>0.6281848999999999</p></td>
-<td><p>0.7191958</p></td>
+<td><p>0.677478</p></td>
+<td><p>local</p></td>
+<td><p>0.628185</p></td>
+<td><p>0.719196</p></td>
 <td></td>
 <td></td>
 <td></td>
-<td></td>
+<td><p>CI</p></td>
 <td></td>
 <td></td>
 </tr>

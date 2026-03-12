@@ -135,6 +135,9 @@ tlo.methods.diarrhoea module
         * - probability_of_severe_dehydration_if_some_dehydration
           - REAL
           - probability that someone with diarrhoea and some dehydration develops severe dehydration
+        * - prob_remove_dehydration_no_treatment
+          - REAL
+          - probability that someone with diarrhoea stops without treatment
         * - prob_prolonged_diarr_rotavirus
           - REAL
           - probability of prolonged episode in rotavirus-attributed diarrhoea
@@ -312,12 +315,24 @@ tlo.methods.diarrhoea module
         * - days_between_treatment_and_cure
           - INT
           - number of days between any treatment being given in an HSI and the cure occurring.
+        * - prob_clear_bacterial_infection_no_treatment
+          - REAL
+          - probability clear bacterial infection no treatment.
         * - rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo
           - REAL
           - relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.
         * - rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo
           - REAL
           - relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.
+        * - relative_prob_severe_dehydration_no_vaccine
+          - REAL
+          - relative probability of severe dehydration without rotavirus vaccine.
+        * - persistent_diarrhoea_threshold_days
+          - REAL
+          - Days of symptoms after which classification is persistent diarrhoea.
+        * - main_polling_frequency
+          - INT
+          - Main polling frequency for event that runs acquisition of pathogens that cause Diarrhoea.
 
 
      **PROPERTIES:**
@@ -341,9 +356,9 @@ tlo.methods.diarrhoea module
         * - gi_dehydration
           - CATEGORICAL
           - Severity of dehydration for the current episode of diarrhoea (np.nan if the person does not currently have diarrhoea)..  Possible values are: [none, some, severe, ]
-        * - gi_duration_longer_than_13days
+        * - persistent_diarrhoea_status
           - BOOL
-          - Whether the duration of the current episode would last longer than 13 days if untreated. (False if does not have current episode)
+          - Whether the duration of the current episode would last longer than days set as threshold if untreated. (False if does not have current episode)
         * - gi_number_of_episodes
           - INT
           - Number of episodes of diarrhoea caused by a pathogen
@@ -369,13 +384,13 @@ tlo.methods.diarrhoea module
 
      ADDITIONAL_DEPENDENCIES : {'Alri', 'Epi', 'Stunting'}
 
-     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x333b9b710>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x333b9bfd0>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x333b9a490>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x333b98550>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x333b9a7d0>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x333b9b510>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x333b99990>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x333b98650>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x333b982d0>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x333b99410>}
+     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x1393b6c10>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x1393b6890>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x1393b78d0>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x1393b6b10>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x1393b5450>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x1393b5750>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x1393b54d0>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x1393b5d50>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x1393b6550>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x1393b7b10>}
 
-     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x333b992d0>}
+     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x1393b6cd0>}
 
-     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Wasting', 'HealthSystem', 'SymptomManager', 'Hiv', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Hiv', 'Demography', 'HealthSystem', 'NewbornOutcomes', 'Wasting', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -398,6 +413,8 @@ tlo.methods.diarrhoea module
      .. automethod:: on_hsi_alert
 
      .. automethod:: report_daly_values
+
+     .. automethod:: report_summary_stats
 
      .. automethod:: look_up_consumables
 
@@ -601,7 +618,7 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Wasting', 'Alri', 'Hiv', 'Epi', 'Stunting'}
+     ALTERNATIVE_TO : {'Alri', 'Epi', 'Stunting', 'Wasting', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

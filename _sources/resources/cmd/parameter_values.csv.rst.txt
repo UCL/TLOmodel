@@ -1,0 +1,30 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/parameter_values.csv>`
+
+====  ==================================================  =======  ==============  ============  ============  ===============
+  ..  parameter\_name                                       value  param\_label      prior\_min    prior\_max  prior\_note
+====  ==================================================  =======  ==============  ============  ============  ===============
+   0  prob\_care\_provided\_given\_seek\_emergency\_care     0.5   local                   0              1    vague prior
+   1  prob\_ckd\_patient\_gets\_dialysis                     0.02  local                   0              1    vague prior
+   2  interval\_between\_polls                               3     undetermined            1             12    design decision
+   3  emergency\_care\_symptom\_max\_days                    3     local                   1              7    vague prior
+   4  community\_testing\_schedule\_buffer\_days             2     undetermined            1              5    design decision
+   5  community\_testing\_deadline\_buffer\_days             1     undetermined            1              5    design decision
+   6  symptom\_onset\_buffer\_days                           1     undetermined            1              5    design decision
+   7  event\_buffer\_days                                    1     undetermined            1              5    design decision
+   8  death\_outcome\_delay\_days                            7     local                   1             14    vague prior
+   9  weight\_loss\_min\_wait\_months                        6     local                   1             12    vague prior
+  10  weight\_loss\_max\_wait\_months                       12     local                   6             18    vague prior
+  11  medication\_refill\_interval\_months                   1     local                   1              6    vague prior
+  12  medication\_refill\_deadline\_window\_days             7     local                   1             14    vague prior
+  13  retry\_appointment\_start\_delay\_days                 1     local                   1              7    vague prior
+  14  retry\_appointment\_deadline\_days                    15     local                   7             30    vague prior
+  15  min\_age\_for\_assessment\_years                       5     local                   1             10    vague prior
+  16  bmi\_threshold\_for\_risk\_score                       3     local                   2              5    vague prior
+  17  min\_risk\_factors\_for\_scheduled\_weight\_loss       2     local                   1              4    vague prior
+  18  bmi\_threshold\_weight\_loss\_advice                   2     local                   1              4    vague prior
+  19  tests\_per\_year                                       2     local                   1              4    vague prior
+  20  pr\_bmi\_reduction                                     0.1   local                   0.05           0.2  vague prior
+====  ==================================================  =======  ==============  ============  ============  ===============

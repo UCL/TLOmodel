@@ -4,7 +4,6 @@ ResourceFile_Measles
 .. toctree::
     :maxdepth: 1
 
-    beta.csv
     cfr.csv
     parameters.csv
     symptoms.csv

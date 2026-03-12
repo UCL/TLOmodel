@@ -3,13 +3,13 @@ scaleup parameters (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/malaria/ResourceFile_malaria/scaleup_parameters.csv>`
 
-====  ============================  ===============  ============  ============
-  ..  parameter                       target\_value    min\_value    max\_value
-====  ============================  ===============  ============  ============
-   0  prob\_malaria\_case\_tests                1               0           1
-   1  rdt\_testing\_rates                       0.8             0           1
-   2  prob\_of\_treatment\_success              1               0           1
-   3  irs\_district                             0.8             0           0.8
-   4  itn\_district                             0.7             0           0.7
-   5  itn                                       0.7             0           0.7
-====  ============================  ===============  ============  ============
+====  ============================  =======  ==============  ============  ============  =============  ===========
+  ..  parameter\_name                 value  param\_label      prior\_min    prior\_max  prior\_note    reference
+====  ============================  =======  ==============  ============  ============  =============  ===========
+   0  prob\_malaria\_case\_tests        1    scenario                   0           1    vague prior
+   1  rdt\_testing\_rates               0.8  scenario                   0           1    vague prior
+   2  prob\_of\_treatment\_success      1    scenario                   0           1    vague prior
+   3  irs\_district                     0.8  scenario                   0           0.8  vague prior
+   4  itn\_district                     0.7  scenario                   0           0.7  vague prior
+   5  itn                               0.7  scenario                   0           0.7  vague prior
+====  ============================  =======  ==============  ============  ============  =============  ===========

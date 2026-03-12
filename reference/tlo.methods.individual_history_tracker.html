@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tlo.methods.individual_history_tracker module &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.record_summary_stats module" href="tlo.methods.record_summary_stats.html" />
+    <link rel="prev" title="tlo.util module" href="tlo.util.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tlo.html">tlo package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.html">tlo.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.hsi_events.html">tlo.analysis.hsi_events module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.life_expectancy.html">tlo.analysis.life_expectancy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.cli.html">tlo.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.core.html">tlo.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.dependencies.html">tlo.dependencies module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.docs.html">tlo.docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.events.html">tlo.events module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.lm.html">tlo.lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.html">tlo.logging package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html">tlo.logging.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.encoding.html">tlo.logging.encoding module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html">tlo.logging.helpers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.reader.html">tlo.logging.reader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.html">tlo.methods package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.alri.html">tlo.methods.alri module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.bed_days.html">tlo.methods.bed_days module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.bladder_cancer.html">tlo.methods.bladder_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.breast_cancer.html">tlo.methods.breast_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cancer_consumables.html">tlo.methods.cancer_consumables module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cardio_metabolic_disorders.html">tlo.methods.cardio_metabolic_disorders module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.care_of_women_during_pregnancy.html">tlo.methods.care_of_women_during_pregnancy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.causes.html">tlo.methods.causes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cervical_cancer.html">tlo.methods.cervical_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.chronicsyndrome.html">tlo.methods.chronicsyndrome module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.consumables.html">tlo.methods.consumables module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.contraception.html">tlo.methods.contraception module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.copd.html">tlo.methods.copd module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.demography.html">tlo.methods.demography module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.depression.html">tlo.methods.depression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.diarrhoea.html">tlo.methods.diarrhoea module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.dxmanager.html">tlo.methods.dxmanager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.enhanced_lifestyle.html">tlo.methods.enhanced_lifestyle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.epi.html">tlo.methods.epi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.epilepsy.html">tlo.methods.epilepsy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.equipment.html">tlo.methods.equipment module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.fullmodel.html">tlo.methods.fullmodel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthburden.html">tlo.methods.healthburden module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthseekingbehaviour.html">tlo.methods.healthseekingbehaviour module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html">tlo.methods.healthsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hiv.html">tlo.methods.hiv module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hiv_tb_calibration.html">tlo.methods.hiv_tb_calibration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hsi_event.html">tlo.methods.hsi_event module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html">tlo.methods.hsi_generic_first_appts module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tlo.methods.individual_history_tracker module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.labour.html">tlo.methods.labour module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.labour_lm.html">tlo.methods.labour_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html">tlo.methods.malaria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.measles.html">tlo.methods.measles module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.mockitis.html">tlo.methods.mockitis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.newborn_outcomes.html">tlo.methods.newborn_outcomes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.newborn_outcomes_lm.html">tlo.methods.newborn_outcomes_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.oesophagealcancer.html">tlo.methods.oesophagealcancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.other_adult_cancers.html">tlo.methods.other_adult_cancers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.postnatal_supervisor.html">tlo.methods.postnatal_supervisor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.postnatal_supervisor_lm.html">tlo.methods.postnatal_supervisor_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_helper_functions.html">tlo.methods.pregnancy_helper_functions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_supervisor.html">tlo.methods.pregnancy_supervisor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_supervisor_lm.html">tlo.methods.pregnancy_supervisor_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.prostate_cancer.html">tlo.methods.prostate_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.record_summary_stats.html">tlo.methods.record_summary_stats module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.rti.html">tlo.methods.rti module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.scenario_switcher.html">tlo.methods.scenario_switcher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html">tlo.methods.schisto module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.simplified_births.html">tlo.methods.simplified_births module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.skeleton.html">tlo.methods.skeleton module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.stunting.html">tlo.methods.stunting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.symptommanager.html">tlo.methods.symptommanager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.tb.html">tlo.methods.tb module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.wasting.html">tlo.methods.wasting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.notify.html">tlo.notify module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.performance.html">tlo.performance module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.population.html">tlo.population module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.progressbar.html">tlo.progressbar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.scenario.html">tlo.scenario module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.simulation.html">tlo.simulation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.html">tlo.test package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.random_birth.html">tlo.test.random_birth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.random_death.html">tlo.test.random_death module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.util.html">tlo.util module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Reference</a></li>
+      <li class="breadcrumb-item active">tlo.methods.individual_history_tracker module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/tlo.methods.individual_history_tracker.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tlo.methods.individual_history_tracker">
+<span id="tlo-methods-individual-history-tracker-module"></span><h1>tlo.methods.individual_history_tracker module<a class="headerlink" href="#module-tlo.methods.individual_history_tracker" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">IndividualHistoryTracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modules_of_interest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events_to_ignore</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker" title="Link to this definition"></a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>modules_of_interest</p></td>
+<td><p>LIST</p></td>
+<td><p>Restrict the events collected to specific modules. If <a href="#id1"><span class="problematic" id="id2">*</span></a>, print for all modules</p></td>
+</tr>
+<tr class="row-odd"><td><p>events_to_ignore</p></td>
+<td><p>LIST</p></td>
+<td><p>Events to be ignored when collecting chains</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>iht_track_history</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether the individual should be tracked bythe individual history tracker or not</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>INIT_DEPENDENCIES : {‘Demography’}</p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class IndividualHistoryTracker):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modules_of_interest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events_to_ignore</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.__init__" title="Link to this definition"></a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.initialise_simulation" title="Link to this definition"></a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.read_parameters" title="Link to this definition"></a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically, modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.df_to_eav">
+<span class="sig-name descname"><span class="pre">df_to_eav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.df_to_eav" title="Link to this definition"></a></dt>
+<dd><p>Function to convert entire population dataframe into custom EAV</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.convert_chain_links_into_eav">
+<span class="sig-name descname"><span class="pre">convert_chain_links_into_eav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chain_links</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.convert_chain_links_into_eav" title="Link to this definition"></a></dt>
+<dd><p>Function to convert chain links into custom EAV</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.initialise_population" title="Link to this definition"></a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>By default, all <code class="docutils literal notranslate"><span class="pre">Property``s</span> <span class="pre">in</span> <span class="pre">``self.PROPERTIES</span></code> will have
+their columns in the population dataframe set to the default value.</p>
+<p>Modules that wish to implement this behaviour do not need to implement this method,
+it will be inherited automatically. Modules that wish to perform additional steps
+during the initialise_population stage should reimplement this method and call</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">super().initialise_population(population=population)</span>
+<span class="pre">`</span></code></p>
+<p>at the beginning of the method, then proceed with their additional steps. Modules that
+do not wish to inherit this default behaviour should re-implement initialise_population
+without the call to <code class="docutils literal notranslate"><span class="pre">super()</span></code> above.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>population</strong> – The population of individuals in the simulation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_birth" title="Link to this definition"></a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_pop_dataframe">
+<span class="sig-name descname"><span class="pre">copy_of_pop_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_pop_dataframe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_pop_dataframe_row">
+<span class="sig-name descname"><span class="pre">copy_of_pop_dataframe_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_ID</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_pop_dataframe_row" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_mni">
+<span class="sig-name descname"><span class="pre">copy_of_mni</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_mni" title="Link to this definition"></a></dt>
+<dd><p>Function to safely copy entire mni dictionary, ensuring that series attributes
+are safely copied too.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_mni_row">
+<span class="sig-name descname"><span class="pre">copy_of_mni_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_ID</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.copy_of_mni_row" title="Link to this definition"></a></dt>
+<dd><p>Function to safely copy mni entry for single individual, ensuring that series attributes
+are safely copied too.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.log_eav_dataframe_to_individual_histories">
+<span class="sig-name descname"><span class="pre">log_eav_dataframe_to_individual_histories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.log_eav_dataframe_to_individual_histories" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_simulation_post_initialise">
+<span class="sig-name descname"><span class="pre">on_simulation_post_initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_simulation_post_initialise" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_simulation_post_do_birth">
+<span class="sig-name descname"><span class="pre">on_simulation_post_do_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_simulation_post_do_birth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_consumable_request">
+<span class="sig-name descname"><span class="pre">on_consumable_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_consumable_request" title="Link to this definition"></a></dt>
+<dd><p>Do this when notified that an individual has accessed consumables</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_event_pre_run">
+<span class="sig-name descname"><span class="pre">on_event_pre_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_event_pre_run" title="Link to this definition"></a></dt>
+<dd><p>Do this when notified that an event is about to run.
+This function checks whether this event should be logged as part of the event chains, a
+nd if so stored required information before the event has occurred.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_event_post_run">
+<span class="sig-name descname"><span class="pre">on_event_post_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.on_event_post_run" title="Link to this definition"></a></dt>
+<dd><p>If print_chains=True, this function logs the event and identifies and logs the any property
+changes that have occured to one or multiple individuals as a result of the event taking place.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.mni_values_differ">
+<span class="sig-name descname"><span class="pre">mni_values_differ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.mni_values_differ" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.compare_entire_mni_dicts">
+<span class="sig-name descname"><span class="pre">compare_entire_mni_dicts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entire_mni_before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entire_mni_after</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_of_tracked_individuals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.compare_entire_mni_dicts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.individual_history_tracker.IndividualHistoryTracker.compare_population_dataframe_and_mni">
+<span class="sig-name descname"><span class="pre">compare_population_dataframe_and_mni</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_after</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entire_mni_before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entire_mni_after</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.individual_history_tracker.IndividualHistoryTracker.compare_population_dataframe_and_mni" title="Link to this definition"></a></dt>
+<dd><p>This function compares the population dataframe and mni dictionary before/after a population-wide e
+vent has occurred.
+It allows us to identify the individuals for which this event led to a significant (i.e. property) change,
+and to store the properties which have changed as a result of it.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlo.util.html" class="btn btn-neutral float-left" title="tlo.util module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlo.methods.record_summary_stats.html" class="btn btn-neutral float-right" title="tlo.methods.record_summary_stats module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

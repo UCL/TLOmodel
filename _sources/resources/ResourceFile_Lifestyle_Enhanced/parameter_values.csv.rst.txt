@@ -65,7 +65,7 @@ parameter values (.csv)
   56  init\_p\_no\_access\_handwashing\_wealth1                                0.478
   57  init\_or\_no\_access\_handwashing\_per\_lower\_wealth                    1.06
   58  r\_urban                                                                 0.0005
-  59  r\_rural                                                                 1e-05
+  59  r\_rural                                                                 1.00E-05
   60  r\_higher\_bmi                                                           0.0005
   61  rr\_higher\_bmi\_urban                                                   1.5
   62  rr\_higher\_bmi\_f                                                       3
@@ -114,6 +114,6 @@ parameter values (.csv)
  105  r\_access\_handwashing                                                   0.001
  106  proportion\_of\_men\_that\_are\_assumed\_to\_be\_circumcised\_at\_birth  0.2128                          average of circumcision prevalence in adult ages
  107  proportion\_of\_men\_circumcised\_at\_initiation                         0.2128                          average of circumcision prevalence in adult ages
- 108  proportion\_female\_sex\_workers                                         0.0069                          brought over from HIV module done originally by Tara Mangal
- 109  fsw\_transition                                                          0.18181818181818182             brought over from HIV module done originally by Tara Mangal
+ 108  number\_female\_sex\_workers                                             39000                           brought over from HIV module done originally by Tara Mangal
+ 109  fsw\_transition                                                          0.181818182                     brought over from HIV module done originally by Tara Mangal
 ====  =======================================================================  ==============================  ===========================================================  ============  ============  ============

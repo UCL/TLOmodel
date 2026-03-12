@@ -4,7 +4,7 @@ chronic kidney disease (.csv)
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_and_events_incidence/chronic_kidney_disease.csv>`
 
 ====  =================  ==========  =========  ==========  =============================
-  ..  parameter\_name         value      lower       upper  Source: GBD 2019 per 100 PY
+  ..  parameter\_name         value      upper       lower  Source: GBD 2019 per 100 PY
 ====  =================  ==========  =========  ==========  =============================
    0  0-4                0.0374859   0.0511308  0.026625
    1  5-9                0.00873811  0.0158243  0.00331266

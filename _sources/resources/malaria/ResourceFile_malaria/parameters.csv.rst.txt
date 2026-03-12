@@ -3,36 +3,56 @@ parameters (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/malaria/ResourceFile_malaria/parameters.csv>`
 
-====  =======================================  =======
-  ..  parameter\_name                          value
-====  =======================================  =======
-   0  sensitivity\_rdt                         0.95
-   1  cfr                                      0.15
-   2  dur\_asym                                110
-   3  dur\_clin                                5
-   4  dur\_clin\_para                          195
-   5  treatment\_adjustment                    0.5
-   6  p\_sev\_anaemia\_preg                    0.075
-   7  mortality\_adjust                        10
-   8  data\_end                                2018
-   9  irs\_rates\_boundary                     0.5
-  10  irs\_rates\_upper                        0.8
-  11  irs\_rates\_lower                        0
-  12  prob\_malaria\_case\_tests               0.4
-  13  itn                                      0.6
-  14  scaling\_factor\_for\_rdt\_availability  1.2
-  15  duration\_iptp\_protection\_weeks        6
-  16  rr\_clinical\_malaria\_hiv\_under5       1.7
-  17  rr\_clinical\_malaria\_hiv\_over5        2.6
-  18  rr\_clinical\_malaria\_hiv\_pregnant     3.96
-  19  rr\_clinical\_malaria\_cotrimoxazole     0.58
-  20  rr\_clinical\_malaria\_art               0.74
-  21  rr\_clinical\_malaria\_iptp              0.54
-  22  rr\_severe\_malaria\_hiv\_under5         9.69
-  23  rr\_severe\_malaria\_hiv\_over5          2.68
-  24  rr\_severe\_malaria\_hiv\_pregnant       2.8
-  25  rr\_severe\_malaria\_iptp                0.6
-  26  prob\_of\_treatment\_success             1
-  27  type\_of\_scaleup                        none
-  28  scaleup\_start\_year                     2025
-====  =======================================  =======
+====  ==============================================  =======  ==============  ============  ============  ===============  ===========
+  ..  parameter\_name                                 value    param\_label    prior\_min    prior\_max    prior\_note      reference
+====  ==============================================  =======  ==============  ============  ============  ===============  ===========
+   0  sensitivity\_rdt                                0.95     universal       0             1             vague prior
+   1  cfr\_severe\_malaria                            0.15     universal       0             1             vague prior
+   2  dur\_asym                                       110      universal       1             365           vague prior
+   3  dur\_clin                                       5        universal       1             30            vague prior
+   4  dur\_clin\_para                                 195      universal       1             365           vague prior
+   5  treatment\_adjustment                           0.5      universal       0             1             vague prior
+   6  p\_sev\_anaemia\_preg                           0.075    universal       0             1             vague prior
+   7  mortality\_adjust                               10       local           0.01          100           vague prior
+   8  data\_end                                       2018     scenario        2010          2030          vague prior
+   9  irs\_rates\_boundary                            0.5      local           0             1             vague prior
+  10  irs\_rates\_upper                               0.8      local           0             1             vague prior
+  11  irs\_rates\_lower                               0        local           0             1             vague prior
+  12  prob\_malaria\_case\_tests                      0.4      local           0.01          1             vague prior
+  13  itn                                             0.6      local           0             1             vague prior
+  14  scaling\_factor\_for\_rdt\_availability         1.2      local           0.01          10            vague prior
+  15  duration\_iptp\_protection\_weeks               6        universal       1             52            vague prior
+  16  rr\_clinical\_malaria\_hiv\_under5              1.7      universal       0.01          100           vague prior
+  17  rr\_clinical\_malaria\_hiv\_over5               2.6      universal       0.01          100           vague prior
+  18  rr\_clinical\_malaria\_hiv\_pregnant            3.96     universal       0.01          100           vague prior
+  19  rr\_clinical\_malaria\_cotrimoxazole            0.58     universal       0.01          100           vague prior
+  20  rr\_clinical\_malaria\_art                      0.74     universal       0.01          100           vague prior
+  21  rr\_clinical\_malaria\_iptp                     0.54     universal       0.01          100           vague prior
+  22  rr\_severe\_malaria\_hiv\_under5                9.69     universal       0.01          100           vague prior
+  23  rr\_severe\_malaria\_hiv\_over5                 2.68     universal       0.01          100           vague prior
+  24  rr\_severe\_malaria\_hiv\_pregnant              2.8      universal       0.01          100           vague prior
+  25  rr\_severe\_malaria\_iptp                       0.6      universal       0.01          100           vague prior
+  26  prob\_of\_treatment\_success                    1        universal       0             1             vague prior
+  27  type\_of\_scaleup                               none     scenario        none          max           vague prior
+  28  scaleup\_start\_year                            2025     scenario        2020          2050          vague prior
+  29  temp\_max\_itn\_coverage                        0.7      local           0.5           1             vague prior
+  30  max\_age\_incidence\_data                       80       universal       70            100           vague prior
+  31  max\_year\_rdt\_data                            2024     scenario        2020          2030          vague prior
+  32  symptom\_onset\_delay\_days                     7        universal       1             14            vague prior
+  33  death\_delay\_min\_days                         1        universal       1             7             vague prior
+  34  death\_delay\_max\_days                         7        universal       1             14            vague prior
+  35  rdt\_followup\_days                             7        local           1             14            vague prior
+  36  clinical\_treatment\_duration\_days             5        universal       3             10            vague prior
+  37  severe\_clinical\_treatment\_duration\_days     7        universal       5             14            vague prior
+  38  self\_cure\_duration\_days                      6        universal       3             14            vague prior
+  39  rdt\_scheduling\_retry\_days                    1        local           1             7             vague prior
+  40  rdt\_scheduling\_max\_delay\_days               4        local           1             14            vague prior
+  41  MalariaParasiteClearanceEvent\_frequency\_days  30.5     undetermined    1             60            design decision
+  42  MalariaUpdateEvent\_frequency\_days             1        undetermined    1             5             design decision
+  43  MalariaPollingEventDistrict\_frequency\_months  1        undetermined    0             30            design decision
+  44  MalariaPollingEventDistrict\_delay\_days        0        undetermined    0             30            design decision
+  45  MalariaUpdateEvent\_delay\_days                 0        undetermined    0             30            design decision
+  46  MalariaParasiteClearanceEvent\_delay\_months    1        undetermined    1             12            design decision
+  47  MalariaIPTp\_frequency\_months                  1        undetermined    1             60            design decision
+  48  MalariaIPTp\_delay\_days                        30.5     undetermined    1             60            design decision
+====  ==============================================  =======  ==============  ============  ============  ===============  ===========

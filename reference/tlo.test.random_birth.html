@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.test.random_birth module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>tlo.test.random_birth module &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -100,7 +100,7 @@ a fixed probability, set as a module parameter. Nine months after becoming pregn
 become pregnant!</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_birth.RandomBirth">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomBirth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.test.random_birth.RandomBirth" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">RandomBirth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.test.random_birth.RandomBirth" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
 <p>Randomly become pregnant with fixed probability.</p>
 <p>All disease modules need to be implemented as a class inheriting from Module.
@@ -120,12 +120,12 @@ generator.</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.test.random_birth.RandomBirth.PARAMETERS">
-<span class="sig-name descname"><span class="pre">PARAMETERS</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="tlo.core.html#tlo.core.Parameter" title="tlo.core.Parameter"><span class="pre">Parameter</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'pregnancy_probability':</span> <span class="pre">REAL</span> <span class="pre">===</span> <span class="pre">Fixed</span> <span class="pre">probability</span> <span class="pre">of</span> <span class="pre">pregnancy</span> <span class="pre">each</span> <span class="pre">month</span> <span class="pre">(if</span> <span class="pre">not</span> <span class="pre">already</span> <span class="pre">pregnant)}</span></em><a class="headerlink" href="#tlo.test.random_birth.RandomBirth.PARAMETERS" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PARAMETERS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'pregnancy_probability':</span> <span class="pre">REAL</span> <span class="pre">===</span> <span class="pre">Fixed</span> <span class="pre">probability</span> <span class="pre">of</span> <span class="pre">pregnancy</span> <span class="pre">each</span> <span class="pre">month</span> <span class="pre">(if</span> <span class="pre">not</span> <span class="pre">already</span> <span class="pre">pregnant)}</span></span><a class="headerlink" href="#tlo.test.random_birth.RandomBirth.PARAMETERS" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.test.random_birth.RandomBirth.PROPERTIES">
-<span class="sig-name descname"><span class="pre">PROPERTIES</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="tlo.core.html#tlo.core.Property" title="tlo.core.Property"><span class="pre">Property</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'children':</span> <span class="pre">LIST</span> <span class="pre">===</span> <span class="pre">The</span> <span class="pre">children</span> <span class="pre">born</span> <span class="pre">to</span> <span class="pre">this</span> <span class="pre">individual,</span> <span class="pre">in</span> <span class="pre">birth</span> <span class="pre">order,</span> <span class="pre">'date_of_birth':</span> <span class="pre">DATE</span> <span class="pre">===</span> <span class="pre">When</span> <span class="pre">the</span> <span class="pre">individual</span> <span class="pre">was</span> <span class="pre">born,</span> <span class="pre">'is_pregnant':</span> <span class="pre">BOOL</span> <span class="pre">===</span> <span class="pre">Whether</span> <span class="pre">this</span> <span class="pre">individual</span> <span class="pre">is</span> <span class="pre">currently</span> <span class="pre">pregnant}</span></em><a class="headerlink" href="#tlo.test.random_birth.RandomBirth.PROPERTIES" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PROPERTIES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'children':</span> <span class="pre">LIST</span> <span class="pre">===</span> <span class="pre">The</span> <span class="pre">children</span> <span class="pre">born</span> <span class="pre">to</span> <span class="pre">this</span> <span class="pre">individual,</span> <span class="pre">in</span> <span class="pre">birth</span> <span class="pre">order,</span> <span class="pre">'date_of_birth':</span> <span class="pre">DATE</span> <span class="pre">===</span> <span class="pre">When</span> <span class="pre">the</span> <span class="pre">individual</span> <span class="pre">was</span> <span class="pre">born,</span> <span class="pre">'is_pregnant':</span> <span class="pre">BOOL</span> <span class="pre">===</span> <span class="pre">Whether</span> <span class="pre">this</span> <span class="pre">individual</span> <span class="pre">is</span> <span class="pre">currently</span> <span class="pre">pregnant}</span></span><a class="headerlink" href="#tlo.test.random_birth.RandomBirth.PROPERTIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -189,7 +189,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_birth.RandomPregnancyEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomPregnancyEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pregnancy_probability</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.test.random_birth.RandomPregnancyEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">RandomPregnancyEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pregnancy_probability</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.test.random_birth.RandomPregnancyEvent" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
 <p>The regular event that actually makes people pregnant.</p>
 <p>Regular events automatically reschedule themselves at a fixed frequency,
@@ -224,7 +224,7 @@ and initiate pregnancies at random.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_birth.DelayedBirthEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DelayedBirthEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.test.random_birth.DelayedBirthEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">DelayedBirthEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.test.random_birth.DelayedBirthEvent" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndividualScopeEventMixin</span></code></a></p>
 <p>A one-off event in which a pregnant mother gives birth.</p>
 <p>For an individual-scoped event we need to specify the person it applies to in

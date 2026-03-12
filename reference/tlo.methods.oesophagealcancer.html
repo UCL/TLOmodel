@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.oesophagealcancer module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>tlo.methods.oesophagealcancer module &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -99,7 +99,7 @@
 * Footprints of HSI – pending input from expert on resources required.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.OesophagealCancer">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OesophagealCancer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesophagealCancer" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">OesophagealCancer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesophagealCancer" title="Link to this definition"></a></dt>
 <dd><p>Oesophageal Cancer Disease Module</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -331,10 +331,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x334321410&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x334322450&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x149a25410&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x149a256d0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘HealthSystem’, ‘Lifestyle’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.REPORTS_DISEASE_NUMBERS: 5&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class OesophagealCancer):</strong></p>
@@ -395,6 +395,11 @@ generator.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.OesophagealCancer.report_summary_stats">
+<span class="sig-name descname"><span class="pre">report_summary_stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesophagealCancer.report_summary_stats" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.OesophagealCancer.do_at_generic_first_appt">
 <span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesophagealCancer.do_at_generic_first_appt" title="Link to this definition"></a></dt>
 <dd><p>Actions to take during a non-emergency generic health system interaction (HSI).</p>
@@ -437,7 +442,7 @@ appointment.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.OesCancerMainPollingEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OesCancerMainPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesCancerMainPollingEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">OesCancerMainPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesCancerMainPollingEvent" title="Link to this definition"></a></dt>
 <dd><p>Regular event that updates all Oesophageal cancer properties for population:
 * Acquisition and progression of Oesophageal Cancer
 * Symptom Development according to stage of Oesophageal Cancer
@@ -487,7 +492,7 @@ appointment.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_Investigation_Following_Dysphagia">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_Investigation_Following_Dysphagia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_Investigation_Following_Dysphagia" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_Investigation_Following_Dysphagia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_Investigation_Following_Dysphagia" title="Link to this definition"></a></dt>
 <dd><p>This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
 dysphagia.
 This event begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of
@@ -533,7 +538,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_StartTreatment">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_StartTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_StartTreatment" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_StartTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_StartTreatment" title="Link to this definition"></a></dt>
 <dd><p>This event is scheduled by HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of
 Oesophageal Cancer. It initiates the treatment of Oesophageal Cancer.
 It is only for persons with a cancer that is not in stage4 and who have been diagnosed.</p>
@@ -577,7 +582,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PostTreatmentCheck">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_PostTreatmentCheck</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PostTreatmentCheck" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_PostTreatmentCheck</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PostTreatmentCheck" title="Link to this definition"></a></dt>
 <dd><p>This event is scheduled by HSI_OesophagealCancer_StartTreatment and itself.
 It is only for those who have undergone treatment for Oesophageal Cancer.
 If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
@@ -622,7 +627,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PalliativeCare">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_PalliativeCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PalliativeCare" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">HSI_OesophagealCancer_PalliativeCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PalliativeCare" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>This is the event for palliative care. It does not affect the patients progress but does affect the disability</dt><dd><p>weight and takes resources from the healthsystem.</p>
 </dd>
@@ -672,7 +677,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.OesCancerLoggingEvent">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OesCancerLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesCancerLoggingEvent" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">OesCancerLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesCancerLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>The only logging event for this module</p>
 <p>schedule logging to repeat every 3 months</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>

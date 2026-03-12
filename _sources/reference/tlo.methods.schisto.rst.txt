@@ -30,6 +30,9 @@ tlo.methods.schisto module
         * - calibration_scenario
           - REAL
           - Scenario used to reset parameters to run calibration sims
+        * - urine_filtration_sensitivity_noneWB
+          - REAL
+          - Sensitivity of urine filtration test for non-infected cases
         * - urine_filtration_sensitivity_lowWB
           - REAL
           - Sensitivity of UF in detecting low WB
@@ -39,12 +42,36 @@ tlo.methods.schisto module
         * - urine_filtration_sensitivity_heavyWB
           - REAL
           - Sensitivity of UF in detecting heavy WB
+        * - urine_filtration_specificity_noneWB
+          - REAL
+          - Specificity of urine filtration test
+        * - urine_filtration_specificity_lowWB
+          - REAL
+          - Specificity of UF in detecting low WB
+        * - urine_filtration_specificity_moderateWB
+          - REAL
+          - Specificity of UF in detecting moderate WB
+        * - urine_filtration_specificity_heavyWB
+          - REAL
+          - Specificity of UF in detecting heavy WB
+        * - kato_katz_sensitivity_lowWB
+          - REAL
+          - Sensitivity of Kato-Katz test for non-infected cases
         * - kato_katz_sensitivity_moderateWB
           - REAL
           - Sensitivity of KK in detecting moderate WB
         * - kato_katz_sensitivity_heavyWB
           - REAL
           - Sensitivity of KK in detecting heavy WB
+        * - kato_katz_specificity_lowWB
+          - REAL
+          - Sensitivity of Kato-Katz test for non-infected cases
+        * - kato_katz_specificity_moderateWB
+          - REAL
+          - Specificity of KK in detecting moderate WB
+        * - kato_katz_specificity_heavyWB
+          - REAL
+          - Specificity of KK in detecting moderate WB
         * - scaleup_WASH
           - STRING
           - Whether to scale-up WASH during simulation, pause fixes values at 2024 levels with no further improvement, continue allows historical trends to continue, scaleup switches everyone to having access to WASH
@@ -90,6 +117,93 @@ tlo.methods.schisto module
         * - MDA_coverage_historical
           - DATA_FRAME
           - Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds
+        * - odds_ratio_health_seeking_children_schisto_low
+          - REAL
+          - Odds ratio for health seeking in children with schisto low symptoms
+        * - odds_ratio_health_seeking_adults_schisto_low
+          - REAL
+          - Odds ratio for health seeking in adults with schisto low symptoms
+        * - single_district_calibration_number
+          - INT
+          - District number for single district calibration runs
+        * - single_district_calibration_name
+          - STRING
+          - District name for single district calibration runs
+        * - single_district_calibration_region
+          - STRING
+          - District region for single district calibration runs
+        * - mda_schedule_month
+          - INT
+          - Month for scheduling MDA events
+        * - mda_schedule_day
+          - INT
+          - Day for scheduling MDA events
+        * - minimum_baseline_prevalence
+          - REAL
+          - Minimum baseline prevalence to prevent division by zero
+        * - prevalence_lower_bound
+          - REAL
+          - Lower bound for prevalence clamping
+        * - prevalence_upper_bound
+          - REAL
+          - Upper bound for prevalence clamping
+        * - infant_min_age
+          - INT
+          - Minimum age for Infant group
+        * - infant_max_age
+          - INT
+          - Maximum age for Infant group
+        * - psac_min_age
+          - INT
+          - Minimum age for PSAC group
+        * - psac_max_age
+          - INT
+          - Maximum age for PSAC group
+        * - sac_min_age
+          - INT
+          - Minimum age for SAC group
+        * - sac_max_age
+          - INT
+          - Maximum age for SAC group
+        * - adults_min_age
+          - INT
+          - Minimum age for Adults group
+        * - adults_max_age
+          - INT
+          - Maximum age for Adults group
+        * - mda_execute
+          - BOOL
+          - Whether to execute MDA events
+        * - single_district
+          - BOOL
+          - Whether to run simulation for a single district only
+        * - main_polling_frequency
+          - INT
+          - Polling freq main schisto event in months
+        * - worm_maturation_period_months
+          - INT
+          - Time in months for juvenile worms to mature into adult worms
+        * - worm_death_check_frequency_years
+          - INT
+          - Frequency in years to check for worm deaths
+        * - mda_appointment_window_months
+          - INT
+          - Time window in months for MDA appointment scheduling
+        * - wash_scaleup_frequency_years
+          - INT
+          - Frequency in years to check and apply WASH scale-up
+        * - recent_sanitation_window_years
+          - INT
+          - Time window in years to consider sanitation acquisition as recent
+        * - avg_weight_psac_kg
+          - REAL
+          - Average weight in kg for PSAC age group for drug dosing
+        * - avg_weight_sac_kg
+          - REAL
+          - Average weight in kg for SAC age group for drug dosing
+        * - avg_weight_adult_kg
+          - REAL
+          - Average weight in kg for adults for drug dosing
 
 
      **PROPERTIES:**
@@ -111,11 +225,11 @@ tlo.methods.schisto module
 
      CAUSES_OF_DEATH : {}
 
-     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x333dc5d90>}
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x1393eced0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSystem'}
 
@@ -139,9 +253,13 @@ tlo.methods.schisto module
 
      .. automethod:: report_daly_values
 
+     .. automethod:: report_summary_stats
+
      .. automethod:: do_effect_of_treatment
 
      .. automethod:: _load_parameters_from_workbook
+
+     .. automethod:: _get_age_groups
 
      .. automethod:: _create_mda_strategy
 

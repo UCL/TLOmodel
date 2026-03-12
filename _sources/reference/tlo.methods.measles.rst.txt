@@ -36,18 +36,57 @@ tlo.methods.measles module
         * - vaccine_efficacy_2
           - REAL
           - Efficacy of second measles vaccine dose against measles infection
-        * - prob_severe
-          - REAL
-          - Probability of severe measles infection, requiring hospitalisation
-        * - risk_death_on_treatment
-          - REAL
-          - Risk of scheduled death occurring if on treatment for measles complications
         * - symptom_prob
           - DATA_FRAME
           - Probability of each symptom with measles infection
+        * - odds_ratio_health_seeking_in_children_rash
+          - REAL
+          - Odds ratio seeking care in children rash
+        * - odds_ratio_health_seeking_in_adults_rash
+          - REAL
+          - Odds ratio seeking care in adults rash
+        * - odds_ratio_health_seeking_in_children_otitis_media
+          - REAL
+          - Odds ratio seeking care in children otitis media
+        * - odds_ratio_health_seeking_in_adults_otitis_media
+          - REAL
+          - Odds ratio seeking care in adults otitis media
+        * - reduction_in_death_risk_measle_treated
+          - REAL
+          - Reduction in death risk when measles are treated
+        * - maternal_immunity_age_threshold
+          - REAL
+          - Age threshold below which children are protected by maternal immunity
+        * - age_min_symptoms_constant_rate
+          - INT
+          - Maximum age for measles symptom probability lookup
+        * - death_timing_min_days
+          - INT
+          - Minimum days from symptom onset to death
+        * - death_timing_max_days
+          - INT
+          - Maximum days from symptom onset to death
+        * - natural_resolution_min_days
+          - INT
+          - Minimum days from symptom onset to natural resolution
+        * - natural_resolution_max_days
+          - INT
+          - Maximum days from symptom onset to natural resolution
+        * - symptom_onset_min_days
+          - INT
+          - Minimum days from infection to symptom onset (incubation period)
+        * - symptom_onset_max_days
+          - INT
+          - Maximum days from infection to symptom onset (incubation period)
+        * - sympt_resolution_after_treatment
+          - INT
+          - Days until symptom resolution after treatment
+        * - main_polling_event_frequency_months
+          - INT
+          - Measles main polling event frequency months
         * - case_fatality_rate
           - DICT
-          - Probability that case of measles will result in death if not treated
+          - Case fatality rate for measles infection
 
 
      **PROPERTIES:**
@@ -73,13 +112,13 @@ tlo.methods.measles module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x334063550>}
+     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x139ace010>}
 
-     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x334063c90>}
+     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x139acd510>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -100,6 +139,8 @@ tlo.methods.measles module
      .. automethod:: on_birth
 
      .. automethod:: report_daly_values
+
+     .. automethod:: report_summary_stats
 
      .. automethod:: process_parameters
 

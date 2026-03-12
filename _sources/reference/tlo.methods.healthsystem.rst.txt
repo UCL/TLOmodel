@@ -51,9 +51,12 @@ tlo.methods.healthsystem module
         * - consumables_item_designations
           - DATA_FRAME
           - Look-up table for the designations of consumables (whether diagnostic, medicine, or other
+        * - data_source_for_cons_availability_estimates
+          - STRING
+          - Source of data on consumable availability. Options are: `original` or `updated`.The original source was used in the calibration and presented in the overview paper. The updated source introduced in PR #1743 and better reflects the average availability of consumables in the merged 1b/2 facility level.
         * - availability_estimates
-          - DATA_FRAME
-          - Estimated availability of consumables in the LMIS dataset.
+          - DICT
+          - Estimated availability of consumables in the LMIS dataset. Dict contains all the databases that might be selected using `data_source_for_cons_availability_estimates`
         * - cons_availability
           - STRING
           - Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no consumable be  ever be available; if 'all', then all consumables are always available. When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.Note that other options are also available: see the `Consumables` class.
@@ -137,7 +140,7 @@ tlo.methods.healthsystem module
           - Offset in days from topen at which tclose will be set by the healthsystem for all HSIsif tclose_overwrite is set to True.
         * - mode_appt_constraints
           - INT
-          - Integer code in `{1, 2}` determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run with squeeze factor, provided officers required to deliver the HSI have capabilities > 02: hard constraints, only HSI events with no squeeze factor run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.
+          - Integer code in `{1, 2}` determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run, provided officers required to deliver the HSI have capabilities > 02: hard constraints, only HSI events for which capabilities are available run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.
         * - mode_appt_constraints_postSwitch
           - INT
           - Mode considered after a mode switch in year_mode_switch.
@@ -173,13 +176,13 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x3337b7a60>
+     capabilities_today : <property object at 0x1390a6e30>
 
-     hsi_event_counts : <property object at 0x3337b7c40>
+     hsi_event_counts : <property object at 0x1390a7010>
 
-     never_ran_hsi_event_counts : <property object at 0x3337b7c90>
+     never_ran_hsi_event_counts : <property object at 0x1390a7060>
 
-     use_funded_or_actual_staffing : <property object at 0x3337b7b50>
+     use_funded_or_actual_staffing : <property object at 0x1390a6f20>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -251,10 +254,6 @@ tlo.methods.healthsystem module
 
      .. automethod:: get_appt_footprint_as_time_request
 
-     .. automethod:: get_squeeze_factors
-
-     .. automethod:: get_clinic_squeeze_factors
-
      .. automethod:: record_hsi_event
 
      .. automethod:: write_to_hsi_log
@@ -264,8 +263,6 @@ tlo.methods.healthsystem module
      .. automethod:: write_to_never_ran_hsi_log
 
      .. automethod:: log_current_capabilities_and_usage
-
-     .. automethod:: log_clinic_current_capabilities_and_usage
 
      .. automethod:: remove_beddays_footprint
 
@@ -290,6 +287,8 @@ tlo.methods.healthsystem module
      .. automethod:: on_end_of_month
 
      .. automethod:: on_end_of_year
+
+     .. automethod:: do_all_required_officers_have_nonzero_capabilities
 
      .. automethod:: run_individual_level_events_in_mode_1
 
@@ -368,7 +367,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x3337b7fb0>
+     current_pop_size : <property object at 0x1390a7330>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

@@ -111,15 +111,69 @@ tlo.methods.cardio_metabolic_disorders module
         * - chronic_ischemic_hd_initial_prev
           - DICT
           - initial prevalence of condition
-        * - interval_between_polls
-          - INT
-          - months between the main polling event
-        * - pr_bmi_reduction
-          - INT
-          - probability of an individual having a reduction in BMI following weight loss treatment
         * - prob_care_provided_given_seek_emergency_care
           - REAL
           - The probability that correct care is fully provided to persons that have sought emergency care for a Cardio-metabolic disorder.
+        * - prob_ckd_patient_gets_dialysis
+          - REAL
+          - The probability that patient with ckd has disease progression ultimately needing dialysis
+        * - interval_between_polls
+          - INT
+          - months between the main polling event
+        * - emergency_care_symptom_max_days
+          - INT
+          - max days of symptoms for person to seek emergency care in days
+        * - community_testing_schedule_buffer_days
+          - INT
+          - buffer days for community testing schedule to ensure testing occurs before next polling event
+        * - community_testing_deadline_buffer_days
+          - INT
+          - buffer days for community testing deadline to ensure testing occurs before next polling event
+        * - symptom_onset_buffer_days
+          - INT
+          - buffer days for symptom onset to ensure it occurs before next polling event
+        * - event_buffer_days
+          - INT
+          - buffer days for event to ensure it occurs before next polling event
+        * - death_outcome_delay_days
+          - INT
+          - delay days for death outcome
+        * - weight_loss_min_wait_months
+          - INT
+          - minimum time for individual to loose weight in months
+        * - weight_loss_max_wait_months
+          - INT
+          - maximum time for individual to loose weight in months
+        * - medication_refill_interval_months
+          - INT
+          - interval for medication refill in months
+        * - medication_refill_deadline_window_days
+          - INT
+          - buffer window to complete medication refill in days
+        * - retry_appointment_start_delay_days
+          - INT
+          - days to wait before starting retry appointment window
+        * - retry_appointment_deadline_days
+          - INT
+          - maximum days allowed for retry appointment
+        * - min_age_for_assessment_years
+          - INT
+          - minimum age for assessment of CMD in years
+        * - bmi_threshold_for_risk_score
+          - INT
+          - BMI threshold for risk score calculation
+        * - min_risk_factors_for_scheduled_weight_loss
+          - INT
+          - minimum number of risk factors for individual to be recommended weight loss
+        * - bmi_threshold_weight_loss_advice
+          - INT
+          - BMI threshold for weight loss advice
+        * - tests_per_year
+          - INT
+          - tests to be undergone per year for conditions that require investigation
+        * - pr_bmi_reduction
+          - REAL
+          - probability of an individual having a reduction in BMI following weight loss treatment
 
 
      **PROPERTIES:**
@@ -272,6 +326,9 @@ tlo.methods.cardio_metabolic_disorders module
         * - nc_risk_score
           - INT
           - score to represent number of risk conditions the person has
+        * - nc_ckd_total_dialysis_sessions
+          - INT
+          - total number of dialysis sessions the person has ever had
 
 
 
@@ -279,13 +336,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x333bf4550>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x333bf51d0>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x333bf5b50>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x333bf4b50>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x333bf7d50>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x149917110>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x149915210>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x149915b90>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x149917e90>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x149917350>}
 
-     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x333bf7c10>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x333bf7310>, 'heart_attack': <tlo.methods.causes.Cause object at 0x333bf6c90>, 'stroke': <tlo.methods.causes.Cause object at 0x333bf5890>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x333bf7d10>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x333bf4950>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x149915750>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x149917290>, 'heart_attack': <tlo.methods.causes.Cause object at 0x149916a10>, 'stroke': <tlo.methods.causes.Cause object at 0x149916650>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x149915a10>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x149917390>}
 
-     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
@@ -335,8 +392,6 @@ tlo.methods.cardio_metabolic_disorders module
 
      onset_events_param_dicts : {'ever_stroke_onset': DICT === all the parameters that specify the linear models for onset of ever_stroke, 'ever_heart_attack_onset': DICT === all the parameters that specify the linear models for onset of ever_heart_attack}
 
-     other_params_dict : {'interval_between_polls': INT === months between the main polling event, 'pr_bmi_reduction': INT === probability of an individual having a reduction in BMI following weight loss treatment}
-
      removal_conditions_param_dicts : {'diabetes_removal': DICT === all the parameters that specify the linear models for removal of diabetes, 'hypertension_removal': DICT === all the parameters that specify the linear models for removal of hypertension, 'chronic_kidney_disease_removal': DICT === all the parameters that specify the linear models for removal of chronic_kidney_disease, 'chronic_lower_back_pain_removal': DICT === all the parameters that specify the linear models for removal of chronic_lower_back_pain, 'chronic_ischemic_hd_removal': DICT === all the parameters that specify the linear models for removal of chronic_ischemic_hd}
 
      **Functions (defined or overridden in class CardioMetabolicDisorders):**
@@ -358,6 +413,8 @@ tlo.methods.cardio_metabolic_disorders module
      .. automethod:: update_risk_score
 
      .. automethod:: report_daly_values
+
+     .. automethod:: report_summary_stats
 
      .. automethod:: on_hsi_alert
 
@@ -562,6 +619,31 @@ tlo.methods.cardio_metabolic_disorders module
      .. automethod:: apply
 
      .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CardioMetabolicDisorders_Dialysis_Refill
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_Dialysis_Refill):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: never_ran
 
 
 

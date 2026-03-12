@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>Parameters &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="_static/favicon.png"/>
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/documentation_options.js?v=6470984e"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -1348,20 +1348,110 @@
 <td><p>Series</p></td>
 <td><p><a class="reference internal" href="#cardiometabolicdisorders-chronic-ischemic-hd-initial-prev"><span class="std std-ref">…</span></a></p></td>
 </tr>
+<tr class="row-odd"><td><p>prob_care_provided_given_seek_emergency_care</p></td>
+<td><p>The probability that correct care is fully provided to persons that have sought emergency care for a Cardio-metabolic disorder.</p></td>
+<td><p>Real</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_ckd_patient_gets_dialysis</p></td>
+<td><p>The probability that patient with ckd has disease progression ultimately needing dialysis</p></td>
+<td><p>Real</p></td>
+<td><p>0.02</p></td>
+</tr>
 <tr class="row-odd"><td><p>interval_between_polls</p></td>
 <td><p>months between the main polling event</p></td>
 <td><p>Integer</p></td>
 <td><p>3</p></td>
 </tr>
-<tr class="row-even"><td><p>pr_bmi_reduction</p></td>
+<tr class="row-even"><td><p>emergency_care_symptom_max_days</p></td>
+<td><p>max days of symptoms for person to seek emergency care in days</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>community_testing_schedule_buffer_days</p></td>
+<td><p>buffer days for community testing schedule to ensure testing occurs before next polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>community_testing_deadline_buffer_days</p></td>
+<td><p>buffer days for community testing deadline to ensure testing occurs before next polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>symptom_onset_buffer_days</p></td>
+<td><p>buffer days for symptom onset to ensure it occurs before next polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>event_buffer_days</p></td>
+<td><p>buffer days for event to ensure it occurs before next polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_outcome_delay_days</p></td>
+<td><p>delay days for death outcome</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>weight_loss_min_wait_months</p></td>
+<td><p>minimum time for individual to loose weight in months</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-odd"><td><p>weight_loss_max_wait_months</p></td>
+<td><p>maximum time for individual to loose weight in months</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>medication_refill_interval_months</p></td>
+<td><p>interval for medication refill in months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>medication_refill_deadline_window_days</p></td>
+<td><p>buffer window to complete medication refill in days</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>retry_appointment_start_delay_days</p></td>
+<td><p>days to wait before starting retry appointment window</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>retry_appointment_deadline_days</p></td>
+<td><p>maximum days allowed for retry appointment</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_for_assessment_years</p></td>
+<td><p>minimum age for assessment of CMD in years</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>bmi_threshold_for_risk_score</p></td>
+<td><p>BMI threshold for risk score calculation</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>min_risk_factors_for_scheduled_weight_loss</p></td>
+<td><p>minimum number of risk factors for individual to be recommended weight loss</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>bmi_threshold_weight_loss_advice</p></td>
+<td><p>BMI threshold for weight loss advice</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>tests_per_year</p></td>
+<td><p>tests to be undergone per year for conditions that require investigation</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>pr_bmi_reduction</p></td>
 <td><p>probability of an individual having a reduction in BMI following weight loss treatment</p></td>
 <td><p>Real</p></td>
 <td><p>0.1</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_care_provided_given_seek_emergency_care</p></td>
-<td><p>The probability that correct care is fully provided to persons that have sought emergency care for a Cardio-metabolic disorder.</p></td>
-<td><p>Real</p></td>
-<td><p>0.5</p></td>
 </tr>
 </tbody>
 </table>
@@ -1725,7 +1815,11 @@
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 </tr>
-<tr class="row-even"><td><p>2064</p></td>
+<tr class="row-even"><td><p>2070</p></td>
+</tr>
+<tr class="row-odd"><td><p>2071</p></td>
+</tr>
+<tr class="row-even"><td><p>282</p></td>
 </tr>
 <tr class="row-odd"><td><p>0</p></td>
 </tr>
@@ -4439,13 +4533,13 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Rumphi</p></td>
+<tr class="row-even"><td><p>Chitipa</p></td>
 <td><p>Likoma</p></td>
 <td><p>Mzimba</p></td>
-<td><p>Mzuzu City</p></td>
-<td><p>Nkhata Bay</p></td>
+<td><p>Rumphi</p></td>
 <td><p>Karonga</p></td>
-<td><p>Chitipa</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>Mzuzu City</p></td>
 </tr>
 </tbody>
 </table>
@@ -4467,16 +4561,16 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Ntcheu</p></td>
-<td><p>Nkhotakota</p></td>
-<td><p>Kasungu</p></td>
-<td><p>Lilongwe City</p></td>
+<tr class="row-even"><td><p>Salima</p></td>
 <td><p>Dedza</p></td>
-<td><p>Lilongwe</p></td>
-<td><p>Salima</p></td>
-<td><p>Ntchisi</p></td>
-<td><p>Mchinji</p></td>
+<td><p>Lilongwe City</p></td>
+<td><p>Ntcheu</p></td>
 <td><p>Dowa</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>Mchinji</p></td>
+<td><p>Kasungu</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>Ntchisi</p></td>
 </tr>
 </tbody>
 </table>
@@ -4503,21 +4597,21 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Chikwawa</p></td>
-<td><p>Nsanje</p></td>
-<td><p>Neno</p></td>
-<td><p>Blantyre City</p></td>
-<td><p>Mangochi</p></td>
-<td><p>Blantyre</p></td>
-<td><p>Chiradzulu</p></td>
-<td><p>Phalombe</p></td>
-<td><p>Zomba City</p></td>
-<td><p>Zomba</p></td>
-<td><p>Mulanje</p></td>
-<td><p>Mwanza</p></td>
-<td><p>Balaka</p></td>
-<td><p>Thyolo</p></td>
+<tr class="row-even"><td><p>Mangochi</p></td>
 <td><p>Machinga</p></td>
+<td><p>Thyolo</p></td>
+<td><p>Phalombe</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>Balaka</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>Zomba City</p></td>
+<td><p>Blantyre City</p></td>
+<td><p>Mulanje</p></td>
+<td><p>Neno</p></td>
+<td><p>Zomba</p></td>
+<td><p>Mwanza</p></td>
+<td><p>Nsanje</p></td>
+<td><p>Blantyre</p></td>
 </tr>
 </tbody>
 </table>
@@ -5064,300 +5158,310 @@
 <td><p>Real</p></td>
 <td><p>0.167</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prolonged_diarr_rotavirus</p></td>
+<tr class="row-odd"><td><p>prob_remove_dehydration_no_treatment</p></td>
+<td><p>probability that someone with diarrhoea stops without treatment</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_prolonged_diarr_rotavirus</p></td>
 <td><p>probability of prolonged episode in rotavirus-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.117706</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_prolonged_diarr_shigella</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_shigella</p></td>
 <td><p>probability of prolonged episode by shigella-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.165342</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prolonged_diarr_adenovirus</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_adenovirus</p></td>
 <td><p>probability of prolonged episode by adenovirus-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.116406</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_prolonged_diarr_cryptosporidium</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_cryptosporidium</p></td>
 <td><p>probability of prolonged episode by cryptosporidium-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.169134</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prolonged_diarr_campylobacter</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_campylobacter</p></td>
 <td><p>probability of prolonged episode by campylobacter-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.152206</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_prolonged_diarr_ETEC</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_ETEC</p></td>
 <td><p>probability of prolonged episode by ETEC-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.114177</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prolonged_diarr_sapovirus</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_sapovirus</p></td>
 <td><p>probability of prolonged episode by sapovirus-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.133209</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_prolonged_diarr_norovirus</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_norovirus</p></td>
 <td><p>probability of prolonged episode by norovirus-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.118223</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prolonged_diarr_astrovirus</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_astrovirus</p></td>
 <td><p>probability of prolonged episode by norovirus-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.13511</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_prolonged_diarr_tEPEC</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_tEPEC</p></td>
 <td><p>probability of prolonged episode by tEPEC-attributed diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.190845</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prolonged_to_persistent_diarr</p></td>
+<tr class="row-even"><td><p>prob_prolonged_to_persistent_diarr</p></td>
 <td><p>probability of prolonged diarrhoea becoming persistent diarrhoea</p></td>
 <td><p>Real</p></td>
 <td><p>0.2866</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_age&gt;6mo</p></td>
+<tr class="row-odd"><td><p>rr_bec_persistent_age&gt;6mo</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for children over 6 months</p></td>
 <td><p>Real</p></td>
 <td><p>0.26</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_HIV</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_HIV</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for HIV positive</p></td>
 <td><p>Real</p></td>
 <td><p>1.7</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_SAM</p></td>
+<tr class="row-odd"><td><p>rr_bec_persistent_SAM</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for severely acute malnutrition</p></td>
 <td><p>Real</p></td>
 <td><p>1.7</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_stunted</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_stunted</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for stunted children</p></td>
 <td><p>Real</p></td>
 <td><p>33.3</p></td>
 </tr>
-<tr class="row-even"><td><p>min_dur_acute</p></td>
+<tr class="row-odd"><td><p>min_dur_acute</p></td>
 <td><p>The minimum duration (in days) for an episode that is classified as an acute episode</p></td>
 <td><p>Integer</p></td>
 <td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>min_dur_prolonged</p></td>
+<tr class="row-even"><td><p>min_dur_prolonged</p></td>
 <td><p>The minimum duration (in days) for an episode that is classified as a prolonged episode</p></td>
 <td><p>Integer</p></td>
 <td><p>5</p></td>
 </tr>
-<tr class="row-even"><td><p>min_dur_persistent</p></td>
+<tr class="row-odd"><td><p>min_dur_persistent</p></td>
 <td><p>The minimum duration (in days) for an episode that is classified as a persistent episode</p></td>
 <td><p>Integer</p></td>
 <td><p>13</p></td>
 </tr>
-<tr class="row-odd"><td><p>max_dur_persistent</p></td>
+<tr class="row-even"><td><p>max_dur_persistent</p></td>
 <td><p>The maximum duration (in days) for an episode that is classified as a persistent episode</p></td>
 <td><p>Integer</p></td>
 <td><p>30</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_rotavirus</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_rotavirus</p></td>
 <td><p>probability of fever caused by rotavirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.384925</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_shigella</p></td>
+<tr class="row-even"><td><p>prob_fever_by_shigella</p></td>
 <td><p>probability of fever caused by shigella</p></td>
 <td><p>Real</p></td>
 <td><p>0.319876</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_adenovirus</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_adenovirus</p></td>
 <td><p>probability of fever caused by adenovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.271513</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_cryptosporidium</p></td>
+<tr class="row-even"><td><p>prob_fever_by_cryptosporidium</p></td>
 <td><p>probability of fever caused by cryptosporidium</p></td>
 <td><p>Real</p></td>
 <td><p>0.322385</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_campylobacter</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_campylobacter</p></td>
 <td><p>probability of fever caused by campylobacter</p></td>
 <td><p>Real</p></td>
 <td><p>0.312807</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_ETEC</p></td>
+<tr class="row-even"><td><p>prob_fever_by_ETEC</p></td>
 <td><p>probability of fever caused by ETEC</p></td>
 <td><p>Real</p></td>
 <td><p>0.258931</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_sapovirus</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_sapovirus</p></td>
 <td><p>probability of fever caused by sapovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.292276</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_norovirus</p></td>
+<tr class="row-even"><td><p>prob_fever_by_norovirus</p></td>
 <td><p>probability of fever caused by norovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.251071</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_astrovirus</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_astrovirus</p></td>
 <td><p>probability of fever caused by astrovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.195905</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_tEPEC</p></td>
+<tr class="row-even"><td><p>prob_fever_by_tEPEC</p></td>
 <td><p>probability of fever caused by tEPEC</p></td>
 <td><p>Real</p></td>
 <td><p>0.384547</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_rotavirus</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_rotavirus</p></td>
 <td><p>probability of vomiting caused by rotavirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.471793</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_shigella</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_shigella</p></td>
 <td><p>probability of vomiting caused by shigella</p></td>
 <td><p>Real</p></td>
 <td><p>0.209852</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_adenovirus</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_adenovirus</p></td>
 <td><p>probability of vomiting caused by adenovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.308677</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_cryptosporidium</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_cryptosporidium</p></td>
 <td><p>probability of vomiting caused by cryptosporidium</p></td>
 <td><p>Real</p></td>
 <td><p>0.243581</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_campylobacter</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_campylobacter</p></td>
 <td><p>probability of vomiting caused by campylobacter</p></td>
 <td><p>Real</p></td>
 <td><p>0.218669</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_ETEC</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_ETEC</p></td>
 <td><p>probability of vomiting caused by ETEC</p></td>
 <td><p>Real</p></td>
 <td><p>0.283139</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_sapovirus</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_sapovirus</p></td>
 <td><p>probability of vomiting caused by sapovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.303154</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_norovirus</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_norovirus</p></td>
 <td><p>probability of vomiting caused by norovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.299343</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_astrovirus</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_astrovirus</p></td>
 <td><p>probability of vomiting caused by astrovirus</p></td>
 <td><p>Real</p></td>
 <td><p>0.276018</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_tEPEC</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_tEPEC</p></td>
 <td><p>probability of vomiting caused by tEPEC</p></td>
 <td><p>Real</p></td>
 <td><p>0.285661</p></td>
 </tr>
-<tr class="row-even"><td><p>adjustment_factor_on_cfr</p></td>
+<tr class="row-odd"><td><p>adjustment_factor_on_cfr</p></td>
 <td><p>Factor by which fatality probabilities are multiplied (to be used in calibration)</p></td>
 <td><p>Real</p></td>
 <td><p>3.75</p></td>
 </tr>
-<tr class="row-odd"><td><p>case_fatality_rate_AWD</p></td>
+<tr class="row-even"><td><p>case_fatality_rate_AWD</p></td>
 <td><p>case fatality rate for acute watery diarrhoea cases</p></td>
 <td><p>Real</p></td>
 <td><p>0.0015</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarr_death_bloody</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_bloody</p></td>
 <td><p>relative risk of diarrhoea death (compared to <cite>case_fatality_rate_AWD</cite> if the diarrhoea is of type “bloody” (i.e. dyssentry).</p></td>
 <td><p>Real</p></td>
 <td><p>7.6</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarr_death_age24to59mo</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_age24to59mo</p></td>
 <td><p>relative risk of diarrhoea death for ages 24 to 59 months</p></td>
 <td><p>Real</p></td>
 <td><p>0.38</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarr_death_if_duration_longer_than_13_days</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_if_duration_longer_than_13_days</p></td>
 <td><p>relative risk of diarrhoea death if the duration episode is 13 days or longer</p></td>
 <td><p>Real</p></td>
 <td><p>0.0035</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarr_death_severe_dehydration</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_severe_dehydration</p></td>
 <td><p>relative risk of diarrhoea death for cases with severe dehyadration</p></td>
 <td><p>Real</p></td>
 <td><p>3.45</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarr_death_untreated_HIV</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_untreated_HIV</p></td>
 <td><p>relative risk of diarrhoea death for untreated HIV</p></td>
 <td><p>Real</p></td>
 <td><p>5.05</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarr_death_SAM</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_SAM</p></td>
 <td><p>relative risk of diarrhoea death for severe acute malnutrition</p></td>
 <td><p>Real</p></td>
 <td><p>4.13</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarr_death_alri</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_alri</p></td>
 <td><p>relative risk of diarrhoea death if concurrent lower respiratory infection</p></td>
 <td><p>Real</p></td>
 <td><p>3.51</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarr_death_cryptosporidium</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_cryptosporidium</p></td>
 <td><p>relative risk of diarrhoea death if caused by cryptosporidium</p></td>
 <td><p>Real</p></td>
 <td><p>2.14</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarr_death_shigella</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_shigella</p></td>
 <td><p>relative risk of diarrhoea death if caused by shigella</p></td>
 <td><p>Real</p></td>
 <td><p>2.8</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_severe_dehydration_visual_inspection</p></td>
+<tr class="row-even"><td><p>sensitivity_severe_dehydration_visual_inspection</p></td>
 <td><p>sensitivity of IMCI severe dehydration algorithm for dehydration &gt;9% loss of body weight</p></td>
 <td><p>Real</p></td>
 <td><p>0.77</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_severe_dehydration_visual_inspection</p></td>
+<tr class="row-odd"><td><p>specificity_severe_dehydration_visual_inspection</p></td>
 <td><p>specificity of IMCI severe dehydration algorithm for dehydration &gt;9% loss of body weight</p></td>
 <td><p>Real</p></td>
 <td><p>0.67</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hospitalization_on_danger_signs</p></td>
+<tr class="row-even"><td><p>prob_hospitalization_on_danger_signs</p></td>
 <td><p>probability of hospitalisation when danger signs are detected in an initial consultation</p></td>
 <td><p>Real</p></td>
 <td><p>0.7</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_WHOPlanC_cures_dehydration_if_severe_dehydration</p></td>
+<tr class="row-odd"><td><p>prob_WHOPlanC_cures_dehydration_if_severe_dehydration</p></td>
 <td><p>probability that severe dehydration is cured by Treatment Plan C</p></td>
 <td><p>Real</p></td>
 <td><p>0.9</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_ORS_cures_dehydration_if_severe_dehydration</p></td>
+<tr class="row-even"><td><p>prob_ORS_cures_dehydration_if_severe_dehydration</p></td>
 <td><p>probability that severe dehydration is cured by ORS</p></td>
 <td><p>Real</p></td>
 <td><p>0.721</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_ORS_cures_dehydration_if_non_severe_dehydration</p></td>
+<tr class="row-odd"><td><p>prob_ORS_cures_dehydration_if_non_severe_dehydration</p></td>
 <td><p>probability that non-severe dehydration is cured by ORS</p></td>
 <td><p>Real</p></td>
 <td><p>0.93</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_antibiotic_cures_dysentery</p></td>
+<tr class="row-even"><td><p>prob_antibiotic_cures_dysentery</p></td>
 <td><p>probability that blood-in-stool is removed by the use of antibiotics</p></td>
 <td><p>Real</p></td>
 <td><p>0.99</p></td>
 </tr>
-<tr class="row-even"><td><p>number_of_days_reduced_duration_with_zinc</p></td>
+<tr class="row-odd"><td><p>number_of_days_reduced_duration_with_zinc</p></td>
 <td><p>number of days reduced duration with zinc</p></td>
 <td><p>Integer</p></td>
 <td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>days_between_treatment_and_cure</p></td>
+<tr class="row-even"><td><p>days_between_treatment_and_cure</p></td>
 <td><p>number of days between any treatment being given in an HSI and the cure occurring.</p></td>
 <td><p>Integer</p></td>
 <td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_clear_bacterial_infection_no_treatment</p></td>
+<td><p>probability clear bacterial infection no treatment.</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
 </tr>
 <tr class="row-even"><td><p>rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo</p></td>
 <td><p>relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.</p></td>
@@ -5368,6 +5472,21 @@
 <td><p>relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.</p></td>
 <td><p>Real</p></td>
 <td><p>0.35</p></td>
+</tr>
+<tr class="row-even"><td><p>relative_prob_severe_dehydration_no_vaccine</p></td>
+<td><p>relative probability of severe dehydration without rotavirus vaccine.</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>persistent_diarrhoea_threshold_days</p></td>
+<td><p>Days of symptoms after which classification is persistent diarrhoea.</p></td>
+<td><p>Real</p></td>
+<td><p>13.0</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_frequency</p></td>
+<td><p>Main polling frequency for event that runs acquisition of pathogens that cause Diarrhoea.</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
 </tr>
 </tbody>
 </table>
@@ -5940,167 +6059,172 @@
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#healthsystem-consumables-item-designations"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-odd"><td><p>availability_estimates</p></td>
-<td><p>Estimated availability of consumables in the LMIS dataset.</p></td>
-<td><p>Dataframe</p></td>
+<tr class="row-odd"><td><p>data_source_for_cons_availability_estimates</p></td>
+<td><p>Source of data on consumable availability. Options are: <cite>original</cite> or <cite>updated</cite>.The original source was used in the calibration and presented in the overview paper. The updated source introduced in PR #1743 and better reflects the average availability of consumables in the merged 1b/2 facility level.</p></td>
+<td><p>String</p></td>
+<td><p>original</p></td>
+</tr>
+<tr class="row-even"><td><p>availability_estimates</p></td>
+<td><p>Estimated availability of consumables in the LMIS dataset. Dict contains all the databases that might be selected using <cite>data_source_for_cons_availability_estimates</cite></p></td>
+<td><p>Dictionary</p></td>
 <td><p><a class="reference internal" href="#healthsystem-availability-estimates"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>cons_availability</p></td>
+<tr class="row-odd"><td><p>cons_availability</p></td>
 <td><p>Availability of consumables. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no consumable be  ever be available; if ‘all’, then all consumables are always available. When using ‘all’ or ‘none’, requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.Note that other options are also available: see the <cite>Consumables</cite> class.</p></td>
 <td><p>String</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-odd"><td><p>cons_override_treatment_ids</p></td>
+<tr class="row-even"><td><p>cons_override_treatment_ids</p></td>
 <td><p>Consumable availability within any treatment ids listed in this parameter will be set at to a given probabilty stored in override_treatment_ids_avail. By default this list is empty</p></td>
 <td><p>List</p></td>
 <td><p>[]</p></td>
 </tr>
-<tr class="row-even"><td><p>cons_override_treatment_ids_prob_avail</p></td>
+<tr class="row-odd"><td><p>cons_override_treatment_ids_prob_avail</p></td>
 <td><p>Probability that consumables for treatment ids listed in cons_override_treatment_ids will be available</p></td>
 <td><p>Real</p></td>
 <td><p>1.0</p></td>
 </tr>
-<tr class="row-odd"><td><p>BedCapacity</p></td>
+<tr class="row-even"><td><p>BedCapacity</p></td>
 <td><p>Data on the number of beds available of each type by facility_id</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#healthsystem-bedcapacity"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>beds_availability</p></td>
+<tr class="row-odd"><td><p>beds_availability</p></td>
 <td><p>Availability of beds. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no beds be  ever be available; if ‘all’, then all beds are always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 <td><p>String</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-odd"><td><p>EquipmentCatalogue</p></td>
+<tr class="row-even"><td><p>EquipmentCatalogue</p></td>
 <td><p>Data on equipment items and packages.</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#healthsystem-equipmentcatalogue"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>equipment_availability_estimates</p></td>
+<tr class="row-odd"><td><p>equipment_availability_estimates</p></td>
 <td><p>Data on the availability of equipment items and packages.</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#healthsystem-equipment-availability-estimates"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-odd"><td><p>equip_availability</p></td>
+<tr class="row-even"><td><p>equip_availability</p></td>
 <td><p>What to assume about the availability of equipment. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no equipment ever be available; if ‘all’, then all equipment is always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 <td><p>String</p></td>
 <td><p>all</p></td>
 </tr>
-<tr class="row-even"><td><p>equip_availability_postSwitch</p></td>
+<tr class="row-odd"><td><p>equip_availability_postSwitch</p></td>
 <td><p>What to assume about the availability of equipment after the switch (see <cite>year_equip_availability_switch</cite>). The options for this are the same as <cite>equip_availability</cite>.</p></td>
 <td><p>String</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_equip_availability_switch</p></td>
+<tr class="row-even"><td><p>year_equip_availability_switch</p></td>
 <td><p>Year in which the assumption for <cite>equip_availability</cite> changes (The change happens on 1st January of that year.)</p></td>
 <td><p>Integer</p></td>
 <td><p>2100</p></td>
 </tr>
-<tr class="row-even"><td><p>Service_Availability</p></td>
+<tr class="row-odd"><td><p>Service_Availability</p></td>
 <td><p>List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 <td><p>List</p></td>
 <td><p>[‘*’]</p></td>
 </tr>
-<tr class="row-odd"><td><p>policy_name</p></td>
+<tr class="row-even"><td><p>policy_name</p></td>
 <td><p>Name of priority policy adopted</p></td>
 <td><p>String</p></td>
 <td><p>Naive</p></td>
 </tr>
-<tr class="row-even"><td><p>year_mode_switch</p></td>
+<tr class="row-odd"><td><p>year_mode_switch</p></td>
 <td><p>Year in which mode switch is enforced</p></td>
 <td><p>Integer</p></td>
 <td><p>2100</p></td>
 </tr>
-<tr class="row-odd"><td><p>scale_to_effective_capabilities</p></td>
+<tr class="row-even"><td><p>scale_to_effective_capabilities</p></td>
 <td><p>In year in which mode switch takes place, will rescale available capabilities to match thosethat were effectively used (on average) in the past year if this is set to True. This way,we can approximate overtime and rushing of appts even in mode 2.</p></td>
 <td><p>Boolean</p></td>
 <td><p>False</p></td>
 </tr>
-<tr class="row-even"><td><p>year_cons_availability_switch</p></td>
+<tr class="row-odd"><td><p>year_cons_availability_switch</p></td>
 <td><p>Year in which consumable availability switch is enforced. The change happenson 1st January of that year.)</p></td>
 <td><p>Integer</p></td>
 <td><p>2100</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_use_funded_or_actual_staffing_switch</p></td>
+<tr class="row-even"><td><p>year_use_funded_or_actual_staffing_switch</p></td>
 <td><p>Year in which switch for <cite>use_funded_or_actual_staffing</cite> is enforced. (The change happenson 1st January of that year.)</p></td>
 <td><p>Integer</p></td>
 <td><p>2100</p></td>
 </tr>
-<tr class="row-even"><td><p>priority_rank</p></td>
+<tr class="row-odd"><td><p>priority_rank</p></td>
 <td><p>Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments</p></td>
 <td><p>Dictionary</p></td>
 <td><p><a class="reference internal" href="#healthsystem-priority-rank"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-odd"><td><p>HR_scaling_by_level_and_officer_type_table</p></td>
+<tr class="row-even"><td><p>HR_scaling_by_level_and_officer_type_table</p></td>
 <td><p>Factors by which capabilities of medical officer types at different levels will bescaled at the start of the year specified by <cite>year_HR_scaling_by_level_and_officer_type</cite>. Thisserves to simulate a number of effects (e.g. absenteeism, boosting capabilities of specific medical cadres, etc). This is the imported from an Excel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding worksheets to this workbook: the value of <cite>HR_scaling_by_level_and_officer_type_mode</cite> indicates which sheet is used.</p></td>
 <td><p>Dictionary</p></td>
 <td><p><a class="reference internal" href="#healthsystem-hr-scaling-by-level-and-officer-type-table"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>year_HR_scaling_by_level_and_officer_type</p></td>
+<tr class="row-odd"><td><p>year_HR_scaling_by_level_and_officer_type</p></td>
 <td><p>Year in which one-off constant HR scaling will take place. (The change happenson 1st January of that year.)</p></td>
 <td><p>Integer</p></td>
 <td><p>2100</p></td>
 </tr>
-<tr class="row-odd"><td><p>HR_scaling_by_level_and_officer_type_mode</p></td>
+<tr class="row-even"><td><p>HR_scaling_by_level_and_officer_type_mode</p></td>
 <td><p>Mode of HR scaling considered at the start of the simulation. This corresponds to the nameof the worksheet in <cite>ResourceFile_HR_scaling_by_level_and_officer_type.xlsx</cite> that should be used. Options are: <cite>default</cite> (capabilities are scaled by a constaint factor of 1); <cite>data</cite> (factors informed by survey data); and, <cite>custom</cite> (user can freely set these factors as parameters in the analysis).</p></td>
 <td><p>String</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-even"><td><p>HR_scaling_by_district_table</p></td>
+<tr class="row-odd"><td><p>HR_scaling_by_district_table</p></td>
 <td><p>Factors by which daily capabilities in different districts will bescaled at the start of the year specified by year_HR_scaling_by_district to simulate(e.g., through catastrophic event disrupting delivery of services in particular district(s)).This is the import of an Excel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding worksheets to this workbook: the value of <cite>HR_scaling_by_district_mode</cite> indicates whichsheet is used.</p></td>
 <td><p>Dictionary</p></td>
 <td><p><a class="reference internal" href="#healthsystem-hr-scaling-by-district-table"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-odd"><td><p>year_HR_scaling_by_district</p></td>
+<tr class="row-even"><td><p>year_HR_scaling_by_district</p></td>
 <td><p>Year in which scaling of daily capabilities by district will take place. (The change happenson 1st January of that year.)</p></td>
 <td><p>Integer</p></td>
 <td><p>2100</p></td>
 </tr>
-<tr class="row-even"><td><p>HR_scaling_by_district_mode</p></td>
+<tr class="row-odd"><td><p>HR_scaling_by_district_mode</p></td>
 <td><p>Mode of scaling of daily capabilities by district. This corresponds to the name of the worksheet in the file <cite>ResourceFile_HR_scaling_by_district.xlsx</cite>.</p></td>
 <td><p>String</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-odd"><td><p>yearly_HR_scaling</p></td>
+<tr class="row-even"><td><p>yearly_HR_scaling</p></td>
 <td><p>Factors by which HR capabilities are scaled. Each sheet specifies a ‘mode’ for dynamic HR scaling. The mode to use is determined by the parameter <cite>yearly_HR_scaling_mode</cite>. Each sheet must have the same format, including the same column headers. On each sheet, the first row (for <cite>2010</cite>, when the simulation starts) specifies the initial configuration: <cite>dynamic_HR_scaling_factor</cite> (float) is the factor by which all human resoucres capabilities and multiplied; <cite>scale_HR_by_popsize</cite> (bool) specifies whether the capabilities should (also) grow by the factor by which the population has grown in the last year. Each subsequent row specifies a year where there should be a CHANGE in the configuration. If there are no further rows, then there is no change. But, for example, an additional row of the form <code class="docutils literal notranslate"><span class="pre">`2015,</span> <span class="pre">1.05,</span> <span class="pre">TRUE`</span></code> would mean that on 1st January of 2015, 2016, 2017, ….(and the rest of the simulation), the capabilities would increase by the product of 1.05 and by the ratio of the population size to that in the year previous.</p></td>
 <td><p>Dictionary</p></td>
 <td><p><a class="reference internal" href="#healthsystem-yearly-hr-scaling"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>yearly_HR_scaling_mode</p></td>
+<tr class="row-odd"><td><p>yearly_HR_scaling_mode</p></td>
 <td><p>Specifies which of the policies in yearly_HR_scaling should be adopted. This corresponds toa worksheet of the file <cite>ResourceFile_dynamic_HR_scaling.xlsx</cite>.</p></td>
 <td><p>String</p></td>
 <td><p>no_scaling</p></td>
 </tr>
-<tr class="row-odd"><td><p>tclose_overwrite</p></td>
+<tr class="row-even"><td><p>tclose_overwrite</p></td>
 <td><p>Decide whether to overwrite tclose variables assigned by disease modules</p></td>
 <td><p>Integer</p></td>
 <td><p>0</p></td>
 </tr>
-<tr class="row-even"><td><p>tclose_days_offset_overwrite</p></td>
+<tr class="row-odd"><td><p>tclose_days_offset_overwrite</p></td>
 <td><p>Offset in days from topen at which tclose will be set by the healthsystem for all HSIsif tclose_overwrite is set to True.</p></td>
 <td><p>Integer</p></td>
 <td><p>7</p></td>
 </tr>
-<tr class="row-odd"><td><p>mode_appt_constraints</p></td>
-<td><p>Integer code in <cite>{1, 2}</cite> determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run with squeeze factor, provided officers required to deliver the HSI have capabilities &gt; 02: hard constraints, only HSI events with no squeeze factor run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.</p></td>
+<tr class="row-even"><td><p>mode_appt_constraints</p></td>
+<td><p>Integer code in <cite>{1, 2}</cite> determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run, provided officers required to deliver the HSI have capabilities &gt; 02: hard constraints, only HSI events for which capabilities are available run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.</p></td>
 <td><p>Integer</p></td>
 <td><p>1</p></td>
 </tr>
-<tr class="row-even"><td><p>mode_appt_constraints_postSwitch</p></td>
+<tr class="row-odd"><td><p>mode_appt_constraints_postSwitch</p></td>
 <td><p>Mode considered after a mode switch in year_mode_switch.</p></td>
 <td><p>Integer</p></td>
 <td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>cons_availability_postSwitch</p></td>
+<tr class="row-even"><td><p>cons_availability_postSwitch</p></td>
 <td><p>Consumables availability after switch in <cite>year_cons_availability_switch</cite>. Acceptable valuesare the same as those for Parameter <cite>cons_availability</cite>.</p></td>
 <td><p>String</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-even"><td><p>use_funded_or_actual_staffing_postSwitch</p></td>
+<tr class="row-odd"><td><p>use_funded_or_actual_staffing_postSwitch</p></td>
 <td><p>Staffing availability after switch in <cite>year_use_funded_or_actual_staffing_switch</cite>. Acceptable values are the same as those for Parameter <cite>use_funded_or_actual_staffing</cite>.</p></td>
 <td><p>String</p></td>
 <td><p>funded_plus</p></td>
 </tr>
-<tr class="row-odd"><td><p>clinic_configuration_name</p></td>
+<tr class="row-even"><td><p>clinic_configuration_name</p></td>
 <td><p>Name of configuration of clinics to use.</p></td>
 <td><p>String</p></td>
 <td><p>Default</p></td>
@@ -6855,7 +6979,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 2444 are shown.</em></p>
+<p><em>Only first 10 rows of 2445 are shown.</em></p>
 </section>
 <section id="consumables-item-designations">
 <span id="healthsystem-consumables-item-designations"></span><h3>consumables_item_designations<a class="headerlink" href="#consumables-item-designations" title="Link to this heading"></a></h3>
@@ -6939,6 +7063,8 @@
 </section>
 <section id="availability-estimates">
 <span id="healthsystem-availability-estimates"></span><h3>availability_estimates<a class="headerlink" href="#availability-estimates" title="Link to this heading"></a></h3>
+<section id="original">
+<h4>original<a class="headerlink" href="#original" title="Link to this heading"></a></h4>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Facility_ID</p></th>
@@ -7146,6 +7272,217 @@
 </tbody>
 </table>
 <p><em>Only first 10 rows of 310464 are shown.</em></p>
+</section>
+<section id="updated">
+<h4>updated<a class="headerlink" href="#updated" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Facility_ID</p></th>
+<th class="head"><p>month</p></th>
+<th class="head"><p>item_code</p></th>
+<th class="head"><p>available_prop</p></th>
+<th class="head"><p>available_prop_scenario1</p></th>
+<th class="head"><p>available_prop_scenario2</p></th>
+<th class="head"><p>available_prop_scenario3</p></th>
+<th class="head"><p>available_prop_scenario4</p></th>
+<th class="head"><p>available_prop_scenario5</p></th>
+<th class="head"><p>available_prop_scenario6</p></th>
+<th class="head"><p>available_prop_scenario7</p></th>
+<th class="head"><p>available_prop_scenario8</p></th>
+<th class="head"><p>available_prop_scenario9</p></th>
+<th class="head"><p>available_prop_scenario10</p></th>
+<th class="head"><p>available_prop_scenario11</p></th>
+<th class="head"><p>available_prop_scenario12</p></th>
+<th class="head"><p>available_prop_scenario13</p></th>
+<th class="head"><p>available_prop_scenario14</p></th>
+<th class="head"><p>available_prop_scenario15</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.75</p></td>
+<td><p>0.974971</p></td>
+<td><p>0.974971</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.866935</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.75</p></td>
+<td><p>0.903333</p></td>
+<td><p>0.75</p></td>
+<td><p>0.75</p></td>
+<td><p>0.75</p></td>
+<td><p>0.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>2</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>3</p></td>
+<td><p>0.875</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.959677</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.875</p></td>
+<td><p>0.903333</p></td>
+<td><p>0.875</p></td>
+<td><p>0.875</p></td>
+<td><p>0.875</p></td>
+<td><p>0.875</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>5</p></td>
+<td><p>0.290323</p></td>
+<td><p>0.290323</p></td>
+<td><p>0.290323</p></td>
+<td><p>0.339445</p></td>
+<td><p>0.380991</p></td>
+<td><p>0.395443</p></td>
+<td><p>0.5</p></td>
+<td><p>0.777778</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.730215</p></td>
+<td><p>0.903333</p></td>
+<td><p>0.290323</p></td>
+<td><p>0.290323</p></td>
+<td><p>0.290323</p></td>
+<td><p>0.290323</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>6</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.917153</p></td>
+<td><p>0.917492</p></td>
+<td><p>0.917631</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.916667</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>7</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.8</p></td>
+<td><p>1</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+<td><p>0.903333</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+<td><p>0.8</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>8</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.730215</p></td>
+<td><p>0.903333</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>11</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.565544</p></td>
+<td><p>0.623619</p></td>
+<td><p>0.653443</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.730215</p></td>
+<td><p>0.903333</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>0.714286</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0.909091</p></td>
+<td><p>0.916667</p></td>
+<td><p>0.949821</p></td>
+<td><p>0.949821</p></td>
+<td><p>0.730215</p></td>
+<td><p>0.903333</p></td>
+<td><p>0.714286</p></td>
+<td><p>0.714286</p></td>
+<td><p>0.714286</p></td>
+<td><p>0.714286</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>Only first 10 rows of 310464 are shown.</em></p>
+</section>
 </section>
 <section id="bedcapacity">
 <span id="healthsystem-bedcapacity"></span><h3>BedCapacity<a class="headerlink" href="#bedcapacity" title="Link to this heading"></a></h3>
@@ -7417,7 +7754,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="default">
 <h4>Default<a class="headerlink" href="#default" title="Link to this heading"></a></h4>
@@ -7497,7 +7834,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="test">
 <h4>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h4>
@@ -7577,7 +7914,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="clinicallyvulnerable">
 <h4>ClinicallyVulnerable<a class="headerlink" href="#clinicallyvulnerable" title="Link to this heading"></a></h4>
@@ -7657,7 +7994,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="rmnch">
 <h4>RMNCH<a class="headerlink" href="#rmnch" title="Link to this heading"></a></h4>
@@ -7737,7 +8074,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="ehp-iii">
 <h4>EHP_III<a class="headerlink" href="#ehp-iii" title="Link to this heading"></a></h4>
@@ -7817,7 +8154,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="cvd">
 <h4>CVD<a class="headerlink" href="#cvd" title="Link to this heading"></a></h4>
@@ -7897,7 +8234,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="lcoa-ehp">
 <h4>LCOA_EHP<a class="headerlink" href="#lcoa-ehp" title="Link to this heading"></a></h4>
@@ -7977,7 +8314,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="verticalprogrammes">
 <h4>VerticalProgrammes<a class="headerlink" href="#verticalprogrammes" title="Link to this heading"></a></h4>
@@ -8057,7 +8394,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 <section id="naive">
 <h4>Naive<a class="headerlink" href="#naive" title="Link to this heading"></a></h4>
@@ -8137,7 +8474,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 102 are shown.</em></p>
+<p><em>Only first 10 rows of 104 are shown.</em></p>
 </section>
 </section>
 <section id="hr-scaling-by-level-and-officer-type-table">
@@ -9001,7 +9338,7 @@
 <tr class="row-even"><td><p>rr_fsw</p></td>
 <td><p>Relative risk of HIV with female sex work</p></td>
 <td><p>Real</p></td>
-<td><p>25.0</p></td>
+<td><p>7.8</p></td>
 </tr>
 <tr class="row-odd"><td><p>rr_circumcision</p></td>
 <td><p>Relative risk of HIV with circumcision</p></td>
@@ -9063,10 +9400,20 @@
 <td><p>Real</p></td>
 <td><p>0.75</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_reduction_in_risk_of_hiv_aq_if_on_prep</p></td>
-<td><p>Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.</p></td>
+<tr class="row-odd"><td><p>proportion_reduction_in_risk_of_hiv_aq_if_on_oral_prep</p></td>
+<td><p>Proportion reduction in risk of HIV acquisition if on oral PrEP. 0 for no efficacy; 1.0 for perfect efficacy.</p></td>
 <td><p>Real</p></td>
-<td><p>0.9</p></td>
+<td><p>0.6</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep</p></td>
+<td><p>Proportion reduction in risk of HIV acquisition if on inj PrEP. 0 for no efficacy; 1.0 for perfect efficacy.</p></td>
+<td><p>Real</p></td>
+<td><p>0.95</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_months_between_aids_and_death</p></td>
+<td><p>Minimum number of months for the time between AIDS and AIDS Death</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
 </tr>
 <tr class="row-even"><td><p>mean_months_between_aids_and_death</p></td>
 <td><p>Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death</p></td>
@@ -9188,16 +9535,6 @@
 <td><p>Real</p></td>
 <td><p>0.75</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_initiation_adjustment</p></td>
-<td><p>adjustment to current ART coverage levels to account for defaulters</p></td>
-<td><p>Real</p></td>
-<td><p>1.0</p></td>
-</tr>
-<tr class="row-odd"><td><p>vs_adjustment</p></td>
-<td><p>adjustment to current viral suppression levels to account for defaulters</p></td>
-<td><p>Real</p></td>
-<td><p>1.0</p></td>
-</tr>
 <tr class="row-even"><td><p>prob_hiv_test_at_anc_or_delivery</p></td>
 <td><p>probability of a women having hiv test at anc or following delivery</p></td>
 <td><p>Real</p></td>
@@ -9209,7 +9546,7 @@
 <td><p>0.95</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_start_art_or_vs</p></td>
-<td><p>Probability that a person will start treatment and be virally suppressed following testing</p></td>
+<td><p>Probability that a person will start treatment and be virally suppressed following testing, from 2016 inputs reduced viral suppression rates to account for viral load testing effect</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#hiv-prob-start-art-or-vs"><span class="std std-ref">…</span></a></p></td>
 </tr>
@@ -9221,12 +9558,12 @@
 <tr class="row-even"><td><p>prob_prep_for_fsw_after_hiv_test</p></td>
 <td><p>Probability that a FSW will start PrEP, if HIV-negative, following testing</p></td>
 <td><p>Real</p></td>
-<td><p>0.05</p></td>
+<td><p>0.11</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_prep_for_agyw</p></td>
 <td><p>Probability that adolescent girls / young women will start PrEP</p></td>
 <td><p>Real</p></td>
-<td><p>0.0</p></td>
+<td><p>0.01</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_circ_after_hiv_test</p></td>
 <td><p>Probability that a male will be circumcised, if HIV-negative, following testing</p></td>
@@ -9251,7 +9588,7 @@
 <tr class="row-even"><td><p>probability_of_being_retained_on_prep_every_3_months</p></td>
 <td><p>Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.</p></td>
 <td><p>Real</p></td>
-<td><p>0.5</p></td>
+<td><p>0.9</p></td>
 </tr>
 <tr class="row-odd"><td><p>probability_of_being_retained_on_art_every_3_months</p></td>
 <td><p>Probability that someone who has initiated on treatment will attend an appointment and be on treatment for next 3 months, until the next appointment.</p></td>
@@ -9288,25 +9625,45 @@
 <td><p>Real</p></td>
 <td><p>10.0</p></td>
 </tr>
-<tr class="row-even"><td><p>aids_tb_treatment_adjustment</p></td>
+<tr class="row-even"><td><p>aids_tb_death_rate_with_tb_treatment</p></td>
 <td><p>probability of death if aids and tb, person on treatment for tb</p></td>
+<td><p>Real</p></td>
+<td><p>0.15</p></td>
+</tr>
+<tr class="row-odd"><td><p>aids_tb_death_rate_no_tb_treatment</p></td>
+<td><p>probability of death if aids and tb, person not on treatment for tb</p></td>
 <td><p>Real</p></td>
 <td><p>0.5</p></td>
 </tr>
-<tr class="row-odd"><td><p>hiv_healthseekingbehaviour_cap</p></td>
+<tr class="row-even"><td><p>hiv_healthseekingbehaviour_cap</p></td>
 <td><p>number of repeat visits assumed for healthcare services</p></td>
 <td><p>Integer</p></td>
 <td><p>5</p></td>
 </tr>
-<tr class="row-even"><td><p>dispensation_period_months</p></td>
-<td><p>length of prescription for ARVs in months, same for all PLHIV</p></td>
-<td><p>Real</p></td>
-<td><p>3.0</p></td>
+<tr class="row-odd"><td><p>initial_dispensation_period_months</p></td>
+<td><p>length of prescription for ARVs in months for prescriptions pre-2021</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
 </tr>
-<tr class="row-odd"><td><p>length_of_inpatient_stay_if_terminal</p></td>
+<tr class="row-even"><td><p>dispensation_period_months</p></td>
+<td><p>prescription length probabilities for ARVs in months, varies by age/sex/year</p></td>
+<td><p>Dataframe</p></td>
+<td><p><a class="reference internal" href="#hiv-dispensation-period-months"><span class="std std-ref">…</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>dispensation_min_days</p></td>
+<td><p>Minimum days to attain ARV dispensation</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>length_of_inpatient_stay_if_terminal</p></td>
 <td><p>length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive, high-bound-exclusive]</p></td>
 <td><p>List</p></td>
 <td><p>[14, 20]</p></td>
+</tr>
+<tr class="row-odd"><td><p>aids_death_beddays_default</p></td>
+<td><p>Default number of bed days for end-of-life AIDS care</p></td>
+<td><p>Integer</p></td>
+<td><p>17</p></td>
 </tr>
 <tr class="row-even"><td><p>type_of_scaleup</p></td>
 <td><p>argument to determine type scale-up of program which will be implemented, can be ‘none’, ‘target’ or ‘max’</p></td>
@@ -9327,6 +9684,351 @@
 <td><p>the interval for viral load monitoring in months</p></td>
 <td><p>Real</p></td>
 <td><p>24.0</p></td>
+</tr>
+<tr class="row-even"><td><p>annual_rate_selftest</p></td>
+<td><p>the annual rate of having an HIV self-test for those not on ART</p></td>
+<td><p>Real</p></td>
+<td><p>0.07</p></td>
+</tr>
+<tr class="row-odd"><td><p>selftest_start_year</p></td>
+<td><p>the year in which HIV self-tests become available</p></td>
+<td><p>Real</p></td>
+<td><p>2023.0</p></td>
+</tr>
+<tr class="row-even"><td><p>selftest_available</p></td>
+<td><p>whether self-tests for HIV are available from the scale-up start date</p></td>
+<td><p>Boolean</p></td>
+<td><p>True</p></td>
+</tr>
+<tr class="row-odd"><td><p>young_adult_vls_factor</p></td>
+<td><p>adjustment factor for viral load suppression probability for young adults compared to older adults</p></td>
+<td><p>Real</p></td>
+<td><p>0.08</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_young_adult_on_art</p></td>
+<td><p>proportion of adults on ART who are aged 15-29</p></td>
+<td><p>Real</p></td>
+<td><p>0.15</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_receive_viral_load_test_result</p></td>
+<td><p>the probability of receiving viral load test result</p></td>
+<td><p>Real</p></td>
+<td><p>0.6</p></td>
+</tr>
+<tr class="row-even"><td><p>sensitivity_viral_load_test</p></td>
+<td><p>sensitivity of a viral load test</p></td>
+<td><p>Real</p></td>
+<td><p>0.6</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_of_viral_suppression_following_VL_test</p></td>
+<td><p>the probability of viral suppression following a viral load test</p></td>
+<td><p>Real</p></td>
+<td><p>0.5816</p></td>
+</tr>
+<tr class="row-even"><td><p>viral_load_testing_start_year</p></td>
+<td><p>the year when the viral load testing starts (it will occur on 1st January of that year</p></td>
+<td><p>Integer</p></td>
+<td><p>2016</p></td>
+</tr>
+<tr class="row-odd"><td><p>delay_from_viral_load_to_result_months_min</p></td>
+<td><p>the minimum delay in months from viral load test to receiving result, months</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-even"><td><p>delay_from_viral_load_to_result_months_max</p></td>
+<td><p>the maximum delay in months from viral load test to receiving result, months</p></td>
+<td><p>Real</p></td>
+<td><p>7.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>tdf_test_replace_vl_test</p></td>
+<td><p>whether urine TDF test should replace viral load monitoring during follow-up appts</p></td>
+<td><p>Boolean</p></td>
+<td><p>False</p></td>
+</tr>
+<tr class="row-even"><td><p>targeted_adherence_monitoring</p></td>
+<td><p>whether viral load monitoring or TDF testing should be targeted to specific groups</p></td>
+<td><p>Boolean</p></td>
+<td><p>False</p></td>
+</tr>
+<tr class="row-odd"><td><p>p_tdf_positive_given_suppressed</p></td>
+<td><p>probability of a urine TDF test returning positive if person virally suppressed</p></td>
+<td><p>Real</p></td>
+<td><p>0.939</p></td>
+</tr>
+<tr class="row-even"><td><p>p_tdf_positive_given_not_suppressed</p></td>
+<td><p>probability of a urine TDF test returning positive if person not virally suppressed</p></td>
+<td><p>Real</p></td>
+<td><p>0.353</p></td>
+</tr>
+<tr class="row-odd"><td><p>injectable_prep_allowed</p></td>
+<td><p>whether injectable prep is allowed</p></td>
+<td><p>Boolean</p></td>
+<td><p>False</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_injectable_prep_vs_oral</p></td>
+<td><p>probability of injectable prep vs oral prep, given if injectable_prep_allowed=True</p></td>
+<td><p>Real</p></td>
+<td><p>0.7</p></td>
+</tr>
+<tr class="row-odd"><td><p>linked_to_care_after_selftest</p></td>
+<td><p>probability a person who has had a self-test will be linked to care</p></td>
+<td><p>Real</p></td>
+<td><p>0.563</p></td>
+</tr>
+<tr class="row-even"><td><p>selftest_sensitivity</p></td>
+<td><p>sensitivity of an HIV self-test</p></td>
+<td><p>Real</p></td>
+<td><p>0.9</p></td>
+</tr>
+<tr class="row-odd"><td><p>delay_from_selftest_to_facility_weibull_shape</p></td>
+<td><p>Weibull distribution shape parameter for number of days between a self-test result and confirmatory test</p></td>
+<td><p>Real</p></td>
+<td><p>0.454</p></td>
+</tr>
+<tr class="row-even"><td><p>delay_from_selftest_to_facility_weibull_scale</p></td>
+<td><p>Weibull distribution scale parameter for number of days between a self-test result and confirmatory test</p></td>
+<td><p>Real</p></td>
+<td><p>13.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_on_treatment_not_lost_to_follow_up</p></td>
+<td><p>proportion of people who are lost to follow up due to not attending follow-up appointments</p></td>
+<td><p>Real</p></td>
+<td><p>0.99</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_regular_polling_event_frequency_months</p></td>
+<td><p>Frequency in months for HivRegularPollingEvent</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>regular_polling_event_initialisation_delay_days</p></td>
+<td><p>Delay in days for initial HivRegularPollingEvent</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_check_properties_event_delay_months</p></td>
+<td><p>Delay in months for HivCheckPropertiesEvent, which checks configuration of all properties</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>baseline_year</p></td>
+<td><p>Baseline year at which simulation starts</p></td>
+<td><p>Integer</p></td>
+<td><p>2010</p></td>
+</tr>
+<tr class="row-even"><td><p>end_year_circumcision_data</p></td>
+<td><p>End year for circumcision data availability</p></td>
+<td><p>Integer</p></td>
+<td><p>2020</p></td>
+</tr>
+<tr class="row-odd"><td><p>end_year_treatment_data</p></td>
+<td><p>End year for treatment data availability</p></td>
+<td><p>Integer</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p>end_year_testing_data</p></td>
+<td><p>End year for HIV testing data availability</p></td>
+<td><p>Integer</p></td>
+<td><p>2020</p></td>
+</tr>
+<tr class="row-odd"><td><p>years_since_infection_threshold_for_higher_art_probability</p></td>
+<td><p>Minimum years since HIV infection required to assign higher ART probability at baseline</p></td>
+<td><p>Integer</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>years_offset_for_dummy_test_date_at_baseline</p></td>
+<td><p>Years prior to simulation start date to assign test date at baseline; Required for logical consistency so that all persons on ART have been tested and diagnosed,</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_threshold_child_adult_distinction</p></td>
+<td><p>Age threshold for child/adult distinction</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>age_max_adult</p></td>
+<td><p>Maximum age for adult categorization</p></td>
+<td><p>Integer</p></td>
+<td><p>80</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_max_infant</p></td>
+<td><p>Maximum age for infant categorization</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>age_default_adult</p></td>
+<td><p>Default age for adult viral suppression calculations</p></td>
+<td><p>Integer</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_default_children</p></td>
+<td><p>Default age for children viral suppression calculations</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>age_min_agyw</p></td>
+<td><p>Minimum age for adolescent girls and young women (AGYW) category</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_max_agyw</p></td>
+<td><p>Maximum age for adolescent girls and young women (AGYW) category</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>age_max_prep</p></td>
+<td><p>Maximum age for PrEP eligibility</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_max_hiv_early_infant_test_years</p></td>
+<td><p>Maximum age in years for early infant HIV test eligibility</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>age_max_prophylaxis_years</p></td>
+<td><p>Maximum age in years for infant HIV prophylaxis</p></td>
+<td><p>Real</p></td>
+<td><p>1.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>hiv_infection_to_aids_untreated_threshold_years</p></td>
+<td><p>Number of years after HIV infection at which a person is assumed to have AIDS if not virally suppressed on ART</p></td>
+<td><p>Integer</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>prop_aids_death_is_tb_coinfection</p></td>
+<td><p>Proportion of AIDS deaths that have TB co-infection</p></td>
+<td><p>Real</p></td>
+<td><p>0.3</p></td>
+</tr>
+<tr class="row-odd"><td><p>hiv_early_infant_test_sensitivity</p></td>
+<td><p>Sensitivity of early infant HIV test</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_early_infant_test_specificity</p></td>
+<td><p>Specificity of early infant HIV test</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-odd"><td><p>hv_min_test_interval_days</p></td>
+<td><p>Minimum interval in days between HIV tests</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>infant_hiv_test_first_weeks</p></td>
+<td><p>Timing of first infant HIV test in weeks after birth in weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-odd"><td><p>infant_hiv_test_second_months</p></td>
+<td><p>Timing of second infant HIV test in months after birth in months</p></td>
+<td><p>Integer</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-even"><td><p>infant_hiv_test_third_months</p></td>
+<td><p>Timing of third infant HIV test in months after birth in months</p></td>
+<td><p>Integer</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>hiv_testing_initial_window_for_individuals_with_aids_at_init_days</p></td>
+<td><p>Initial window in days for HIV testing via HSI event HSI_Test_and_Refer for individuals with AIDS at initialization</p></td>
+<td><p>Integer</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_testing_close_window_for_individuals_with_aids_at_init_days</p></td>
+<td><p>Close window in days for HIV testing via HSI event HSI_Test_and_Referfor individuals with AIDS at initialization</p></td>
+<td><p>Integer</p></td>
+<td><p>365</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_aids_symptoms_adults</p></td>
+<td><p>Odds ratio for health seeking behavior in adults with AIDS symptoms</p></td>
+<td><p>Real</p></td>
+<td><p>10.0</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_aids_symptoms_children</p></td>
+<td><p>Odds ratio for health seeking behavior in children with AIDS symptoms</p></td>
+<td><p>Real</p></td>
+<td><p>10.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>hiv_prep_refill_appointment_window_days</p></td>
+<td><p>Window in days for PrEP refill appointments, checked if retained on prep every 3 months</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>prep_continuation_reevaluation_period_months</p></td>
+<td><p>Months between PrEP continuation re-evaluation appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>prep_cons_notavailable_retry_days</p></td>
+<td><p>Days to retry PrEP appointment if consumables not available</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>art_continuation_appointment_window_days</p></td>
+<td><p>Window in days for ART continuation appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>art_restart_appointment_delay_months</p></td>
+<td><p>Delay in months for scheduling ART restart appointment</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>art_drug_notavailable_default_retry_months</p></td>
+<td><p>Default months to retry ART appointment if drugs not available</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-odd"><td><p>art_level1a_healthseekingbehaviour_cap</p></td>
+<td><p>Maximum number of retry attempts at level 1a facility before referral</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>art_level1a_appointment_delay_months</p></td>
+<td><p>Delay in months for ART appointment retry at level 1a facility</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>art_level1b_appointment_delay_days</p></td>
+<td><p>Delay in days for ART appointment at level 1b facility after referral</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>seek_further_art_appointment_if_appointment_not_available_min_delay_days</p></td>
+<td><p>Minimum delay in days to seek further ART appointment if appointment not available</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>seek_further_art_appointment_if_appointment_not_available_max_delay_days</p></td>
+<td><p>Maximum delay in days to seek further ART appointment if appointment not available</p></td>
+<td><p>Integer</p></td>
+<td><p>21</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_circ_procedure_first_followup_days</p></td>
+<td><p>Days after circumcision procedure for first follow-up appointment</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>hiv_circ_procedure_second_followup_days</p></td>
+<td><p>Days after circumcision procedure for second follow-up appointment</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_circ_cons_notavailable_retry_procedure_weeks</p></td>
+<td><p>Weeks to retry circumcision procedure if consumables not available</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>infant_prophylaxis_followup_months</p></td>
+<td><p>Months after starting infant prophylaxis for follow-up appointment</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>infant_prophylaxis_cons_notavailable_retry_days</p></td>
+<td><p>Days to retry infant prophylaxis if consumables not available</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
 </tr>
 </tbody>
 </table>
@@ -9400,6 +10102,8 @@
 <th class="head"><p>sex</p></th>
 <th class="head"><p>art_coverage</p></th>
 <th class="head"><p>prop_coverage</p></th>
+<th class="head"><p>prop_coverage_revised</p></th>
+<th class="head"><p>prop_coverage_reduced</p></th>
 </tr>
 </thead>
 <tbody>
@@ -9407,68 +10111,86 @@
 <td><p>0_4</p></td>
 <td><p>1</p></td>
 <td><p>F</p></td>
-<td><p>10.69</p></td>
-<td><p>0.1069</p></td>
+<td><p>14.35</p></td>
+<td><p>0.1435</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-odd"><td><p>2009</p></td>
 <td><p>0_4</p></td>
 <td><p>2</p></td>
 <td><p>F</p></td>
-<td><p>10.69</p></td>
-<td><p>0.1069</p></td>
+<td><p>14.35</p></td>
+<td><p>0.1435</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-even"><td><p>2009</p></td>
 <td><p>0_4</p></td>
 <td><p>3</p></td>
 <td><p>F</p></td>
-<td><p>10.69</p></td>
-<td><p>0.1069</p></td>
+<td><p>14.35</p></td>
+<td><p>0.1435</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-odd"><td><p>2009</p></td>
 <td><p>0_4</p></td>
 <td><p>4</p></td>
 <td><p>F</p></td>
-<td><p>10.69</p></td>
-<td><p>0.1069</p></td>
+<td><p>14.35</p></td>
+<td><p>0.1435</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-even"><td><p>2009</p></td>
 <td><p>5_9</p></td>
 <td><p>5</p></td>
 <td><p>F</p></td>
-<td><p>7.6</p></td>
-<td><p>0.076</p></td>
+<td><p>11.59</p></td>
+<td><p>0.1159</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-odd"><td><p>2009</p></td>
 <td><p>5_9</p></td>
 <td><p>6</p></td>
 <td><p>F</p></td>
-<td><p>7.6</p></td>
-<td><p>0.076</p></td>
+<td><p>11.59</p></td>
+<td><p>0.1159</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-even"><td><p>2009</p></td>
 <td><p>5_9</p></td>
 <td><p>7</p></td>
 <td><p>F</p></td>
-<td><p>7.6</p></td>
-<td><p>0.076</p></td>
+<td><p>11.59</p></td>
+<td><p>0.1159</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-odd"><td><p>2009</p></td>
 <td><p>5_9</p></td>
 <td><p>8</p></td>
 <td><p>F</p></td>
-<td><p>7.6</p></td>
-<td><p>0.076</p></td>
+<td><p>11.59</p></td>
+<td><p>0.1159</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 <tr class="row-even"><td><p>2009</p></td>
 <td><p>5_9</p></td>
 <td><p>9</p></td>
 <td><p>F</p></td>
-<td><p>7.6</p></td>
-<td><p>0.076</p></td>
+<td><p>11.59</p></td>
+<td><p>0.1159</p></td>
+<td><p>0.0854349</p></td>
+<td><p>0.0427174</p></td>
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 1662 are shown.</em></p>
+<p><em>Only first 10 rows of 202 are shown.</em></p>
 </section>
 <section id="treatment-cascade">
 <span id="hiv-treatment-cascade"></span><h3>treatment_cascade<a class="headerlink" href="#treatment-cascade" title="Link to this heading"></a></h3>
@@ -9476,105 +10198,165 @@
 <thead>
 <tr class="row-odd"><th class="head"><p>year</p></th>
 <th class="head"><p>age</p></th>
-<th class="head"><p>plhiv</p></th>
 <th class="head"><p>know_status</p></th>
 <th class="head"><p>on_art</p></th>
 <th class="head"><p>plhiv_virally_suppressed</p></th>
 <th class="head"><p>prob_art_if_dx</p></th>
+<th class="head"><p>prob_art_if_dx_updated</p></th>
 <th class="head"><p>virally_suppressed_on_art</p></th>
 <th class="head"><p>vs_assumed_value</p></th>
+<th class="head"><p>notes</p></th>
+<th class="head"><p>adjusted_baseline_prob_vs_untested</p></th>
+<th class="head"><p>adjusted_odds_vs_tested</p></th>
+<th class="head"><p>adjusted_prob_vs_tested</p></th>
+<th class="head"><p>overall_adjusted_viral_suppression_on_art</p></th>
+<th class="head"><p>adjusted_viral_suppression_on_art</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>2011</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>73.2277</p></td>
-<td><p>37.6375</p></td>
+<td><p>49.868</p></td>
 <td><p>nan</p></td>
-<td><p>0.513979</p></td>
+<td><p>51.3979</p></td>
+<td><p>0.489223</p></td>
 <td><p>80</p></td>
 <td><p>yes</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.716204</p></td>
+<td><p>3.50789</p></td>
+<td><p>0.778167</p></td>
+<td><p>0.778167</p></td>
+<td><p>0.816872</p></td>
 </tr>
 <tr class="row-odd"><td><p>2012</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>76.423</p></td>
-<td><p>46.3159</p></td>
+<td><p>58.9956</p></td>
 <td><p>42.1013</p></td>
-<td><p>0.606046</p></td>
+<td><p>60.6046</p></td>
+<td><p>0.568935</p></td>
 <td><p>91</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.814682</p></td>
+<td><p>6.11063</p></td>
+<td><p>0.859365</p></td>
+<td><p>0.859365</p></td>
+<td><p>0.883903</p></td>
 </tr>
 <tr class="row-even"><td><p>2013</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>78.7843</p></td>
-<td><p>52.9497</p></td>
+<td><p>65.6284</p></td>
 <td><p>47.6735</p></td>
-<td><p>0.672084</p></td>
+<td><p>67.2084</p></td>
+<td><p>0.631461</p></td>
 <td><p>90</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.80573</p></td>
+<td><p>5.76498</p></td>
+<td><p>0.85218</p></td>
+<td><p>0.85218</p></td>
+<td><p>0.877971</p></td>
 </tr>
 <tr class="row-odd"><td><p>2014</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>80.8733</p></td>
-<td><p>59.2378</p></td>
+<td><p>63.0337</p></td>
 <td><p>51.5664</p></td>
-<td><p>0.732477</p></td>
+<td><p>73.2477</p></td>
+<td><p>0.69048</p></td>
 <td><p>87</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.778872</p></td>
+<td><p>4.89595</p></td>
+<td><p>0.830392</p></td>
+<td><p>0.830392</p></td>
+<td><p>0.859985</p></td>
 </tr>
 <tr class="row-even"><td><p>2015</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>82.7952</p></td>
-<td><p>64.1071</p></td>
-<td><p>57.269</p></td>
-<td><p>0.774285</p></td>
-<td><p>89</p></td>
+<td><p>83.5</p></td>
+<td><p>67.9145</p></td>
+<td><p>54</p></td>
+<td><p>72</p></td>
+<td><p>0.733631</p></td>
+<td><p>88.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.792301</p></td>
+<td><p>5.30237</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.869014</p></td>
 </tr>
 <tr class="row-odd"><td><p>2016</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>85.3839</p></td>
-<td><p>71.6873</p></td>
-<td><p>65.3256</p></td>
-<td><p>0.839588</p></td>
-<td><p>91</p></td>
+<td><p>86</p></td>
+<td><p>68.0015</p></td>
+<td><p>62</p></td>
+<td><p>78.5</p></td>
+<td><p>0.798764</p></td>
+<td><p>90.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.810206</p></td>
+<td><p>5.93373</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.880941</p></td>
 </tr>
 <tr class="row-even"><td><p>2017</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>88.3281</p></td>
-<td><p>78.056</p></td>
-<td><p>69.322</p></td>
-<td><p>0.883705</p></td>
 <td><p>89</p></td>
+<td><p>74.7266</p></td>
+<td><p>66</p></td>
+<td><p>83.5</p></td>
+<td><p>0.848989</p></td>
+<td><p>88.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.792301</p></td>
+<td><p>5.30237</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.869014</p></td>
 </tr>
 <tr class="row-odd"><td><p>2018</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>90.6581</p></td>
-<td><p>84.2257</p></td>
-<td><p>76.8029</p></td>
-<td><p>0.929047</p></td>
-<td><p>91</p></td>
+<td><p>91.5</p></td>
+<td><p>81.0026</p></td>
+<td><p>73.5</p></td>
+<td><p>88</p></td>
+<td><p>0.894529</p></td>
+<td><p>90.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.810206</p></td>
+<td><p>5.93373</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.880941</p></td>
 </tr>
 <tr class="row-even"><td><p>2019</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>92.1484</p></td>
-<td><p>85.4227</p></td>
-<td><p>79.9867</p></td>
-<td><p>0.927012</p></td>
-<td><p>94</p></td>
+<td><p>93</p></td>
+<td><p>81.9902</p></td>
+<td><p>77</p></td>
+<td><p>88</p></td>
+<td><p>0.889631</p></td>
+<td><p>93.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.837064</p></td>
+<td><p>7.14093</p></td>
+<td><p>0.877164</p></td>
+<td><p>0.877164</p></td>
+<td><p>0.898596</p></td>
 </tr>
 </tbody>
 </table>
@@ -9706,170 +10488,323 @@
 <thead>
 <tr class="row-odd"><th class="head"><p>year</p></th>
 <th class="head"><p>age</p></th>
-<th class="head"><p>plhiv</p></th>
 <th class="head"><p>know_status</p></th>
 <th class="head"><p>on_art</p></th>
 <th class="head"><p>plhiv_virally_suppressed</p></th>
 <th class="head"><p>prob_art_if_dx</p></th>
+<th class="head"><p>prob_art_if_dx_updated</p></th>
 <th class="head"><p>virally_suppressed_on_art</p></th>
 <th class="head"><p>vs_assumed_value</p></th>
+<th class="head"><p>notes</p></th>
+<th class="head"><p>adjusted_baseline_prob_vs_untested</p></th>
+<th class="head"><p>adjusted_odds_vs_tested</p></th>
+<th class="head"><p>adjusted_prob_vs_tested</p></th>
+<th class="head"><p>overall_adjusted_viral_suppression_on_art</p></th>
+<th class="head"><p>adjusted_viral_suppression_on_art</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>2011</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>73.2277</p></td>
-<td><p>37.6375</p></td>
+<td><p>49.868</p></td>
 <td><p>nan</p></td>
-<td><p>0.513979</p></td>
+<td><p>51.3979</p></td>
+<td><p>0.489223</p></td>
 <td><p>80</p></td>
 <td><p>yes</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.716204</p></td>
+<td><p>3.50789</p></td>
+<td><p>0.778167</p></td>
+<td><p>0.778167</p></td>
+<td><p>0.816872</p></td>
 </tr>
 <tr class="row-odd"><td><p>2012</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>76.423</p></td>
-<td><p>46.3159</p></td>
+<td><p>58.9956</p></td>
 <td><p>42.1013</p></td>
-<td><p>0.606046</p></td>
+<td><p>60.6046</p></td>
+<td><p>0.568935</p></td>
 <td><p>91</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.814682</p></td>
+<td><p>6.11063</p></td>
+<td><p>0.859365</p></td>
+<td><p>0.859365</p></td>
+<td><p>0.883903</p></td>
 </tr>
 <tr class="row-even"><td><p>2013</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>78.7843</p></td>
-<td><p>52.9497</p></td>
+<td><p>65.6284</p></td>
 <td><p>47.6735</p></td>
-<td><p>0.672084</p></td>
+<td><p>67.2084</p></td>
+<td><p>0.631461</p></td>
 <td><p>90</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.80573</p></td>
+<td><p>5.76498</p></td>
+<td><p>0.85218</p></td>
+<td><p>0.85218</p></td>
+<td><p>0.877971</p></td>
 </tr>
 <tr class="row-odd"><td><p>2014</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>80.8733</p></td>
-<td><p>59.2378</p></td>
+<td><p>63.0337</p></td>
 <td><p>51.5664</p></td>
-<td><p>0.732477</p></td>
+<td><p>73.2477</p></td>
+<td><p>0.69048</p></td>
 <td><p>87</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.778872</p></td>
+<td><p>4.89595</p></td>
+<td><p>0.830392</p></td>
+<td><p>0.830392</p></td>
+<td><p>0.859985</p></td>
 </tr>
 <tr class="row-even"><td><p>2015</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>82.7952</p></td>
-<td><p>64.1071</p></td>
-<td><p>57.269</p></td>
-<td><p>0.774285</p></td>
-<td><p>89</p></td>
+<td><p>83.5</p></td>
+<td><p>67.9145</p></td>
+<td><p>54</p></td>
+<td><p>72</p></td>
+<td><p>0.733631</p></td>
+<td><p>88.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.792301</p></td>
+<td><p>5.30237</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.869014</p></td>
 </tr>
 <tr class="row-odd"><td><p>2016</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>85.3839</p></td>
-<td><p>71.6873</p></td>
-<td><p>65.3256</p></td>
-<td><p>0.839588</p></td>
-<td><p>91</p></td>
+<td><p>86</p></td>
+<td><p>68.0015</p></td>
+<td><p>62</p></td>
+<td><p>78.5</p></td>
+<td><p>0.798764</p></td>
+<td><p>90.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.810206</p></td>
+<td><p>5.93373</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.880941</p></td>
 </tr>
 <tr class="row-even"><td><p>2017</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>88.3281</p></td>
-<td><p>78.056</p></td>
-<td><p>69.322</p></td>
-<td><p>0.883705</p></td>
 <td><p>89</p></td>
+<td><p>74.7266</p></td>
+<td><p>66</p></td>
+<td><p>83.5</p></td>
+<td><p>0.848989</p></td>
+<td><p>88.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.792301</p></td>
+<td><p>5.30237</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.869014</p></td>
 </tr>
 <tr class="row-odd"><td><p>2018</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>90.6581</p></td>
-<td><p>84.2257</p></td>
-<td><p>76.8029</p></td>
-<td><p>0.929047</p></td>
-<td><p>91</p></td>
+<td><p>91.5</p></td>
+<td><p>81.0026</p></td>
+<td><p>73.5</p></td>
+<td><p>88</p></td>
+<td><p>0.894529</p></td>
+<td><p>90.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.810206</p></td>
+<td><p>5.93373</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.880941</p></td>
 </tr>
 <tr class="row-even"><td><p>2019</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>92.1484</p></td>
-<td><p>85.4227</p></td>
-<td><p>79.9867</p></td>
-<td><p>0.927012</p></td>
-<td><p>94</p></td>
+<td><p>93</p></td>
+<td><p>81.9902</p></td>
+<td><p>77</p></td>
+<td><p>88</p></td>
+<td><p>0.889631</p></td>
+<td><p>93.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.837064</p></td>
+<td><p>7.14093</p></td>
+<td><p>0.877164</p></td>
+<td><p>0.877164</p></td>
+<td><p>0.898596</p></td>
 </tr>
 </tbody>
 </table>
 <p><em>Only first 10 rows of 32 are shown.</em></p>
 </section>
+<section id="dispensation-period-months">
+<span id="hiv-dispensation-period-months"></span><h3>dispensation_period_months<a class="headerlink" href="#dispensation-period-months" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>sub_group</p></th>
+<th class="head"><p>year</p></th>
+<th class="head"><p>length_of_dispensation_months</p></th>
+<th class="head"><p>probability</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>child</p></td>
+<td><p>2022</p></td>
+<td><p>1</p></td>
+<td><p>0.384102</p></td>
+</tr>
+<tr class="row-odd"><td><p>child</p></td>
+<td><p>2023</p></td>
+<td><p>1</p></td>
+<td><p>0.277173</p></td>
+</tr>
+<tr class="row-even"><td><p>child</p></td>
+<td><p>2024</p></td>
+<td><p>1</p></td>
+<td><p>0.237981</p></td>
+</tr>
+<tr class="row-odd"><td><p>child</p></td>
+<td><p>2025</p></td>
+<td><p>1</p></td>
+<td><p>0.164536</p></td>
+</tr>
+<tr class="row-even"><td><p>child</p></td>
+<td><p>2021</p></td>
+<td><p>4</p></td>
+<td><p>0.47107</p></td>
+</tr>
+<tr class="row-odd"><td><p>child</p></td>
+<td><p>2022</p></td>
+<td><p>4</p></td>
+<td><p>0.505391</p></td>
+</tr>
+<tr class="row-even"><td><p>child</p></td>
+<td><p>2023</p></td>
+<td><p>4</p></td>
+<td><p>0.610534</p></td>
+</tr>
+<tr class="row-odd"><td><p>child</p></td>
+<td><p>2024</p></td>
+<td><p>4</p></td>
+<td><p>0.665449</p></td>
+</tr>
+<tr class="row-even"><td><p>child</p></td>
+<td><p>2025</p></td>
+<td><p>4</p></td>
+<td><p>0.728276</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>Only first 10 rows of 75 are shown.</em></p>
+</section>
 <section id="scaleup-parameters">
 <span id="hiv-scaleup-parameters"></span><h3>scaleup_parameters<a class="headerlink" href="#scaleup-parameters" title="Link to this heading"></a></h3>
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>parameter</p></th>
-<th class="head"><p>target_value</p></th>
-<th class="head"><p>min_value</p></th>
-<th class="head"><p>max_value</p></th>
+<tr class="row-odd"><th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>reduction_in_hiv_beta</p></td>
 <td><p>0.9</p></td>
+<td><p>scenario</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_prep_for_fsw_after_hiv_test</p></td>
 <td><p>0.5</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_prep_for_agyw</p></td>
 <td><p>0.1</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>probability_of_being_retained_on_prep_every_3_months</p></td>
 <td><p>0.75</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>probability_of_being_retained_on_art_every_3_months</p></td>
 <td><p>1</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_circ_after_hiv_test</p></td>
 <td><p>0.25</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>annual_testing_rate_adults</p></td>
 <td><p>0.4</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_hiv_test_at_anc_or_delivery</p></td>
 <td><p>0.95</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_hiv_test_for_newborn_infant</p></td>
 <td><p>0.95</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>virally_suppressed_on_art</p></td>
 <td><p>95</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>
@@ -10771,6 +11706,91 @@
 <td><p>Boolean</p></td>
 <td><p>False</p></td>
 </tr>
+<tr class="row-odd"><td><p>min_reproductive_age</p></td>
+<td><p>Minimum age for women to be considered of reproductive age</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-even"><td><p>max_reproductive_age</p></td>
+<td><p>Maximum age for women to be considered of reproductive age</p></td>
+<td><p>Integer</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-odd"><td><p>birth_weight_threshold_macrosomia</p></td>
+<td><p>Birth weight threshold for macrosomia classification (grams)</p></td>
+<td><p>Integer</p></td>
+<td><p>4000</p></td>
+</tr>
+<tr class="row-even"><td><p>birth_weight_threshold_normal</p></td>
+<td><p>Birth weight threshold for normal vs low birth weight classification (grams)</p></td>
+<td><p>Integer</p></td>
+<td><p>2500</p></td>
+</tr>
+<tr class="row-odd"><td><p>birth_weight_threshold_low</p></td>
+<td><p>Birth weight threshold for low vs very low birth weight classification (grams)</p></td>
+<td><p>Integer</p></td>
+<td><p>1500</p></td>
+</tr>
+<tr class="row-even"><td><p>birth_weight_threshold_very_low</p></td>
+<td><p>Birth weight threshold for very low vs extremely low birth weight classification (grams)</p></td>
+<td><p>Integer</p></td>
+<td><p>1000</p></td>
+</tr>
+<tr class="row-odd"><td><p>hsi_event_standard_delay_window</p></td>
+<td><p>Standard delay window in days for scheduling HSI events</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_event_delay_window</p></td>
+<td><p>Delay window in days for scheduling delivery events</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_stillbirth_event_delay</p></td>
+<td><p>Delay in days for scheduling death and stillbirth events</p></td>
+<td><p>Integer</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>birth_event_delay</p></td>
+<td><p>Delay in days for scheduling birth event</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_estimated_pregnancy_duration_days</p></td>
+<td><p>Maximum estimated pregnancy duration in days for validation checks</p></td>
+<td><p>Integer</p></td>
+<td><p>245</p></td>
+</tr>
+<tr class="row-even"><td><p>beddays_regular_delivery</p></td>
+<td><p>Beddays required for regular maternity delivery</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>beddays_extended_delivery</p></td>
+<td><p>Beddays required for extended maternity delivery</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>anemia_diagnostic_sensitivity</p></td>
+<td><p>Sensitivity for anemia diagnostic test</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_timings_pnc_&lt;48_scenario</p></td>
+<td><p>probabilities that a woman who will receive a PNC check will receive care &lt; 48hrs post birth scenario set to 1</p></td>
+<td><p>List</p></td>
+<td><p>[[1, 0], [1, 0]]</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_timings_pnc_newborns_&lt;48_scenario</p></td>
+<td><p>probabilities that a woman who will receive a PNC check newborn will receive care &lt; 48hrs post birth scenario set to 1</p></td>
+<td><p>List</p></td>
+<td><p>[[1, 0], [1, 0]]</p></td>
+</tr>
+<tr class="row-odd"><td><p>home_delivery_sens_analysis_prob</p></td>
+<td><p>Probability for home delivery in sensitivity analysis</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -11340,15 +12360,15 @@
 <td><p>Real</p></td>
 <td><p>0.2128</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_female_sex_workers</p></td>
-<td><p>proportion of women aged 15-49 years who are sex workers</p></td>
-<td><p>Real</p></td>
-<td><p>0.0069</p></td>
+<tr class="row-odd"><td><p>number_female_sex_workers</p></td>
+<td><p>number of women aged 15-49 years who are sex workers</p></td>
+<td><p>Integer</p></td>
+<td><p>39000</p></td>
 </tr>
 <tr class="row-even"><td><p>fsw_transition</p></td>
 <td><p>proportion of sex workers that stop being a sex worker each year</p></td>
 <td><p>Real</p></td>
-<td><p>0.18181818181818182</p></td>
+<td><p>0.181818182</p></td>
 </tr>
 </tbody>
 </table>
@@ -11454,165 +12474,260 @@
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#malaria-irs-district"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>sev_symp_prob</p></td>
-<td><p>probabilities of each symptom for severe malaria cases</p></td>
-<td><p>Dataframe</p></td>
-<td><p><a class="reference internal" href="#malaria-sev-symp-prob"><span class="std std-ref">…</span></a></p></td>
-</tr>
-<tr class="row-odd"><td><p>sensitivity_rdt</p></td>
+<tr class="row-even"><td><p>sensitivity_rdt</p></td>
 <td><p>Sensitivity of rdt</p></td>
 <td><p>Real</p></td>
 <td><p>0.95</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr</p></td>
+<tr class="row-odd"><td><p>cfr_severe_malaria</p></td>
 <td><p>case-fatality rate for severe malaria</p></td>
 <td><p>Real</p></td>
 <td><p>0.15</p></td>
 </tr>
-<tr class="row-odd"><td><p>dur_asym</p></td>
+<tr class="row-even"><td><p>dur_asym</p></td>
 <td><p>duration (days) of asymptomatic malaria</p></td>
 <td><p>Real</p></td>
 <td><p>110.0</p></td>
 </tr>
-<tr class="row-even"><td><p>dur_clin</p></td>
+<tr class="row-odd"><td><p>dur_clin</p></td>
 <td><p>duration (days) of clinical symptoms of malaria</p></td>
 <td><p>Real</p></td>
 <td><p>5.0</p></td>
 </tr>
-<tr class="row-odd"><td><p>dur_clin_para</p></td>
+<tr class="row-even"><td><p>dur_clin_para</p></td>
 <td><p>duration (days) of parasitaemia for clinical malaria cases</p></td>
 <td><p>Real</p></td>
 <td><p>195.0</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_adjustment</p></td>
+<tr class="row-odd"><td><p>treatment_adjustment</p></td>
 <td><p>probability of death from severe malaria if on treatment</p></td>
 <td><p>Real</p></td>
 <td><p>0.5</p></td>
 </tr>
-<tr class="row-odd"><td><p>p_sev_anaemia_preg</p></td>
+<tr class="row-even"><td><p>p_sev_anaemia_preg</p></td>
 <td><p>probability of severe anaemia in pregnant women with clinical malaria</p></td>
 <td><p>Real</p></td>
 <td><p>0.075</p></td>
 </tr>
-<tr class="row-even"><td><p>mortality_adjust</p></td>
+<tr class="row-odd"><td><p>mortality_adjust</p></td>
 <td><p>adjustment of case-fatality rate to match WHO/MAP</p></td>
 <td><p>Real</p></td>
 <td><p>10.0</p></td>
 </tr>
-<tr class="row-odd"><td><p>data_end</p></td>
+<tr class="row-even"><td><p>data_end</p></td>
 <td><p>final year of ICL malaria model outputs, after 2018 = projections</p></td>
 <td><p>Real</p></td>
 <td><p>2018.0</p></td>
 </tr>
-<tr class="row-even"><td><p>irs_rates_boundary</p></td>
+<tr class="row-odd"><td><p>irs_rates_boundary</p></td>
 <td><p>threshold for indoor residual spraying coverage</p></td>
 <td><p>Real</p></td>
 <td><p>0.5</p></td>
 </tr>
-<tr class="row-odd"><td><p>irs_rates_upper</p></td>
+<tr class="row-even"><td><p>irs_rates_upper</p></td>
 <td><p>indoor residual spraying high coverage</p></td>
 <td><p>Real</p></td>
 <td><p>0.8</p></td>
 </tr>
-<tr class="row-even"><td><p>irs_rates_lower</p></td>
+<tr class="row-odd"><td><p>irs_rates_lower</p></td>
 <td><p>indoor residual spraying low coverage</p></td>
 <td><p>Real</p></td>
 <td><p>0.0</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_malaria_case_tests</p></td>
+<tr class="row-even"><td><p>prob_malaria_case_tests</p></td>
 <td><p>probability that a malaria case will have a scheduled rdt</p></td>
 <td><p>Real</p></td>
 <td><p>0.4</p></td>
 </tr>
-<tr class="row-even"><td><p>itn</p></td>
-<td><p>projected future itn coverage</p></td>
+<tr class="row-odd"><td><p>itn</p></td>
+<td><p>projected future itn coverage after data end</p></td>
 <td><p>Real</p></td>
 <td><p>0.6</p></td>
 </tr>
-<tr class="row-odd"><td><p>rdt_testing_rates</p></td>
+<tr class="row-even"><td><p>rdt_testing_rates</p></td>
 <td><p>per capita rdt testing rate of general population</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#malaria-rdt-testing-rates"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-even"><td><p>scaling_factor_for_rdt_availability</p></td>
+<tr class="row-odd"><td><p>scaling_factor_for_rdt_availability</p></td>
 <td><p>scaling factor applied to the reports of rdt usage to compensate fornon-availability of rdts at some facilities</p></td>
 <td><p>Real</p></td>
 <td><p>1.2</p></td>
 </tr>
-<tr class="row-odd"><td><p>duration_iptp_protection_weeks</p></td>
+<tr class="row-even"><td><p>duration_iptp_protection_weeks</p></td>
 <td><p>duration of protection against clinical malaria conferred by each dose of IPTp</p></td>
 <td><p>Real</p></td>
 <td><p>6.0</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_clinical_malaria_hiv_under5</p></td>
+<tr class="row-odd"><td><p>rr_clinical_malaria_hiv_under5</p></td>
 <td><p>relative risk of clinical malaria if HIV+ and aged under 5 years</p></td>
 <td><p>Real</p></td>
 <td><p>1.7</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_clinical_malaria_hiv_over5</p></td>
+<tr class="row-even"><td><p>rr_clinical_malaria_hiv_over5</p></td>
 <td><p>relative risk of clinical malaria if HIV+ and aged over 5 years</p></td>
 <td><p>Real</p></td>
 <td><p>2.6</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_clinical_malaria_hiv_pregnant</p></td>
+<tr class="row-odd"><td><p>rr_clinical_malaria_hiv_pregnant</p></td>
 <td><p>relative risk of clinical malaria if HIV+ and pregnant</p></td>
 <td><p>Real</p></td>
 <td><p>3.96</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_clinical_malaria_cotrimoxazole</p></td>
+<tr class="row-even"><td><p>rr_clinical_malaria_cotrimoxazole</p></td>
 <td><p>relative risk of clinical malaria if on cotrimoxazole</p></td>
 <td><p>Real</p></td>
 <td><p>0.58</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_clinical_malaria_art</p></td>
+<tr class="row-odd"><td><p>rr_clinical_malaria_art</p></td>
 <td><p>relative risk of clinical malaria if HIV+ and on ART and virally suppressed</p></td>
 <td><p>Real</p></td>
 <td><p>0.74</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_clinical_malaria_iptp</p></td>
+<tr class="row-even"><td><p>rr_clinical_malaria_iptp</p></td>
 <td><p>relative risk of clinical malaria with each dose of IPTp</p></td>
 <td><p>Real</p></td>
 <td><p>0.54</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_severe_malaria_hiv_under5</p></td>
+<tr class="row-odd"><td><p>rr_severe_malaria_hiv_under5</p></td>
 <td><p>relative risk of severe malaria if HIV+ and aged under 5 years</p></td>
 <td><p>Real</p></td>
 <td><p>9.69</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_severe_malaria_hiv_over5</p></td>
+<tr class="row-even"><td><p>rr_severe_malaria_hiv_over5</p></td>
 <td><p>relative risk of severe malaria if HIV+ and aged over 5 years</p></td>
 <td><p>Real</p></td>
 <td><p>2.68</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_severe_malaria_hiv_pregnant</p></td>
+<tr class="row-odd"><td><p>rr_severe_malaria_hiv_pregnant</p></td>
 <td><p>relative risk of clinical malaria if HIV+ and pregnant</p></td>
 <td><p>Real</p></td>
 <td><p>2.8</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_severe_malaria_iptp</p></td>
+<tr class="row-even"><td><p>rr_severe_malaria_iptp</p></td>
 <td><p>relative risk of severe malaria with each dose of IPTp</p></td>
 <td><p>Real</p></td>
 <td><p>0.6</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_of_treatment_success</p></td>
+<tr class="row-odd"><td><p>prob_of_treatment_success</p></td>
 <td><p>probability that treatment will clear malaria symptoms</p></td>
 <td><p>Real</p></td>
 <td><p>1.0</p></td>
 </tr>
-<tr class="row-odd"><td><p>type_of_scaleup</p></td>
+<tr class="row-even"><td><p>type_of_scaleup</p></td>
 <td><p>argument to determine type scale-up of program which will be implemented, can be ‘none’, ‘target’ or ‘max’</p></td>
 <td><p>String</p></td>
 <td><p>none</p></td>
 </tr>
-<tr class="row-even"><td><p>scaleup_start_year</p></td>
+<tr class="row-odd"><td><p>scaleup_start_year</p></td>
 <td><p>the year when the scale-up starts (it will occur on 1st January of that year)</p></td>
 <td><p>Integer</p></td>
 <td><p>2025</p></td>
 </tr>
-<tr class="row-odd"><td><p>scaleup_parameters</p></td>
+<tr class="row-even"><td><p>scaleup_parameters</p></td>
 <td><p>the parameters and values changed in scenario analysis</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#malaria-scaleup-parameters"><span class="std std-ref">…</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>temp_max_itn_coverage</p></td>
+<td><p>Temp maximum ITN coverage allowed; To reduce the lookup table file size, the malaria team has cut off the entries at this point as coverage of bednets above this value was highly unlikely</p></td>
+<td><p>Real</p></td>
+<td><p>0.7</p></td>
+</tr>
+<tr class="row-even"><td><p>max_age_incidence_data</p></td>
+<td><p>maximum age for which incidence data is available</p></td>
+<td><p>Integer</p></td>
+<td><p>80</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_year_rdt_data</p></td>
+<td><p>maximum year for RDT testing data</p></td>
+<td><p>Integer</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p>symptom_onset_delay_days</p></td>
+<td><p>delay in days from infection to symptom onset</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_delay_min_days</p></td>
+<td><p>minimum delay in days from symptom onset to death</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>death_delay_max_days</p></td>
+<td><p>maximum delay in days from symptom onset to death</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>rdt_followup_days</p></td>
+<td><p>days for RDT followup</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>clinical_treatment_duration_days</p></td>
+<td><p>duration in days for clinical malaria treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>severe_clinical_treatment_duration_days</p></td>
+<td><p>duration in days for severe malaria treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>self_cure_duration_days</p></td>
+<td><p>days for self-cure of untreated malaria</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-odd"><td><p>rdt_scheduling_retry_days</p></td>
+<td><p>Days to retry RDT scheduling if not received</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>rdt_scheduling_max_delay_days</p></td>
+<td><p>maximum delay in days for RDT scheduling</p></td>
+<td><p>Integer</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-odd"><td><p>MalariaParasiteClearanceEvent_frequency_days</p></td>
+<td><p>frequency in days for parasite clearance events</p></td>
+<td><p>Real</p></td>
+<td><p>30.5</p></td>
+</tr>
+<tr class="row-even"><td><p>MalariaUpdateEvent_frequency_days</p></td>
+<td><p>frequency in days for MalariaUpdateEvent</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>MalariaPollingEventDistrict_frequency_months</p></td>
+<td><p>frequency in months for MalariaPollingEventDistrict</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>MalariaIPTp_frequency_months</p></td>
+<td><p>frequency in days for MalariaIPTp</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>MalariaPollingEventDistrict_delay_days</p></td>
+<td><p>delay in days for MalariaPollingEventDistrict</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>MalariaUpdateEvent_delay_days</p></td>
+<td><p>delay in days for MalariaUpdateEvent</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>MalariaParasiteClearanceEvent_delay_months</p></td>
+<td><p>delay in months for MalariaParasiteClearanceEvent</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>MalariaIPTp_delay_days</p></td>
+<td><p>delay in days for MalariaIPTp</p></td>
+<td><p>Real</p></td>
+<td><p>30.5</p></td>
 </tr>
 </tbody>
 </table>
@@ -11623,44 +12738,94 @@
 <tr class="row-odd"><th class="head"><p>District</p></th>
 <th class="head"><p>Year</p></th>
 <th class="head"><p>itn_rate</p></th>
+<th class="head"><p>prior_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Balaka</p></td>
 <td><p>2011</p></td>
 <td><p>0.3</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-odd"><td><p>Balaka</p></td>
 <td><p>2012</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-even"><td><p>Balaka</p></td>
 <td><p>2013</p></td>
 <td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-odd"><td><p>Balaka</p></td>
 <td><p>2014</p></td>
 <td><p>0.6</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-even"><td><p>Balaka</p></td>
 <td><p>2015</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-odd"><td><p>Balaka</p></td>
 <td><p>2016</p></td>
 <td><p>0.6</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-even"><td><p>Balaka</p></td>
 <td><p>2017</p></td>
 <td><p>0.6</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-odd"><td><p>Balaka</p></td>
 <td><p>2018</p></td>
 <td><p>0.6</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 <tr class="row-even"><td><p>Blantyre</p></td>
 <td><p>2010</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 </tbody>
 </table>
@@ -11670,111 +12835,111 @@
 <span id="malaria-irs-district"></span><h3>irs_district<a class="headerlink" href="#irs-district" title="Link to this heading"></a></h3>
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>District</p></th>
+<tr class="row-odd"><th class="head"><p>Region</p></th>
+<th class="head"><p>District</p></th>
 <th class="head"><p>Year</p></th>
 <th class="head"><p>irs_rate</p></th>
+<th class="head"><p>prior_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Balaka</p></td>
+<tr class="row-even"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2011</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-odd"><td><p>Balaka</p></td>
+<tr class="row-odd"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2012</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-even"><td><p>Balaka</p></td>
+<tr class="row-even"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2013</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-odd"><td><p>Balaka</p></td>
+<tr class="row-odd"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2014</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-even"><td><p>Balaka</p></td>
+<tr class="row-even"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2015</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-odd"><td><p>Balaka</p></td>
+<tr class="row-odd"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2016</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-even"><td><p>Balaka</p></td>
+<tr class="row-even"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2017</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-odd"><td><p>Balaka</p></td>
+<tr class="row-odd"><td><p>Southern Region</p></td>
+<td><p>Balaka</p></td>
 <td><p>2018</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
-<tr class="row-even"><td><p>Blantyre</p></td>
+<tr class="row-even"><td><p>Southern Region</p></td>
+<td><p>Blantyre</p></td>
 <td><p>2010</p></td>
 <td><p>0</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>MAP</p></td>
 </tr>
 </tbody>
 </table>
 <p><em>Only first 10 rows of 288 are shown.</em></p>
-</section>
-<section id="sev-symp-prob">
-<span id="malaria-sev-symp-prob"></span><h3>sev_symp_prob<a class="headerlink" href="#sev-symp-prob" title="Link to this heading"></a></h3>
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>symptom</p></th>
-<th class="head"><p>age_group</p></th>
-<th class="head"><p>prop_lower</p></th>
-<th class="head"><p>prop_upper</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>acidosis</p></td>
-<td><p>0_5</p></td>
-<td><p>0.4</p></td>
-<td><p>0.45</p></td>
-</tr>
-<tr class="row-odd"><td><p>coma_convulsions</p></td>
-<td><p>0_5</p></td>
-<td><p>0.3</p></td>
-<td><p>0.4</p></td>
-</tr>
-<tr class="row-even"><td><p>renal_failure</p></td>
-<td><p>0_5</p></td>
-<td><p>0.05</p></td>
-<td><p>0.15</p></td>
-</tr>
-<tr class="row-odd"><td><p>severe_anaemia</p></td>
-<td><p>0_5</p></td>
-<td><p>0.4</p></td>
-<td><p>0.5</p></td>
-</tr>
-<tr class="row-even"><td><p>shock</p></td>
-<td><p>0_5</p></td>
-<td><p>0.05</p></td>
-<td><p>0.15</p></td>
-</tr>
-<tr class="row-odd"><td><p>jaundice</p></td>
-<td><p>5_60</p></td>
-<td><p>0.1</p></td>
-<td><p>0.6</p></td>
-</tr>
-<tr class="row-even"><td><p>acidosis</p></td>
-<td><p>5_60</p></td>
-<td><p>0.45</p></td>
-<td><p>0.6</p></td>
-</tr>
-<tr class="row-odd"><td><p>coma_convulsions</p></td>
-<td><p>5_60</p></td>
-<td><p>0.38</p></td>
-<td><p>0.45</p></td>
-</tr>
-<tr class="row-even"><td><p>renal_failure</p></td>
-<td><p>5_60</p></td>
-<td><p>0.1</p></td>
-<td><p>0.5</p></td>
-</tr>
-</tbody>
-</table>
-<p><em>Only first 10 rows of 12 are shown.</em></p>
 </section>
 <section id="rdt-testing-rates">
 <span id="malaria-rdt-testing-rates"></span><h3>rdt_testing_rates<a class="headerlink" href="#rdt-testing-rates" title="Link to this heading"></a></h3>
@@ -11900,42 +13065,63 @@
 <span id="id3"></span><h3>scaleup_parameters<a class="headerlink" href="#malaria-scaleup-parameters" title="Link to this heading"></a></h3>
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>parameter</p></th>
-<th class="head"><p>target_value</p></th>
-<th class="head"><p>min_value</p></th>
-<th class="head"><p>max_value</p></th>
+<tr class="row-odd"><th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>prob_malaria_case_tests</p></td>
 <td><p>1</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>rdt_testing_rates</p></td>
 <td><p>0.8</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_of_treatment_success</p></td>
 <td><p>1</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>irs_district</p></td>
 <td><p>0.8</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>0.8</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>itn_district</p></td>
 <td><p>0.7</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>0.7</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>itn</p></td>
 <td><p>0.7</p></td>
+<td><p>scenario</p></td>
 <td><p>0</p></td>
 <td><p>0.7</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>
@@ -11982,23 +13168,88 @@
 <td><p>Real</p></td>
 <td><p>0.99</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_severe</p></td>
-<td><p>Probability of severe measles infection, requiring hospitalisation</p></td>
-<td><p>Real</p></td>
-<td><p>0.05</p></td>
-</tr>
-<tr class="row-odd"><td><p>risk_death_on_treatment</p></td>
-<td><p>Risk of scheduled death occurring if on treatment for measles complications</p></td>
-<td><p>Real</p></td>
-<td><p>0.38</p></td>
-</tr>
 <tr class="row-even"><td><p>symptom_prob</p></td>
 <td><p>Probability of each symptom with measles infection</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#measles-symptom-prob"><span class="std std-ref">…</span></a></p></td>
 </tr>
-<tr class="row-odd"><td><p>case_fatality_rate</p></td>
-<td><p>Probability that case of measles will result in death if not treated</p></td>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_in_children_rash</p></td>
+<td><p>Odds ratio seeking care in children rash</p></td>
+<td><p>Real</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_in_adults_rash</p></td>
+<td><p>Odds ratio seeking care in adults rash</p></td>
+<td><p>Real</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_in_children_otitis_media</p></td>
+<td><p>Odds ratio seeking care in children otitis media</p></td>
+<td><p>Real</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_in_adults_otitis_media</p></td>
+<td><p>Odds ratio seeking care in adults otitis media</p></td>
+<td><p>Real</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>reduction_in_death_risk_measle_treated</p></td>
+<td><p>Reduction in death risk when measles are treated</p></td>
+<td><p>Real</p></td>
+<td><p>0.6</p></td>
+</tr>
+<tr class="row-even"><td><p>maternal_immunity_age_threshold</p></td>
+<td><p>Age threshold below which children are protected by maternal immunity</p></td>
+<td><p>Real</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_min_symptoms_constant_rate</p></td>
+<td><p>Maximum age for measles symptom probability lookup</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>death_timing_min_days</p></td>
+<td><p>Minimum days from symptom onset to death</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_timing_max_days</p></td>
+<td><p>Maximum days from symptom onset to death</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>natural_resolution_min_days</p></td>
+<td><p>Minimum days from symptom onset to natural resolution</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>natural_resolution_max_days</p></td>
+<td><p>Maximum days from symptom onset to natural resolution</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-even"><td><p>symptom_onset_min_days</p></td>
+<td><p>Minimum days from infection to symptom onset (incubation period)</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>symptom_onset_max_days</p></td>
+<td><p>Maximum days from infection to symptom onset (incubation period)</p></td>
+<td><p>Integer</p></td>
+<td><p>21</p></td>
+</tr>
+<tr class="row-even"><td><p>sympt_resolution_after_treatment</p></td>
+<td><p>Days until symptom resolution after treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>Measles main polling event frequency months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>case_fatality_rate</p></td>
+<td><p>Case fatality rate for measles infection</p></td>
 <td><p>Dictionary</p></td>
 <td><p><a class="reference internal" href="#measles-case-fatality-rate"><span class="std std-ref">…</span></a></p></td>
 </tr>
@@ -12011,44 +13262,94 @@
 <tr class="row-odd"><th class="head"><p>age</p></th>
 <th class="head"><p>symptom</p></th>
 <th class="head"><p>probability</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>1</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>2</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>3</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>4</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>5</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>6</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>7</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>8</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>9</p></td>
 <td><p>rash</p></td>
 <td><p>1</p></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>nan</p></td>
+<td><p>Missing</p></td>
 </tr>
 </tbody>
 </table>
@@ -15581,12 +16882,12 @@
 <tr class="row-even"><td><p>delay_till_hsi_a_repeated</p></td>
 <td><p>Time till seeking healthcare again after not being sent to schisto test: start</p></td>
 <td><p>Real</p></td>
-<td><p>5.0</p></td>
+<td><p>5.00001</p></td>
 </tr>
 <tr class="row-odd"><td><p>delay_till_hsi_b_repeated</p></td>
 <td><p>Time till seeking healthcare again after not being sent to schisto test: end</p></td>
 <td><p>Real</p></td>
-<td><p>20.0</p></td>
+<td><p>20.0001</p></td>
 </tr>
 <tr class="row-even"><td><p>rr_WASH</p></td>
 <td><p>proportional reduction in population susceptible to schistosoma infection with improved WASH</p></td>
@@ -15595,23 +16896,53 @@
 </tr>
 <tr class="row-odd"><td><p>calibration_scenario</p></td>
 <td><p>Scenario used to reset parameters to run calibration sims</p></td>
-<td><p>Real</p></td>
-<td><p>0.0</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td><p>urine_filtration_sensitivity_lowWB</p></td>
+<tr class="row-even"><td><p>urine_filtration_sensitivity_noneWB</p></td>
+<td><p>Sensitivity of urine filtration test for non-infected cases</p></td>
+<td><p>Real</p></td>
+<td><p>1e-07</p></td>
+</tr>
+<tr class="row-odd"><td><p>urine_filtration_sensitivity_lowWB</p></td>
 <td><p>Sensitivity of UF in detecting low WB</p></td>
 <td><p>Real</p></td>
 <td><p>0.6</p></td>
 </tr>
-<tr class="row-odd"><td><p>urine_filtration_sensitivity_moderateWB</p></td>
+<tr class="row-even"><td><p>urine_filtration_sensitivity_moderateWB</p></td>
 <td><p>Sensitivity of UF in detecting moderate WB</p></td>
 <td><p>Real</p></td>
 <td><p>0.68</p></td>
 </tr>
-<tr class="row-even"><td><p>urine_filtration_sensitivity_heavyWB</p></td>
+<tr class="row-odd"><td><p>urine_filtration_sensitivity_heavyWB</p></td>
 <td><p>Sensitivity of UF in detecting heavy WB</p></td>
 <td><p>Real</p></td>
 <td><p>0.75</p></td>
+</tr>
+<tr class="row-even"><td><p>urine_filtration_specificity_noneWB</p></td>
+<td><p>Specificity of urine filtration test</p></td>
+<td><p>Real</p></td>
+<td><p>1e-07</p></td>
+</tr>
+<tr class="row-odd"><td><p>urine_filtration_specificity_lowWB</p></td>
+<td><p>Specificity of UF in detecting low WB</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-even"><td><p>urine_filtration_specificity_moderateWB</p></td>
+<td><p>Specificity of UF in detecting moderate WB</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-odd"><td><p>urine_filtration_specificity_heavyWB</p></td>
+<td><p>Specificity of UF in detecting heavy WB</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-even"><td><p>kato_katz_sensitivity_lowWB</p></td>
+<td><p>Sensitivity of Kato-Katz test for non-infected cases</p></td>
+<td><p>Real</p></td>
+<td><p>1e-07</p></td>
 </tr>
 <tr class="row-odd"><td><p>kato_katz_sensitivity_moderateWB</p></td>
 <td><p>Sensitivity of KK in detecting moderate WB</p></td>
@@ -15623,80 +16954,240 @@
 <td><p>Real</p></td>
 <td><p>0.62</p></td>
 </tr>
-<tr class="row-odd"><td><p>scaleup_WASH</p></td>
+<tr class="row-odd"><td><p>kato_katz_specificity_lowWB</p></td>
+<td><p>Sensitivity of Kato-Katz test for non-infected cases</p></td>
+<td><p>Real</p></td>
+<td><p>1e-07</p></td>
+</tr>
+<tr class="row-even"><td><p>kato_katz_specificity_moderateWB</p></td>
+<td><p>Specificity of KK in detecting moderate WB</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-odd"><td><p>kato_katz_specificity_heavyWB</p></td>
+<td><p>Specificity of KK in detecting moderate WB</p></td>
+<td><p>Real</p></td>
+<td><p>0.999999</p></td>
+</tr>
+<tr class="row-even"><td><p>scaleup_WASH</p></td>
 <td><p>Whether to scale-up WASH during simulation, pause fixes values at 2024 levels with no further improvement, continue allows historical trends to continue, scaleup switches everyone to having access to WASH</p></td>
 <td><p>String</p></td>
 <td><p>continue</p></td>
 </tr>
-<tr class="row-even"><td><p>scaleup_WASH_start_year</p></td>
+<tr class="row-odd"><td><p>scaleup_WASH_start_year</p></td>
 <td><p>Start date to scale-up WASH, years after sim start date</p></td>
-<td><p>Real</p></td>
-<td><p>2024.0</p></td>
+<td><p>Integer</p></td>
+<td><p>2024</p></td>
 </tr>
-<tr class="row-odd"><td><p>mda_coverage</p></td>
+<tr class="row-even"><td><p>mda_coverage</p></td>
 <td><p>Coverage of future MDA activities, consistent across alltarget groups</p></td>
 <td><p>Real</p></td>
 <td><p>0.7</p></td>
 </tr>
-<tr class="row-even"><td><p>mda_target_group</p></td>
+<tr class="row-odd"><td><p>mda_target_group</p></td>
 <td><p>Target group for future MDA activities, one of [PSAC_SAC, SAC, ALL]</p></td>
 <td><p>String</p></td>
 <td><p>SAC</p></td>
 </tr>
-<tr class="row-odd"><td><p>mda_frequency_months</p></td>
+<tr class="row-even"><td><p>mda_frequency_months</p></td>
 <td><p>Number of months between MDA activities</p></td>
-<td><p>Real</p></td>
-<td><p>12.0</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
 </tr>
-<tr class="row-even"><td><p>scaling_factor_baseline_risk</p></td>
+<tr class="row-odd"><td><p>scaling_factor_baseline_risk</p></td>
 <td><p>scaling factor controls how the background risk of infection is adjusted based on the deviation of current prevalence from baseline prevalence</p></td>
 <td><p>Real</p></td>
 <td><p>0.01</p></td>
 </tr>
-<tr class="row-odd"><td><p>baseline_risk</p></td>
+<tr class="row-even"><td><p>baseline_risk</p></td>
 <td><p>number of worms applied as a baseline risk across districts to prevent fadeout, number is scaled by scaling_factor_baseline_risk</p></td>
-<td><p>Real</p></td>
-<td><p>5.0</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
 </tr>
-<tr class="row-even"><td><p>background_gamma</p></td>
+<tr class="row-odd"><td><p>background_gamma</p></td>
 <td><p>controls how fast the cushion shrinks as national prevalence falls; larger values (e.g. 2.5–3.0) make it disappear sooner</p></td>
 <td><p>Real</p></td>
 <td><p>1.3</p></td>
 </tr>
-<tr class="row-odd"><td><p>background_rel</p></td>
+<tr class="row-even"><td><p>background_rel</p></td>
 <td><p>a small proportional cushion (1% at baseline) applied to the human reservoir; keeps early declines smooth without creating an artificial floor</p></td>
 <td><p>Real</p></td>
 <td><p>0.02</p></td>
 </tr>
-<tr class="row-even"><td><p>daly_weight_mild_schistosomiasis</p></td>
+<tr class="row-odd"><td><p>daly_weight_mild_schistosomiasis</p></td>
 <td><p>daly weight assigned to mild schistosomiasis, both species</p></td>
-<td><p>Real</p></td>
-<td><p>0.0</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td><p>daly_weight_moderate_s_mansoni</p></td>
+<tr class="row-even"><td><p>daly_weight_moderate_s_mansoni</p></td>
 <td><p>daly weight assigned to moderate S. mansoni</p></td>
 <td><p>Real</p></td>
 <td><p>0.011</p></td>
 </tr>
-<tr class="row-even"><td><p>daly_weight_heavy_s_mansoni</p></td>
+<tr class="row-odd"><td><p>daly_weight_heavy_s_mansoni</p></td>
 <td><p>daly weight assigned to heavy S. mansoni</p></td>
 <td><p>Real</p></td>
 <td><p>0.325</p></td>
 </tr>
-<tr class="row-odd"><td><p>daly_weight_moderate_s_haematobium</p></td>
+<tr class="row-even"><td><p>daly_weight_moderate_s_haematobium</p></td>
 <td><p>daly weight assigned to moderate S. haematobium</p></td>
 <td><p>Real</p></td>
 <td><p>0.011</p></td>
 </tr>
-<tr class="row-even"><td><p>daly_weight_heavy_s_haematobium</p></td>
+<tr class="row-odd"><td><p>daly_weight_heavy_s_haematobium</p></td>
 <td><p>daly weight assigned to heavy S. haematobium</p></td>
 <td><p>Real</p></td>
 <td><p>0.325</p></td>
 </tr>
-<tr class="row-odd"><td><p>MDA_coverage_historical</p></td>
+<tr class="row-even"><td><p>MDA_coverage_historical</p></td>
 <td><p>Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#schisto-mda-coverage-historical"><span class="std std-ref">…</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_children_schisto_low</p></td>
+<td><p>Odds ratio for health seeking in children with schisto low symptoms</p></td>
+<td><p>Real</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_adults_schisto_low</p></td>
+<td><p>Odds ratio for health seeking in adults with schisto low symptoms</p></td>
+<td><p>Real</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-odd"><td><p>single_district_calibration_number</p></td>
+<td><p>District number for single district calibration runs</p></td>
+<td><p>Integer</p></td>
+<td><p>19</p></td>
+</tr>
+<tr class="row-even"><td><p>single_district_calibration_name</p></td>
+<td><p>District name for single district calibration runs</p></td>
+<td><p>String</p></td>
+<td><p>Zomba</p></td>
+</tr>
+<tr class="row-odd"><td><p>single_district_calibration_region</p></td>
+<td><p>District region for single district calibration runs</p></td>
+<td><p>String</p></td>
+<td><p>Southern</p></td>
+</tr>
+<tr class="row-even"><td><p>mda_schedule_month</p></td>
+<td><p>Month for scheduling MDA events</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>mda_schedule_day</p></td>
+<td><p>Day for scheduling MDA events</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>minimum_baseline_prevalence</p></td>
+<td><p>Minimum baseline prevalence to prevent division by zero</p></td>
+<td><p>Real</p></td>
+<td><p>1e-06</p></td>
+</tr>
+<tr class="row-odd"><td><p>prevalence_lower_bound</p></td>
+<td><p>Lower bound for prevalence clamping</p></td>
+<td><p>Real</p></td>
+<td><p>1e-09</p></td>
+</tr>
+<tr class="row-even"><td><p>prevalence_upper_bound</p></td>
+<td><p>Upper bound for prevalence clamping</p></td>
+<td><p>Real</p></td>
+<td><p>0.9999999</p></td>
+</tr>
+<tr class="row-odd"><td><p>infant_min_age</p></td>
+<td><p>Minimum age for Infant group</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>infant_max_age</p></td>
+<td><p>Maximum age for Infant group</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>psac_min_age</p></td>
+<td><p>Minimum age for PSAC group</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>psac_max_age</p></td>
+<td><p>Maximum age for PSAC group</p></td>
+<td><p>Integer</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-odd"><td><p>sac_min_age</p></td>
+<td><p>Minimum age for SAC group</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>sac_max_age</p></td>
+<td><p>Maximum age for SAC group</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>adults_min_age</p></td>
+<td><p>Minimum age for Adults group</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>adults_max_age</p></td>
+<td><p>Maximum age for Adults group</p></td>
+<td><p>Integer</p></td>
+<td><p>120</p></td>
+</tr>
+<tr class="row-odd"><td><p>mda_execute</p></td>
+<td><p>Whether to execute MDA events</p></td>
+<td><p>Boolean</p></td>
+<td><p>True</p></td>
+</tr>
+<tr class="row-even"><td><p>single_district</p></td>
+<td><p>Whether to run simulation for a single district only</p></td>
+<td><p>Boolean</p></td>
+<td><p>False</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency</p></td>
+<td><p>Polling freq main schisto event in months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>worm_maturation_period_months</p></td>
+<td><p>Time in months for juvenile worms to mature into adult worms</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>worm_death_check_frequency_years</p></td>
+<td><p>Frequency in years to check for worm deaths</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>mda_appointment_window_months</p></td>
+<td><p>Time window in months for MDA appointment scheduling</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>wash_scaleup_frequency_years</p></td>
+<td><p>Frequency in years to check and apply WASH scale-up</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>recent_sanitation_window_years</p></td>
+<td><p>Time window in years to consider sanitation acquisition as recent</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>avg_weight_psac_kg</p></td>
+<td><p>Average weight in kg for PSAC age group for drug dosing</p></td>
+<td><p>Real</p></td>
+<td><p>17.5</p></td>
+</tr>
+<tr class="row-even"><td><p>avg_weight_sac_kg</p></td>
+<td><p>Average weight in kg for SAC age group for drug dosing</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>avg_weight_adult_kg</p></td>
+<td><p>Average weight in kg for adults for drug dosing</p></td>
+<td><p>Integer</p></td>
+<td><p>62</p></td>
 </tr>
 <tr class="row-even"><td><p>sm_R0</p></td>
 <td><p>R0 of species</p></td>
@@ -15711,7 +17202,7 @@
 <tr class="row-even"><td><p>sm_beta_SAC</p></td>
 <td><p>Contact/exposure rate of SAC</p></td>
 <td><p>Real</p></td>
-<td><p>1.0</p></td>
+<td><p>1.000001</p></td>
 </tr>
 <tr class="row-odd"><td><p>sm_beta_Adults</p></td>
 <td><p>Contact/exposure rate of Adults</p></td>
@@ -15786,7 +17277,7 @@
 <tr class="row-odd"><td><p>sh_beta_SAC</p></td>
 <td><p>Contact/exposure rate of SAC</p></td>
 <td><p>Real</p></td>
-<td><p>1.0</p></td>
+<td><p>1.0000001</p></td>
 </tr>
 <tr class="row-even"><td><p>sh_beta_Adults</p></td>
 <td><p>Contact/exposure rate of Adults</p></td>
@@ -16580,6 +18071,26 @@
 <td><p>Real</p></td>
 <td><p>1.51</p></td>
 </tr>
+<tr class="row-even"><td><p>death_timing_hiv_positive_min_months</p></td>
+<td><p>Minimum months to death for HIV positive patients</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_timing_hiv_positive_max_months</p></td>
+<td><p>Maximum months to death for HIV positive patients</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>death_timing_hiv_negative_min_months</p></td>
+<td><p>Minimum months to death for HIV negative patients</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_timing_hiv_negative_max_months</p></td>
+<td><p>Maximum months to death for HIV negative patients</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
 <tr class="row-even"><td><p>rr_tb_bcg</p></td>
 <td><p>relative risk of progression to active disease for children with BCG vaccine</p></td>
 <td><p>Real</p></td>
@@ -16715,6 +18226,26 @@
 <td><p>Real</p></td>
 <td><p>0.67</p></td>
 </tr>
+<tr class="row-odd"><td><p>sensitivity_sputum_test_smear_negative</p></td>
+<td><p>Sensitivity of sputum test for smear negative cases</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_sputum_test_smear_negative</p></td>
+<td><p>Specificity of sputum test for smear negative cases</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_culture_test</p></td>
+<td><p>Sensitivity of culture test</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_culture_test</p></td>
+<td><p>Specificity of culture test</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
 <tr class="row-odd"><td><p>prob_tx_success_ds</p></td>
 <td><p>Probability of treatment success for new and relapse TB cases</p></td>
 <td><p>Real</p></td>
@@ -16785,8 +18316,8 @@
 <td><p>String</p></td>
 <td><p>xpert</p></td>
 </tr>
-<tr class="row-odd"><td><p>tb_healthseekingbehaviour_cap</p></td>
-<td><p>number of repeat visits assumed for healthcare services</p></td>
+<tr class="row-odd"><td><p>number_high_risk_contacts</p></td>
+<td><p>number of high risk contacts given ipt</p></td>
 <td><p>Integer</p></td>
 <td><p>5</p></td>
 </tr>
@@ -16795,22 +18326,187 @@
 <td><p>Integer</p></td>
 <td><p>2022</p></td>
 </tr>
+<tr class="row-odd"><td><p>max_duration_ipt_continued_treatment_months</p></td>
+<td><p>last year for which data are available</p></td>
+<td><p>Integer</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_treatment_availability</p></td>
+<td><p>The average probability tb treatment available</p></td>
+<td><p>Real</p></td>
+<td><p>0.6</p></td>
+</tr>
 <tr class="row-odd"><td><p>length_of_inpatient_stay_if_terminal</p></td>
-<td><p>length of inpatient stay for end-of-life TB patients</p></td>
+<td><p>length of inpatient stay for end-of-life TB patients. Minimum to maximum range.</p></td>
 <td><p>List</p></td>
 <td><p>[5, 10]</p></td>
 </tr>
-<tr class="row-even"><td><p>type_of_scaleup</p></td>
+<tr class="row-even"><td><p>tb_healthseekingbehaviour_cap</p></td>
+<td><p>number of repeat visits assumed for healthcare services</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_adults_fatigue</p></td>
+<td><p>Odds ratio for health seeking in adults with fatigue</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_children_fatigue</p></td>
+<td><p>Odds ratio for health seeking in children with fatigue</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_adults_night_sweats</p></td>
+<td><p>Odds ratio for health seeking in adults with night sweats</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_children_night_sweats</p></td>
+<td><p>Odds ratio for health seeking in children with night sweats</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_threshold_adult_years</p></td>
+<td><p>Age threshold for adult classification</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>age_threshold_ipt_dispensation</p></td>
+<td><p>Age threshold for IPT dispensation regimine</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_threshold_infant_years</p></td>
+<td><p>Age threshold for infant/under-5 classification</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>screening_scheduling_window_months</p></td>
+<td><p>Window for screening scheduling if selected for general screening in months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>ipt_scheduling_window_child_of_tb_mother_days</p></td>
+<td><p>Scheduling window for IPT in days for child of a mother with tb</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>min_days_symptomatic_required_for_screening</p></td>
+<td><p>Minimum days required to be symptomatic for screening</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>tb_min_days_between_tests</p></td>
+<td><p>Min days between TB tests</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>hv_min_days_between_tests</p></td>
+<td><p>Min days between HIV tests</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>xray_scheduling_weeks_level2</p></td>
+<td><p>Scheduling interval for level2 X-rays in weeks if consumables not available in level 1b</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>TbActiveCasePoll_frequency_years</p></td>
+<td><p>Frequency of TbActiveCasePoll in years</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>TbActiveEvent_frequency_days</p></td>
+<td><p>Frequency of TbActiveEvent in days</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>TbSelfCureEvent_frequency_months</p></td>
+<td><p>Frequency of TbSelfCureEvent in years</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>TbRegularEvents_frequency_months</p></td>
+<td><p>Frequency of TbRegularEvents in months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>relapse_early_late_cutoff_years</p></td>
+<td><p>Cut off between early and late relapse in years for which risk of relapse changes</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>ipt_reevaluate_continuation_frequency_months</p></td>
+<td><p>Frequency to re-evaluate continuation of IPT in months</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>active_disease_duration_months</p></td>
+<td><p>Duration for active disease monitoring in months</p></td>
+<td><p>Integer</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-odd"><td><p>follow_up_interval_months</p></td>
+<td><p>Follow-up interval in months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_retry_weeks</p></td>
+<td><p>Interval for treatment retry in weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>ipt_scheduling_delay_days_min</p></td>
+<td><p>Delay for ipt treatment HSI in days min</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>ipt_scheduling_delay_days_max</p></td>
+<td><p>Delay for appointments in days max</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>xpert_appointment_delay_days</p></td>
+<td><p>Delay for appointments in days</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>mdr_level2_appt_delay_days</p></td>
+<td><p>Delay for MDR level 2 appointments in days</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>screening_appointment_window_days</p></td>
+<td><p>Appointment window for TB screening in days</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-even"><td><p>ipt_appointment_window_days</p></td>
+<td><p>Appointment window for IPT in days</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>number_doses_3hp_per_dispensation</p></td>
+<td><p>Number of 3hp doses per dispensation</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>number_doses_ipt_per_dispensation</p></td>
+<td><p>Number of ipt doses per dispensation</p></td>
+<td><p>Integer</p></td>
+<td><p>182</p></td>
+</tr>
+<tr class="row-odd"><td><p>type_of_scaleup</p></td>
 <td><p>argument to determine type scale-up of program which will be implemented, can be ‘none’, ‘target’ or ‘max’</p></td>
 <td><p>String</p></td>
 <td><p>none</p></td>
 </tr>
-<tr class="row-odd"><td><p>scaleup_start_year</p></td>
+<tr class="row-even"><td><p>scaleup_start_year</p></td>
 <td><p>the year when the scale-up starts (it will occur on 1st January of that year)</p></td>
 <td><p>Integer</p></td>
 <td><p>2025</p></td>
 </tr>
-<tr class="row-even"><td><p>scaleup_parameters</p></td>
+<tr class="row-odd"><td><p>scaleup_parameters</p></td>
 <td><p>the parameters and values changed in scenario analysis</p></td>
 <td><p>Dataframe</p></td>
 <td><p><a class="reference internal" href="#tb-scaleup-parameters"><span class="std std-ref">…</span></a></p></td>
@@ -17141,57 +18837,87 @@
 <span id="id4"></span><h3>scaleup_parameters<a class="headerlink" href="#tb-scaleup-parameters" title="Link to this heading"></a></h3>
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>parameter</p></th>
-<th class="head"><p>target_value</p></th>
-<th class="head"><p>min_value</p></th>
-<th class="head"><p>max_value</p></th>
+<tr class="row-odd"><th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>tb_treatment_coverage</p></td>
 <td><p>90</p></td>
-<td><p>0</p></td>
-<td><p>100</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>tb_prob_tx_success_ds</p></td>
 <td><p>0.9</p></td>
-<td><p>0</p></td>
-<td><p>1</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>tb_prob_tx_success_mdr</p></td>
 <td><p>0.9</p></td>
-<td><p>0</p></td>
-<td><p>1</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>tb_prob_tx_success_0_4</p></td>
 <td><p>0.9</p></td>
-<td><p>0</p></td>
-<td><p>1</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>tb_prob_tx_success_5_14</p></td>
 <td><p>0.9</p></td>
-<td><p>0</p></td>
-<td><p>1</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>first_line_test</p></td>
 <td><p>xpert</p></td>
+<td><p>nan</p></td>
 <td><p>sputum</p></td>
 <td><p>xpert</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>second_line_test</p></td>
 <td><p>sputum</p></td>
+<td><p>nan</p></td>
 <td><p>sputum</p></td>
 <td><p>xpert</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>ipt_coverage_plhiv</p></td>
 <td><p>0.9</p></td>
-<td><p>0</p></td>
-<td><p>1</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>ipt_coverage_paediatric</p></td>
 <td><p>90</p></td>
-<td><p>0</p></td>
-<td><p>100</p></td>
+<td><p>scenario</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>

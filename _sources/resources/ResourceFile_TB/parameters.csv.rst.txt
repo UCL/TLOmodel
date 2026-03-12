@@ -3,69 +3,110 @@ parameters (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/parameters.csv>`
 
-====  =========================================  =======  ==================  =======  ==================
-  ..  parameter\_name                            value    lower               upper    notes
-====  =========================================  =======  ==================  =======  ==================
-   0  scaling\_factor\_WHO                       1.60303
-   1  prop\_mdr2010                              0.0186
-   2  monthly\_prob\_relapse\_tx\_complete       0.0027   0.0014              0.00405
-   3  monthly\_prob\_relapse\_tx\_incomplete     0.0116   0.0058              0.0174
-   4  monthly\_prob\_relapse\_2yrs               0.0001   5e-05               0.0015
-   5  rr\_relapse\_hiv                           4.7
-   6  rr\_relapse\_diabetes                      1.86                                  Huangfu et al 2019
-   7  duration\_active\_disease\_years           3
-   8  prop\_smear\_positive                      0.62     0.42                0.8
-   9  prop\_smear\_positive\_hiv                 0.35     0.19                0.54
-  10  death\_rate\_child0\_4\_treated            0.05
-  11  death\_rate\_child5\_14\_treated           0.06
-  12  death\_rate\_adult\_treated                0.107    changed from 0.086
-  13  death\_rate\_smear\_pos\_untreated         0.7
-  14  death\_rate\_smear\_neg\_untreated         0.2
-  15  rr\_death\_diabetes                        1.51                                  Huangfu et al 2019
-  16  rr\_tb\_child                              0.1      assumed
-  17  rr\_tb\_bcg                                0.42
-  18  rr\_tb\_hiv                                5        assumed                      20.6getahun2010
-  19  rr\_tb\_aids                               26       assumed                      26williams\_pnas
-  20  rr\_tb\_art\_adult                         0.35
-  21  rr\_tb\_art\_child                         0.3
-  22  rr\_tb\_obese                              0.4
-  23  rr\_tb\_diabetes                           3
-  24  rr\_tb\_alcohol                            2.9
-  25  rr\_tb\_smoking                            1.3
-  26  rr\_ipt\_adult                             0.4
-  27  rr\_ipt\_child                             0.55
-  28  rr\_ipt\_adult\_hiv                        0.68
-  29  rr\_ipt\_child\_hiv                        0.31
-  30  rr\_ipt\_art\_child                        0.76
-  31  rr\_ipt\_art\_adult                        0.63
-  32  sens\_xpert\_smear\_negative               0.68
-  33  sens\_xpert\_smear\_positive               0.98
-  34  spec\_xpert\_smear\_negative               0.99
-  35  spec\_xpert\_smear\_positive               0.99
-  36  sens\_sputum\_smear\_positive              1
-  37  spec\_sputum\_smear\_positive              1
-  38  sens\_clinical                             0.209    0.12                0.33
-  39  spec\_clinical                             0.953    0.92                0.97
-  40  sens\_xray\_smear\_negative                0.8
-  41  sens\_xray\_smear\_positive                0.91
-  42  spec\_xray\_smear\_negative                0.67
-  43  spec\_xray\_smear\_positive                0.67
-  44  prob\_tx\_success\_ds                      0.837
-  45  prob\_tx\_success\_mdr                     0.597
-  46  prob\_tx\_success\_0\_4                    0.94
-  47  prob\_tx\_success\_5\_14                   0.92
-  48  rate\_testing\_general\_pop                0.025
-  49  ds\_treatment\_length                      6
-  50  ds\_retreatment\_length                    8
-  51  mdr\_treatment\_length                     24
-  52  prob\_retained\_ipt\_6\_months             0.9
-  53  age\_eligibility\_for\_ipt                 5
-  54  ipt\_start\_date                           2014
-  55  first\_line\_test                          sputum
-  56  second\_line\_test                         xpert
-  57  tb\_healthseekingbehaviour\_cap            5
-  58  data\_end                                  2022
-  59  length\_of\_inpatient\_stay\_if\_terminal  [5,10]
-  60  type\_of\_scaleup                          none
-  61  scaleup\_start\_year                       2025
-====  =========================================  =======  ==================  =======  ==================
+====  =====================================================  =======  ==============  ============  ============  ===============  ==================  ============
+  ..  parameter\_name                                        value    param\_label    prior\_min    prior\_max    prior\_note      reference           Unnamed: 7
+====  =====================================================  =======  ==============  ============  ============  ===============  ==================  ============
+   0  scaling\_factor\_WHO                                   1.60303  local           0.5           5             vague prior
+   1  prop\_mdr2010                                          0.0186   local           0.001         0.1           vague prior
+   2  monthly\_prob\_relapse\_tx\_complete                   0.0027   local           0.001         0.1           vague prior
+   3  monthly\_prob\_relapse\_tx\_incomplete                 0.0116   local           0.001         0.1           vague prior
+   4  monthly\_prob\_relapse\_2yrs                           0.0001   local           0.001         0.1           vague prior
+   5  rr\_relapse\_hiv                                       4.7      universal       2.5           8.9           95% CI
+   6  rr\_relapse\_diabetes                                  1.86     universal       0.01          100           vague prior      Huangfu et al 2019
+   7  duration\_active\_disease\_years                       3        universal       1             10            vague prior
+   8  prop\_smear\_positive                                  0.62     local           0.1           1             vague prior
+   9  prop\_smear\_positive\_hiv                             0.35     local           0.1           1             vague prior
+  10  death\_rate\_child0\_4\_treated                        0.05     universal       0             1             vague prior
+  11  death\_rate\_child5\_14\_treated                       0.06     universal       0             1             vague prior
+  12  death\_rate\_adult\_treated                            0.107    undetermined    0             1             calibration      changed from 0.086
+  13  death\_rate\_smear\_pos\_untreated                     0.7      universal       0             1             vague prior
+  14  death\_rate\_smear\_neg\_untreated                     0.2      universal       0             1             vague prior
+  15  rr\_death\_diabetes                                    1.51     universal       0.01          100           vague prior      Huangfu et al 2019
+  16  rr\_tb\_child                                          0.1      universal       0.01          100           vague prior      assumed
+  17  rr\_tb\_bcg                                            0.42     universal       0.01          100           vague prior
+  18  rr\_tb\_hiv                                            5        universal       0.01          100           vague prior      20.6getahun2010     assumed
+  19  rr\_tb\_aids                                           26       universal       0.01          100           vague prior      26williams\_pnas    assumed
+  20  rr\_tb\_art\_adult                                     0.35     universal       0.28          0.44          CI
+  21  rr\_tb\_art\_child                                     0.3      universal       0.21          0.39          CI
+  22  rr\_tb\_obese                                          0.4      universal       0.01          100           vague prior
+  23  rr\_tb\_diabetes                                       3        universal       0.01          100           vague prior
+  24  rr\_tb\_alcohol                                        2.9      universal       0.01          100           vague prior
+  25  rr\_tb\_smoking                                        1.3      universal       0.01          100           vague prior
+  26  rr\_ipt\_adult                                         0.4      universal       0.01          100           vague prior
+  27  rr\_ipt\_child                                         0.55     universal       0.4           0.75          CI
+  28  rr\_ipt\_adult\_hiv                                    0.68     universal       0.54          0.85          CI
+  29  rr\_ipt\_child\_hiv                                    0.31     universal       0.11          0.87          CI
+  30  rr\_ipt\_art\_child                                    0.76     universal       0.01          100           vague prior
+  31  rr\_ipt\_art\_adult                                    0.63     universal       0.01          100           vague prior
+  32  sens\_xpert\_smear\_negative                           0.68     universal       0             1             vague prior
+  33  sens\_xpert\_smear\_positive                           0.98     universal       0             1             vague prior
+  34  spec\_xpert\_smear\_negative                           0.99     universal       0             1             vague prior
+  35  spec\_xpert\_smear\_positive                           0.99     universal       0             1             vague prior
+  36  sens\_sputum\_smear\_positive                          1        universal       0             1             vague prior
+  37  spec\_sputum\_smear\_positive                          1        universal       0             1             vague prior
+  38  sens\_clinical                                         0.209    universal       0.12          0.33          vague prior
+  39  spec\_clinical                                         0.953    universal       0.92          0.97          vague prior
+  40  sens\_xray\_smear\_negative                            0.8      universal       0             1             vague prior
+  41  sens\_xray\_smear\_positive                            0.91     universal       0             1             vague prior
+  42  spec\_xray\_smear\_negative                            0.67     universal       0             1             vague prior
+  43  spec\_xray\_smear\_positive                            0.67     universal       0             1             vague prior
+  44  prob\_tx\_success\_ds                                  0.837    local           0             1             vague prior
+  45  prob\_tx\_success\_mdr                                 0.597    local           0             1             vague prior
+  46  prob\_tx\_success\_0\_4                                0.94     local           0             1             vague prior
+  47  prob\_tx\_success\_5\_14                               0.92     local           0             1             vague prior
+  48  rate\_testing\_general\_pop                            0.025    local           0             1             vague prior
+  49  ds\_treatment\_length                                  6        local           1             24            vague prior
+  50  ds\_retreatment\_length                                8        local           1             24            vague prior
+  51  mdr\_treatment\_length                                 24       local           1             48            vague prior
+  52  prob\_retained\_ipt\_6\_months                         0.9      local           0             1             vague prior
+  53  age\_eligibility\_for\_ipt                             5        local           0             20            vague prior
+  54  ipt\_start\_date                                       2014     local           2010          2030          vague prior
+  55  first\_line\_test                                      sputum   local                                       vague prior
+  56  second\_line\_test                                     xpert    local                                       vague prior
+  57  tb\_healthseekingbehaviour\_cap                        5        local           1             20            vague prior
+  58  data\_end                                              2022     local           2020          2030          vague prior
+  59  length\_of\_inpatient\_stay\_if\_terminal              [5,10]   local           [0,1]         [1,30]        vague prior
+  60  type\_of\_scaleup                                      none     scenario
+  61  scaleup\_start\_year                                   2025     scenario        2020          2040          vague prior
+  62  age\_threshold\_adult\_years                           15       local           10            20            vague prior
+  63  age\_threshold\_ipt\_dispensation                      2        local           0             10            vague prior
+  64  age\_threshold\_infant\_years                          5        local           3             10            vague prior
+  65  odds\_ratio\_health\_seeking\_adults\_fatigue          5        local           0.01          100           vague prior
+  66  odds\_ratio\_health\_seeking\_children\_fatigue        5        local           0.01          100           vague prior
+  67  odds\_ratio\_health\_seeking\_adults\_night\_sweats    5        local           0.01          100           vague prior
+  68  odds\_ratio\_health\_seeking\_children\_night\_sweats  5        local           0.01          100           vague prior
+  69  sensitivity\_sputum\_test\_smear\_negative             0        universal       0             1             vague prior
+  70  specificity\_sputum\_test\_smear\_negative             1        universal       0             1             vague prior
+  71  sensitivity\_culture\_test                             1        universal       0             1             vague prior
+  72  specificity\_culture\_test                             1        universal       0             1             vague prior
+  73  screening\_scheduling\_window\_months                  1        local           1             12            vague prior
+  74  ipt\_scheduling\_window\_child\_of\_tb\_mother\_days   28       local           1             365           vague prior
+  75  hv\_min\_days\_between\_tests                          7        local           1             365           vague prior
+  76  tb\_min\_days\_between\_tests                          7        local           1             365           vague prior
+  77  xray\_scheduling\_weeks\_level2                        1        local           1             52            vague prior
+  78  TbActiveCasePoll\_frequency\_years                     1        undetermined    1             5             design decision
+  79  TbActiveEvent\_frequency\_days                         1        undetermined    1             5             design decision
+  80  TbRegularEvents\_frequency\_months                     1        undetermined    1             12            design decision
+  81  relapse\_early\_late\_cutoff\_years                    2        local           1             5             vague prior
+  82  ipt\_reevaluate\_continuation\_frequency\_months       6        local           1             24            vague prior
+  83  active\_disease\_duration\_months                      36       universal       1             120           vague prior
+  84  follow\_up\_interval\_months                           1        local           1             24            vague prior
+  85  treatment\_retry\_weeks                                1        local           1             12            vague prior
+  86  death\_timing\_hiv\_positive\_min\_months              1        universal       1             12            vague prior
+  87  death\_timing\_hiv\_positive\_max\_months              5        universal       1             12            vague prior
+  88  death\_timing\_hiv\_negative\_min\_months              1        universal       1             12            vague prior
+  89  death\_timing\_hiv\_negative\_max\_months              6        universal       1             12            vague prior
+  90  prob\_treatment\_availability                          0.6      local           0             1             vague prior
+  91  TbSelfCureEvent\_frequency\_months                     12       undetermined    6             18            design decision
+  92  number\_high\_risk\_contacts                           5        local           1             15            vague prior
+  93  ipt\_scheduling\_delay\_days\_min                      1        local           1             15            vague prior
+  94  ipt\_scheduling\_delay\_days\_max                      14       local           10            20            vague prior
+  95  xpert\_appointment\_delay\_days                        1        local           1             15            vague prior
+  96  mdr\_level2\_appt\_delay\_days                         1        local           1             15            vague prior
+  97  screening\_appointment\_window\_days                   14       local           1             30            vague prior
+  98  ipt\_appointment\_window\_days                         14       local           1             30            vague prior
+  99  max\_duration\_ipt\_continued\_treatment\_months       36       local           1             15            vague prior
+ 100  min\_days\_symptomatic\_required\_for\_screening       14       local           1             30            vague prior
+ 101  number\_doses\_3hp\_per\_dispensation                  12       local           1             24            vague prior
+ 102  number\_doses\_ipt\_per\_dispensation                  182      local           1             365           vague prior
+====  =====================================================  =======  ==============  ============  ============  ===============  ==================  ============

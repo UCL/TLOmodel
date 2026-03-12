@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>spectrum treatment cascade (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>spectrum treatment cascade (.csv) &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -72,6 +72,7 @@
 <li class="toctree-l3"><a class="reference internal" href="MoH_number_art.csv.html">MoH number art (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="MoH_numbers_tests.csv.html">MoH numbers tests (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="art_coverage.csv.html">art coverage (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="arv_dispensation_schedule.csv.html">arv dispensation schedule (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="calibration_from_aids_info.csv.html">calibration from aids info (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="children0_14_prev_AIDSinfo.csv.html">children0 14 prev AIDSinfo (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="hiv_prevalence.csv.html">hiv prevalence (.csv)</a></li>
@@ -79,13 +80,14 @@
 <li class="toctree-l3"><a class="reference internal" href="scaleup_parameters.csv.html">scaleup parameters (.csv)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">spectrum treatment cascade (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="time_since_infection_at_baselin.csv.html">time since infection at baselin (.csv)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="unaids_infections_art2021.csv.html">unaids infections art2021 (.csv)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="unaids_mortality_dalys2021.csv.html">unaids mortality dalys2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_infections_art2023.csv.html">unaids infections art2023 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_mortality_dalys2023.csv.html">unaids mortality dalys2023 (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="unaids_pmtct2021.csv.html">unaids pmtct2021 (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="unaids_program_perf.csv.html">unaids program perf (.csv)</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_IndividualHistoryTracker/index.html">ResourceFile_IndividualHistoryTracker</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
@@ -113,6 +115,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RecordSummaryStats.csv.html">RecordSummaryStats (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
 </ul>
 </li>
@@ -159,367 +162,532 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>year</p></th>
 <th class="head"><p>age</p></th>
-<th class="head"><p>plhiv</p></th>
 <th class="head"><p>know_status</p></th>
 <th class="head"><p>on_art</p></th>
 <th class="head"><p>plhiv_virally_suppressed</p></th>
 <th class="head"><p>prob_art_if_dx</p></th>
+<th class="head"><p>prob_art_if_dx_updated</p></th>
 <th class="head"><p>virally_suppressed_on_art</p></th>
 <th class="head"><p>vs_assumed_value</p></th>
+<th class="head"><p>notes</p></th>
+<th class="head"><p>adjusted_baseline_prob_vs_untested</p></th>
+<th class="head"><p>adjusted_odds_vs_tested</p></th>
+<th class="head"><p>adjusted_prob_vs_tested</p></th>
+<th class="head"><p>overall_adjusted_viral_suppression_on_art</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>2010</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>68.7973</p></td>
-<td><p>29.6951</p></td>
+<td><p>53.7024</p></td>
 <td></td>
-<td><p>0.431632</p></td>
+<td><p>43.1632</p></td>
+<td><p>0.415302</p></td>
 <td><p>80</p></td>
 <td><p>yes</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.716204</p></td>
+<td><p>3.50789</p></td>
+<td><p>0.778167</p></td>
+<td><p>0.778167</p></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>2011</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>73.2277</p></td>
-<td><p>37.6375</p></td>
+<td><p>49.868</p></td>
 <td></td>
-<td><p>0.513979</p></td>
+<td><p>51.3979</p></td>
+<td><p>0.489223</p></td>
 <td><p>80</p></td>
 <td><p>yes</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.716204</p></td>
+<td><p>3.50789</p></td>
+<td><p>0.778167</p></td>
+<td><p>0.778167</p></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>2012</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>76.423</p></td>
-<td><p>46.3159</p></td>
-<td><p>42.10131</p></td>
-<td><p>0.606046</p></td>
+<td><p>58.9956</p></td>
+<td><p>42.1013</p></td>
+<td><p>60.6046</p></td>
+<td><p>0.568935</p></td>
 <td><p>91</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.814682</p></td>
+<td><p>6.11063</p></td>
+<td><p>0.859365</p></td>
+<td><p>0.859365</p></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>2013</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>78.7843</p></td>
-<td><p>52.9497</p></td>
-<td><p>47.67345</p></td>
-<td><p>0.672084</p></td>
+<td><p>65.6284</p></td>
+<td><p>47.6735</p></td>
+<td><p>67.2084</p></td>
+<td><p>0.631461</p></td>
 <td><p>90</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.80573</p></td>
+<td><p>5.76498</p></td>
+<td><p>0.85218</p></td>
+<td><p>0.85218</p></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>2014</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
 <td><p>80.8733</p></td>
-<td><p>59.2378</p></td>
-<td><p>51.56636</p></td>
-<td><p>0.732477</p></td>
+<td><p>63.0337</p></td>
+<td><p>51.5664</p></td>
+<td><p>73.2477</p></td>
+<td><p>0.69048</p></td>
 <td><p>87</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.778872</p></td>
+<td><p>4.89595</p></td>
+<td><p>0.830392</p></td>
+<td><p>0.830392</p></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>2015</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>82.7952</p></td>
-<td><p>64.1071</p></td>
-<td><p>57.26896</p></td>
-<td><p>0.774285</p></td>
-<td><p>89</p></td>
+<td><p>83.5</p></td>
+<td><p>67.9145</p></td>
+<td><p>54</p></td>
+<td><p>72</p></td>
+<td><p>0.733631</p></td>
+<td><p>88.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.792301</p></td>
+<td><p>5.30237</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.84133</p></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>2016</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>85.3839</p></td>
-<td><p>71.6873</p></td>
-<td><p>65.32565</p></td>
-<td><p>0.839588</p></td>
-<td><p>91</p></td>
+<td><p>86</p></td>
+<td><p>68.0015</p></td>
+<td><p>62</p></td>
+<td><p>78.5</p></td>
+<td><p>0.798764</p></td>
+<td><p>90.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.810206</p></td>
+<td><p>5.93373</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.855777</p></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>2017</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>88.3281</p></td>
-<td><p>78.056</p></td>
-<td><p>69.32195</p></td>
-<td><p>0.883705</p></td>
 <td><p>89</p></td>
+<td><p>74.7266</p></td>
+<td><p>66</p></td>
+<td><p>83.5</p></td>
+<td><p>0.848989</p></td>
+<td><p>88.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.792301</p></td>
+<td><p>5.30237</p></td>
+<td><p>0.84133</p></td>
+<td><p>0.84133</p></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>2018</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>90.6581</p></td>
-<td><p>84.2257</p></td>
-<td><p>76.80294</p></td>
-<td><p>0.929047</p></td>
-<td><p>91</p></td>
+<td><p>91.5</p></td>
+<td><p>81.0026</p></td>
+<td><p>73.5</p></td>
+<td><p>88</p></td>
+<td><p>0.894529</p></td>
+<td><p>90.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.810206</p></td>
+<td><p>5.93373</p></td>
+<td><p>0.855777</p></td>
+<td><p>0.855777</p></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>2019</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>92.1484</p></td>
-<td><p>85.4227</p></td>
-<td><p>79.98671</p></td>
-<td><p>0.927012</p></td>
-<td><p>94</p></td>
+<td><p>93</p></td>
+<td><p>81.9902</p></td>
+<td><p>77</p></td>
+<td><p>88</p></td>
+<td><p>0.889631</p></td>
+<td><p>93.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.837064</p></td>
+<td><p>7.14093</p></td>
+<td><p>0.877164</p></td>
+<td><p>0.877164</p></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>2020</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>92.9485</p></td>
-<td><p>88.4399</p></td>
-<td><p>84.41127</p></td>
-<td><p>0.951494</p></td>
-<td><p>95</p></td>
+<td><p>93.5</p></td>
+<td><p>85.3697</p></td>
+<td><p>81.5</p></td>
+<td><p>91</p></td>
+<td><p>0.920326</p></td>
+<td><p>95.5</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.854969</p></td>
+<td><p>8.19414</p></td>
+<td><p>0.891235</p></td>
+<td><p>0.891235</p></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>2021</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>93.5013</p></td>
-<td><p>87.7915</p></td>
-<td><p>84.41127</p></td>
-<td><p>0.938933</p></td>
+<td><p>93.5</p></td>
+<td><p>87.5221</p></td>
+<td><p>82.5</p></td>
 <td><p>95</p></td>
-<td><p>yes</p></td>
+<td><p>0.93786</p></td>
+<td><p>94.5</p></td>
+<td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.846016</p></td>
+<td><p>7.63692</p></td>
+<td><p>0.884218</p></td>
+<td><p>0.884218</p></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>2022</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>93.9624</p></td>
-<td><p>89.4291</p></td>
-<td><p>84.41127</p></td>
-<td><p>0.951754</p></td>
+<td><p>94.5</p></td>
+<td><p>89.5707</p></td>
+<td><p>84.5</p></td>
 <td><p>95</p></td>
-<td><p>yes</p></td>
+<td><p>0.948135</p></td>
+<td><p>94.5</p></td>
+<td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.846016</p></td>
+<td><p>7.63692</p></td>
+<td><p>0.884218</p></td>
+<td><p>0.884218</p></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>2023</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>94.4156</p></td>
-<td><p>90.9153</p></td>
-<td><p>84.41127</p></td>
-<td><p>0.962926</p></td>
-<td><p>95</p></td>
-<td><p>yes</p></td>
+<td><p>95.5</p></td>
+<td><p>91.6683</p></td>
+<td><p>87.5</p></td>
+<td><p>96</p></td>
+<td><p>0.957094</p></td>
+<td><p>95.5</p></td>
+<td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.854969</p></td>
+<td><p>8.19414</p></td>
+<td><p>0.891235</p></td>
+<td><p>0.891235</p></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>2024</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>94.8546</p></td>
-<td><p>92.2097</p></td>
-<td><p>84.41127</p></td>
-<td><p>0.972116</p></td>
-<td><p>95</p></td>
+<td><p>95.5</p></td>
+<td><p>91.6683</p></td>
+<td><p>87.5</p></td>
+<td><p>96</p></td>
+<td><p>0.958383</p></td>
+<td><p>95.5</p></td>
 <td><p>yes</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.854969</p></td>
+<td><p>8.19414</p></td>
+<td><p>0.891235</p></td>
+<td><p>0.891235</p></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>2025</p></td>
 <td><p>adults</p></td>
-<td><p>100</p></td>
-<td><p>95.2839</p></td>
-<td><p>93.2709</p></td>
-<td><p>84.41127</p></td>
-<td><p>0.978874</p></td>
-<td><p>95</p></td>
+<td><p>95.5</p></td>
+<td><p>91.6683</p></td>
+<td><p>87.5</p></td>
+<td><p>96</p></td>
+<td><p>0.958383</p></td>
+<td><p>95.5</p></td>
 <td><p>yes</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.854969</p></td>
+<td><p>8.19414</p></td>
+<td><p>0.891235</p></td>
+<td><p>0.891235</p></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>2010</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
 <td><p>12.0082</p></td>
-<td><p>12.0082</p></td>
-<td></td>
-<td><p>1</p></td>
+<td><p>27.5215</p></td>
+<td><p>16.4257</p></td>
+<td><p>88</p></td>
+<td><p>0.924763</p></td>
 <td><p>60</p></td>
 <td><p>yes</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.537153</p></td>
+<td><p>1.61315</p></td>
+<td><p>0.617321</p></td>
+<td><p>0.617321</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>2011</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
 <td><p>16.3359</p></td>
-<td><p>16.3359</p></td>
-<td></td>
-<td><p>1</p></td>
+<td><p>36.8277</p></td>
+<td><p>16.4257</p></td>
+<td><p>88</p></td>
+<td><p>0.916309</p></td>
 <td><p>60</p></td>
 <td><p>yes</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.537153</p></td>
+<td><p>1.61315</p></td>
+<td><p>0.617321</p></td>
+<td><p>0.617321</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>2012</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
 <td><p>21.3058</p></td>
-<td><p>21.3058</p></td>
+<td><p>46.7586</p></td>
 <td><p>16.4257</p></td>
-<td><p>1</p></td>
+<td><p>88</p></td>
+<td><p>0.906289</p></td>
 <td><p>77</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.689346</p></td>
+<td><p>3.08444</p></td>
+<td><p>0.755168</p></td>
+<td><p>0.755168</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>2013</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
 <td><p>26.7224</p></td>
-<td><p>26.7224</p></td>
-<td><p>18.72319</p></td>
-<td><p>1</p></td>
+<td><p>56.4413</p></td>
+<td><p>18.7232</p></td>
+<td><p>88</p></td>
+<td><p>0.896673</p></td>
 <td><p>70</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.626679</p></td>
+<td><p>2.33333</p></td>
+<td><p>0.7</p></td>
+<td><p>0.7</p></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>2014</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
 <td><p>31.232</p></td>
-<td><p>31.232</p></td>
-<td><p>19.97077</p></td>
-<td><p>1</p></td>
+<td><p>42.8389</p></td>
+<td><p>19.9708</p></td>
+<td><p>88</p></td>
+<td><p>0.883672</p></td>
 <td><p>64</p></td>
 <td><p>no</p></td>
+<td><p>from 2021 projections</p></td>
+<td><p>0.572963</p></td>
+<td><p>1.86499</p></td>
+<td><p>0.650959</p></td>
+<td><p>0.650959</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>2015</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>36.8552</p></td>
-<td><p>36.8552</p></td>
-<td><p>24.14631</p></td>
-<td><p>1</p></td>
+<td><p>41</p></td>
+<td><p>49.7614</p></td>
+<td><p>23</p></td>
+<td><p>88</p></td>
+<td><p>0.874845</p></td>
 <td><p>66</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.590868</p></td>
+<td><p>2.00744</p></td>
+<td><p>0.667491</p></td>
+<td><p>0.667491</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>2016</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>45.6402</p></td>
-<td><p>45.6402</p></td>
-<td><p>30.28785</p></td>
-<td><p>1</p></td>
+<td><p>50</p></td>
+<td><p>43.5389</p></td>
+<td><p>29</p></td>
+<td><p>88</p></td>
+<td><p>0.87305</p></td>
 <td><p>66</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.590868</p></td>
+<td><p>2.00744</p></td>
+<td><p>0.667491</p></td>
+<td><p>0.667491</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>2017</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>55.3097</p></td>
-<td><p>55.3097</p></td>
-<td><p>31.84964</p></td>
-<td><p>1</p></td>
+<td><p>59</p></td>
+<td><p>51.8231</p></td>
+<td><p>30</p></td>
+<td><p>87</p></td>
+<td><p>0.869772</p></td>
 <td><p>58</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.519248</p></td>
+<td><p>1.5013</p></td>
+<td><p>0.600208</p></td>
+<td><p>0.600208</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>2018</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>59.9339</p></td>
-<td><p>59.9339</p></td>
-<td><p>34.86357</p></td>
-<td><p>1</p></td>
+<td><p>64</p></td>
+<td><p>55.7944</p></td>
+<td><p>32</p></td>
+<td><p>86</p></td>
+<td><p>0.857858</p></td>
 <td><p>58</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.519248</p></td>
+<td><p>1.5013</p></td>
+<td><p>0.600208</p></td>
+<td><p>0.600208</p></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>2019</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>70.1143</p></td>
-<td><p>70.1143</p></td>
-<td><p>45.20806</p></td>
-<td><p>1</p></td>
+<td><p>74</p></td>
+<td><p>64.4523</p></td>
+<td><p>41</p></td>
+<td><p>87</p></td>
+<td><p>0.861609</p></td>
 <td><p>64</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.572963</p></td>
+<td><p>1.86499</p></td>
+<td><p>0.650959</p></td>
+<td><p>0.650959</p></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
 <td><p>2020</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>74.5157</p></td>
-<td><p>74.5157</p></td>
-<td><p>55.22878</p></td>
-<td><p>1</p></td>
+<td><p>79</p></td>
+<td><p>68.251</p></td>
+<td><p>50</p></td>
+<td><p>86</p></td>
+<td><p>0.845286</p></td>
 <td><p>74</p></td>
 <td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.662489</p></td>
+<td><p>2.72838</p></td>
+<td><p>0.731787</p></td>
+<td><p>0.731787</p></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>2021</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>75.0737</p></td>
-<td><p>74.8426</p></td>
-<td><p>55.22878</p></td>
-<td><p>0.996922</p></td>
-<td><p>74</p></td>
-<td><p>yes</p></td>
+<td><p>80</p></td>
+<td><p>69.2667</p></td>
+<td><p>52</p></td>
+<td><p>86</p></td>
+<td><p>0.834482</p></td>
+<td><p>75</p></td>
+<td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.671441</p></td>
+<td><p>2.8406</p></td>
+<td><p>0.739624</p></td>
+<td><p>0.739624</p></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
 <td><p>2022</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>77.5224</p></td>
-<td><p>77.263</p></td>
-<td><p>55.22878</p></td>
-<td><p>0.996654</p></td>
-<td><p>74</p></td>
-<td><p>yes</p></td>
+<td><p>83</p></td>
+<td><p>70.9988</p></td>
+<td><p>56</p></td>
+<td><p>85</p></td>
+<td><p>0.820808</p></td>
+<td><p>79</p></td>
+<td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.707252</p></td>
+<td><p>3.3581</p></td>
+<td><p>0.770542</p></td>
+<td><p>0.770542</p></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
 <td><p>2023</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>79.6966</p></td>
-<td><p>79.4016</p></td>
-<td><p>55.22878</p></td>
-<td><p>0.996298</p></td>
-<td><p>74</p></td>
-<td><p>yes</p></td>
+<td><p>88</p></td>
+<td><p>72.6218</p></td>
+<td><p>61</p></td>
+<td><p>83</p></td>
+<td><p>0.790068</p></td>
+<td><p>84</p></td>
+<td><p>no</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.752014</p></td>
+<td><p>4.21516</p></td>
+<td><p>0.808251</p></td>
+<td><p>0.808251</p></td>
 </tr>
 <tr class="row-even"><td><p>30</p></td>
 <td><p>2024</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>81.5702</p></td>
-<td><p>81.2117</p></td>
-<td><p>55.22878</p></td>
-<td><p>0.995606</p></td>
-<td><p>74</p></td>
+<td><p>88</p></td>
+<td><p>72.6218</p></td>
+<td><p>61</p></td>
+<td><p>83</p></td>
+<td><p>0.768246</p></td>
+<td><p>84</p></td>
 <td><p>yes</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.752014</p></td>
+<td><p>4.21516</p></td>
+<td><p>0.808251</p></td>
+<td><p>0.808251</p></td>
 </tr>
 <tr class="row-odd"><td><p>31</p></td>
 <td><p>2025</p></td>
 <td><p>children</p></td>
-<td><p>100</p></td>
-<td><p>83.7223</p></td>
-<td><p>83.3131</p></td>
-<td><p>55.22878</p></td>
-<td><p>0.995112</p></td>
-<td><p>74</p></td>
+<td><p>88</p></td>
+<td><p>72.6218</p></td>
+<td><p>61</p></td>
+<td><p>83</p></td>
+<td><p>0.768246</p></td>
+<td><p>84</p></td>
 <td><p>yes</p></td>
+<td><p>from 2025 projections</p></td>
+<td><p>0.752014</p></td>
+<td><p>4.21516</p></td>
+<td><p>0.808251</p></td>
+<td><p>0.808251</p></td>
 </tr>
 </tbody>
 </table>

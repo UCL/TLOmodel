@@ -552,6 +552,57 @@ tlo.methods.labour module
         * - pnc_sens_analysis_min
           - BOOL
           - Signals that min coverage of SBA is being forced for sensitivity analysis
+        * - min_reproductive_age
+          - INT
+          - Minimum age for women to be considered of reproductive age
+        * - max_reproductive_age
+          - INT
+          - Maximum age for women to be considered of reproductive age
+        * - birth_weight_threshold_macrosomia
+          - INT
+          - Birth weight threshold for macrosomia classification (grams)
+        * - birth_weight_threshold_normal
+          - INT
+          - Birth weight threshold for normal vs low birth weight classification (grams)
+        * - birth_weight_threshold_low
+          - INT
+          - Birth weight threshold for low vs very low birth weight classification (grams)
+        * - birth_weight_threshold_very_low
+          - INT
+          - Birth weight threshold for very low vs extremely low birth weight classification (grams)
+        * - hsi_event_standard_delay_window
+          - INT
+          - Standard delay window in days for scheduling HSI events
+        * - delivery_event_delay_window
+          - INT
+          - Delay window in days for scheduling delivery events
+        * - death_stillbirth_event_delay
+          - INT
+          - Delay in days for scheduling death and stillbirth events
+        * - birth_event_delay
+          - INT
+          - Delay in days for scheduling birth event
+        * - max_estimated_pregnancy_duration_days
+          - INT
+          - Maximum estimated pregnancy duration in days for validation checks
+        * - beddays_regular_delivery
+          - INT
+          - Beddays required for regular maternity delivery
+        * - beddays_extended_delivery
+          - INT
+          - Beddays required for extended maternity delivery
+        * - anemia_diagnostic_sensitivity
+          - REAL
+          - Sensitivity for anemia diagnostic test
+        * - prob_timings_pnc_<48_scenario
+          - LIST
+          - probabilities that a woman who will receive a PNC check will receive care < 48hrs post birth scenario set to 1
+        * - prob_timings_pnc_newborns_<48_scenario
+          - LIST
+          - probabilities that a woman who will receive a PNC check newborn will receive care < 48hrs post birth scenario set to 1
+        * - home_delivery_sens_analysis_prob
+          - REAL
+          - Probability for home delivery in sensitivity analysis
 
 
      **PROPERTIES:**
@@ -640,15 +691,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'PregnancySupervisor', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'HealthSystem', 'Lifestyle', 'Contraception'}
+     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Contraception', 'HealthSystem', 'PregnancySupervisor', 'NewbornOutcomes', 'Lifestyle'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x3341824d0>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x334181950>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x334180690>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x334183510>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x334180410>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x334182a90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x334183090>, 'eclampsia': <tlo.methods.causes.Cause object at 0x334180a10>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x139a04590>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x139a07410>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x139a06410>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x139a06fd0>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x139a04910>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x139a04050>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x139a06450>, 'eclampsia': <tlo.methods.causes.Cause object at 0x139a042d0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x334181450>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x139a04610>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
@@ -673,6 +724,8 @@ tlo.methods.labour module
      .. automethod:: on_hsi_alert
 
      .. automethod:: report_daly_values
+
+     .. automethod:: report_summary_stats
 
      .. automethod:: set_date_of_labour
 

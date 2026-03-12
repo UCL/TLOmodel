@@ -393,9 +393,9 @@ tlo.methods.enhanced_lifestyle module
         * - proportion_of_men_circumcised_at_initiation
           - REAL
           - Proportion of men (of all ages) that are assumed to be circumcised at the initiation of thesimulation.
-        * - proportion_female_sex_workers
-          - REAL
-          - proportion of women aged 15-49 years who are sex workers
+        * - number_female_sex_workers
+          - INT
+          - number of women aged 15-49 years who are sex workers
         * - fsw_transition
           - REAL
           - proportion of sex workers that stop being a sex worker each year

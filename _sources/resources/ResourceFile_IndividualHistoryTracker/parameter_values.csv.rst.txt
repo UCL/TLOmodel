@@ -1,0 +1,11 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_IndividualHistoryTracker/parameter_values.csv>`
+
+====  =====================  ====================================================================================================================================================================================  ==============  ============  ============  =============
+  ..  parameter\_name        value                                                                                                                                                                                 param\_label    prior\_min    prior\_max    prior\_note
+====  =====================  ====================================================================================================================================================================================  ==============  ============  ============  =============
+   0  modules\_of\_interest  ["\*"]                                                                                                                                                                                scenario        N/A           N/A           N/A
+   1  events\_to\_ignore     ["AgeUpdateEvent","HealthSystemScheduler","SimplifiedBirthsPoll","DirectBirth","LifestyleEvent","TbActiveCasePollGenerateData","HivPollingEventForDataGeneration","RTIPollingEvent"]  scenario        N/A           N/A           N/A
+====  =====================  ====================================================================================================================================================================================  ==============  ============  ============  =============

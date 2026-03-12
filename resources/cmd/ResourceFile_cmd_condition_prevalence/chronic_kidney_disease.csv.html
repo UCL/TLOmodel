@@ -6,18 +6,18 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>chronic kidney disease (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+  <title>chronic kidney disease (.csv) &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=34bb78ad" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3b2d0e5f"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -65,6 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_IndividualHistoryTracker/index.html">ResourceFile_IndividualHistoryTracker</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
@@ -103,6 +104,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../ResourceFile_cmd_events_hsi/index.html">ResourceFile_cmd_events_hsi</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../ResourceFile_cmd_events_symptoms/index.html">ResourceFile_cmd_events_symptoms</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../ResourceFile_cmd_parameters.csv.html">cmd parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../parameter_values.csv.html">parameter values (.csv)</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../contraception/index.html">contraception</a></li>
@@ -117,6 +119,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_RecordSummaryStats.csv.html">RecordSummaryStats (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
 </ul>
 </li>
@@ -164,37 +167,46 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
-<th class="head"><p>lower</p></th>
-<th class="head"><p>upper</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
 <th class="head"><p>gbd_value</p></th>
-<th class="head"><p>gbd_lower</p></th>
 <th class="head"><p>gbd_upper</p></th>
-<th class="head"><p>Unnamed: 7</p></th>
-<th class="head"><p>“value” source:</p></th>
+<th class="head"><p>gbd_lower</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>Unnamed: 9</p></th>
 <th class="head"><p>Nakanga et al. 2019</p></th>
+<th class="head"><p>Unnamed: 11</p></th>
+<th class="head"><p>“value” source:</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>m_0-4</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.00255692</p></td>
 <td><p>0.00319887</p></td>
 <td><p>0.00200606</p></td>
+<td><p>CI</p></td>
+<td></td>
+<td><p>GBD 2019</p></td>
 <td></td>
 <td><p>“gbd_value” source:</p></td>
-<td><p>GBD 2019</p></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>m_5-9</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.00371278</p></td>
 <td><p>0.00468917</p></td>
-<td><p>0.00286889</p></td>
+<td><p>0.0028689</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -202,11 +214,14 @@
 <tr class="row-even"><td><p>2</p></td>
 <td><p>m_10-14</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.0061868</p></td>
-<td><p>0.00908298</p></td>
+<td><p>0.00908299</p></td>
 <td><p>0.00448046</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -214,11 +229,14 @@
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>m_15-19</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.0137078</p></td>
 <td><p>0.0231063</p></td>
 <td><p>0.00851325</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -226,11 +244,14 @@
 <tr class="row-even"><td><p>4</p></td>
 <td><p>m_20-24</p></td>
 <td><p>0.0003</p></td>
+<td><p>local</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0281956</p></td>
 <td><p>0.0488208</p></td>
 <td><p>0.0159868</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -238,11 +259,14 @@
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>m_25-29</p></td>
 <td><p>0.0003</p></td>
+<td><p>local</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0517956</p></td>
 <td><p>0.0929709</p></td>
 <td><p>0.0276113</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -250,11 +274,14 @@
 <tr class="row-even"><td><p>6</p></td>
 <td><p>m_30-34</p></td>
 <td><p>0.0009</p></td>
+<td><p>local</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.0834814</p></td>
 <td><p>0.156243</p></td>
 <td><p>0.0416993</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -262,11 +289,14 @@
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>m_35-39</p></td>
 <td><p>0.0009</p></td>
+<td><p>local</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.115192</p></td>
 <td><p>0.217204</p></td>
 <td><p>0.0570853</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -274,11 +304,14 @@
 <tr class="row-even"><td><p>8</p></td>
 <td><p>m_40-44</p></td>
 <td><p>0.0033</p></td>
+<td><p>local</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.135337</p></td>
 <td><p>0.294774</p></td>
 <td><p>0.0736934</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -286,11 +319,14 @@
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>m_45-49</p></td>
 <td><p>0.0033</p></td>
+<td><p>local</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.142722</p></td>
 <td><p>0.255127</p></td>
 <td><p>0.0773419</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -298,11 +334,14 @@
 <tr class="row-even"><td><p>10</p></td>
 <td><p>m_50-54</p></td>
 <td><p>0.014</p></td>
+<td><p>local</p></td>
 <td><p>0.014</p></td>
 <td><p>0.014</p></td>
 <td><p>0.160194</p></td>
 <td><p>0.269689</p></td>
 <td><p>0.0878407</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -310,11 +349,14 @@
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>m_55-59</p></td>
 <td><p>0.014</p></td>
+<td><p>local</p></td>
 <td><p>0.014</p></td>
 <td><p>0.014</p></td>
 <td><p>0.180531</p></td>
 <td><p>0.299908</p></td>
 <td><p>0.0963243</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -322,11 +364,14 @@
 <tr class="row-even"><td><p>12</p></td>
 <td><p>m_60-64</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
 <td><p>0.05</p></td>
 <td><p>0.05</p></td>
 <td><p>0.207884</p></td>
 <td><p>0.332039</p></td>
 <td><p>0.129019</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -334,11 +379,14 @@
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>m_65-69</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
 <td><p>0.05</p></td>
 <td><p>0.05</p></td>
 <td><p>0.262859</p></td>
 <td><p>0.441759</p></td>
 <td><p>0.156898</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -346,11 +394,14 @@
 <tr class="row-even"><td><p>14</p></td>
 <td><p>m_70-74</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.32175</p></td>
 <td><p>0.51209</p></td>
 <td><p>0.184222</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -358,11 +409,14 @@
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>m_75-79</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.365787</p></td>
 <td><p>0.537517</p></td>
 <td><p>0.248142</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -370,11 +424,14 @@
 <tr class="row-even"><td><p>16</p></td>
 <td><p>m_80-84</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.373024</p></td>
 <td><p>0.50989</p></td>
 <td><p>0.268238</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -382,11 +439,14 @@
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>m_85-89</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.344507</p></td>
 <td><p>0.475384</p></td>
 <td><p>0.248942</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -394,11 +454,14 @@
 <tr class="row-even"><td><p>18</p></td>
 <td><p>m_90-94</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.32002</p></td>
 <td><p>0.44949</p></td>
 <td><p>0.234287</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -406,11 +469,14 @@
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>m_95-99</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.312771</p></td>
 <td><p>0.466587</p></td>
 <td><p>0.225862</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -418,11 +484,14 @@
 <tr class="row-even"><td><p>20</p></td>
 <td><p>m_100+</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.312771</p></td>
 <td><p>0.466587</p></td>
 <td><p>0.225862</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -430,11 +499,14 @@
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>f_0-4</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.00273803</p></td>
 <td><p>0.00328639</p></td>
 <td><p>0.00219423</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -442,11 +514,14 @@
 <tr class="row-even"><td><p>22</p></td>
 <td><p>f_5-9</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.00360398</p></td>
 <td><p>0.0043984</p></td>
 <td><p>0.00287865</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -454,11 +529,14 @@
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>f_10-14</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.00547178</p></td>
 <td><p>0.00835224</p></td>
 <td><p>0.00387041</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -466,11 +544,14 @@
 <tr class="row-even"><td><p>24</p></td>
 <td><p>f_15-19</p></td>
 <td></td>
+<td><p>local</p></td>
 <td></td>
 <td></td>
 <td><p>0.0121246</p></td>
 <td><p>0.0206483</p></td>
-<td><p>0.0070925</p></td>
+<td><p>0.00709249</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -478,11 +559,14 @@
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>f_20-24</p></td>
 <td><p>0.0003</p></td>
+<td><p>local</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0269679</p></td>
 <td><p>0.048902</p></td>
 <td><p>0.0143855</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -490,11 +574,14 @@
 <tr class="row-even"><td><p>26</p></td>
 <td><p>f_25-29</p></td>
 <td><p>0.0003</p></td>
+<td><p>local</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0003</p></td>
 <td><p>0.0517027</p></td>
 <td><p>0.0943903</p></td>
 <td><p>0.0271254</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -502,11 +589,14 @@
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>f_30-34</p></td>
 <td><p>0.0009</p></td>
+<td><p>local</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.0834728</p></td>
 <td><p>0.159149</p></td>
 <td><p>0.0407822</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -514,11 +604,14 @@
 <tr class="row-even"><td><p>28</p></td>
 <td><p>f_35-39</p></td>
 <td><p>0.0009</p></td>
+<td><p>local</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.0009</p></td>
 <td><p>0.113658</p></td>
 <td><p>0.21309</p></td>
 <td><p>0.0554153</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -526,11 +619,14 @@
 <tr class="row-odd"><td><p>29</p></td>
 <td><p>f_40-44</p></td>
 <td><p>0.0033</p></td>
+<td><p>local</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.13185</p></td>
 <td><p>0.270861</p></td>
 <td><p>0.0705371</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -538,11 +634,14 @@
 <tr class="row-even"><td><p>30</p></td>
 <td><p>f_45-49</p></td>
 <td><p>0.0033</p></td>
+<td><p>local</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.0033</p></td>
 <td><p>0.14036</p></td>
 <td><p>0.249878</p></td>
 <td><p>0.0769333</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -550,11 +649,14 @@
 <tr class="row-odd"><td><p>31</p></td>
 <td><p>f_50-54</p></td>
 <td><p>0.014</p></td>
+<td><p>local</p></td>
 <td><p>0.014</p></td>
 <td><p>0.014</p></td>
 <td><p>0.163039</p></td>
 <td><p>0.268802</p></td>
 <td><p>0.0870672</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -562,11 +664,14 @@
 <tr class="row-even"><td><p>32</p></td>
 <td><p>f_55-59</p></td>
 <td><p>0.014</p></td>
+<td><p>local</p></td>
 <td><p>0.014</p></td>
 <td><p>0.014</p></td>
 <td><p>0.187413</p></td>
 <td><p>0.301578</p></td>
 <td><p>0.100809</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -574,11 +679,14 @@
 <tr class="row-odd"><td><p>33</p></td>
 <td><p>f_60-64</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
 <td><p>0.05</p></td>
 <td><p>0.05</p></td>
 <td><p>0.217728</p></td>
 <td><p>0.340314</p></td>
 <td><p>0.133008</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -586,11 +694,14 @@
 <tr class="row-even"><td><p>34</p></td>
 <td><p>f_65-69</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
 <td><p>0.05</p></td>
 <td><p>0.05</p></td>
 <td><p>0.276124</p></td>
 <td><p>0.451387</p></td>
 <td><p>0.165055</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -598,11 +709,14 @@
 <tr class="row-odd"><td><p>35</p></td>
 <td><p>f_70-74</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.336192</p></td>
 <td><p>0.539004</p></td>
 <td><p>0.190413</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -610,11 +724,14 @@
 <tr class="row-even"><td><p>36</p></td>
 <td><p>f_75-79</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.38355</p></td>
 <td><p>0.573695</p></td>
 <td><p>0.258577</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -622,11 +739,14 @@
 <tr class="row-odd"><td><p>37</p></td>
 <td><p>f_80-84</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.408242</p></td>
 <td><p>0.56643</p></td>
 <td><p>0.286157</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -634,11 +754,14 @@
 <tr class="row-even"><td><p>38</p></td>
 <td><p>f_85-89</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.401826</p></td>
 <td><p>0.550125</p></td>
 <td><p>0.287672</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -646,11 +769,14 @@
 <tr class="row-odd"><td><p>39</p></td>
 <td><p>f_90-94</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.393353</p></td>
 <td><p>0.538132</p></td>
 <td><p>0.29649</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -658,11 +784,14 @@
 <tr class="row-even"><td><p>40</p></td>
 <td><p>f_95-99</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.402685</p></td>
 <td><p>0.579583</p></td>
 <td><p>0.304552</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -670,11 +799,14 @@
 <tr class="row-odd"><td><p>41</p></td>
 <td><p>f_100+</p></td>
 <td><p>0.16</p></td>
+<td><p>local</p></td>
 <td><p>0.16</p></td>
 <td><p>0.16</p></td>
 <td><p>0.402685</p></td>
 <td><p>0.579583</p></td>
 <td><p>0.304552</p></td>
+<td><p>CI</p></td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>

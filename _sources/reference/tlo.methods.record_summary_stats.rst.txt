@@ -1,0 +1,80 @@
+tlo.methods.record_summary_stats module
+=======================================
+
+.. automodule:: tlo.methods.record_summary_stats
+
+
+.. autoclass:: RecordSummaryStats
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - logging_frequency
+          - STRING
+          - Frequency at which to collect numbers: "day", "month", or "year"
+        * - do_checks
+          - BOOL
+          - Whether to check that the collected statistics are valid
+
+
+
+     **Class attributes:**
+
+     INIT_DEPENDENCIES : {'Demography'}
+
+     METADATA : {}
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class RecordSummaryStats):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: _check_stats
+
+     .. automethod:: collect_stats_and_write_to_log
+
+
+
+
+
+
+
+
+.. autoclass:: DiseasenumbersLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class DiseasenumbersLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

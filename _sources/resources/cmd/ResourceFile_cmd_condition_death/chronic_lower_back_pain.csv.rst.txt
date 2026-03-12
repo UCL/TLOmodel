@@ -3,74 +3,74 @@ chronic lower back pain (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_death/chronic_lower_back_pain.csv>`
 
-====  =====================================================  =======
-  ..  parameter\_name                                          value
-====  =====================================================  =======
-   0  baseline\_annual\_probability                                0
-   1  rr\_male                                                     0
-   2  rr\_0\_4                                                     0
-   3  rr\_5\_9                                                     0
-   4  rr\_10\_14                                                   0
-   5  rr\_15\_19                                                   0
-   6  rr\_20\_24                                                   0
-   7  rr\_25\_29                                                   0
-   8  rr\_30\_34                                                   0
-   9  rr\_35\_39                                                   0
-  10  rr\_40\_44                                                   0
-  11  rr\_45\_49                                                   0
-  12  rr\_50\_54                                                   0
-  13  rr\_55\_59                                                   0
-  14  rr\_60\_64                                                   0
-  15  rr\_65\_69                                                   0
-  16  rr\_70\_74                                                   0
-  17  rr\_75\_79                                                   0
-  18  rr\_80\_84                                                   0
-  19  rr\_85\_89                                                   0
-  20  rr\_90\_94                                                   0
-  21  rr\_95\_99                                                   0
-  22  rr\_100                                                      0
-  23  rr\_urban                                                    0
-  24  rr\_wealth\_1                                                0
-  25  rr\_wealth\_2                                                0
-  26  rr\_wealth\_3                                                0
-  27  rr\_wealth\_4                                                0
-  28  rr\_wealth\_5                                                0
-  29  rr\_bmi\_1                                                   0
-  30  rr\_bmi\_2                                                   0
-  31  rr\_bmi\_3                                                   0
-  32  rr\_bmi\_4                                                   0
-  33  rr\_bmi\_5                                                   0
-  34  rr\_low\_exercise                                            0
-  35  rr\_high\_salt                                               0
-  36  rr\_high\_sugar                                              0
-  37  rr\_tobacco                                                  0
-  38  rr\_alcohol                                                  0
-  39  rr\_marital\_status\_1                                       0
-  40  rr\_marital\_status\_2                                       0
-  41  rr\_marital\_status\_3                                       0
-  42  rr\_in\_education                                            0
-  43  rr\_current\_education\_level\_1                             0
-  44  rr\_current\_education\_level\_2                             0
-  45  rr\_current\_education\_level\_3                             0
-  46  rr\_unimproved\_sanitation                                   0
-  47  rr\_no\_access\_handwashing                                  0
-  48  rr\_no\_clean\_drinking\_water                               0
-  49  rr\_wood\_burning\_stove                                     0
-  50  rr\_diabetes                                                 0
-  51  rr\_hypertension                                             0
-  52  rr\_depression                                               0
-  53  rr\_chronic\_kidney\_disease                                 0
-  54  rr\_chronic\_lower\_back\_pain                               0
-  55  rr\_chronic\_ischemic\_heart\_disease                        0
-  56  rr\_cancers                                                  0
-  57  rr\_hiv                                                      0
-  58  rr\_ever\_stroke                                             0
-  59  rr\_ever\_heart\_attack                                      0
-  60  rr\_diabetes\_on\_medication                                 0
-  61  rr\_hypertension\_on\_medication                             0
-  62  rr\_chronic\_kidney\_disease\_on\_medication                 0
-  63  rr\_chronic\_lower\_back\_pain\_on\_medication               0
-  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
-  65  rr\_stroke\_on\_medication                                   0
-  66  rr\_heart\_attack\_on\_medication                            0
-====  =====================================================  =======
+====  =====================================================  =======  ==============  ============  ============  =============
+  ..  parameter\_name                                          value  param\_label      prior\_min    prior\_max  prior\_note
+====  =====================================================  =======  ==============  ============  ============  =============
+   0  baseline\_annual\_probability                                0  local                      0             1  vague prior
+   1  rr\_male                                                     0  universal                  0           100  vague prior
+   2  rr\_0\_4                                                     0  universal                  0           100  vague prior
+   3  rr\_5\_9                                                     0  universal                  0           100  vague prior
+   4  rr\_10\_14                                                   0  universal                  0           100  vague prior
+   5  rr\_15\_19                                                   0  universal                  0           100  vague prior
+   6  rr\_20\_24                                                   0  universal                  0           100  vague prior
+   7  rr\_25\_29                                                   0  universal                  0           100  vague prior
+   8  rr\_30\_34                                                   0  universal                  0           100  vague prior
+   9  rr\_35\_39                                                   0  universal                  0           100  vague prior
+  10  rr\_40\_44                                                   0  universal                  0           100  vague prior
+  11  rr\_45\_49                                                   0  universal                  0           100  vague prior
+  12  rr\_50\_54                                                   0  universal                  0           100  vague prior
+  13  rr\_55\_59                                                   0  universal                  0           100  vague prior
+  14  rr\_60\_64                                                   0  universal                  0           100  vague prior
+  15  rr\_65\_69                                                   0  universal                  0           100  vague prior
+  16  rr\_70\_74                                                   0  universal                  0           100  vague prior
+  17  rr\_75\_79                                                   0  universal                  0           100  vague prior
+  18  rr\_80\_84                                                   0  universal                  0           100  vague prior
+  19  rr\_85\_89                                                   0  universal                  0           100  vague prior
+  20  rr\_90\_94                                                   0  universal                  0           100  vague prior
+  21  rr\_95\_99                                                   0  universal                  0           100  vague prior
+  22  rr\_100                                                      0  universal                  0           100  vague prior
+  23  rr\_urban                                                    0  local                      0           100  vague prior
+  24  rr\_wealth\_1                                                0  local                      0           100  vague prior
+  25  rr\_wealth\_2                                                0  local                      0           100  vague prior
+  26  rr\_wealth\_3                                                0  local                      0           100  vague prior
+  27  rr\_wealth\_4                                                0  local                      0           100  vague prior
+  28  rr\_wealth\_5                                                0  local                      0           100  vague prior
+  29  rr\_bmi\_1                                                   0  universal                  0           100  vague prior
+  30  rr\_bmi\_2                                                   0  universal                  0           100  vague prior
+  31  rr\_bmi\_3                                                   0  universal                  0           100  vague prior
+  32  rr\_bmi\_4                                                   0  universal                  0           100  vague prior
+  33  rr\_bmi\_5                                                   0  universal                  0           100  vague prior
+  34  rr\_low\_exercise                                            0  universal                  0           100  vague prior
+  35  rr\_high\_salt                                               0  universal                  0           100  vague prior
+  36  rr\_high\_sugar                                              0  universal                  0           100  vague prior
+  37  rr\_tobacco                                                  0  universal                  0           100  vague prior
+  38  rr\_alcohol                                                  0  universal                  0           100  vague prior
+  39  rr\_marital\_status\_1                                       0  local                      0           100  vague prior
+  40  rr\_marital\_status\_2                                       0  local                      0           100  vague prior
+  41  rr\_marital\_status\_3                                       0  local                      0           100  vague prior
+  42  rr\_in\_education                                            0  local                      0           100  vague prior
+  43  rr\_current\_education\_level\_1                             0  local                      0           100  vague prior
+  44  rr\_current\_education\_level\_2                             0  local                      0           100  vague prior
+  45  rr\_current\_education\_level\_3                             0  local                      0           100  vague prior
+  46  rr\_unimproved\_sanitation                                   0  local                      0           100  vague prior
+  47  rr\_no\_access\_handwashing                                  0  local                      0           100  vague prior
+  48  rr\_no\_clean\_drinking\_water                               0  local                      0           100  vague prior
+  49  rr\_wood\_burning\_stove                                     0  local                      0           100  vague prior
+  50  rr\_diabetes                                                 0  universal                  0           100  vague prior
+  51  rr\_hypertension                                             0  universal                  0           100  vague prior
+  52  rr\_depression                                               0  local                      0           100  vague prior
+  53  rr\_chronic\_kidney\_disease                                 0  universal                  0           100  vague prior
+  54  rr\_chronic\_lower\_back\_pain                               0  universal                  0           100  vague prior
+  55  rr\_chronic\_ischemic\_heart\_disease                        0  universal                  0           100  vague prior
+  56  rr\_cancers                                                  0  universal                  0           100  vague prior
+  57  rr\_hiv                                                      0  universal                  0           100  vague prior
+  58  rr\_ever\_stroke                                             0  universal                  0           100  vague prior
+  59  rr\_ever\_heart\_attack                                      0  universal                  0           100  vague prior
+  60  rr\_diabetes\_on\_medication                                 0  universal                  0           100  vague prior
+  61  rr\_hypertension\_on\_medication                             0  universal                  0           100  vague prior
+  62  rr\_chronic\_kidney\_disease\_on\_medication                 0  universal                  0           100  vague prior
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication               0  universal                  0           100  vague prior
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0  universal                  0           100  vague prior
+  65  rr\_stroke\_on\_medication                                   0  universal                  0           100  vague prior
+  66  rr\_heart\_attack\_on\_medication                            0  universal                  0           100  vague prior
+====  =====================================================  =======  ==============  ============  ============  =============

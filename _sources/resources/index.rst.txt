@@ -17,6 +17,7 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_EPI_WHO_estimates/index.rst
     ResourceFile_HIV/index.rst
     ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.rst
+    ResourceFile_IndividualHistoryTracker/index.rst
     ResourceFile_LabourSkilledBirthAttendance/index.rst
     ResourceFile_Lifestyle_Enhanced/index.rst
     ResourceFile_Measles/index.rst
@@ -44,5 +45,6 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_EPI_vaccine_coverage.csv
     ResourceFile_GenericSymptoms_and_HealthSeeking.csv
     ResourceFile_HealthSeekingBehaviour.csv
+    ResourceFile_RecordSummaryStats.csv
     ResourceFile_SymptomManager.csv
 

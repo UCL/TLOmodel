@@ -1,0 +1,95 @@
+tlo.methods.individual_history_tracker module
+=============================================
+
+.. automodule:: tlo.methods.individual_history_tracker
+
+
+.. autoclass:: IndividualHistoryTracker
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - modules_of_interest
+          - LIST
+          - Restrict the events collected to specific modules. If *, print for all modules
+        * - events_to_ignore
+          - LIST
+          - Events to be ignored when collecting chains
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - iht_track_history
+          - BOOL
+          - Whether the individual should be tracked bythe individual history tracker or not
+
+
+
+     **Class attributes:**
+
+     INIT_DEPENDENCIES : {'Demography'}
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class IndividualHistoryTracker):**
+
+     .. automethod:: __init__
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: read_parameters
+
+     .. automethod:: df_to_eav
+
+     .. automethod:: convert_chain_links_into_eav
+
+     .. automethod:: initialise_population
+
+     .. automethod:: on_birth
+
+     .. automethod:: copy_of_pop_dataframe
+
+     .. automethod:: copy_of_pop_dataframe_row
+
+     .. automethod:: copy_of_mni
+
+     .. automethod:: copy_of_mni_row
+
+     .. automethod:: log_eav_dataframe_to_individual_histories
+
+     .. automethod:: on_simulation_post_initialise
+
+     .. automethod:: on_simulation_post_do_birth
+
+     .. automethod:: on_consumable_request
+
+     .. automethod:: on_event_pre_run
+
+     .. automethod:: on_event_post_run
+
+     .. automethod:: mni_values_differ
+
+     .. automethod:: compare_entire_mni_dicts
+
+     .. automethod:: compare_population_dataframe_and_mni
+
+
+
+
+

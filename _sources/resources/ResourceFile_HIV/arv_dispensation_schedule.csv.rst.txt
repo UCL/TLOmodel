@@ -1,0 +1,84 @@
+arv dispensation schedule (.csv)
+================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_HIV/arv_dispensation_schedule.csv>`
+
+====  =============  ======  ==================================  =============
+  ..  sub\_group       year    length\_of\_dispensation\_months    probability
+====  =============  ======  ==================================  =============
+   0  child            2021                                   1      0.380832
+   1  child            2022                                   1      0.384102
+   2  child            2023                                   1      0.277173
+   3  child            2024                                   1      0.237981
+   4  child            2025                                   1      0.164536
+   5  child            2021                                   4      0.47107
+   6  child            2022                                   4      0.505391
+   7  child            2023                                   4      0.610534
+   8  child            2024                                   4      0.665449
+   9  child            2025                                   4      0.728276
+  10  child            2021                                   6      0.148098
+  11  child            2022                                   6      0.110507
+  12  child            2023                                   6      0.112292
+  13  child            2024                                   6      0.0965694
+  14  child            2025                                   6      0.107188
+  15  adult\_male      2021                                   1      0.102441
+  16  adult\_male      2022                                   1      0.0921283
+  17  adult\_male      2023                                   1      0.0677378
+  18  adult\_male      2024                                   1      0.0613587
+  19  adult\_male      2025                                   1      0.0441665
+  20  adult\_male      2021                                   4      0.435522
+  21  adult\_male      2022                                   4      0.516045
+  22  adult\_male      2023                                   4      0.475346
+  23  adult\_male      2024                                   4      0.439114
+  24  adult\_male      2025                                   4      0.392442
+  25  adult\_male      2021                                   6      0.462037
+  26  adult\_male      2022                                   6      0.391826
+  27  adult\_male      2023                                   6      0.456917
+  28  adult\_male      2024                                   6      0.499527
+  29  adult\_male      2025                                   6      0.563391
+  30  adult\_female    2021                                   1      0.103209
+  31  adult\_female    2022                                   1      0.0949951
+  32  adult\_female    2023                                   1      0.0747759
+  33  adult\_female    2024                                   1      0.0679457
+  34  adult\_female    2025                                   1      0.051416
+  35  adult\_female    2021                                   4      0.465761
+  36  adult\_female    2022                                   4      0.547231
+  37  adult\_female    2023                                   4      0.502157
+  38  adult\_female    2024                                   4      0.465533
+  39  adult\_female    2025                                   4      0.417565
+  40  adult\_female    2021                                   6      0.431031
+  41  adult\_female    2022                                   6      0.357774
+  42  adult\_female    2023                                   6      0.423067
+  43  adult\_female    2024                                   6      0.466522
+  44  adult\_female    2025                                   6      0.531019
+  45  breastfeeding    2021                                   1      0.231479
+  46  breastfeeding    2021                                   4      0.719493
+  47  breastfeeding    2021                                   6      0.0490284
+  48  breastfeeding    2022                                   1      0.231479
+  49  breastfeeding    2022                                   4      0.719493
+  50  breastfeeding    2022                                   6      0.0490284
+  51  breastfeeding    2023                                   1      0.231479
+  52  breastfeeding    2023                                   4      0.719493
+  53  breastfeeding    2023                                   6      0.0490284
+  54  breastfeeding    2024                                   1      0.231479
+  55  breastfeeding    2024                                   4      0.719493
+  56  breastfeeding    2024                                   6      0.0490284
+  57  breastfeeding    2025                                   1      0.231479
+  58  breastfeeding    2025                                   4      0.719493
+  59  breastfeeding    2025                                   6      0.0490284
+  60  pregnant         2021                                   1      0.362711
+  61  pregnant         2021                                   4      0.51039
+  62  pregnant         2021                                   6      0.126899
+  63  pregnant         2022                                   1      0.362711
+  64  pregnant         2022                                   4      0.51039
+  65  pregnant         2022                                   6      0.126899
+  66  pregnant         2023                                   1      0.362711
+  67  pregnant         2023                                   4      0.51039
+  68  pregnant         2023                                   6      0.126899
+  69  pregnant         2024                                   1      0.362711
+  70  pregnant         2024                                   4      0.51039
+  71  pregnant         2024                                   6      0.126899
+  72  pregnant         2025                                   1      0.362711
+  73  pregnant         2025                                   4      0.51039
+  74  pregnant         2025                                   6      0.126899
+====  =============  ======  ==================================  =============

@@ -84,6 +84,18 @@ tlo.methods.tb module
         * - rr_death_diabetes
           - REAL
           - additional risk of death if person has diabetes (treated/untreated)
+        * - death_timing_hiv_positive_min_months
+          - INT
+          - Minimum months to death for HIV positive patients
+        * - death_timing_hiv_positive_max_months
+          - INT
+          - Maximum months to death for HIV positive patients
+        * - death_timing_hiv_negative_min_months
+          - INT
+          - Minimum months to death for HIV negative patients
+        * - death_timing_hiv_negative_max_months
+          - INT
+          - Maximum months to death for HIV negative patients
         * - rr_tb_bcg
           - REAL
           - relative risk of progression to active disease for children with BCG vaccine
@@ -165,6 +177,18 @@ tlo.methods.tb module
         * - spec_xray_smear_positive
           - REAL
           - specificity of x-ray diagnosis in smear positive TB cases
+        * - sensitivity_sputum_test_smear_negative
+          - REAL
+          - Sensitivity of sputum test for smear negative cases
+        * - specificity_sputum_test_smear_negative
+          - REAL
+          - Specificity of sputum test for smear negative cases
+        * - sensitivity_culture_test
+          - REAL
+          - Sensitivity of culture test
+        * - specificity_culture_test
+          - REAL
+          - Specificity of culture test
         * - prob_tx_success_ds
           - REAL
           - Probability of treatment success for new and relapse TB cases
@@ -207,15 +231,114 @@ tlo.methods.tb module
         * - second_line_test
           - STRING
           - name of second test to be used for TB diagnosis
-        * - tb_healthseekingbehaviour_cap
+        * - number_high_risk_contacts
           - INT
-          - number of repeat visits assumed for healthcare services
+          - number of high risk contacts given ipt
         * - data_end
           - INT
           - last year for which data are available
+        * - max_duration_ipt_continued_treatment_months
+          - INT
+          - last year for which data are available
+        * - prob_treatment_availability
+          - REAL
+          - The average probability tb treatment available
         * - length_of_inpatient_stay_if_terminal
           - LIST
-          - length of inpatient stay for end-of-life TB patients
+          - length of inpatient stay for end-of-life TB patients. Minimum to maximum range.
+        * - tb_healthseekingbehaviour_cap
+          - INT
+          - number of repeat visits assumed for healthcare services
+        * - odds_ratio_health_seeking_adults_fatigue
+          - REAL
+          - Odds ratio for health seeking in adults with fatigue
+        * - odds_ratio_health_seeking_children_fatigue
+          - REAL
+          - Odds ratio for health seeking in children with fatigue
+        * - odds_ratio_health_seeking_adults_night_sweats
+          - REAL
+          - Odds ratio for health seeking in adults with night sweats
+        * - odds_ratio_health_seeking_children_night_sweats
+          - REAL
+          - Odds ratio for health seeking in children with night sweats
+        * - age_threshold_adult_years
+          - INT
+          - Age threshold for adult classification
+        * - age_threshold_ipt_dispensation
+          - INT
+          - Age threshold for IPT dispensation regimine
+        * - age_threshold_infant_years
+          - INT
+          - Age threshold for infant/under-5 classification
+        * - screening_scheduling_window_months
+          - INT
+          - Window for screening scheduling if selected for general screening in months
+        * - ipt_scheduling_window_child_of_tb_mother_days
+          - INT
+          - Scheduling window for IPT in days for child of a mother with tb
+        * - min_days_symptomatic_required_for_screening
+          - INT
+          - Minimum days required to be symptomatic for screening
+        * - tb_min_days_between_tests
+          - INT
+          - Min days between TB tests
+        * - hv_min_days_between_tests
+          - INT
+          - Min days between HIV tests
+        * - xray_scheduling_weeks_level2
+          - INT
+          - Scheduling interval for level2 X-rays in weeks if consumables not available in level 1b
+        * - TbActiveCasePoll_frequency_years
+          - INT
+          - Frequency of TbActiveCasePoll in years
+        * - TbActiveEvent_frequency_days
+          - INT
+          - Frequency of TbActiveEvent in days
+        * - TbSelfCureEvent_frequency_months
+          - INT
+          - Frequency of TbSelfCureEvent in years
+        * - TbRegularEvents_frequency_months
+          - INT
+          - Frequency of TbRegularEvents in months
+        * - relapse_early_late_cutoff_years
+          - INT
+          - Cut off between early and late relapse in years for which risk of relapse changes
+        * - ipt_reevaluate_continuation_frequency_months
+          - INT
+          - Frequency to re-evaluate continuation of IPT in months
+        * - active_disease_duration_months
+          - INT
+          - Duration for active disease monitoring in months
+        * - follow_up_interval_months
+          - INT
+          - Follow-up interval in months
+        * - treatment_retry_weeks
+          - INT
+          - Interval for treatment retry in weeks
+        * - ipt_scheduling_delay_days_min
+          - INT
+          - Delay for ipt treatment HSI in days min
+        * - ipt_scheduling_delay_days_max
+          - INT
+          - Delay for appointments in days max
+        * - xpert_appointment_delay_days
+          - INT
+          - Delay for appointments in days
+        * - mdr_level2_appt_delay_days
+          - INT
+          - Delay for MDR level 2 appointments in days
+        * - screening_appointment_window_days
+          - INT
+          - Appointment window for TB screening in days
+        * - ipt_appointment_window_days
+          - INT
+          - Appointment window for IPT in days
+        * - number_doses_3hp_per_dispensation
+          - INT
+          - Number of 3hp doses per dispensation
+        * - number_doses_ipt_per_dispensation
+          - INT
+          - Number of ipt doses per dispensation
         * - type_of_scaleup
           - STRING
           - argument to determine type scale-up of program which will be implemented, can be 'none', 'target' or 'max'
@@ -298,17 +421,17 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x333dfb6d0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x333df9e10>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x13962bfd0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x13962ac90>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x333dfb7d0>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x13962a4d0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Epi', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Epi', 'Demography', 'HealthSystem', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
-     SYMPTOMS : {'night_sweats', 'fatigue'}
+     SYMPTOMS : {'fatigue', 'night_sweats'}
 
      __annotations__ : {}
 
@@ -337,6 +460,8 @@ tlo.methods.tb module
      .. automethod:: on_birth
 
      .. automethod:: report_daly_values
+
+     .. automethod:: report_summary_stats
 
      .. automethod:: calculate_untreated_proportion
 
@@ -595,7 +720,7 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x333d11940>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x139386bb0>
 
      __annotations__ : {}
 

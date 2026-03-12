@@ -1,0 +1,460 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tlo.performance module &mdash; TLOmodel 0.1.dev2653+g90c6b9d03.d20260312 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6470984e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Resource files" href="../resources/index.html" />
+    <link rel="prev" title="tlo.notify module" href="tlo.notify.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tlo.html">tlo package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.html">tlo.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.hsi_events.html">tlo.analysis.hsi_events module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.life_expectancy.html">tlo.analysis.life_expectancy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.cli.html">tlo.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.core.html">tlo.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.dependencies.html">tlo.dependencies module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.docs.html">tlo.docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.events.html">tlo.events module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.lm.html">tlo.lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.html">tlo.logging package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html">tlo.logging.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.encoding.html">tlo.logging.encoding module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html">tlo.logging.helpers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.reader.html">tlo.logging.reader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.html">tlo.methods package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.alri.html">tlo.methods.alri module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.bed_days.html">tlo.methods.bed_days module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.bladder_cancer.html">tlo.methods.bladder_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.breast_cancer.html">tlo.methods.breast_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cancer_consumables.html">tlo.methods.cancer_consumables module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cardio_metabolic_disorders.html">tlo.methods.cardio_metabolic_disorders module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.care_of_women_during_pregnancy.html">tlo.methods.care_of_women_during_pregnancy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.causes.html">tlo.methods.causes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cervical_cancer.html">tlo.methods.cervical_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.chronicsyndrome.html">tlo.methods.chronicsyndrome module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.consumables.html">tlo.methods.consumables module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.contraception.html">tlo.methods.contraception module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.copd.html">tlo.methods.copd module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.demography.html">tlo.methods.demography module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.depression.html">tlo.methods.depression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.diarrhoea.html">tlo.methods.diarrhoea module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.dxmanager.html">tlo.methods.dxmanager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.enhanced_lifestyle.html">tlo.methods.enhanced_lifestyle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.epi.html">tlo.methods.epi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.epilepsy.html">tlo.methods.epilepsy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.equipment.html">tlo.methods.equipment module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.fullmodel.html">tlo.methods.fullmodel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthburden.html">tlo.methods.healthburden module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthseekingbehaviour.html">tlo.methods.healthseekingbehaviour module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html">tlo.methods.healthsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hiv.html">tlo.methods.hiv module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hiv_tb_calibration.html">tlo.methods.hiv_tb_calibration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hsi_event.html">tlo.methods.hsi_event module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html">tlo.methods.hsi_generic_first_appts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.individual_history_tracker.html">tlo.methods.individual_history_tracker module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.labour.html">tlo.methods.labour module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.labour_lm.html">tlo.methods.labour_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html">tlo.methods.malaria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.measles.html">tlo.methods.measles module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.mockitis.html">tlo.methods.mockitis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.newborn_outcomes.html">tlo.methods.newborn_outcomes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.newborn_outcomes_lm.html">tlo.methods.newborn_outcomes_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.oesophagealcancer.html">tlo.methods.oesophagealcancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.other_adult_cancers.html">tlo.methods.other_adult_cancers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.postnatal_supervisor.html">tlo.methods.postnatal_supervisor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.postnatal_supervisor_lm.html">tlo.methods.postnatal_supervisor_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_helper_functions.html">tlo.methods.pregnancy_helper_functions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_supervisor.html">tlo.methods.pregnancy_supervisor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_supervisor_lm.html">tlo.methods.pregnancy_supervisor_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.prostate_cancer.html">tlo.methods.prostate_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.record_summary_stats.html">tlo.methods.record_summary_stats module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.rti.html">tlo.methods.rti module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.scenario_switcher.html">tlo.methods.scenario_switcher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html">tlo.methods.schisto module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.simplified_births.html">tlo.methods.simplified_births module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.skeleton.html">tlo.methods.skeleton module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.stunting.html">tlo.methods.stunting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.symptommanager.html">tlo.methods.symptommanager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.tb.html">tlo.methods.tb module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.wasting.html">tlo.methods.wasting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.notify.html">tlo.notify module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tlo.performance module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.population.html">tlo.population module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.progressbar.html">tlo.progressbar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.scenario.html">tlo.scenario module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.simulation.html">tlo.simulation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.html">tlo.test package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.random_birth.html">tlo.test.random_birth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.random_death.html">tlo.test.random_death module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.util.html">tlo.util module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Reference</a></li>
+      <li class="breadcrumb-item active">tlo.performance module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/tlo.performance.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tlo.performance">
+<span id="tlo-performance-module"></span><h1>tlo.performance module<a class="headerlink" href="#module-tlo.performance" title="Link to this heading"></a></h1>
+<p>A module to collect metrics, checkpoints, hashes and a variety of other information about the simulation as it runs,
+for debugging and performance monitoring purposes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">MagpieOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_perf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_perf_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_pop_hash</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_sim_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_sim_on_end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wall_time_limit_minutes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.MagpieOptions" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.log_perf">
+<span class="sig-name descname"><span class="pre">log_perf</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.log_perf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.log_perf_freq">
+<span class="sig-name descname"><span class="pre">log_perf_freq</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.log_perf_freq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.log_pop_hash">
+<span class="sig-name descname"><span class="pre">log_pop_hash</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.log_pop_hash" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.save_sim">
+<span class="sig-name descname"><span class="pre">save_sim</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.save_sim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.save_sim_freq">
+<span class="sig-name descname"><span class="pre">save_sim_freq</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.save_sim_freq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.save_sim_on_end">
+<span class="sig-name descname"><span class="pre">save_sim_on_end</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.save_sim_on_end" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.MagpieOptions.wall_time_limit_minutes">
+<span class="sig-name descname"><span class="pre">wall_time_limit_minutes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tlo.performance.MagpieOptions.wall_time_limit_minutes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.performance.Magpie">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Magpie</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.Magpie" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>Register in simulation:
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Magpie(</dt><dd><p>log_perf=True,           # turn on logging of performance statistics…
+log_perf_freq=2,         # …every n months
+log_pop_hash=True,       # include hash of population dataframe (can be slow)
+save_sim=True,           # save the simulation to a pickle file…
+save_sim_freq=3,         # …every n months
+save_sim_on_end=True     # save the simulation to a pickle file at the end of the simulation
+wall_time_limit_minutes=60  # stop the simulation if it runs for more than n minutes (checked every month)</p>
+</dd>
+</dl>
+<p>)</p>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>e.g. to add to an existing scenario:
+<a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a></p>
+<blockquote>
+<div><dl class="simple">
+<dt>def modules(self):</dt><dd><dl class="simple">
+<dt>return fullmodel() + [Magpie(log_perf=True,</dt><dd><p>log_perf_freq=2, log_pop_hash=True,
+save_sim=False, save_sim_on_end=True)]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.Magpie.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.Magpie.read_parameters" title="Link to this definition"></a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically, modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.Magpie.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation" title="tlo.simulation.Simulation"><span class="pre">Simulation</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.Magpie.initialise_simulation" title="Link to this definition"></a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.Magpie.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.Magpie.on_birth" title="Link to this definition"></a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.Magpie.on_simulation_end">
+<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.Magpie.on_simulation_end" title="Link to this definition"></a></dt>
+<dd><p>This is called after the simulation has ended.
+Modules do not need to declare this.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.performance.Magpie.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#tlo.performance.Magpie.parameters" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.performance.SaveSimulation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">SaveSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency_months</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.SaveSimulation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.SaveSimulation.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.SaveSimulation.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.performance.LogPerfProfile">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">LogPerfProfile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency_months</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_hash</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.LogPerfProfile" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.LogPerfProfile.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.LogPerfProfile.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.performance.WallTimeLimit">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">WallTimeLimit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wall_time_limit_minutes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.WallTimeLimit" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.performance.WallTimeLimit.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.WallTimeLimit.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.performance.make_pickle_filename">
+<span class="sig-name descname"><span class="pre">make_pickle_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.make_pickle_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.performance.profile_statistics">
+<span class="sig-name descname"><span class="pre">profile_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_hash</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.performance.profile_statistics" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.performance.memory_statistics">
+<span class="sig-name descname"><span class="pre">memory_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#tlo.performance.memory_statistics" title="Link to this definition"></a></dt>
+<dd><p>Extract memory usage statistics in current process using <cite>psutil</cite> if available.
+Statistics are returned as a dictionary. If <cite>psutil</cite> not installed an empty dict is returned.</p>
+<p>Key / value pairs are:
+memory_rss_MiB: float</p>
+<blockquote>
+<div><p>Resident set size in mebibytes. The non-swapped physical memory the process has used.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>memory_vms_MiB: float</dt><dd><p>Virtual memory size in mebibytes. The total amount of virtual memory used by the process.</p>
+</dd>
+<dt>memory_uss_MiB: float</dt><dd><p>Unique set size in mebibytes. The memory which is unique to a process and which would be freed if the process
+was terminated right now</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlo.notify.html" class="btn btn-neutral float-left" title="tlo.notify module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../resources/index.html" class="btn btn-neutral float-right" title="Resource files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

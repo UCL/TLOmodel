@@ -6,5 +6,6 @@ cmd parameters (.csv)
 ====  ==================================================  =======
   ..  parameter\_name                                       value
 ====  ==================================================  =======
-   0  prob\_care\_provided\_given\_seek\_emergency\_care      0.5
+   0  prob\_care\_provided\_given\_seek\_emergency\_care     0.5
+   1  prob\_ckd\_patient\_gets\_dialysis                     0.02
 ====  ==================================================  =======

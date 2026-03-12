@@ -4,17 +4,10 @@ ResourceFile_Schisto
 .. toctree::
     :maxdepth: 1
 
-    DALYs.csv
     District_Params_haematobium.csv
     District_Params_mansoni.csv
-    ESPEN.csv
     ESPEN_MDA.csv
-    ESPEN_codebook.csv
-    InitialData_haematobium.csv
-    InitialData_mansoni.csv
     LatestData_haematobium.csv
     LatestData_mansoni.csv
-    MDA_historical_Coverage.csv
-    Parameters.csv
-    Symptoms.csv
+    parameter_values.csv
 
