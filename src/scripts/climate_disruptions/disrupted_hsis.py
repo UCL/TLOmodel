@@ -54,7 +54,7 @@ if parameter_uncertainty_analysis:
     scenarios_of_interest = scenario_names
     suffix = "parameter_UA"
 if main_text:
-    scenario_names = ["Baseline", "Best Case", "Worst Case"]
+    scenario_names = ["No disruptions", "Baseline", "Worst Case"]
     scenarios_of_interest = [0, 1, 2]
     suffix = "main_text"
 
@@ -296,20 +296,23 @@ def load_anc_disruption_rate_annual(min_year, max_year):
 # ─────────────────────────────────────────────────────────────────────────────
 #  MAIN EXTRACTION LOOP
 # ─────────────────────────────────────────────────────────────────────────────
-
 target_year_sequence = range(min_year, max_year, spacing_of_years)
 
-# Storage: list indexed by draw order (same length as scenarios_of_interest)
-all_draws_monthly_delayed_rate = []  # pd.Series indexed 'YYYY-MM'
+all_draws_monthly_delayed_rate = []
 all_draws_monthly_cancelled_rate = []
-all_draws_annual_delayed_rate = []  # pd.Series indexed 'YYYY'
+all_draws_annual_delayed_rate = []
 all_draws_annual_cancelled_rate = []
+
+# CI storage — explicit mean/lower/upper, matching pattern from DALY script
+all_draws_annual_delayed_lower = []
+all_draws_annual_delayed_upper = []
+all_draws_annual_cancelled_lower = []
+all_draws_annual_cancelled_upper = []
 
 for draw in scenarios_of_interest:
     print(f"\n=== Draw {draw} ({scenario_names[draw]}) ===")
 
-    if scenario_names[draw] == "Baseline":
-        # Baseline has no weather disruptions — store zero Series
+    if scenario_names[draw] == "No disruptions":
         all_months = pd.date_range(
             start=f"{min_year}-01-01", end=f"{max_year - 1}-12-01", freq="MS"
         ).strftime("%Y-%m")
@@ -318,12 +321,24 @@ for draw in scenarios_of_interest:
         all_draws_monthly_cancelled_rate.append(pd.Series(0.0, index=all_months))
         all_draws_annual_delayed_rate.append(pd.Series(0.0, index=all_years_str))
         all_draws_annual_cancelled_rate.append(pd.Series(0.0, index=all_years_str))
+        all_draws_annual_delayed_lower.append(pd.Series(0.0, index=all_years_str))
+        all_draws_annual_delayed_upper.append(pd.Series(0.0, index=all_years_str))
+        all_draws_annual_cancelled_lower.append(pd.Series(0.0, index=all_years_str))
+        all_draws_annual_cancelled_upper.append(pd.Series(0.0, index=all_years_str))
         continue
 
-    # Accumulate across years
     monthly_total_parts = []
     monthly_delayed_parts = []
     monthly_cancelled_parts = []
+
+    # Explicit mean/lower/upper accumulators — same pattern as DALY script
+    all_years_delayed_mean = {}
+    all_years_delayed_lower = {}
+    all_years_delayed_upper = {}
+    all_years_cancelled_mean = {}
+    all_years_cancelled_lower = {}
+    all_years_cancelled_upper = {}
+    all_years_total_mean = {}
 
     for target_year in target_year_sequence:
         TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
@@ -332,36 +347,73 @@ for draw in scenarios_of_interest:
         fn_total = _make_hsi_counts_by_real_facility_monthly(TARGET_PERIOD)
         fn_disrupted = _make_disrupted_by_real_facility_monthly(TARGET_PERIOD)
 
-        total_s = _extract_mean_series(results_folder, draw,
-                                       "hsi_event_counts_by_facility_monthly", fn_total)
-        delayed_s = _extract_mean_series(results_folder, draw,
-                                         "Weather_delayed_HSI_Event_full_info", fn_disrupted)
-        cancelled_s = _extract_mean_series(results_folder, draw,
-                                           "Weather_cancelled_HSI_Event_full_info", fn_disrupted)
+        # Total HSIs — mean only (denominator, no CI needed)
+        total_s = _extract_mean_series(
+            results_folder, draw, "hsi_event_counts_by_facility_monthly", fn_total
+        )
 
-        monthly_total_parts.append(total_s)
-        monthly_delayed_parts.append(delayed_s)
-        monthly_cancelled_parts.append(cancelled_s)
-        print(f"total={total_s.sum():.0f}  delayed={delayed_s.sum():.0f}  cancelled={cancelled_s.sum():.0f}")
+        # Delayed — extract mean/lower/upper via summarize
+        result_delayed = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="Weather_delayed_HSI_Event_full_info",
+                custom_generate_series=fn_disrupted,
+                do_scaling=False,
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
 
-    # Concatenate all years then compute rates
-    total_all = pd.concat(monthly_total_parts).groupby(level=0).sum()
-    delayed_all = pd.concat(monthly_delayed_parts).groupby(level=0).sum()
-    cancelled_all = pd.concat(monthly_cancelled_parts).groupby(level=0).sum()
+        # Cancelled — extract mean/lower/upper via summarize
+        result_cancelled = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="Weather_cancelled_HSI_Event_full_info",
+                custom_generate_series=fn_disrupted,
+                do_scaling=False,
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
 
-    monthly_delayed_rate = compute_monthly_rates(total_all, delayed_all)
-    monthly_cancelled_rate = compute_monthly_rates(total_all, cancelled_all)
-    annual_delayed_rate = compute_annual_rates(total_all, delayed_all)
-    annual_cancelled_rate = compute_annual_rates(total_all, cancelled_all)
+        all_years_total_mean[target_year] = total_s
+        all_years_delayed_mean[target_year] = result_delayed["mean"].fillna(0)
+        all_years_delayed_lower[target_year] = result_delayed["lower"].fillna(0)
+        all_years_delayed_upper[target_year] = result_delayed["upper"].fillna(0)
+        all_years_cancelled_mean[target_year] = result_cancelled["mean"].fillna(0)
+        all_years_cancelled_lower[target_year] = result_cancelled["lower"].fillna(0)
+        all_years_cancelled_upper[target_year] = result_cancelled["upper"].fillna(0)
 
-    all_draws_monthly_delayed_rate.append(monthly_delayed_rate)
-    all_draws_monthly_cancelled_rate.append(monthly_cancelled_rate)
-    all_draws_annual_delayed_rate.append(annual_delayed_rate)
-    all_draws_annual_cancelled_rate.append(annual_cancelled_rate)
+        print(f"total={total_s.sum():.0f}  "
+              f"delayed={result_delayed['mean'].sum():.0f}  "
+              f"cancelled={result_cancelled['mean'].sum():.0f}")
 
-    print(f"  >> Mean monthly delayed rate:   {monthly_delayed_rate.mean():.4f}")
-    print(f"  >> Mean monthly cancelled rate: {monthly_cancelled_rate.mean():.4f}")
+    # Concatenate across years
+    total_all = pd.concat(all_years_total_mean.values()).groupby(level=0).sum()
+    delayed_mean_all = pd.concat(all_years_delayed_mean.values()).groupby(level=0).sum()
+    delayed_lower_all = pd.concat(all_years_delayed_lower.values()).groupby(level=0).sum()
+    delayed_upper_all = pd.concat(all_years_delayed_upper.values()).groupby(level=0).sum()
+    cancelled_mean_all = pd.concat(all_years_cancelled_mean.values()).groupby(level=0).sum()
+    cancelled_lower_all = pd.concat(all_years_cancelled_lower.values()).groupby(level=0).sum()
+    cancelled_upper_all = pd.concat(all_years_cancelled_upper.values()).groupby(level=0).sum()
 
+    # Compute rates — mean, lower, upper each get their own rate Series
+    all_draws_annual_delayed_rate.append(compute_annual_rates(total_all, delayed_mean_all))
+    all_draws_annual_delayed_lower.append(compute_annual_rates(total_all, delayed_lower_all))
+    all_draws_annual_delayed_upper.append(compute_annual_rates(total_all, delayed_upper_all))
+
+    all_draws_annual_cancelled_rate.append(compute_annual_rates(total_all, cancelled_mean_all))
+    all_draws_annual_cancelled_lower.append(compute_annual_rates(total_all, cancelled_lower_all))
+    all_draws_annual_cancelled_upper.append(compute_annual_rates(total_all, cancelled_upper_all))
+
+    # Monthly mean (unchanged — CIs on annual plot only)
+    all_draws_monthly_delayed_rate.append(compute_monthly_rates(total_all, delayed_mean_all))
+    all_draws_monthly_cancelled_rate.append(compute_monthly_rates(total_all, cancelled_mean_all))
+
+    print(f"  >> Mean annual delayed rate:   {all_draws_annual_delayed_rate[-1].mean():.4f}")
+    print(f"  >> Mean annual cancelled rate: {all_draws_annual_cancelled_rate[-1].mean():.4f}")
 # ─────────────────────────────────────────────────────────────────────────────
 #  ANC REFERENCE DATA
 # ─────────────────────────────────────────────────────────────────────────────
@@ -384,10 +436,10 @@ n_rows = (n_plots + n_cols - 1) // n_cols
 fig, axes = plt.subplots(n_rows, n_cols, figsize=(7 * n_cols, 5 * n_rows), squeeze=False)
 axes_flat = axes.flatten()
 
-COLOUR_DELAYED = "#FF8C00"
-COLOUR_CANCELLED = "#DC143C"
+COLOUR_DELAYED = "#CC7000"
+COLOUR_CANCELLED = "#A8102E"
 COLOUR_TOTAL = "#1E3A8A"
-COLOUR_ANC = "#7C3AED"
+COLOUR_ANC = "#0A8C0F"
 
 
 def _series_to_dates_pct(s):
@@ -417,13 +469,11 @@ for idx, draw in enumerate(scenarios_of_interest):
         ax.plot(t_dates, t_vals, color=COLOUR_TOTAL, lw=3, alpha=0.9,
                 label="Total disrupted (TLO)")
 
-    # ANC overlay — same series for all non-baseline draws
-    if not anc_monthly.empty and scenario_names[draw] != "Baseline":
+    # ANC overlay — same series for all non-disruption draws
+    if not anc_monthly.empty and scenario_names[draw] != "No disruptions":
         ax.plot(
             anc_monthly.index, anc_monthly.values * 100,
             color=COLOUR_ANC, lw=2.5, ls="--",
-            marker="o", markevery=3, markersize=4,
-            markerfacecolor=COLOUR_ANC, markeredgecolor="white", markeredgewidth=0.8,
             alpha=0.9, label="ANC disruptions (DHIS2 model, RealFacility_ID)",
         )
 
@@ -467,18 +517,26 @@ SCENARIO_COLOURS = [
     "#5b3f8c", "#8e7cc3", "#c7b7ec",
     "#0081a7", "#5ab4c6", "#f07167", "#f59e96",
 ]
-
 for idx, draw in enumerate(scenarios_of_interest):
     col = SCENARIO_COLOURS[idx % len(SCENARIO_COLOURS)]
     d_s = all_draws_annual_delayed_rate[idx]
     c_s = all_draws_annual_cancelled_rate[idx]
+    print(f"idx={idx}  draw={draw}  name={scenario_names[draw]}  "
+          f"total_mean={(d_s + c_s.reindex(d_s.index, fill_value=0)).values * 100}")
+    d_lo = all_draws_annual_delayed_lower[idx]
+    d_hi = all_draws_annual_delayed_upper[idx]
+    c_lo = all_draws_annual_cancelled_lower[idx]
+    c_hi = all_draws_annual_cancelled_upper[idx]
 
     if d_s.empty and c_s.empty:
         continue
 
     years = pd.to_datetime([f"{y}-01-01" for y in d_s.index])
     total = (d_s + c_s.reindex(d_s.index, fill_value=0)).values * 100
+    total_lo = (d_lo + c_lo.reindex(d_lo.index, fill_value=0)).values * 100
+    total_hi = (d_hi + c_hi.reindex(d_hi.index, fill_value=0)).values * 100
 
+    ax2.fill_between(years, total_lo, total_hi, color=col, alpha=0.15, linewidth=0)
     ax2.plot(years, total, color=col, lw=2.5,
              label=f"{scenario_names[draw]} — total disrupted")
     ax2.plot(years, d_s.values * 100, color=col, lw=1, ls="--", alpha=0.5)
@@ -490,8 +548,6 @@ if not anc_annual.empty:
     ax2.plot(
         anc_annual.index, anc_annual.values * 100,
         color=COLOUR_ANC, lw=2.5, ls="--",
-        marker="D", markersize=5,
-        markerfacecolor=COLOUR_ANC, markeredgecolor="white",
         alpha=0.9, label="ANC disruptions (DHIS2, annual mean)",
     )
 
