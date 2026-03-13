@@ -12,44 +12,45 @@ or locally using:
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
-from tlo.methods.fullmodel import fullmodel
-from tlo.scenario import BaseScenario
 from tlo.methods import (
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthseekingbehaviour,
-    symptommanager,
-    epi,
-    healthsystem,
-    simplified_births,
-    contraception,
-    pregnancy_supervisor,
-    care_of_women_during_pregnancy,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
     alri,
-    diarrhoea,
-    stunting,
-    wasting,
-    hiv,
-    malaria,
-    measles,
-    schisto,
-    tb,
     bladder_cancer,
     breast_cancer,
+    cardio_metabolic_disorders,
+    care_of_women_during_pregnancy,
     cervical_cancer,
+    contraception,
+    copd,
+    demography,
+    depression,
+    diarrhoea,
+    enhanced_lifestyle,
+    epi,
+    epilepsy,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    labour,
+    malaria,
+    measles,
+    newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     prostate_cancer,
-    cardio_metabolic_disorders,
     rti,
-    copd,
-    depression,
-    epilepsy,
+    schisto,
+    simplified_births,
+    stunting,
+    symptommanager,
+    tb,
+    wasting,
 )
+from tlo.methods.fullmodel import fullmodel
+from tlo.scenario import BaseScenario
+
 
 class LongRun(BaseScenario):
     def __init__(self):

@@ -1,17 +1,17 @@
 import argparse
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from scipy import stats
 
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
-    summarize,
     get_color_short_treatment_id,
-    load_pickled_dataframes
+    load_pickled_dataframes,
+    summarize,
 )
 
 min_year = 2025

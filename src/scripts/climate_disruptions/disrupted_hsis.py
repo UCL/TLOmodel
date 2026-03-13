@@ -13,10 +13,11 @@ For each draw and year:
 The ResourceFile overlay uses mean_all_service directly, keyed by RealFacility_ID.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 import matplotlib.dates as mdates
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -300,7 +301,7 @@ def _series_to_dates_pct(s):
 for idx, draw in enumerate(scenarios_of_interest):
     if scenario_names[draw] == "No disruptions":
         continue
-    ax = axes_flat[idx]
+    ax = axes_flat[idx - 1]
 
     d_dates, d_vals = _series_to_dates_pct(all_draws_monthly_delayed_rate[idx])
     c_dates, c_vals = _series_to_dates_pct(all_draws_monthly_cancelled_rate[idx])
@@ -322,26 +323,23 @@ for idx, draw in enumerate(scenarios_of_interest):
         ax.plot(
             rf_dates_monthly, rf_disruption_monthly,
             color=COLOUR_RF, lw=2.5, ls="--",
-            alpha=0.9, label="ResourceFile disruption rate",
+            alpha=0.9, label="DHIS2 ANC Data",
         )
 
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right")
     ax.set_xlabel("Month", fontsize=11, fontweight="bold")
-    ax.set_ylabel("% disrupted (mean across facilities)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("% HSIs disrupted", fontsize=11, fontweight="bold")
     ax.set_title(f"{scenario_names[draw]}", fontsize=13, fontweight="bold")
     ax.set_ylim(bottom=0)
-    ax.grid(True, alpha=0.3, ls=":", lw=0.5)
-    ax.set_facecolor("#F8F9FA")
     ax.legend(fontsize=9, framealpha=0.95, edgecolor="gray", fancybox=True)
 
 for j in range(n_plots, len(axes_flat)):
     axes_flat[j].set_visible(False)
 
 fig.suptitle(
-    f"Monthly mean per-facility disruption rate: TLO vs ResourceFile  ({min_year}–{max_year - 1})\n"
-    "Rate = disrupted HSIs / total HSIs, averaged across facilities (RealFacility_ID)",
+    f"Monthly mean per-facility disruption rate: TLO vs ResourceFile  ({min_year}–{max_year - 1})\n",
     fontsize=12, fontweight="bold", y=1.01,
 )
 fig.tight_layout()
@@ -353,8 +351,6 @@ print(f"  Saved {out_monthly}")
 # ─────────────────────────────────────────────────────────────────────────────
 #  PLOT B: ANNUAL time series — all scenarios on one panel
 # ─────────────────────────────────────────────────────────────────────────────
-
-print("Plotting annual time series...")
 
 fig2, ax2 = plt.subplots(figsize=(10, 5))
 
@@ -385,7 +381,7 @@ for idx, draw in enumerate(scenarios_of_interest):
 
     ax2.fill_between(years, total_lo, total_hi, color=col, alpha=0.15, linewidth=0)
     ax2.plot(years, total, color=col, lw=2.5,
-             label=f"{scenario_names[draw]} — total disrupted")
+             label=f"{scenario_names[draw]}")
     ax2.plot(years, d_s.values * 100, color=col, lw=1, ls="--", alpha=0.5)
     ax2.plot(years, c_s.reindex(d_s.index, fill_value=0).values * 100,
              color=col, lw=1, ls=":", alpha=0.5)
@@ -397,18 +393,41 @@ if len(rf_disruption_annual):
         alpha=0.9, label="ResourceFile disruption rate",
     )
 
+# --- Scenario legend (colours) ---
+scenario_legend = ax2.legend(
+    loc="upper left",
+    fontsize=9,
+    framealpha=0.85,
+    title="Scenario",
+    title_fontsize=9,
+)
+ax2.add_artist(scenario_legend)
+
+# --- Line-style legend (shared across all scenarios) ---
+style_handles = [
+    mlines.Line2D([], [], color="grey", lw=2.5, ls="-", label="Total disrupted"),
+    mlines.Line2D([], [], color="grey", lw=1, ls="--", alpha=0.7, label="Delayed"),
+    mlines.Line2D([], [], color="grey", lw=1, ls=":", alpha=0.7, label="Cancelled"),
+]
+ax2.legend(
+    handles=style_handles,
+    loc="upper right",
+    fontsize=9,
+    framealpha=0.85,
+    title="Line style",
+    title_fontsize=9,
+)
+
 ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax2.xaxis.set_major_locator(mdates.YearLocator())
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha="right")
 ax2.set_xlabel("Year", fontsize=12, fontweight="bold")
-ax2.set_ylabel("% disrupted (mean across RealFacility_IDs)", fontsize=12, fontweight="bold")
+ax2.set_ylabel("% HSIs disrupted", fontsize=12, fontweight="bold")
 ax2.set_title(
-    f"Annual mean per-facility disruption rate by scenario ({min_year}–{max_year - 1})\n"
-    "Solid = total; dashed = delayed; dotted = cancelled",
+    f"Annual mean per-facility disruption rate by scenario ({min_year}–{max_year - 1})",
     fontsize=12, fontweight="bold",
 )
 ax2.set_ylim(bottom=0)
-ax2.grid(True, alpha=0.3, ls=":")
 ax2.legend(fontsize=9, frameon=True, framealpha=0.9)
 fig2.tight_layout()
 out_annual = output_folder / f"comparison_disruption_annual_{suffix}.png"

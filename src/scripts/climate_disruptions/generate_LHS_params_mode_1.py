@@ -1,11 +1,10 @@
-from typing import Dict
 import json
 import os
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 from scipy.stats import qmc
-
 
 YEAR_OF_CHANGE = 2025
 n_samples_total = 1000

@@ -2,7 +2,6 @@ import json
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
-
 from tlo.scenario import BaseScenario
 
 YEAR_OF_CHANGE = 2025

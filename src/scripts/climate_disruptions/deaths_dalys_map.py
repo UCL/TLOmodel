@@ -4,6 +4,7 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 from matplotlib import pyplot as plt
+
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 

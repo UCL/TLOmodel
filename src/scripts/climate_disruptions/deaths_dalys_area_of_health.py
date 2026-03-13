@@ -1,18 +1,19 @@
 import argparse
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 from scipy.stats import ttest_rel
 
-import pandas as pd
-import numpy as np
-from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_color_cause_of_death_or_daly_label,
-    make_age_grp_lookup,
-    summarize,
     get_scenario_info,
     load_pickled_dataframes,
+    make_age_grp_lookup,
+    summarize,
 )
 
 min_year = 2025

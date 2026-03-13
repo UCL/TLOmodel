@@ -5,11 +5,12 @@ Standalone script to produce the TLO Model – Malawi population placement
 and health facilities figure.
 """
 from pathlib import Path
+
+import geopandas as gpd
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
 resourcefilepath = Path(__file__).parent.parent.parent.parent / "resources"
 path_to_climate = resourcefilepath / "climate_change_impacts"
