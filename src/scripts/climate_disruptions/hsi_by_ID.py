@@ -626,10 +626,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     height=0.35, color=scenario_colors[scenario_label],
                     label=scenario_label, alpha=0.8)
         ax.set_yticks(y_positions_cd)
-        ax.set_yticklabels(treatment_labels_cd, fontsize=10)
-        ax.set_xlabel(title, fontsize=11)
-        ax.legend(title='Scenario', fontsize=9)
-        ax.grid(axis='x', alpha=0.3)
+        ax.set_yticklabels(treatment_labels_cd, fontsize=12)
+        ax.set_xlabel(title, fontsize=14)
+        ax.legend(title='Scenario', fontsize=11)
         ax.invert_yaxis()
     fig_cd.tight_layout()
     fig_cd.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Cancelled_Delayed_by_TreatmentType_{suffix}.png", dpi=300)
@@ -660,8 +659,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for ax, df_plot, title in zip(
         axes_top,
         [df_cancelled_long_top, df_delayed_long_top],
-        [f'Top {TOP_N} Weather-Cancelled HSIs per 100,000 (detailed)',
-         f'Top {TOP_N} Weather-Delayed HSIs per 100,000 (detailed)']
+        [f'Top {TOP_N} Weather-Cancelled HSIs per 100,000',
+         f'Top {TOP_N} Weather-Delayed HSIs per 100,000']
     ):
         y_pos = np.arange(len(df_plot.index))
         labels = [t.replace("*", "") for t in df_plot.index]
@@ -674,10 +673,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     height=0.35, color=scenario_colors[scenario_label],
                     label=scenario_label, alpha=0.85)
         ax.set_yticks(y_pos)
-        ax.set_yticklabels(labels, fontsize=10)
-        ax.set_xlabel(title, fontsize=11)
-        ax.legend(title='Scenario', fontsize=9)
-        ax.grid(axis='x', alpha=0.3)
+        ax.set_yticklabels(labels, fontsize=12)
+        ax.set_xlabel(title, fontsize=14)
+        ax.legend(title='Scenario', fontsize=11)
         ax.invert_yaxis()
 
     fig_top.suptitle(f"Top {TOP_N} Most Weather-Disrupted HSI", fontsize=13, fontweight='bold')
@@ -757,7 +755,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     ax_final.legend(handles, new_labels, bbox_to_anchor=(1.05, 1), loc='upper left',
                     title='Treatment Type\nvs No disruption\n(* p<0.05, ** p<0.01, *** p<0.001)',
-                    fontsize=9)
+                    fontsize=11)
     fig_final.tight_layout()
     fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_{suffix}.png", dpi=300)
     plt.close(fig_final)
@@ -799,15 +797,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     diffs.iloc[j] + x_offset,
                     y_positions[j] + offset,
                     star,
-                    ha='left', va='center', fontsize=9,
+                    ha='left', va='center', fontsize=11,
                     color=color, fontweight='bold'
                 )
 
     ax_diff.axvline(0, color='black', linewidth=1, linestyle='--', label='No disruption')
     ax_diff.set_yticks(y_positions)
-    ax_diff.set_yticklabels(treatment_labels, fontsize=10)
+    ax_diff.set_yticklabels(treatment_labels, fontsize=12)
     ax_diff.set_xlabel("Difference in HSIs per 100,000 population vs No Disruption", fontsize=12)
-    ax_diff.legend(title='Scenario', fontsize=10)
+    ax_diff.legend(title='Scenario', fontsize=12)
     ax_diff.grid(axis='x', alpha=0.3)
     ax_diff.invert_yaxis()
     fig_diff.tight_layout()
