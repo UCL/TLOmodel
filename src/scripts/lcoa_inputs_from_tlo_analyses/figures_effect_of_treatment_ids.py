@@ -28,6 +28,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_multiindex_dot_with_interval,
     plot_appointment_counts_by_period_for_draw,
     plot_appointment_counts_heatmap,
+    plot_hsi_counts_stacked_bar
 )
 from tlo.analysis.utils import (
     compute_summary_statistics,
@@ -74,6 +75,21 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
         name_of_plot = f"Yearly appointment counts for {draw}"
         fig, ax = plot_appointment_counts_by_period_for_draw(
             counts_of_appts_by_period,
+            draw=draw,
+            period_labels=appointment_period_labels,
+        )
+        ax.set_title(name_of_plot)
+        fig.savefig(make_graph_file_name(name_of_plot))
+        plt.close(fig)
+
+
+    # Plot number of HSIs for each draw
+    counts_of_hsi_by_period = results["counts_of_hsi_by_period"]
+    for param in param_names:
+        draw = format_scenario_name(param)
+        name_of_plot = f"Yearly HSI counts for {draw}"
+        fig, ax = plot_hsi_counts_by_period_for_draw(
+            counts_of_hsi_by_period,
             draw=draw,
             period_labels=appointment_period_labels,
         )

@@ -29,6 +29,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     make_get_num_dalys_by_cause_label_and_period,
     make_get_num_deaths_by_cause_label_and_period,
     make_get_counts_of_appts_by_period,
+    make_get_counts_of_hsis_by_period,
     set_param_names_as_column_index_level_0,
     target_period,
     find_difference_extra_relative_to_comparison,
@@ -63,6 +64,12 @@ results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_
 # SCALING_FACTOR retrieved from the suspended run in
 # outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z
 # SCALING_FACTOR = 58.158436
+EXCLUDED_HSIs = [
+    "FirstAttendance_Emergency",
+    "FirstAttendance_NonEmergency",
+    "FirstAttendance_SpuriousEmergencyCare",
+]
+
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -82,6 +89,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     # Get yearly number of appointments;
     get_num_appts_by_period = make_get_counts_of_appts_by_period(
+        period_length_years=1,
+        target_period_tuple=TARGET_PERIOD,
+    )
+    get_num_hsi_by_period = make_get_counts_of_hsis_by_period(
         period_length_years=1,
         target_period_tuple=TARGET_PERIOD,
     )
@@ -216,6 +227,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
         .sort_index()
+    )
+
+    counts_of_hsi_by_short_treatment_id = (
+        compute_summary_statistics(counts_of_hsi_by_short_treatment_id, 'median')
+    )
+    counts_of_hsi_by_short_treatment_id = (
+        counts_of_hsi_by_short_treatment_id.drop(columns=EXCLUDED_HSIs, errors='ignore')
+    )
+
+    counts_of_hsi_by_period = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
+            custom_generate_series=lambda _df: get_num_hsi_by_period(_df, TARGET_PERIOD),
+            do_scaling=True,
+            suspended_results_folder=suspended_folder,
+            autodiscover=True,
+        )
+        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        .fillna(0.0)
+        .sort_index()
+    )
+    counts_of_hsi_by_period = (
+        compute_summary_statistics(counts_of_hsi_by_period, 'median')
     )
 
     print("Extracting counts of appointments data...")

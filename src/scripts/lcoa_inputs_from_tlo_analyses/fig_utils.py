@@ -36,6 +36,13 @@ def get_color_by_appointment_type(appointment_types) -> dict:
     return color_by_appointment_type
 
 
+def _get_color_for_treatment_id_prefix(treatment_id: str) -> str:
+    """Return color for a treatment id based on its first underscore-delimited token."""
+    prefix = str(treatment_id).split("_")[0]
+    color = get_color_short_treatment_id(prefix)
+    return "grey" if pd.isna(color) else color
+
+
 def do_bar_plot_with_ci(
     _df: pd.DataFrame,
     _param,
@@ -277,6 +284,59 @@ def plot_appointment_counts_stacked_bar(_df: pd.DataFrame, plot_stat: str = "cen
     return fig, ax
 
 
+def plot_hsi_counts_stacked_bar(_df: pd.DataFrame, plot_stat: str = "central"):
+    """Plot horizontal stacked bars of HSI counts by draw for a selected summary statistic."""
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+    stat_level_values = _df.columns.get_level_values(stat_level_name)
+    if plot_stat not in stat_level_values:
+        raise ValueError(f"The column MultiIndex does not contain '{plot_stat}' in the stat level.")
+
+    _plot = _df.xs(plot_stat, axis=1, level=stat_level_name).T
+    if _plot.empty:
+        raise ValueError(f"No plottable data remain after selecting the '{plot_stat}' columns.")
+
+    if _plot.isna().any().any():
+        warnings.warn(
+            f"Missing values detected after selecting '{plot_stat}'. Bars will omit missing segments.",
+            stacklevel=2,
+        )
+
+    totals = _plot.sum(axis=1, skipna=True)
+    _plot = _plot.loc[totals.sort_values(ascending=False).index]
+    if not (_plot.gt(0).any(axis=1)).any():
+        raise ValueError(f"No positive values remain after selecting the '{plot_stat}' columns.")
+
+    fig_width = max(12, min(0.22 * len(_plot.columns) + 12, 30))
+    fig_height = max(6, min(0.35 * len(_plot.index), 24))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    left = np.zeros(len(_plot.index), dtype=float)
+    y = np.arange(len(_plot.index))
+
+    for treatment_id in _plot.columns:
+        values = _plot[treatment_id]
+        mask = values.gt(0) & values.notna()
+        if not mask.any():
+            continue
+        ax.barh(
+            y[mask.to_numpy()],
+            values.loc[mask].to_numpy(),
+            left=left[mask.to_numpy()],
+            color=_get_color_for_treatment_id_prefix(treatment_id),
+            label=str(treatment_id),
+        )
+        left[mask.to_numpy()] += values.loc[mask].to_numpy()
+
+    ax.set_yticks(y)
+    ax.set_yticklabels([str(label) for label in _plot.index], fontsize=12)
+    ax.invert_yaxis()
+    fig.tight_layout()
+    return fig, ax
+
+
 def plot_appointment_counts_by_period_for_draw(
     _df: pd.DataFrame,
     draw: str,
@@ -349,6 +409,89 @@ def plot_appointment_counts_by_period_for_draw(
     ax.spines["right"].set_visible(False)
     ax.legend(
         title="Appointment type",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        title_fontsize=9,
+        frameon=True,
+    )
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_hsi_counts_by_period_for_draw(
+    _df: pd.DataFrame,
+    draw: str,
+    period_labels: list[str],
+):
+    """Plot central values with lower/upper intervals across period chunks for one draw."""
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("_df index must be a 2-level MultiIndex with levels for short_treatment_id and period.")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+    if draw not in _df.columns.get_level_values(0):
+        available_draws = sorted(set(_df.columns.get_level_values(0)))
+        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws}")
+
+    _plot = _df[draw].reindex(
+        pd.MultiIndex.from_product(
+            [
+                _df.index.get_level_values(0).unique(),
+                period_labels,
+            ],
+            names=["short_treatment_id", "period"],
+        ),
+        fill_value=0.0,
+    )
+    _plot = _plot.loc[:, ["lower", "central", "upper"]]
+    _plot = _plot.unstack("period")
+
+    central = _plot["central"]
+    lower = _plot["lower"]
+    upper = _plot["upper"]
+    non_zero_mask = central.gt(0).any(axis=1)
+    central = central.loc[non_zero_mask, period_labels]
+    lower = lower.loc[non_zero_mask, period_labels]
+    upper = upper.loc[non_zero_mask, period_labels]
+
+    if central.empty:
+        raise ValueError(f"No non-zero treatment ids remain for draw '{draw}'.")
+
+    x = np.arange(len(period_labels))
+    fig_width = max(10, min(1.2 * len(period_labels) + 4, 20))
+    fig_height = max(6, min(0.28 * len(central.index) + 6, 18))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    for treatment_id in central.index:
+        central_values = central.loc[treatment_id].to_numpy()
+        lower_values = lower.loc[treatment_id].to_numpy()
+        upper_values = upper.loc[treatment_id].to_numpy()
+        yerr = np.vstack([central_values - lower_values, upper_values - central_values])
+        color = _get_color_for_treatment_id_prefix(treatment_id)
+        ax.errorbar(
+            x,
+            central_values,
+            yerr=yerr,
+            fmt="o",
+            color=color,
+            ecolor=color,
+            elinewidth=1.2,
+            capsize=2,
+            markersize=4,
+            label=str(treatment_id),
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(period_labels, rotation=45, ha="right")
+    ax.set_xlabel("period")
+    ax.set_ylabel("HSI count")
+    ax.set_title(f"HSI counts by period: {draw}")
+    ax.grid(axis="y")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(
+        title="Treatment ID",
         loc="center left",
         bbox_to_anchor=(1.02, 0.5),
         fontsize=8,

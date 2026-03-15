@@ -311,3 +311,38 @@ def make_get_counts_of_appts_by_period(
         return pd.concat([chunked, overall]).astype(int).sort_index()
 
     return _get_counts_of_appts_by_period
+
+
+def make_get_counts_of_hsis_by_period(
+    period_length_years: int,
+    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+):
+    """Create helper that summarizes appointment counts by period chunks + overall."""
+    periods = get_periods_within_target_period(
+        period_length_years=period_length_years,
+        target_period_tuple=target_period_tuple,
+    )
+    period_lookup = {
+        year: period_label
+        for period_label, (start_year, end_year) in periods
+        for year in range(start_year, end_year + 1)
+    }
+    target_period_label = target_period(target_period_tuple)
+
+    def _get_counts_of_hsis_by_period(_df: pd.DataFrame) -> pd.Series:
+        _df_in_target = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple)].copy()
+        _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
+        _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+
+        hsis = _df_in_target["TREATMENT_ID"].apply(pd.Series)
+        chunked = hsis.groupby(_df_in_target["period"]).sum().T.stack()
+        chunked.index = chunked.index.set_names(["appt_type", "period"])
+
+        overall = hsis.sum()
+        overall.index = pd.MultiIndex.from_arrays(
+            [overall.index, np.repeat(target_period_label, len(overall.index))],
+            names=["appt_type", "period"],
+        )
+        return pd.concat([chunked, overall]).astype(int).sort_index()
+
+    return _get_counts_of_hsis_by_period
