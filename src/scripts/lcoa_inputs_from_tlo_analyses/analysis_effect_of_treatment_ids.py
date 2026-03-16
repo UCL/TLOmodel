@@ -70,13 +70,9 @@ EXCLUDED_HSIs = [
     "FirstAttendance_SpuriousEmergencyCare",
 ]
 
-
-
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard plots describing effect of each TREATMENT_ID."""
     _, age_grp_lookup = make_age_grp_lookup()
-
-
 
     param_names = get_parameter_names_from_scenario_file()
     get_num_deaths_by_cause_label_and_period = make_get_num_deaths_by_cause_label_and_period(
@@ -241,7 +237,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             results_folder,
             module="tlo.methods.healthsystem.summary",
             key="HSI_Event",
-            custom_generate_series=lambda _df: get_num_hsi_by_period(_df, TARGET_PERIOD),
+            custom_generate_series=lambda _df: get_num_hsi_by_period(_df),
             do_scaling=True,
             suspended_results_folder=suspended_folder,
             autodiscover=True,

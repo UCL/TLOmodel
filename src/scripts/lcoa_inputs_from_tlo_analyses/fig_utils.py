@@ -13,7 +13,9 @@ from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     get_color_cause_of_death_or_daly_label,
     get_color_short_treatment_id,
+    make_calendar_period_type,
     order_of_cause_of_death_or_daly_label,
+    order_of_short_treatment_ids,
 )
 
 
@@ -41,6 +43,89 @@ def _get_color_for_treatment_id_prefix(treatment_id: str) -> str:
     prefix = str(treatment_id).split("_")[0]
     color = get_color_short_treatment_id(prefix)
     return "grey" if pd.isna(color) else color
+
+
+def _get_ordered_short_treatment_ids(treatment_ids: pd.Index) -> list[str]:
+    """Return treatment ids with recognized short ids first in standard order."""
+    treatment_ids = pd.Index(treatment_ids).unique()
+    recognized = [treatment_id for treatment_id in treatment_ids if not pd.isna(get_color_short_treatment_id(treatment_id))]
+    unrecognized = sorted(str(treatment_id) for treatment_id in treatment_ids if pd.isna(get_color_short_treatment_id(treatment_id)))
+    recognized = sorted(recognized, key=order_of_short_treatment_ids)
+    return recognized + unrecognized
+
+
+def plot_deaths_by_period_for_cause(
+    _df: pd.DataFrame,
+    cause_label: str,
+    plot_stat: str = "central",
+):
+    """Plot deaths over time for a single cause, with one line per short treatment id."""
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("_df index must be a 2-level MultiIndex with levels for label and period.")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for treatment id and stat.")
+
+    label_level_name = "label" if "label" in _df.index.names else _df.index.names[0]
+    period_level_name = "period" if "period" in _df.index.names else _df.index.names[1]
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+
+    available_causes = pd.Index(_df.index.get_level_values(label_level_name).unique())
+    if cause_label not in available_causes:
+        raise ValueError(f"Cause label '{cause_label}' not found. Available causes: {available_causes.tolist()}")
+
+    available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
+    if plot_stat not in available_stats:
+        raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
+
+    _plot = _df.xs(cause_label, level=label_level_name)
+    _plot = _plot.xs(plot_stat, axis=1, level=stat_level_name)
+    if _plot.empty:
+        raise ValueError(f"No plottable data remain for cause '{cause_label}' using stat '{plot_stat}'.")
+
+    _plot.index.name = period_level_name
+    try:
+        ordered_periods = pd.Index(_plot.index).astype(make_calendar_period_type())
+        _plot = _plot.reindex(ordered_periods.sort_values().astype(str))
+    except (TypeError, ValueError):
+        _plot = _plot.loc[pd.Index(_plot.index).drop_duplicates()]
+
+    ordered_treatment_ids = _get_ordered_short_treatment_ids(_plot.columns)
+    _plot = _plot.loc[:, ordered_treatment_ids]
+
+    fig_width = max(10, min(1.4 * len(_plot.index) + 4, 18))
+    fig, ax = plt.subplots(figsize=(fig_width, 6))
+    x = np.arange(len(_plot.index))
+
+    for treatment_id in _plot.columns:
+        ax.plot(
+            x,
+            _plot[treatment_id].to_numpy(),
+            marker="o",
+            linewidth=1.8,
+            markersize=4,
+            color=_get_color_for_treatment_id_prefix(treatment_id),
+            label=str(treatment_id),
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(period) for period in _plot.index], rotation=45, ha="right")
+    ax.set_xlabel("Period")
+    ax.set_ylabel("Number of deaths")
+    ax.set_title(str(cause_label))
+    ax.grid(axis="y")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(
+        title="Treatment ID",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        title_fontsize=9,
+        frameon=True,
+    )
+
+    fig.tight_layout()
+    return fig, ax
 
 
 def do_bar_plot_with_ci(

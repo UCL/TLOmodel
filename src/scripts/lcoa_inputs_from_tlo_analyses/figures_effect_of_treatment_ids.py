@@ -28,6 +28,8 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_multiindex_dot_with_interval,
     plot_appointment_counts_by_period_for_draw,
     plot_appointment_counts_heatmap,
+    plot_deaths_by_period_for_cause,
+    plot_hsi_counts_by_period_for_draw,
     plot_hsi_counts_stacked_bar
 )
 from tlo.analysis.utils import (
@@ -157,6 +159,15 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+        plt.close(fig)
+
+    cause_labels = num_deaths_by_cause_label.index.get_level_values("label").unique()
+    for cause_label in cause_labels:
+        fig, ax = plot_deaths_by_period_for_cause(num_deaths_by_cause_label / 1e3, cause_label=cause_label)
+        name_of_plot = f"Deaths Over Time for {cause_label}"
+        ax.set_title(name_of_plot)
+        ax.set_ylabel("Number of deaths (/1000)")
         fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
         plt.close(fig)
 
