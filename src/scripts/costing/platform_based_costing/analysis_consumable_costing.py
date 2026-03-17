@@ -49,7 +49,7 @@ results_folder = get_scenario_outputs('consumables_costing-2026-01-08T140906Z.py
 #create_pickles_locally(scenario_output_dir = results_folder, compressed_file_name_prefix=results_folder.name.split('-')[0]) # from .log.gz files
 
 # Check can read results from draw=0, run=0
-log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
+log = load_pickled_dataframes(results_folder, 1, 0)  # look at one log (so can decide what to extract)
 params = extract_params(results_folder)
 info = get_scenario_info(results_folder)
 
@@ -288,17 +288,62 @@ def get_disease_specific_summary(results_folder, module, key, var ,do_scaling):
 
     return count
 
+def get_disease_specific_summary_from_dict(results_folder, module, key, var ,do_scaling):
+    def get_col_summary(_df: pd.Series, var=var):
+        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series.
+
+        If var is a column containing dicts (e.g. prev_by_age_and_sex), expands the dict
+        into a long Series with MultiIndex (year, age_group).
+        """
+        _df = drop_outside_period(_df).copy()
+        _df["year"] = pd.to_datetime(_df["date"]).dt.year
+        _df = _df.set_axis(_df['year']).drop(columns=['date'])
+        _df = _df[var]
+
+        # If the column contains dicts, expand into long format with MultiIndex
+        if _df.apply(lambda x: isinstance(x, dict)).any():
+            _df = pd.DataFrame(_df.tolist(), index=_df.index)  # wide: rows=year, cols=age_group
+            _df = _df.stack()  # long: MultiIndex (year, age_group)
+            _df.index.names = ['year', 'age_group']
+
+        return _df
+
+    count = compute_summary_statistics(extract_results(
+        Path(results_folder),
+        module=module,
+        key=key,
+        custom_generate_series=get_col_summary,
+        do_scaling=do_scaling,
+    ), central_measure='median')
+
+    return count
+
 total_plhiv = get_disease_specific_summary(results_folder,
                                      module = 'tlo.methods.hiv',
                                      key = 'summary_inc_and_prev_for_adults_and_children_and_fsw',
                                      var = 'total_plhiv',
                                      do_scaling = True)
-
+child_plhiv = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'summary_inc_and_prev_for_adults_and_children_and_fsw',
+                                     var = 'child_plhiv',
+                                     do_scaling = True)
+n_new_infections_adult_1549 = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'summary_inc_and_prev_for_adults_and_children_and_fsw',
+                                     var = 'n_new_infections_adult_1549',
+                                     do_scaling = True)
 pop_total = get_disease_specific_summary(results_folder,
                                      module = 'tlo.methods.hiv',
                                      key = 'summary_inc_and_prev_for_adults_and_children_and_fsw',
                                      var = 'pop_total',
                                      do_scaling = True)
+testing_yield = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'testing_yield',
+                                     do_scaling = False)
+
 art_coverage_adult = get_disease_specific_summary(results_folder,
                                      module = 'tlo.methods.hiv',
                                      key = 'hiv_program_coverage',
@@ -314,6 +359,70 @@ prop_tested_adult = get_disease_specific_summary(results_folder,
                                      key = 'hiv_program_coverage',
                                      var = 'prop_tested_adult',
                                      do_scaling = False)
+prev_by_age_and_sex = get_disease_specific_summary_from_dict(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'prop_tested_adult',
+                                     do_scaling = False) #TODO this needs to be updated
+
+dx_adult = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'dx_adult',
+                                     do_scaling = False)
+
+dx_childen = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'dx_childen',
+                                     do_scaling = False)
+
+n_on_art_children= get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'n_on_art_children',
+                                     do_scaling = True)
+
+
+
+n_on_art_female_15plus = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'n_on_art_female_15plus',
+                                     do_scaling = True)
+
+n_on_art_male_15plus = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'n_on_art_male_15plus',
+                                     do_scaling = True)
+
+n_on_art_total = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'n_on_art_total',
+                                     do_scaling = True)
+
+def get_num_deaths_by_cause_label(_df):
+    """Return total number of Deaths by label within the TARGET_PERIOD
+    values are summed for all ages
+    df returned: rows=COD, columns=draw
+    """
+    _df = drop_outside_period(_df).copy()
+    _df["year"] = pd.to_datetime(_df["date"]).dt.year
+    _df = _df.set_axis(_df['year']).drop(columns=['date'])
+
+    return _df \
+        .groupby([_df['label'], _df['year']]) \
+        .size()
+
+num_deaths_by_label = extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='death',
+    custom_generate_series=get_num_deaths_by_cause_label,
+    do_scaling=True
+)
 
 number_adults_tested = get_disease_specific_summary(results_folder,
                                      module = 'tlo.methods.hiv',
@@ -415,6 +524,41 @@ wasting_results = {
 wasting_table = extract_summary_table(wasting_results, years, draw_label=1)
 
 
+def get_diabetes_summary(results_folder, module, key ,do_scaling):
+    def get_col_summary(_df: pd.Series):
+        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+        _df = drop_outside_period(_df).copy()
+        _df["year"] = pd.to_datetime(_df["date"]).dt.year
+        _df = _df.set_axis(_df['year']).drop(columns=['date'])
+        return _df.set_index('year').iloc[:, 0]
+
+
+    count  = compute_summary_statistics(extract_results(
+        Path(results_folder),
+        module= module,
+        key= key,
+        custom_generate_series=get_col_summary,
+        do_scaling=do_scaling,
+    ), central_measure='median')
+
+    return count
+
+diabetes_prevalence = get_diabetes_summary(results_folder,
+                                     module = 'tlo.methods.cardio_metabolic_disorders',
+                                     key = 'diabetes_prevalence',
+                                     do_scaling = False)
+
+diabetes_diagnosis_prevalence = get_diabetes_summary(results_folder,
+                                     module = 'tlo.methods.cardio_metabolic_disorders',
+                                     key = 'diabetes_diagnosis_prevalence',
+                                     do_scaling = False)
+
+diabetes_medication_prevalence = get_diabetes_summary(results_folder,
+                                     module = 'tlo.methods.cardio_metabolic_disorders',
+                                     key = 'diabetes_medication_prevalence',
+                                     do_scaling = False)
+
+
 # TODO update code to extract relevant results alongside prevalance
 log['tlo.methods.tb'].keys()
 # tb_incidence - num_new_active_tb, prop_active_tb_in_plhiv; tb_prevalence -> tbPrevActive, tbPrevActiveAdult, tbPrevActiveChild; tb_mdr - tbPropActiveCasesMdr; tb_treatment - tbPropDiagnosed, tbTreatmentCoverage, tbIptCoverage
@@ -434,6 +578,7 @@ log['tlo.methods.cardio_metabolic_disorders'].keys()
 # 'ever_heart_attack_prevalence'
 log['tlo.methods.wasting'].keys()
 # 'wasting_prevalence_props' - 'total_mod_under5_prop', 'total_sev_under5_prop'
+log['tlo.methods.population']['scaling_factor_district']
 
 #TODO add bednets and IRS
 
