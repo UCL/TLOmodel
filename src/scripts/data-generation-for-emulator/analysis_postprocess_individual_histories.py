@@ -238,7 +238,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
 
     # Find differences between two draws; parameters that are common across draws can be added to metadata, differences will be added to dataset.
     # Find all common parameters across draws
-    # Artificially inflate differences:
+    # REVIEW: Artificially inflate differences:
     draws_parameters[0]['parameters']['CervicalCancer']['different_param'] = 30
     draws_parameters[1]['parameters']['CervicalCancer']['different_param'] = 39
     draws_parameters[0]['parameters']['CervicalCancer']['same_param'] = 2
@@ -267,12 +267,10 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
             # The changing or adding of properties from the first_event will be stored in progression_properties
             progression_properties = {}
             running_date = None
-        
             episode_start_date = None
             episode_end_date = None
             episode_start_properties = {}
             episode_end_properties = {}
-            
             resource_access = {}
 
             # Iterate over each row in this group
@@ -291,6 +289,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 update_resource_access(info, resource_access)
                 print(resource_access)
             
+                # REVIEW: this is module specific
                 if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1':
                     polling_event_found = True
 

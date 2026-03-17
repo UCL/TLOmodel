@@ -104,13 +104,14 @@ def sample_param_combo():
             
         # Retreive module parameters which are not scenario or design decisions
         # REVIEW: is this best way to access module parameters?
-        # REVIEW: Ideally unique criterion to filter these
+
         p = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
+        
         # Drop scenario variables
         p = p.drop(p[p['param_label'] == 'scenario'].index)
         # Drop universal variables, already known
         p = p.drop(p[p['param_label'] == 'universal'].index)
-        # Drop design decision
+        # Drop design decision (currently self-consistently handle sampling this)
         p = p.drop(p[p['prior_note'] == 'design decision'].index)
         # Parse values
         p['value'] = p['value'].apply(parse_value)
@@ -118,11 +119,13 @@ def sample_param_combo():
         # For all param combos/draws, create a dictionary of parameter combinations
         for draw in range(N_param_combo):
             
+            # 1. Select services included with 50/50 probability
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
             # REVIEW: better handle on random seed here
             selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
             parameter_draws[draw] = {'HealthSystem': {'Service_Availability': selected_treatments}}
 
+            # 2. Resample parameters
             parameter_draws[draw].setdefault(module_of_interest, {})
             for idx, row in p.iterrows():
                 val = row['value']
@@ -134,6 +137,9 @@ def sample_param_combo():
                 else:
                     new_val = val * r
                     parameter_draws[draw][module_of_interest][row['parameter_name']] = new_val
+                    
+            # 3. Resample consumable availability
+            # REVIEW: How to resample this from scenario file
 
         return parameter_draws
 

@@ -395,9 +395,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
         df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
-
-        # Initialise all cases through polling event
-        #if self.parameters["generate_emulator_data"] is False:
         
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------
         women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
