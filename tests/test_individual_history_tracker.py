@@ -11,6 +11,7 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
@@ -20,7 +21,6 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    healthburden,
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
