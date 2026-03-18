@@ -19,6 +19,7 @@ from tlo.methods.causes import (
     get_gbd_causes_not_represented_in_disease_modules,
 )
 from tlo.methods.demography import age_at_date
+from tlo.notify import notifier
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -613,6 +614,21 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Multiply 1/12 as these weights are for one month only
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1 / 12)
+
+        if notifier.has_listeners("healthburden.monthly_dalys_report"):
+            # Do not dispatch individuals or causes that have zero dalys reported this month
+            monthly_dalys = disease_specific_daly_values_this_month.copy()
+            monthly_dalys_nonzero = (
+                monthly_dalys.loc[(monthly_dalys != 0).any(axis=1), (monthly_dalys != 0).any(axis=0)]
+                  .to_dict(orient="index"))
+
+            # Store data as dictionary
+            data = {
+                person: {col: val for col, val in cols.items() if val != 0}
+                for person, cols in monthly_dalys_nonzero.items()
+            }
+            
+            notifier.dispatch("healthburden.monthly_dalys_report", data=data)
 
         # 4) Summarise the results for this month wrt sex/age/wealth
         # - merge in age/wealth/sex information

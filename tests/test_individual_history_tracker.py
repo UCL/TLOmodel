@@ -20,6 +20,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    healthburden,
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -56,6 +57,7 @@ def test_individual_history_tracker(tmpdir, seed):
     sim.register(demography.Demography(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(),
+                 healthburden.HealthBurden(),
                  individual_history_tracker.IndividualHistoryTracker(),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
@@ -79,7 +81,9 @@ def test_individual_history_tracker(tmpdir, seed):
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
     individual_histories = reconstruct_individual_histories(
                             output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
-
+    print(individual_histories.columns)
+    print(individual_histories.loc[individual_histories['event_name']=='monthly_daly_report'])
+    exit(-1)
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     #   and that this was logged at the start date
     assert (individual_histories['event_name'] == 'StartOfSimulation').sum() == popsize
