@@ -22,7 +22,7 @@ import ast
 import numpy as np
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 2
+N_param_combo = 10
 
 def detect_and_convert(value):
     # try float
@@ -47,6 +47,10 @@ def detect_and_convert(value):
     # fallback: return as string
     return value
 
+def to_array(x):
+    if isinstance(x, str):
+        x = ast.literal_eval(x)
+    return np.asarray(x, dtype=float)
 
 def parse_value(value):
     # If already not string, return as-is (e.g. native float)
@@ -108,38 +112,39 @@ def sample_param_combo():
         p = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
         
         # Drop scenario variables
-        p = p.drop(p[p['param_label'] == 'scenario'].index)
-        # Drop universal variables, already known
-        p = p.drop(p[p['param_label'] == 'universal'].index)
-        # Drop design decision (currently self-consistently handle sampling this)
+        p = p.loc[p['param_label']=='undetermined']
         p = p.drop(p[p['prior_note'] == 'design decision'].index)
+        p = p.drop(p[p['prior_note'] == 'design feature '].index)
         # Parse values
         p['value'] = p['value'].apply(parse_value)
         
         # For all param combos/draws, create a dictionary of parameter combinations
         for draw in range(N_param_combo):
+            parameter_draws[draw] = {}
             
             # 1. Select services included with 50/50 probability
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
             # REVIEW: better handle on random seed here
-            selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
-            parameter_draws[draw] = {'HealthSystem': {'Service_Availability': selected_treatments}}
+            # selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
+            # parameter_draws[draw]['HealthSystem'] = {'Service_Availability': selected_treatments}
 
             # 2. Resample parameters
             parameter_draws[draw].setdefault(module_of_interest, {})
             for idx, row in p.iterrows():
-                val = row['value']
-                # REVIEW: Resampled value should be informed by prior!
                 r = random.random()
-
-                if isinstance(val, (pd.Series, list, tuple, np.ndarray)):
-                    new_val = np.array(val, dtype=float) * r
+                
+                if isinstance(row['value'], (pd.Series, list, tuple, np.ndarray)):
+                    val = to_array(row['value'])
+                    prior_max = to_array(row['prior_max'])
+                    prior_min = to_array(row['prior_min'])
+                    new_val = r*(prior_max - prior_min)
+                    new_val = new_val.tolist()
                 else:
-                    new_val = val * r
-                    parameter_draws[draw][module_of_interest][row['parameter_name']] = new_val
-                    
+                    new_val = r*(float(row['prior_max']) - float(row['prior_min']))
+                
+                parameter_draws[draw][module_of_interest][row['parameter_name']] = new_val
+
             # 3. Resample consumable availability
-            # REVIEW: How to resample this from scenario file
 
         return parameter_draws
 
@@ -203,10 +208,10 @@ class TrackIndividualHistories(BaseScenario):
         for i in range(N_param_combo):
             scenarios[str(i)] = mix_scenarios(
                                     self._baseline(),
-                                    #{
-                                    #    'HealthSystem': module_parameter_and_services_samples[i]['HealthSystem'],
-                                    #    module_of_interest: module_parameter_and_services_samples[i][module_of_interest]
-                                    #}
+                                    {
+                                       #'HealthSystem': module_parameter_and_services_samples[i]['HealthSystem'],
+                                        module_of_interest: module_parameter_and_services_samples[i][module_of_interest]
+                                    }
                                 )
 
         return scenarios
