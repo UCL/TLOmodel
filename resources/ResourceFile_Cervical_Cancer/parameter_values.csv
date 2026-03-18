@@ -46,7 +46,7 @@ stage_1_3_daly_wt,607,universal,N/A,N/A,definition,N/A
 stage_1_3_treated_daly_wt,608,universal,N/A,N/A,definition,N/A
 stage4_daly_wt,609,universal,N/A,N/A,definition,N/A
 min_yrs_between_screening_if_cin_treated,1,local,1,10,vague prior,Missing
-death_timing_spread_days,90,undetermined,1,365,design feature ,N/A
+death_timing_spread_days,90,undetermined,1,365,design decision,N/A
 initial_post_treatment_check_months,3,local,1,36,vague prior,Missing
 months_to_next_appt_treated_less_than_12_mo_ago,3,local,1,36,vague prior,Missing
 months_to_next_appt_treated_12_to_36_mo_ago,6,local,1,36,vague prior,Missing
