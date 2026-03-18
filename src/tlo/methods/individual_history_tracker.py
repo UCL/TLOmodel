@@ -374,9 +374,10 @@ class IndividualHistoryTracker(Module):
 
     def on_monthly_daly_report(self,data):
         """Upon receiving monthly daly report, convert it to custom EAV format and log"""
+        print("I received the dispatch with ", data)
         rows = []
 
-        # This is not a real event, so create custom name and invalid tag associated with it
+        # This is not a real event, so create custom name and create custom tag associated with it
         event_name = "monthly_daly_report"
         event_tag = -1
 
