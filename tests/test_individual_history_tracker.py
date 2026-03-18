@@ -81,9 +81,15 @@ def test_individual_history_tracker(tmpdir, seed):
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
     individual_histories = reconstruct_individual_histories(
                             output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
-    print(individual_histories.columns)
-    print(individual_histories.loc[individual_histories['event_name']=='monthly_daly_report'])
-    exit(-1)
+    
+    # Check that monthly daly reporting is included
+    assert (individual_histories['event_name'] == 'monthly_daly_report').sum() > 0
+    
+    # Cannot estimate how many monthly reports should be expected, since monthly report is only logged if individual
+    # experienced dalys that month, so check that at or below this max
+    max_monthly_reports = ((end_date.year - start_date.year) * 12 + (end_date.month - start_date.month))*popsize
+    assert (individual_histories['event_name'] == 'monthly_daly_report').sum() <= max_monthly_reports
+
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     #   and that this was logged at the start date
     assert (individual_histories['event_name'] == 'StartOfSimulation').sum() == popsize
