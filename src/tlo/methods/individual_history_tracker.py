@@ -64,6 +64,7 @@ class IndividualHistoryTracker(Module):
         notifier.add_listener("hsi_event.pre-run", self.on_event_pre_run)
         notifier.add_listener("hsi_event.post-run", self.on_event_post_run)
         notifier.add_listener("consumables.post-request_consumables", self.on_consumable_request)
+        notifier.add_listener("healthburden.monthly_daly_report", self.on_monthly_daly_report)
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         self.load_parameters_from_dataframe(
@@ -375,6 +376,29 @@ class IndividualHistoryTracker(Module):
         self.entire_mni_before = {}
         self.consumable_access = {}
         self.cons_call_number_within_event = 0
+
+    def on_monthly_daly_report(self,data):
+        """Upon receiving monthly daly report, convert it to custom EAV format and log"""
+        print("I received the dispatch with ", data)
+        rows = []
+
+        # This is not a real event, so create custom name and create custom tag associated with it
+        event_name = "monthly_daly_report"
+        event_tag = -1
+
+        for person, dalys in data.items():
+            for cause, value in dalys.items():
+                rows.append({
+                    "entity": person,
+                    "event_name": event_name,
+                    "event_tag": event_tag,
+                    "attribute": cause,
+                    "value": value
+                })
+
+        eav = pd.DataFrame(rows)
+        self.log_eav_dataframe_to_individual_histories(eav)
+        return
 
     def mni_values_differ(self, v1, v2):
 

@@ -11,6 +11,7 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
@@ -56,6 +57,7 @@ def test_individual_history_tracker(tmpdir, seed):
     sim.register(demography.Demography(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(),
+                 healthburden.HealthBurden(),
                  individual_history_tracker.IndividualHistoryTracker(),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
@@ -79,6 +81,14 @@ def test_individual_history_tracker(tmpdir, seed):
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
     individual_histories = reconstruct_individual_histories(
                             output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
+    
+    # Check that monthly daly reporting is included
+    assert (individual_histories['event_name'] == 'monthly_daly_report').sum() > 0
+    
+    # Cannot estimate how many monthly reports should be expected, since monthly report is only logged if individual
+    # experienced dalys that month, so check that at or below this max
+    max_monthly_reports = ((end_date.year - start_date.year) * 12 + (end_date.month - start_date.month))*popsize
+    assert (individual_histories['event_name'] == 'monthly_daly_report').sum() <= max_monthly_reports
 
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     #   and that this was logged at the start date
