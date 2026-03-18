@@ -108,13 +108,11 @@ def sample_param_combo():
             
         # Retreive module parameters which are not scenario or design decisions
         # REVIEW: is this best way to access module parameters?
-
         p = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
         
-        # Drop scenario variables
+        # Select undetermined parameters which were not design decisions
         p = p.loc[p['param_label']=='undetermined']
         p = p.drop(p[p['prior_note'] == 'design decision'].index)
-        p = p.drop(p[p['prior_note'] == 'design feature '].index)
         # Parse values
         p['value'] = p['value'].apply(parse_value)
         
