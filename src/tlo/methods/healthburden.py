@@ -616,7 +616,6 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1 / 12)
 
         if notifier.has_listeners("healthburden.monthly_daly_report"):
-            print("Listener is present")
             # Do not dispatch individuals or causes that have zero dalys reported this month
             monthly_dalys = disease_specific_daly_values_this_month.copy()
             monthly_dalys_nonzero = (
@@ -628,7 +627,6 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
                 person: {col: val for col, val in cols.items() if val != 0}
                 for person, cols in monthly_dalys_nonzero.items()
             }
-            print("I will dispatch ", data)
             notifier.dispatch("healthburden.monthly_daly_report", data=data)
 
         # 4) Summarise the results for this month wrt sex/age/wealth
