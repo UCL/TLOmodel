@@ -13,7 +13,6 @@ And:
 from __future__ import annotations
 
 import math
-import sys
 from itertools import combinations
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
@@ -261,7 +260,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
                   'nc_ckd_total_dialysis_sessions': Property(Types.INT,
-                                                             'total number of dialysis sessions the person has ever had'),
+                                                             'total dialysis sessions the person has ever had'),
                   }
 
     def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
