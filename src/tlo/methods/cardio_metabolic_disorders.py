@@ -13,6 +13,7 @@ And:
 from __future__ import annotations
 
 import math
+import sys
 from itertools import combinations
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
@@ -140,7 +141,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         f"{p}_initial_prev": Parameter(Types.DICT, 'initial prevalence of condition') for p in conditions
     }
 
-
     PARAMETERS = {
         **onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
         **onset_events_param_dicts, **death_conditions_param_dicts, **death_events_param_dicts,
@@ -220,6 +220,10 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication (if provided) will "
                                                                   f"prevent death from {p}") for p in conditions
     }
+    condition_date_onset_list = {
+        f"nc_{p}_date_onset": Property(Types.DATE, f"Date when {p} first developed") for p in conditions
+    }
+
     event_list = {
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
     event_date_last_list = {
@@ -247,8 +251,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
                   **condition_date_of_last_test_list, **condition_medication_list, **condition_medication_death_list,
-                  **event_date_last_list, **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
-                  **event_medication_death_list, **event_scheduled_date_death_list,
+                  **condition_date_onset_list, **event_date_last_list, **event_diagnosis_list,
+                  **event_date_diagnosis_list, **event_medication_list, **event_medication_death_list,
+                  **event_scheduled_date_death_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -256,7 +261,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
                   'nc_ckd_total_dialysis_sessions': Property(Types.INT,
-                                                          'total number of dialysis sessions the person has ever had'),
+                                                             'total number of dialysis sessions the person has ever had'),
                   }
 
     def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
@@ -413,7 +418,13 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             eligible = df.index[_filter]
             init_prev = self.rng.choice([True, False], size=len(eligible), p=[_p, 1 - _p])
             if sum(init_prev):
+                selected_indices = eligible[init_prev]
                 df.loc[eligible[init_prev], f'nc_{_condition}'] = True
+                # Set onset date for the initial prevalent cases
+                for person_id in selected_indices:
+                    days_before = self.rng.randint(1, 365)
+                    onset_date = self.sim.date - pd.DateOffset(days=days_before)
+                    df.at[person_id, f'nc_{_condition}_date_onset'] = onset_date
 
         def sample_eligible_diagnosis_medication(_filter, _p, _condition):
             """uses filter to get eligible population and samples individuals for prior diagnosis & medication use
@@ -559,7 +570,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         # Hypertension is the only condition for which we assume some community-based testing occurs; build LM based on
         # age / sex
         self.lms_testing['hypertension'] = self.build_linear_model('hypertension', self.parameters[
-                'interval_between_polls'], lm_type='testing')
+            'interval_between_polls'], lm_type='testing')
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
@@ -780,6 +791,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             df.at[child_id, f'nc_{condition}_date_last_test'] = pd.NaT
             df.at[child_id, f'nc_{condition}_on_medication'] = False
             df.at[child_id, f'nc_{condition}_medication_prevents_death'] = False
+            df.at[child_id, f'nc_{condition}_date_onset'] = pd.NaT
         for event in self.events:
             df.at[child_id, f'nc_{event}'] = False
             df.at[child_id, f'nc_{event}_date_last_event'] = pd.NaT
@@ -1056,7 +1068,11 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             acquires_condition = self.module.lms_onset[condition].predict(
                 df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_acquires_condition = acquires_condition[acquires_condition].index
-            df.loc[idx_acquires_condition, f'nc_{condition}'] = True
+
+            current_date = self.sim.date
+            for person_id in idx_acquires_condition:
+                df.loc[person_id, f'nc_{condition}'] = True
+                df.loc[person_id, f'nc_{condition}_date_onset'] = current_date
 
             # Add incident cases to the tracker
             self.module.trackers['onset_condition'].add(
