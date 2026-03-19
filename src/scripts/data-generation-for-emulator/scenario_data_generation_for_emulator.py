@@ -22,7 +22,7 @@ import ast
 import numpy as np
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 10
+N_param_combo = 3
 
 def detect_and_convert(value):
     # try float
