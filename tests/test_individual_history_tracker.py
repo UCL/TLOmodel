@@ -66,9 +66,9 @@ def test_individual_history_tracker(tmpdir, seed):
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  chronicsyndrome.ChronicSyndrome(),
-                 #malaria.Malaria(),
-                 rti.RTI(),
-                 schisto.Schisto(),
+                 malaria.Malaria(),
+                 #rti.RTI(),
+                 #schisto.Schisto(),
                  contraception.Contraception(),
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
@@ -111,31 +111,10 @@ def test_individual_history_tracker(tmpdir, seed):
     # Assert that all HSI events that occurred were also collected in the event chains.
     # Do not include Inpatient_Care HSIs, as these
     # are not currently treated as being individual-specific
+    
     Num_of_HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
     Num_of_HSIs_in_hs_log = len(output['tlo.methods.healthsystem']['HSI_Event'].loc[
-    output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
-    
-    
-    print("HSIs in log")
-    HSIs_in_log = output['tlo.methods.healthsystem']['HSI_Event'].loc[output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care', 'Event_Name'].to_list()
-    HSIs_in_IHT = individual_histories.loc[individual_histories["event_name"].str.contains('HSI', na=False),"event_name"].tolist()
-
-    only_in_log = list((Counter(HSIs_in_log) - Counter(HSIs_in_IHT)).elements())
-    only_in_IHT = list((Counter(HSIs_in_IHT) - Counter(HSIs_in_log)).elements())
-    print("Only in log")
-    print(only_in_log)
-    print("Only in IHT")
-    print(only_in_IHT)
-    
-    output['tlo.methods.healthsystem']['HSI_Event'].loc[output['tlo.methods.healthsystem']['HSI_Event']['Event_Name']=='HSI_Malaria_Treatment'].to_csv('HSI_event_log.csv')
-    individual_histories.loc[individual_histories["event_name"].str.contains('HSI_Malaria_Treatment', na=False)].to_csv('HSI_event_IHT.csv')
-    individual_histories.to_csv('full_IHT.csv')
-    
-    malaria_events_in_log =output['tlo.methods.healthsystem']['HSI_Event'].loc[output['tlo.methods.healthsystem']['HSI_Event']['Event_Name']=='HSI_Malaria_Treatment']
-    malaria_events_in_IHT = individual_histories.loc[individual_histories["event_name"].str.contains('HSI_Malaria_Treatment', na=False)]
-    
-    
-    print(output['tlo.methods.healthsystem']['HSI_Event'].loc[output['tlo.methods.healthsystem']['HSI_Event']['Event_Name']=='HSI_Malaria_Treatment'])
+        output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
     assert Num_of_HSIs_in_individual_histories == Num_of_HSIs_in_hs_log
 
     # Check that aside from HSIs, StartOfSimulation, and Birth, other events were collected too
