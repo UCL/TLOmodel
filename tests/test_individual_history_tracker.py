@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pytest
-from collections import Counter
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, reconstruct_individual_histories
@@ -22,8 +21,6 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    rti,
-    schisto,
     symptommanager,
 )
 
@@ -67,8 +64,6 @@ def test_individual_history_tracker(tmpdir, seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  chronicsyndrome.ChronicSyndrome(),
                  malaria.Malaria(),
-                 #rti.RTI(),
-                 #schisto.Schisto(),
                  contraception.Contraception(),
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
