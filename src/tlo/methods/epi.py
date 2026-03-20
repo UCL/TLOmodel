@@ -182,10 +182,15 @@ class Epi(Module):
         sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # HPV vaccine given from 2018 onwards
-        if self.sim.date.year < 2018:
-            sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
-        else:
-            sim.schedule_event(HpvScheduleEvent(self), Date(self.sim.date.year, 1, 1))
+        schedule_hpv_vaccine_from_2018 = True
+        if 'IndividualHistoryTracker' in self.sim.modules and self.sim.modules['IndividualHistoryTracker'].parameters['generate_emulator_data']:
+            schedule_hpv_vaccine_from_2018 = False
+        
+        if schedule_hpv_vaccine_from_2018:
+            if self.sim.date.year < 2018:
+                sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
+            else:
+                sim.schedule_event(HpvScheduleEvent(self), Date(self.sim.date.year, 1, 1))
 
         # Look up item codes for consumables
         self.get_item_codes()

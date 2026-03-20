@@ -186,9 +186,8 @@ class TrackIndividualHistories(BaseScenario):
             # HealthSystem and the Expanded Programme on Immunizations
             epi.Epi(),
             healthsystem.HealthSystem(),
-            hiv.Hiv(),
+            hiv.DummyHivModule(),
             simplified_births.SimplifiedBirths(),
-            tb.Tb(),
             individual_history_tracker.IndividualHistoryTracker(),
             ]
             )
