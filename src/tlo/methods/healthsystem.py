@@ -1438,6 +1438,10 @@ class HealthSystem(Module):
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: "HSI_Event", tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
+        if self.sim.date > tdate:
+            print(f"Warning: trying to schedule never_ran for date {tdate} in the past (current simulation date is {self.sim.date}). This event will not be scheduled.")
+            print(f"treament id is {hsi_event.TREATMENT_ID}")
+
         self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tdate)
 
     def get_mode_appt_constraints(self) -> int:

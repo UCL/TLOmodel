@@ -28,8 +28,11 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
         .drop(columns=([comparison] if drop_comparison else [])) \
         .stack()
 
-def get_total_population_by_year(_df):
-    years_needed = [i.year for i in TARGET_PERIOD]
+def get_total_population_by_year(
+    _df: pd.DataFrame,
+    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+) -> pd.Series:
+    years_needed = [i.year for i in target_period_tuple]
     _df["year"] = pd.to_datetime(_df["date"]).dt.year
     return _df.loc[_df["year"].between(min(years_needed), max(years_needed)), ["year", "total"]].set_index("year")[
         "total"

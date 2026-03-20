@@ -1,6 +1,7 @@
 """Produce plots to show the impact each set of treatments."""
 
 import argparse
+from datetime import date
 import glob
 import os
 import zipfile
@@ -56,9 +57,11 @@ from tlo.analysis.utils import (
     squarify_neat,
     summarize,
 )
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2026-01-01 --target-end=2041-01-01
 
 TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
-PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 5
+PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
 results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
 # SCALING_FACTOR retrieved from the suspended run in
@@ -70,74 +73,51 @@ EXCLUDED_HSIs = [
     "FirstAttendance_SpuriousEmergencyCare",
 ]
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+
+def parse_iso_date(value: str) -> Date:
+    parsed = date.fromisoformat(value)
+    return Date(parsed.year, parsed.month, parsed.day)
+
+
+def apply(
+    results_folder: Path,
+    output_folder: Path,
+    resourcefilepath: Path = None,
+    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+):
     """Produce standard plots describing effect of each TREATMENT_ID."""
     _, age_grp_lookup = make_age_grp_lookup()
 
     param_names = get_parameter_names_from_scenario_file()
     get_num_deaths_by_cause_label_and_period = make_get_num_deaths_by_cause_label_and_period(
         PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
-        TARGET_PERIOD,
+        target_period_tuple,
     )
     get_num_dalys_by_cause_label_and_period = make_get_num_dalys_by_cause_label_and_period(
         PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
-        TARGET_PERIOD,
-    )
-    # Get yearly number of appointments;
-    get_num_appts_by_period = make_get_counts_of_appts_by_period(
-        period_length_years=1,
-        target_period_tuple=TARGET_PERIOD,
+        target_period_tuple,
     )
     get_num_hsi_by_period = make_get_counts_of_hsis_by_period(
-        period_length_years=1,
-        target_period_tuple=TARGET_PERIOD,
+        PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
+        target_period_tuple=target_period_tuple,
     )
-
-    # Costs calculation
-    print("Calculating costs...")
-    # For now, choose specific draws
-    # draw_number:Treament ID
-    # 0 : Nothing
-    # 10: BreastCancer_Investigation_*
-    # 15: CardioMetabolicDisorders_Prevention_WeightLoss_*
-    # 27: Contraception_Routine_*
-    draws_to_run = [0, 10, 15, 27, 31, 39, 65]
-    selected_draws = [9, 14, 26, 30, 38, 64]
-
-    discount_rate_cost = 0.03
-    input_costs = estimate_input_cost_of_scenarios(
-                      results_folder,
-                      resourcefilepath,
-                      suspended_results_folder=suspended_folder,
-                      _draws=draws_to_run,
-                      _runs=[0, 1, 2, 3, 4],
-                      cost_only_used_staff=True,
-                      _discount_rate=discount_rate_cost,
-                      _metric="median",)
-
+    results = {}
     # Get total population by year
     print("Extracting population data...")
-    total_population_by_year = extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='population',
-        custom_generate_series=get_total_population_by_year,
-        do_scaling=True,
-        suspended_results_folder=suspended_folder,
-        autodiscover=True
+    total_population_by_year = (
+        extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=lambda _df: get_total_population_by_year(_df, target_period_tuple),
+            do_scaling=True,
+            suspended_results_folder=suspended_folder,
+            autodiscover=True
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
-    total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure = 'median')
-    total_population_by_year = set_param_names_as_column_index_level_0(total_population_by_year, param_names=param_names)
-    total_population_by_year = (total_population_by_year
-            .stack(level=["draw", "stat"])   # move draw & stat into index
-            .reset_index()                   # turn all index levels into columns
-            .rename(columns={0: "population"})    # name the value column
-    ).set_index(["draw", "stat",'year'])
 
-    total_population_by_year = total_population_by_year.rename(
-        index={"central": "median"},
-        level="stat"
-    )
+    total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure='median')
+    results['total_population_by_year'] = total_population_by_year
 
     print("Extracting total deaths and DALYs by label...")
     num_deaths = (
@@ -155,15 +135,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_averted = summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack()
 
 
     pc_deaths_averted = 100.0 * summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack()
 
-    num_deaths = summarize(num_deaths)
+    num_deaths = compute_summary_statistics(num_deaths, central_measure='median')
+    results['num_deaths'] = num_deaths
 
     num_dalys = (
         extract_results(
@@ -185,37 +166,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pc_dalys_averted = 100.0 * summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack()
 
-    num_dalys = summarize(num_dalys)
-    num_dalys_averted_summarized = summarize_cost_data(-1.0 * num_dalys_averted, _metric='median')
-
-    total_num_death_by_agegrp_and_label = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=lambda _df: get_total_num_death_by_agegrp_and_label(_df, TARGET_PERIOD),
-        do_scaling=True,
-        suspended_results_folder=suspended_folder,
-        autodiscover=True,
-    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-
-    total_num_dalys_by_agegrp_and_label = extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked_by_age_and_time",
-        custom_generate_series=lambda _df: get_total_num_dalys_by_agegrp_and_label(_df, TARGET_PERIOD),
-        do_scaling=True,
-        suspended_results_folder=suspended_folder,
-        autodiscover=True,
-    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
 
     counts_of_hsi_by_short_treatment_id = (
         extract_results(
             results_folder,
             module="tlo.methods.healthsystem.summary",
             key="HSI_Event",
-            custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, TARGET_PERIOD),
+            custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, target_period_tuple),
             do_scaling=True,
             suspended_results_folder=suspended_folder,
             autodiscover=True,
@@ -223,14 +183,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
         .sort_index()
-    )
+    ).drop(EXCLUDED_HSIs, errors='ignore')
 
     counts_of_hsi_by_short_treatment_id = (
         compute_summary_statistics(counts_of_hsi_by_short_treatment_id, 'median')
     )
-    counts_of_hsi_by_short_treatment_id = (
-        counts_of_hsi_by_short_treatment_id.drop(columns=EXCLUDED_HSIs, errors='ignore')
-    )
+
+    results['counts_of_hsi_by_short_treatment_id'] = counts_of_hsi_by_short_treatment_id
 
     counts_of_hsi_by_period = (
         extract_results(
@@ -245,91 +204,49 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
         .sort_index()
-    )
+    ).drop(EXCLUDED_HSIs, level=0, errors='ignore')
+
     counts_of_hsi_by_period = (
         compute_summary_statistics(counts_of_hsi_by_period, 'median')
     )
+    results['counts_of_hsi_by_period'] = counts_of_hsi_by_period
 
-    print("Extracting counts of appointments data...")
-    counts_of_appts = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="HSI_Event",
-            custom_generate_series=lambda _df: get_counts_of_appts(_df, TARGET_PERIOD),
-            do_scaling=True,
-            suspended_results_folder=suspended_folder,
-        )
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-        .fillna(0.0)
-        .sort_index()
-    )
-    counts_of_appts = compute_summary_statistics(counts_of_appts, 'median')
-
-    counts_of_appts_by_period = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="HSI_Event",
-            custom_generate_series=lambda _df: get_num_appts_by_period(_df),
-            do_scaling=True,
-            suspended_results_folder=suspended_folder,
-        )
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-        .fillna(0.0)
-        .sort_index()
-    )
-    counts_of_appts_by_period = compute_summary_statistics(counts_of_appts_by_period, 'median')
-
-    # Computing ICERs
-    print("Computing ICERs...")
-    total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-    incremental_scenario_cost = (pd.DataFrame(
-        find_difference_relative_to_comparison(
-            total_input_cost,
-            comparison=0,)
-    ).T.iloc[0].unstack()).T
-
-    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric='median')
-    icers_summarized = (incremental_scenario_cost_summarized.values /
-                        num_dalys_averted_summarized.iloc[selected_draws].values)
-
-    icers_summarized = (
-        pd.DataFrame(
-            icers_summarized,
-            index=num_dalys_averted_summarized.index[selected_draws],
-            columns=num_dalys_averted_summarized.columns
-        )
-    )
-
-    return {
-        "total_population_by_year": total_population_by_year,
-        "num_deaths": num_deaths,
-        "deaths_averted": num_deaths_averted,
-        "pc_deaths_averted": pc_deaths_averted,
-        "num_dalys": num_dalys,
-        "dalys_averted": num_dalys_averted,
-        "pc_dalys_averted": pc_dalys_averted,
-        "input_costs": input_costs,
-        "incremental_scenario_cost_summarized": incremental_scenario_cost_summarized,
-        "icers_summarized": icers_summarized,
-        "total_num_death_by_agegrp_and_label": total_num_death_by_agegrp_and_label,
-        "total_num_dalys_by_agegrp_and_label": total_num_dalys_by_agegrp_and_label,
-        "counts_of_hsi_by_short_treatment_id": counts_of_hsi_by_short_treatment_id,
-        "counts_of_appts": counts_of_appts,
-        "counts_of_appts_by_period": counts_of_appts_by_period,
-    }
+    return results
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
     parser.add_argument("output_folder", type=Path, nargs="?", default=None)
+    parser.add_argument("--target-start", type=str, default=None)
+    parser.add_argument("--target-end", type=str, default=None)
     args = parser.parse_args()
 
+    if (args.target_start is None) != (args.target_end is None):
+        parser.error("Provide both --target-start and --target-end, or neither.")
+
+    if args.target_start is None:
+        target_period_tuple = TARGET_PERIOD
+    else:
+        target_period_tuple = (
+            parse_iso_date(args.target_start),
+            parse_iso_date(args.target_end),
+        )
+        if not target_period_tuple[0] < target_period_tuple[1]:
+            parser.error("--target-start must be earlier than --target-end.")
+
     out = args.output_folder if args.output_folder is not None else args.results_folder
-    results = apply(results_folder=args.results_folder, output_folder=out, resourcefilepath=Path("./resources"))
-    with open(args.output_folder / 'fullresults.pkl', 'wb') as f:
+    results = apply(
+        results_folder=args.results_folder,
+        output_folder=out,
+        resourcefilepath=Path("./resources"),
+        target_period_tuple=target_period_tuple,
+    )
+    outfile = (
+        f"{target_period_tuple[1].year:04d}-{target_period_tuple[1].month:02d}-{target_period_tuple[1].day:02d}"
+        "_fullresults.pkl"
+    )
+    with open(out / outfile, 'wb') as f:
         pickle.dump(results, f)
 
-    print("Analysis complete! Results saved to fullresults.pkl")
+    print(f"Analysis complete! Results saved to {out / outfile}")

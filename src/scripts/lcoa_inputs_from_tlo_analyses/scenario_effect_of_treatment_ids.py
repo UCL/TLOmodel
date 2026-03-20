@@ -28,12 +28,13 @@ from tlo.analysis.utils import get_filtered_treatment_ids, mix_scenarios, get_pa
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
+from tlo.methods.individual_history_tracker import IndividualHistoryTracker
 
 
 class ScenarioDefinitions:
     @property
     def YEAR_OF_SERVICE_AVAILABILITY_SWITCH(self) -> int:
-        return 2026
+        return 2011
 
     def baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario."""
@@ -64,8 +65,8 @@ class EffectOfEachTreatment(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 1)
-        self.pop_size = 250_000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
@@ -80,6 +81,7 @@ class EffectOfEachTreatment(BaseScenario):
                 "tlo.methods.demography.detail": logging.WARNING,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.individual_history_tracker": logging.INFO,
             },
         }
 
@@ -104,6 +106,8 @@ class EffectOfEachTreatment(BaseScenario):
         service_availability.update(
             {f"Only {treatment}": [treatment] for treatment in treatments}
         )
+        ##service_availability = {"Only Rti_TetanusVaccine": ["Rti_TetanusVaccine"]}
+
         scenario_definitions = ScenarioDefinitions()
 
         scenarios = {
