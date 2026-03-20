@@ -17,6 +17,7 @@ from tlo.methods import (
     hiv,
     individual_history_tracker,
     labour,
+    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
@@ -62,6 +63,7 @@ def test_individual_history_tracker(tmpdir, seed):
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  chronicsyndrome.ChronicSyndrome(),
+                 malaria.Malaria(),
                  contraception.Contraception(),
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
@@ -104,9 +106,10 @@ def test_individual_history_tracker(tmpdir, seed):
     # Assert that all HSI events that occurred were also collected in the event chains.
     # Do not include Inpatient_Care HSIs, as these
     # are not currently treated as being individual-specific
+    
     Num_of_HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
     Num_of_HSIs_in_hs_log = len(output['tlo.methods.healthsystem']['HSI_Event'].loc[
-    output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
+        output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
     assert Num_of_HSIs_in_individual_histories == Num_of_HSIs_in_hs_log
 
     # Check that aside from HSIs, StartOfSimulation, and Birth, other events were collected too

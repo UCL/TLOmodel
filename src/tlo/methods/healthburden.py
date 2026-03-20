@@ -617,16 +617,16 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         if notifier.has_listeners("healthburden.monthly_daly_report"):
             # Do not dispatch individuals or causes that have zero dalys reported this month
-            monthly_dalys = disease_specific_daly_values_this_month.copy()
+            monthly_dalys = disease_specific_daly_values_this_month
             monthly_dalys_nonzero = (
-                monthly_dalys.loc[(monthly_dalys != 0).any(axis=1), (monthly_dalys != 0).any(axis=0)]
-                  .to_dict(orient="index"))
+                monthly_dalys.loc[(monthly_dalys != 0).any(axis=1), (monthly_dalys != 0).any(axis=0)])
 
-            # Store data as dictionary
+            # Only retain non-zero info
             data = {
-                person: {col: val for col, val in cols.items() if val != 0}
-                for person, cols in monthly_dalys_nonzero.items()
+                idx: {col: val for col, val in row.items() if val > 0}
+                for idx, row in monthly_dalys_nonzero.iterrows()
             }
+
             notifier.dispatch("healthburden.monthly_daly_report", data=data)
 
         # 4) Summarise the results for this month wrt sex/age/wealth
