@@ -22,7 +22,7 @@ import ast
 import numpy as np
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 3
+N_param_combo = 5
 
 def detect_and_convert(value):
     # try float
@@ -152,7 +152,7 @@ class TrackIndividualHistories(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=25)
+        self.end_date = self.start_date + pd.DateOffset(years=20)
         self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
