@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import ttest_rel
+import matplotlib.cm as cm
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -40,8 +41,8 @@ scenario_colours = [
 ]
 
 climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = False  # Changed to True
-main_text = True
+parameter_sensitivity_analysis = True  # Changed to True
+main_text = False
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
@@ -58,7 +59,7 @@ if climate_sensitivity_analysis:
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
-    num_draws = 200  # Number of parameter scan draws
+    num_draws = 50  # Number of parameter scan draws
     scenario_names = [f"Draw_{i}" for i in range(num_draws)]
     scenarios_of_interest = range(num_draws)
     suffix = "parameter_SA"
@@ -66,6 +67,8 @@ if main_text:
     scenario_names = ["No disruptions", "Baseline", "Worst Case"]
     suffix = "main_text"
     scenarios_of_interest = [0, 1, 2]
+
+cmap = cm.get_cmap('tab20', len(scenarios_of_interest))
 
 PREFIX_ON_FILENAME = "1"
 
@@ -211,62 +214,65 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # SUMMARY FIGURES FOR ALL DRAWS
     # ============================================================================
     # 7. Difference dot plot vs "No disruption"
-    fig_diff, ax_diff = plt.subplots(figsize=(12, len(df_dalys_all_draws_mean_1000.index) * 0.5 + 2))
-    scenario_colors = {'No disruptions': '#0081a7', 'Baseline': '#FEB95F', 'Worst Case': '#f07167'}
-    offsets = {'No disruptions': -0.25, 'Baseline': 0.0, 'Worst Case': 0.25}
-    y_positions = np.arange(len(df_dalys_all_draws_mean_1000.index))
-    treatment_labels = [t.replace("*", "") for t in df_dalys_all_draws_mean_1000.index]
+    if main_text:
 
-    for draw in scenarios_of_interest:
-        if scenario_names[draw] == "No disruptions":
-            continue
-        color = scenario_colors[scenario_names[draw]]
-        offset = offsets[scenario_names[draw]]
+        fig_diff, ax_diff = plt.subplots(figsize=(12, len(df_dalys_all_draws_mean_1000.index) * 0.5 + 2))
+        scenario_colors = {'No disruptions': '#0081a7', 'Baseline': '#FEB95F', 'Worst Case': '#f07167'}
+        offsets = {'No disruptions': -0.25, 'Baseline': 0.0, 'Worst Case': 0.25}
+        y_positions = np.arange(len(df_dalys_all_draws_mean_1000.index))
+        treatment_labels = [t.replace("*", "") for t in df_dalys_all_draws_mean_1000.index]
 
-        ref_means = df_dalys_all_draws_mean_1000.iloc[:, 0]  # No disruptions column
-        cmp_means = df_dalys_all_draws_mean_1000.iloc[:, draw]
-        cmp_lowers = df_dalys_all_draws_lower_1000.iloc[:, draw]
-        cmp_uppers = df_dalys_all_draws_upper_1000.iloc[:, draw]
-        diffs = cmp_means - ref_means
-        print(diffs)
-        xerr = np.array([
-            np.clip(cmp_means.values - cmp_lowers.values, 0, None),
-            np.clip(cmp_uppers.values - cmp_means.values, 0, None)
-        ])
+        for draw in scenarios_of_interest:
+            if scenario_names[draw] == "No disruptions":
+                continue
+            color = scenario_colors.get(scenario_names[draw], cmap(draw % 20))
 
-        ax_diff.errorbar(
-            x=diffs.values,
-            y=y_positions + offset,
-            xerr=xerr,
-            fmt='o', color=color, label=scenario_names[draw],
-            capsize=3, markersize=5, linewidth=1.2,
-        )
+            offset = offsets[scenario_names[draw]]
 
-        # Add significance stars next to each point
-        # x_offset = max(abs(diffs)) * 0.02 if max(abs(diffs)) > 0 else 0.01
-        # for j, treatment in enumerate(df_final.index):
-        #     star = treatment_significance[scenario_label].get(treatment, '')
-        #     if star:
-        #         ax_diff.text(
-        #             diffs.iloc[j] + x_offset,
-        #             y_positions[j] + offset,
-        #             star,
-        #             ha='left', va='center', fontsize=9,
-        #             color=color, fontweight='bold'
-        #         )
+            ref_means = df_dalys_all_draws_mean_1000.iloc[:, 0]  # No disruptions column
+            cmp_means = df_dalys_all_draws_mean_1000.iloc[:, draw]
+            cmp_lowers = df_dalys_all_draws_lower_1000.iloc[:, draw]
+            cmp_uppers = df_dalys_all_draws_upper_1000.iloc[:, draw]
+            diffs = cmp_means - ref_means
+            print(diffs)
+            xerr = np.array([
+                np.clip(cmp_means.values - cmp_lowers.values, 0, None),
+                np.clip(cmp_uppers.values - cmp_means.values, 0, None)
+            ])
 
-    ax_diff.axvline(0, color='black', linewidth=1, linestyle='--', label='No disruptions')
-    ax_diff.set_yticks(y_positions)
-    ax_diff.set_yticklabels(treatment_labels, fontsize=10)
-    ax_diff.set_xlabel("Difference in DALYs per 100,000 population vs No Disruption", fontsize=12)
-    ax_diff.legend(title='Scenario', fontsize=10)
-    ax_diff.grid(axis='x', alpha=0.3)
-    ax_diff.invert_yaxis()
-    fig_diff.tight_layout()
-    fig_diff.savefig(
-        output_folder / f"{PREFIX_ON_FILENAME}_Final_DALYs_DiffPlot_{suffix}.png",
-        dpi=300)
-    plt.close(fig_diff)
+            ax_diff.errorbar(
+                x=diffs.values,
+                y=y_positions + offset,
+                xerr=xerr,
+                fmt='o', color=color, label=scenario_names[draw],
+                capsize=3, markersize=5, linewidth=1.2,
+            )
+
+            # Add significance stars next to each point
+            # x_offset = max(abs(diffs)) * 0.02 if max(abs(diffs)) > 0 else 0.01
+            # for j, treatment in enumerate(df_final.index):
+            #     star = treatment_significance[scenario_label].get(treatment, '')
+            #     if star:
+            #         ax_diff.text(
+            #             diffs.iloc[j] + x_offset,
+            #             y_positions[j] + offset,
+            #             star,
+            #             ha='left', va='center', fontsize=9,
+            #             color=color, fontweight='bold'
+            #         )
+
+        ax_diff.axvline(0, color='black', linewidth=1, linestyle='--', label='No disruptions')
+        ax_diff.set_yticks(y_positions)
+        ax_diff.set_yticklabels(treatment_labels, fontsize=10)
+        ax_diff.set_xlabel("Difference in DALYs per 100,000 population vs No Disruption", fontsize=12)
+        ax_diff.legend(title='Scenario', fontsize=10)
+        ax_diff.grid(axis='x', alpha=0.3)
+        ax_diff.invert_yaxis()
+        fig_diff.tight_layout()
+        fig_diff.savefig(
+            output_folder / f"{PREFIX_ON_FILENAME}_Final_DALYs_DiffPlot_{suffix}.png",
+            dpi=300)
+        plt.close(fig_diff)
 
     # 1. Total DALYs distribution across draws (box plot by cause)
     fig, ax = plt.subplots(1, 1, figsize=(16, 10))
