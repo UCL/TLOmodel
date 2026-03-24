@@ -3,12 +3,12 @@ PRCC Sensitivity Analysis Script
 Produces publication-ready PRCC figure for the climate disruption sensitivity analysis.
 
 Outputs:
-- (A1) PRCC for Total DALYs
-- (A2) PRCC for Proportion Delayed
-- (A3) PRCC for Proportion Cancelled
-- (B) Parameter correlation matrix (LHS validation)
+- (A) PRCC for Total DALYs
+- (B) PRCC for Proportion Delayed
+- (C) PRCC for Proportion Cancelled
 """
 
+import argparse
 import json
 from pathlib import Path
 
@@ -21,29 +21,22 @@ from scipy.stats import rankdata, spearmanr
 # Configuration
 # =============================================================================
 
-results_folder = Path(
-    '/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs_baseline-2025-12-04T163755Z')
-output_folder = Path(
-    '/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs_baseline-2025-12-04T163755Z')
-
-# Analysis parameters
-N_DRAWS = 200
-LHS_FILE = Path('/Users/rem76/PycharmProjects/TLOmodel/resources/lhs_grid.json')  # Adjust path as needed
+N_DRAWS = 50
 
 PARAMETER_INFO = {
-    "rescaling_prob_disruption": {
+    "scale_factor_prob_disruption": {
         "symbol": "α",
         "name": "Disruption scaling",
     },
-    "rescaling_prob_seeking_after_disruption": {
+    "scale_factor_reseeking_healthcare_post_disruption": {
         "symbol": "β",
         "name": "Re-seeking scaling",
     },
-    "scale_factor_delay_in_seeking_care_weather": {
+    "delay_in_seeking_care_weather": {
         "symbol": "δ",
         "name": "Base delay",
     },
-    "scale_factor_priority_and_delay": {
+    "scale_factor_appointment_urgency": {
         "symbol": "γ",
         "name": "Priority scaling",
     },
@@ -52,6 +45,33 @@ PARAMETER_INFO = {
         "name": "Severity scaling",
     },
 }
+
+# ── Publication rcParams ──────────────────────────────────────────────────────
+PUB_RC = {
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "DejaVu Serif"],
+    "font.size": 8,
+    "axes.titlesize": 9,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "axes.linewidth": 0.6,
+    "xtick.major.width": 0.6,
+    "ytick.major.width": 0.6,
+    "xtick.major.size": 3,
+    "ytick.major.size": 3,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "figure.dpi": 300,
+    "savefig.dpi": 300,
+    "savefig.bbox": "tight",
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
+}
+
+COLOUR_POS = "#0072B2"
+COLOUR_NEG = "#D55E00"
+COLOUR_NS = "#999999"
 
 
 # =============================================================================
@@ -79,199 +99,177 @@ def calculate_prcc(params_df: pd.DataFrame, outcome_series: pd.Series) -> pd.Dat
         other_params = [p for p in param_names if p != target_param]
 
         if not other_params:
-            corr, p_val = spearmanr(
-                params_clean[target_param], outcome_clean
-            )
+            corr, p_val = spearmanr(params_clean[target_param], outcome_clean)
         else:
             X = ranked_params[other_params].values
-            y_target = ranked_params[target_param].values
-            X_int = np.column_stack([np.ones(len(y_target)), X])
+            y_t = ranked_params[target_param].values
+            X_int = np.column_stack([np.ones(len(y_t)), X])
 
-            beta_target = np.linalg.lstsq(X_int, y_target, rcond=None)[0]
-            resid_target = y_target - X_int @ beta_target
-
-            beta_outcome = np.linalg.lstsq(X_int, ranked_outcome, rcond=None)[0]
-            resid_outcome = ranked_outcome - X_int @ beta_outcome
+            resid_target = y_t - X_int @ np.linalg.lstsq(X_int, y_t, rcond=None)[0]
+            resid_outcome = ranked_outcome - X_int @ np.linalg.lstsq(X_int, ranked_outcome, rcond=None)[0]
 
             corr, p_val = spearmanr(resid_target, resid_outcome)
 
-        results.append(
-            {
-                "parameter": target_param,
-                "prcc": corr,
-                "p_value": p_val,
-            }
-        )
+        results.append({"parameter": target_param, "prcc": corr, "p_value": p_val})
 
     return pd.DataFrame(results)
 
 
-def plot_prcc_horizontal_bars(prcc_results, outcome_name, ax):
-    """Horizontal PRCC bar plot."""
+def _sig_label(p_val: float) -> str:
+    if p_val < 0.001: return "***"
+    if p_val < 0.01:  return "**"
+    if p_val < 0.05:  return "*"
+    return "ns"
 
-    prcc_sorted = prcc_results.copy()
-    prcc_sorted["abs_prcc"] = prcc_sorted["prcc"].abs()
-    prcc_sorted = prcc_sorted.sort_values("abs_prcc", ascending=True).reset_index(drop=True)
+
+def plot_prcc_horizontal_bars(prcc_results, outcome_name, ax, show_ylabel=True):
+    """Publication-quality horizontal PRCC bar plot."""
+
+    df = prcc_results.copy()
+    df["abs_prcc"] = df["prcc"].abs()
+    df = df.sort_values("abs_prcc", ascending=True).reset_index(drop=True)
 
     labels = []
-    for param in prcc_sorted["parameter"]:
+    for param in df["parameter"]:
         info = PARAMETER_INFO.get(param)
-        labels.append(
-            f"{info['symbol']} ({info['name']})" if info else param
-        )
+        labels.append(f"{info['symbol']} — {info['name']}" if info else param)
 
-    colors = ["#DC2626" if x > 0 else "#2563EB" for x in prcc_sorted["prcc"]]
-
-    y_pos = np.arange(len(prcc_sorted))
-    ax.barh(
-        y_pos,
-        prcc_sorted["prcc"],
-        color=colors,
-        edgecolor="black",
-        linewidth=0.5,
-        height=0.7,
-        alpha=0.85,
-    )
-
-    for idx, row in prcc_sorted.iterrows():
-        if row["p_value"] < 0.001:
-            marker = "***"
-        elif row["p_value"] < 0.01:
-            marker = "**"
-        elif row["p_value"] < 0.05:
-            marker = "*"
+    colors = []
+    for _, row in df.iterrows():
+        if row["p_value"] >= 0.05:
+            colors.append(COLOUR_NS)
+        elif row["prcc"] > 0:
+            colors.append(COLOUR_POS)
         else:
-            marker = ""
+            colors.append(COLOUR_NEG)
 
-        if marker:
-            ax.text(
-                row["prcc"] + (0.03 if row["prcc"] > 0 else -0.06),
-                idx,
-                marker,
-                va="center",
-                ha="left" if row["prcc"] > 0 else "right",
-                fontsize=12,
-                color="#FCD34D",
-                fontweight="bold",
-            )
+    y_pos = np.arange(len(df))
+
+    ax.barh(
+        y_pos, df["prcc"],
+        color=colors, edgecolor="white", linewidth=0.4,
+        height=0.62, alpha=0.92, zorder=3,
+    )
 
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(labels, fontsize=10)
-    ax.axvline(0, color="black", linewidth=1)
-    ax.set_xlim(-1.1, 1.1)
-    ax.set_xlabel("Partial Rank Correlation Coefficient")
-    ax.set_title(outcome_name, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", alpha=0.3)
+    ax.set_yticklabels(labels if show_ylabel else [""] * len(labels), fontsize=7)
+
+    ax.axvline(0, color="black", linewidth=0.8, zorder=4)
+    ax.set_xlim(-1.05, 1.05)
+    ax.set_xticks([-1, -0.5, 0, 0.5, 1])
+    ax.set_xlabel("PRCC", fontsize=8)
+    ax.set_title(outcome_name, fontweight="bold", fontsize=9, pad=4)
+
+    ax.xaxis.grid(True, linestyle=":", linewidth=0.4, color="0.75", zorder=0)
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
 
-def plot_parameter_correlation_matrix(params_df, ax):
-    """Spearman correlation matrix for LHS validation."""
+def load_outputs_from_results(results_folder: Path) -> dict:
+    """Load pre-computed disruption and DALY outputs."""
 
-    corr = params_df.corr(method="spearman")
-    labels = [
-        PARAMETER_INFO.get(p, {}).get("symbol", p[:6])
-        for p in corr.columns
+    disruption_file = results_folder / "prcc_disruption_summary.csv"
+    if not disruption_file.exists():
+        raise FileNotFoundError(
+            f"Run comparison_actual_vs_expected_disruption_realfacility.py first:\n  {disruption_file}"
+        )
+    disruption_df = pd.read_csv(disruption_file).set_index("draw")
+
+    daly_file = results_folder / "dalys_by_cause_all_draws_parameter_SA.csv"
+    if not daly_file.exists():
+        raise FileNotFoundError(
+            f"Run the DALY analysis script first:\n  {daly_file}"
+        )
+    daly_df = pd.read_csv(daly_file, index_col=0)
+
+    total_dalys = daly_df.sum(axis=0)
+    total_dalys.index = [int(c.replace("Draw ", "")) for c in total_dalys.index]
+    total_dalys = total_dalys.sort_index()
+
+    common = disruption_df.index.intersection(total_dalys.index)
+    if len(common) < len(disruption_df):
+        print(f"  Warning: {len(disruption_df) - len(common)} draws missing from DALY file")
+
+    for name, series in [
+        ("total_dalys", total_dalys),
+        ("prop_delayed", disruption_df["prop_delayed"]),
+        ("prop_cancelled", disruption_df["prop_cancelled"]),
+    ]:
+        print(f"  {name}: {series.notna().sum()} valid draws  "
+              f"[{series.min():.4g} – {series.max():.4g}]")
+
+    return {
+        "total_dalys": total_dalys,
+        "prop_delayed": disruption_df["prop_delayed"],
+        "prop_cancelled": disruption_df["prop_cancelled"],
+    }
+
+
+def create_combined_prcc_figure(params_df, outputs, output_folder):
+    """Assemble publication-ready PRCC figure (190 mm wide, double-column)."""
+
+    outcome_items = [
+        ("total_dalys", "Total DALYs"),
+        ("prop_delayed", "Prop. delayed"),
+        ("prop_cancelled", "Prop. cancelled"),
     ]
 
-    im = ax.imshow(corr.values, cmap="RdBu_r", vmin=-1, vmax=1)
-    cbar = plt.colorbar(im, ax=ax, shrink=0.7)
-    cbar.set_label("Spearman correlation")
+    with plt.rc_context(PUB_RC):
+        fig = plt.figure(figsize=(7.48, 3.2))
 
-    ax.set_xticks(range(len(labels)))
-    ax.set_yticks(range(len(labels)))
-    ax.set_xticklabels(labels, fontsize=12, style="italic")
-    ax.set_yticklabels(labels, fontsize=12, style="italic")
-    ax.set_title("Parameter correlations (LHS validation)", fontweight="bold")
+        gs = fig.add_gridspec(
+            1, 3,
+            left=0.13, right=0.98,
+            top=0.93, bottom=0.22,
+            wspace=0.42,
+        )
+        axes = [fig.add_subplot(gs[0, i]) for i in range(3)]
 
+        for i, (out_key, out_label) in enumerate(outcome_items):
+            ax = axes[i]
+            prcc = calculate_prcc(params_df, outputs[out_key])
 
-def create_combined_prcc_figure(params_df, outputs):
-    """Assemble full PRCC figure."""
+            # Save PRCC values for this outcome
+            prcc.to_csv(output_folder / f"prcc_{out_key}.csv", index=False)
 
-    fig = plt.figure(figsize=(16, 10))
+            plot_prcc_horizontal_bars(prcc, out_label, ax, show_ylabel=(i == 0))
+            ax.text(
+                -0.14 if i == 0 else -0.05, 1.06,
+                f"({chr(65 + i)})",
+                transform=ax.transAxes,
+                fontweight="bold", fontsize=9,
+            )
 
-    ax1 = fig.add_axes([0.05, 0.55, 0.28, 0.4])
-    ax2 = fig.add_axes([0.38, 0.55, 0.28, 0.4])
-    ax3 = fig.add_axes([0.71, 0.55, 0.28, 0.4])
-    ax4 = fig.add_axes([0.25, 0.08, 0.5, 0.38])
-
-    for i, (name, series) in enumerate(
-        {
-            "Total DALYs": outputs["total_dalys"],
-            "Prop. delayed": outputs["prop_delayed"],
-            "Prop. cancelled": outputs["prop_cancelled"],
-        }.items()
-    ):
-        ax = [ax1, ax2, ax3][i]
-        prcc = calculate_prcc(params_df, series)
-        plot_prcc_horizontal_bars(prcc, name, ax)
-        ax.text(-0.12, 1.05, f"(A{i+1})", transform=ax.transAxes, fontweight="bold")
-
-    plot_parameter_correlation_matrix(params_df, ax4)
-    ax4.text(-0.08, 1.08, "(B)", transform=ax4.transAxes, fontweight="bold")
-
-    fig.text(
-        0.5,
-        0.01,
-        "* p<0.05   ** p<0.01   *** p<0.001",
-        ha="center",
-        fontsize=10,
-    )
+        # Figure-level legend, centred under all three panels
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor=COLOUR_POS, label="Positive (p < 0.05)"),
+            Patch(facecolor=COLOUR_NEG, label="Negative (p < 0.05)"),
+            Patch(facecolor=COLOUR_NS, label="Non-significant"),
+        ]
+        fig.legend(
+            handles=legend_elements,
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.01),
+            ncol=3,
+            fontsize=6.5,
+            frameon=True,
+            edgecolor="0.7",
+            fancybox=False,
+        )
 
     return fig
 
 
-def load_outputs_from_results(results_folder: Path) -> dict:
-    """
-    Load or compute output metrics from simulation results.
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """Produce a publication-ready PRCC figure for the climate disruption sensitivity analysis."""
 
-    Adapt file paths and column names to match your actual results structure.
-    """
+    lhs_file = resourcefilepath / "climate_disruptions" / "lhs_parameter_draws.json"
+    if not lhs_file.exists():
+        raise FileNotFoundError(f"LHS draws file not found:\n  {lhs_file}")
 
-    # Option 1: If you have a summary CSV with all draws
-    summary_file = results_folder / "summary_outcomes.csv"
-    if summary_file.exists():
-        df = pd.read_csv(summary_file)
-        return {
-            "total_dalys": df.set_index("draw")["total_dalys"],
-            "prop_delayed": df.set_index("draw")["prop_delayed"],
-            "prop_cancelled": df.set_index("draw")["prop_cancelled"],
-        }
-
-    # Option 2: Load from individual draw folders
-    total_dalys = {}
-    prop_delayed = {}
-    prop_cancelled = {}
-
-    for draw in range(N_DRAWS):
-        draw_folder = results_folder / f"draw_{draw}"
-        if not draw_folder.exists():
-            continue
-
-        try:
-            results_file = draw_folder / "results.csv"
-            if results_file.exists():
-                df = pd.read_csv(results_file)
-                total_dalys[draw] = df["dalys"].sum() if "dalys" in df.columns else np.nan
-                prop_delayed[draw] = df["delayed"].mean() if "delayed" in df.columns else np.nan
-                prop_cancelled[draw] = df["cancelled"].mean() if "cancelled" in df.columns else np.nan
-        except Exception as e:
-            print(f"Warning: Could not load draw {draw}: {e}")
-            continue
-
-    return {
-        "total_dalys": pd.Series(total_dalys, name="total_dalys"),
-        "prop_delayed": pd.Series(prop_delayed, name="prop_delayed"),
-        "prop_cancelled": pd.Series(prop_cancelled, name="prop_cancelled"),
-    }
-
-
-def apply(results_folder: Path, output_folder: Path):
-    """
-    Produce a publication-ready PRCC figure for the climate disruption
-    sensitivity analysis.
-    """
-
-    with open(LHS_FILE) as f:
+    with open(lhs_file) as f:
         lhs_grid = json.load(f)
 
     records = []
@@ -289,23 +287,28 @@ def apply(results_folder: Path, output_folder: Path):
 
     outputs = load_outputs_from_results(results_folder)
 
-    fig = create_combined_prcc_figure(params_df, outputs)
+    fig = create_combined_prcc_figure(params_df, outputs, output_folder)
 
-    fig.savefig(output_folder / "prcc_combined_figure.png", dpi=300, bbox_inches="tight")
+    out_path = output_folder / "prcc_combined_figure.png"
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
+    print(f"Saved: {out_path}")
+
 
 # =============================================================================
 # Main Execution
 # =============================================================================
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("results_folder", type=Path)
+    parser = argparse.ArgumentParser(
+        description="Produce PRCC sensitivity figure for climate disruption analysis."
+    )
+    parser.add_argument("results_folder", type=Path, )
+    parser.add_argument("--resourcefilepath", type=Path, default=Path("./resources"), )
     args = parser.parse_args()
 
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
+        resourcefilepath=args.resourcefilepath,
     )
