@@ -46,14 +46,14 @@ worst_case_params = baseline_params.copy()
 worst_case_params["HealthSystem"] = baseline_params["HealthSystem"].copy()
 worst_case_params["HealthSystem"].update({
     "scale_factor_reseeking_healthcare_post_disruption": 2.0,
-    "scale_factor_prob_disruption": 2.0,
+    "scale_factor_prob_disruption": 0.5,
     "delay_in_seeking_care_weather": 60.0,
     "scale_factor_appointment_urgency": 2.0,
     "scale_factor_severity_disruption_and_delay": 2.0,
     "services_affected_precip": "all",
 })
 
-full_grid = [baseline_params, best_case_params, worst_case_params]
+full_grid = [worst_case_params]  # baseline_params, best_case_params, worst_case_params]
 
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
