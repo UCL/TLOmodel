@@ -1,4 +1,3 @@
-
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
@@ -6,8 +5,7 @@ from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 
 YEAR_OF_CHANGE = 2025
 
-# Define the three scenarios explicitly
-no_disruptional_params = { # no disruptions
+no_disruption_params = {  # no disruptions at all (scale_factor_prob_disruption=0)
     "HealthSystem": {
         "scale_factor_reseeking_healthcare_post_disruption": 1.0,
         "scale_factor_prob_disruption": 0.0,
@@ -38,22 +36,27 @@ no_disruptional_params = { # no disruptions
     },
 }
 
-no_reseeking_param = no_disruptional_params.copy() # never reseek healthcare, lots of cancellations
-no_reseeking_param["HealthSystem"] = no_disruptional_params["HealthSystem"].copy()
-no_reseeking_param["HealthSystem"]["scale_factor_prob_disruption"] = 1.0
-no_reseeking_param["HealthSystem"]["scale_factor_reseeking_healthcare_post_disruption"] = 0.0
+demand_side_disruption_params = no_disruption_params.copy()  # all disruptions are demand-side (prop_supply_side=0)
+demand_side_disruption_params["HealthSystem"] = no_disruption_params["HealthSystem"].copy()
+demand_side_disruption_params["HealthSystem"]["scale_factor_prob_disruption"] = 1.0
+demand_side_disruption_params["HealthSystem"]["prop_supply_side_disruptions"] = 0.0
 
+mixed_disruption_params = no_disruption_params.copy()  # disruptions split 50/50 supply- and demand-side (prop_supply_side=0.5)
+mixed_disruption_params["HealthSystem"] = no_disruption_params["HealthSystem"].copy()
+mixed_disruption_params["HealthSystem"]["scale_factor_prob_disruption"] = 1.0
+mixed_disruption_params["HealthSystem"]["prop_supply_side_disruptions"] = 0.5
 
-always_disrupted_param = no_disruptional_params.copy() # expect to always see delays, as this will then go to 1
-always_disrupted_param["HealthSystem"] = no_disruptional_params["HealthSystem"].copy()
-always_disrupted_param["HealthSystem"]["scale_factor_prob_disruption"] = 10000.0
+supply_side_disruption_params = no_disruption_params.copy()  # all disruptions are supply-side (prop_supply_side=1)
+supply_side_disruption_params["HealthSystem"] = no_disruption_params["HealthSystem"].copy()
+supply_side_disruption_params["HealthSystem"]["scale_factor_prob_disruption"] = 1.0
+supply_side_disruption_params["HealthSystem"]["prop_supply_side_disruptions"] = 1.0
 
-huge_delay_param = no_disruptional_params.copy() # expecting to see overall lower HSIs as they are delayed and never re-ran?
-huge_delay_param["HealthSystem"] = huge_delay_param["HealthSystem"].copy()
-huge_delay_param["HealthSystem"]["scale_factor_prob_disruption"] = 1
-huge_delay_param["HealthSystem"]["delay_in_seeking_care_weather"] = 10000
-
-full_grid = [no_disruptional_params, no_reseeking_param, always_disrupted_param, huge_delay_param]
+full_grid = [
+    no_disruption_params,
+    demand_side_disruption_params,
+    mixed_disruption_params,
+    supply_side_disruption_params,
+]
 
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
@@ -62,16 +65,13 @@ class ClimateDisruptionScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2027, 1, 1)
         self.pop_size = 10_000
-        self.runs_per_draw = 5
+        self.runs_per_draw = 1
         self._parameter_grid = full_grid
         self.number_of_draws = len(self._parameter_grid)
 
-        #with open("selected_parameter_combinations_baseline.json", "w") as f:
-        #    json.dump(self._parameter_grid, f, indent=2)
-
     def log_configuration(self):
         return {
-            "filename": "test_disruption_parameters",
+            "filename": "test_disruption_parameters_mode_2",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
