@@ -13,18 +13,18 @@ mfl = pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'Resource
 
 hr_salary = pd.read_csv(resourcefilepath /
                         'costing' / 'ResourceFile_Annual_Salary_Per_Cadre.csv', index_col=False)
-hr_salary_per_level = pd.read_excel(resourcefilepath /
-                                    'costing' / 'ResourceFile_Costing.xlsx', sheet_name='human_resources')
+# hr_salary_per_level = pd.read_excel(resourcefilepath /
+#                                     'costing' / 'ResourceFile_Costing.xlsx', sheet_name='human_resources')
 # as of 2019
 hr_current = pd.read_csv(resourcefilepath /
                          'healthsystem' / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv')
 hr_established = pd.read_csv(resourcefilepath /
                              'healthsystem' / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv')
 # for 2020-2024
-historical_scaling = pd.read_excel(resourcefilepath /
-                                   'healthsystem' / 'human_resources' / 'scaling_capabilities' /
-                                   'ResourceFile_dynamic_HR_scaling.xlsx', sheet_name='historical_scaling'
-                                   ).set_index('year')
+historical_scaling = pd.read_csv(resourcefilepath /
+                                 'healthsystem' / 'human_resources' / 'scaling_capabilities' /
+                                 'ResourceFile_dynamic_HR_scaling' / 'historical_scaling.csv'
+                                 ).set_index('year')
 integrated_historical_scaling = (
     historical_scaling.loc[2020, 'dynamic_HR_scaling_factor'] *
     historical_scaling.loc[2021, 'dynamic_HR_scaling_factor'] *
