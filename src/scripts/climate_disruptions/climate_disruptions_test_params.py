@@ -15,7 +15,7 @@ no_disruptional_params = { # no disruptions
         "scale_factor_appointment_urgency": 1.0,
         "scale_factor_severity_disruption_and_delay": 1.0,
         "mode_appt_constraints": 1,
-        "mode_appt_constraints_postSwitch": 1,
+        "mode_appt_constraints_postSwitch": 2,
         "cons_availability": "default",
         "cons_availability_postSwitch": "default",
         "year_cons_availability_switch": YEAR_OF_CHANGE,
@@ -61,7 +61,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2027, 1, 1)
-        self.pop_size = 100_000
+        self.pop_size = 10_000
         self.runs_per_draw = 5
         self._parameter_grid = full_grid
         self.number_of_draws = len(self._parameter_grid)
