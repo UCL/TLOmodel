@@ -12,7 +12,7 @@ This allows disruption rates to be sliced by month, facility, or HSI type.
 IMPORTANT: For monthly/annual/facility plots the raw counts are first collapsed
 to YYYY-MM:RealFacility_ID granularity (summing across HSI types) before rates
 are computed. This preserves identical behaviour to the original script.
-The HSI-type plot uses the full three-component key.
+The HSI-type plots use the full three-component key.
 """
 
 import argparse
@@ -40,8 +40,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     main_text = True
     parameter_uncertainty_analysis = False
 
-    # How many of the top HSI types to show in the bar chart (by total volume)
-    top_n_hsi = 15
+    top_n_hsi = 15  # HSI types to show in bar charts
 
     if parameter_uncertainty_analysis:
         scenario_names = list(range(0, 50))
@@ -57,13 +56,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     # ─────────────────────────────────────────────────────────────────────────────
 
     def _make_hsi_counts_by_real_facility_monthly(target_period):
-        """
-        Composite key: YYYY-MM:RealFacility_ID:HSI_type
-        The counts dict key is expected to be RealFacility_ID:TREATMENT_ID.
-        Split on the FIRST colon only so treatment IDs containing colons are
-        kept intact as the HSI_type component.
-        """
-
         def _fn(_df):
             _df["date"] = pd.to_datetime(_df["date"])
             _df = _df.loc[_df["date"].between(*target_period)]
@@ -74,21 +66,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 ym = row["date"].strftime("%Y-%m")
                 counts_dict = row["counts"] if isinstance(row["counts"], dict) else {}
                 for key, val in counts_dict.items():
-                    parts = str(key).split(":", 1)  # split on FIRST colon only
+                    parts = str(key).split(":", 1)
                     real_fac = parts[0]
                     hsi_type = parts[1] if len(parts) > 1 else "unknown"
                     composite = f"{ym}:{real_fac}:{hsi_type}"
                     totals[composite] = totals.get(composite, 0) + val
             return pd.Series(totals, dtype=float)
-
         return _fn
 
     def _make_disrupted_by_real_facility_monthly(target_period):
-        """
-        Composite key: YYYY-MM:RealFacility_ID:HSI_type
-        Uses TREATMENT_ID column from the full_info log if present.
-        """
-
         def _fn(_df):
             _df["date"] = pd.to_datetime(_df["date"])
             _df = _df.loc[_df["date"].between(*target_period)]
@@ -105,13 +91,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 + _df["hsi_type"]
             )
             return _df["composite"].value_counts().astype(float)
-
         return _fn
 
     def _extract_df(results_folder, draw, log_key, fn):
-        """Returns per-run DataFrame (index: composite keys, columns: run indices).
-        Does NOT average across runs."""
-        try:
             raw = extract_results(
                 results_folder,
                 module="tlo.methods.healthsystem.summary",
@@ -120,49 +102,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 do_scaling=False,
             )
             return raw[draw].fillna(0)
-        except Exception as e:
-            print(f"  Warning: extraction failed for {log_key} draw {draw}: {e}")
-            return pd.DataFrame(dtype=float)
 
-    # ── Key parsing helpers (composite = YYYY-MM:RealFacility_ID:HSI_type) ──────
+    # ── Key parsing helpers ───────────────────────────────────────────────────────
 
     def _parse_ym(index):
-        """Extract YYYY-MM (first component)."""
         return index.astype(str).str.split(":", n=1).str[0]
 
     def _parse_facility(index):
-        """Extract RealFacility_ID (second component)."""
         return index.astype(str).str.split(":", n=2).str[1]
 
     def _parse_hsi_type(index):
-        """Extract HSI type (everything after second colon)."""
         return index.astype(str).str.split(":", n=2).str[2]
 
     def _collapse_hsi_types(df):
-        """
-        Sum a three-component (YYYY-MM:RealFacility_ID:HSI_type) DataFrame down
-        to two-component (YYYY-MM:RealFacility_ID) by grouping on the first two
-        components. This restores exactly the granularity used by the original
-        script so that monthly/annual/facility stats are unaffected by the new
-        HSI_type dimension.
-        """
         if df.empty:
             return df
         key_2 = _parse_ym(df.index) + ":" + _parse_facility(df.index)
         return df.groupby(key_2).sum()
 
     def _align_and_rate(total_df, disrupted_df):
-        """Align indices and compute per-run rate = disrupted / total (0 where total=0).
-        Returns a DataFrame of rates, same shape as inputs after alignment."""
         idx = total_df.index.union(disrupted_df.index)
         t = total_df.reindex(idx, fill_value=0)
         d = disrupted_df.reindex(idx, fill_value=0)
         return d.div(t).where(t > 0, 0.0)
 
     def _monthly_stats(rate_df):
-        """Group per-run rates by YYYY-MM, average across facilities per month per
-        run, then return mean/lower/upper across runs.
-        Expects two-component index (YYYY-MM:RealFacility_ID)."""
         rate_df = rate_df.copy()
         ym = _parse_ym(rate_df.index)
         monthly = rate_df.groupby(ym).mean().sort_index()
@@ -173,9 +137,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         )
 
     def _annual_stats(rate_df):
-        """Group per-run rates by year, average across facilities+months per year per
-        run, then return mean/lower/upper across runs.
-        Expects two-component index (YYYY-MM:RealFacility_ID)."""
         rate_df = rate_df.copy()
         yr = _parse_ym(rate_df.index).str[:4]
         annual = rate_df.groupby(yr).mean().sort_index()
@@ -186,9 +147,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         )
 
     def _facility_stats(rate_df, total_df):
-        """Group per-run rates by facility, average across months per facility per
-        run, then return mean across runs. Also returns mean total count per facility.
-        Expects two-component index (YYYY-MM:RealFacility_ID)."""
         rate_df = rate_df.copy()
         total_df = total_df.reindex(rate_df.index, fill_value=0)
         fac = _parse_facility(rate_df.index)
@@ -197,27 +155,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         return fac_rate, fac_total
 
     def _hsi_type_stats(rate_df, total_df):
-        """
-        Group per-run rates by HSI type, averaging across facilities and months
-        per HSI type per run, then return mean/lower/upper across runs.
-        Also returns mean total HSI count per type (for ordering / bubble size).
-        Expects three-component index (YYYY-MM:RealFacility_ID:HSI_type).
-
-        Returns
-        -------
-        hsi_mean  : pd.Series  index = hsi_type
-        hsi_lower : pd.Series
-        hsi_upper : pd.Series
-        hsi_total : pd.Series  mean total count per hsi_type across runs
-        """
         rate_df = rate_df.copy()
         total_df = total_df.reindex(rate_df.index, fill_value=0)
-
         hsi = _parse_hsi_type(rate_df.index)
-
         by_type = rate_df.groupby(hsi).mean()
         by_type_total = total_df.groupby(hsi).sum()
-
         return (
             by_type.mean(axis=1),
             by_type.quantile(0.025, axis=1),
@@ -230,7 +172,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     # ─────────────────────────────────────────────────────────────────────────────
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
-
     tlo_facilities = set()
 
     all_draws_monthly_delayed_mean = []
@@ -247,7 +188,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     all_draws_annual_cancelled_lower = []
     all_draws_annual_cancelled_upper = []
 
-    # Per-HSI-type stats storage
     all_draws_hsi_delayed_mean = []
     all_draws_hsi_delayed_lower = []
     all_draws_hsi_delayed_upper = []
@@ -261,7 +201,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     all_draws_cancelled_df = {}
 
     for draw in scenarios_of_interest:
-        print(f"\n=== Draw {draw} ({scenario_names[draw]}) ===")
 
         if scenario_names[draw] == "No disruptions":
             all_months = pd.date_range(
@@ -292,7 +231,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
         for target_year in target_year_sequence:
             TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
-            print(f"  Year {target_year}...", end=" ", flush=True)
 
             fn_total = _make_hsi_counts_by_real_facility_monthly(TARGET_PERIOD)
             fn_disrupted = _make_disrupted_by_real_facility_monthly(TARGET_PERIOD)
@@ -305,30 +243,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             all_years_delayed_dfs.append(delayed_df)
             all_years_cancelled_dfs.append(cancelled_df)
 
-            print(f"total={total_df.sum().mean():.0f}  "
-                  f"delayed={delayed_df.sum().mean():.0f}  "
-                  f"cancelled={cancelled_df.sum().mean():.0f}")
-
         def _concat_years(dfs):
             combined = pd.concat(dfs)
             return combined.groupby(level=0).sum()
 
-        # Full three-component DFs (YYYY-MM:RealFacility_ID:HSI_type)
         total_all = _concat_years(all_years_total_dfs)
         delayed_all = _concat_years(all_years_delayed_dfs)
         cancelled_all = _concat_years(all_years_cancelled_dfs)
 
-        tlo_facilities.update(
-            _parse_facility(total_all.index).dropna()
-        )
+        tlo_facilities.update(_parse_facility(total_all.index).dropna())
 
         all_draws_total_df[draw] = total_all
         all_draws_delayed_df[draw] = delayed_all
         all_draws_cancelled_df[draw] = cancelled_all
 
-        # ── Collapse to YYYY-MM:RealFacility_ID for existing plots ────────────
-        # Sum across HSI types BEFORE computing rates so that monthly/annual/
-        # facility stats are numerically identical to the original script.
+        # Collapse to YYYY-MM:RealFacility_ID before computing rates for
+        # monthly/annual/facility plots (preserves original behaviour)
         total_2 = _collapse_hsi_types(total_all)
         delayed_2 = _collapse_hsi_types(delayed_all)
         cancelled_2 = _collapse_hsi_types(cancelled_all)
@@ -354,10 +284,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         all_draws_annual_cancelled_lower.append(cal)
         all_draws_annual_cancelled_upper.append(cau)
 
-        print(f"  >> Mean annual delayed rate:   {dam.mean():.4f}")
-        print(f"  >> Mean annual cancelled rate: {cam.mean():.4f}")
-
-        # ── HSI-type stats use full three-component rates ─────────────────────
+        # HSI-type stats use full three-component index
         delayed_rate_3 = _align_and_rate(total_all, delayed_all)
         cancelled_rate_3 = _align_and_rate(total_all, cancelled_all)
 
@@ -382,7 +309,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     disruptions_df = disruptions_df[disruptions_df["RealFacility_ID"].isin(tlo_facilities)]
     disruptions_df = disruptions_df[
         (disruptions_df["year"] >= min_year) & (disruptions_df["year"] <= max_year - 1)
-        ]
+    ]
 
     avg_df_annual = (
         disruptions_df.groupby("year")["mean_all_service"]
@@ -407,7 +334,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     #  PLOT A: MONTHLY time series
     # ─────────────────────────────────────────────────────────────────────────────
 
-    print("\nPlotting monthly time series...")
 
     n_plots = len(scenarios_of_interest) - (1 if "No disruptions" in scenario_names else 0)
     n_cols = min(3, n_plots)
@@ -456,20 +382,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         ax.set_title(scenario_names[draw], fontsize=13, fontweight="bold")
         ax.set_ylim(bottom=0)
         ax.set_xlim(left=pd.Timestamp("2025-01-01"))
-        ax.legend(fontsize=9, framealpha=0.95, edgecolor="gray", fancybox=True)
+        if plot_idx == 1:
+            ax.legend(fontsize=9, framealpha=0.95, edgecolor="gray", fancybox=True)
 
     for j in range(plot_idx, len(axes_flat)):
         axes_flat[j].set_visible(False)
 
-    fig.suptitle(
-        f"Monthly mean per-facility disruption rate: TLO vs DHIS2 ({min_year}–{max_year - 1})\n",
-        fontsize=12, fontweight="bold", y=1.01,
-    )
     fig.tight_layout()
     out_monthly = output_folder / f"comparison_disruption_monthly_{suffix}.png"
     fig.savefig(out_monthly, dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print(f"  Saved {out_monthly}")
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  PLOT B: ANNUAL time series
@@ -517,7 +439,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     ]
     ax2.legend(handles=style_handles, loc="upper right", fontsize=9,
                framealpha=0.85, title="Line style", title_fontsize=9)
-
     ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax2.xaxis.set_major_locator(mdates.YearLocator())
     plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha="right")
@@ -534,24 +455,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     out_annual = output_folder / f"comparison_disruption_annual_{suffix}.png"
     fig2.savefig(out_annual, dpi=300, bbox_inches="tight")
     plt.close(fig2)
-    print(f"  Saved {out_annual}")
 
     # ─────────────────────────────────────────────────────────────────────────────
-    #  PLOT C: PER-HSI-TYPE disruption rates (horizontal bar chart, one panel
-    #           per scenario, sorted by total HSI volume)
+    #  SHARED FIGURE SETUP for Plots C and C2
     # ─────────────────────────────────────────────────────────────────────────────
-
-    print("\nPlotting per-HSI-type disruption rates...")
-
-    all_rates = pd.concat([
-        (all_draws_hsi_delayed_mean[idx] + all_draws_hsi_cancelled_mean[idx])
-        for idx, draw in enumerate(scenarios_of_interest)
-        if scenario_names[draw] != "No disruptions"
-           and not all_draws_hsi_delayed_mean[idx].empty
-    ]).groupby(level=0).mean().sort_values(ascending=False)
-    all_rates = all_rates[all_rates.index.astype(str) != "nan"]
-    all_rates = all_rates[all_rates > 0]  # drop zero-rate HSIs
-    top_hsi_types = all_rates.head(top_n_hsi).index.tolist()
 
     n_scen_hsi = sum(
         1 for idx, draw in enumerate(scenarios_of_interest)
@@ -560,17 +467,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     )
     n_cols_hsi = min(3, n_scen_hsi)
     n_rows_hsi = (n_scen_hsi + n_cols_hsi - 1) // n_cols_hsi
-
     bar_height = max(0.3, min(0.7, 12 / max(top_n_hsi, 1)))
     fig_h = max(6, top_n_hsi * bar_height * 1.4)
-    fig3, axes3 = plt.subplots(
-        n_rows_hsi, n_cols_hsi,
-        figsize=(9 * n_cols_hsi, fig_h),
-        squeeze=False
-    )
-    axes3_flat = axes3.flatten()
 
-    y_pos = np.arange(len(top_hsi_types))
+    def _draw_hsi_bar_panel(ax, hd_m, hd_l, hd_u, hc_m, hc_l, hc_u,
+                            hsi_types, title):
+        """Draw a single stacked bar panel for a given ordered list of HSI types."""
+        hd_m = hd_m.reindex(hsi_types, fill_value=0)
+        hd_l = hd_l.reindex(hsi_types, fill_value=0)
+        hd_u = hd_u.reindex(hsi_types, fill_value=0)
+        hc_m = hc_m.reindex(hsi_types, fill_value=0)
+        hc_l = hc_l.reindex(hsi_types, fill_value=0)
+        hc_u = hc_u.reindex(hsi_types, fill_value=0)
+
+        y_pos = np.arange(len(hsi_types))
+        total_m = (hd_m + hc_m).values * 100
+        total_l = (hd_l + hc_l).values * 100
+        total_u = (hd_u + hc_u).values * 100
+        delayed_m = hd_m.values * 100
+        canceld_m = hc_m.values * 100
+
+        ax.barh(y_pos, delayed_m, height=bar_height,
+                color=COLOUR_DELAYED, alpha=0.75, label="Delayed")
+        ax.barh(y_pos, canceld_m, height=bar_height,
+                left=delayed_m, color=COLOUR_CANCELLED, alpha=0.75, label="Cancelled")
+        ax.errorbar(
+            total_m, y_pos,
+            xerr=[total_m - total_l, total_u - total_m],
+            fmt="none", color="black", lw=1.0, capsize=2, alpha=0.6,
+        )
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(hsi_types, fontsize=12)
+        ax.invert_yaxis()
+        ax.set_xlabel("% of HSIs disrupted", fontsize=14, fontweight="bold")
+        ax.set_title(title, fontsize=15, fontweight="bold")
+        ax.set_xlim(left=0)
+        ax.legend(fontsize=8, loc="lower right")
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  PLOT C: TOP 15 MOST DISRUPTED HSI TYPES — per-draw ranking
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    fig3, axes3 = plt.subplots(n_rows_hsi, n_cols_hsi,
+                               figsize=(9 * n_cols_hsi, fig_h), squeeze=False)
+    axes3_flat = axes3.flatten()
 
     plot_idx = 0
     for idx, draw in enumerate(scenarios_of_interest):
@@ -586,57 +526,78 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if hd_m.empty and hc_m.empty:
             continue
 
+        # Rank by total disruption rate for THIS draw only
+        draw_total_rate = (hd_m + hc_m).copy()
+        draw_total_rate = draw_total_rate[draw_total_rate.index.astype(str) != "nan"]
+        draw_total_rate = draw_total_rate[draw_total_rate > 0].sort_values(ascending=False)
+        top_types = draw_total_rate.head(top_n_hsi).index.tolist()
+
         ax = axes3_flat[plot_idx]
         plot_idx += 1
-
-        hd_m = hd_m.reindex(top_hsi_types, fill_value=0)
-        hd_l = hd_l.reindex(top_hsi_types, fill_value=0)
-        hd_u = hd_u.reindex(top_hsi_types, fill_value=0)
-        hc_m = hc_m.reindex(top_hsi_types, fill_value=0)
-        hc_l = hc_l.reindex(top_hsi_types, fill_value=0)
-        hc_u = hc_u.reindex(top_hsi_types, fill_value=0)
-
-        total_m = (hd_m + hc_m).values * 100
-        total_l = (hd_l + hc_l).values * 100
-        total_u = (hd_u + hc_u).values * 100
-        delayed_m = hd_m.values * 100
-        canceld_m = hc_m.values * 100
-
-        ax.barh(y_pos, delayed_m, height=bar_height,
-                color=COLOUR_DELAYED, alpha=0.75, label="Delayed")
-        ax.barh(y_pos, canceld_m, height=bar_height,
-                left=delayed_m, color=COLOUR_CANCELLED, alpha=0.75, label="Cancelled")
-
-        ax.errorbar(
-            total_m, y_pos,
-            xerr=[total_m - total_l, total_u - total_m],
-            fmt="none", color="black", lw=1.0, capsize=2, alpha=0.6,
-        )
-
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(top_hsi_types, fontsize=7)
-        ax.invert_yaxis()
-        ax.set_xlabel("% of HSI events disrupted", fontsize=10, fontweight="bold")
-        ax.set_title(scenario_names[draw], fontsize=11, fontweight="bold")
-        ax.set_xlim(left=0)
-        ax.legend(fontsize=8, loc="lower right")
+        _draw_hsi_bar_panel(ax, hd_m, hd_l, hd_u, hc_m, hc_l, hc_u,
+                            top_types, scenario_names[draw])
 
     for j in range(plot_idx, len(axes3_flat)):
         axes3_flat[j].set_visible(False)
 
     fig3.suptitle(
-        f"Disruption rate by HSI type (top {top_n_hsi} by volume, {min_year}–{max_year - 1})\n"
-        "Bars show mean delayed + cancelled; whiskers show 95% CI on total",
+        f"Top {top_n_hsi} most disrupted HSI types ({min_year}–{max_year - 1})\n"
+        "Ranked by mean total disruption rate within each scenario; whiskers = 95% CI",
         fontsize=11, fontweight="bold", y=1.01,
     )
     fig3.tight_layout()
     out_hsi = output_folder / f"comparison_disruption_by_hsi_type_{suffix}.png"
     fig3.savefig(out_hsi, dpi=300, bbox_inches="tight")
     plt.close(fig3)
-    print(f"  Saved {out_hsi}")
 
     # ─────────────────────────────────────────────────────────────────────────────
-    #  CSV OUTPUTS
+    #  PLOT C2: TOP 15 MOST CANCELLED HSI TYPES — per-draw ranking
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    fig5, axes5 = plt.subplots(n_rows_hsi, n_cols_hsi,
+                               figsize=(9 * n_cols_hsi, fig_h), squeeze=False)
+    axes5_flat = axes5.flatten()
+
+    plot_idx = 0
+    for idx, draw in enumerate(scenarios_of_interest):
+        if scenario_names[draw] == "No disruptions":
+            continue
+        hd_m = all_draws_hsi_delayed_mean[idx]
+        hd_l = all_draws_hsi_delayed_lower[idx]
+        hd_u = all_draws_hsi_delayed_upper[idx]
+        hc_m = all_draws_hsi_cancelled_mean[idx]
+        hc_l = all_draws_hsi_cancelled_lower[idx]
+        hc_u = all_draws_hsi_cancelled_upper[idx]
+
+        if hd_m.empty and hc_m.empty:
+            continue
+
+        # Rank by CANCELLED rate for THIS draw only
+        draw_cancelled_rate = hc_m.copy()
+        draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate.index.astype(str) != "nan"]
+        draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate > 0].sort_values(ascending=False)
+        top_cancelled = draw_cancelled_rate.head(top_n_hsi).index.tolist()
+
+        ax = axes5_flat[plot_idx]
+        plot_idx += 1
+        _draw_hsi_bar_panel(ax, hd_m, hd_l, hd_u, hc_m, hc_l, hc_u,
+                            top_cancelled, scenario_names[draw])
+
+    for j in range(plot_idx, len(axes5_flat)):
+        axes5_flat[j].set_visible(False)
+
+    fig5.suptitle(
+        f"Top {top_n_hsi} most cancelled HSI types ({min_year}–{max_year - 1})\n"
+        "Ranked by mean cancelled rate within each scenario; whiskers = 95% CI on total",
+        fontsize=11, fontweight="bold", y=1.01,
+    )
+    fig5.tight_layout()
+    out_cancelled = output_folder / f"comparison_disruption_top_cancelled_hsi_type_{suffix}.png"
+    fig5.savefig(out_cancelled, dpi=300, bbox_inches="tight")
+    plt.close(fig5)
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  CSV OUTPUTS — monthly / annual / HSI type
     # ─────────────────────────────────────────────────────────────────────────────
 
     monthly_rows = []
@@ -683,7 +644,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         output_folder / f"annual_disruption_rates_realfacilityid_{suffix}.csv", index=False
     )
 
-    # Per-HSI-type CSV
     hsi_rows = []
     for idx, draw in enumerate(scenarios_of_interest):
         if scenario_names[draw] == "No disruptions":
@@ -695,8 +655,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         hc_l = all_draws_hsi_cancelled_lower[idx]
         hc_u = all_draws_hsi_cancelled_upper[idx]
         htot = all_draws_hsi_total[idx]
-        all_types = hd_m.index.union(hc_m.index)
-        for hsi in all_types:
+        for hsi in hd_m.index.union(hc_m.index):
             hsi_rows.append({
                 "Scenario": scenario_names[draw],
                 "draw": draw,
@@ -715,7 +674,78 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     pd.DataFrame(hsi_rows).to_csv(
         output_folder / f"hsi_type_disruption_rates_{suffix}.csv", index=False
     )
-    print(f"  Saved hsi_type_disruption_rates_{suffix}.csv")
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  MAIN TEXT SUMMARY CSV
+    #  Per scenario:
+    #    1) total HSIs disrupted (delayed + cancelled), mean across runs
+    #    2) total HSIs cancelled, mean across runs
+    #    3) total HSIs delayed, mean across runs
+    #    4) average monthly disruption rate across all facilities and months
+    #    5) max monthly disruption rate across all facilities and months
+    #    6) min monthly disruption rate across all facilities and months
+    #    7) std monthly disruption rate across all facilities and months
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    summary_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+
+        if scen == "No disruptions":
+            summary_rows.append({
+                "Scenario": scen,
+                "total_hsi_disrupted_mean": 0,
+                "total_hsi_cancelled_mean": 0,
+                "total_hsi_delayed_mean": 0,
+                "monthly_disruption_rate_mean_%": 0,
+                "monthly_disruption_rate_max_%": 0,
+                "monthly_disruption_rate_min_%": 0,
+                "monthly_disruption_rate_std_%": 0,
+            })
+            continue
+
+        # ── absolute counts ───────────────────────────────────────────────────
+        # Collapse to YYYY-MM:RealFacility_ID then sum across all rows per run,
+        # then average across runs.
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
+
+        # reindex disrupted onto total index so zeros are correctly included
+        delayed_2_r = delayed_2.reindex(total_2.index, fill_value=0)
+        cancelled_2_r = cancelled_2.reindex(total_2.index, fill_value=0)
+
+        total_delayed_per_run = delayed_2_r.sum(axis=0)  # sum over facilities×months
+        total_cancelled_per_run = cancelled_2_r.sum(axis=0)
+        total_disrupted_per_run = total_delayed_per_run + total_cancelled_per_run
+
+        mean_delayed = total_delayed_per_run.mean()
+        mean_cancelled = total_cancelled_per_run.mean()
+        mean_disrupted = total_disrupted_per_run.mean()
+
+        # ── monthly disruption rate distribution ──────────────────────────────
+        # all_draws_monthly_*_mean[idx] is a Series indexed by YYYY-MM,
+        # already averaged across facilities per month per run, then averaged
+        # across runs.  We want stats across the months dimension.
+        monthly_total_rate = (
+                                 all_draws_monthly_delayed_mean[idx] +
+                                 all_draws_monthly_cancelled_mean[idx]
+                             ) * 100  # convert to %
+
+        summary_rows.append({
+            "Scenario": scen,
+            "total_hsi_disrupted_mean": round(mean_disrupted, 1),
+            "total_hsi_cancelled_mean": round(mean_cancelled, 1),
+            "total_hsi_delayed_mean": round(mean_delayed, 1),
+            "monthly_disruption_rate_mean_%": round(monthly_total_rate.mean(), 4),
+            "monthly_disruption_rate_max_%": round(monthly_total_rate.max(), 4),
+            "monthly_disruption_rate_min_%": round(monthly_total_rate.min(), 4),
+            "monthly_disruption_rate_std_%": round(monthly_total_rate.std(), 4),
+        })
+
+    summary_df = pd.DataFrame(summary_rows)
+    out_summary = output_folder / f"main_text_summary_{suffix}.csv"
+    summary_df.to_csv(out_summary, index=False)
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  PER-FACILITY COMPARISON: TLO vs ResourceFile
@@ -723,14 +753,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     rf_facility = (
         disruptions_df.groupby("RealFacility_ID")["mean_all_service"]
-        .mean()
-        .rename("rf_rate")
+        .mean().rename("rf_rate")
     )
 
     n_scen = len(scenarios_of_interest) - (1 if "No disruptions" in scenario_names else 0)
     fig4, axes4 = plt.subplots(1, n_scen, figsize=(7 * n_scen, 6), squeeze=False)
     axes4_flat = axes4.flatten()
-
     plot_idx = 0
     merged_all = rf_facility.to_frame()
 
@@ -738,7 +766,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if scenario_names[draw] == "No disruptions":
             continue
 
-        # Use collapsed (two-component) DFs for facility-level comparison
         total_2 = _collapse_hsi_types(all_draws_total_df[draw])
         delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
         cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
@@ -775,67 +802,73 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     out_facility = output_folder / f"comparison_disruption_per_facility_{suffix}.png"
     fig4.savefig(out_facility, dpi=300, bbox_inches="tight")
     plt.close(fig4)
-    print(f"  Saved {out_facility}")
 
     merged_all.to_csv(output_folder / f"per_facility_disruption_rates_{suffix}.csv")
 
     # ─────────────────────────────────────────────────────────────────────────────
-    #  PER-FACILITY RATES FOR A SPECIFIC MONTH
+    #  PLOT D: COMBINED FIGURE — 2x2
+    #  (A) Baseline   most disrupted   (B) Worst Case most disrupted
+    #  (C) Baseline   most cancelled   (D) Worst Case most cancelled
     # ─────────────────────────────────────────────────────────────────────────────
 
-    target_ym = "2031-12"
-    draw = 1  # Baseline
+    non_zero_draws = [
+        (idx, draw) for idx, draw in enumerate(scenarios_of_interest)
+        if scenario_names[draw] != "No disruptions"
+           and not all_draws_hsi_delayed_mean[idx].empty
+    ]
 
-    total_all_df = all_draws_total_df[draw]
-    delayed_all_df = all_draws_delayed_df[draw]
-    cancelled_all_df = all_draws_cancelled_df[draw]
+    fig6, axes6 = plt.subplots(2, len(non_zero_draws),
+                               figsize=(9 * len(non_zero_draws), fig_h * 2),
+                               squeeze=False)
 
-    mask = total_all_df.index.astype(str).str.startswith(target_ym + ":")
+    panel_labels = iter("ABCDEFGH")
 
-    # Collapse to facility level for this month
-    total_m = _collapse_hsi_types(total_all_df[mask])
-    delayed_m = _collapse_hsi_types(delayed_all_df.reindex(total_all_df[mask].index, fill_value=0))
-    cancelled_m = _collapse_hsi_types(cancelled_all_df.reindex(total_all_df[mask].index, fill_value=0))
+    for col, (idx, draw) in enumerate(non_zero_draws):
+        hd_m = all_draws_hsi_delayed_mean[idx]
+        hd_l = all_draws_hsi_delayed_lower[idx]
+        hd_u = all_draws_hsi_delayed_upper[idx]
+        hc_m = all_draws_hsi_cancelled_mean[idx]
+        hc_l = all_draws_hsi_cancelled_lower[idx]
+        hc_u = all_draws_hsi_cancelled_upper[idx]
 
-    delayed_rate_m = _align_and_rate(total_m, delayed_m)
-    cancelled_rate_m = _align_and_rate(total_m, cancelled_m)
+        # ── Row 0: most disrupted (delayed + cancelled) ───────────────────────
+        draw_total_rate = (hd_m + hc_m).copy()
+        draw_total_rate = draw_total_rate[draw_total_rate.index.astype(str) != "nan"]
+        draw_total_rate = draw_total_rate[draw_total_rate > 0].sort_values(ascending=False)
+        top_disrupted = draw_total_rate.head(top_n_hsi).index.tolist()
 
-    df_fac = pd.DataFrame({
-        "facility": _parse_facility(total_m.index),
-        "total": total_m.mean(axis=1).values,
-        "delayed_rate": delayed_rate_m.mean(axis=1).values,
-        "cancelled_rate": cancelled_rate_m.mean(axis=1).values,
-    })
-    df_fac["total_rate"] = df_fac["delayed_rate"] + df_fac["cancelled_rate"]
-    df_fac = df_fac[df_fac["facility"] != "nan"]
-    df_fac = df_fac.sort_values("total_rate", ascending=False).reset_index(drop=True)
+        ax_top = axes6[0, col]
+        _draw_hsi_bar_panel(ax_top, hd_m, hd_l, hd_u, hc_m, hc_l, hc_u,
+                            top_disrupted, scenario_names[draw])
+        label = next(panel_labels)
+        ax_top.set_title(f"({label}) {scenario_names[draw]} — most disrupted",
+                         fontsize=13, fontweight="bold")
 
-    out_month = output_folder / f"per_facility_rates_{target_ym}_baseline.csv"
-    df_fac.to_csv(out_month, index=False)
-    print(df_fac.to_string())
-    print(f"\nSaved to {out_month}")
+        # ── Row 1: most cancelled ─────────────────────────────────────────────
+        draw_cancelled_rate = hc_m.copy()
+        draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate.index.astype(str) != "nan"]
+        draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate > 0].sort_values(ascending=False)
+        top_cancelled = draw_cancelled_rate.head(top_n_hsi).index.tolist()
 
-    # ─────────────────────────────────────────────────────────────────────────────
-    #  DIAGNOSTIC: single facility check
-    # ─────────────────────────────────────────────────────────────────────────────
+        ax_bot = axes6[1, col]
+        _draw_hsi_bar_panel(ax_bot, hd_m, hd_l, hd_u, hc_m, hc_l, hc_u,
+                            top_cancelled, scenario_names[draw])
+        label = next(panel_labels)
+        ax_bot.set_title(f"({label}) {scenario_names[draw]} — most cancelled",
+                         fontsize=13, fontweight="bold")
 
-    fac = "Chilinda"
-    total_fac = all_draws_total_df[1]
-    total_fac = total_fac[total_fac.index.astype(str).str.contains(fac)]
-    print("\n=== DENOMINATOR (ran) — per run ===")
-    print(total_fac.sort_index().head(24))
-
-    delayed_fac = all_draws_delayed_df[1]
-    delayed_fac = delayed_fac[delayed_fac.index.astype(str).str.contains(fac)]
-    print("=== NUMERATOR (disrupted) — per run ===")
-    print(delayed_fac.sort_index().head(24))
-
-    print("=== RF RATE ===")
-    print(disruptions_df[disruptions_df["RealFacility_ID"] == fac]
-          [["year", "month", "mean_all_service"]].sort_values(["year", "month"]).head(24))
-
-    print("\nDone.")
-
+    fig6.suptitle(
+        f"Disruption by HSI type: top {top_n_hsi} most disrupted (rows A–B) "
+        f"and most cancelled (rows C–D)\n{min_year}–{max_year - 1}  |  "
+        "whiskers = 95% CI on total disruption rate",
+        fontsize=12, fontweight="bold", y=1.01,
+    )
+    fig6.tight_layout()
+    pd.DataFrame(top_cancelled).to_csv(results_folder / "top_cancelled.csv", index=False)
+    pd.DataFrame(top_disrupted).to_csv(results_folder / "top_disrupted.csv", index=False)
+    out_combined = output_folder / f"comparison_disruption_hsi_combined_{suffix}.png"
+    fig6.savefig(out_combined, dpi=300, bbox_inches="tight")
+    plt.close(fig6)
     # ─────────────────────────────────────────────────────────────────────────────
     #  PRCC SUMMARY OUTPUT
     # ─────────────────────────────────────────────────────────────────────────────
@@ -855,7 +888,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     pd.DataFrame(prcc_rows).to_csv(
         output_folder / "prcc_disruption_summary.csv", index=False
     )
-    print("Saved prcc_disruption_summary.csv")
 
 
 if __name__ == "__main__":
