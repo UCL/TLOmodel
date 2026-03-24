@@ -128,10 +128,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_years_data_population_upper = {}
 
         for target_year in target_year_sequence:
-            TARGET_PERIOD = (
-                Date(target_year, 1, 1),
-                Date(target_year + spacing_of_years, 12, 31),
-            )
+            TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
             # Absolute Number of DALYs
             result_data_dalys = summarize(

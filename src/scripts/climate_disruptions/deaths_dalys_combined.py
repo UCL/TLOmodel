@@ -40,8 +40,8 @@ scenario_colours = [
 ]
 
 climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = True  # Changed to True
-main_text = False  # Changed to False
+parameter_sensitivity_analysis = False
+main_text = True
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
@@ -125,10 +125,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_years_data_population_upper = {}
 
         for target_year in target_year_sequence:
-            TARGET_PERIOD = (
-                Date(target_year, 1, 1),
-                Date(target_year + spacing_of_years, 12, 31),
-            )
+            TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
             # Absolute Number of DALYs
             result_data_dalys = summarize(
