@@ -136,6 +136,7 @@ class WeatherDisruptions(Module):
         scale_factor_reseeking_healthcare_post_disruption: Optional[float] = None,
         scale_factor_prob_disruption: Optional[float] = None,
         scale_factor_severity_disruption_and_delay: Optional[float] = None,
+        scale_factor_appointment_urgency: Optional[float] = None,  # ← add
         prop_supply_side_disruptions: Optional[float] = None,
     ):
         super().__init__(name)
@@ -151,6 +152,7 @@ class WeatherDisruptions(Module):
         self.arg_scale_factor_reseeking = scale_factor_reseeking_healthcare_post_disruption
         self.arg_scale_factor_prob_disruption = scale_factor_prob_disruption
         self.arg_scale_factor_severity = scale_factor_severity_disruption_and_delay
+        self.arg_scale_factor_appointment_urgency = scale_factor_appointment_urgency
         self.arg_prop_supply_side = prop_supply_side_disruptions
 
         self._reset_monthly_counters_internal()
@@ -207,6 +209,8 @@ class WeatherDisruptions(Module):
             self.parameters["scale_factor_prob_disruption"] = self.arg_scale_factor_prob_disruption
         if self.arg_scale_factor_severity is not None:
             self.parameters["scale_factor_severity_disruption_and_delay"] = self.arg_scale_factor_severity
+        if self.arg_scale_factor_appointment_urgency is not None:
+            self.parameters["scale_factor_appointment_urgency"] = self.arg_scale_factor_appointment_urgency
         if self.arg_prop_supply_side is not None:
             self.parameters["prop_supply_side_disruptions"] = self.arg_prop_supply_side
 
@@ -485,17 +489,17 @@ class WeatherDisruptions(Module):
         month = current_date.month
 
         if year < self.parameters["year_effective_climate_disruptions"]:
-            return False
+            return False, False
 
         if self.parameters["services_affected_precip"] in ("none", None):
-            return False
+            return False, False
 
         fac_level = hsi_event_item.hsi_event.facility_info.level
         person_id = hsi_event_item.hsi_event.target
         facility_used = self.sim.population.props.at[person_id, f"level_{fac_level}"]
 
         if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
-            return False
+            return False, False
 
         prob_disruption = self._get_disruption_probability(
             facility_id=facility_used,
@@ -505,12 +509,12 @@ class WeatherDisruptions(Module):
         )
 
         if prob_disruption == 0.0 or self.rng.binomial(1, prob_disruption) == 0:
-            return False
+            return False, False
 
         district = self.sim.population.props.at[person_id, "district_of_residence"]
         treatment_id = getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown")
 
-        self._handle_disruption(
+        is_supply_side = self._handle_disruption(
             hsi_event_item=hsi_event_item,
             prob_disruption=prob_disruption,
             current_date=current_date,
@@ -518,7 +522,8 @@ class WeatherDisruptions(Module):
             district=str(district),
             treatment_id=str(treatment_id),
         )
-        return True
+
+        return True, is_supply_side
 
     def _get_disruption_probability(self, facility_id, year: int, month: int, service: str) -> float:
         """Look up and scale the disruption probability for a given facility/year/month/service."""
@@ -591,6 +596,8 @@ class WeatherDisruptions(Module):
         self._increment_district_counter(self._hsi_total_by_district, district)
         self._increment_facility_treatment_counter(self._hsi_total_by_facility_treatment, facility_id, treatment_id)
 
+        return is_supply_side
+
     def _determine_rescheduling(self, hsi_event_item: HSIEventQueueItem) -> bool:
         """Determine if a person will reschedule their appointment after a disruption."""
         if self.sim.modules["HealthSeekingBehaviour"].force_any_symptom_to_lead_to_healthcareseeking:
@@ -659,32 +666,42 @@ class WeatherDisruptions(Module):
         return delay_days
 
     def _log_delayed_hsi(self, hsi_event_item: HSIEventQueueItem, facility_id: Optional[str] = None):
-        """Log an HSI that was delayed due to weather, including RealFacility_ID."""
-        hs = self.sim.modules.get("HealthSystem")
-        if hs is not None and hasattr(hs, 'call_and_record_weather_delayed_hsi_event'):
-            hs.call_and_record_weather_delayed_hsi_event(
-                hsi_event=hsi_event_item.hsi_event,
-                priority=hsi_event_item.priority,
-                real_facility_id=facility_id,
-            )
+        """Log an HSI that was delayed due to weather.
+        The event has already been rescheduled — call did_not_run()
+        """
+        hsi_event_item.hsi_event.did_not_run()
+
+        logger_summary.info(
+            key="Weather_delayed_HSI_Event_full_info",
+            data={
+                "TREATMENT_ID": getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown"),
+                "Person_ID": hsi_event_item.hsi_event.target,
+                "priority": hsi_event_item.priority,
+                "RealFacility_ID": facility_id if facility_id is not None else "unknown",
+            },
+            description="record of each HSI event delayed due to weather",
+        )
 
     def _log_cancelled_hsi(self, hsi_event_item: HSIEventQueueItem, facility_id: Optional[str] = None):
+        """Log an HSI that was cancelled due to weather.
+        The event will not be rescheduled — call never_ran().
         """
-        Log an HSI that was cancelled due to weather, including RealFacility_ID.
-        never_ran() is called exactly once inside call_and_record_weather_cancelled_hsi_event;
-        do NOT call it here to avoid double invocation.
-        """
-        hs = self.sim.modules.get("HealthSystem")
-        if hs is not None and hasattr(hs, 'call_and_record_weather_cancelled_hsi_event'):
-            hs.call_and_record_weather_cancelled_hsi_event(
-                hsi_event=hsi_event_item.hsi_event,
-                priority=hsi_event_item.priority,
-                real_facility_id=facility_id,
-            )
-        else:
-            # Fallback if HealthSystem doesn't have the weather-specific method
-            hsi_event_item.hsi_event.never_ran()
+        person_id = hsi_event_item.hsi_event.target
+        if not self.sim.population.props.at[person_id, 'is_alive']:
+            return
 
+        hsi_event_item.hsi_event.never_ran()
+
+        logger_summary.info(
+            key="Weather_cancelled_HSI_Event_full_info",
+            data={
+                "TREATMENT_ID": getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown"),
+                "Person_ID": person_id,
+                "priority": hsi_event_item.priority,
+                "RealFacility_ID": facility_id if facility_id is not None else "unknown",
+            },
+            description="record of each HSI event cancelled due to weather",
+        )
 
 class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
     """Monthly logger for weather disruptions — overall, by district, and by facility×treatment."""
