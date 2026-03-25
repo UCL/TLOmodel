@@ -2077,6 +2077,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         month = self.sim.date.month
 
         climate_disrupted = False
+        is_supply_side = False
         TIME_SENSITIVE_MODULES = {'Labour', 'PostnatalCare', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy'}
 
         if (
@@ -2123,10 +2124,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         max_allowable_days = max(0, (item.tclose - self.sim.date).days)
                         delay_days = min(delay_days, max_allowable_days)
 
-                    if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and \
-                        self.module.parameters["mode_appt_constraints"] == 2:
-                        footprint = item.hsi_event.expected_time_requests
-                        self.module.running_total_footprint.update(footprint)
+                    is_supply_side = bool(
+                        np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"])
+                        and self.module.parameters["mode_appt_constraints"] == 2
+                    )  # to see if capabilities should be reduced
 
                     if self.sim.modules[
                         "HealthSeekingBehaviour"
@@ -2184,8 +2185,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             self.module.call_and_record_weather_cancelled_hsi_event(
                                 hsi_event=item.hsi_event, priority=item.priority, real_facility_id=facility_used,
                             )
+        return climate_disrupted, is_supply_side
 
-        return climate_disrupted
 
     def process_events_mode_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
@@ -2197,7 +2198,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = []
 
             for item in list_of_individual_hsi_event_tuples_due_today:
-                climate_disrupted = self._check_climate_disruption(item, hold_over)
+                climate_disrupted, _ = self._check_climate_disruption(item, hold_over)
                 if not climate_disrupted:
                     equipment_available = True
                     if not item.hsi_event.is_all_declared_equipment_available:
@@ -2251,9 +2252,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 else:
                     original_call = next_event_tuple.hsi_event.expected_time_requests
                     _priority = next_event_tuple.priority
-                    climate_disrupted = self._check_climate_disruption(next_event_tuple, hold_over)
+                    climate_disrupted, is_supply_side = self._check_climate_disruption(next_event_tuple, hold_over)
 
-                    if not climate_disrupted:
+                    if climate_disrupted:  # just need to update the capabilities
+                        if is_supply_side:
+                            footprint = next_event_tuple.hsi_event.expected_time_requests
+                            capabilities_monitor[event_clinic].subtract(footprint)
+                            for officer in footprint:
+                                if capabilities_monitor[event_clinic][officer] <= 0:
+                                    capabilities_still_available.discard(officer)
+                            self.module.running_total_footprint[event_clinic].update(footprint)
+
+
+                    else:
                         out_of_resources = False
                         for officer, call in original_call.items():
                             if officer not in capabilities_still_available:
@@ -2263,73 +2274,53 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             rtn_from_did_not_run = event.did_not_run()
                             if rtn_from_did_not_run is not False:
                                 hp.heappush(hold_over, next_event_tuple)
-
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            did_run=False,
-                            priority=_priority,
-                            clinic=event_clinic,
-                        )
-                    else:
-                        if sum(event.BEDDAYS_FOOTPRINT.values()):
-                            event._received_info_about_bed_days = (
-                                self.module.bed_days.issue_bed_days_according_to_availability(
-                                    facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                        persons_id=event.target),
-                                    footprint=event.BEDDAYS_FOOTPRINT,
-                                )
-                            )
-
-                        assert event.facility_info is not None, (
-                            f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-                        )
-
-                        if not event.is_all_declared_equipment_available:
-                            self.module.call_and_record_never_ran_hsi_event(
+                            self.module.record_hsi_event(
                                 hsi_event=event,
-                                priority=next_event_tuple.priority,
-                                clinic=next_event_tuple.clinic_eligibility,
-                            )
-                            continue
-
-                        _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-                        actual_appt_footprint = event.run(squeeze_factor=0.0)
-
-                        if actual_appt_footprint is not None:
-                            assert self.module.appt_footprint_is_valid(actual_appt_footprint)
-                            updated_call = self.module.get_appt_footprint_as_time_request(
-                                facility_info=event.facility_info,
-                                appt_footprint=actual_appt_footprint
+                                actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                did_run=False,
+                                priority=_priority,
+                                clinic=event_clinic,
                             )
                         else:
-                            actual_appt_footprint = _appt_footprint_before_running
-                            updated_call = original_call
-
-                        capabilities_monitor[event_clinic].subtract(updated_call)
-
-                        for officer, call in updated_call.items():
-                            if capabilities_monitor[event_clinic][officer] <= 0:
-                                if officer in capabilities_still_available:
-                                    capabilities_still_available.remove(officer)
-                                else:
-                                    logger.warning(
-                                        key="message",
-                                        data=(
-                                            f"{event.TREATMENT_ID} actual_footprint requires different"
-                                            f"officers than expected_footprint."
-                                        ),
+                            if sum(event.BEDDAYS_FOOTPRINT.values()):
+                                event._received_info_about_bed_days = (
+                                    self.module.bed_days.issue_bed_days_according_to_availability(
+                                        facility_id=self.module.bed_days.get_facility_id_for_beds(
+                                            persons_id=event.target),
+                                        footprint=event.BEDDAYS_FOOTPRINT,
                                     )
-
-                        self.module.running_total_footprint[event_clinic].update(updated_call)
-
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=actual_appt_footprint,
-                            did_run=True,
-                            priority=_priority,
-                            clinic=event_clinic,
-                        )
+                                )
+                            assert event.facility_info is not None
+                            if not event.is_all_declared_equipment_available:
+                                self.module.call_and_record_never_ran_hsi_event(
+                                    hsi_event=event,
+                                    priority=next_event_tuple.priority,
+                                    clinic=next_event_tuple.clinic_eligibility,
+                                )
+                                continue
+                            _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+                            actual_appt_footprint = event.run(squeeze_factor=0.0)
+                            if actual_appt_footprint is not None:
+                                assert self.module.appt_footprint_is_valid(actual_appt_footprint)
+                                updated_call = self.module.get_appt_footprint_as_time_request(
+                                    facility_info=event.facility_info, appt_footprint=actual_appt_footprint
+                                )
+                            else:
+                                actual_appt_footprint = _appt_footprint_before_running
+                                updated_call = original_call
+                            capabilities_monitor[event_clinic].subtract(updated_call)
+                            for officer, call in updated_call.items():
+                                if capabilities_monitor[event_clinic][officer] <= 0:
+                                    if officer in capabilities_still_available:
+                                        capabilities_still_available.remove(officer)
+                            self.module.running_total_footprint[event_clinic].update(updated_call)
+                            self.module.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=actual_appt_footprint,
+                                did_run=True,
+                                priority=_priority,
+                                clinic=event_clinic,
+                            )
             else:
                 break
 
