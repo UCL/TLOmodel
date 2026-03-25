@@ -1913,7 +1913,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Check for climate disruption
                 climate_disrupted = False
                 if 'WeatherDisruptions' in self.sim.modules:
-                    climate_disrupted = self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
+                    climate_disrupted, _ = self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
                         hsi_event_item=item,
                         current_date=self.sim.date
                     )
@@ -1977,19 +1977,21 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     climate_disrupted = False
                     if 'WeatherDisruptions' in self.sim.modules:
-                        climate_disrupted = self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
-                            hsi_event_item=next_event_tuple,
-                            current_date=self.sim.date
+                        climate_disrupted, is_supply_side = (
+                            self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
+                                hsi_event_item=next_event_tuple,
+                                current_date=self.sim.date
+                            ) if 'WeatherDisruptions' in self.sim.modules else (False, False)
                         )
 
-                    if climate_disrupted:
-                        # Record the disrupted event as never ran and move on.
-                        self.module.call_and_record_never_ran_hsi_event(
-                            hsi_event=event,
-                            priority=next_event_tuple.priority,
-                            clinic=next_event_tuple.clinic_eligibility,
-                        )
-                        continue
+                        if climate_disrupted:
+                            if is_supply_side:
+                                footprint = next_event_tuple.hsi_event.expected_time_requests
+                                capabilities_monitor[event_clinic].subtract(footprint)
+                                for officer in footprint:
+                                    if capabilities_monitor[event_clinic][officer] <= 0:
+                                        capabilities_still_available.discard(officer)
+                            continue
 
                     # Not climate disrupted: check resources and run event.
                     out_of_resources = False
