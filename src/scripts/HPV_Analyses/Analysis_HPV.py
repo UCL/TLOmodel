@@ -8,7 +8,7 @@ import random
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, extract_results
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -16,10 +16,13 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    measles,
     simplified_births,
     symptommanager,
     hpv,
 )
+
+results_folder = Path("./outputs")
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -32,10 +35,9 @@ resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 2000
 
-# scenario = 1
 
 # set up the log config
 log_config = {
@@ -46,11 +48,11 @@ log_config = {
         "tlo.methods.hpv": logging.INFO,
     },
 }
-
-# Register the appropriate modules
-# need to call epi before tb to get bcg vax
+#
+# # Register the appropriate modules
+# # need to call epi before tb to get bcg vax
 seed = random.randint(0, 50000)
-# seed = 41728  # set seed for reproducibility
+# # seed = 41728  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
                  show_progress_bar=True, resourcefilepath=resourcefilepath)
 sim.register(
@@ -71,15 +73,17 @@ sim.register(
     healthburden.HealthBurden(),
     epi.Epi(),
     hpv.HPV(),
+    measles.Measles(),
 )
-
-# set the scenario
-sim.modules["Hpv"].parameters["r_hpv"] = 0.4
-
-# Run the simulation and flush the logger
+#
+# # set the scenario
+#sim.modules["HPV"].parameters["r_hpv"] = 0.01
+#sim.modules["HPV"].parameters["r_hpv_clear"] = 0.6
+#
+# # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-
+#
 # parse the results
 output = parse_log_file(sim.log_filepath)
 
@@ -91,3 +95,21 @@ with open(outputpath / "default_run.pickle", "wb") as f:
 # load the results
 with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
+
+#Show the results
+hpv_outputs = output["tlo.methods.hpv"]["summary"]
+# proportion_infected = extract_results(
+#     results_folder,
+#     module="tlo.methods.hpv",
+#     key="summary",
+#     column="PropInf",
+#     do_scaling=False,
+# )
+#
+# number_infected = extract_results(
+#     results_folder,
+#     module="tlo.methods.hpv",
+#     key="summary",
+#     column="TotalInf",
+#     do_scaling=True,
+# )

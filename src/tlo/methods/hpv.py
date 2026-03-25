@@ -25,6 +25,10 @@ logger.setLevel(logging.INFO)
 
 class HPV(Module, GenericFirstAppointmentsMixin):
     """This is a HPV infectious Process.
+    Groups:
+        g1 = HPV16/18
+        g2 = other vaccine-covered high-risk HPV (31/33/45/52/58)
+        g3 = other high-risk HPV (35/39/51/56/59/68)
 
     It demonstrates the following behaviours in respect of the healthsystem module:
 
@@ -55,25 +59,49 @@ class HPV(Module, GenericFirstAppointmentsMixin):
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {}
 
+    HPV_GROUPS = ['hr1', 'hr2', 'hr3']
+
     PARAMETERS = {
-        "r_hpv": Parameter(
+        "init_prev_hpv_hr1": Parameter(
             Types.REAL,
-            "probability per month of oncogenic hpv infection",
+            "Initial prevalence of hpv 16/18 infection",
         ),
-        "Init_prevalence": Parameter(
+        "init_prev_hpv_hr2": Parameter(
             Types.REAL,
-            "Initial prevalence of oncogenic hpv infection",
+            "Initial prevalence of HPV 31/33/45/52/58 infection",
+        ),
+        "init_prev_hpv_hr3": Parameter(
+            Types.REAL,
+            "Initial prevalence of other HR types"
+        ),
+        # Transmission coefficients β
+        "b_hpv": Parameter(
+            Types.REAL,
+            "Baseline transmission coefficient for HPV Infection",
+        ),
+
+        # Clearance probabilities
+        "r_clear_12": Parameter(
+            Types.REAL,
+            "probability of clearing HPV after 12 month",
+        ),
+        "r_clear_24": Parameter(
+            Types.REAL,
+            "probability of clearing HPV after 24 month",
         ),
     }
 
     PROPERTIES = {
         'hp_is_infected': Property(
-            Types.BOOL, 'Is infected with oncogenic hpv infection'),
+            Types.BOOL, 'Is infected with oncogenic hpv group'),
+        'hp_group': Property(
+            Types.STRING, 'Current HPV types carried, separated by "|"'),
+        'hp_date_infected': Property(
+            Types.DATE, 'Date of most recent infection'),
     }
 
     def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
-
         super().__init__(name)
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -97,14 +125,58 @@ class HPV(Module, GenericFirstAppointmentsMixin):
 
         # Set default for properties
         df.loc[df.is_alive, 'hp_is_infected'] = False  # default: no individuals infected
+        df.loc[df.is_alive, 'hp_group'] = ''  # default: no hpy type
+        df.loc[df.is_alive, 'hp_date_infected'] = pd.NaT  # default: not a time
 
-        Susceptible = df.loc[df.is_alive & (df.age_years >= 15)].index
+        eligible = df.index[df.is_alive & (df.age_years >= 15)]
 
+        for group in self.HPV_GROUPS:
+            p_init = self.parameters[f'init_prev_hpv_{group}']
+            u = self.rng.random(size=len(eligible))
+            infected_this_group = eligible[u < p_init]
 
-        # randomly selected some individuals as infected
-        initial_infected = self.parameters['initial_prevalence']
-        index_of_infected = self.rng.choice(Susceptible, size=initial_infected*Susceptible, replace=False)
-        df.loc[index_of_infected, 'hp_is_infected'] = True
+            for person_id in infected_this_group:
+                current_groups = self._get_hpv_group_set(person_id)
+                current_groups.add(group)
+                self._set_hpv_group_set(person_id, current_groups)
+
+        initially_infected = df.index[df.is_alive & df.hp_is_infected]
+        if len(initially_infected) > 0:
+            df.loc[initially_infected, 'hp_date_infected'] = self.sim.date
+
+    def _get_hpv_group_set(self,person_id):
+        df = self.sim.population.props
+        hpv_str = df.at[person_id, 'hp_group']
+        if hpv_str is None or hpv_str == '':
+            return set()
+        return set(hpv_str.split('|'))
+
+    def _set_hpv_group_set(self,person_id, hpv_set):
+        df = self.sim.population.props
+
+        if len(hpv_set) == 0:
+            df.at[person_id, 'hp_group'] = ''
+            df.at[person_id, 'hp_is_infected'] = False
+        else:
+            df.at[person_id, 'hp_group'] = '|'.join(sorted(hpv_set))
+            df.at[person_id, 'hp_is_infected'] = True
+
+    def _add_new_infection_groups(self, person_id, new_groups):
+
+        if len(new_groups) == 0:
+            return
+        df = self.sim.population.props
+        current_groups = self._get_hpv_group_set(person_id)
+        updated_groups = current_groups.union(new_groups)
+
+        self._set_hpv_group_set(person_id, updated_groups)
+        df.at[person_id, 'hp_date_infected'] = self.sim.date
+
+    def _clear_all_infection(self, person_id):
+        """Clear all HPV groups for a person."""
+        df = self.sim.population.props
+        self._set_hpv_group_set(person_id, set())
+        df.at[person_id, 'hp_date_infected'] = pd.NaT
 
     def initialise_simulation(self, sim):
 
@@ -133,6 +205,8 @@ class HPV(Module, GenericFirstAppointmentsMixin):
 
         df = self.sim.population.props  # shortcut to the population props dataframe
         df.at[child_id, 'hp_is_infected'] = False
+        df.at[child_id, 'hp_group'] = ''
+        df.at[child_id, 'hp_date_infected'] = pd.NaT
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -141,10 +215,8 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug(key="debug", data="This is hpv reporting my health values")
-
         df = self.sim.population.props  # shortcut to population properties dataframe
-
-        health_values = pd.Series(index=df.index[df.is_alive], data=0)
+        health_values = pd.Series(index=df.index[df.is_alive], data=0.0)
         return health_values  # returns the series
 
     def report_summary_stats(self):
@@ -153,45 +225,89 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         return {'infected': prevalence_by_age_group_sex}
 
 class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event is occurring regularly at one 6 months intervals and controls the infection process of HPV.
-    """
+    """This event is occurring regularly at one 6 months intervals and controls the infection process of HPV."""
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=6))
         assert isinstance(module, HPV)
 
     def apply(self, population):
-
         logger.debug(key='debug', data='This is HpvInfectionEvent, tracking the disease progression of the population.')
-
         df = population.props
+        module = self.module
+        now = self.sim.date
 
-        # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected = df.index[df.hp_is_infected & df.is_alive]
-        currently_susc = df.index[df.is_alive & ~df.hp_is_infected]
+        # 1. define eligible population
+        eligible = df.index[df.is_alive & (df.age_years >= 15)]
+        if len(eligible) == 0:
+            return
 
-        if df.is_alive.sum():
-            prevalence = len(currently_infected) / (
-                len(currently_infected) + len(currently_susc))
-        else:
-            prevalence = 0
+        # 2. self-clearance
+        infected_idx = df.index[df.is_alive & df.hp_is_infected & (df.age_years >= 15)]
+        for person_id in infected_idx:
+            date_inf = df.at[person_id, 'hp_date_infected']
+            #if data is missing. skip for safety
+            if pd.isna(date_inf):
+                continue
 
-        # 2. handle new infections
-        now_infected = self.module.rng.choice([True, False],
-                                              size=len(currently_susc),
-                                              p=[prevalence, 1 - prevalence])
+            duration = (now.year - date_inf.year) * 12 + (now.month - date_inf.month)
 
-        # if any are newly infected...
-        if now_infected.sum():
-            infected_idx = currently_susc[now_infected]
+            clear_now = False
 
-            df.loc[infected_idx, 'hp_is_infected'] = True
+            if duration >= 24:
+                p_clear = module.parameters['r_clear_24']
+                if module.rng.random() < p_clear:
+                    clear_now = True
 
-            # schedule death events for newly infected individuals
+            elif duration >= 12:
+                p_clear = module.parameters['r_clear_12']
+                if module.rng.random() < p_clear:
+                    clear_now = True
 
-        else:
-            logger.debug(key='debug', data='This is HpvInfectionEvent, no one is newly infected.')
+            if clear_now:
+                module._clear_all_infection(person_id)
+
+        # 3. recalculate prevalence by HPV group after clearance
+        male_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
+        female_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
+
+        prev_male = {}
+        prev_female = {}
+
+        for group in module.HPV_GROUPS:
+            male_carrier = male_idx[df.loc[male_idx, 'hp_group'].fillna('').str.contains(fr'(^|\|){group}(\||$)', regex=True)]
+            female_carrier = female_idx[df.loc[female_idx, 'hp_group'].fillna('').str.contains(fr'(^|\|){group}(\||$)', regex=True)]
+
+            prev_male[group] = len(male_carrier)/len(male_idx) if len(male_idx) > 0 else 0
+            prev_female[group] = len(female_carrier) / len(female_idx) if len(female_idx) > 0 else 0
+
+        #new infection
+        beta=module.parameters['b_hpv']
+
+        for person_id in eligible:
+            sex = df.at[person_id,'sex']
+            current_groups = module._get_hpv_group_set(person_id)
+            new_group = set()
+
+            if sex == 'F':
+                source_prev = prev_male
+            elif sex == 'M':
+                source_prev = prev_female
+            else:
+                continue
+
+            for group in module.HPV_GROUPS:
+                if group in current_groups:
+                    continue
+
+                risk = beta * source_prev[group]
+                risk = min(max(risk, 0.0), 1.0)
+
+                if module.rng.random() < risk:
+                    new_group.add(group)
+
+            if len(new_group) > 0:
+                module._add_new_infection_groups(person_id, new_group)
 
 class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
