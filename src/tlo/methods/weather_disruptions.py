@@ -446,7 +446,7 @@ class WeatherDisruptions(Module):
         deficit = pred_baseline - pred_precip
         prob_disruption = np.where(
             pred_baseline > 0,
-            deficit / pred_baseline,
+            np.clip(deficit / pred_baseline, 0, 1),  # clipped in ANC paper as not interested in increase
             0,
         )
 
