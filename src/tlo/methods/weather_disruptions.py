@@ -153,21 +153,18 @@ class WeatherDisruptions(Module):
 
     def _reset_monthly_counters_internal(self):
         """Initialise or reset all monthly counters (overall, per-district, per-facility×treatment)."""
-        # Overall scalars
         self._disruptions_cancelled_count = 0
         self._disruptions_delayed_count = 0
         self._disruptions_hsi_total_count = 0
         self._supply_side_disruptions_count = 0
         self._demand_side_disruptions_count = 0
 
-        # Per-district counters (district_name -> int)
         self._hsi_total_by_district: Dict[str, int] = {}
         self._cancelled_by_district: Dict[str, int] = {}
         self._delayed_by_district: Dict[str, int] = {}
         self._supply_side_by_district: Dict[str, int] = {}
         self._demand_side_by_district: Dict[str, int] = {}
 
-        # Per-facility × per-treatment counters ("facility_id|TREATMENT_ID" -> int)
         self._hsi_total_by_facility_treatment: Dict[str, int] = {}
         self._cancelled_by_facility_treatment: Dict[str, int] = {}
         self._delayed_by_facility_treatment: Dict[str, int] = {}
@@ -184,7 +181,6 @@ class WeatherDisruptions(Module):
         counter_dict[key] = counter_dict.get(key, 0) + n
 
     def read_parameters(self, resourcefilepath) -> None:
-        # Constructor arguments override CSV defaults where provided
         if self.arg_climate_ssp is not None:
             self.parameters["climate_ssp"] = self.arg_climate_ssp
         if self.arg_climate_model_ensemble_model is not None:
@@ -213,11 +209,6 @@ class WeatherDisruptions(Module):
         )
 
         if self.parameters["year_effective_climate_disruptions"] < 2025:
-            logger.warning(
-                key="message",
-                data=f"year_effective set to {self.parameters['year_effective_climate_disruptions']}, "
-                     f"minimum is 2025. Setting to 2025."
-            )
             self.parameters["year_effective_climate_disruptions"] = 2025
 
         ssp = self.parameters["climate_ssp"]
@@ -302,9 +293,7 @@ class WeatherDisruptions(Module):
     def reset_monthly_counters(self):
         self._reset_monthly_counters_internal()
 
-    # -------------------------------------------------------------------------
     # Linear model construction
-    # -------------------------------------------------------------------------
 
     def build_linear_models(self):
         p = self.parameters
@@ -457,7 +446,7 @@ class WeatherDisruptions(Module):
         deficit = pred_baseline - pred_precip
         prob_disruption = np.where(
             pred_baseline > 0,
-            np.clip(deficit / pred_baseline, 0, 1),
+            deficit / pred_baseline,
             0,
         )
 
@@ -471,13 +460,13 @@ class WeatherDisruptions(Module):
             'pred_baseline', 'pred_precip'
         ]].copy()
 
-        print(self.parameters["projected_precip_disruptions"])
-
-
     def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date) -> bool:
         """
         Check if an HSI event should be disrupted due to climate/weather conditions.
         Returns True if the event was disrupted (and should not proceed), False otherwise.
+
+        Also checks if the disruption was supply- or demand-side. Returns False if demand side.
+        (Needed for Mode 2 Capabilities.)
         """
         year = current_date.year
         month = current_date.month
@@ -502,7 +491,7 @@ class WeatherDisruptions(Module):
             service=self.parameters["services_affected_precip"],
         )
 
-        if prob_disruption == 0.0 or self.rng.binomial(1, prob_disruption) == 0:
+        if self.rng.binomial(1, prob_disruption) == 0:
             return False, False
 
         district = self.sim.population.props.at[person_id, "district_of_residence"]
@@ -529,8 +518,6 @@ class WeatherDisruptions(Module):
             & (disruption_probs["service"] == service)
         )
         prob = disruption_probs.loc[mask, "disruption"]
-        if prob.empty:
-            return 0.0
         return min(float(prob.iloc[0]) * self.parameters["scale_factor_prob_disruption"], 1.0)
 
     def _handle_disruption(
@@ -542,10 +529,7 @@ class WeatherDisruptions(Module):
         district: str,
         treatment_id: str,
     ):
-        """
-        Handle a confirmed disruption: determine supply/demand side, reschedule or cancel,
-        and update all counters (overall, district, facility×treatment).
-        """
+        """Handle a disruption: determine supply/demand side, rescheduled, or cancelled """
         is_supply_side = bool(self.rng.binomial(1, self.parameters["prop_supply_side_disruptions"]))
 
         if is_supply_side and self.sim.modules["HealthSystem"].mode_appt_constraints == 2:
@@ -572,7 +556,7 @@ class WeatherDisruptions(Module):
                 priority=hsi_event_item.priority,
                 clinic_eligibility=hsi_event_item.clinic_eligibility,
                 topen=new_topen,
-                tclose=new_topen,  # point-in-time reschedule, matching healthsystem.py convention
+                tclose=new_topen,
                 hsi_event=hsi_event_item.hsi_event,
             )
             self._log_delayed_hsi(hsi_event_item, facility_id=facility_id)
@@ -585,7 +569,6 @@ class WeatherDisruptions(Module):
             self._increment_district_counter(self._cancelled_by_district, district)
             self._increment_facility_treatment_counter(self._cancelled_by_facility_treatment, facility_id, treatment_id)
 
-        # Overall hsi_total counter — incremented once per disruption regardless of outcome
         self._disruptions_hsi_total_count += 1
         self._increment_district_counter(self._hsi_total_by_district, district)
         self._increment_facility_treatment_counter(self._hsi_total_by_facility_treatment, facility_id, treatment_id)
@@ -628,16 +611,9 @@ class WeatherDisruptions(Module):
     ) -> int:
         """
         Calculate the delay in days for rescheduling after a disruption.
-
-        Two adjustments are made relative to the basic urgency×severity calculation:
-
-        1. Window width is added — the rescheduled topen is pushed past the end of the
-           original appointment window, avoiding overlap with the disrupted slot.
-
-        2. For time-sensitive modules (Labour, PostnatalCare, PregnancySupervisor,
+        For time-sensitive modules (Labour, PostnatalCare, PregnancySupervisor,
            CareOfWomenDuringPregnancy), the delay is capped so that the new topen
-           never exceeds the original tclose. Rescheduling beyond a clinical deadline
-           would be meaningless and could cause simulation errors.
+           never exceeds the original tclose.
         """
         base_delay = int(
             max(self.parameters["scale_factor_appointment_urgency"] * hsi_event_item.priority, 1)
