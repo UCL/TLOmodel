@@ -351,6 +351,7 @@ class Simulation:
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
         start_time =  time.process_time()
+        start_time_2 = time.perf_counter()
 
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
@@ -371,19 +372,20 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar.stop()
         end_time = time.process_time()- start_time
+        end_time_2 = time.perf_counter() - start_time_2
         if rti_scenario == "standard":
-            filename = 'duration_time_standardRTI_x250.txt'
+            filename = 'duration_time_standardRTI.txt'
         elif rti_scenario == "emulator":
-            filename = 'duration_time_emulatedRTI_x250.txt'
+            filename = 'duration_time_emulatedRTI.txt'
         elif rti_scenario == "noRTIpoll":
-            filename = 'duration_time_noRTIPoll_x250.txt'
+            filename = 'duration_time_noRTIPoll.txt'
         else:
             print("ERROR: I don't know pathname")
             exit(-1)
 
         with open(filename, 'a') as file:
             # Append text to the file
-            file.write(f"Time taken, {end_time}\n")
+            file.write(f"Time taken, {end_time}, {end_time_2}\n")
         print("Time taken", end_time)
 
     def simulate(self, *, end_date: Date) -> None:
