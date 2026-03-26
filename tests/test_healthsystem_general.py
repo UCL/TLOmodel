@@ -516,21 +516,24 @@ def test_is_treatment_id_allowed():
     assert hs.is_treatment_id_allowed("Epilepsy", ["Epi", "Epilepsy_*"])
 
     ## Service availability switch debugging
-    excluded_hsis = ["FirstAttendance_Emergency_*", "FirstAttendance_NonEmergency_*", "FirstAttendance_SpuriousEmergencyCare_*",]
+    excluded_hsis = [
+        "FirstAttendance_Emergency_*",
+        "FirstAttendance_NonEmergency_*",
+        "FirstAttendance_SpuriousEmergencyCare_*",
+    ]
     treatments = get_filtered_treatment_ids(depth=None)
     for treatment_allowed in treatments:
-       print(f"Allowed {treatment_allowed}")
-       for treatment_requested in treatments:
-           # If the only treatment allowed is treatment_allowed then all other treatments should return false
-           if not treatment_requested == treatment_allowed:
-               print(f"Requested {treatment_requested}")
-               if treatment_requested in excluded_hsis:
-                   assert hs.is_treatment_id_allowed(treatment_requested, [treatment_allowed])
-               elif treatment_requested.startswith(treatment_allowed.replace("_*", "")):
-                   assert hs.is_treatment_id_allowed(treatment_requested, [treatment_allowed])
-               else:
-                   assert not hs.is_treatment_id_allowed(treatment_requested, [treatment_allowed])
-
+        print(f"Allowed {treatment_allowed}")
+        for treatment_requested in treatments:
+            # If the only treatment allowed is treatment_allowed then all other treatments should return false
+            if not treatment_requested == treatment_allowed:
+                print(f"Requested {treatment_requested}")
+                if treatment_requested in excluded_hsis:
+                    assert hs.is_treatment_id_allowed(treatment_requested, [treatment_allowed])
+                elif treatment_requested.startswith(treatment_allowed.replace("_*", "")):
+                    assert hs.is_treatment_id_allowed(treatment_requested, [treatment_allowed])
+                else:
+                    assert not hs.is_treatment_id_allowed(treatment_requested, [treatment_allowed])
 
 
 def test_manipulation_of_service_availability(seed, tmpdir):
@@ -1546,7 +1549,6 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         clinic1_capabilities_before * 2,
         clinic1_capabilities_after,
     ), "Expected Clinic1 capabilities to be rescaled by factor of 2"
-
 
 
 def test_service_availability_switch(tmpdir, seed):
