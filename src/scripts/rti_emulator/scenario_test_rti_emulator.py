@@ -81,7 +81,7 @@ class GenerateDataChains(BaseScenario):
                 enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
                 healthburden.HealthBurden(resourcefilepath=self.resources),
                 symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
-                rti.RTI(resourcefilepath=self.resources),
+                #rti.RTI(resourcefilepath=self.resources),
                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
                 simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
                 healthsystem.HealthSystem(resourcefilepath=self.resources,
