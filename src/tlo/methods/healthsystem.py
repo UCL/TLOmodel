@@ -2473,7 +2473,6 @@ class HealthSystemSummaryCounter:
             for appt_type, number in appt_footprint:
                 self._no_blank_appt_appts[appt_type] += number
                 self._no_blank_appt_by_level[level][appt_type] += number
-        # *** NEW ***
         if real_facility_id and real_facility_id != 'unknown':
             self._hsi_by_real_facility[real_facility_id] += 1
 
@@ -2495,7 +2494,6 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._weather_cancelled_appts[appt_type] += number
             self._weather_cancelled_appts_by_level[level][appt_type] += number
-        # *** NEW ***
         if real_facility_id and real_facility_id != 'unknown':
             self._weather_cancelled_by_real_facility[real_facility_id] += 1
 
@@ -2508,7 +2506,6 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._weather_delayed_appts[appt_type] += number
             self._weather_delayed_appts_by_level[level][appt_type] += number
-        # *** NEW ***
         if real_facility_id and real_facility_id != 'unknown':
             self._weather_delayed_by_real_facility[real_facility_id] += 1
 
@@ -2536,7 +2533,7 @@ class HealthSystemSummaryCounter:
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
                 "squeeze_factor": {t_id: 0.0 for t_id, v in self._treatment_ids.items()},
-                "Number_By_RealFacility_ID": self._hsi_by_real_facility,  # *** NEW ***
+                "Number_By_RealFacility_ID": self._hsi_by_real_facility,
             },
         )
         logger_summary.info(
@@ -2567,7 +2564,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._weather_cancelled_treatment_ids,
                 "Number_By_Appt_Type_Code": self._weather_cancelled_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._weather_cancelled_appts_by_level,
-                "Number_By_RealFacility_ID": self._weather_cancelled_by_real_facility,  # *** NEW ***
+                "Number_By_RealFacility_ID": self._weather_cancelled_by_real_facility,
             },
         ),
         logger_summary.info(
@@ -2578,7 +2575,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._weather_delayed_treatment_ids,
                 "Number_By_Appt_Type_Code": self._weather_delayed_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._weather_delayed_appts_by_level,
-                "Number_By_RealFacility_ID": self._weather_delayed_by_real_facility,  # *** NEW ***
+                "Number_By_RealFacility_ID": self._weather_delayed_by_real_facility,
             },
         ),
 
