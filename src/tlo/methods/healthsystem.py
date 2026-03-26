@@ -2192,7 +2192,8 @@ class HealthSystem(Module):
                 # Check here that the treatment id is allowed at this point as service availability might have changed
                 # since the event was scheduled
                 if not self.is_treatment_id_allowed(event.TREATMENT_ID, self.service_availability):
-                    ok_to_run = False
+                    call_and_record_never_ran_hsi_event(hsi_event=event, priority=_priority)
+                    continue
 
                 if ok_to_run:
 
