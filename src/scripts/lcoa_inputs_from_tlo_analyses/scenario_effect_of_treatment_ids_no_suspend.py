@@ -66,8 +66,8 @@ class EffectOfEachTreatment(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 1)
-        self.pop_size = 250_000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 50_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
