@@ -502,7 +502,7 @@ def test_mode_2_supply_side_disruption_reduces_capabilities(seed, tmpdir):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = "DummyHSI"
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
             self.ACCEPTED_FACILITY_LEVEL = "1a"
 
         def apply(self, person_id, squeeze_factor):
