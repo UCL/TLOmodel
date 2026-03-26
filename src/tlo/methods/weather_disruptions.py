@@ -5,16 +5,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
-from tlo.events import (
-    PopulationScopeEventMixin,
-    Priority,
-    RegularEvent,
-)
+from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
-from tlo.methods.hsi_event import (
-    HSIEventQueueItem,
-)
+from tlo.methods.hsi_event import HSIEventQueueItem
 from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)

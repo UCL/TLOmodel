@@ -1,7 +1,9 @@
 from pathlib import Path
-from tlo.analysis.utils import parse_log_file
-from tlo import logging
+
 import pandas as pd
+
+from tlo import logging
+from tlo.analysis.utils import parse_log_file
 
 
 def get_disruptions_by_facility(log_dir: str | Path) -> pd.DataFrame:
