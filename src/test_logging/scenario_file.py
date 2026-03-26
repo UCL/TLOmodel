@@ -10,7 +10,7 @@ no_disruption_params = {  # no disruptions at all (scale_factor_prob_disruption=
         "mode_appt_constraints": 1,
         "mode_appt_constraints_postSwitch": 2,
         "cons_availability": "default",
-        "cons_availability_postSwitch": "default",
+        "cons_availability_postSwitch": "all",
         "year_cons_availability_switch": YEAR_OF_CHANGE,
         "beds_availability": "default",
         "equip_availability": "default",
