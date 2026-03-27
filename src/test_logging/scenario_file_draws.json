@@ -9,8 +9,8 @@
             "parameters": {
                 "HealthSystem": {
                     "mode_appt_constraints": 1,
-                    "mode_appt_constraints_postSwitch": 2,
-                    "cons_availability": "default",
+                    "mode_appt_constraints_postSwitch": 1,
+                    "cons_availability": "all",
                     "cons_availability_postSwitch": "all",
                     "year_cons_availability_switch": 2025,
                     "beds_availability": "default",
@@ -29,6 +29,6 @@
             "draw_name": "0"
         }
     ],
-    "commit": "a682c0c40e1f623291879672c9b2825633b80328",
-    "github": "https://github.com/UCL/TLOmodel/tree/a682c0c40e1f623291879672c9b2825633b80328"
+    "commit": "a8e52c16c1891b9e3b566fbcecd3a59dfe33f842",
+    "github": "https://github.com/UCL/TLOmodel/tree/a8e52c16c1891b9e3b566fbcecd3a59dfe33f842"
 }
