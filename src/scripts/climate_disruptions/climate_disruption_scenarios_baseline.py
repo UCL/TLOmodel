@@ -25,7 +25,7 @@ baseline_params = {
         "equip_availability_postSwitch": "default",
         "year_equip_availability_switch": YEAR_OF_CHANGE,
         "use_funded_or_actual_staffing": "actual",
-        "scale_to_effective_capabilities": False,
+        "scale_to_effective_capabilities": True,
         "policy_name": "Naive",
         "climate_ssp": "ssp245",
         "climate_model_ensemble_model": "mean",
