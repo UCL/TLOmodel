@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -13,9 +14,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     symptommanager,
-    weather_disruptions
+    weather_disruptions,
 )
-
 from tlo.methods.hsi_event import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
