@@ -11,7 +11,7 @@
                     "mode_appt_constraints": 1,
                     "mode_appt_constraints_postSwitch": 2,
                     "cons_availability": "default",
-                    "cons_availability_postSwitch": "default",
+                    "cons_availability_postSwitch": "all",
                     "year_cons_availability_switch": 2025,
                     "beds_availability": "default",
                     "equip_availability": "default",
@@ -29,6 +29,6 @@
             "draw_name": "0"
         }
     ],
-    "commit": "fd03d8f1d8d6bfd950df7f3d6dc27981746d6b01",
-    "github": "https://github.com/UCL/TLOmodel/tree/fd03d8f1d8d6bfd950df7f3d6dc27981746d6b01"
+    "commit": "a682c0c40e1f623291879672c9b2825633b80328",
+    "github": "https://github.com/UCL/TLOmodel/tree/a682c0c40e1f623291879672c9b2825633b80328"
 }
