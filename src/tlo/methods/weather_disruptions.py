@@ -181,6 +181,10 @@ class WeatherDisruptions(Module):
         counter_dict[key] = counter_dict.get(key, 0) + n
 
     def read_parameters(self, resourcefilepath) -> None:
+        self.load_parameters_from_dataframe(
+            read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files='parameter_values')
+        )
+
         if self.arg_climate_ssp is not None:
             self.parameters["climate_ssp"] = self.arg_climate_ssp
         if self.arg_climate_model_ensemble_model is not None:
@@ -203,10 +207,6 @@ class WeatherDisruptions(Module):
             self.parameters["scale_factor_appointment_urgency"] = self.arg_scale_factor_appointment_urgency
         if self.arg_prop_supply_side is not None:
             self.parameters["prop_supply_side_disruptions"] = self.arg_prop_supply_side
-
-        self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files='parameter_values')
-        )
 
         if self.parameters["year_effective_climate_disruptions"] < 2025:
             self.parameters["year_effective_climate_disruptions"] = 2025

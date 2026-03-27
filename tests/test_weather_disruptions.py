@@ -438,15 +438,39 @@ def _make_scale_factor_sim(seed, scale_factor, n_pop=1000):
     )
 
     sim.make_initial_population(n=n_pop)
+
+    # Bypass facility lookup so disruptions actually fire
+    def check_with_real_prob(hsi_event_item, current_date):
+        wd = sim.modules["WeatherDisruptions"]
+        prob = wd._get_disruption_probability(
+            facility_id=wd.parameters["projected_precip_disruptions"]["RealFacility_ID"].iloc[0],
+            year=current_date.year,
+            month=current_date.month,
+            service=wd.parameters["services_affected_precip"],
+        )
+        if prob == 0.0 or wd.rng.binomial(1, prob) == 0:
+            return False, False
+        district = sim.population.props.at[hsi_event_item.hsi_event.target, "district_of_residence"]
+        treatment_id = getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown")
+        is_supply_side = wd._handle_disruption(
+            hsi_event_item=hsi_event_item,
+            prob_disruption=prob,
+            current_date=current_date,
+            facility_id="test_facility",
+            district=str(district),
+            treatment_id=str(treatment_id),
+        )
+        return True, is_supply_side
+
+    sim.modules["WeatherDisruptions"].check_hsi_for_disruption = check_with_real_prob
+
     sim.simulate(end_date=Date(2025, 1, 3))
-
     return sim.modules["WeatherDisruptions"]._disruptions_hsi_total_count
-
 
 def test_scale_factor_prob_disruption_scales_probability(seed):
     """Check that a doubled scale factor should produce more disruptions."""
-    disruptions_low = _make_scale_factor_sim(seed, scale_factor=0.5)
-    disruptions_high = _make_scale_factor_sim(seed, scale_factor=1.0)
+    disruptions_low = _make_scale_factor_sim(seed, scale_factor=0)
+    disruptions_high = _make_scale_factor_sim(seed, scale_factor=100.0)
 
     assert disruptions_high > disruptions_low, (
         f"Doubling scale factor should increase disruptions: "
@@ -494,15 +518,15 @@ def test_delay_capped_for_time_sensitive_modules(weather_disruption_sim):
 
 ## Mode 2 test
 
-def test_mode_2_supply_side_disruption_reduces_capabilities(seed, tmpdir):
-    """In mode 2, a supply-side disruption should update running_total_footprint,
-    which reduces available capabilities for subsequent HSIs that day."""
+def _run_mode2_sim_with_disruption_type(seed, tmpdir, prop_supply_side, n_pop=200):
+    """Run mode 2 simulation with controlled supply/demand side disruptions.
+    Returns mean Frac_Time_Used_Overall from the Capacity log."""
 
     class DummyHSI(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = "DummyHSI"
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
             self.ACCEPTED_FACILITY_LEVEL = "1a"
 
         def apply(self, person_id, squeeze_factor):
@@ -518,18 +542,19 @@ def test_mode_2_supply_side_disruption_reduces_capabilities(seed, tmpdir):
             pass
 
         def initialise_simulation(self, sim):
-            sim.modules["HealthSystem"].schedule_hsi_event(
-                DummyHSI(self, person_id=0),
-                topen=sim.date,
-                tclose=None,
-                priority=1,
-            )
+            for person_id in range(n_pop):
+                sim.modules["HealthSystem"].schedule_hsi_event(
+                    DummyHSI(self, person_id=person_id),
+                    topen=sim.date,
+                    tclose=None,
+                    priority=1,
+                )
 
     log_config = {
         "filename": "log",
         "directory": tmpdir,
         "custom_levels": {
-            "tlo.methods.healthsystem": logging.DEBUG,
+            "tlo.methods.healthsystem": logging.INFO,
             "tlo.methods.weather_disruptions": logging.INFO,
         },
     }
@@ -541,9 +566,10 @@ def test_mode_2_supply_side_disruption_reduces_capabilities(seed, tmpdir):
 
     sim.register(
         demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
         healthsystem.HealthSystem(
             mode_appt_constraints=2,
-            capabilities_coefficient=10000.0,
+            capabilities_coefficient=1.0,  # realistic capabilities so footprint matters
             cons_availability="all",
         ),
         healthseekingbehaviour.HealthSeekingBehaviour(
@@ -556,25 +582,22 @@ def test_mode_2_supply_side_disruption_reduces_capabilities(seed, tmpdir):
             scale_factor_prob_disruption=1.0,
             delay_in_seeking_care_weather=1.0,
             scale_factor_severity_disruption_and_delay=1.0,
-            scale_factor_reseeking_healthcare_post_disruption=100.0,
-            prop_supply_side_disruptions=1.0,  # ← always supply-side
+            scale_factor_reseeking_healthcare_post_disruption=1.0,
+            prop_supply_side_disruptions=prop_supply_side,
+            scale_factor_appointment_urgency=1.0,
         ),
         DummyModule(),
         check_all_dependencies=False,
     )
 
-    sim.make_initial_population(n=100)
-    sim.modules["WeatherDisruptions"].parameters["scale_factor_appointment_urgency"] = 1.0
+    sim.make_initial_population(n=n_pop)
 
-    # Capture running_total_footprint before the disruption fires
-    hs = sim.modules["HealthSystem"]
+    disruption_count = [0]
 
-    disruption_fired = [False]
-
-    def always_supply_side_once(hsi_event_item, current_date):
-        if disruption_fired[0]:
+    def always_disrupt(hsi_event_item, current_date):
+        if disruption_count[0] >= n_pop // 2:  # disrupt half the HSIs
             return False, False
-        disruption_fired[0] = True
+        disruption_count[0] += 1
         wd = sim.modules["WeatherDisruptions"]
         district = sim.population.props.at[
             hsi_event_item.hsi_event.target, "district_of_residence"
@@ -590,21 +613,30 @@ def test_mode_2_supply_side_disruption_reduces_capabilities(seed, tmpdir):
         )
         return True, is_supply_side
 
-    sim.modules["WeatherDisruptions"].check_hsi_for_disruption = always_supply_side_once
-
+    sim.modules["WeatherDisruptions"].check_hsi_for_disruption = always_disrupt
     sim.simulate(end_date=Date(2025, 1, 3))
 
-    # running_total_footprint should have been updated by the supply-side disruption
-    total_footprint = sum(
-        sum(counter.values())
-        for counter in hs.running_total_footprint.values()
+    log = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem"]["Capacity"]
+    return log["Frac_Time_Used_Overall"].mean()
+
+
+def test_mode_2_supply_side_reduces_logged_capacity(seed, tmp_path):
+    """Supply-side disruptions should increase logged capacity utilisation compared
+    to demand-side disruptions, because supply-side updates running_total_footprint."""
+
+    supply_dir = tmp_path / "supply"
+    supply_dir.mkdir()
+    demand_dir = tmp_path / "demand"
+    demand_dir.mkdir()
+
+    frac_used_supply = _run_mode2_sim_with_disruption_type(
+        seed, supply_dir, prop_supply_side=1.0
     )
-    assert total_footprint > 0, (
-        "capabilities were not reduced"
+    frac_used_demand = _run_mode2_sim_with_disruption_type(
+        seed, demand_dir, prop_supply_side=0.0
     )
 
-    # Also check the supply-side counter on WeatherDisruptions was incremented
-    wd = sim.modules["WeatherDisruptions"]
-    assert wd._supply_side_disruptions_count > 0 or wd._disruptions_hsi_total_count > 0, (
-        "WeatherDisruptions supply-side counter was not incremented"
+    assert frac_used_supply > frac_used_demand, (
+        f"Supply-side disruptions should show higher capacity utilisation than demand-side: "
+        f"got {frac_used_supply:.3f} (supply) vs {frac_used_demand:.3f} (demand)"
     )
