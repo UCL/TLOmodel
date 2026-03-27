@@ -16,6 +16,7 @@ baseline_params = {
         "scale_factor_severity_disruption_and_delay": 1.0,
         "mode_appt_constraints": 1,
         "mode_appt_constraints_postSwitch": 2,
+        "year_mode_switch": YEAR_OF_CHANGE,
         "cons_availability": "default",
         "cons_availability_postSwitch": "default",
         "year_cons_availability_switch": YEAR_OF_CHANGE,
@@ -53,7 +54,7 @@ worst_case_params["HealthSystem"].update({
     "services_affected_precip": "all",
 })
 
-full_grid = [worst_case_params]  # baseline_params, best_case_params, worst_case_params]
+full_grid = [baseline_params, best_case_params, worst_case_params]
 
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
