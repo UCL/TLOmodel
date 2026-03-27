@@ -27,7 +27,7 @@
                 "equip_availability_postSwitch": "default",
                 "year_equip_availability_switch": 2025,
                 "use_funded_or_actual_staffing": "actual",
-                "scale_to_effective_capabilities": false,
+                "scale_to_effective_capabilities": true,
                 "policy_name": "Naive",
                 "climate_ssp": "ssp245",
                 "climate_model_ensemble_model": "mean",
@@ -62,7 +62,7 @@
                   "equip_availability_postSwitch": "default",
                   "year_equip_availability_switch": 2025,
                   "use_funded_or_actual_staffing": "actual",
-                  "scale_to_effective_capabilities": false,
+                  "scale_to_effective_capabilities": true,
                   "policy_name": "Naive",
                   "climate_ssp": "ssp245",
                   "climate_model_ensemble_model": "mean",
@@ -97,7 +97,7 @@
                   "equip_availability_postSwitch": "default",
                   "year_equip_availability_switch": 2025,
                   "use_funded_or_actual_staffing": "actual",
-                  "scale_to_effective_capabilities": false,
+                  "scale_to_effective_capabilities": true,
                   "policy_name": "Naive",
                   "climate_ssp": "ssp245",
                   "climate_model_ensemble_model": "mean",
@@ -113,6 +113,6 @@
           "draw_name": "2"
     }
   ],
-    "commit": "47b116131c3b0030b6894bb86f7dbad7cd6f8bf9",
-    "github": "https://github.com/UCL/TLOmodel/tree/47b116131c3b0030b6894bb86f7dbad7cd6f8bf9"
+    "commit": "9de5677ecd5ad0d778fc8c59b19a343f19f2a73b",
+    "github": "https://github.com/UCL/TLOmodel/tree/9de5677ecd5ad0d778fc8c59b19a343f19f2a73b"
 }
