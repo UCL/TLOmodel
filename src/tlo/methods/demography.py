@@ -446,7 +446,8 @@ class Demography(Module):
             'age_years': 0,
             'age_range': self.AGE_RANGE_LOOKUP[0]
         }
-        df.loc[child_id, child.keys()] = child.values()
+        for key, val in child.items():
+            df.at[child_id, key] = val
 
         # Log the birth:
         _mother_age_at_birth = df.at[abs(mother_id), 'age_years']  # Log age of mother whether true or direct birth
@@ -630,7 +631,7 @@ class Demography(Module):
                 if (~valid_mask).any():
                     assigned.loc[person_idx[~valid_mask]] = relevant_clean.iloc[0]["Fname"]
 
-            df[level] = assigned.astype("category")
+            df[level] = pd.Categorical(assigned, categories=self.PROPERTIES[level].categories)
 
         df.drop("coordinate_of_residence", axis=1, inplace=True)
 
