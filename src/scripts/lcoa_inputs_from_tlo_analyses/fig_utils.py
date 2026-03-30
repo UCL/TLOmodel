@@ -22,6 +22,10 @@ from tlo.analysis.utils import (
 APPOINTMENT_TYPE_PALETTE = list(plt.get_cmap("tab20").colors) + list(plt.get_cmap("Set2").colors)
 APPOINTMENT_TYPE_FIXED_COLORS = {"AccidentsandEmerg": "black"}
 
+def make_graph_file_name(stub):
+    filename = stub.replace('*', '_star_').replace(' ', '_').lower()
+    return f"{filename}.png"
+
 
 def get_color_by_appointment_type(appointment_types) -> dict:
     """Return a deterministic color map for appointment types."""
@@ -386,7 +390,8 @@ def plot_hsi_counts_by_period_for_draw(
     central = _plot["central"]
     lower = _plot["lower"]
     upper = _plot["upper"]
-    non_zero_mask = central.gt(0).any(axis=1)
+    periods_for_filtering = central.columns.difference(["2025-2025"], sort=False)
+    non_zero_mask = central.loc[:, periods_for_filtering].gt(0).any(axis=1)
 
     ordered_period_labels, display_period_labels = _get_sorted_period_labels_and_display_labels(period_labels)
     central = central.loc[non_zero_mask, ordered_period_labels]
@@ -394,7 +399,7 @@ def plot_hsi_counts_by_period_for_draw(
     upper = upper.loc[non_zero_mask, ordered_period_labels]
 
     if central.empty:
-        raise ValueError(f"No non-zero treatment ids remain for draw '{draw}'.")
+        print(f"No non-zero treatment ids remain for draw '{draw}'.")
 
     x = np.arange(len(ordered_period_labels))
     fig_width = max(10, min(1.2 * len(ordered_period_labels) + 4, 20))
@@ -441,31 +446,34 @@ def plot_hsi_counts_by_period_for_draw(
     return fig, ax
 
 
-def plot_population_by_year(_df: pd.DataFrame, _dfbaseline: pd.DataFrame):
-    """Plot yearly central population values for all draws plus baseline."""
+def plot_population_by_year(_df: pd.DataFrame, _dfbaseline: pd.DataFrame | None = None):
+    """Plot yearly central population values for all draws, optionally with baseline."""
     if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
         raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
-    if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
-        raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
 
     stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
-    baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
 
     available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
     if "central" not in available_stats:
         raise ValueError(f"Statistic 'central' not found. Available stats: {available_stats.tolist()}")
 
-    baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
-    if "Nothing" not in baseline_draws:
-        raise ValueError(f"Baseline draw 'Nothing' not found. Available baseline draws: {baseline_draws.tolist()}")
-
     implementation_central = _df.xs("central", axis=1, level=stat_level_name).copy()
-    baseline_central = _dfbaseline["Nothing"].loc[:, ["central"]].copy()
-
     implementation_central.columns = implementation_central.columns.to_series().str.replace(r"_\*$", "", regex=True)
-    baseline_central.columns = pd.Index(["Nothing"])
 
-    _plot = pd.concat([baseline_central, implementation_central], axis=1)
+    if _dfbaseline is None:
+        _plot = implementation_central
+    else:
+        if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
+            raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
+        baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
+        baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
+        if "Nothing" not in baseline_draws:
+            raise ValueError(f"Baseline draw 'Nothing' not found. Available baseline draws: {baseline_draws.tolist()}")
+
+        baseline_central = _dfbaseline["Nothing"].loc[:, ["central"]].copy()
+        baseline_central.columns = pd.Index(["Nothing"])
+        _plot = pd.concat([baseline_central, implementation_central], axis=1)
+
     _plot = _plot.loc[:, ~_plot.columns.duplicated()]
     _plot = _plot.sort_index()
 

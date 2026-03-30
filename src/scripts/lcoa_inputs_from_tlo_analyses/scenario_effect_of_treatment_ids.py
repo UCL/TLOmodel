@@ -98,6 +98,7 @@ class EffectOfEachTreatment(BaseScenario):
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=None)
+
         # Return 'Service_Availability' values, with scenarios for nothing, and ones for which all but one
         # treatment is omitted
         service_availability = dict({"Nothing": []})

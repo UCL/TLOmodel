@@ -58,9 +58,8 @@ from tlo.analysis.utils import (
     summarize,
 )
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2026-01-01 --target-end=2041-01-01
-
-TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
 results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
@@ -71,8 +70,8 @@ EXCLUDED_HSIs = [
     "FirstAttendance_Emergency",
     "FirstAttendance_NonEmergency",
     "FirstAttendance_SpuriousEmergencyCare",
+    "Inpatient_Care"
 ]
-
 
 def parse_iso_date(value: str) -> Date:
     parsed = date.fromisoformat(value)
@@ -119,57 +118,6 @@ def apply(
     total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure='median')
     results['total_population_by_year'] = total_population_by_year
 
-    print("Extracting total deaths and DALYs by label...")
-    num_deaths = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.demography",
-            key="death",
-            custom_generate_series=get_num_deaths_by_cause_label_and_period,
-            do_scaling=True,
-            suspended_results_folder=suspended_folder,
-            autodiscover=True,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    )
-
-    num_deaths_averted = summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T
-    ).iloc[0].unstack()
-
-
-    pc_deaths_averted = 100.0 * summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T
-    ).iloc[0].unstack()
-
-    num_deaths = compute_summary_statistics(num_deaths, central_measure='median')
-    results['num_deaths'] = num_deaths
-
-    num_dalys = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.healthburden",
-            key="dalys_stacked_by_age_and_time",
-            custom_generate_series=get_num_dalys_by_cause_label_and_period,
-            do_scaling=True,
-            suspended_results_folder=suspended_folder,
-            autodiscover=True,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    )
-
-    num_dalys_averted = (
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing')
-        ).T.iloc[0].unstack(level='run'))
-
-    pc_dalys_averted = 100.0 * summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T
-    ).iloc[0].unstack()
-
-    num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
-
     counts_of_hsi_by_short_treatment_id = (
         extract_results(
             results_folder,
@@ -210,6 +158,63 @@ def apply(
         compute_summary_statistics(counts_of_hsi_by_period, 'median')
     )
     results['counts_of_hsi_by_period'] = counts_of_hsi_by_period
+
+    print("Extracting total deaths and DALYs by label...")
+    num_deaths = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=get_num_deaths_by_cause_label_and_period,
+            do_scaling=True,
+            suspended_results_folder=suspended_folder,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
+
+    num_deaths_averted = summarize(
+        pd.DataFrame(
+            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T
+    ).iloc[0].unstack()
+
+    pc_deaths_averted = 100.0 * summarize(
+        pd.DataFrame(
+            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T
+    ).iloc[0].unstack()
+
+    num_deaths = compute_summary_statistics(num_deaths, central_measure='median')
+
+    results['num_deaths'] = num_deaths
+    results['num_deaths_averted'] = num_deaths_averted
+    results['pc_deaths_averted'] = pc_deaths_averted
+
+    num_dalys = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="dalys_stacked_by_age_and_time",
+            custom_generate_series=get_num_dalys_by_cause_label_and_period,
+            do_scaling=True,
+            suspended_results_folder=suspended_folder,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
+
+    num_dalys_averted = (
+        pd.DataFrame(
+            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing')
+        ).T.iloc[0].unstack(level='run'))
+
+    pc_dalys_averted = 100.0 * summarize(
+        pd.DataFrame(
+            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T
+    ).iloc[0].unstack()
+
+    num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
+
+    results['num_dalys'] = num_dalys
+    results['num_dalys_averted'] = num_dalys_averted
+    results['pc_dalys_averted'] = pc_dalys_averted
 
     return results
 

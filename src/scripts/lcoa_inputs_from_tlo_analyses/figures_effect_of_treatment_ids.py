@@ -14,6 +14,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     target_period,
 )
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
+    make_graph_file_name,
     do_bar_plot_with_ci,
     plot_deaths_by_period_for_cause,
     plot_hsi_counts_by_period_for_draw,
@@ -21,8 +22,8 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 )
 from tlo import Date
 
-TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
-PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 5
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
+PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
 
 def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
@@ -34,10 +35,6 @@ def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
 
 def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path = None):
     """Produce standard plots describing effect of each TREATMENT_ID."""
-
-    def make_graph_file_name(stub):
-        filename = stub.replace('*', '_star_').replace(' ', '_').lower()
-        return output_folder / f"{filename}.png"
 
     param_names = get_parameter_names_from_scenario_file()
 
@@ -56,22 +53,24 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
     counts_of_hsi_in_implementation_period = all_results[results_files[1]]['counts_of_hsi_by_short_treatment_id']
 
-    result_df = pd.DataFrame([
-        {'treatment_id_included': draw, 'nonzero_hsis': treatment_id}
-        for draw in counts_of_hsi_in_implementation_period.columns.get_level_values(0).unique()
-        for treatment_id in ((counts_of_hsi_in_implementation_period[draw] != 0).any(axis=1))[(counts_of_hsi_in_implementation_period[draw] != 0).any(axis=1)].index
-    ])
-    result_df['treatment_id_included'] = result_df['treatment_id_included'].str.replace('_\\*$', '', regex=True)
-    #133 rows here;
-    #result_df[result_df['treatment_id_included'] != result_df['nonzero_hsis']]
-
-
-    # Plot number of HSIs for each draw dropping the aggregate over the entire period
     counts_of_hsi_in_baseline = all_results[results_files[0]]['counts_of_hsi_by_period']
     counts_of_hsi_in_baseline = counts_of_hsi_in_baseline.drop(['2010-2025'], level=1)
 
     counts_of_hsi_in_implementation_period = all_results[results_files[1]]['counts_of_hsi_by_period']
-    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2026-2041'], level=1)
+    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2025-2041'], level=1)
+    # Values for the year 2025 have been logged in the implementation period;
+    # remove them from here and add them to the baseline dataframe.
+    x = counts_of_hsi_in_implementation_period['Nothing']
+    nothing_hsis_in_2025 = x.xs('2025-2025', level = 'period')
+    nothing_hsis_in_2025 = pd.concat({"2025-2025": nothing_hsis_in_2025}, names=["period"]).reorder_levels(["appt_type", "period"])
+    nothing_hsis_in_2025.columns = pd.MultiIndex.from_tuples(
+        [("Nothing", col) for col in nothing_hsis_in_2025.columns],
+        names=["draw", "stat"]
+    )
+    counts_of_hsi_in_baseline = pd.concat([counts_of_hsi_in_baseline, nothing_hsis_in_2025], axis=0).sort_index()
+    # now we can safely drop 2025-2025 from the implementation period dataframe
+    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop('2025-2025', level=1)
+
     result_df_by_period = pd.DataFrame([
         {'treatment_id_included': draw, 'nonzero_hsis': treatment_id, 'period': period}
         for draw in counts_of_hsi_in_implementation_period.columns.get_level_values(0).unique()
@@ -86,6 +85,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     )
 
     for param in param_names:
+        if param == "Nothing":
+            continue
         draw = format_scenario_name(param)
         print(f"Plotting HSI counts for {draw}...")
         name_of_plot = f"Yearly HSI counts for {draw}"
@@ -95,7 +96,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
             counts_of_hsi_in_baseline,
         )
         ax.set_title(name_of_plot)
-        fig.savefig(make_graph_file_name(name_of_plot))
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
         plt.close(fig)
 
     # Plot population growth
@@ -109,13 +111,13 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     plt.close(fig)
 
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
-    num_deaths_by_cause_label = results['num_deaths']
-    deaths_averted = results['deaths_averted']
-    pc_deaths_averted = results['pc_deaths_averted']
+    num_deaths_by_cause_label = all_results[results_files[1]]['num_deaths']
+    deaths_averted = all_results[results_files[1]]['num_deaths_averted']
+    pc_deaths_averted = all_results[results_files[1]]['pc_deaths_averted']
 
-    num_dalys_by_cause_label = results['num_dalys']
-    dalys_averted = results['dalys_averted']
-    pc_dalys_averted = results['pc_dalys_averted']
+    num_dalys_by_cause_label = all_results[results_files[1]]['num_dalys']
+    dalys_averted = all_results[results_files[1]]['num_dalys_averted']
+    pc_dalys_averted = all_results[results_files[1]]['pc_dalys_averted']
 
     for param in param_names:
         param_formatted = format_scenario_name(param)
@@ -134,7 +136,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         fig.tight_layout()
-        fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
         plt.close(fig)
 
         fig, ax = plt.subplots()
@@ -152,7 +155,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         fig.tight_layout()
-        fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
         plt.close(fig)
 
     cause_labels = num_deaths_by_cause_label.index.get_level_values("label").unique()
@@ -161,7 +165,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         name_of_plot = f"Deaths Over Time for {cause_label}"
         ax.set_title(name_of_plot)
         ax.set_ylabel("Number of deaths (/1000)")
-        fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
         plt.close(fig)
 
     # Plot cost of each scenario, with confidence intervals, for the target period
@@ -170,7 +175,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_files", type=Path, nargs="+")
-    parser.add_argument("--output-folder", type=Path, required=True)
+    parser.add_argument("--output_folder", type=Path, required=True)
     args = parser.parse_args()
 
     apply(results_files=args.results_files, output_folder=args.output_folder, resourcefilepath=Path("./resources"))
