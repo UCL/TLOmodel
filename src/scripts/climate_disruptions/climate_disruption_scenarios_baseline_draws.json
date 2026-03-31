@@ -2,8 +2,8 @@
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios_baseline.py",
   "scenario_seed": 0,
   "arguments": [
-      "--suspend-date",
-      "2024-12-31"
+      "--resume-simulation",
+      "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/baseline_run_with_pop_mode_2-2026-03-27T134831Z/0"
   ],
   "runs_per_draw": 5,
   "draws": [
@@ -113,6 +113,6 @@
           "draw_name": "2"
     }
   ],
-    "commit": "9de5677ecd5ad0d778fc8c59b19a343f19f2a73b",
-    "github": "https://github.com/UCL/TLOmodel/tree/9de5677ecd5ad0d778fc8c59b19a343f19f2a73b"
+    "commit": "ccf46fa332e4130d05505196ffba021408b3f2f3",
+    "github": "https://github.com/UCL/TLOmodel/tree/ccf46fa332e4130d05505196ffba021408b3f2f3"
 }

@@ -3,7 +3,7 @@
   "scenario_seed": 0,
   "arguments": [
     "--resume-simulation",
-      "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/baseline_run_with_pop-2026-03-03T092729Z/0"
+      "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/baseline_run_with_pop_mode_2-2026-03-27T134831Z/0"
   ],
   "runs_per_draw": 5,
   "draws": [
@@ -1708,6 +1708,6 @@
       "draw_name": "49"
     }
   ],
-    "commit": "d33b6e62811e37c5afddec1c92d96466dfc92888",
-    "github": "https://github.com/UCL/TLOmodel/tree/d33b6e62811e37c5afddec1c92d96466dfc92888"
+    "commit": "ccf46fa332e4130d05505196ffba021408b3f2f3",
+    "github": "https://github.com/UCL/TLOmodel/tree/ccf46fa332e4130d05505196ffba021408b3f2f3"
 }
