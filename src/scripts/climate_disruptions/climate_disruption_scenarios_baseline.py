@@ -72,7 +72,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "baseline_run_with_pop_mode_2",
+            "filename": "baseline_run_with_pop",  # _mode_2",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
