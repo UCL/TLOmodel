@@ -111,8 +111,8 @@ def plot_deaths_by_period_for_cause(
 
     _plot.index.name = period_level_name
     try:
-        ordered_periods = pd.Index(_plot.index).astype(make_calendar_period_type())
-        _plot = _plot.reindex(ordered_periods.sort_values().astype(str))
+        ordered_period_labels, display_period_labels = _get_sorted_period_labels_and_display_labels(_plot.index)
+        _plot = _plot.reindex(ordered_period_labels)
     except (TypeError, ValueError):
         _plot = _plot.loc[pd.Index(_plot.index).drop_duplicates()]
 

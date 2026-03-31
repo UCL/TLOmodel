@@ -12,7 +12,7 @@ from tlo import Date
 from tlo.analysis.utils import make_age_grp_types, summarize, to_age_group
 
 
-TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
 
 def find_difference_relative_to_comparison(_ser: pd.Series,
                                            comparison: str,
@@ -66,18 +66,22 @@ def get_periods_within_target_period(
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get tuple of scenario names from Scenario class used to create results."""
     e = EffectOfEachTreatment()
-    return tuple(e._scenarios.keys())
+    excluded = {"Only Hiv_Test_Selftest_*"}
+    # I think Hiv_test_Selftest has been added after I had submitted the draws, hence filtering it out.
+    return tuple(name for name in e._scenarios.keys() if name not in excluded)
 
 
 def format_scenario_name(_sn: str) -> str:
     """Return reformatted scenario name ready for plotting."""
     if _sn == "Nothing":
         return "Nothing"
-    return _sn.lstrip("Only ")
+    else:
+        return _sn.removeprefix("Only ")
 
 
 def set_param_names_as_column_index_level_0(_df: pd.DataFrame, param_names: tuple[str, ...]) -> pd.DataFrame:
     """Set columns index level 0 as scenario param names."""
+
     ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
     names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
     assert len(names_of_cols_level0) == len(_df.columns.levels[0])

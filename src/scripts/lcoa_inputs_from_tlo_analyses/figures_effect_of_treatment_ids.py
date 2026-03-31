@@ -111,13 +111,27 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     plt.close(fig)
 
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
-    num_deaths_by_cause_label = all_results[results_files[1]]['num_deaths']
+
     deaths_averted = all_results[results_files[1]]['num_deaths_averted']
     pc_deaths_averted = all_results[results_files[1]]['pc_deaths_averted']
 
     num_dalys_by_cause_label = all_results[results_files[1]]['num_dalys']
     dalys_averted = all_results[results_files[1]]['num_dalys_averted']
     pc_dalys_averted = all_results[results_files[1]]['pc_dalys_averted']
+
+    num_deaths_by_cause_label_baseline = all_results[results_files[0]]['num_deaths'].drop(['2010-2025'], level=1)
+    num_deaths_by_cause_label_implementation = all_results[results_files[1]]['num_deaths'].drop(['2025-2041'], level=1)
+
+    cause_labels = num_deaths_by_cause_label.index.get_level_values("label").unique()
+    for cause_label in cause_labels:
+        fig, ax = plot_deaths_by_period_for_cause(num_deaths_by_cause_label / 1e3, cause_label=cause_label)
+        name_of_plot = f"Deaths Over Time for {cause_label}"
+        ax.set_title(name_of_plot)
+        ax.set_ylabel("Number of deaths (/1000)")
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
+        plt.close(fig)
+
 
     for param in param_names:
         param_formatted = format_scenario_name(param)
@@ -159,15 +173,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig.savefig(outfile)
         plt.close(fig)
 
-    cause_labels = num_deaths_by_cause_label.index.get_level_values("label").unique()
-    for cause_label in cause_labels:
-        fig, ax = plot_deaths_by_period_for_cause(num_deaths_by_cause_label / 1e3, cause_label=cause_label)
-        name_of_plot = f"Deaths Over Time for {cause_label}"
-        ax.set_title(name_of_plot)
-        ax.set_ylabel("Number of deaths (/1000)")
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile)
-        plt.close(fig)
 
     # Plot cost of each scenario, with confidence intervals, for the target period
 
