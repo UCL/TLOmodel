@@ -1064,8 +1064,8 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             # Store onset dates only for diabetes
             if condition == 'nc_diabetes':
                 for person_id in idx_acquires_condition:
-                    if person_id not in self.diabetes_onset_dates:
-                        self.diabetes_onset_dates[person_id] = self.sim.date
+                    if person_id not in self.module.diabetes_onset_dates:
+                        self.module.diabetes_onset_dates[person_id] = self.sim.date
 
             # Add incident cases to the tracker
             self.module.trackers['onset_condition'].add(
