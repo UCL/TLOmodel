@@ -485,8 +485,6 @@ class Demography(Module):
         nearest-neighbor matching, restricted to facilities within each individual's district.
         """
         import hashlib
-        import secrets
-        import time
 
         worldpop_gdf = self.parameters["worldpop_gdf"].copy()
         worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
@@ -518,9 +516,12 @@ class Demography(Module):
             "Nkhatabay": "Nkhata Bay",
         }
 
-        # Worldpop-weighted coordinate assignment
-        run_seed = secrets.token_bytes(16) + int(time.time() * 1e9).to_bytes(8, "big")
-        unique_districts = df["district_of_residence"].unique()
+        # Worldpop-weighted coordinate assignment.
+        # FIX: derive run_seed from the module RNG (not secrets/time) so results are
+        # reproducible across runs that share the same random seed.
+        run_seed = self.rng.randint(0, 2 ** 31 - 1).to_bytes(4, "big")
+        # FIX: sort districts so iteration order is deterministic regardless of PYTHONHASHSEED.
+        unique_districts = sorted(df["district_of_residence"].unique())
 
         district_to_coords = {}
         for district in unique_districts:
