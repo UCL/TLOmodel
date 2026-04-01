@@ -529,7 +529,7 @@ def get_weather_data(ssp_scenario, model_type):
 model_types = ['lowest', 'mean', 'highest']  # was 'median', now 'mean'
 
 # Change 3: update the scenario list
-ssp_scenarios = ["ssp129", "ssp245", "ssp585"]  # was "ssp2_4_5"
+ssp_scenarios = ["ssp126", "ssp245", "ssp585"]  # was "ssp2_4_5"
 min_year_for_analysis = 2025
 absolute_min_year = 2024
 max_year_for_analysis = 2041
