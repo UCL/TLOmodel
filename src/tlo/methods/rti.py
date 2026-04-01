@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from tlo.population import IndividualProperties
 
 include_conditionality = True
-emulator_path = '/Users/mm2908/Desktop/EmuIBM/Save_With_WellPerforming/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl'
+emulator_path = 'resources/RTI_emulator.pkl'
 
-rti_scenario = "noRTIpoll" #standard # "emulator", "noRTIpoll"
+rti_scenario = "noRTIpoll" #Options: "standard", "emulator", "noRTIpoll"
 if rti_scenario == "emulator":
     use_emulator = True
 elif rti_scenario == "standard" or rti_scenario == "noRTIpoll":
@@ -41,10 +41,6 @@ elif rti_scenario == "standard" or rti_scenario == "noRTIpoll":
 else:
     print("ERROR, I don't have scenario")
     exit(-1)
-    
-#emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_synthesizer.pkl'
-#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
-#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -86,14 +82,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
 
     # Initialize the counter with all items set to 0
     HS_Use_by_RTI = Counter({col: 0 for col in HS_Use_Type})
-    
-    #RTI_emulator = TVAESynthesizer.load(
-    #    filepath=emulator_path
-    #)
-    
-    #RTI_emulator = GaussianCopulaSynthesizer.load(
-    #    filepath=emulator_path
-    #)
     
     RTI_emulator = CTGANSynthesizer.load(filepath=emulator_path)
     

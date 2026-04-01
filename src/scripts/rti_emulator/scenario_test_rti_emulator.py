@@ -81,30 +81,18 @@ class GenerateDataChains(BaseScenario):
                 enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
                 healthburden.HealthBurden(resourcefilepath=self.resources),
                 symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
-                #rti.RTI(resourcefilepath=self.resources),
+                rti.RTI(resourcefilepath=self.resources),
                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
                 simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
                 healthsystem.HealthSystem(resourcefilepath=self.resources,
                                           mode_appt_constraints=1,
                                           cons_availability='all')]
-                                          
-       # return (
-       #     fullmodel(resourcefilepath=self.resources)
-       #     + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-       # )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
             return list(self._scenarios.values())[draw_number]
         else:
             return
-
-    # case 1: gfHE = -0.030, factor = 1.01074
-    # case 2: gfHE = -0.020, factor = 1.02116
-    # case 3: gfHE = -0.015, factor = 1.02637
-    # case 4: gfHE =  0.015, factor = 1.05763
-    # case 5: gfHE =  0.020, factor = 1.06284
-    # case 6: gfHE =  0.030, factor = 1.07326
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
