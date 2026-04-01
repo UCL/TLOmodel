@@ -16,31 +16,53 @@ YEAR_OF_CHANGE = 2025
 full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
-            "scale_factor_delay_in_seeking_care_weather": [float(28)],
-            "rescaling_prob_seeking_after_disruption": [float(1)],
-            "rescaling_prob_disruption": [float(1)],
-            "scale_factor_severity_disruption_and_delay": [float(1)],
-            "mode_appt_constraints": [1],
-            "mode_appt_constraints_postSwitch": [2],
-            "cons_availability": ["default"],
-            "cons_availability_postSwitch": ["default"],
-            "year_cons_availability_switch": [YEAR_OF_CHANGE],
-            "beds_availability": ["default"],
-            "equip_availability": ["default"],
-            "equip_availability_postSwitch": ["default"],
-            "year_equip_availability_switch": [YEAR_OF_CHANGE],
-            "use_funded_or_actual_staffing": ["actual"],
-            "scale_to_effective_capabilities": [True],
-            "policy_name": ["Naive"],
+            "scale_factor_reseeking_healthcare_post_disruption": 1.0,
+            "scale_factor_prob_disruption": 1.0,
+            "delay_in_seeking_care_weather": 28.0,
+            "scale_factor_appointment_urgency": 1.0,
+            "scale_factor_severity_disruption_and_delay": 1.0,
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2,
+            "year_mode_switch": YEAR_OF_CHANGE,
+            "cons_availability": "default",
+            "cons_availability_postSwitch": "default",
+            "year_cons_availability_switch": YEAR_OF_CHANGE,
+            "beds_availability": "default",
+            "equip_availability": "default",
+            "equip_availability_postSwitch": "default",
+            "year_equip_availability_switch": YEAR_OF_CHANGE,
+            "use_funded_or_actual_staffing": "actual",
+            "scale_to_effective_capabilities": True,
+            "policy_name": "Naive",
             "climate_ssp": ["ssp126", "ssp245", "ssp585"],
-            "year_effective_climate_disruptions": [2025],
-            "climate_model_ensemble_model": ["lowest", "mean", "highest"],
-            "services_affected_precip": ["all"],
-            "tclose_overwrite": [1000],
-            "prop_supply_side_disruptions": [0.5],
-        }
+            "climate_model_ensemble_model": "mean",
+            "year_effective_climate_disruptions": 2025,
+            "prop_supply_side_disruptions": 0.5,
+            "services_affected_precip": "none",  # baseline: no climate impacts
+            "tclose_overwrite": 1000,
+        },
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
     }
 )
+
+best_case_params = baseline_params.copy()
+best_case_params["HealthSystem"] = baseline_params["HealthSystem"].copy()
+best_case_params["HealthSystem"]["services_affected_precip"] = "all"
+
+worst_case_params = baseline_params.copy()
+worst_case_params["HealthSystem"] = baseline_params["HealthSystem"].copy()
+worst_case_params["HealthSystem"].update({
+    "scale_factor_reseeking_healthcare_post_disruption": 0.5,
+    "scale_factor_prob_disruption": 2,
+    "delay_in_seeking_care_weather": 60.0,
+    "scale_factor_appointment_urgency": 2.0,
+    "scale_factor_severity_disruption_and_delay": 2.0,
+    "services_affected_precip": "all",
+})
+
+full_grid = [worst_case_params]  # [baseline_params, best_case_params, worst_case_params]
 
 
 class ClimateDisruptionScenario(BaseScenario):
