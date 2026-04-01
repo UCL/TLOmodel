@@ -8,7 +8,7 @@ path_to_resourcefiles_for_healthsystem = Path(resourcefilepath) / "healthsystem"
 
 climatefilepath = "/Users/rem76/Desktop/Climate_Change_Health/Data"
 services = ["ANC"]
-scenarios = ["ssp245"]
+scenarios = ["ssp126", "ssp245", "ssp585"]
 ensemble_types = ["lowest", "mean", "highest"]
 # read in climate files - all will have the same facilities
 sample_climate_file = Path(climatefilepath) / "weather_predictions_with_X_ssp245_mean_ANC.csv"
