@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
+# from scripts.diarrhoea_analyses.analysis_diarrhoea_with_and_without_treatment import data
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -96,8 +97,14 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.BOOL, 'Is infected with oncogenic hpv group'),
         'hp_group': Property(
             Types.STRING, 'Current HPV types carried, separated by "|"'),
-        'hp_date_infected': Property(
-            Types.DATE, 'Date of most recent infection'),
+        'hp_date_infected_hr1': Property(
+            Types.DATE, 'Date of infection of hr1'),
+        'hp_date_infected_hr2': Property(
+            Types.DATE, 'Date of infection of hr2'),
+        'hp_date_infected_hr3': Property(
+            Types.DATE, 'Date of infection of hr3'),
+        'hp_date_first_infected': Property(
+            Types.DATE, 'Date of first HPV infection'),
     }
 
     def __init__(self, name=None):
@@ -121,13 +128,15 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         :param population: the population of individuals
         """
 
-        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        df = population.props  # a shortcut to the dataframe storing data for individuals
 
         # Set default for properties
         df.loc[df.is_alive, 'hp_is_infected'] = False  # default: no individuals infected
-        df.loc[df.is_alive, 'hp_group'] = ''  # default: no hpy type
-        df.loc[df.is_alive, 'hp_date_infected'] = pd.NaT  # default: not a time
-
+        df.loc[df.is_alive, 'hp_group'] = ''  # default: no hpv type
+        df.loc[df.is_alive, 'hp_date_infected_hr1'] = pd.NaT
+        df.loc[df.is_alive, 'hp_date_infected_hr2'] = pd.NaT
+        df.loc[df.is_alive, 'hp_date_infected_hr3'] = pd.NaT
+        df.loc[df.is_alive, 'hp_date_first_infected'] = pd.NaT
         eligible = df.index[df.is_alive & (df.age_years >= 15)]
 
         for group in self.HPV_GROUPS:
@@ -140,9 +149,20 @@ class HPV(Module, GenericFirstAppointmentsMixin):
                 current_groups.add(group)
                 self._set_hpv_group_set(person_id, current_groups)
 
+                # randomly select a infection date for initial population
+                previous_infection = self.rng.random_integers(1,25) #1-24month
+                infection_date = self.sim.date - DateOffset(months=int(previous_infection))
+                df.at[person_id, f'hp_date_infected_{group}'] = infection_date
+
         initially_infected = df.index[df.is_alive & df.hp_is_infected]
-        if len(initially_infected) > 0:
-            df.loc[initially_infected, 'hp_date_infected'] = self.sim.date
+        for person_id in initially_infected:
+            group_dates = [
+                df.at[person_id, f'hp_date_infected_{group}']
+                for group in self.HPV_GROUPS
+                if not pd.isna(df.at[person_id, f'hp_date_infected_{group}'])
+            ]
+            if len(group_dates) > 0:
+                df.loc[initially_infected, 'hp_date_first_infected'] = min(group_dates)
 
     def _get_hpv_group_set(self,person_id):
         df = self.sim.population.props
@@ -168,15 +188,30 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         current_groups = self._get_hpv_group_set(person_id)
         updated_groups = current_groups.union(new_groups)
-
         self._set_hpv_group_set(person_id, updated_groups)
-        df.at[person_id, 'hp_date_infected'] = self.sim.date
+
+        #set infection date for new groups
+        for group in new_groups:
+            df.at[person_id, f'hp_date_infected_{group}'] = self.sim.date
+
+        #set first infection date
+        if pd.isna(df.at[person_id, 'hp_date_first_infected']):
+            df.at[person_id, 'hp_date_first_infected'] = self.sim.date
 
     def _clear_all_infection(self, person_id):
         """Clear all HPV groups for a person."""
         df = self.sim.population.props
         self._set_hpv_group_set(person_id, set())
-        df.at[person_id, 'hp_date_infected'] = pd.NaT
+        for group in self.HPV_GROUPS:
+            df.at[person_id, f'hp_date_infected_{group}'] = pd.NaT
+
+    def _clear_single_group(self, person_id, group):
+        """clear a single HPV group for a person"""
+        df = self.sim.population.props
+        current_groups = self._get_hpv_group_set(person_id)
+        current_groups.discard(group)
+        self._set_hpv_group_set(person_id, current_groups)
+        df.at[person_id, f'hp_date_infected_{group}'] = pd.NaT
 
     def initialise_simulation(self, sim):
 
@@ -206,7 +241,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props  # shortcut to the population props dataframe
         df.at[child_id, 'hp_is_infected'] = False
         df.at[child_id, 'hp_group'] = ''
-        df.at[child_id, 'hp_date_infected'] = pd.NaT
+        df.at[child_id, 'hp_date_infected_hr1'] = pd.NaT
+        df.at[child_id, 'hp_date_infected_hr2'] = pd.NaT
+        df.at[child_id, 'hp_date_infected_hr3'] = pd.NaT
+        df.at[child_id, 'hp_date_first_infected'] = pd.NaT
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -245,27 +283,31 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         # 2. self-clearance
         infected_idx = df.index[df.is_alive & df.hp_is_infected & (df.age_years >= 15)]
         for person_id in infected_idx:
-            date_inf = df.at[person_id, 'hp_date_infected']
-            #if data is missing. skip for safety
-            if pd.isna(date_inf):
-                continue
+            current_groups = module._get_hpv_group_set(person_id)
+            for group in list(current_groups):
+                date_col = f'hp_date_infected_{group}'
+                date_inf = df.at[person_id, date_col]
 
-            duration = (now.year - date_inf.year) * 12 + (now.month - date_inf.month)
 
-            clear_now = False
+                if pd.isna(date_inf):#if data is missing. skip for safety
+                    continue
 
-            if duration >= 24:
-                p_clear = module.parameters['r_clear_24']
-                if module.rng.random() < p_clear:
-                    clear_now = True
+                duration = (now.year - date_inf.year) * 12 + (now.month - date_inf.month)
 
-            elif duration >= 12:
-                p_clear = module.parameters['r_clear_12']
-                if module.rng.random() < p_clear:
-                    clear_now = True
+                clear_now = False
 
-            if clear_now:
-                module._clear_all_infection(person_id)
+                if duration >= 24:
+                    p_clear = module.parameters['r_clear_24']
+                    if module.rng.random() < p_clear:
+                        clear_now = True
+
+                elif duration >= 12:
+                    p_clear = module.parameters['r_clear_12']
+                    if module.rng.random() < p_clear:
+                        clear_now = True
+
+                if clear_now:
+                    module._clear_single_group(person_id, group)
 
         # 3. recalculate prevalence by HPV group after clearance
         male_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
@@ -313,7 +355,7 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summmary of the numbers of people with respect to their 'hpv status'
         """
-        # run this event every month
+        # run this event every 12 month
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, HPV)
@@ -321,12 +363,95 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
+        module = self.module
 
-        infected_total = df.loc[df.is_alive, 'hp_is_infected'].sum()
-        proportion_infected = infected_total / len(df)
+        eligible = df.index[df.is_alive & (df.age_years >= 15)]
+        male_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
+        female_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
+
+        total_inf = df.loc[eligible, 'hp_is_infected'].sum()
+        total_prev = total_inf / len(eligible) if len(eligible) > 0 else 0
+
+        male_inf = df.loc[male_idx, 'hp_is_infected'].sum()
+        female_inf = df.loc[female_idx, 'hp_is_infected'].sum()
+
+        male_prev = male_inf / len(male_idx) if len(male_idx) > 0 else 0
+        female_prev = female_inf / len(female_idx) if len(female_idx) > 0 else 0
+
+        log_data= {
+            'Year':self.sim.date.year,
+            'TotalInf':int(total_inf),
+            'TotalPrev':total_prev,
+            'MaleInf':int(male_inf),
+            'FemaleInf':int(female_inf),
+            'MalePrev':male_prev,
+            'FemalePrev':female_prev,
+        }
+
+        # group-specific prevalence by sex
+        for group in module.HPV_GROUPS:
+            male_mask = df.loc[male_idx, 'hp_group'].fillna('').str.contains(fr'(^|\|){group}(\||$)', regex=True)
+            female_mask = df.loc[female_idx,'hp_group'].fillna('').str.contains(fr'(^|\|){group}(\||$)', regex=True)
+
+            male_group_inf = male_mask.sum()
+            female_group_inf = female_mask.sum()
+
+            log_data[f'{group}_MaleInf'] = int(male_group_inf)
+            log_data[f'{group}_MalePrev'] = male_group_inf / len(male_idx) if len(male_idx) > 0 else 0
+            log_data[f'{group}_FemaleInf'] = int(female_group_inf)
+            log_data[f'{group}_FemalePrev'] = female_group_inf / len(female_idx) if len(female_idx) > 0 else 0
+
+        # multiplicity of infection
+        infection_people = df.index[df.is_alive & (df.age_years>=15) &df.hp_is_infected]
+        n_group_1 = 0
+        n_group_2 = 0
+        n_group_3 = 0
+
+        male_n_group_1 = 0
+        male_n_group_2 = 0
+        male_n_group_3 = 0
+
+        female_n_group_1 = 0
+        female_n_group_2 = 0
+        female_n_group_3 = 0
+
+        for person_id in infection_people:
+            n_group = len(module._get_hpv_group_set(person_id))
+            sex = df.at[person_id,'sex']
+
+            if n_group ==1:
+                n_group_1=1
+                if sex == 'M':
+                    male_n_group_1 += 1
+                elif sex =='F':
+                    female_n_group_1 += 1
+
+            elif n_group == 2:
+                n_group_2 += 1
+                if sex == 'M':
+                    male_n_group_2 += 1
+                elif sex =='F':
+                    female_n_group_2 += 1
+
+            elif n_group == 3:
+                n_group_3 += 1
+                if sex == 'M':
+                    male_n_group_3 += 1
+                elif sex =='F':
+                    female_n_group_3 += 1
+
+        log_data['InfGroup1'] = n_group_1
+        log_data['InfGroup2'] = n_group_2
+        log_data['InfGroup3'] = n_group_3
+
+        log_data['MaleGroup1'] = male_n_group_1
+        log_data['MaleGroup2'] = male_n_group_2
+        log_data['MaleGroup3'] = male_n_group_3
+
+        log_data['FemaleGroup1'] = female_n_group_1
+        log_data['FemaleGroup2'] = female_n_group_2
+        log_data['FemaleGroup3'] = female_n_group_3
 
         logger.info(key='summary',
-                    data={'TotalInf': infected_total,
-                          'PropInf': proportion_infected,
-                          })
+                    data=log_data)
 
