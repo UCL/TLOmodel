@@ -200,10 +200,10 @@ def apply(
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
-    num_dalys_averted = (
+    num_dalys_averted = summarize(
         pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing')
-        ).T.iloc[0].unstack(level='run'))
+            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing')).T
+    ).iloc[0].unstack()
 
     pc_dalys_averted = 100.0 * summarize(
         pd.DataFrame(

@@ -23,7 +23,7 @@ APPOINTMENT_TYPE_PALETTE = list(plt.get_cmap("tab20").colors) + list(plt.get_cma
 APPOINTMENT_TYPE_FIXED_COLORS = {"AccidentsandEmerg": "black"}
 
 def make_graph_file_name(stub):
-    filename = stub.replace('*', '_star_').replace(' ', '_').lower()
+    filename = stub.replace('*', '_star_').replace(' ', '_').replace('/', '').lower()
     return f"{filename}.png"
 
 
@@ -85,27 +85,60 @@ def plot_deaths_by_period_for_cause(
     _df: pd.DataFrame,
     cause_label: str,
     plot_stat: str = "central",
+    _dfbaseline: pd.DataFrame = None,
 ):
     """Plot deaths over time for a single cause, with one line per short treatment id."""
     if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
         raise ValueError("_df index must be a 2-level MultiIndex with levels for label and period.")
     if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
         raise ValueError("_df columns must be a 2-level MultiIndex with levels for treatment id and stat.")
+    if _dfbaseline is None:
+        raise ValueError("_dfbaseline is required.")
+    if not isinstance(_dfbaseline.index, pd.MultiIndex) or _dfbaseline.index.nlevels != 2:
+        raise ValueError("_dfbaseline index must be a 2-level MultiIndex with levels for label and period.")
+    if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
+        raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
 
     label_level_name = "label" if "label" in _df.index.names else _df.index.names[0]
     period_level_name = "period" if "period" in _df.index.names else _df.index.names[1]
     stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+    baseline_label_level_name = "label" if "label" in _dfbaseline.index.names else _dfbaseline.index.names[0]
+    baseline_stat_level_name = "stat" if "stat" in _dfbaseline.columns.names else _dfbaseline.columns.names[1]
+    baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
 
     available_causes = pd.Index(_df.index.get_level_values(label_level_name).unique())
     if cause_label not in available_causes:
         raise ValueError(f"Cause label '{cause_label}' not found. Available causes: {available_causes.tolist()}")
+    available_baseline_causes = pd.Index(_dfbaseline.index.get_level_values(baseline_label_level_name).unique())
+    if cause_label not in available_baseline_causes:
+        raise ValueError(
+            f"Cause label '{cause_label}' not found in _dfbaseline. "
+            f"Available causes: {available_baseline_causes.tolist()}"
+        )
 
     available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
     if plot_stat not in available_stats:
         raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
+    available_baseline_stats = pd.Index(_dfbaseline.columns.get_level_values(baseline_stat_level_name).unique())
+    if plot_stat not in available_baseline_stats:
+        raise ValueError(
+            f"Statistic '{plot_stat}' not found in _dfbaseline. "
+            f"Available stats: {available_baseline_stats.tolist()}"
+        )
+    available_baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
+    if "Nothing" not in available_baseline_draws:
+        raise ValueError(
+            f"Draw 'Nothing' not found in _dfbaseline. Available draws: {available_baseline_draws.tolist()}"
+        )
 
-    _plot = _df.xs(cause_label, level=label_level_name)
-    _plot = _plot.xs(plot_stat, axis=1, level=stat_level_name)
+    _plot = _df.xs(cause_label, level=label_level_name).xs(plot_stat, axis=1, level=stat_level_name)
+    _plot_baseline = (
+        _dfbaseline["Nothing"]
+        .xs(cause_label, level=baseline_label_level_name)
+        .loc[:, [plot_stat]]
+        .rename(columns={plot_stat: "Nothing"})
+    )
+    _plot = pd.concat([_plot_baseline, _plot])
     if _plot.empty:
         raise ValueError(f"No plottable data remain for cause '{cause_label}' using stat '{plot_stat}'.")
 
@@ -136,7 +169,7 @@ def plot_deaths_by_period_for_cause(
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels([str(period) for period in _plot.index], rotation=45, ha="right")
+    ax.set_xticklabels(display_period_labels, rotation=45, ha="right")
     ax.set_xlabel("Period")
     ax.set_ylabel("Number of deaths")
     ax.set_title(str(cause_label))
@@ -151,8 +184,6 @@ def plot_deaths_by_period_for_cause(
         title_fontsize=9,
         frameon=True,
     )
-
-    fig.tight_layout()
     return fig, ax
 
 
@@ -276,7 +307,13 @@ def plot_multiindex_dot_with_interval(
 def do_barh_plot_with_ci(_df: pd.DataFrame, _ax):
     """Make horizontal bar plot for each treatment id."""
     errors = pd.concat([_df["mean"] - _df["lower"], _df["upper"] - _df["mean"]], axis=1).T.to_numpy()
-    _df.plot.barh(ax=_ax, y="mean", xerr=errors, legend=False, color=[get_color_short_treatment_id(_id) for _id in _df.index])
+    _df.plot.barh(
+        ax=_ax,
+        y="mean",
+        xerr=errors,
+        legend=False,
+        color=[_get_short_treatment_id_and_color(_id)[1] for _id in _df.index],
+    )
 
 
 def do_label_barh_plot(_df: pd.DataFrame, _ax):
@@ -369,7 +406,6 @@ def plot_hsi_counts_by_period_for_draw(
     # only want to compare the number of Hiv_Treament HSIs until 2025 and during the implementation period
     _dfbaseline = _dfbaseline['Nothing'] # because baseline was run only for Nothing scenario
     treatment_id_of_interest = draw.replace("_*", "")
-    print(f"Filtering baseline to treatment id of interest: '{treatment_id_of_interest}'")
     _dfbaseline = _dfbaseline[_dfbaseline.index.get_level_values(0) == treatment_id_of_interest]
 
     _df = pd.concat([_df[draw], _dfbaseline])

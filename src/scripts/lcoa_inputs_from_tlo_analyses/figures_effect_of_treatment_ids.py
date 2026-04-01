@@ -15,6 +15,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
 )
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     make_graph_file_name,
+    do_barh_plot_with_ci,
     do_bar_plot_with_ci,
     plot_deaths_by_period_for_cause,
     plot_hsi_counts_by_period_for_draw,
@@ -88,7 +89,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         if param == "Nothing":
             continue
         draw = format_scenario_name(param)
-        print(f"Plotting HSI counts for {draw}...")
         name_of_plot = f"Yearly HSI counts for {draw}"
         fig, ax = plot_hsi_counts_by_period_for_draw(
             counts_of_hsi_in_implementation_period,
@@ -112,19 +112,22 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
 
-    deaths_averted = all_results[results_files[1]]['num_deaths_averted']
-    pc_deaths_averted = all_results[results_files[1]]['pc_deaths_averted']
 
-    num_dalys_by_cause_label = all_results[results_files[1]]['num_dalys']
-    dalys_averted = all_results[results_files[1]]['num_dalys_averted']
     pc_dalys_averted = all_results[results_files[1]]['pc_dalys_averted']
+
+    num_dalys_by_cause_label_baseline = all_results[results_files[0]]['num_dalys'].drop(['2010-2025'], level=1)
+    num_dalys_by_cause_label_implementation = all_results[results_files[1]]['num_dalys'].drop(['2025-2041'], level=1)
 
     num_deaths_by_cause_label_baseline = all_results[results_files[0]]['num_deaths'].drop(['2010-2025'], level=1)
     num_deaths_by_cause_label_implementation = all_results[results_files[1]]['num_deaths'].drop(['2025-2041'], level=1)
 
-    cause_labels = num_deaths_by_cause_label.index.get_level_values("label").unique()
+    cause_labels = num_deaths_by_cause_label_implementation.index.get_level_values("label").unique()
     for cause_label in cause_labels:
-        fig, ax = plot_deaths_by_period_for_cause(num_deaths_by_cause_label / 1e3, cause_label=cause_label)
+        fig, ax = plot_deaths_by_period_for_cause(
+            num_deaths_by_cause_label_implementation / 1e3,
+            cause_label=cause_label,
+            _dfbaseline=num_deaths_by_cause_label_baseline / 1e3,
+        )
         name_of_plot = f"Deaths Over Time for {cause_label}"
         ax.set_title(name_of_plot)
         ax.set_ylabel("Number of deaths (/1000)")
@@ -132,50 +135,81 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig.savefig(outfile)
         plt.close(fig)
 
-
-    for param in param_names:
-        param_formatted = format_scenario_name(param)
-        print(f"Plotting for {param_formatted}...")
-        fig, ax = plt.subplots()
-        name_of_plot = f"Deaths With {param_formatted}, {target_period_label}"
-        do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, param_formatted, ax, period_labels_for_bar_plots, target_period_label)
-        legend = ax.get_legend()
-        if legend is not None:
-            legend.remove()
+        fig, ax = plot_deaths_by_period_for_cause(
+            num_dalys_by_cause_label_implementation / 1e3,
+            cause_label=cause_label,
+            _dfbaseline=num_dalys_by_cause_label_baseline / 1e3,
+        )
+        name_of_plot = f"DALYs Over Time for {cause_label}"
         ax.set_title(name_of_plot)
-        ax.set_xlabel("Cause of Death")
-        ax.set_ylabel("Number of Deaths (/1000)")
-        #ax.set_ylim(0, 500)
-        ax.grid(axis="y")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        fig.tight_layout()
+        ax.set_ylabel("Number of DALYs (/1000)")
         outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
         fig.savefig(outfile)
         plt.close(fig)
 
-        fig, ax = plt.subplots()
-        name_of_plot = f"DALYS With {param_formatted}, {target_period_label}"
-        do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, param_formatted, ax, period_labels_for_bar_plots, target_period_label)
-        legend = ax.get_legend()
-        if legend is not None:
-            legend.remove()
-        ax.set_title(name_of_plot)
-        ax.set_xlabel("Cause of Disability/Death")
-        ax.set_ylabel("Number of DALYS (/millions)")
-        #ax.set_ylim(0, 30)
-        ##ax.set_yticks(np.arange(0, 35, 5))
-        ax.grid(axis="y")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        fig.tight_layout()
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile)
-        plt.close(fig)
+    deaths_averted = all_results[results_files[1]]['num_deaths_averted']
+    deaths_averted_sorted = (deaths_averted.sort_values(by="mean", ascending=True) / 1e3)
+    fig_height = max(6, min(0.28 * len(deaths_averted_sorted.index) + 4, 18))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
+    name_of_plot = "Deaths Averted by Each Treatment ID"
+    do_barh_plot_with_ci(deaths_averted_sorted, ax)
+    ax.set_title(name_of_plot)
+    ax.set_xlabel("Number of deaths averted (/1000)")
+    ax.grid(axis="x")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    fig.tight_layout()
+    fig.savefig(outfile)
+    plt.close(fig)
 
+    dalys_averted = all_results[results_files[1]]['num_dalys_averted']
+    dalys_averted_sorted = (dalys_averted.sort_values(by="mean", ascending=True) / 1e3)
+    fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
+    name_of_plot = "DALYS Averted by Each Treatment ID"
+    do_barh_plot_with_ci(dalys_averted_sorted, ax)
+    ax.set_title(name_of_plot)
+    ax.set_xlabel("DALYs averted (/1000)")
+    ax.grid(axis="x")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    fig.tight_layout()
+    fig.savefig(outfile)
+    plt.close(fig)
 
-    # Plot cost of each scenario, with confidence intervals, for the target period
+    pc_deaths_averted = all_results[results_files[1]]['pc_deaths_averted']
+    pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="mean", ascending=True))
+    fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
+    name_of_plot = "Percentage Deaths Averted by Each Treatment ID"
+    do_barh_plot_with_ci(pc_deaths_averted_sorted, ax)
+    ax.set_title(name_of_plot)
+    ax.set_xlabel("Percentage of deaths averted")
+    ax.grid(axis="x")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    fig.tight_layout()
+    fig.savefig(outfile)
+    plt.close(fig)
 
+    pc_dalys_averted = all_results[results_files[1]]['pc_dalys_averted']
+    pc_dalys_averted_sorted = (pc_dalys_averted.sort_values(by="mean", ascending=True))
+    fig_height = max(6, min(0.28 * len(pc_dalys_averted_sorted.index) + 4, 18))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
+    name_of_plot = "Percentage DALYs Averted by Each Treatment ID"
+    do_barh_plot_with_ci(pc_dalys_averted_sorted, ax)
+    ax.set_title(name_of_plot)
+    ax.set_xlabel("Percentage of DALYs averted")
+    ax.grid(axis="x")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    fig.tight_layout()
+    fig.savefig(outfile)
+    plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

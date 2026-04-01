@@ -27,7 +27,6 @@ from typing import Dict, List
 from tlo import Date, logging
 from tlo.analysis.utils import mix_scenarios, get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -44,19 +43,12 @@ class ScenarioDefinitions:
             {
                 "HealthSystem": {
                     "cons_availability": "default",
-                    "year_cons_availability_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
-                    "cons_availability_postSwitch": "all",
                     "mode_appt_constraints": 1,
                     "year_service_availability_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
                     # allow historical HRH scaling to occur 2018-2024
                     # 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
                     "yearly_HR_scaling_mode": "historical_scaling",
-                },
-                "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-                    "max_healthsystem_function": [False, True],  # <-- switch from False to True mid-way
-                    "max_healthcare_seeking": [False, True],  # <-- switch from False to True mid-way
-                    "year_of_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
-                },
+                }
             },
         )
 
@@ -66,7 +58,7 @@ class EffectOfEachTreatment(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
+        self.end_date = Date(2041, 1, 1)
         self.pop_size = 50_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -86,7 +78,7 @@ class EffectOfEachTreatment(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel() + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
+        return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -97,7 +89,7 @@ class EffectOfEachTreatment(BaseScenario):
         The sequences of scenarios systematically omits all but one TREATMENT_ID that is defined in the model."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
-        treatments = ["Hiv_Treatment_*"]
+        treatments = ["Epilepsy_Treatment_Start_*"]
         # Return 'Service_Availability' values, with scenarios for nothing, and ones for which all but one
         # treatment is omitted
         service_availability = dict()
