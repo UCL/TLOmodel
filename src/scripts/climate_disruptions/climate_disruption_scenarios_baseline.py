@@ -15,7 +15,7 @@ baseline_params = {
         "scale_factor_appointment_urgency": 1.0,
         "scale_factor_severity_disruption_and_delay": 1.0,
         "mode_appt_constraints": 1,
-        "mode_appt_constraints_postSwitch": 2,
+        "mode_appt_constraints_postSwitch": 1,
         "year_mode_switch": YEAR_OF_CHANGE,
         "cons_availability": "default",
         "cons_availability_postSwitch": "default",
@@ -54,7 +54,7 @@ worst_case_params["HealthSystem"].update({
     "services_affected_precip": "all",
 })
 
-full_grid = [baseline_params, best_case_params, worst_case_params]
+full_grid = [worst_case_params]  # [baseline_params, best_case_params, worst_case_params]
 
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
@@ -65,14 +65,14 @@ class ClimateDisruptionScenario(BaseScenario):
         self.pop_size = 100_000
         self.runs_per_draw = 5
         self._parameter_grid = full_grid
-        self.number_of_draws = len(self._parameter_grid)
+        self.number_of_draws = 1  #len(self._parameter_grid)
 
         #with open("selected_parameter_combinations_baseline.json", "w") as f:
         #    json.dump(self._parameter_grid, f, indent=2)
 
     def log_configuration(self):
         return {
-            "filename": "baseline_run_with_pop",  # _mode_2",
+            "filename": "baseline_run_with_pop_new_worst_case",  # _mode_2",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
@@ -88,7 +88,7 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[draw_number]
+        return self._parameter_grid  #[draw_number]
 
 if __name__ == "__main__":
     from tlo.cli import scenario_run
