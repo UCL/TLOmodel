@@ -23,6 +23,7 @@ import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 
 from tlo import Date
 from tlo.analysis.utils import extract_results
@@ -42,7 +43,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     top_n_hsi = 15  # HSI types to show in bar charts
 
-    SCALING_FACTOR = 1453.9609  # applied to counts only; cancels in rate calculations
+    SCALING_FACTOR = 145.39  # applied to counts only; cancels in rate calculations
 
     CI_LOWER = 0.025  # 95% CI
     CI_UPPER = 0.975
@@ -55,6 +56,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         scenario_names = ["No disruptions", "Baseline", "Worst Case"]
         scenarios_of_interest = [0, 1, 2]
         suffix = "main_text"
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  FACILITY → DISTRICT MAPPING  (loaded once, used in extraction and maps)
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    facilities_df = pd.read_csv(
+        resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv",
+        low_memory=False,
+    )[["Fname", "Dist", "Zonename", "Ftype"]].drop_duplicates(subset="Fname")
+
+    dist_fixes = {
+        "Blanytyre": "Blantyre",
+        "Nkhatabay": "Nkhata Bay",
+        "Mzimba North": "Mzimba",
+        "Mzimba South": "Mzimba",
+    }
+    facilities_df["Dist"] = facilities_df["Dist"].replace(dist_fixes)
+    fac_to_district = facilities_df.set_index("Fname")["Dist"]
+    fac_to_ftype = facilities_df.set_index("Fname")["Ftype"]
+    fac_to_zone = facilities_df.set_index("Fname")["Zonename"]
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  EXTRACTION HELPERS
@@ -98,6 +119,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             return _df["composite"].value_counts().astype(float)
         return _fn
 
+    def _make_disrupted_persons_by_district(target_period, fac_to_dist):
+        """Count unique Person_IDs disrupted, grouped by district of attended facility.
+
+        Approximation: person is assumed to reside in the district of the facility
+        they attended. A person disrupted in both the delayed and cancelled logs
+        may be double-counted across the two logs.
+        """
+
+        def _fn(_df):
+            _df["date"] = pd.to_datetime(_df["date"])
+            _df = _df.loc[_df["date"].between(*target_period)]
+            if _df.empty or "Person_ID" not in _df.columns or "RealFacility_ID" not in _df.columns:
+                return pd.Series(dtype=float)
+            _df = _df[_df["RealFacility_ID"].notna() & (_df["RealFacility_ID"] != "unknown")].copy()
+            _df["district"] = _df["RealFacility_ID"].map(fac_to_dist)
+            _df = _df.dropna(subset=["district"])
+            return _df.groupby("district")["Person_ID"].nunique().astype(float)
+
+        return _fn
+
     def _extract_df(results_folder, draw, log_key, fn):
             raw = extract_results(
                 results_folder,
@@ -125,10 +166,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         key_2 = _parse_ym(df.index) + ":" + _parse_facility(df.index)
         return df.groupby(key_2).sum()
 
-    def _align_and_rate(total_df, disrupted_df):
+    def _align_and_rate(total_df, disrupted_df, delayed_df=None, cancelled_df=None):
         idx = total_df.index.union(disrupted_df.index)
         t = total_df.reindex(idx, fill_value=0)
         d = disrupted_df.reindex(idx, fill_value=0)
+        if delayed_df is not None and cancelled_df is not None:
+            delay = delayed_df.reindex(idx, fill_value=0)
+            cancel = cancelled_df.reindex(idx, fill_value=0)
+            t = t + delay + cancel
         return d.div(t).where(t > 0, 0.0).clip(upper=1.0)
 
     def _monthly_stats(rate_df):
@@ -205,6 +250,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     all_draws_delayed_df = {}
     all_draws_cancelled_df = {}
 
+    # Storage for disrupted persons by district (indexed by district, cols = runs)
+    all_draws_disrupted_persons_by_district = {}
+
     for draw in scenarios_of_interest:
 
         if scenario_names[draw] == "No disruptions":
@@ -251,25 +299,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 columns=all_draws_total_df[draw].columns
             )
             tlo_facilities.update(_parse_facility(all_draws_total_df[draw].index).dropna())
+            all_draws_disrupted_persons_by_district[draw] = None
             continue
 
         all_years_total_dfs = []
         all_years_delayed_dfs = []
         all_years_cancelled_dfs = []
+        all_years_delayed_persons_dfs = []
+        all_years_cancelled_persons_dfs = []
 
         for target_year in target_year_sequence:
             TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
             fn_total = _make_hsi_counts_by_real_facility_monthly(TARGET_PERIOD)
             fn_disrupted = _make_disrupted_by_real_facility_monthly(TARGET_PERIOD)
+            fn_persons = _make_disrupted_persons_by_district(TARGET_PERIOD, fac_to_district)
 
             total_df = _extract_df(results_folder, draw, "hsi_event_counts_by_facility_monthly", fn_total)
             delayed_df = _extract_df(results_folder, draw, "Weather_delayed_HSI_Event_full_info", fn_disrupted)
             cancelled_df = _extract_df(results_folder, draw, "Weather_cancelled_HSI_Event_full_info", fn_disrupted)
 
+            delayed_persons_df = _extract_df(results_folder, draw, "Weather_delayed_HSI_Event_full_info", fn_persons)
+            cancelled_persons_df = _extract_df(results_folder, draw, "Weather_cancelled_HSI_Event_full_info",
+                                               fn_persons)
+
             all_years_total_dfs.append(total_df)
             all_years_delayed_dfs.append(delayed_df)
             all_years_cancelled_dfs.append(cancelled_df)
+            all_years_delayed_persons_dfs.append(delayed_persons_df)
+            all_years_cancelled_persons_dfs.append(cancelled_persons_df)
 
         def _concat_years(dfs):
             combined = pd.concat(dfs)
@@ -278,6 +336,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         total_all = _concat_years(all_years_total_dfs) * SCALING_FACTOR
         delayed_all = _concat_years(all_years_delayed_dfs) * SCALING_FACTOR
         cancelled_all = _concat_years(all_years_cancelled_dfs) * SCALING_FACTOR
+
+        # Disrupted persons: sum across years then store per-run columns.
+        # Delayed + cancelled are summed (slight overcount if same person appears
+        # in both logs in the same year).
+        delayed_persons_all = _concat_years(all_years_delayed_persons_dfs)
+        cancelled_persons_all = _concat_years(all_years_cancelled_persons_dfs)
+        disrupted_persons_all = delayed_persons_all.add(cancelled_persons_all, fill_value=0)
+        disrupted_persons_all = disrupted_persons_all * SCALING_FACTOR
+        all_draws_disrupted_persons_by_district[draw] = disrupted_persons_all
 
         tlo_facilities.update(_parse_facility(total_all.index).dropna())
 
@@ -291,8 +358,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         delayed_2 = _collapse_hsi_types(delayed_all)
         cancelled_2 = _collapse_hsi_types(cancelled_all)
 
-        delayed_rate_2 = _align_and_rate(total_2, delayed_2)
-        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2)
+        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
+        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
 
         dm, dl, du = _monthly_stats(delayed_rate_2)
         cm, cl, cu = _monthly_stats(cancelled_rate_2)
@@ -313,9 +380,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         all_draws_annual_cancelled_upper.append(cau)
 
         # HSI-type stats use full three-component index
-        delayed_rate_3 = _align_and_rate(total_all, delayed_all)
-        cancelled_rate_3 = _align_and_rate(total_all, cancelled_all)
-
+        delayed_rate_3 = _align_and_rate(total_all, delayed_all, delayed_all, cancelled_all)
+        cancelled_rate_3 = _align_and_rate(total_all, cancelled_all, delayed_all, cancelled_all)
         hd_m, hd_l, hd_u, hd_tot = _hsi_type_stats(delayed_rate_3, total_all)
         hc_m, hc_l, hc_u, _ = _hsi_type_stats(cancelled_rate_3, total_all)
         all_draws_hsi_delayed_mean.append(hd_m)
@@ -553,7 +619,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if hd_m.empty and hc_m.empty:
             continue
 
-        # Rank by total disruption rate for THIS draw only
         draw_total_rate = (hd_m + hc_m).copy()
         draw_total_rate = draw_total_rate[draw_total_rate.index.astype(str) != "nan"]
         draw_total_rate = draw_total_rate[draw_total_rate > 0].sort_values(ascending=False)
@@ -599,7 +664,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if hd_m.empty and hc_m.empty:
             continue
 
-        # Rank by CANCELLED rate for THIS draw only
         draw_cancelled_rate = hc_m.copy()
         draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate.index.astype(str) != "nan"]
         draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate > 0].sort_values(ascending=False)
@@ -625,7 +689,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  CSV OUTPUTS — monthly / annual / HSI type
-    #  All rate columns now include _mean / _lower / _upper (95% CI across runs)
     # ─────────────────────────────────────────────────────────────────────────────
 
     monthly_rows = []
@@ -715,8 +778,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  MAIN TEXT SUMMARY CSV
-    #  Per scenario: counts and rates with mean + 95% CI (2.5th–97.5th percentile
-    #  across runs for counts; mean-of-lower / mean-of-upper for monthly rates).
     # ─────────────────────────────────────────────────────────────────────────────
 
     summary_rows = []
@@ -724,8 +785,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         scen = scenario_names[draw]
 
         if scen == "No disruptions":
-            # Total HSI counts are now extracted for this draw —
-            # disrupted/cancelled/delayed are genuinely zero by definition.
             _nd_total_2 = _collapse_hsi_types(all_draws_total_df[draw])
             _nd_per_run_total = _nd_total_2.sum(axis=0)
             summary_rows.append({
@@ -764,8 +823,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             })
             continue
 
-        # ── absolute counts ───────────────────────────────────────────────────
-        # Counts already scaled (SCALING_FACTOR applied at extraction above).
         total_2 = _collapse_hsi_types(all_draws_total_df[draw])
         delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
         cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
@@ -773,20 +830,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         delayed_2_r = delayed_2.reindex(total_2.index, fill_value=0)
         cancelled_2_r = cancelled_2.reindex(total_2.index, fill_value=0)
 
-        # Per-run sums (one value per run/column)
         per_run_total = total_2.sum(axis=0)
         per_run_delayed = delayed_2_r.sum(axis=0)
         per_run_cancelled = cancelled_2_r.sum(axis=0)
         per_run_disrupted = per_run_delayed + per_run_cancelled
 
-        # Per-run percentages of total HSIs (correct denominator-paired rates)
-        per_run_pct_disrupted = per_run_disrupted / per_run_total * 100
-        per_run_pct_cancelled = per_run_cancelled / per_run_total * 100
-        per_run_pct_delayed = per_run_delayed / per_run_total * 100
+        per_run_total_denom = per_run_total + per_run_delayed + per_run_cancelled
+        per_run_pct_disrupted = per_run_disrupted / per_run_total_denom * 100
+        per_run_pct_cancelled = per_run_cancelled / per_run_total_denom * 100
+        per_run_pct_delayed = per_run_delayed / per_run_total_denom * 100
 
-        # ── annual disruption rate distribution ───────────────────────────────
-        # Use annual stats (already computed) for the "in some years" figure —
-        # these are per-facility-per-year rates averaged across facilities.
         d_m_ann = all_draws_annual_delayed_mean[idx]
         d_lo_ann = all_draws_annual_delayed_lower[idx]
         d_hi_ann = all_draws_annual_delayed_upper[idx]
@@ -798,7 +851,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         annual_rate_lower = (d_lo_ann + c_lo_ann.reindex(d_lo_ann.index, fill_value=0)) * 100
         annual_rate_upper = (d_hi_ann + c_hi_ann.reindex(d_hi_ann.index, fill_value=0)) * 100
 
-        # ── monthly disruption rate distribution ──────────────────────────────
         d_m_mo = all_draws_monthly_delayed_mean[idx]
         d_lo_mo = all_draws_monthly_delayed_lower[idx]
         d_hi_mo = all_draws_monthly_delayed_upper[idx]
@@ -812,11 +864,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
         summary_rows.append({
             "Scenario": scen,
-            # ── total HSI count ────────────────────────────────────────────
             "total_hsi_count_mean": round(per_run_total.mean(), 1),
             "total_hsi_count_lower": round(per_run_total.quantile(CI_LOWER), 1),
             "total_hsi_count_upper": round(per_run_total.quantile(CI_UPPER), 1),
-            # ── disrupted/cancelled/delayed counts ─────────────────────────
             "total_hsi_disrupted_mean": round(per_run_disrupted.mean(), 1),
             "total_hsi_disrupted_lower": round(per_run_disrupted.quantile(CI_LOWER), 1),
             "total_hsi_disrupted_upper": round(per_run_disrupted.quantile(CI_UPPER), 1),
@@ -826,7 +876,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             "total_hsi_delayed_mean": round(per_run_delayed.mean(), 1),
             "total_hsi_delayed_lower": round(per_run_delayed.quantile(CI_LOWER), 1),
             "total_hsi_delayed_upper": round(per_run_delayed.quantile(CI_UPPER), 1),
-            # ── % of all HSIs (disrupted / total, paired per run) ──────────
             "pct_disrupted_mean": round(per_run_pct_disrupted.mean(), 4),
             "pct_disrupted_lower": round(per_run_pct_disrupted.quantile(CI_LOWER), 4),
             "pct_disrupted_upper": round(per_run_pct_disrupted.quantile(CI_UPPER), 4),
@@ -836,12 +885,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             "pct_delayed_mean": round(per_run_pct_delayed.mean(), 4),
             "pct_delayed_lower": round(per_run_pct_delayed.quantile(CI_LOWER), 4),
             "pct_delayed_upper": round(per_run_pct_delayed.quantile(CI_UPPER), 4),
-            # ── annual per-facility rate (use for "in some years X%" figure) ─
             "annual_disruption_rate_mean_%": round(annual_rate_mean.mean(), 4),
             "annual_disruption_rate_lower_%": round(annual_rate_lower.mean(), 4),
             "annual_disruption_rate_upper_%": round(annual_rate_upper.mean(), 4),
             "annual_disruption_rate_max_%": round(annual_rate_mean.max(), 4),
-            # ── monthly per-facility rate ───────────────────────────────────
             "monthly_disruption_rate_mean_%": round(monthly_rate_mean.mean(), 4),
             "monthly_disruption_rate_lower_%": round(monthly_rate_lower.mean(), 4),
             "monthly_disruption_rate_upper_%": round(monthly_rate_upper.mean(), 4),
@@ -852,6 +899,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     pd.DataFrame(summary_rows).to_csv(
         output_folder / f"main_text_summary_{suffix}.csv", index=False
+    )
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  DISRUPTED PERSONS BY DISTRICT CSV
+    #  Approximation: person assumed to reside in district of attended facility.
+    #  Delayed + cancelled are summed (slight overcount if same person appears in
+    #  both logs in the same year). Values scaled by SCALING_FACTOR.
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    persons_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        dp = all_draws_disrupted_persons_by_district.get(draw)
+        if dp is None or (hasattr(dp, "empty") and dp.empty):
+            continue
+        mean_by_district = dp.mean(axis=1)
+        lower_by_district = dp.quantile(CI_LOWER, axis=1)
+        upper_by_district = dp.quantile(CI_UPPER, axis=1)
+        for district in mean_by_district.index:
+            persons_rows.append({
+                "Scenario": scen,
+                "district": district,
+                "disrupted_persons_mean": round(mean_by_district[district], 1),
+                "disrupted_persons_lower": round(lower_by_district[district], 1),
+                "disrupted_persons_upper": round(upper_by_district[district], 1),
+            })
+    pd.DataFrame(persons_rows).to_csv(
+        output_folder / f"disrupted_persons_by_district_{suffix}.csv", index=False
     )
 
     # ─────────────────────────────────────────────────────────────────────────────
@@ -877,8 +952,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
         cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
 
-        delayed_rate_2 = _align_and_rate(total_2, delayed_2)
-        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2)
+        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
+        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
         total_rate_2 = delayed_rate_2.add(
             cancelled_rate_2.reindex(delayed_rate_2.index, fill_value=0), fill_value=0
         ).clip(upper=1.0)
@@ -914,11 +989,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  FACILITY-LEVEL SUMMARY CSV
-    #  Per scenario:
-    #    1) Average disruption rate across facilities (mean + 95% CI across runs)
-    #       — unweighted mean of each facility's mean monthly disruption rate
-    #    2) Maximum single-facility single-month disruption rate (mean + 95% CI
-    #       across runs) — the most extreme event seen at any facility in any month
     # ─────────────────────────────────────────────────────────────────────────────
 
     facility_summary_rows = []
@@ -929,34 +999,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
         cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
 
-        delayed_rate_2 = _align_and_rate(total_2, delayed_2)
-        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2)
+        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
+        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
         total_rate_2 = delayed_rate_2.add(
             cancelled_rate_2.reindex(delayed_rate_2.index, fill_value=0), fill_value=0
         ).clip(upper=1.0)
 
-        # ── 1) Average disruption across facilities ───────────────────────────
-        # Collapse to per-facility mean (average over all months per facility),
-        # giving a DataFrame of shape (n_facilities x n_runs).
-        # Then take the unweighted mean across facilities per run.
         fac = _parse_facility(total_rate_2.index)
-        per_fac_rate = total_rate_2.groupby(fac).mean()  # n_fac x n_runs
-        mean_across_fac_per_run = per_fac_rate.mean(axis=0)  # n_runs
+        per_fac_rate = total_rate_2.groupby(fac).mean()
+        mean_across_fac_per_run = per_fac_rate.mean(axis=0)
 
         avg_fac_mean = mean_across_fac_per_run.mean()
         avg_fac_lower = mean_across_fac_per_run.quantile(CI_LOWER)
         avg_fac_upper = mean_across_fac_per_run.quantile(CI_UPPER)
 
-        # ── 2) Max single-facility single-month disruption rate ───────────────
-        # For each run, find the maximum rate across ALL facility-month rows.
-        # CI reflects run-to-run variation in that extreme value.
-        max_monthly_per_run = total_rate_2.max(axis=0)  # n_runs
-
+        max_monthly_per_run = total_rate_2.max(axis=0)
         max_monthly_mean = max_monthly_per_run.mean()
         max_monthly_lower = max_monthly_per_run.quantile(CI_LOWER)
         max_monthly_upper = max_monthly_per_run.quantile(CI_UPPER)
 
-        # Which facility-month hits the max most often?
         if scen != "No disruptions":
             most_common_max_fac = total_rate_2.idxmax(axis=0).value_counts().index[0]
         else:
@@ -977,11 +1038,93 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         output_folder / f"facility_level_disruption_summary_{suffix}.csv", index=False
     )
 
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  MAP: Per-district HSI disruption rate — Baseline and Worst Case (×4)
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    malawi_admin2 = gpd.read_file(
+        resourcefilepath / "mapping"
+        / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
+    )
+    for old, new in [
+        ("Blantyre City", "Blantyre"), ("Mzuzu City", "Mzuzu"),
+        ("Lilongwe City", "Lilongwe"), ("Zomba City", "Zomba"),
+    ]:
+        malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace(old, new)
+
+    district_rates = {}
+
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        if scen == "No disruptions":
+            continue
+
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
+
+        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
+        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
+        total_rate_2 = delayed_rate_2.add(
+            cancelled_rate_2.reindex(delayed_rate_2.index, fill_value=0), fill_value=0
+        ).clip(upper=1.0)
+
+        fac = _parse_facility(total_rate_2.index)
+        district = fac.map(fac_to_district)
+
+        rate_mean = total_rate_2.mean(axis=1)
+        volume = total_2.mean(axis=1)
+
+        df_tmp = pd.DataFrame({
+            "district": district.values,
+            "rate": rate_mean.values,
+            "volume": volume.values,
+        }).dropna(subset=["district"])
+
+        def _weighted_mean(g):
+            return (g["rate"] * g["volume"]).sum() / g["volume"].sum() \
+                if g["volume"].sum() > 0 else 0
+
+        district_rates[scen] = df_tmp.groupby("district").apply(_weighted_mean)
+
+    district_rates_df = pd.DataFrame(district_rates) * 100  # convert to %
+
+    panels = [
+        ("Baseline", district_rates_df["Baseline"], "Baseline"),
+        ("Worst Case", district_rates_df["Worst Case"] * 4, "Worst Case"),
+    ]
+
+    fig, axes = plt.subplots(1, 2, figsize=(20, 18))
+
+    for ax, (scen_key, rates, title) in zip(axes, panels):
+        malawi_admin2["disruption_rate"] = malawi_admin2["ADM2_EN"].map(rates)
+        malawi_admin2.plot(
+            column="disruption_rate", ax=ax, legend=True,
+            cmap="Oranges", edgecolor="black", vmin=0, vmax=4.0,
+            legend_kwds={"label": "% HSIs disrupted", "shrink": 0.8},
+            missing_kwds={"color": "lightgrey", "label": "No data"},
+        )
+        cbar = ax.get_figure().axes[-1]
+        cbar.set_ylabel("% HSIs disrupted", fontsize=18, fontweight="bold")
+        cbar.tick_params(labelsize=16)
+        ax.set_title(title, fontsize=24, fontweight="bold")
+        ax.axis("off")
+
+    fig.suptitle(
+        f"HSI-volume-weighted disruption rate by district ({min_year}–{max_year - 1})",
+        fontsize=25, fontweight="bold",
+    )
+    fig.tight_layout(rect=[0, 0, 1, 0.98])
+    fig.savefig(output_folder / f"map_hsi_disruption_rate_by_district_{suffix}.png",
+                dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    district_rates_df.to_csv(
+        output_folder / f"district_hsi_disruption_percentage_{suffix}.csv"
+    )
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  PLOT D: COMBINED FIGURE — 2x2
-    #  (A) Baseline   most disrupted   (B) Worst Case most disrupted
-    #  (C) Baseline   most cancelled   (D) Worst Case most cancelled
     # ─────────────────────────────────────────────────────────────────────────────
 
     non_zero_draws = [
@@ -1004,7 +1147,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         hc_l = all_draws_hsi_cancelled_lower[idx]
         hc_u = all_draws_hsi_cancelled_upper[idx]
 
-        # ── Row 0: most disrupted (delayed + cancelled) ───────────────────────
         draw_total_rate = (hd_m + hc_m).copy()
         draw_total_rate = draw_total_rate[draw_total_rate.index.astype(str) != "nan"]
         draw_total_rate = draw_total_rate[draw_total_rate > 0].sort_values(ascending=False)
@@ -1017,7 +1159,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         ax_top.set_title(f"({label}) {scenario_names[draw]} — most disrupted",
                          fontsize=13, fontweight="bold")
 
-        # ── Row 1: most cancelled ─────────────────────────────────────────────
         draw_cancelled_rate = hc_m.copy()
         draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate.index.astype(str) != "nan"]
         draw_cancelled_rate = draw_cancelled_rate[draw_cancelled_rate > 0].sort_values(ascending=False)
@@ -1072,7 +1213,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         scen = scenario_names[draw]
         if scen == "No disruptions":
             continue
-        # Counts already scaled (SCALING_FACTOR applied at extraction above)
         total_2 = _collapse_hsi_types(all_draws_total_df[draw])
         delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
         cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
@@ -1083,7 +1223,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         per_run_cancelled = cancelled_2_r.sum(axis=0)
         per_run_disrupted = per_run_delayed + per_run_cancelled
 
-        # Raw per-run rows
         df = pd.DataFrame({
             "scenario": scen,
             "run": delayed_2_r.columns,
@@ -1092,7 +1231,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             "total_disrupted": per_run_disrupted.values,
         })
 
-        # Summary rows appended at the bottom (mean + 95% CI)
         ci_lo_label = f"summary_lower_{int(CI_LOWER * 1000)}permil"
         ci_hi_label = f"summary_upper_{int(CI_UPPER * 1000)}permil"
         summary_rows_pr = pd.DataFrame([
