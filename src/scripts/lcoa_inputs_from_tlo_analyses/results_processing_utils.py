@@ -1,6 +1,5 @@
 """Utilities for extracting and processing results for treatment-id analyses."""
 
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,9 +9,6 @@ from scripts.lcoa_inputs_from_tlo_analyses.scenario_effect_of_treatment_ids impo
 )
 from tlo import Date
 from tlo.analysis.utils import make_age_grp_types, summarize, to_age_group
-
-
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
 
 def find_difference_relative_to_comparison(_ser: pd.Series,
                                            comparison: str,
@@ -30,7 +26,7 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
 
 def get_total_population_by_year(
     _df: pd.DataFrame,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ) -> pd.Series:
     years_needed = [i.year for i in target_period_tuple]
     _df["year"] = pd.to_datetime(_df["date"]).dt.year
@@ -43,14 +39,14 @@ def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
     return pd.Series({"Total": len(df)})
 
 
-def target_period(target_period_tuple: tuple[Date, Date] = TARGET_PERIOD) -> str:
+def target_period(target_period_tuple: tuple[Date, Date]) -> str:
     """Returns the target period as a string of the form YYYY-YYYY."""
     return "-".join(str(t.year) for t in target_period_tuple)
 
 
 def get_periods_within_target_period(
     period_length_years: int,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ) -> list[tuple[str, tuple[int, int]]]:
     """Return chunks within target period as [(label, (start_year, end_year)), ...]."""
     if period_length_years <= 0:
@@ -63,7 +59,7 @@ def get_periods_within_target_period(
     return periods
 
 
-def get_parameter_names_from_scenario_file() -> Tuple[str]:
+def get_parameter_names_from_scenario_file() -> tuple[str]:
     """Get tuple of scenario names from Scenario class used to create results."""
     e = EffectOfEachTreatment()
     excluded = {"Only Hiv_Test_Selftest_*"}
@@ -147,12 +143,12 @@ def find_mean_difference_extra_relative_to_comparison_dataframe(
     )
 
 
-def get_num_deaths_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date] = TARGET_PERIOD) -> pd.Series:
+def get_num_deaths_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date]) -> pd.Series:
     """Return total deaths by label within target period."""
     return _df.loc[pd.to_datetime(_df.date).between(*target_period_tuple)].groupby(_df["label"]).size()
 
 
-def get_num_dalys_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date] = TARGET_PERIOD) -> pd.Series:
+def get_num_dalys_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date]) -> pd.Series:
     """Return total DALYS by label within target period."""
     return (
         _df.loc[_df.year.between(*[i.year for i in target_period_tuple])]
@@ -163,7 +159,7 @@ def get_num_dalys_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[D
 
 def make_get_num_deaths_by_cause_label_and_period(
     period_length_years: int,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date]
 ):
     """Create helper that summarizes deaths by cause and period chunks + overall."""
     periods = get_periods_within_target_period(
@@ -194,7 +190,7 @@ def make_get_num_deaths_by_cause_label_and_period(
 
 def make_get_num_dalys_by_cause_label_and_period(
     period_length_years: int,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date]
 ):
     """Create helper that summarizes DALYS by cause and period chunks + overall."""
     periods = get_periods_within_target_period(
@@ -230,7 +226,7 @@ def make_get_num_dalys_by_cause_label_and_period(
 def get_num_deaths_by_age_group(
     _df: pd.DataFrame,
     age_grp_lookup: dict,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ):
     """Return total deaths by age-group in target period."""
     return (
@@ -242,7 +238,7 @@ def get_num_deaths_by_age_group(
 
 def get_total_num_death_by_agegrp_and_label(
     _df: pd.DataFrame,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ) -> pd.Series:
     """Return deaths in target period by age-group and cause label."""
     _df_limited_to_dates = _df.loc[_df["date"].between(*target_period_tuple)]
@@ -252,7 +248,7 @@ def get_total_num_death_by_agegrp_and_label(
 
 def get_total_num_dalys_by_agegrp_and_label(
     _df: pd.DataFrame,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ) -> pd.Series:
     """Return DALYS in target period by age-group and cause label."""
     return (
@@ -267,7 +263,7 @@ def get_total_num_dalys_by_agegrp_and_label(
 
 def get_counts_of_hsi_by_short_treatment_id(
     _df: pd.DataFrame,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ) -> pd.Series:
     """Get counts of short treatment ids occurring in target period."""
     mask = pd.to_datetime(_df["date"]).between(*target_period_tuple)
@@ -275,7 +271,7 @@ def get_counts_of_hsi_by_short_treatment_id(
     return _counts_by_treatment_id
 
 
-def get_counts_of_appts(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date] = TARGET_PERIOD) -> pd.Series:
+def get_counts_of_appts(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date]) -> pd.Series:
     """Get counts of appointments of each type being used in target period."""
     return (
         _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple), "Number_By_Appt_Type_Code"]
@@ -287,7 +283,7 @@ def get_counts_of_appts(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date
 
 def make_get_counts_of_appts_by_period(
     period_length_years: int,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ):
     """Create helper that summarizes appointment counts by period chunks + overall."""
     periods = get_periods_within_target_period(
@@ -322,7 +318,7 @@ def make_get_counts_of_appts_by_period(
 
 def make_get_counts_of_hsis_by_period(
     period_length_years: int,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    target_period_tuple: tuple[Date, Date],
 ):
     """Create helper that summarizes appointment counts by period chunks + overall."""
     periods = get_periods_within_target_period(

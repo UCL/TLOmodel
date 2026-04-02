@@ -59,7 +59,8 @@ from tlo.analysis.utils import (
 )
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
+
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
 results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
@@ -81,8 +82,8 @@ def parse_iso_date(value: str) -> Date:
 def apply(
     results_folder: Path,
     output_folder: Path,
-    resourcefilepath: Path = None,
-    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+    resourcefilepath: Path,
+    target_period_tuple: tuple[Date, Date]
 ):
     """Produce standard plots describing effect of each TREATMENT_ID."""
     _, age_grp_lookup = make_age_grp_lookup()
@@ -230,15 +231,12 @@ if __name__ == "__main__":
     if (args.target_start is None) != (args.target_end is None):
         parser.error("Provide both --target-start and --target-end, or neither.")
 
-    if args.target_start is None:
-        target_period_tuple = TARGET_PERIOD
-    else:
-        target_period_tuple = (
-            parse_iso_date(args.target_start),
-            parse_iso_date(args.target_end),
-        )
-        if not target_period_tuple[0] < target_period_tuple[1]:
-            parser.error("--target-start must be earlier than --target-end.")
+    target_period_tuple = (
+        parse_iso_date(args.target_start),
+        parse_iso_date(args.target_end),
+    )
+    if not target_period_tuple[0] < target_period_tuple[1]:
+        parser.error("--target-start must be earlier than --target-end.")
 
     out = args.output_folder if args.output_folder is not None else args.results_folder
     results = apply(

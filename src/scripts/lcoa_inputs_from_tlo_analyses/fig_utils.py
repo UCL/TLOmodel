@@ -187,6 +187,93 @@ def plot_deaths_by_period_for_cause(
     return fig, ax
 
 
+def plot_deaths_by_period_for_draw(
+    _df: pd.DataFrame,
+    draw: str,
+    plot_stat: str = "central",
+    _dfbaseline: pd.DataFrame = None,
+):
+    """Plot deaths over time for a single draw, with one line per cause label."""
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("_df index must be a 2-level MultiIndex with levels for label and period.")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+    if _dfbaseline is None:
+        raise ValueError("_dfbaseline is required.")
+    if not isinstance(_dfbaseline.index, pd.MultiIndex) or _dfbaseline.index.nlevels != 2:
+        raise ValueError("_dfbaseline index must be a 2-level MultiIndex with levels for label and period.")
+    if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
+        raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
+
+    label_level_name = "label" if "label" in _df.index.names else _df.index.names[0]
+    period_level_name = "period" if "period" in _df.index.names else _df.index.names[1]
+    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+    baseline_stat_level_name = "stat" if "stat" in _dfbaseline.columns.names else _dfbaseline.columns.names[1]
+    baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
+
+    available_draws = pd.Index(_df.columns.get_level_values(draw_level_name).unique())
+    if draw not in available_draws:
+        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws.tolist()}")
+    available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
+    if plot_stat not in available_stats:
+        raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
+    available_baseline_stats = pd.Index(_dfbaseline.columns.get_level_values(baseline_stat_level_name).unique())
+    if plot_stat not in available_baseline_stats:
+        raise ValueError(
+            f"Statistic '{plot_stat}' not found in _dfbaseline. "
+            f"Available stats: {available_baseline_stats.tolist()}"
+        )
+    available_baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
+    if "Nothing" not in available_baseline_draws:
+        raise ValueError(
+            f"Draw 'Nothing' not found in _dfbaseline. Available draws: {available_baseline_draws.tolist()}"
+        )
+
+    _plot_baseline = _dfbaseline["Nothing"].loc[:, [plot_stat]]
+    _plot_implementation = _df[draw].loc[:, [plot_stat]]
+    _plot = pd.concat([_plot_baseline, _plot_implementation])
+    if _plot.empty:
+        raise ValueError(f"No plottable data remain for draw '{draw}' using stat '{plot_stat}'.")
+
+    periods = _plot.index.get_level_values(1).unique()
+    ordered_period_labels, display_period_labels = _get_sorted_period_labels_and_display_labels(periods)
+
+    fig_width = max(10, min(1.4 * len(_plot.index) + 4, 18))
+    fig, ax = plt.subplots(figsize=(fig_width, 6))
+    x = np.arange(len(periods))
+
+    for cause_label in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys():
+        print(f"************ {cause_label} *************")
+        ax.plot(
+            x,
+            _plot.xs(cause_label, level='label').to_numpy(),
+            marker="o",
+            linewidth=1.8,
+            markersize=4,
+            color=get_color_cause_of_death_or_daly_label(cause_label),
+            label=str(cause_label),
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(display_period_labels, rotation=45, ha="right")
+    ax.set_xlabel("Period")
+    ax.set_ylabel("Number of deaths")
+    ax.set_title(str(draw))
+    ax.grid(axis="y")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(
+        title="",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        title_fontsize=9,
+        frameon=True,
+    )
+    return fig, ax
+
+
 def do_bar_plot_with_ci(
     _df: pd.DataFrame,
     _param,

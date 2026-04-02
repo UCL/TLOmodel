@@ -18,6 +18,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     do_barh_plot_with_ci,
     do_bar_plot_with_ci,
     plot_deaths_by_period_for_cause,
+    plot_deaths_by_period_for_draw,
     plot_hsi_counts_by_period_for_draw,
     plot_population_by_year,
 )
@@ -50,9 +51,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     target_period_label = target_period(TARGET_PERIOD)
 
     all_results = load_results_files(results_files)
-    results = all_results[results_files[1]]
-
-    counts_of_hsi_in_implementation_period = all_results[results_files[1]]['counts_of_hsi_by_short_treatment_id']
 
     counts_of_hsi_in_baseline = all_results[results_files[0]]['counts_of_hsi_by_period']
     counts_of_hsi_in_baseline = counts_of_hsi_in_baseline.drop(['2010-2025'], level=1)
@@ -120,6 +118,20 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
     num_deaths_by_cause_label_baseline = all_results[results_files[0]]['num_deaths'].drop(['2010-2025'], level=1)
     num_deaths_by_cause_label_implementation = all_results[results_files[1]]['num_deaths'].drop(['2025-2041'], level=1)
+
+    for param in param_names:
+        draw = format_scenario_name(param)
+        fig, ax = plot_deaths_by_period_for_draw(
+            num_deaths_by_cause_label_implementation / 1e3,
+            draw,
+            _dfbaseline=num_deaths_by_cause_label_baseline / 1e3,
+        )
+        name_of_plot = f"Deaths Over Time by Cause for {draw}"
+        ax.set_title(name_of_plot)
+        ax.set_ylabel("Number of deaths (/1000)")
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
+        plt.close(fig)
 
     cause_labels = num_deaths_by_cause_label_implementation.index.get_level_values("label").unique()
     for cause_label in cause_labels:
