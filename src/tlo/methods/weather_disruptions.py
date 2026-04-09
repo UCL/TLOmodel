@@ -208,7 +208,9 @@ class WeatherDisruptions(Module):
         if self.arg_prop_supply_side is not None:
             self.parameters["prop_supply_side_disruptions"] = self.arg_prop_supply_side
 
-        if self.parameters["year_effective_climate_disruptions"] < 2025:
+        year_param = self.parameters.get("year_effective_climate_disruptions")
+
+        if year_param is None or pd.isna(year_param) or year_param < 2025:
             self.parameters["year_effective_climate_disruptions"] = 2025
 
         ssp = self.parameters["climate_ssp"]
