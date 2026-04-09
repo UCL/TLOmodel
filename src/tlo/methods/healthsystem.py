@@ -1887,7 +1887,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             event = hp.heappop(self.module.HSI_EVENT_QUEUE)
 
             if self.sim.date > event.tclose:
-                self.module.call_and_record_never_ran_hsi_event(hsi_event=event.hsi_event, priority=event.priority)
+                self.module.call_and_record_never_ran_hsi_event(hsi_event=event.hsi_event, priority=event.priority,
+                                                                clinic=event.clinic_eligibility,
+                                                                )
 
             elif not is_alive[event.hsi_event.target]:
                 continue
@@ -1910,7 +1912,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = list()
             for item in list_of_individual_hsi_event_tuples_due_today:
-                # Check for climate disruption
                 climate_disrupted = False
                 if 'WeatherDisruptions' in self.sim.modules:
                     climate_disrupted, _ = self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
@@ -1918,18 +1919,25 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         current_date=self.sim.date
                     )
 
-                # If not climate disrupted, check equipment
-                if not climate_disrupted:
-                    equipment_available = True
-                    if not item.hsi_event.is_all_declared_equipment_available:
-                        self.module.call_and_record_never_ran_hsi_event(
-                            hsi_event=item.hsi_event, priority=item.priority
-                        )
-                        equipment_available = False
+                if climate_disrupted:
+                    self.module.call_and_record_never_ran_hsi_event(
+                        hsi_event=item.hsi_event,
+                        priority=item.priority,
+                        clinic=item.clinic_eligibility,
+                    )
+                    continue
 
-                    if equipment_available:
-                        list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
+                if not item.hsi_event.is_all_declared_equipment_available:
+                    self.module.call_and_record_never_ran_hsi_event(
+                        hsi_event=item.hsi_event,
+                        priority=item.priority,
+                        clinic=item.clinic_eligibility,
+                    )
+                    continue
 
+                list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
+
+            # Don't forget to actually run the events and collect holdovers
             _to_be_held_over = self.module.run_individual_level_events_in_mode_1(
                 list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
             )
@@ -1959,7 +1967,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 capabilities_still_available = set_capabilities_still_available[event_clinic]
 
                 if self.sim.date > next_event_tuple.tclose:
-                    self.module.call_and_record_never_ran_hsi_event(hsi_event=event, priority=next_event_tuple.priority)
+                    self.module.call_and_record_never_ran_hsi_event(hsi_event=event, priority=next_event_tuple.priority,
+                                                                    clinic=event_clinic, )
 
                 elif event.target not in alive_persons:
                     pass
@@ -1991,6 +2000,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 for officer in footprint:
                                     if capabilities_monitor[event_clinic][officer] <= 0:
                                         capabilities_still_available.discard(officer)
+
+                            self.module.call_and_record_never_ran_hsi_event(  # added
+                                hsi_event=event,
+                                priority=_priority,
+                                clinic=event_clinic,
+                            )
                             continue
 
                     # Not climate disrupted: check resources and run event.
