@@ -517,10 +517,10 @@ class Demography(Module):
         }
 
         # Worldpop-weighted coordinate assignment.
-        # FIX: derive run_seed from the module RNG (not secrets/time) so results are
-        # reproducible across runs that share the same random seed.
+        _rng_state = self.rng.get_state()
         run_seed = self.rng.randint(0, 2 ** 31 - 1).to_bytes(4, "big")
-        # FIX: sort districts so iteration order is deterministic regardless of PYTHONHASHSEED.
+        self.rng.set_state(_rng_state)
+
         unique_districts = sorted(df["district_of_residence"].unique())
 
         district_to_coords = {}
