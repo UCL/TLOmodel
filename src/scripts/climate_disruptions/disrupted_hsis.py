@@ -47,15 +47,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     CI_LOWER = 0.025  # 95% CI
     CI_UPPER = 0.975
-
+    mode_2 = True
     if parameter_uncertainty_analysis:
         scenario_names = list(range(0, 50))
         scenarios_of_interest = scenario_names
-        suffix = "parameter_UA"
+        if mode_2:
+            suffix = "parameter_UA_mode_2"
+        else:
+            suffix = "parameter_UA_mode_1"
     if main_text:
-        scenario_names = ["No disruptions", "Baseline", "Worst Case"]
+        scenario_names = ["No disruptions", "Default", "Worst Case"]
         scenarios_of_interest = [0, 1, 2]
-        suffix = "main_text"
+        if mode_2:
+            suffix = "main_text_mode_2"
+        else:
+            suffix = "main_text_mode_1"
+
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  FACILITY → DISTRICT MAPPING  (loaded once, used in extraction and maps)
@@ -1039,7 +1046,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     )
 
     # ─────────────────────────────────────────────────────────────────────────────
-    #  MAP: Per-district HSI disruption rate — Baseline and Worst Case (×4)
+    #  MAP: Per-district HSI disruption rate — Default and Worst Case (×4)
     # ─────────────────────────────────────────────────────────────────────────────
 
     malawi_admin2 = gpd.read_file(
@@ -1073,7 +1080,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         district = fac.map(fac_to_district)
 
         rate_mean = total_rate_2.mean(axis=1)
-        volume = total_2.mean(axis=1)
+        volume = total_2.reindex(total_rate_2.index, fill_value=0).mean(axis=1)
 
         df_tmp = pd.DataFrame({
             "district": district.values,
@@ -1090,7 +1097,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     district_rates_df = pd.DataFrame(district_rates) * 100  # convert to %
 
     panels = [
-        ("Baseline", district_rates_df["Baseline"], "Baseline"),
+        ("Default", district_rates_df["Default"], "Default"),
         ("Worst Case", district_rates_df["Worst Case"] * 4, "Worst Case"),
     ]
 
