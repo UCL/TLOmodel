@@ -388,6 +388,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "number of repeat visits assumed for healthcare services",
         ),
+        "hiv_healthseekingbehaviour_cap_postSwitch": Parameter(
+            Types.INT,
+            "number of repeat visits assumed for healthcare services after switch",
+        ),
+        "change_persistence_cap_year": Parameter(
+            Types.INT,
+            "number of repeat visits assumed for healthcare services after switch",
+        ),
         "dispensation_period_months": Parameter(
             Types.REAL,
             "length of prescription for ARVs in months, same for all PLHIV",
@@ -918,6 +926,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
+            
+        # Schedule changes in persistence
+        sim.schedule_event(ChangePersistenceCap(self), Date(self.parameters["change_persistence_cap_year"], 1, 1))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -3567,3 +3578,17 @@ class DummyHivModule(Module):
 
         if df.at[child, "hv_inf"]:
             df.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
+
+class ChangePersistenceCap(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change the priority policy adopted by the
+    HealthSystem at a given year.    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        # Change mode_appt_constraints
+        
+        self.module.parameters["hiv_healthseekingbehaviour_cap"] = self.module.parameters["hiv_healthseekingbehaviour_cap_postSwitch"]
+
