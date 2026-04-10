@@ -9,7 +9,7 @@ baseline_params = {
         "climate_ssp": "ssp245",
         "climate_model_ensemble_model": "mean",
         "year_effective_climate_disruptions": 2025,
-        "services_affected_precip": "none",
+        "services_affected_precip": "all",
         "delay_in_seeking_care_weather": 28.0,
         "scale_factor_reseeking_healthcare_post_disruption": 1.0,
         "scale_factor_prob_disruption": 1.0,
