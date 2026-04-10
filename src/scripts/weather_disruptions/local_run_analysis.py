@@ -38,7 +38,7 @@ log_config = {
 }
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2030, 1, 1)
 pop_size = 5_000
 
 resourcefilepath = Path("./resources")
@@ -60,7 +60,7 @@ sim.register(
             "WeatherDisruptions": {
                 "climate_ssp": "ssp245",
                 "climate_model_ensemble_model": "mean",
-                "year_effective_climate_disruptions": 2010,
+                "year_effective_climate_disruptions": 2025,
                 "services_affected_precip": "all",
                 "scale_factor_prob_disruption": 10.0,
                 "delay_in_seeking_care_weather": 28.0,
