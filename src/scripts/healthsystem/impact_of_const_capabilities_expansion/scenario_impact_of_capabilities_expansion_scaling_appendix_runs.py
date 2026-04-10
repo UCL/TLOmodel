@@ -87,7 +87,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "no_scaling",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.min_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.min_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -100,7 +101,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "no_scaling",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.max_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.max_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -116,7 +118,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "all",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.min_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.min_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -131,7 +134,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "all",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.max_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.max_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -147,7 +151,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "scenario13",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.min_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.min_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                       
                     }
@@ -163,7 +168,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "scenario13",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.max_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.max_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                       
                     }
@@ -180,7 +186,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "scenario14",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.min_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.min_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -195,7 +202,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "scenario14",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.max_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.max_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -211,7 +219,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "scenario15",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.min_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.min_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
@@ -225,7 +234,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "cons_availability_postSwitch": "scenario15",
                       },
                      "Hiv": {
-                        "hiv_healthseekingbehaviour_cap": self.max_cap,
+                        "hiv_healthseekingbehaviour_cap_postSwitch": self.max_cap,
+                        "change_persistence_cap_year": self.YEAR_OF_CHANGE
                       }
                     }
                 ),
