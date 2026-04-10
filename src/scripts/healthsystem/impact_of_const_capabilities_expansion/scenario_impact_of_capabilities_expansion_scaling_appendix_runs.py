@@ -74,7 +74,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.YEAR_OF_CHANGE = 2025
 
         self.min_cap = 0
-        self.max_cap = 10000
+        self.max_cap = 100000
 
         return {
             
