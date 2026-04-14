@@ -20,6 +20,8 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     hpv,
+    hiv,
+    tb
 )
 
 results_folder = Path("./outputs")
@@ -74,6 +76,8 @@ sim.register(
     epi.Epi(),
     hpv.HPV(),
     measles.Measles(),
+    hiv.Hiv(),
+    tb.Tb(),
 )
 #
 # # set the scenario
@@ -98,6 +102,7 @@ with open(outputpath / "default_run.pickle", "rb") as f:
 
 #Show the results
 hpv_outputs = output["tlo.methods.hpv"]["summary"]
+print(hpv_outputs)
 # proportion_infected = extract_results(
 #     results_folder,
 #     module="tlo.methods.hpv",
