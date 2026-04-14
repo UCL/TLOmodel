@@ -344,14 +344,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     if len(map_draws) == 1:
         axes = [axes]
 
-    for ax, draw in zip(axes, map_draws):
+    panel_labels = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)"]
+
+    for i, (ax, draw) in enumerate(zip(axes, map_draws)):
         scen = scenario_names[draw]
         result = all_scenario_results[scen]
 
         malawi["pct"] = malawi["ADM2_EN"].map(result["mean"] * 100)
 
         malawi.plot(
-            column="pct", ax=ax, legend=True, cmap="YlOrRd",
+            column="pct", ax=ax, legend=True, cmap="Oranges",
             edgecolor="black", linewidth=0.5,
             vmin=0, vmax=vmax_pct,
             legend_kwds={
@@ -361,17 +363,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             missing_kwds={"color": "lightgrey", "label": "No data"},
         )
 
-        # for _, row in malawi.iterrows():
-        #     if pd.isna(row["pct"]):
-        #         continue
-        #     c  = row.geometry.centroid
-        #     lo = result["lower"].get(row["ADM2_EN"], np.nan) * 100
-        #     hi = result["upper"].get(row["ADM2_EN"], np.nan) * 100
-        #     ax.annotate(
-        #         f"{row['pct']:.2f}%\n[{lo:.2f}–{hi:.2f}]",
-        #         xy=(c.x, c.y), ha="center", va="center",
-        #         fontsize=5.5, color="black",
-        #     )
+        ax.text(-0.08, 1.02, panel_labels[i], transform=ax.transAxes,
+                fontsize=16, fontweight="bold", va="bottom")
 
         ax.get_figure().axes[-1].set_ylabel(
             "% population with ≥1 disruption/year",
