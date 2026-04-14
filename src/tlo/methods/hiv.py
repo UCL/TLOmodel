@@ -364,6 +364,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "Probability that a person who 'should' be on art will seek another appointment (the following "
             "day and try for each of the next 7 days) if drugs were not available.",
         ),
+        "probability_of_seeking_further_art_appointment_if_drug_not_available_postSwitch": Parameter(
+            Types.REAL,
+            "Probability that a person who 'should' be on art will seek another appointment (the following "
+            "day and try for each of the next 7 days) if drugs were not available after switch.",
+        ),
         "probability_of_seeking_further_art_appointment_if_appointment_not_available": Parameter(
             Types.REAL,
             "Probability that a person who 'should' be on art will seek another appointment if the health-"
@@ -392,9 +397,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "number of repeat visits assumed for healthcare services after switch",
         ),
-        "change_persistence_cap_year": Parameter(
+        "change_persistence_year": Parameter(
             Types.INT,
-            "number of repeat visits assumed for healthcare services after switch",
+            "Year in which assumptions around persistance in healthcare seeking will be modified",
         ),
         "dispensation_period_months": Parameter(
             Types.REAL,
@@ -928,7 +933,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
             
         # Schedule changes in persistence
-        sim.schedule_event(ChangePersistenceCap(self), Date(self.parameters["change_persistence_cap_year"], 1, 1))
+        sim.schedule_event(ChangePersistence(self), Date(self.parameters["change_persistence_year"], 1, 1))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -3579,7 +3584,7 @@ class DummyHivModule(Module):
         if df.at[child, "hv_inf"]:
             df.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
 
-class ChangePersistenceCap(RegularEvent, PopulationScopeEventMixin):
+class ChangePersistence(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change the priority policy adopted by the
     HealthSystem at a given year.    """
 
@@ -3591,4 +3596,5 @@ class ChangePersistenceCap(RegularEvent, PopulationScopeEventMixin):
         # Change mode_appt_constraints
         
         self.module.parameters["hiv_healthseekingbehaviour_cap"] = self.module.parameters["hiv_healthseekingbehaviour_cap_postSwitch"]
+        self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available_postSwitch"]
 
