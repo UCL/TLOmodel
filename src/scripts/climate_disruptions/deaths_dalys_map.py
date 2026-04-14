@@ -10,14 +10,14 @@ from tlo.analysis.utils import extract_results, summarize
 
 # Configuration
 MIN_YEAR = 2025
-MAX_YEAR = 2040
+MAX_YEAR = 2041
 SPACING_OF_YEARS = 1
 PREFIX_ON_FILENAME = "1"
 SCALING_FACTOR = 145.39
 VMIN = -15
 VMAX = 15
 
-SCENARIO_COLOURS = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
+SCENARIO_COLOURS = ["#ADB993", "#EDC7CF", "#6F8AB7"]
 
 DISTRICT_COLOURS = [
     "red", "blue", "green", "orange", "purple", "brown", "pink", "gray",
@@ -183,32 +183,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_upper_p1k = pd.DataFrame(all_scenarios_dalys_upper_p1k)
     df_dalys_lower_p1k = pd.DataFrame(all_scenarios_dalys_lower_p1k)
 
-    # 2. Bar chart: total DALYs by scenario with 95% CI error bars
-    dalys_means = df_dalys.mean(axis=0)
-    dalys_upper_agg = df_dalys_upper.mean(axis=0)
-    dalys_lower_agg = df_dalys_lower.mean(axis=0)
-    dalys_yerr = [dalys_means - dalys_lower_agg, dalys_upper_agg - dalys_means]
-
-    fig, ax = plt.subplots(figsize=(12, 10))
-    ax.bar(
-        range(len(dalys_means)), dalys_means,
-        yerr=dalys_yerr, capsize=5,
-        color=SCENARIO_COLOURS[: len(active_scenario_names)],
-        alpha=0.8, error_kw={"elinewidth": 2, "capthick": 2},
-    )
-    ax.set_title("DALYs by Scenario", fontsize=14, fontweight="bold")
-    ax.set_xlabel("Scenario")
-    ax.set_ylabel("DALYs")
-    ax.set_xticks(range(len(dalys_means)))
-    ax.set_xticklabels(dalys_means.index, rotation=45, ha="right")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.grid(False)
-    fig.tight_layout()
-    fig.savefig(output_folder / "dalys_total_all_scenarios.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
-
-    # 3. Stacked bar: district contribution to total DALYs per scenario
+    # -------------------------------------------------------------------------
+    # 2. Stacked bar: district contribution to total DALYs per scenario
+    # -------------------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(12, 8))
     df_dalys.T.plot(kind="bar", stacked=True, ax=ax)
     ax.set_xlabel("Scenario")
@@ -222,33 +199,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(output_folder / "stacked_dalys_by_district_scenario.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-    # 4 & 7. Combined publication figure: dot plot with 95% CI (left) + % difference maps (right)
-    malawi_admin2 = gpd.read_file(
-        "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/"
-        "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
-    )
-    water_bodies = gpd.read_file(
-        "/Users/rem76/Desktop/Climate_Change_Health/Data/"
-        "Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp"
-    )
-    for old, new in [
-        ("Blantyre City", "Blantyre"), ("Mzuzu City", "Mzuzu"),
-        ("Lilongwe City", "Lilongwe"), ("Zomba City", "Zomba"),
-    ]:
-        malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace(old, new)
-
-    non_baseline = SCENARIOS_OF_INTEREST[1:]
-    n_maps = len(non_baseline)
+    # -------------------------------------------------------------------------
+    # 3. Combined figure: (A) Dot plot with 95% CI  |  (B) Bar chart by scenario
+    # -------------------------------------------------------------------------
     district_order = df_dalys[active_scenario_names[0]].sort_values(ascending=True).index
     n_districts = len(district_order)
     n_scenarios = len(active_scenario_names)
 
-    # Dot plot takes ~half the width; maps share the other half
-    col_widths = [2.5] + [1.2] * n_maps
-    fig = plt.figure(figsize=(6 * (1 + n_maps) + 2, max(8, n_districts * 0.35)))
-    gs = fig.add_gridspec(1, 1 + n_maps, width_ratios=col_widths, wspace=0.08)
+    # Aggregate bar chart data
+    dalys_means = df_dalys.mean(axis=0)
+    dalys_upper_agg = df_dalys_upper.mean(axis=0)
+    dalys_lower_agg = df_dalys_lower.mean(axis=0)
+    dalys_yerr = [dalys_means - dalys_lower_agg, dalys_upper_agg - dalys_means]
 
-    # --- Left panel: dot plot ---
+    # Layout: col 0 = dot plot (A), col 1 = bar chart (B), cols 2+ = maps (C, D,...)
+    n_cols = 2
+    fig = plt.figure(figsize=(24, max(8, n_districts * 0.35)))
+    gs = fig.add_gridspec(1, n_cols, wspace=0.35)
+
+    # --- Panel A: Dot plot ---
     ax_dot = fig.add_subplot(gs[0, 0])
     offsets = [(i - (n_scenarios - 1) / 2) * 0.25 for i in range(n_scenarios)]
 
@@ -267,65 +236,51 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     ax_dot.set_yticks(range(n_districts))
-    ax_dot.set_yticklabels(district_order, fontsize=8)
-    ax_dot.set_xlabel(f"Total DALYs ({MIN_YEAR}–{MAX_YEAR - 1})", fontsize=11)
-    ax_dot.set_title("DALYs by District with 95% CI", fontsize=12, fontweight="bold")
+    ax_dot.set_yticklabels(district_order, fontsize=14)
+    ax_dot.set_xlabel(f"Total DALYs ({MIN_YEAR}–{MAX_YEAR - 1})", fontsize=16, fontweight="bold")
+    ax_dot.set_title("DALYs by District with 95% CI", fontsize=16, fontweight="bold")
+    ax_dot.tick_params(axis="x", labelsize=14)
     ax_dot.axvline(0, color="black", linewidth=0.8, linestyle="--")
     ax_dot.spines["top"].set_visible(False)
     ax_dot.spines["right"].set_visible(False)
     ax_dot.legend(
-        title="Scenario", bbox_to_anchor=(0, -0.08), loc="upper left",
-        fontsize=9, ncol=n_scenarios,
+        title="Scenario", loc="lower right",
+        fontsize=11, ncol=n_scenarios,
     )
     ax_dot.grid(axis="x", linestyle=":", linewidth=0.6, alpha=0.6)
-    ax_dot.text(-0.08, 1.02, "A", transform=ax_dot.transAxes,
-                fontsize=14, fontweight="bold", va="bottom")
+    ax_dot.text(-0.08, 1.02, "(A)", transform=ax_dot.transAxes,
+                fontsize=16, fontweight="bold", va="bottom")
 
-    # --- Right panels: % difference maps ---
-    map_letters = "BCDEFGHIJ"
-    for ax_idx, scenario in enumerate(non_baseline):
-        ax_map = fig.add_subplot(gs[0, 1 + ax_idx])
+    # --- Panel B: Bar chart ---
+    ax_bar = fig.add_subplot(gs[0, 1])
+    ax_bar.bar(
+        range(len(dalys_means)), dalys_means,
+        yerr=dalys_yerr, capsize=5,
+        color=SCENARIO_COLOURS[: len(active_scenario_names)],
+        alpha=0.8, error_kw={"elinewidth": 2, "capthick": 2},
+    )
+    ax_bar.set_title("DALYs by Scenario", fontsize=16, fontweight="bold")
+    ax_bar.set_xlabel("Scenario", size=16, labelpad=10, fontweight="bold")
+    ax_bar.set_ylabel("DALYs", size=16, labelpad=10, fontweight="bold")
+    ax_bar.set_xticks(range(len(dalys_means)))
+    ax_bar.set_xticklabels(dalys_means.index, rotation=45, ha="right", fontsize=14)
+    ax_bar.tick_params(axis="both", which="major", labelsize=14)
+    ax_bar.spines["top"].set_visible(False)
+    ax_bar.spines["right"].set_visible(False)
+    ax_bar.grid(False)
+    ax_bar.text(-0.12, 1.02, "(B)", transform=ax_bar.transAxes,
+                fontsize=16, fontweight="bold", va="bottom")
 
-        pct_diff = (
-                       (df_dalys_p1k.iloc[:, scenario] - df_dalys_p1k.iloc[:, 0])
-                       / df_dalys_p1k.iloc[:, 0]
-                   ) * 100
-        malawi_admin2["DALY_Rate"] = malawi_admin2["ADM2_EN"].map(pct_diff)
-
-        malawi_admin2.plot(
-            column="DALY_Rate", ax=ax_map,
-            legend=True,
-            legend_kwds={
-                "label": "% difference in DALYs",
-                "orientation": "horizontal",
-                "shrink": 0.7,
-                "pad": 0.02,
-            },
-            cmap="PiYG", edgecolor="black", linewidth=0.4,
-            vmin=VMIN, vmax=VMAX,
-        )
-        water_bodies.plot(
-            ax=ax_map, facecolor="#7BDFF2", alpha=0.6,
-            edgecolor="#999999", linewidth=0.5, hatch="xxx",
-        )
-        water_bodies.plot(
-            ax=ax_map, facecolor="#7BDFF2", edgecolor="black", linewidth=1,
-        )
-        ax_map.set_title(
-            f"{SCENARIO_NAMES[scenario]}\nvs {SCENARIO_NAMES[SCENARIOS_OF_INTEREST[0]]}",
-            fontsize=11, fontweight="bold",
-        )
-        ax_map.axis("off")
-        ax_map.text(-0.04, 1.02, map_letters[ax_idx], transform=ax_map.transAxes,
-                    fontsize=14, fontweight="bold", va="bottom")
 
     fig.savefig(
-        output_folder / "dalys_dotplot_and_maps_combined.png",
+        output_folder / "dalys_dotplot_barchart_combined.png",
         dpi=300, bbox_inches="tight",
     )
     plt.close(fig)
 
-    # 5. Monthly time series — aggregate total across all districts
+    # -------------------------------------------------------------------------
+    # 4. Monthly time series — aggregate total across all districts
+    # -------------------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(14, 6))
     for s_idx, draw in enumerate(SCENARIOS_OF_INTEREST):
         scen_name = SCENARIO_NAMES[draw]
@@ -350,7 +305,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(output_folder / "dalys_monthly_timeseries_total.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-    # 6. Monthly time series — small multiples by district
+    # -------------------------------------------------------------------------
+    # 5. Monthly time series — small multiples by district
+    # -------------------------------------------------------------------------
     district_ts_data = {}
     for draw in SCENARIOS_OF_INTEREST:
         scen_name = SCENARIO_NAMES[draw]
@@ -361,12 +318,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     all_districts = sorted(
-        district_ts_data[active_scenario_names[0]]["mean"]
-        .index.get_level_values("district_of_residence").unique()
+        district_ts_data[active_scenario_names[0]]["mean"].index.get_level_values("district_of_residence").unique()
     )
 
     n_cols = 4
-    n_rows = -(-len(all_districts) // n_cols)  # ceiling division
+    n_rows = -(-len(all_districts) // n_cols)
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 3.5 * n_rows),
                              sharex=True, sharey=False)
     axes_flat = axes.flatten()
@@ -387,12 +343,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ax.fill_between(dates, lower_vals.values, upper_vals.values,
                                 color=colour, alpha=0.2)
             except KeyError:
-                pass  # district absent from this draw
-        ax.set_title(district, fontsize=8, fontweight="bold")
+                pass
+        ax.set_title(district, fontsize=10, fontweight="bold")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        ax.tick_params(axis="x", labelrotation=45, labelsize=6)
-        ax.tick_params(axis="y", labelsize=6)
+        ax.tick_params(axis="x", labelrotation=45, labelsize=10)
+        ax.tick_params(axis="y", labelsize=10)
         ax.grid(axis="y", linestyle=":", linewidth=0.5, alpha=0.5)
 
     for ax in axes_flat[len(all_districts):]:
@@ -408,7 +364,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-    # 7. Save summary CSV
+    # -------------------------------------------------------------------------
+    # 6. Save summary CSV
+    # -------------------------------------------------------------------------
     df_dalys_p1k.to_csv(output_folder / "dalys_by_district_scenario.csv", index=True)
 
 
