@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class HPV(Module, GenericFirstAppointmentsMixin):
+class HPV(Module, GenericFirstAppointmentsMixin): #
     """This is an HPV infection Process.
     Groups:
         g1 = HPV16/18
@@ -213,7 +213,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
                 infection_date = self.sim.date - DateOffset(months=previous_infection)
                 df.at[person_id, f'hp_date_infected_{group}'] = infection_date
 
-        initially_infected = df.index[df.is_alive & df.hp_is_infected]
+        initially_infected = df.index[df.is_alive & df.hp_is_infected] #can not make sure when is the first infection
         for person_id in initially_infected:
             group_dates = [
                 df.at[person_id, f'hp_date_infected_{group}']

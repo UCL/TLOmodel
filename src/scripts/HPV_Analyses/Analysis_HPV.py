@@ -5,6 +5,8 @@ Run the HPV modules
 import datetime
 import pickle
 import random
+import pandas as pd
+import matplotlib.pyplot as plt
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
@@ -118,3 +120,62 @@ print(hpv_outputs)
 #     column="TotalInf",
 #     do_scaling=True,
 # )
+
+hpv_outputs = output["tlo.methods.hpv"]["summary"]
+hpv_df = pd.DataFrame(hpv_outputs)
+
+print(hpv_df)
+print(hpv_df.columns)
+
+# 1. Total infection
+plt.figure(figsize=(8, 5))
+plt.plot(hpv_df["Year"], hpv_df["TotalPrev"], marker="o")
+plt.xlabel("Year")
+plt.ylabel("Total HPV prevalence")
+plt.title("Total HPV prevalence over time")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "hpv_total_prevalence.png", dpi=300)
+plt.show()
+
+# 2. HPV  prevalence in different gender
+plt.figure(figsize=(8, 5))
+plt.plot(hpv_df["Year"], hpv_df["MalePrev"], marker="o", label="Male")
+plt.plot(hpv_df["Year"], hpv_df["FemalePrev"], marker="o", label="Female")
+plt.xlabel("Year")
+plt.ylabel("HPV prevalence")
+plt.title("HPV prevalence by sex")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "hpv_prevalence_by_sex.png", dpi=300)
+plt.show()
+
+# 3. Prevalence of different HPV groups in female
+plt.figure(figsize=(8, 5))
+plt.plot(hpv_df["Year"], hpv_df["hr1_FemalePrev"], marker="o", label="hr1")
+plt.plot(hpv_df["Year"], hpv_df["hr2_FemalePrev"], marker="o", label="hr2")
+plt.plot(hpv_df["Year"], hpv_df["hr3_FemalePrev"], marker="o", label="hr3")
+plt.xlabel("Year")
+plt.ylabel("Prevalence")
+plt.title("Female HPV prevalence by group")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "female_hpv_group_prevalence.png", dpi=300)
+plt.show()
+
+# 4. Prevalence of different HPV groups in male
+plt.figure(figsize=(8, 5))
+plt.plot(hpv_df["Year"], hpv_df["hr1_MalePrev"], marker="o", label="hr1")
+plt.plot(hpv_df["Year"], hpv_df["hr2_MalePrev"], marker="o", label="hr2")
+plt.plot(hpv_df["Year"], hpv_df["hr3_MalePrev"], marker="o", label="hr3")
+plt.xlabel("Year")
+plt.ylabel("Prevalence")
+plt.title("Male HPV prevalence by group")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "male_hpv_group_prevalence.png", dpi=300)
+plt.show()
+
