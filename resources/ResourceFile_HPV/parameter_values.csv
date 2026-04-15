@@ -3,6 +3,10 @@ init_prev_hpv_hr1,0.03,undetermined,0,1,calibration,N/A
 init_prev_hpv_hr2,0.04,undetermined,0,1,calibration,N/A
 init_prev_hpv_hr3,0.05,undetermined,0,1,calibration,N/A
 b_hpv,0.3,undetermined,0,1,calibration,N/A
+median_clear_hr1,12,undetermined,0,1,calibration,N/A
+median_clear_hr2,12,undetermined,0,1,calibration,N/A
+median_clear_hr3,12,undetermined,0,1,calibration,N/A
+clear_shape,2,undetermined,0,1,calibration,N/A
 r_clear_12,0.2,undetermined,0,1,calibration,N/A
 r_clear_24,0.3,undetermined,0,1,calibration,N/A
 rr_hpv_hiv,2,undetermined,0,1,calibration,N/A

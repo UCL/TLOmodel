@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
+import math
 
 # from scripts.diarrhoea_analyses.analysis_diarrhoea_with_and_without_treatment import data
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class HPV(Module, GenericFirstAppointmentsMixin): #
+class HPV(Module, GenericFirstAppointmentsMixin):
     """This is an HPV infection Process.
     Groups:
         g1 = HPV16/18
@@ -42,7 +43,7 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         - Use of the SymptomManager
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'Hiv'} #Epi?
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'Hiv'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -84,6 +85,23 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         ),
 
         # Clearance probabilities
+        "median_clear_hr1": Parameter(
+            Types.REAL,
+            "Median months to self-clear for hr1 infection",
+        ),
+        "median_clear_hr2": Parameter(
+            Types.REAL,
+            "Median months to self-clear for hr2 infection",
+        ),
+        "median_clear_hr3": Parameter(
+            Types.REAL,
+            "Median months to self-clear for hr3 infection",
+        ),
+        "clear_shape": Parameter(
+            Types.REAL,
+            "Weibull shape parameter for HPV clearance duration",
+        ),
+
         "r_clear_12": Parameter(
             Types.REAL,
             "probability of clearing HPV after 12 month",
@@ -108,7 +126,7 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         ),
         "rr_hr3_vaccinated": Parameter(
             Types.REAL,
-            "Relative risk for hr1 infection if vaccinated",
+            "Relative risk for hr3 infection if vaccinated",
         ),
         "rr_immunity_hr1": Parameter(
             Types.REAL,
@@ -132,7 +150,7 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         'hp_is_infected': Property(
             Types.BOOL, 'Is infected with oncogenic hpv group'),
         'hp_infected_hr1': Property(
-            Types.BOOL,'Current infected with hr1'),
+            Types.BOOL, 'Current infected with hr1'),
         'hp_infected_hr2': Property(
             Types.BOOL, 'Current infected with hr2'),
         'hp_infected_hr3': Property(
@@ -144,7 +162,21 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         'hp_date_infected_hr3': Property(
             Types.DATE, 'Date of infection of hr3'),
         'hp_date_first_infected': Property(
-            Types.DATE, 'Date of first HPV infection'),
+            Types.DATE, 'Start date of current HPV infection'),
+        'hp_duration_hr1': Property(
+            Types.INT,'Sampled duration for current hr1 infection'),
+        'hp_duration_hr2': Property(
+            Types.INT,'Sampled duration for current hr2 infection'),
+        'hp_duration_hr3': Property(
+            Types.INT,'Sampled duration for current hr3 infection'),
+        'hp_duration_all_clear': Property(
+            Types.INT, 'Duration for current all HPV infection'),
+        'hp_date_clear_hr1': Property(
+            Types.DATE, 'Scheduled clearance date of current hr1 infection'),
+        'hp_date_clear_hr2': Property(
+            Types.DATE, 'Scheduled clearance date of current hr2 infection'),
+        'hp_date_clear_hr3': Property(
+            Types.DATE, 'Scheduled clearance date of current hr3 infection'),
         'hp_ever_infected_hr1': Property(
             Types.BOOL, 'Ever infected with hr1'),
         'hp_ever_infected_hr2': Property(
@@ -193,6 +225,13 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         df.loc[df.is_alive, 'hp_date_infected_hr2'] = pd.NaT
         df.loc[df.is_alive, 'hp_date_infected_hr3'] = pd.NaT
         df.loc[df.is_alive, 'hp_date_first_infected'] = pd.NaT
+        df.loc[df.is_alive, 'hp_duration_hr1'] = -1
+        df.loc[df.is_alive, 'hp_duration_hr2'] = -1
+        df.loc[df.is_alive, 'hp_duration_hr3'] = -1
+        df.loc[df.is_alive, 'hp_duration_all_clear'] = -1
+        df.loc[df.is_alive, 'hp_date_clear_hr1'] = pd.NaT
+        df.loc[df.is_alive, 'hp_date_clear_hr2'] = pd.NaT
+        df.loc[df.is_alive, 'hp_date_clear_hr3'] = pd.NaT
         df.loc[df.is_alive, 'hp_ever_infected_hr1'] = False
         df.loc[df.is_alive, 'hp_ever_infected_hr2'] = False
         df.loc[df.is_alive, 'hp_ever_infected_hr3'] = False
@@ -208,12 +247,21 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
                 df.at[person_id, f'hp_ever_infected_{group}'] = True
                 df.at[person_id, 'hp_is_infected'] = True
 
-                # randomly select a infection date for initial population
-                previous_infection = int(self.rng.randint(1,25)) #1-24month
+                # randomly select an infection date for initial population
+                previous_infection = int(self.rng.randint(0, 24))  # 0-23month
                 infection_date = self.sim.date - DateOffset(months=previous_infection)
-                df.at[person_id, f'hp_date_infected_{group}'] = infection_date
 
-        initially_infected = df.index[df.is_alive & df.hp_is_infected] #can not make sure when is the first infection
+                # Sample a duration that longer that previous infection
+                previous_duration = self._sample_clear_duration(group)
+                while previous_duration <= previous_infection:
+                    previous_duration = self._sample_clear_duration(group)
+
+                clear_date = infection_date + DateOffset(months=previous_duration)
+                df.at[person_id, f'hp_date_infected_{group}'] = infection_date
+                df.at[person_id, f'hp_date_clear_{group}'] = clear_date
+                df.at[person_id, f'hp_duration_{group}'] = previous_duration
+
+        initially_infected = df.index[df.is_alive & df.hp_is_infected]
         for person_id in initially_infected:
             group_dates = [
                 df.at[person_id, f'hp_date_infected_{group}']
@@ -221,24 +269,25 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
                 if not pd.isna(df.at[person_id, f'hp_date_infected_{group}'])
             ]
             if len(group_dates) > 0:
-                df.at[person_id, 'hp_date_first_infected'] = min(group_dates)
+                first_date = min(group_dates)
+                df.at[person_id, 'hp_date_first_infected'] = first_date
 
     def _get_age_group(self, age_years):
-        if age_years <15:
+        if age_years < 15:
             return '0_15'
-        elif age_years <20:
+        elif age_years < 20:
             return '15_19'
-        elif age_years <25:
+        elif age_years < 25:
             return '20_24'
-        elif age_years <30:
+        elif age_years < 30:
             return '25_29'
-        elif age_years <35:
+        elif age_years < 35:
             return '30_34'
-        elif age_years <40:
+        elif age_years < 40:
             return '35_39'
-        elif age_years <45:
+        elif age_years < 45:
             return '40_44'
-        elif age_years <50:
+        elif age_years < 50:
             return '45_49'
         else:
             return '50plus'
@@ -262,11 +311,11 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         df.at[person_id, 'hp_is_infected'] = (len(hpv_set) > 0)
 
     def _add_new_infection_groups(self, person_id, new_groups):
-
         if len(new_groups) == 0:
             return
 
         df = self.sim.population.props
+        was_infected_before = df.at[person_id, 'hp_is_infected']
         current_groups = self._get_hpv_group_set(person_id)
         updated_groups = current_groups.union(new_groups)
         self._set_hpv_group_set(person_id, updated_groups)
@@ -276,9 +325,18 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
             df.at[person_id, f'hp_date_infected_{group}'] = self.sim.date
             df.at[person_id, f'hp_ever_infected_{group}'] = True
 
+            duration = self._sample_clear_duration(group)
+            df.at[person_id, f'hp_date_clear_{group}'] = self.sim.date + DateOffset(months=duration)
+            df.at[person_id,f'hp_duration_{group}'] = duration
+
         #set first infection date
         if pd.isna(df.at[person_id, 'hp_date_first_infected']):
             df.at[person_id, 'hp_date_first_infected'] = self.sim.date
+
+        # start a new HPV infection process only if the person was uninfected/ self-clear
+        if not was_infected_before:
+            df.at[person_id, 'hp_date_first_infected'] = self.sim.date
+
 
     def _clear_single_group(self, person_id, group):
         """clear a single HPV group for a person"""
@@ -286,11 +344,38 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
 
         df.at[person_id, f'hp_infected_{group}'] = False
         df.at[person_id, f'hp_date_infected_{group}'] = pd.NaT
+        df.at[person_id, f'hp_date_clear_{group}'] = pd.NaT
 
         still_infected= any(
             df.at[person_id, f'hp_infected_{g}'] for g in self.HPV_GROUPS
         )
         df.at[person_id, 'hp_is_infected'] = still_infected
+
+        if not still_infected:
+            start_date = df.at[person_id, 'hp_date_first_infected']
+            if not pd.isna(start_date):
+                overall_duration = (self.sim.date.year - start_date.year) * 12 + (self.sim.date.month - start_date.month)
+                df.at[person_id, 'hp_duration_all_clear'] = overall_duration
+
+            df.at[person_id, 'hp_date_first_infected'] = pd.NaT
+
+    def _sample_clear_duration(self,group):
+        """Sample a infection duration for one HPV group using Weibull distribution"""
+        p = self.parameters
+
+        median = p[f'median_clear_{group}']
+        shape = p['clear_shape']
+
+        # WeibullMedian= Scale * （ln 2)^(1/shape)
+        scale = median / (math.log(2) ** (1.0 / shape))
+
+        u = self.rng.random()
+        duration = scale * ((-math.log(1.0 - u)) ** (1.0 / shape))
+
+        duration =  max(1,int(round(duration)))
+        duration = min(duration, 48)
+
+        return duration
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -316,12 +401,12 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
                 .when(True, p[f'rr_immunity_{group}'])
                 .otherwise(1.0),
 
-                Predictor('age_years', conditions_are_mutually_exclusive = True)
+                Predictor('age_years', conditions_are_mutually_exclusive=True)
                 .when('.between(0,15)', 0.0)
                 .when('>=50', p['rr_hpv_age50plus'])
                 .otherwise(1.0),
 
-                Predictor('hv_inf')
+                Predictor('hv_inf')  # Need to be updated with ART
                 .when(True,p['rr_hpv_hiv'])
                 .otherwise(1.0),
                 )
@@ -351,6 +436,13 @@ class HPV(Module, GenericFirstAppointmentsMixin): #
         df.at[child_id, 'hp_date_infected_hr2'] = pd.NaT
         df.at[child_id, 'hp_date_infected_hr3'] = pd.NaT
         df.at[child_id, 'hp_date_first_infected'] = pd.NaT
+        df.at[child_id, 'hp_duration_hr1'] = -1
+        df.at[child_id, 'hp_duration_hr2'] = -1
+        df.at[child_id, 'hp_duration_hr3'] = -1
+        df.at[child_id, 'hp_duration_all_clear'] = -1
+        df.at[child_id, 'hp_date_clear_hr1'] = pd.NaT
+        df.at[child_id, 'hp_date_clear_hr2'] = pd.NaT
+        df.at[child_id, 'hp_date_clear_hr3'] = pd.NaT
         df.at[child_id, 'hp_ever_infected_hr1'] = False
         df.at[child_id, 'hp_ever_infected_hr2'] = False
         df.at[child_id, 'hp_ever_infected_hr3'] = False
@@ -394,29 +486,29 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         for person_id in infected_idx:
             current_groups = module._get_hpv_group_set(person_id)
             for group in list(current_groups):
-                date_col = f'hp_date_infected_{group}'
-                date_inf = df.at[person_id, date_col]
+                clear_date = df.at[person_id, f'hp_date_clear_{group}']
 
-
-                if pd.isna(date_inf): #if data is missing. skip for safety
+                if pd.isna(clear_date): #if data is missing. skip for safety
                     continue
 
-                duration = (now.year - date_inf.year) * 12 + (now.month - date_inf.month)
-
-                clear_now = False
-
-                if duration >= 24:
-                    p_clear = module.parameters['r_clear_24']
-                    if module.rng.random() < p_clear:
-                        clear_now = True
-
-                elif duration >= 12:
-                    p_clear = module.parameters['r_clear_12']
-                    if module.rng.random() < p_clear:
-                        clear_now = True
-
-                if clear_now:
+                if now >= clear_date:
                     module._clear_single_group(person_id, group)
+
+                # duration = (now.year - date_inf.year) * 12 + (now.month - date_inf.month)
+                #
+                # clear_now = False
+                #
+                # if duration >= 24:
+                #     p_clear = module.parameters['r_clear_24']
+                #     if module.rng.random() < p_clear:
+                #         clear_now = True
+                #
+                # elif duration >= 12:
+                #     p_clear = module.parameters['r_clear_12']
+                #     if module.rng.random() < p_clear:
+                #         clear_now = True
+
+
 
         # 3. recalculate prevalence by HPV group after clearance
         male_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
@@ -488,14 +580,14 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         male_prev = male_inf / len(male_idx) if len(male_idx) > 0 else 0
         female_prev = female_inf / len(female_idx) if len(female_idx) > 0 else 0
 
-        log_data= {
+        log_data = {
             'Year':self.sim.date.year,
-            'TotalInf':int(total_inf),
-            'TotalPrev':total_prev,
-            'MaleInf':int(male_inf),
-            'FemaleInf':int(female_inf),
-            'MalePrev':male_prev,
-            'FemalePrev':female_prev,
+            'TotalInf': int(total_inf),
+            'TotalPrev': total_prev,
+            'MaleInf': int(male_inf),
+            'FemaleInf': int(female_inf),
+            'MalePrev': male_prev,
+            'FemalePrev': female_prev,
         }
 
         # group-specific prevalence by sex
