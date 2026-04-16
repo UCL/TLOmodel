@@ -301,6 +301,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         self.lms_event_death = dict()
         self.lms_event_symptoms = dict()
 
+        # Dictionary to hold date onset
+        self.diabetes_onset_dates = {}
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
@@ -1057,6 +1060,12 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
+
+            # Store onset dates only for diabetes
+            if condition == 'nc_diabetes':
+                for person_id in idx_acquires_condition:
+                    if person_id not in self.module.diabetes_onset_dates:
+                        self.module.diabetes_onset_dates[person_id] = self.sim.date
 
             # Add incident cases to the tracker
             self.module.trackers['onset_condition'].add(
