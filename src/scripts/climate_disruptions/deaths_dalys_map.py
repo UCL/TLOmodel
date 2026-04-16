@@ -4,7 +4,7 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 from matplotlib import pyplot as plt
-
+import numpy as np
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 
@@ -47,7 +47,7 @@ if PARAMETER_SENSITIVITY_ANALYSIS:
     SCENARIOS_OF_INTEREST = list(SCENARIO_NAMES)
 
 if MAIN_TEXT:
-    SCENARIO_NAMES = ["No disruptions", "Baseline", "Worst case"]
+    SCENARIO_NAMES = ["No Disruptions", "Default", "Worst case"]
     SUFFIX = "main_text"
     SCENARIOS_OF_INTEREST = [0, 1, 2]
 
@@ -106,6 +106,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     full_period = (Date(MIN_YEAR, 1, 1), Date(MAX_YEAR, 12, 31))
     active_scenario_names = [SCENARIO_NAMES[i] for i in SCENARIOS_OF_INTEREST]
 
+    # Diagnostic: individual run totals
+    raw = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_district_stacked_by_age_and_time",
+        custom_generate_series=lambda df: get_num_dalys_by_district(df, full_period),
+        do_scaling=False,
+    )
+    for draw in SCENARIOS_OF_INTEREST:
+        runs = raw.xs(draw, axis=1, level='draw')
+        totals = runs.sum(axis=0)
+        print(f"Draw {draw} ({SCENARIO_NAMES[draw]}): run totals = {totals.values.round(0)}")
+
     # 1. Per-year extraction: district-level DALY totals
     all_scenarios_dalys = {}
     all_scenarios_dalys_upper = {}
@@ -122,11 +135,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         for year in range(MIN_YEAR, MAX_YEAR, SPACING_OF_YEARS):
             period = (Date(year, 1, 1), Date(year, 12, 31))
+            # FIX: use 'draw' not shadowed by inner loop variable
             result = extract_and_summarize(
                 results_folder,
                 custom_fn=lambda df, p=period: get_num_dalys_by_district(df, p),
                 draw=draw,
             )
+
             yearly_mean[year] = result["mean"] * SCALING_FACTOR
             yearly_lower[year] = result["lower"] * SCALING_FACTOR
             yearly_upper[year] = result["upper"] * SCALING_FACTOR
@@ -206,13 +221,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     n_districts = len(district_order)
     n_scenarios = len(active_scenario_names)
 
-    # Aggregate bar chart data
+    # FIX: use .sum(axis=0) to get total DALYs across all districts per scenario,
+    # not .mean(axis=0) which averages across districts and makes differences tiny.
+    dalys_totals = df_dalys.sum(axis=0)
+    dalys_upper_total = df_dalys_upper.sum(axis=0)
+    dalys_lower_total = df_dalys_lower.sum(axis=0)
+
+    # For the dot plot, keep per-district means as before
     dalys_means = df_dalys.mean(axis=0)
     dalys_upper_agg = df_dalys_upper.mean(axis=0)
     dalys_lower_agg = df_dalys_lower.mean(axis=0)
-    dalys_yerr = [dalys_means - dalys_lower_agg, dalys_upper_agg - dalys_means]
 
-    # Layout: col 0 = dot plot (A), col 1 = bar chart (B), cols 2+ = maps (C, D,...)
+    # Layout: col 0 = dot plot (A), col 1 = bar chart (B)
     n_cols = 2
     fig = plt.figure(figsize=(24, max(8, n_districts * 0.35)))
     gs = fig.add_gridspec(1, n_cols, wspace=0.35)
@@ -238,39 +258,53 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax_dot.set_yticks(range(n_districts))
     ax_dot.set_yticklabels(district_order, fontsize=14)
     ax_dot.set_xlabel(f"Total DALYs ({MIN_YEAR}–{MAX_YEAR - 1})", fontsize=16, fontweight="bold")
-    ax_dot.set_title("DALYs by District with 95% CI", fontsize=16, fontweight="bold")
+    ax_dot.set_title("", fontsize=16, fontweight="bold")
     ax_dot.tick_params(axis="x", labelsize=14)
     ax_dot.axvline(0, color="black", linewidth=0.8, linestyle="--")
     ax_dot.spines["top"].set_visible(False)
     ax_dot.spines["right"].set_visible(False)
-    ax_dot.legend(
-        title="Scenario", loc="lower right",
-        fontsize=11, ncol=n_scenarios,
-    )
+    ax_dot.legend(title="Scenario", loc="lower right", fontsize=11, ncol=n_scenarios)
     ax_dot.grid(axis="x", linestyle=":", linewidth=0.6, alpha=0.6)
     ax_dot.text(-0.08, 1.02, "(A)", transform=ax_dot.transAxes,
                 fontsize=16, fontweight="bold", va="bottom")
 
-    # --- Panel B: Bar chart ---
+    # --- Panel B: Bar chart — difference in total DALYs vs No Disruptions ---
+    baseline_total = dalys_totals["No Disruptions"]
+    diff_means = dalys_totals - baseline_total
+    diff_upper = dalys_upper_total - baseline_total
+    diff_lower = dalys_lower_total - baseline_total
+
+    # Drop the No Disruptions entry (difference = 0)
+    plot_mask = dalys_totals.index != "No Disruptions"
+    diff_means = diff_means[plot_mask]
+    diff_upper = diff_upper[plot_mask]
+    diff_lower = diff_lower[plot_mask]
+    diff_colours = [SCENARIO_COLOURS[i] for i, name in enumerate(active_scenario_names)
+                    if name != "No Disruptions"]
+    diff_yerr = [np.abs(diff_means - diff_lower), np.abs(diff_upper - diff_means)]
+
+    print("Difference in total DALYs vs No Disruptions:")
+    print(diff_means)
+
     ax_bar = fig.add_subplot(gs[0, 1])
     ax_bar.bar(
-        range(len(dalys_means)), dalys_means,
-        yerr=dalys_yerr, capsize=5,
-        color=SCENARIO_COLOURS[: len(active_scenario_names)],
+        range(len(diff_means)), diff_means,  # FIX: no abs() — preserve sign
+        yerr=diff_yerr, capsize=5,
+        color=diff_colours,
         alpha=0.8, error_kw={"elinewidth": 2, "capthick": 2},
     )
-    ax_bar.set_title("DALYs by Scenario", fontsize=16, fontweight="bold")
+    ax_bar.axhline(0, color="black", linewidth=0.8, linestyle="--")
+    ax_bar.set_title("", fontsize=16, fontweight="bold")
     ax_bar.set_xlabel("Scenario", size=16, labelpad=10, fontweight="bold")
-    ax_bar.set_ylabel("DALYs", size=16, labelpad=10, fontweight="bold")
-    ax_bar.set_xticks(range(len(dalys_means)))
-    ax_bar.set_xticklabels(dalys_means.index, rotation=45, ha="right", fontsize=14)
+    ax_bar.set_ylabel('Excess of DALYs\nvs. "No Disruptions"', size=16, labelpad=10, fontweight="bold")
+    ax_bar.set_xticks(range(len(diff_means)))
+    ax_bar.set_xticklabels(diff_means.index, rotation=0, ha="right", fontsize=14)
     ax_bar.tick_params(axis="both", which="major", labelsize=14)
     ax_bar.spines["top"].set_visible(False)
     ax_bar.spines["right"].set_visible(False)
     ax_bar.grid(False)
     ax_bar.text(-0.12, 1.02, "(B)", transform=ax_bar.transAxes,
                 fontsize=16, fontweight="bold", va="bottom")
-
 
     fig.savefig(
         output_folder / "dalys_dotplot_barchart_combined.png",
@@ -347,7 +381,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_title(district, fontsize=10, fontweight="bold")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        ax.tick_params(axis="x", labelrotation=45, labelsize=10)
+        ax.tick_params(axis="x", labelrotation=0, labelsize=10)
         ax.tick_params(axis="y", labelsize=10)
         ax.grid(axis="y", linestyle=":", linewidth=0.5, alpha=0.5)
 
