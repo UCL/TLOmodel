@@ -52,23 +52,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
     all_results = load_results_files(results_files)
 
-    counts_of_hsi_in_baseline = all_results[results_files[0]]['counts_of_hsi_by_period']
-    counts_of_hsi_in_baseline = counts_of_hsi_in_baseline.drop(['2010-2025'], level=1)
-
-    counts_of_hsi_in_implementation_period = all_results[results_files[1]]['counts_of_hsi_by_period']
-    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2025-2041'], level=1)
-    # Values for the year 2025 have been logged in the implementation period;
-    # remove them from here and add them to the baseline dataframe.
-    x = counts_of_hsi_in_implementation_period['Nothing']
-    nothing_hsis_in_2025 = x.xs('2025-2025', level = 'period')
-    nothing_hsis_in_2025 = pd.concat({"2025-2025": nothing_hsis_in_2025}, names=["period"]).reorder_levels(["appt_type", "period"])
-    nothing_hsis_in_2025.columns = pd.MultiIndex.from_tuples(
-        [("Nothing", col) for col in nothing_hsis_in_2025.columns],
-        names=["draw", "stat"]
-    )
-    counts_of_hsi_in_baseline = pd.concat([counts_of_hsi_in_baseline, nothing_hsis_in_2025], axis=0).sort_index()
-    # now we can safely drop 2025-2025 from the implementation period dataframe
-    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop('2025-2025', level=1)
+    counts_of_hsi_in_implementation_period = all_results[results_files[0]]['counts_of_hsi_by_period']
+    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2010-2041'], level=1)
 
     result_df_by_period = pd.DataFrame([
         {'treatment_id_included': draw, 'nonzero_hsis': treatment_id, 'period': period}
@@ -91,7 +76,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig, ax = plot_hsi_counts_by_period_for_draw(
             counts_of_hsi_in_implementation_period,
             draw,
-            counts_of_hsi_in_baseline,
         )
         ax.set_title(name_of_plot)
         outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
@@ -99,9 +83,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         plt.close(fig)
 
     # Plot population growth
-    total_population_in_baseline = all_results[results_files[0]]['total_population_by_year']
-    total_population_in_implementation = all_results[results_files[1]]['total_population_by_year']
-    fig, ax = plot_population_by_year(total_population_in_implementation / 1e6, total_population_in_baseline / 1e6)
+    total_population_in_implementation = all_results[results_files[0]]['total_population_by_year']
+    fig, ax = plot_population_by_year(total_population_in_implementation / 1e6)
     name_of_plot = "Population size by year"
     ax.set_title(name_of_plot)
     ax.set_ylabel("Population size (millions)")
@@ -111,20 +94,17 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
 
 
-    pc_dalys_averted = all_results[results_files[1]]['pc_dalys_averted']
+    pc_dalys_averted = all_results[results_files[0]]['pc_dalys_averted']
 
-    num_dalys_by_cause_label_baseline = all_results[results_files[0]]['num_dalys'].drop(['2010-2025'], level=1)
-    num_dalys_by_cause_label_implementation = all_results[results_files[1]]['num_dalys'].drop(['2025-2041'], level=1)
+    num_dalys_by_cause_label_implementation = all_results[results_files[0]]['num_dalys'].drop(['2010-2041'], level=1)
 
-    num_deaths_by_cause_label_baseline = all_results[results_files[0]]['num_deaths'].drop(['2010-2025'], level=1)
-    num_deaths_by_cause_label_implementation = all_results[results_files[1]]['num_deaths'].drop(['2025-2041'], level=1)
+    num_deaths_by_cause_label_implementation = all_results[results_files[0]]['num_deaths'].drop(['2010-2041'], level=1)
 
     for param in param_names:
         draw = format_scenario_name(param)
         fig, ax = plot_deaths_by_period_for_draw(
             num_deaths_by_cause_label_implementation / 1e3,
             draw,
-            _dfbaseline=num_deaths_by_cause_label_baseline / 1e3,
         )
         name_of_plot = f"Deaths Over Time by Cause for {draw}"
         ax.set_title(name_of_plot)
@@ -138,7 +118,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig, ax = plot_deaths_by_period_for_cause(
             num_deaths_by_cause_label_implementation / 1e3,
             cause_label=cause_label,
-            _dfbaseline=num_deaths_by_cause_label_baseline / 1e3,
         )
         name_of_plot = f"Deaths Over Time for {cause_label}"
         ax.set_title(name_of_plot)
@@ -150,7 +129,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig, ax = plot_deaths_by_period_for_cause(
             num_dalys_by_cause_label_implementation / 1e3,
             cause_label=cause_label,
-            _dfbaseline=num_dalys_by_cause_label_baseline / 1e3,
         )
         name_of_plot = f"DALYs Over Time for {cause_label}"
         ax.set_title(name_of_plot)
@@ -159,7 +137,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig.savefig(outfile)
         plt.close(fig)
 
-    deaths_averted = all_results[results_files[1]]['num_deaths_averted']
+    deaths_averted = all_results[results_files[0]]['num_deaths_averted']
     deaths_averted_sorted = (deaths_averted.sort_values(by="mean", ascending=True) / 1e3)
     fig_height = max(6, min(0.28 * len(deaths_averted_sorted.index) + 4, 18))
     fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -175,7 +153,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     fig.savefig(outfile)
     plt.close(fig)
 
-    dalys_averted = all_results[results_files[1]]['num_dalys_averted']
+    dalys_averted = all_results[results_files[0]]['num_dalys_averted']
     dalys_averted_sorted = (dalys_averted.sort_values(by="mean", ascending=True) / 1e3)
     fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
     fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -191,7 +169,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     fig.savefig(outfile)
     plt.close(fig)
 
-    pc_deaths_averted = all_results[results_files[1]]['pc_deaths_averted']
+    pc_deaths_averted = all_results[results_files[0]]['pc_deaths_averted']
     pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="mean", ascending=True))
     fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
     fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -207,7 +185,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     fig.savefig(outfile)
     plt.close(fig)
 
-    pc_dalys_averted = all_results[results_files[1]]['pc_dalys_averted']
+    pc_dalys_averted = all_results[results_files[0]]['pc_dalys_averted']
     pc_dalys_averted_sorted = (pc_dalys_averted.sort_values(by="mean", ascending=True))
     fig_height = max(6, min(0.28 * len(pc_dalys_averted_sorted.index) + 4, 18))
     fig, ax = plt.subplots(figsize=(10, fig_height))

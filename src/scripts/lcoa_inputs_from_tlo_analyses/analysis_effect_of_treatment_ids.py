@@ -1,5 +1,11 @@
 """Produce plots to show the impact each set of treatments."""
 
+import warnings
+from time import perf_counter
+from pandas.errors import (
+    PerformanceWarning,
+    SettingWithCopyWarning
+)
 import argparse
 from datetime import date
 import glob
@@ -62,8 +68,8 @@ from tlo.analysis.utils import (
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
-suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
-results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
+#suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
+#results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
 # SCALING_FACTOR retrieved from the suspended run in
 # outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z
 # SCALING_FACTOR = 58.158436
@@ -102,6 +108,47 @@ def apply(
         target_period_tuple=target_period_tuple,
     )
     results = {}
+    # Costs calculation
+    print("Calculating costs...")
+    discount_rate_cost = 0.03
+    # Period relevant for costing
+    TARGET_PERIOD = (Date(2026, 1, 1), Date(2040, 12, 31))  # This is the period that is costed
+    relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
+    list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
+    print("List of relevant years for costing:", list_of_relevant_years_for_costing)
+    start = perf_counter()
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=PerformanceWarning)
+        warnings.filterwarnings("ignore", category=UserWarning)
+        warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
+        input_costs = estimate_input_cost_of_scenarios(
+                          results_folder,
+                          resourcefilepath,
+                          _years=list_of_relevant_years_for_costing,
+                          cost_only_used_staff=True,
+                          _discount_rate=discount_rate_cost,
+                          _metric="median",)
+
+    elapsed = perf_counter() - start
+    print(f"\n=== TIMING: estimate_input_cost_of_scenarios took {elapsed:.3f}s ===\n", flush=True)
+    results['input_costs'] = input_costs
+
+    # Computing ICERs
+    print("Computing ICERs...")
+    start = perf_counter()
+    total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
+    incremental_scenario_cost = (pd.DataFrame(
+        find_difference_relative_to_comparison(
+            total_input_cost,
+            comparison=0,)
+    ).T.iloc[0].unstack()).T
+
+    elapsed = perf_counter() - start
+    print(f"\n=== TIMING: computing icers took {elapsed:.3f}s ===\n", flush=True)
+
+    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric='median')
+    results['incremental_scenario_cost'] = incremental_scenario_cost_summarized
+
     # Get total population by year
     print("Extracting population data...")
     total_population_by_year = (
@@ -111,7 +158,6 @@ def apply(
             key='population',
             custom_generate_series=lambda _df: get_total_population_by_year(_df, target_period_tuple),
             do_scaling=True,
-            suspended_results_folder=suspended_folder,
             autodiscover=True
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
@@ -126,7 +172,6 @@ def apply(
             key="HSI_Event",
             custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, target_period_tuple),
             do_scaling=True,
-            suspended_results_folder=suspended_folder,
             autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
@@ -147,7 +192,6 @@ def apply(
             key="HSI_Event",
             custom_generate_series=lambda _df: get_num_hsi_by_period(_df),
             do_scaling=True,
-            suspended_results_folder=suspended_folder,
             autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
@@ -168,7 +212,6 @@ def apply(
             key="death",
             custom_generate_series=get_num_deaths_by_cause_label_and_period,
             do_scaling=True,
-            suspended_results_folder=suspended_folder,
             autodiscover=True,
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
@@ -196,7 +239,6 @@ def apply(
             key="dalys_stacked_by_age_and_time",
             custom_generate_series=get_num_dalys_by_cause_label_and_period,
             do_scaling=True,
-            suspended_results_folder=suspended_folder,
             autodiscover=True,
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )

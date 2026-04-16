@@ -85,60 +85,26 @@ def plot_deaths_by_period_for_cause(
     _df: pd.DataFrame,
     cause_label: str,
     plot_stat: str = "central",
-    _dfbaseline: pd.DataFrame = None,
 ):
     """Plot deaths over time for a single cause, with one line per short treatment id."""
     if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
         raise ValueError("_df index must be a 2-level MultiIndex with levels for label and period.")
     if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
         raise ValueError("_df columns must be a 2-level MultiIndex with levels for treatment id and stat.")
-    if _dfbaseline is None:
-        raise ValueError("_dfbaseline is required.")
-    if not isinstance(_dfbaseline.index, pd.MultiIndex) or _dfbaseline.index.nlevels != 2:
-        raise ValueError("_dfbaseline index must be a 2-level MultiIndex with levels for label and period.")
-    if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
-        raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
 
     label_level_name = "label" if "label" in _df.index.names else _df.index.names[0]
     period_level_name = "period" if "period" in _df.index.names else _df.index.names[1]
     stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
-    baseline_label_level_name = "label" if "label" in _dfbaseline.index.names else _dfbaseline.index.names[0]
-    baseline_stat_level_name = "stat" if "stat" in _dfbaseline.columns.names else _dfbaseline.columns.names[1]
-    baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
 
     available_causes = pd.Index(_df.index.get_level_values(label_level_name).unique())
     if cause_label not in available_causes:
         raise ValueError(f"Cause label '{cause_label}' not found. Available causes: {available_causes.tolist()}")
-    available_baseline_causes = pd.Index(_dfbaseline.index.get_level_values(baseline_label_level_name).unique())
-    if cause_label not in available_baseline_causes:
-        raise ValueError(
-            f"Cause label '{cause_label}' not found in _dfbaseline. "
-            f"Available causes: {available_baseline_causes.tolist()}"
-        )
 
     available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
     if plot_stat not in available_stats:
         raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
-    available_baseline_stats = pd.Index(_dfbaseline.columns.get_level_values(baseline_stat_level_name).unique())
-    if plot_stat not in available_baseline_stats:
-        raise ValueError(
-            f"Statistic '{plot_stat}' not found in _dfbaseline. "
-            f"Available stats: {available_baseline_stats.tolist()}"
-        )
-    available_baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
-    if "Nothing" not in available_baseline_draws:
-        raise ValueError(
-            f"Draw 'Nothing' not found in _dfbaseline. Available draws: {available_baseline_draws.tolist()}"
-        )
 
     _plot = _df.xs(cause_label, level=label_level_name).xs(plot_stat, axis=1, level=stat_level_name)
-    _plot_baseline = (
-        _dfbaseline["Nothing"]
-        .xs(cause_label, level=baseline_label_level_name)
-        .loc[:, [plot_stat]]
-        .rename(columns={plot_stat: "Nothing"})
-    )
-    _plot = pd.concat([_plot_baseline, _plot])
     if _plot.empty:
         raise ValueError(f"No plottable data remain for cause '{cause_label}' using stat '{plot_stat}'.")
 
@@ -191,26 +157,17 @@ def plot_deaths_by_period_for_draw(
     _df: pd.DataFrame,
     draw: str,
     plot_stat: str = "central",
-    _dfbaseline: pd.DataFrame = None,
 ):
     """Plot deaths over time for a single draw, with one line per cause label."""
     if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
         raise ValueError("_df index must be a 2-level MultiIndex with levels for label and period.")
     if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
         raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
-    if _dfbaseline is None:
-        raise ValueError("_dfbaseline is required.")
-    if not isinstance(_dfbaseline.index, pd.MultiIndex) or _dfbaseline.index.nlevels != 2:
-        raise ValueError("_dfbaseline index must be a 2-level MultiIndex with levels for label and period.")
-    if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
-        raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
 
     label_level_name = "label" if "label" in _df.index.names else _df.index.names[0]
     period_level_name = "period" if "period" in _df.index.names else _df.index.names[1]
     draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
     stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
-    baseline_stat_level_name = "stat" if "stat" in _dfbaseline.columns.names else _dfbaseline.columns.names[1]
-    baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
 
     available_draws = pd.Index(_df.columns.get_level_values(draw_level_name).unique())
     if draw not in available_draws:
@@ -218,36 +175,36 @@ def plot_deaths_by_period_for_draw(
     available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
     if plot_stat not in available_stats:
         raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
-    available_baseline_stats = pd.Index(_dfbaseline.columns.get_level_values(baseline_stat_level_name).unique())
-    if plot_stat not in available_baseline_stats:
-        raise ValueError(
-            f"Statistic '{plot_stat}' not found in _dfbaseline. "
-            f"Available stats: {available_baseline_stats.tolist()}"
-        )
-    available_baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
-    if "Nothing" not in available_baseline_draws:
-        raise ValueError(
-            f"Draw 'Nothing' not found in _dfbaseline. Available draws: {available_baseline_draws.tolist()}"
-        )
 
-    _plot_baseline = _dfbaseline["Nothing"].loc[:, [plot_stat]]
-    _plot_implementation = _df[draw].loc[:, [plot_stat]]
-    _plot = pd.concat([_plot_baseline, _plot_implementation])
+    _plot = _df[draw].loc[:, [plot_stat]]
     if _plot.empty:
         raise ValueError(f"No plottable data remain for draw '{draw}' using stat '{plot_stat}'.")
 
-    periods = _plot.index.get_level_values(1).unique()
-    ordered_period_labels, display_period_labels = _get_sorted_period_labels_and_display_labels(periods)
+    _plot = _plot[plot_stat].unstack(label_level_name)
+    ordered_causes = [
+        cause_label for cause_label in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys()
+        if cause_label in _plot.columns
+    ]
+    unordered_causes = sorted(
+        cause_label for cause_label in _plot.columns if cause_label not in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
+    )
+    _plot = _plot.loc[:, ordered_causes + unordered_causes]
 
-    fig_width = max(10, min(1.4 * len(_plot.index) + 4, 18))
+    ordered_period_labels, display_period_labels = _get_sorted_period_labels_and_display_labels(_plot.index.tolist())
+    _plot = _plot.reindex(ordered_period_labels)
+    if _plot.empty:
+        raise ValueError(f"No plottable data remain for draw '{draw}' after reshaping by cause.")
+
+    fig_width = max(10, min(1.4 * len(ordered_period_labels) + 4, 18))
     fig, ax = plt.subplots(figsize=(fig_width, 6))
-    x = np.arange(len(periods))
 
-    for cause_label in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys():
-        print(f"************ {cause_label} *************")
+    for cause_label in _plot.columns:
+        cause_values = _plot[cause_label]
+        if cause_values.notna().sum() == 0:
+            continue
         ax.plot(
-            x,
-            _plot.xs(cause_label, level='label').to_numpy(),
+            ordered_period_labels,
+            cause_values.to_numpy(),
             marker="o",
             linewidth=1.8,
             markersize=4,
@@ -255,7 +212,7 @@ def plot_deaths_by_period_for_draw(
             label=str(cause_label),
         )
 
-    ax.set_xticks(x)
+    ax.set_xticks(ordered_period_labels)
     ax.set_xticklabels(display_period_labels, rotation=45, ha="right")
     ax.set_xlabel("Period")
     ax.set_ylabel("Number of deaths")
@@ -476,7 +433,6 @@ def plot_hsi_counts_stacked_bar(_df: pd.DataFrame, plot_stat: str = "central"):
 def plot_hsi_counts_by_period_for_draw(
     _df: pd.DataFrame,
     draw: str,
-    _dfbaseline: pd.DataFrame
 ):
     """Plot central values with lower/upper intervals across period chunks for one draw."""
     if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
@@ -487,15 +443,7 @@ def plot_hsi_counts_by_period_for_draw(
         available_draws = sorted(set(_df.columns.get_level_values(0)))
         raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws}")
 
-
-    # Because the baseline includes all treatment ids, we have a large number of HSIs being delivered;
-    # We are only interested in the HSIs indicated by the draw name i,e. for the draw Hiv_Treament, we
-    # only want to compare the number of Hiv_Treament HSIs until 2025 and during the implementation period
-    _dfbaseline = _dfbaseline['Nothing'] # because baseline was run only for Nothing scenario
-    treatment_id_of_interest = draw.replace("_*", "")
-    _dfbaseline = _dfbaseline[_dfbaseline.index.get_level_values(0) == treatment_id_of_interest]
-
-    _df = pd.concat([_df[draw], _dfbaseline])
+    _df = _df[draw]
     _plot = _df.reindex(
         pd.MultiIndex.from_product(
             [
@@ -569,8 +517,8 @@ def plot_hsi_counts_by_period_for_draw(
     return fig, ax
 
 
-def plot_population_by_year(_df: pd.DataFrame, _dfbaseline: pd.DataFrame | None = None):
-    """Plot yearly central population values for all draws, optionally with baseline."""
+def plot_population_by_year(_df: pd.DataFrame):
+    """Plot yearly central population values for all draws."""
     if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
         raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
 
@@ -582,20 +530,7 @@ def plot_population_by_year(_df: pd.DataFrame, _dfbaseline: pd.DataFrame | None 
 
     implementation_central = _df.xs("central", axis=1, level=stat_level_name).copy()
     implementation_central.columns = implementation_central.columns.to_series().str.replace(r"_\*$", "", regex=True)
-
-    if _dfbaseline is None:
-        _plot = implementation_central
-    else:
-        if not isinstance(_dfbaseline.columns, pd.MultiIndex) or _dfbaseline.columns.nlevels != 2:
-            raise ValueError("_dfbaseline columns must be a 2-level MultiIndex with levels for draw and stat.")
-        baseline_draw_level_name = "draw" if "draw" in _dfbaseline.columns.names else _dfbaseline.columns.names[0]
-        baseline_draws = pd.Index(_dfbaseline.columns.get_level_values(baseline_draw_level_name).unique())
-        if "Nothing" not in baseline_draws:
-            raise ValueError(f"Baseline draw 'Nothing' not found. Available baseline draws: {baseline_draws.tolist()}")
-
-        baseline_central = _dfbaseline["Nothing"].loc[:, ["central"]].copy()
-        baseline_central.columns = pd.Index(["Nothing"])
-        _plot = pd.concat([baseline_central, implementation_central], axis=1)
+    _plot = implementation_central
 
     _plot = _plot.loc[:, ~_plot.columns.duplicated()]
     _plot = _plot.sort_index()
