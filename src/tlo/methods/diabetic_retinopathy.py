@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 from typing import Optional
 
@@ -223,6 +224,32 @@ class DiabeticRetinopathy(Module):
         self.cons_item_codes = None  # (Will store consumable item codes)
         self.daly_wts = dict()
 
+        import copy
+
+        # DR incidence tracker
+        self.dr_incident_case_tracker = {
+            'mild_or_moderate': [],
+            'severe': [],
+            'proliferative': []
+        }
+        self.dr_incident_case_tracker_blank = copy.deepcopy(self.dr_incident_case_tracker)
+
+        # DMO incidence tracker
+        self.dmo_incident_case_tracker = {
+            'clinically_significant': [],
+            'non_clinically_significant': []
+        }
+        self.dmo_incident_case_tracker_blank = copy.deepcopy(self.dmo_incident_case_tracker)
+
+        # Vision impairment incidence tracker
+        self.vision_incident_case_tracker = {
+            'moderate_vision_impairment': [],
+            'severe_vision_impairment': [],
+            'blindness': []
+        }
+
+        self.vision_incident_case_tracker_blank = copy.deepcopy(self.vision_incident_case_tracker)
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Read all parameters and define symptoms (if any)"""
         self.load_parameters_from_dataframe(
@@ -361,6 +388,7 @@ class DiabeticRetinopathy(Module):
         sim.schedule_event(DiabeticRetinopathyLoggingEvent(self), sim.date + DateOffset(months=1))
         self.make_the_linear_models()
         self.look_up_consumable_item_codes()
+        self.reset_incidence_trackers()
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing dilated eye exam for DR and DMO
@@ -578,6 +606,7 @@ class DiabeticRetinopathy(Module):
         Ensures dmo_status is none when dr_status is none/nan."""
         df = self.sim.population.props
         p = self.parameters
+        old_dmo = df['dmo_status'].copy()
 
         # First reset dmo_status to 'none' for anyone without DR
         no_dr_mask = (df.dr_status == 'none') | df.dr_status.isna()
@@ -585,6 +614,7 @@ class DiabeticRetinopathy(Module):
 
         # Now only process people with valid DR status
         valid_dr_statuses = ['mild_or_moderate', 'severe', 'proliferative']
+        dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses) & (df.dmo_status == 'none')].index
         dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses)].index
 
         if not dr_idx.empty:
@@ -603,6 +633,17 @@ class DiabeticRetinopathy(Module):
                     p=probs
                 )
 
+        new_dmo = df['dmo_status']
+        # changed = old_dmo != new_dmo
+        changed = (old_dmo == 'none') & (new_dmo != 'none')
+
+        # Counts new cases (excludes transitions to 'none')
+        for status, count in new_dmo[changed].value_counts().items():
+            if status != 'none':
+                self.dmo_incident_case_tracker[status].extend(
+                    [self.sim.date] * count
+                )
+
         invalid_cases = df[
             ((df.dr_status == 'none') | df.dr_status.isna()) &
             (df.dmo_status.isin(['clinically_significant', 'non_clinically_significant']))
@@ -613,10 +654,11 @@ class DiabeticRetinopathy(Module):
         )
 
     def update_vision_status(self):
-        """Update vision status for people living with diabtes"""
+        """Update vision status for people living with diabetes"""
         df = self.sim.population.props
         p = self.parameters
         rng = self.rng
+        old_vision = df['vision_status'].copy()
 
         alive_diabetes = df.is_alive & df.nc_diabetes
         if not alive_diabetes.any():
@@ -676,6 +718,21 @@ class DiabeticRetinopathy(Module):
 
         df.loc[impaired & df.nc_diabetes, 'vision_loss_due_to_dr'] = True
 
+        new_vision = df['vision_status']
+        changed = old_vision != new_vision
+
+        # Exclude 'normal'
+        for status, count in new_vision[changed].value_counts().items():
+            if status != 'normal':
+                self.vision_incident_case_tracker[status].extend(
+                    [self.sim.date] * count
+                )
+
+    def reset_incidence_trackers(self):
+        self.dr_incident_case_tracker = copy.deepcopy(self.dr_incident_case_tracker_blank)
+        self.dmo_incident_case_tracker = copy.deepcopy(self.dmo_incident_case_tracker_blank)
+        self.vision_incident_case_tracker = copy.deepcopy(self.vision_incident_case_tracker_blank)
+
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Diabetes Retinopathy (DR) and logs current states. DR diagnosis
@@ -716,6 +773,9 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             squeeze_single_row_output=False)
         will_progress_idx = will_progress[will_progress].index
         df.loc[will_progress_idx, 'dr_status'] = 'mild_or_moderate'
+        self.module.dr_incident_case_tracker['mild_or_moderate'].extend(
+            [self.sim.date] * len(will_progress_idx)
+        )
 
         mildmoderate_to_severe = self.module.lm['mildmoderate_severe_dr'].predict(
             diabetes_and_alive_mild_moderate_dr,
@@ -725,6 +785,9 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             diabetes_duration_greater_than_15_years=diabetes_duration_greater_than_15_years)
         mildmoderate_to_severe_idx = mildmoderate_to_severe[mildmoderate_to_severe].index
         df.loc[mildmoderate_to_severe_idx, 'dr_status'] = 'severe'
+        self.module.dr_incident_case_tracker['severe'].extend(
+            [self.sim.date] * len(mildmoderate_to_severe_idx)
+        )
 
         severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(
             diabetes_and_alive_severedr,
@@ -734,6 +797,9 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             diabetes_duration_greater_than_15_years=diabetes_duration_greater_than_15_years)
         severe_to_proliferative_idx = severe_to_proliferative[severe_to_proliferative].index
         df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
+        self.module.dr_incident_case_tracker['proliferative'].extend(
+            [self.sim.date] * len(severe_to_proliferative_idx)
+        )
 
         # Update DMO status
         self.module.update_dmo_status()
@@ -817,7 +883,9 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             # The person is not alive, the event did not happen: so return a blank footprint
             return hs.get_blank_appt_footprint()
 
-        if person["dr_on_treatment"] and not pd.isna(person["dr_date_last_screening"]):
+        # if person["dr_on_treatment"] and not pd.isna(person["dr_date_last_screening"]):
+        #     return hs.get_blank_appt_footprint()
+        if person["dr_on_treatment"] or person["dmo_on_treatment"]:
             return hs.get_blank_appt_footprint()
 
         is_cons_available = self.get_consumables(
@@ -1043,6 +1111,7 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
             self.add_equipment({'Visual acuity chart', 'Opthalmic laser system',
                                 'Silt lamp laser delivery system',
                                 'Indirect laser delivery system', 'Laser wide-field contact lens'})
+            df.at[person_id, 'dr_on_treatment'] = True
             # Increment the per-person session count
             df.at[person_id, 'total_laser_pan_retinal_coagulation_sessions'] += 1
             sessions = df.at[person_id, 'total_laser_pan_retinal_coagulation_sessions']
@@ -1126,8 +1195,7 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
-        """schedule logging to repeat every 1 month
-        """
+        """schedule logging to repeat every 1 month"""
         self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
@@ -1140,39 +1208,72 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Create dictionary for each subset, adding prefix to key name, and adding to make a flat dict for logging.
         out = {}
 
-        # Vision-related stats
-        vision_out = {
-            'total_normal_vision': (df.vision_status == 'normal').sum(),
-            'total_moderate_vision_impairment': (df.vision_status == 'moderate_vision_impairment').sum(),
-            'total_severe_vision_impairment': (df.vision_status == 'severe_vision_impairment').sum(),
-            'total_blindness': (df.vision_status == 'blindness').sum(),
-            'vision_loss_due_to_dr': df.vision_loss_due_to_dr.sum(),
-            'total_diagnosed': df.dr_diagnosed.sum(),
-            'total_on_treatment': df.dr_on_treatment.sum(),
-            'treatment_success_rate': df[df.dr_on_treatment & (df.vision_status == 'normal')].shape[0] /
-                                      max(1, df.dr_on_treatment.sum())
+        # # Vision-related stats
+        # vision_out = {
+        #     'total_normal_vision': (df.vision_status == 'normal').sum(),
+        #     'total_moderate_vision_impairment': (df.vision_status == 'moderate_vision_impairment').sum(),
+        #     'total_severe_vision_impairment': (df.vision_status == 'severe_vision_impairment').sum(),
+        #     'total_blindness': (df.vision_status == 'blindness').sum(),
+        #     'vision_loss_due_to_dr': df.vision_loss_due_to_dr.sum(),
+        #     'total_diagnosed': df.dr_diagnosed.sum(),
+        #     'total_on_treatment': df.dr_on_treatment.sum(),
+        #     'treatment_success_rate': df[df.dr_on_treatment & (df.vision_status == 'normal')].shape[0] /
+        #                               max(1, df.dr_on_treatment.sum())
+        # }
+        #
+        # out.update(vision_out)
+
+        # DR prevalence
+        # out.update({
+        #     f'total_dr_{k}': v
+        #     for k, v in df.loc[df.is_alive].dr_status.value_counts().items()
+        # })
+        # # DMO prevalence
+        # out.update({
+        #     f'total_dmo_{k}': v
+        #     for k, v in df.loc[df.is_alive].dmo_status.value_counts().items()
+        # })
+        # # Vision impairment prevalence
+        # out.update({
+        #     f'total_vision_{k}': v
+        #     for k, v in df.loc[df.is_alive].vision_status.value_counts().items()
+        # })
+        alive = df.loc[df.is_alive]
+
+        for state in df.dr_status.cat.categories:
+            # out[f'total_dr_{state}'] = (alive.dr_status == state).sum()
+            out[f'total_dr_{state}'] = int((alive.dr_status == state).sum())
+
+        for state in df.dmo_status.cat.categories:
+            # out[f'total_dmo_{state}'] = (alive.dmo_status == state).sum()
+            out[f'total_dmo_{state}'] = int((alive.dmo_status == state).sum())
+
+        for state in df.vision_status.cat.categories:
+            # out[f'total_vision_{state}'] = (alive.vision_status == state).sum()
+            out[f'total_vision_{state}'] = int((alive.vision_status == state).sum())
+
+        # DR incidence
+        dr_inc = {
+            f'inc_dr_{k}': len(v)
+            for k, v in self.module.dr_incident_case_tracker.items()
         }
 
-        out.update(vision_out)
+        # DMO incidence
+        dmo_inc = {
+            f'inc_dmo_{k}': len(v)
+            for k, v in self.module.dmo_incident_case_tracker.items()
+        }
 
-        # Current counts, total
-        out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].dr_status.value_counts().items()})
+        # Vision incidence
+        vision_inc = {
+            f'inc_vision_{k}': len(v)
+            for k, v in self.module.vision_incident_case_tracker.items()
+        }
 
-        # Current counts, off treatment
-        out.update({f'off_treatment_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.dr_date_treatment), 'dr_status'].value_counts().items()})
-
-        # Current counts, on treatment (excl. palliative care)
-        out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.dr_date_treatment)), 'dr_status'].value_counts().items()})
-
-        date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
-
-        out.update({
-            'diagnosed_since_last_log': df.dr_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.dr_date_treatment.between(date_lastlog, date_now).sum(),
-        })
+        out.update(dr_inc)
+        out.update(dmo_inc)
+        out.update(vision_inc)
 
         logger.info(key='summary_stats', data=out)
+
+        self.module.reset_incidence_trackers()
