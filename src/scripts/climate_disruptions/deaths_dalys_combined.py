@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2025
-max_year = 2031
+max_year = 2041
 spacing_of_years = 1
 
 scenario_colours = [
@@ -40,8 +40,8 @@ scenario_colours = [
 ]
 
 climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = False
-main_text = True
+parameter_sensitivity_analysis = True
+main_text = False
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
