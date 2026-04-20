@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
-    load_pickled_dataframes,
+    # load_pickled_dataframes,
     order_of_short_treatment_ids,
     plot_stacked_bar_chart,
     squarify_neat,
