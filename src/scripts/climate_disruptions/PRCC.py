@@ -265,7 +265,7 @@ def create_combined_prcc_figure(params_df, outputs, output_folder):
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """Produce a publication-ready PRCC figure for the climate disruption sensitivity analysis."""
 
-    lhs_file = resourcefilepath / "climate_disruptions" / "lhs_parameter_draws.json"
+    lhs_file = Path("/Users/rem76/PycharmProjects/TLOmodel/src/scripts/climate_disruptions/lhs_parameter_draws.json")
     if not lhs_file.exists():
         raise FileNotFoundError(f"LHS draws file not found:\n  {lhs_file}")
 

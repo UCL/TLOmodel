@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
+from plot_configurations import FS_TICK, FS_LABEL, FS_TITLE, FS_LEGEND, FS_PANEL, FS_SUPTITLE, SCENARIO_COLOURS
 
 # Configuration
 MIN_YEAR = 2025
@@ -17,7 +18,6 @@ SCALING_FACTOR = 145.39
 VMIN = -15
 VMAX = 15
 
-SCENARIO_COLOURS = ["#ADB993", "#EDC7CF", "#6F8AB7"]
 
 DISTRICT_COLOURS = [
     "red", "blue", "green", "orange", "purple", "brown", "pink", "gray",
@@ -28,8 +28,8 @@ DISTRICT_COLOURS = [
 
 # --- Select analysis mode (set exactly one to True) ---
 CLIMATE_SENSITIVITY_ANALYSIS = False
-PARAMETER_SENSITIVITY_ANALYSIS = True
-MAIN_TEXT = False
+PARAMETER_SENSITIVITY_ANALYSIS = False
+MAIN_TEXT = True
 
 if CLIMATE_SENSITIVITY_ANALYSIS:
     SCENARIO_NAMES = [
@@ -234,7 +234,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Layout: col 0 = dot plot (A), col 1 = bar chart (B)
     n_cols = 2
-    fig = plt.figure(figsize=(24, max(8, n_districts * 0.35)))
+    fig = plt.figure(figsize=(20, max(8, n_districts * 0.25)))
     gs = fig.add_gridspec(1, n_cols, wspace=0.35)
 
     # --- Panel A: Dot plot ---
@@ -256,17 +256,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     ax_dot.set_yticks(range(n_districts))
-    ax_dot.set_yticklabels(district_order, fontsize=14)
-    ax_dot.set_xlabel(f"Total DALYs ({MIN_YEAR}–{MAX_YEAR - 1})", fontsize=16, fontweight="bold")
-    ax_dot.set_title("", fontsize=16, fontweight="bold")
+    ax_dot.set_yticklabels(district_order, fontsize=FS_TICK)
+    ax_dot.set_xlabel(f"Total DALYs ({MIN_YEAR}–{MAX_YEAR - 1})", fontsize=FS_LABEL, fontweight="bold")
+    ax_dot.set_title("", fontsize=FS_TITLE, fontweight="bold")
     ax_dot.tick_params(axis="x", labelsize=14)
     ax_dot.axvline(0, color="black", linewidth=0.8, linestyle="--")
     ax_dot.spines["top"].set_visible(False)
     ax_dot.spines["right"].set_visible(False)
-    ax_dot.legend(title="Scenario", loc="lower right", fontsize=11, ncol=n_scenarios)
+    ax_dot.legend(title="Scenario", loc="lower right", fontsize=FS_LABEL, ncol=n_scenarios)
     ax_dot.grid(axis="x", linestyle=":", linewidth=0.6, alpha=0.6)
-    ax_dot.text(-0.08, 1.02, "(A)", transform=ax_dot.transAxes,
-                fontsize=16, fontweight="bold", va="bottom")
+    ax_dot.set_title("(A)", fontsize=FS_PANEL, fontweight="bold", loc="left")
 
     # --- Panel B: Bar chart — difference in total DALYs vs No Disruptions ---
     baseline_total = dalys_totals["No Disruptions"]
@@ -294,17 +293,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         alpha=0.8, error_kw={"elinewidth": 2, "capthick": 2},
     )
     ax_bar.axhline(0, color="black", linewidth=0.8, linestyle="--")
-    ax_bar.set_title("", fontsize=16, fontweight="bold")
-    ax_bar.set_xlabel("Scenario", size=16, labelpad=10, fontweight="bold")
-    ax_bar.set_ylabel('Excess of DALYs\nvs. "No Disruptions"', size=16, labelpad=10, fontweight="bold")
+    ax_bar.set_title("", fontsize=FS_TITLE, fontweight="bold")
+    ax_bar.set_xlabel("Scenario", size=FS_LABEL, labelpad=10, fontweight="bold")
+    ax_bar.set_ylabel('Excess of DALYs\nvs. "No Disruptions"', size=FS_LABEL, labelpad=10, fontweight="bold")
     ax_bar.set_xticks(range(len(diff_means)))
-    ax_bar.set_xticklabels(diff_means.index, rotation=0, ha="right", fontsize=14)
-    ax_bar.tick_params(axis="both", which="major", labelsize=14)
+    ax_bar.set_xticklabels(diff_means.index, rotation=0, ha="right", fontsize=FS_LABEL)
+    ax_bar.tick_params(axis="both", which="major", labelsize=FS_TICK)
     ax_bar.spines["top"].set_visible(False)
     ax_bar.spines["right"].set_visible(False)
     ax_bar.grid(False)
-    ax_bar.text(-0.12, 1.02, "(B)", transform=ax_bar.transAxes,
-                fontsize=16, fontweight="bold", va="bottom")
+    ax_bar.set_title("(B)", fontsize=FS_PANEL, fontweight="bold", loc="left")
 
     fig.savefig(
         output_folder / "dalys_dotplot_barchart_combined.png",
@@ -328,8 +326,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(dates, ts["mean"].values, color=colour, linewidth=1.8, label=scen_name)
         ax.fill_between(dates, ts["lower"].values, ts["upper"].values, color=colour, alpha=0.2)
 
-    ax.set_xlabel("Date", fontsize=11)
-    ax.set_ylabel("Total DALYs", fontsize=11)
+    ax.set_xlabel("Date", fontsize=FS_LABEL, labelpad=10, fontweight="bold")
+    ax.set_ylabel("Total DALYs", fontsize=FS_LABEL)
     ax.set_title("Monthly Total DALYs by Scenario (95% CI)", fontsize=13, fontweight="bold")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)

@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from plot_configurations import FS_TICK, FS_LABEL, FS_TITLE, FS_LEGEND, FS_PANEL, FS_SUPTITLE, SCENARIO_COLOURS
 
 
 def _read_log(results_folder: Path, draw: int, run: int,
@@ -340,7 +341,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     vmax_pct = max(np.ceil(all_means.max() * 1000) / 10, 0.1)
 
     fig, axes = plt.subplots(1, len(map_draws),
-                             figsize=(10 * len(map_draws), 14))
+                             figsize=(10 * len(map_draws), 8))
     if len(map_draws) == 1:
         axes = [axes]
 
@@ -363,14 +364,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             missing_kwds={"color": "lightgrey", "label": "No data"},
         )
 
-        ax.text(-0.08, 1.02, panel_labels[i], transform=ax.transAxes,
-                fontsize=16, fontweight="bold", va="bottom")
-
+        ax.set_title(panel_labels[i], fontsize=FS_PANEL, fontweight="bold", loc="left")
         ax.get_figure().axes[-1].set_ylabel(
             "% population with ≥1 disruption/year",
-            fontsize=12, fontweight="bold",
+            fontsize=FS_LABEL, fontweight="bold",
         )
-        ax.set_title(scen, fontsize=18, fontweight="bold")
+        ax.set_title(scen, fontsize=FS_TITLE, fontweight="bold")
         ax.axis("off")
 
     fig.suptitle(
