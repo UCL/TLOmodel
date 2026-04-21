@@ -16,11 +16,13 @@ import geopandas as gpd
 from tlo import Date
 from tlo.analysis.utils import extract_results
 
-from plot_configurations import FS_TICK, FS_LABEL, FS_TITLE, FS_LEGEND, FS_PANEL, FS_SUPTITLE, SCENARIO_COLOURS
-
+from plot_configurations import (FS_TICK, FS_LABEL, FS_TITLE, FS_LEGEND,
+                                 FS_PANEL, FS_SUPTITLE, SCENARIO_COLOURS,
+                                 apply_style)
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    apply_style()
     min_year = 2025
     max_year = 2041
     spacing_of_years = 1

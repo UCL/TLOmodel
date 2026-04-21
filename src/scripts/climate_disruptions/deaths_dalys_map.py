@@ -7,7 +7,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
-from plot_configurations import FS_TICK, FS_LABEL, FS_TITLE, FS_LEGEND, FS_PANEL, FS_SUPTITLE, SCENARIO_COLOURS
+
+from plot_configurations import (FS_TICK, FS_LABEL, FS_TITLE, FS_LEGEND,
+                                 FS_PANEL, FS_SUPTITLE, SCENARIO_COLOURS,
+                                 apply_style)
 
 # Configuration
 MIN_YEAR = 2025
@@ -17,7 +20,6 @@ PREFIX_ON_FILENAME = "1"
 SCALING_FACTOR = 145.39
 VMIN = -15
 VMAX = 15
-
 
 DISTRICT_COLOURS = [
     "red", "blue", "green", "orange", "purple", "brown", "pink", "gray",
@@ -100,6 +102,8 @@ def extract_and_summarize(results_folder, custom_fn, draw, only_mean=False):
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce plots and CSVs describing climate scenario effects on DALYs."""
 
+    apply_style()  # apply shared style once at the start
+
     def graph_path(stub, draw):
         return output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"
 
@@ -135,13 +139,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         for year in range(MIN_YEAR, MAX_YEAR, SPACING_OF_YEARS):
             period = (Date(year, 1, 1), Date(year, 12, 31))
-            # FIX: use 'draw' not shadowed by inner loop variable
             result = extract_and_summarize(
                 results_folder,
                 custom_fn=lambda df, p=period: get_num_dalys_by_district(df, p),
                 draw=draw,
             )
-
             yearly_mean[year] = result["mean"] * SCALING_FACTOR
             yearly_lower[year] = result["lower"] * SCALING_FACTOR
             yearly_upper[year] = result["upper"] * SCALING_FACTOR
@@ -158,8 +160,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_xlabel("Year")
         ax.set_ylabel("DALYs")
         ax.legend(title="District", bbox_to_anchor=(1.0, 1), loc="upper left")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
         ax.grid(False)
         fig.tight_layout()
         fig.savefig(graph_path("Trend_DALYs_by_district_All_Years_Scatter", draw))
@@ -175,15 +175,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_title(f"DALYs by District Over Time — {scenario_name}")
         ax.set_ylabel("Number of DALYs")
         ax.set_xlabel("Year")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.legend(title="District", bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=8, ncol=2)
+        ax.legend(title="District", bbox_to_anchor=(1.05, 1), loc="upper left",
+                  fontsize=FS_LEGEND - 3, ncol=2)
         ax.grid(False)
         fig.tight_layout()
         fig.savefig(graph_path("Trend_DALYs_by_district_All_Years_Stacked", draw))
         plt.close(fig)
 
-        # Store cross-scenario summaries (sum = total over period, mean = annual avg)
         all_scenarios_dalys[scenario_name] = df_mean.sum(axis=1)
         all_scenarios_dalys_upper[scenario_name] = df_upper.sum(axis=1)
         all_scenarios_dalys_lower[scenario_name] = df_lower.sum(axis=1)
@@ -205,10 +203,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys.T.plot(kind="bar", stacked=True, ax=ax)
     ax.set_xlabel("Scenario")
     ax.set_ylabel("DALYs")
-    ax.legend(title="District", bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=8)
+    ax.legend(title="District", bbox_to_anchor=(1.05, 1), loc="upper left",
+              fontsize=FS_LEGEND - 3)
     ax.tick_params(axis="x", rotation=45)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
     ax.grid(False)
     fig.tight_layout()
     fig.savefig(output_folder / "stacked_dalys_by_district_scenario.png", dpi=300, bbox_inches="tight")
@@ -221,20 +218,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     n_districts = len(district_order)
     n_scenarios = len(active_scenario_names)
 
-    # FIX: use .sum(axis=0) to get total DALYs across all districts per scenario,
-    # not .mean(axis=0) which averages across districts and makes differences tiny.
     dalys_totals = df_dalys.sum(axis=0)
     dalys_upper_total = df_dalys_upper.sum(axis=0)
     dalys_lower_total = df_dalys_lower.sum(axis=0)
 
-    # For the dot plot, keep per-district means as before
-    dalys_means = df_dalys.mean(axis=0)
-    dalys_upper_agg = df_dalys_upper.mean(axis=0)
-    dalys_lower_agg = df_dalys_lower.mean(axis=0)
-
-    # Layout: col 0 = dot plot (A), col 1 = bar chart (B)
     n_cols = 2
-    fig = plt.figure(figsize=(20, max(8, n_districts * 0.25)))
+    fig = plt.figure(figsize=(14, max(8, n_districts * 0.35)))
     gs = fig.add_gridspec(1, n_cols, wspace=0.35)
 
     # --- Panel A: Dot plot ---
@@ -258,22 +247,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax_dot.set_yticks(range(n_districts))
     ax_dot.set_yticklabels(district_order, fontsize=FS_TICK)
     ax_dot.set_xlabel(f"Total DALYs ({MIN_YEAR}–{MAX_YEAR - 1})", fontsize=FS_LABEL, fontweight="bold")
-    ax_dot.set_title("", fontsize=FS_TITLE, fontweight="bold")
-    ax_dot.tick_params(axis="x", labelsize=14)
+    ax_dot.tick_params(axis="x", labelsize=FS_TICK)
     ax_dot.axvline(0, color="black", linewidth=0.8, linestyle="--")
-    ax_dot.spines["top"].set_visible(False)
-    ax_dot.spines["right"].set_visible(False)
-    ax_dot.legend(title="Scenario", loc="lower right", fontsize=FS_LABEL, ncol=n_scenarios)
+    ax_dot.legend(title="Scenario", loc="lower right", fontsize=FS_LEGEND, ncol=n_scenarios)
     ax_dot.grid(axis="x", linestyle=":", linewidth=0.6, alpha=0.6)
     ax_dot.set_title("(A)", fontsize=FS_PANEL, fontweight="bold", loc="left")
 
-    # --- Panel B: Bar chart — difference in total DALYs vs No Disruptions ---
+    # --- Panel B: Bar chart ---
     baseline_total = dalys_totals["No Disruptions"]
     diff_means = dalys_totals - baseline_total
     diff_upper = dalys_upper_total - baseline_total
     diff_lower = dalys_lower_total - baseline_total
 
-    # Drop the No Disruptions entry (difference = 0)
     plot_mask = dalys_totals.index != "No Disruptions"
     diff_means = diff_means[plot_mask]
     diff_upper = diff_upper[plot_mask]
@@ -287,20 +272,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     ax_bar = fig.add_subplot(gs[0, 1])
     ax_bar.bar(
-        range(len(diff_means)), diff_means,  # FIX: no abs() — preserve sign
+        range(len(diff_means)), diff_means,
         yerr=diff_yerr, capsize=5,
         color=diff_colours,
         alpha=0.8, error_kw={"elinewidth": 2, "capthick": 2},
     )
     ax_bar.axhline(0, color="black", linewidth=0.8, linestyle="--")
-    ax_bar.set_title("", fontsize=FS_TITLE, fontweight="bold")
-    ax_bar.set_xlabel("Scenario", size=FS_LABEL, labelpad=10, fontweight="bold")
-    ax_bar.set_ylabel('Excess of DALYs\nvs. "No Disruptions"', size=FS_LABEL, labelpad=10, fontweight="bold")
+    ax_bar.set_xlabel("Scenario", fontsize=FS_LABEL, labelpad=10, fontweight="bold")
+    ax_bar.set_ylabel('Excess DALYs\nvs. "No Disruptions"', fontsize=FS_LABEL, labelpad=10, fontweight="bold")
     ax_bar.set_xticks(range(len(diff_means)))
-    ax_bar.set_xticklabels(diff_means.index, rotation=0, ha="right", fontsize=FS_LABEL)
+    ax_bar.set_xticklabels(diff_means.index, rotation=0, ha="right", fontsize=FS_TICK)
     ax_bar.tick_params(axis="both", which="major", labelsize=FS_TICK)
-    ax_bar.spines["top"].set_visible(False)
-    ax_bar.spines["right"].set_visible(False)
     ax_bar.grid(False)
     ax_bar.set_title("(B)", fontsize=FS_PANEL, fontweight="bold", loc="left")
 
@@ -326,12 +308,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(dates, ts["mean"].values, color=colour, linewidth=1.8, label=scen_name)
         ax.fill_between(dates, ts["lower"].values, ts["upper"].values, color=colour, alpha=0.2)
 
-    ax.set_xlabel("Date", fontsize=FS_LABEL, labelpad=10, fontweight="bold")
-    ax.set_ylabel("Total DALYs", fontsize=FS_LABEL)
-    ax.set_title("Monthly Total DALYs by Scenario (95% CI)", fontsize=13, fontweight="bold")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.legend(title="Scenario", bbox_to_anchor=(1.01, 1), loc="upper left", fontsize=9)
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Total DALYs")
+    ax.set_title("Monthly Total DALYs by Scenario (95% CI)")
+    ax.legend(title="Scenario", bbox_to_anchor=(1.01, 1), loc="upper left")
     ax.grid(axis="y", linestyle=":", linewidth=0.6, alpha=0.6)
     fig.tight_layout()
     fig.savefig(output_folder / "dalys_monthly_timeseries_total.png", dpi=300, bbox_inches="tight")
@@ -350,7 +330,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     all_districts = sorted(
-        district_ts_data[active_scenario_names[0]]["mean"].index.get_level_values("district_of_residence").unique()
+        district_ts_data[active_scenario_names[0]]["mean"].index.get_level_values(
+            "district_of_residence").unique()
     )
 
     n_cols = 4
@@ -376,11 +357,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                 color=colour, alpha=0.2)
             except KeyError:
                 pass
-        ax.set_title(district, fontsize=10, fontweight="bold")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.tick_params(axis="x", labelrotation=0, labelsize=10)
-        ax.tick_params(axis="y", labelsize=10)
+        ax.set_title(district)
+        ax.tick_params(axis="x", labelrotation=0)
         ax.grid(axis="y", linestyle=":", linewidth=0.5, alpha=0.5)
 
     for ax in axes_flat[len(all_districts):]:
@@ -388,8 +366,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     handles, labels = axes_flat[0].get_legend_handles_labels()
     fig.legend(handles, labels, title="Scenario", loc="lower right",
-               bbox_to_anchor=(1.0, 0.01), fontsize=9)
-    fig.suptitle("Monthly DALYs by District with 95% CI", fontsize=14,
+               bbox_to_anchor=(1.0, 0.01))
+    fig.suptitle("Monthly DALYs by District with 95% CI", fontsize=FS_SUPTITLE,
                  fontweight="bold", y=1.01)
     fig.tight_layout()
     fig.savefig(output_folder / "dalys_monthly_timeseries_by_district.png",
