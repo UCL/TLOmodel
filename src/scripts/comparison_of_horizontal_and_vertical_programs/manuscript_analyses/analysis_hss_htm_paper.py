@@ -692,6 +692,52 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_num_dalys_by_label_results_averted_vs_baseline.to_csv(
         results_folder / 'num_dalys_by_label_averted_vs_baseline.csv')
 
+
+    # todo add for Ox/York student
+    def get_total_num_dalys_all_causes(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+        y = _df \
+            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+            .drop(columns=['date', 'li_wealth']) \
+            .sum(axis=0)
+
+        return y
+
+    total_num_dalys_by_all_causes = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_all_causes,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    total_num_dalys_by_all_causes.to_csv(
+        results_folder / 'total_num_dalys_by_all_causes.csv')
+
+    def get_total_num_dalys_all_causes_by_year(_df):
+        """Return the total number of DALYs in the TARGET_PERIOD by year and cause label."""
+        y = _df \
+            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+            .drop(columns=['date', 'li_wealth']) \
+            .groupby('year') \
+            .sum() \
+            .stack()
+
+        return y
+
+    total_num_dalys_by_all_causes_by_year = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_all_causes_by_year,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    total_num_dalys_by_all_causes_by_year.to_csv(
+        results_folder / 'total_num_dalys_by_all_causes_by_year.csv')
+
+
+
     def sort_order_of_columns(_df):
 
         level_0_columns_results = total_num_dalys_by_label_results.columns.get_level_values(0).unique()
@@ -1045,6 +1091,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     deaths_averted_by_cause.to_csv(results_folder / f'num_deaths_averted_by_cause_{target_period()}.csv')
 
 
+    # todo deaths by cause for Ox/York student
+    # get numbers of deaths by cause
+    def get_deaths_all_causes(results_folder):
+        """ returns number deaths for each year of the simulation
+        values are aggregated across the runs of each draw
+        for the specified cause
+        """
+
+        def get_num_deaths_by_label(_df):
+            """Return total number of Deaths by label within the TARGET_PERIOD
+            values are summed for all ages
+            df returned: rows=COD, columns=draw
+            """
+            return _df \
+                .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+                .groupby(_df['label']) \
+                .size()
+
+        num_deaths_by_label = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=get_num_deaths_by_label,
+            do_scaling=True,
+        ).pipe(set_param_names_as_column_index_level_0)
+
+        return num_deaths_by_label
+
+    num_deaths_by_all_causes = get_deaths_all_causes(results_folder)
+    num_deaths_by_all_causes.to_csv(results_folder / f'num_deaths_by_all_causes{target_period()}.csv')
+
+
+
     # %% disease-specific outputs
 
     def compute_percentage_difference_in_indicator_across_runs(_df):
@@ -1357,7 +1436,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
+    parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
 
     apply(
