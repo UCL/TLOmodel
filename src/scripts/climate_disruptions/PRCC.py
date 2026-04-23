@@ -295,6 +295,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     print(f"Saved: {out_path}")
 
 
+import pandas as pd
+
+df = pd.read_csv("prcc_total_dalys.csv")
+print(df[df["parameter"].isin(["scale_factor_prob_disruption",
+                               "scale_factor_reseeking_healthcare_post_disruption"])]
+      [["parameter", "prcc", "p_value"]])
 # =============================================================================
 # Main Execution
 # =============================================================================
