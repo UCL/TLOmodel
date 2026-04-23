@@ -81,6 +81,55 @@ def _get_sorted_period_labels_and_display_labels(period_labels: list[str]) -> tu
     return ordered_period_labels, display_labels
 
 
+def _compute_sanitized_asymmetric_errors(
+    _df: pd.DataFrame,
+    central_col: str = "central",
+    lower_col: str = "lower",
+    upper_col: str = "upper",
+) -> tuple[np.ndarray, list]:
+    """Return non-negative asymmetric errors and labels whose CI bounds were auto-corrected."""
+    required_columns = {central_col, lower_col, upper_col}
+    missing_columns = required_columns.difference(set(_df.columns))
+    if missing_columns:
+        raise ValueError(f"Missing required CI column(s): {sorted(missing_columns)}")
+
+    ci = _df.loc[:, [central_col, lower_col, upper_col]].copy()
+    ci.columns = ["central", "lower", "upper"]
+
+    swapped_bounds = ci["lower"] > ci["upper"]
+    if swapped_bounds.any():
+        swapped = ci.loc[swapped_bounds, ["lower", "upper"]].copy()
+        ci.loc[swapped_bounds, "lower"] = swapped["upper"].to_numpy()
+        ci.loc[swapped_bounds, "upper"] = swapped["lower"].to_numpy()
+
+    central_below_lower = ci["central"] < ci["lower"]
+    central_above_upper = ci["central"] > ci["upper"]
+
+    lower_error = ci["central"] - ci["lower"]
+    upper_error = ci["upper"] - ci["central"]
+    lower_error = lower_error.where(~central_below_lower, 0.0).clip(lower=0.0)
+    upper_error = upper_error.where(~central_above_upper, 0.0).clip(lower=0.0)
+
+    corrected_rows = swapped_bounds | central_below_lower | central_above_upper
+    errors = np.vstack([lower_error.to_numpy(dtype=float), upper_error.to_numpy(dtype=float)])
+    return errors, list(ci.index[corrected_rows])
+
+
+def _warn_if_ci_corrected(plot_function_name: str, corrected_labels: list, max_examples: int = 5) -> None:
+    """Emit one warning with sample labels when CI bounds required correction."""
+    unique_labels = list(dict.fromkeys(corrected_labels))
+    if not unique_labels:
+        return
+
+    sample = ", ".join(str(label) for label in unique_labels[:max_examples])
+    sample_suffix = "..." if len(unique_labels) > max_examples else ""
+    warnings.warn(
+        f"{plot_function_name}: auto-corrected inconsistent CI values for {len(unique_labels)} row(s). "
+        f"Sample labels: {sample}{sample_suffix}",
+        stacklevel=2,
+    )
+
+
 def plot_deaths_by_period_for_cause(
     _df: pd.DataFrame,
     cause_label: str,
@@ -256,21 +305,31 @@ def do_bar_plot_with_ci(
 
     cause_labels = list(_df_nothing.index.get_level_values("label").unique())
 
+    corrected_labels = []
     for i, cause_label in enumerate(cause_labels):
         color = get_color_cause_of_death_or_daly_label(cause_label)
         one_cause = _df_nothing.xs(cause_label, level="label")
 
         bottom = 0.0
         for j, period_label in enumerate(period_labels_for_bar_plots):
-            chunk_height = one_cause.loc[period_label, "mean"] if period_label in one_cause.index else 0.0
+            chunk_height = one_cause.loc[period_label, "central"] if period_label in one_cause.index else 0.0
             _ax.bar(i, chunk_height, bottom=bottom, color=color, alpha=0.9 if j % 2 == 0 else 0.35)
             bottom += chunk_height
 
-        mean_value = one_cause.loc[target_period_label, "mean"]
-        lower_value = one_cause.loc[target_period_label, "lower"]
-        upper_value = one_cause.loc[target_period_label, "upper"]
-        overall_yerr = np.array([[mean_value - lower_value], [upper_value - mean_value]])
+        mean_value = one_cause.loc[target_period_label, "central"]
+        ci_row = pd.DataFrame(
+            {
+                "central": [mean_value],
+                "lower": [one_cause.loc[target_period_label, "lower"]],
+                "upper": [one_cause.loc[target_period_label, "upper"]],
+            },
+            index=pd.Index([cause_label], name="label"),
+        )
+        overall_yerr, corrected_row_labels = _compute_sanitized_asymmetric_errors(ci_row)
+        corrected_labels.extend(corrected_row_labels)
         _ax.errorbar(i, mean_value, yerr=overall_yerr, fmt="none", ecolor="black", capsize=2, linewidth=1.2)
+
+    _warn_if_ci_corrected("do_bar_plot_with_ci", corrected_labels)
 
     _ax.set_xticks(range(len(cause_labels)))
     _ax.set_xticklabels(cause_labels, rotation=90)
@@ -286,7 +345,7 @@ def plot_multiindex_dot_with_interval(
     _df: pd.DataFrame,
     year: int,
     _ax,
-    central_measure: str = "mean",
+    central_measure: str = "central",
     value_col: str = "population",
     sort: bool = True,
     x_label_rotation: int = 90,
@@ -350,14 +409,15 @@ def plot_multiindex_dot_with_interval(
 
 def do_barh_plot_with_ci(_df: pd.DataFrame, _ax):
     """Make horizontal bar plot for each treatment id."""
-    errors = pd.concat([_df["mean"] - _df["lower"], _df["upper"] - _df["mean"]], axis=1).T.to_numpy()
+    errors, corrected_labels = _compute_sanitized_asymmetric_errors(_df)
     _df.plot.barh(
         ax=_ax,
-        y="mean",
+        y="central",
         xerr=errors,
         legend=False,
         color=[_get_short_treatment_id_and_color(_id)[1] for _id in _df.index],
     )
+    _warn_if_ci_corrected("do_barh_plot_with_ci", corrected_labels)
 
 
 def do_label_barh_plot(_df: pd.DataFrame, _ax):
@@ -366,8 +426,8 @@ def do_label_barh_plot(_df: pd.DataFrame, _ax):
     pos_on_rhs = _ax.get_xticks()[-1]
 
     for label, row in _df.iterrows():
-        if row["mean"] > 0:
-            annotation = f"{round(row['mean'], 1)} ({round(row['lower'])}-{round(row['upper'])}) %"
+        if row["central"] > 0:
+            annotation = f"{round(row['central'], 1)} ({round(row['lower'])}-{round(row['upper'])}) %"
             _ax.annotate(
                 annotation,
                 xy=(pos_on_rhs, y_cords.get(label)),
@@ -477,11 +537,18 @@ def plot_hsi_counts_by_period_for_draw(
     fig_height = max(6, min(0.28 * len(central.index) + 6, 18))
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 
+    corrected_labels = []
     for treatment_id in central.index:
         central_values = central.loc[treatment_id].to_numpy()
-        lower_values = lower.loc[treatment_id].to_numpy()
-        upper_values = upper.loc[treatment_id].to_numpy()
-        yerr = np.vstack([central_values - lower_values, upper_values - central_values])
+        ci_rows = pd.DataFrame(
+            {
+                "central": central.loc[treatment_id],
+                "lower": lower.loc[treatment_id],
+                "upper": upper.loc[treatment_id],
+            }
+        )
+        yerr, corrected_periods = _compute_sanitized_asymmetric_errors(ci_rows)
+        corrected_labels.extend([f"{treatment_id}:{period}" for period in corrected_periods])
         _, color = _get_short_treatment_id_and_color(treatment_id)
         ax.errorbar(
             x,
@@ -495,6 +562,8 @@ def plot_hsi_counts_by_period_for_draw(
             markersize=4,
             label=str(treatment_id),
         )
+
+    _warn_if_ci_corrected("plot_hsi_counts_by_period_for_draw", corrected_labels)
 
     ax.set_xticks(x)
     ax.set_xticklabels(display_period_labels, rotation=45, ha="right")

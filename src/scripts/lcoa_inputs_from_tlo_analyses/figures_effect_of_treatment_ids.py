@@ -24,6 +24,8 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 )
 from tlo import Date
 
+# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs2
+
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
@@ -35,24 +37,32 @@ def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
             loaded[results_file] = pickle.load(f)
     return loaded
 
+
 def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path = None):
     """Produce standard plots describing effect of each TREATMENT_ID."""
 
     param_names = get_parameter_names_from_scenario_file()
 
-    period_labels_for_bar_plots = [
-        label
-        for label, _ in get_periods_within_target_period(
-                period_length_years=PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
-                target_period_tuple=TARGET_PERIOD,
-            )
-        ]
-
-    target_period_label = target_period(TARGET_PERIOD)
-
     all_results = load_results_files(results_files)
+    primary_results = all_results[results_files[0]]
 
-    counts_of_hsi_in_implementation_period = all_results[results_files[0]]['counts_of_hsi_by_period']
+    num_deaths_averted = primary_results.get('num_deaths_averted')
+    pc_deaths_averted = primary_results.get('pc_deaths_averted')
+    num_dalys_averted = primary_results.get('num_dalys_averted')
+    pc_dalys_averted = primary_results.get('pc_dalys_averted')
+    icers = primary_results.get('icers_summarized')
+    comparison_metrics_available = all(
+        metric is not None
+        for metric in (
+            num_deaths_averted,
+            pc_deaths_averted,
+            num_dalys_averted,
+            pc_dalys_averted,
+            icers,
+        )
+    )
+
+    counts_of_hsi_in_implementation_period = primary_results['counts_of_hsi_by_period']
     counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2010-2041'], level=1)
 
     result_df_by_period = pd.DataFrame([
@@ -83,7 +93,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         plt.close(fig)
 
     # Plot population growth
-    total_population_in_implementation = all_results[results_files[0]]['total_population_by_year']
+    total_population_in_implementation = primary_results['total_population_by_year']
     fig, ax = plot_population_by_year(total_population_in_implementation / 1e6)
     name_of_plot = "Population size by year"
     ax.set_title(name_of_plot)
@@ -94,11 +104,9 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
 
 
-    pc_dalys_averted = all_results[results_files[0]]['pc_dalys_averted']
+    num_dalys_by_cause_label_implementation = primary_results['num_dalys'].drop(['2010-2041'], level=1)
 
-    num_dalys_by_cause_label_implementation = all_results[results_files[0]]['num_dalys'].drop(['2010-2041'], level=1)
-
-    num_deaths_by_cause_label_implementation = all_results[results_files[0]]['num_deaths'].drop(['2010-2041'], level=1)
+    num_deaths_by_cause_label_implementation = primary_results['num_deaths'].drop(['2010-2041'], level=1)
 
     for param in param_names:
         draw = format_scenario_name(param)
@@ -137,69 +145,81 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig.savefig(outfile)
         plt.close(fig)
 
-    deaths_averted = all_results[results_files[0]]['num_deaths_averted']
-    deaths_averted_sorted = (deaths_averted.sort_values(by="mean", ascending=True) / 1e3)
-    fig_height = max(6, min(0.28 * len(deaths_averted_sorted.index) + 4, 18))
-    fig, ax = plt.subplots(figsize=(10, fig_height))
-    name_of_plot = "Deaths Averted by Each Treatment ID"
-    do_barh_plot_with_ci(deaths_averted_sorted, ax)
-    ax.set_title(name_of_plot)
-    ax.set_xlabel("Number of deaths averted (/1000)")
-    ax.grid(axis="x")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.tight_layout()
-    fig.savefig(outfile)
-    plt.close(fig)
+    if comparison_metrics_available:
+        deaths_averted_sorted = (num_deaths_averted.sort_values(by="central", ascending=True) / 1e3)
+        fig_height = max(6, min(0.28 * len(deaths_averted_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "Deaths Averted by Each Treatment ID"
+        do_barh_plot_with_ci(deaths_averted_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("Number of deaths averted (/1000)")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
 
-    dalys_averted = all_results[results_files[0]]['num_dalys_averted']
-    dalys_averted_sorted = (dalys_averted.sort_values(by="mean", ascending=True) / 1e3)
-    fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
-    fig, ax = plt.subplots(figsize=(10, fig_height))
-    name_of_plot = "DALYS Averted by Each Treatment ID"
-    do_barh_plot_with_ci(dalys_averted_sorted, ax)
-    ax.set_title(name_of_plot)
-    ax.set_xlabel("DALYs averted (/1000)")
-    ax.grid(axis="x")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.tight_layout()
-    fig.savefig(outfile)
-    plt.close(fig)
+        dalys_averted_sorted = (num_dalys_averted.sort_values(by="central", ascending=True) / 1e3)
+        fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "DALYS Averted by Each Treatment ID"
+        do_barh_plot_with_ci(dalys_averted_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("DALYs averted (/1000)")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
 
-    pc_deaths_averted = all_results[results_files[0]]['pc_deaths_averted']
-    pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="mean", ascending=True))
-    fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
-    fig, ax = plt.subplots(figsize=(10, fig_height))
-    name_of_plot = "Percentage Deaths Averted by Each Treatment ID"
-    do_barh_plot_with_ci(pc_deaths_averted_sorted, ax)
-    ax.set_title(name_of_plot)
-    ax.set_xlabel("Percentage of deaths averted")
-    ax.grid(axis="x")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.tight_layout()
-    fig.savefig(outfile)
-    plt.close(fig)
+        pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="central", ascending=True))
+        fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "Percentage Deaths Averted by Each Treatment ID"
+        do_barh_plot_with_ci(pc_deaths_averted_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("Percentage of deaths averted")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
 
-    pc_dalys_averted = all_results[results_files[0]]['pc_dalys_averted']
-    pc_dalys_averted_sorted = (pc_dalys_averted.sort_values(by="mean", ascending=True))
-    fig_height = max(6, min(0.28 * len(pc_dalys_averted_sorted.index) + 4, 18))
-    fig, ax = plt.subplots(figsize=(10, fig_height))
-    name_of_plot = "Percentage DALYs Averted by Each Treatment ID"
-    do_barh_plot_with_ci(pc_dalys_averted_sorted, ax)
-    ax.set_title(name_of_plot)
-    ax.set_xlabel("Percentage of DALYs averted")
-    ax.grid(axis="x")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.tight_layout()
-    fig.savefig(outfile)
-    plt.close(fig)
+        pc_dalys_averted_sorted = (pc_dalys_averted.sort_values(by="central", ascending=True))
+        fig_height = max(6, min(0.28 * len(pc_dalys_averted_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "Percentage DALYs Averted by Each Treatment ID"
+        do_barh_plot_with_ci(pc_dalys_averted_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("Percentage of DALYs averted")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
+
+        icers_sorted = icers.sort_values(by="central", ascending=True)
+        fig_height = max(6, min(0.28 * len(icers_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "ICERs for Each Treatment ID"
+        do_barh_plot_with_ci(icers_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("ICER (USD per DALY averted)")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -208,5 +228,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     apply(results_files=args.results_files, output_folder=args.output_folder, resourcefilepath=Path("./resources"))
-
-    plot_legends.apply(results_folder=None, output_folder=args.output_folder, resourcefilepath=Path("./resources"))

@@ -66,13 +66,10 @@ from tlo.analysis.utils import (
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
-
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2041-01-01 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
-#suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
-#results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
-# SCALING_FACTOR retrieved from the suspended run in
-# outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z
-# SCALING_FACTOR = 58.158436
+
 EXCLUDED_HSIs = [
     "FirstAttendance_Emergency",
     "FirstAttendance_NonEmergency",
@@ -85,11 +82,25 @@ def parse_iso_date(value: str) -> Date:
     return Date(parsed.year, parsed.month, parsed.day)
 
 
+def parse_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"true", "t", "1", "yes", "y"}:
+        return True
+    if normalized in {"false", "f", "0", "no", "n"}:
+        return False
+    raise argparse.ArgumentTypeError(
+        f"Invalid boolean value '{value}'. Use True or False."
+    )
+
+
 def apply(
     results_folder: Path,
     output_folder: Path,
     resourcefilepath: Path,
-    target_period_tuple: tuple[Date, Date]
+    target_period_tuple: tuple[Date, Date],
+    do_comparison: bool = True,
+    cost_checkpoint_profile: str | None = None,
+    load_input_costs_from_checkpoint: bool | None = None,
 ):
     """Produce standard plots describing effect of each TREATMENT_ID."""
     _, age_grp_lookup = make_age_grp_lookup()
@@ -116,38 +127,65 @@ def apply(
     relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
     list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
     print("List of relevant years for costing:", list_of_relevant_years_for_costing)
-    start = perf_counter()
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=PerformanceWarning)
-        warnings.filterwarnings("ignore", category=UserWarning)
-        warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
-        input_costs = estimate_input_cost_of_scenarios(
-                          results_folder,
-                          resourcefilepath,
-                          _years=list_of_relevant_years_for_costing,
-                          cost_only_used_staff=True,
-                          _discount_rate=discount_rate_cost,
-                          _metric="median",)
+    checkpoint_path = None
+    if cost_checkpoint_profile is not None:
+        checkpoint_path = output_folder / "checkpoints" / f"input_costs_{cost_checkpoint_profile}.pkl"
 
-    elapsed = perf_counter() - start
-    print(f"\n=== TIMING: estimate_input_cost_of_scenarios took {elapsed:.3f}s ===\n", flush=True)
+    if checkpoint_path is not None and load_input_costs_from_checkpoint is True:
+        print(f"Loading input costs from checkpoint: {checkpoint_path}")
+        if not checkpoint_path.exists():
+            raise FileNotFoundError(
+                f"Input-cost checkpoint not found at {checkpoint_path}. "
+                "Run once with --cost-checkpoint-profile <name> and without "
+                "--load-input-costs-from-checkpoint to create it."
+            )
+        with open(checkpoint_path, "rb") as f:
+            input_costs = pickle.load(f)
+    else:
+        if checkpoint_path is None:
+            print("No cost checkpoint profile provided. Recomputing input costs.")
+        else:
+            print(f"Recomputing input costs")
+        start = perf_counter()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=PerformanceWarning)
+            warnings.filterwarnings("ignore", category=UserWarning)
+            warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
+            input_costs = estimate_input_cost_of_scenarios(
+                              results_folder,
+                              resourcefilepath,
+                              _years=list_of_relevant_years_for_costing,
+                              cost_only_used_staff=True,
+                              _discount_rate=discount_rate_cost,
+                              _metric="median",)
+
+        elapsed = perf_counter() - start
+        print(f"\n=== TIMING: estimate_input_cost_of_scenarios took {elapsed:.3f}s ===\n", flush=True)
+        if checkpoint_path is not None:
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(checkpoint_path, "wb") as f:
+                pickle.dump(input_costs, f)
+            print(f"Saved input costs checkpoint to: {checkpoint_path}")
     results['input_costs'] = input_costs
 
-    # Computing ICERs
-    print("Computing ICERs...")
-    start = perf_counter()
-    total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-    incremental_scenario_cost = (pd.DataFrame(
-        find_difference_relative_to_comparison(
-            total_input_cost,
-            comparison=0,)
-    ).T.iloc[0].unstack()).T
+    # Computing incremental costs
+    if do_comparison:
+        print("Computing incremental_scenario_cost...")
+        start = perf_counter()
+        total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
+        incremental_scenario_cost = (pd.DataFrame(
+            find_difference_relative_to_comparison(
+                total_input_cost,
+                comparison=0,)
+        ).T.iloc[0].unstack()).T
 
-    elapsed = perf_counter() - start
-    print(f"\n=== TIMING: computing icers took {elapsed:.3f}s ===\n", flush=True)
+        elapsed = perf_counter() - start
+        print(f"\n=== TIMING: computing incremental_scenario_cost took {elapsed:.3f}s ===\n", flush=True)
 
-    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric='median')
-    results['incremental_scenario_cost'] = incremental_scenario_cost_summarized
+        incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric='median')
+        incremental_scenario_cost_summarized = incremental_scenario_cost_summarized.rename(columns = {'median':'central'})
+
+
 
     # Get total population by year
     print("Extracting population data...")
@@ -216,15 +254,21 @@ def apply(
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
-    num_deaths_averted = summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T
-    ).iloc[0].unstack()
+    if do_comparison:
+        num_deaths_averted = compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T,
+            central_measure='median'
+        ).iloc[0].unstack()
 
-    pc_deaths_averted = 100.0 * summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T
-    ).iloc[0].unstack()
+        pc_deaths_averted = 100.0 * compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T,
+            central_measure='median'
+        ).iloc[0].unstack()
+    else:
+        num_deaths_averted = None
+        pc_deaths_averted = None
 
     num_deaths = compute_summary_statistics(num_deaths, central_measure='median')
 
@@ -243,21 +287,29 @@ def apply(
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
-    num_dalys_averted = summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing')).T
-    ).iloc[0].unstack()
+    if do_comparison:
+        num_dalys_averted = (
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing'))
 
-    pc_dalys_averted = 100.0 * summarize(
-        pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T
-    ).iloc[0].unstack()
+        ).T.iloc[0].unstack()
+
+        pc_dalys_averted = 100.0 * compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T,
+            central_measure='median'
+        ).iloc[0].unstack()
+        incremental_scenario_cost_summarized.index = num_dalys_averted.index
+        icers_summarized = (incremental_scenario_cost_summarized /num_dalys_averted)
+        num_dalys_averted = compute_summary_statistics(num_dalys_averted.T, central_measure='median').iloc[0].unstack()
 
     num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
 
     results['num_dalys'] = num_dalys
-    results['num_dalys_averted'] = num_dalys_averted
-    results['pc_dalys_averted'] = pc_dalys_averted
+    results['num_dalys_averted'] = num_dalys_averted if do_comparison else None
+    results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
+    results['icers_summarized'] = icers_summarized if do_comparison else None
+    results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
 
     return results
 
@@ -268,6 +320,9 @@ if __name__ == "__main__":
     parser.add_argument("output_folder", type=Path, nargs="?", default=None)
     parser.add_argument("--target-start", type=str, default=None)
     parser.add_argument("--target-end", type=str, default=None)
+    parser.add_argument("--do-comparison", type=parse_bool, default=True)
+    parser.add_argument("--cost-checkpoint-profile", type=str, default=None)
+    parser.add_argument("--load-input-costs-from-checkpoint", type=parse_bool, default=None)
     args = parser.parse_args()
 
     if (args.target_start is None) != (args.target_end is None):
@@ -279,6 +334,10 @@ if __name__ == "__main__":
     )
     if not target_period_tuple[0] < target_period_tuple[1]:
         parser.error("--target-start must be earlier than --target-end.")
+    if args.load_input_costs_from_checkpoint is not None and args.cost_checkpoint_profile is None:
+        parser.error(
+            "Provide --cost-checkpoint-profile when using --load-input-costs-from-checkpoint."
+        )
 
     out = args.output_folder if args.output_folder is not None else args.results_folder
     results = apply(
@@ -286,6 +345,9 @@ if __name__ == "__main__":
         output_folder=out,
         resourcefilepath=Path("./resources"),
         target_period_tuple=target_period_tuple,
+        do_comparison=args.do_comparison,
+        cost_checkpoint_profile=args.cost_checkpoint_profile,
+        load_input_costs_from_checkpoint=args.load_input_costs_from_checkpoint,
     )
     outfile = (
         f"{target_period_tuple[1].year:04d}-{target_period_tuple[1].month:02d}-{target_period_tuple[1].day:02d}"
