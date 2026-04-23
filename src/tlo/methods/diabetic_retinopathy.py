@@ -744,17 +744,32 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population: Population) -> None:
         df = population.props
 
-        # Getting all those with diagnosed diabetes from the cardio_metabolic_disorders module
-        alive_diabetes_diagnosed_in_cmd = df.is_alive & df.nc_diabetes & df.nc_diabetes_date_diagnosis.notna()
+        # Getting all those with diabetes from CMD module
+        alive_with_diabetes = df.is_alive & df.nc_diabetes
 
-        # Compute diabetes duration (years)
+        # Access the diabetes_date_onset dates from CMD module
+        cmd_module = self.sim.modules['CardioMetabolicDisorders']
+        print(f"Size of diabetes_onset_dates dictionary: {len(cmd_module.diabetes_onset_dates)}")
+        print(f"Keys in diabetes_onset_dates: {list(cmd_module.diabetes_onset_dates.keys())[:10]}")
+        diabetes_onset_series = pd.Series(cmd_module.diabetes_onset_dates)
+
+        # Convert to pandas datetime if not already
+        diabetes_onset_series = pd.to_datetime(diabetes_onset_series)
+
+        # Compute diabetes duration (years) from biological onset
         diabetes_duration_years = pd.Series(0.0, index=df.index)
 
-        diabetes_duration_years.loc[alive_diabetes_diagnosed_in_cmd] = (
-            (self.sim.date - df.loc[alive_diabetes_diagnosed_in_cmd, 'nc_diabetes_date_diagnosis']).dt.days / 365.25
+        # Calculate only for those who have onset dates recorded
+        has_onset_date = alive_with_diabetes & df.index.isin(diabetes_onset_series.index)
+        diabetes_duration_years.loc[has_onset_date] = (
+            (self.sim.date - diabetes_onset_series.loc[has_onset_date]).dt.days / 365.25
         )
 
-        # Compute the boolean threshold as a variable you can inspect
+        print("--------------------------DEBUG---------------------------")
+        print(f"Number of people with diabetes and onset date: {has_onset_date.sum()}")
+        print(f"Total people with diabetes: {alive_with_diabetes.sum()}")
+        print("--------------------------DEBUG END---------------------------")
+
         # Boolean for >15 years
         diabetes_duration_greater_than_15_years = diabetes_duration_years >= 15
 
@@ -827,7 +842,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.selected_for_eye_screening = False
 
         eligible_population_for_eye_screening = (
-            (df.is_alive & df.nc_diabetes) &  #todo add condition for people not to be selected again witin 1 year
+            (df.is_alive & df.nc_diabetes) &  # todo add condition for people not to be selected again witin 1 year
             # (df.dr_status == 'none') &
             # (df.dmo_status == 'none') &
             (df.age_years >= 20) &
@@ -891,7 +906,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['eye_screening']
         )
-        #todo should I create another test so that the second one is for dmo?
+        # todo should I create another test so that the second one is for dmo?
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='dilated_eye_exam_dr_dmo',
             hsi_event=self
