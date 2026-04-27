@@ -177,13 +177,17 @@ def apply(
             find_difference_relative_to_comparison(
                 total_input_cost,
                 comparison=0,)
-        ).T.iloc[0].unstack()).T
+        ))
 
         elapsed = perf_counter() - start
         print(f"\n=== TIMING: computing incremental_scenario_cost took {elapsed:.3f}s ===\n", flush=True)
 
-        incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric='median')
-        incremental_scenario_cost_summarized = incremental_scenario_cost_summarized.rename(columns = {'median':'central'})
+        incremental_scenario_cost = (
+            incremental_scenario_cost.T.reorder_levels(["draw", "run"], axis=1).sort_index(axis=1)
+        ).pipe(set_param_names_as_column_index_level_0, param_names)
+
+        incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
+
 
 
 
@@ -292,15 +296,16 @@ def apply(
             -1.0 * pd.DataFrame(
                 find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing'))
 
-        ).T.iloc[0].unstack()
+        )
 
         pc_dalys_averted = 100.0 * compute_summary_statistics(
             -1.0 * pd.DataFrame(
                 find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T,
             central_measure='median'
         ).iloc[0].unstack()
-        incremental_scenario_cost_summarized.index = num_dalys_averted.index
-        icers_summarized = (incremental_scenario_cost_summarized /num_dalys_averted)
+        # Run-by-run incremental cost-effectiveness ratio calculation
+        icers = incremental_scenario_cost.T /num_dalys_averted
+        icers_summarized = compute_summary_statistics(icers.T, central_measure='median').iloc[0].unstack()
         num_dalys_averted = compute_summary_statistics(num_dalys_averted.T, central_measure='median').iloc[0].unstack()
 
     num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
