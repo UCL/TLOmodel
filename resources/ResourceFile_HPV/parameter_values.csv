@@ -1,19 +1,17 @@
-parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
-init_prev_hpv_hr1,0.03,undetermined,0,1,calibration,N/A
-init_prev_hpv_hr2,0.04,undetermined,0,1,calibration,N/A
-init_prev_hpv_hr3,0.05,undetermined,0,1,calibration,N/A
-b_hpv,0.3,undetermined,0,1,calibration,N/A
-median_clear_hr1,12,undetermined,0,1,calibration,N/A
-median_clear_hr2,12,undetermined,0,1,calibration,N/A
-median_clear_hr3,12,undetermined,0,1,calibration,N/A
-clear_shape,2,undetermined,0,1,calibration,N/A
-r_clear_12,0.2,undetermined,0,1,calibration,N/A
-r_clear_24,0.3,undetermined,0,1,calibration,N/A
-rr_hpv_hiv,2,undetermined,0,1,calibration,N/A
-rr_hr1_vaccinated,0,undetermined,0,1,calibration,N/A
-rr_hr2_vaccinated,0.6,undetermined,0,1,calibration,N/A
-rr_hr3_vaccinated,0.3,undetermined,0,1,calibration,N/A
-rr_hpv_age50plus,0.1,undetermined,0,1,calibration,N/A
-rr_immunity_hr1,0.8,undetermined,0,1,calibration,N/A
-rr_immunity_hr2,0.8,undetermined,0,1,calibration,N/A
-rr_immunity_hr3,0.8,undetermined,0,1,calibration,N/A
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference,
+init_prev_hpv_hr1,0.05,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. ",
+init_prev_hpv_hr2,0.1,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. ",
+init_prev_hpv_hr3,0.06,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. ",
+b_hpv,0.3,undetermined,0,1,calibration,N/A,
+rr_hpv_hiv_no_art,2.6,undetermined,0,1,calibration,"Liu G, Sharma M, Tan N, Barnabas RV. HIV-positive women have higher risk of human papilloma virus infection, precancerous lesions, and cervical cancer. AIDS. 2018 Mar 27;32(6):795-808. doi: 10.1097/QAD.0000000000001765. PMID: 29369827; PMCID: PMC5854529.",
+rr_hpv_hiv_art_unsuppressed,1.8,undetermined,0,1,calibration,N/A,
+rr_hr1_vaccinated,0.1,undetermined,0,1,calibration,N/A,
+rr_hr2_vaccinated,0.5,undetermined,0,1,calibration,N/A,
+rr_hr3_vaccinated,0.8,undetermined,0,1,calibration,N/A,
+rr_hpv_age50plus,0.5,undetermined,0,1,calibration,N/A,
+median_clear_hr1,14,undetermined,0,1,calibration,N/A,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
+median_clear_hr2,12,undetermined,0,1,calibration,N/A,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
+median_clear_hr3,12,undetermined,0,1,calibration,N/A,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
+clear_shape,1,undetermined,0,1,calibration,N/A,
+rr_clear_hiv_no_art,0.65,undetermined,0,1,calibration,N/A,
+rr_clear_hiv_art_unsuppressed,0.8,undetermined,0,1,calibration,N/A,

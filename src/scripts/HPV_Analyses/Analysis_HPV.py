@@ -140,8 +140,8 @@ plt.show()
 
 # 2. HPV  prevalence in different gender
 plt.figure(figsize=(8, 5))
-plt.plot(hpv_df["Year"], hpv_df["MalePrev"], marker="o", label="Male")
-plt.plot(hpv_df["Year"], hpv_df["FemalePrev"], marker="o", label="Female")
+plt.plot(hpv_df["Year"], hpv_df["M_Prev"], marker="o", label="Male")
+plt.plot(hpv_df["Year"], hpv_df["F_Prev"], marker="o", label="Female")
 plt.xlabel("Year")
 plt.ylabel("HPV prevalence")
 plt.title("HPV prevalence by sex")
