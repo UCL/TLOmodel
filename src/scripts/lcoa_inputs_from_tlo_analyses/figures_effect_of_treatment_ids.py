@@ -207,6 +207,13 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         plt.close(fig)
 
         icers_sorted = icers.sort_values(by="central", ascending=True)
+        # Do not plot treatment ids with very wide uncertainty
+        # CervicalCancer_Screening_Xpert_*              -110.336087   -6.192826  5064.399284
+        # BreastCancer_PalliativeCare_*                  -25.104866   -5.740423  2611.046029
+        # Hiv_Test_*                                   -7335.183554  248.738016   856.794914
+
+        mask = ~icers_sorted.index.get_level_values("draw").isin(["Hiv_Test_*", "CervicalCancer_Screening_Xpert_*", "BreastCancer_PalliativeCare_*"])
+        icers_sorted = icers_sorted[mask]
         fig_height = max(6, min(0.28 * len(icers_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
         name_of_plot = "ICERs for Each Treatment ID"

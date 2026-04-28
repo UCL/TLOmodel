@@ -8,7 +8,12 @@ from scripts.lcoa_inputs_from_tlo_analyses.scenario_effect_of_treatment_ids impo
     EffectOfEachTreatment,
 )
 from tlo import Date
-from tlo.analysis.utils import make_age_grp_types, summarize, to_age_group
+from tlo.analysis.utils import (
+    make_age_grp_types,
+    summarize,
+    to_age_group,
+    unflatten_flattened_multi_index_in_logging,
+)
 
 def find_difference_relative_to_comparison(_ser: pd.Series,
                                            comparison: str,
@@ -33,6 +38,7 @@ def get_total_population_by_year(
     return _df.loc[_df["year"].between(min(years_needed), max(years_needed)), ["year", "total"]].set_index("year")[
         "total"
     ]
+
 
 
 def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
@@ -349,3 +355,128 @@ def make_get_counts_of_hsis_by_period(
         return pd.concat([chunked, overall]).astype(int).sort_index()
 
     return _get_counts_of_hsis_by_period
+
+
+
+
+# Get available staff count for each year and draw
+def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+    """
+    Convert logged staff dictionary output into tidy format,
+    summing staff counts across all clinic columns.
+
+    Returns pd.Series indexed by:
+    (year, FacilityID, Officer)
+    """
+
+    df = _df.copy()
+    df["year"] = df["date"].dt.year
+    df = df.drop(columns=["date"])
+
+    clinic_cols = df.columns.difference(["year"])
+
+    long_frames = []
+
+    for clinic in clinic_cols:
+        expanded = df[[clinic, "year"]].copy()
+        expanded = expanded[expanded[clinic].notna()]
+
+        expanded_dict = expanded[clinic].apply(pd.Series)
+        expanded_dict["year"] = expanded["year"].values
+
+        long_frames.append(expanded_dict)
+
+    # Combine all clinics
+    combined = pd.concat(long_frames, ignore_index=True)
+
+    # Melt to long format
+    long_df = (
+        combined
+        .melt(id_vars=["year"],
+              var_name="facility_officer",
+              value_name="count")
+        .dropna(subset=["count"])
+    )
+
+    # Split FacilityID and Officer
+    parts = long_df["facility_officer"].str.split("_Officer_", expand=True)
+
+    long_df["FacilityID"] = (
+        parts[0]
+        .str.replace("FacilityID_", "", regex=False)
+        .astype(int)
+    )
+    long_df["Officer"] = parts[1]
+
+    # SUM ACROSS CLINICS HERE
+    result = (
+        long_df
+        .groupby(["year", "FacilityID", "Officer"])["count"]
+        .sum()
+        .sort_index()
+    )
+
+    return result
+
+# Get list of cadres which were utilised in each run to get the count of staff used in the simulation
+# Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run,
+# and not the amount of time which was used
+def get_capacity_used_by_officer_type_and_facility_level(
+    _df: pd.DataFrame,
+    facility_id_levels_dict
+) -> pd.Series:
+    """
+    Parse logging output and return a Series indexed by:
+        (year, OfficerType, FacilityLevel)
+
+    Collapses (sums) across clinics.
+    Uses facility_id_levels_dict to map FacilityID → FacilityLevel.
+    """
+
+    # ---- 1. Set year index ----
+    _df = _df.set_axis(_df["date"].dt.year).drop(columns=["date"])
+    _df.index.name = "year"
+
+    # ---- 2. Unflatten logging columns ----
+    _df = unflatten_flattened_multi_index_in_logging(_df)
+
+    # Expect columns like:
+    # ('Clinic', 'facID_and_officer')
+
+    col_df = _df.columns.to_frame(index=False)
+
+    # ---- 3. Extract OfficerType ----
+    col_df["OfficerType"] = (
+        col_df["facID_and_officer"]
+        .str.split("_Officer_")
+        .str[-1]
+    )
+
+    # ---- 4. Extract FacilityID ----
+    col_df["FacilityID"] = (
+        col_df["facID_and_officer"]
+        .str.split("_Officer_")
+        .str[0]
+        .str.replace("FacilityID_", "", regex=False)
+        .astype(int)
+    )
+
+    # ---- 5. Map to FacilityLevel ----
+    col_df["FacilityLevel"] = col_df["FacilityID"].map(facility_id_levels_dict)
+
+    # ---- 6. Rebuild MultiIndex (drop clinic level) ----
+    _df.columns = pd.MultiIndex.from_frame(
+        col_df[["OfficerType", "FacilityLevel"]]
+    )
+
+    # ---- 7. Collapse across clinics ----
+    _df = _df.groupby(level=["OfficerType", "FacilityLevel"], axis=1).sum()
+
+    # ---- 8. Return stacked format ----
+    return _df.stack(["OfficerType", "FacilityLevel"])
+
+def melt_model_output_draws_and_runs(_df, id_vars):
+    multi_index = pd.MultiIndex.from_tuples(_df.columns)
+    _df.columns = multi_index
+    melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
+    return melted_df

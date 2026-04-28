@@ -40,7 +40,10 @@ from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     set_param_names_as_column_index_level_0,
     target_period,
     find_difference_extra_relative_to_comparison,
-    find_difference_relative_to_comparison
+    find_difference_relative_to_comparison,
+    get_staff_count_by_facid_and_officer_type,
+    get_capacity_used_by_officer_type_and_facility_level,
+    melt_model_output_draws_and_runs
 )
 
 from scripts.costing.cost_estimation import (
@@ -102,8 +105,12 @@ def apply(
     cost_checkpoint_profile: str | None = None,
     load_input_costs_from_checkpoint: bool | None = None,
 ):
-    """Produce standard plots describing effect of each TREATMENT_ID."""
+    """Process results to produce objects needed for LCOA analysis."""
     _, age_grp_lookup = make_age_grp_lookup()
+
+    # Extract districts and facility levels from the Master Facility List
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
 
     param_names = get_parameter_names_from_scenario_file()
     get_num_deaths_by_cause_label_and_period = make_get_num_deaths_by_cause_label_and_period(
@@ -309,6 +316,49 @@ def apply(
         num_dalys_averted = compute_summary_statistics(num_dalys_averted.T, central_measure='median').iloc[0].unstack()
 
     num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
+
+    # Staff count by Facility ID
+    available_staff_count_by_facid_and_officertype = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='number_of_hcw_staff',
+        custom_generate_series=lambda _df:get_staff_count_by_facid_and_officer_type(_df),
+        do_scaling=True,
+        autodiscover=True,
+    )
+
+    # Update above series to get staff count by Facility_Level
+    available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(
+        columns={'FacilityID': 'Facility_ID', 'Officer': 'OfficerType'})
+    available_staff_count_by_facid_and_officertype['Facility_ID'] = pd.to_numeric(
+        available_staff_count_by_facid_and_officertype['Facility_ID'])
+    available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype[
+        'Facility_ID'].map(facility_id_levels_dict)
+    idx = pd.IndexSlice
+    available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(
+        columns=[idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
+    available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(
+        available_staff_count_by_level_and_officer_type.reset_index(),
+        id_vars=['year', 'Facility_Level', 'OfficerType'])
+    # make sure facility level is stored as string
+    available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type[
+        'Facility_Level'].astype(str)
+    available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(
+        available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type[
+                                                            'Facility_Level'] == '5'].index)  # drop headquarters
+    # because we're only concerned with staff engaged in service delivery
+    available_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
+
+
+    annual_capacity_used_by_cadre_and_level = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Capacity_By_FacID_and_Officer',
+        custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
+        do_scaling=True,
+        autodiscover=True,
+    )
+
 
     results['num_dalys'] = num_dalys
     results['num_dalys_averted'] = num_dalys_averted if do_comparison else None
