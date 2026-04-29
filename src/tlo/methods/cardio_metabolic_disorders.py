@@ -447,6 +447,14 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                 sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
                 sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
 
+            # Initialise diabetes onset dates for those with prevalent diabetes
+            if condition == 'diabetes':
+                has_diabetes = df.index[df.is_alive & df.nc_diabetes]
+
+                for person_id in has_diabetes:
+                    if person_id not in self.diabetes_onset_dates:
+                        self.diabetes_onset_dates[person_id] = self.sim.date
+
             # ----- Set variables to false / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
             df.loc[df.is_alive, f'nc_{condition}_ever_diagnosed'] = False
@@ -1062,7 +1070,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
             # Store onset dates only for diabetes
-            if condition == 'nc_diabetes':
+            if condition == 'diabetes':
                 for person_id in idx_acquires_condition:
                     if person_id not in self.module.diabetes_onset_dates:
                         self.module.diabetes_onset_dates[person_id] = self.sim.date
