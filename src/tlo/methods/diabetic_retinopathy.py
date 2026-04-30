@@ -665,8 +665,8 @@ class DiabeticRetinopathy(Module):
             return
 
         sight_threatening = (
-            df.dr_status.isin(['severe', 'proliferative']) |
-            (df.dmo_status == 'clinically_significant')
+                df.dr_status.isin(['severe', 'proliferative']) |
+                (df.dmo_status == 'clinically_significant')
         )
 
         # People on treatment should have better outcomes so should be isolated
@@ -747,13 +747,11 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Getting all those with diabetes from CMD module
         alive_with_diabetes = df.is_alive & df.nc_diabetes
 
-        # Access the diabetes_date_onset dates from CMD module
+        # Access the diabetes_onset_dates from CMD module
         cmd_module = self.sim.modules['CardioMetabolicDisorders']
-        print(f"Size of diabetes_onset_dates dictionary: {len(cmd_module.diabetes_onset_dates)}")
-        print(f"Keys in diabetes_onset_dates: {list(cmd_module.diabetes_onset_dates.keys())[:10]}")
         diabetes_onset_series = pd.Series(cmd_module.diabetes_onset_dates)
 
-        # Convert to pandas datetime if not already
+        # Convert to pandas datetime format
         diabetes_onset_series = pd.to_datetime(diabetes_onset_series)
 
         # Compute diabetes duration (years) from biological onset
@@ -762,13 +760,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Calculate only for those who have onset dates recorded
         has_onset_date = alive_with_diabetes & df.index.isin(diabetes_onset_series.index)
         diabetes_duration_years.loc[has_onset_date] = (
-            (self.sim.date - diabetes_onset_series.loc[has_onset_date]).dt.days / 365.25
+                (self.sim.date - diabetes_onset_series.loc[has_onset_date]).dt.days / 365.25
         )
-
-        print("--------------------------DEBUG---------------------------")
-        print(f"Number of people with diabetes and onset date: {has_onset_date.sum()}")
-        print(f"Total people with diabetes: {alive_with_diabetes.sum()}")
-        print("--------------------------DEBUG END---------------------------")
 
         # Boolean for >15 years
         diabetes_duration_greater_than_15_years = diabetes_duration_years >= 15
@@ -842,19 +835,19 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.selected_for_eye_screening = False
 
         eligible_population_for_eye_screening = (
-            (df.is_alive & df.nc_diabetes) &  # todo add condition for people not to be selected again witin 1 year
-            # (df.dr_status == 'none') &
-            # (df.dmo_status == 'none') &
-            (df.age_years >= 20) &
-            (pd.isna(df.dr_date_diagnosis)) &
-            # Add time since last screening condition
-            ((df.dr_date_last_screening.isna()) |
-             (df.dr_date_last_screening < self.sim.date - pd.DateOffset(years=1)))
+                (df.is_alive & df.nc_diabetes) &  # todo add condition for people not to be selected again witin 1 year
+                # (df.dr_status == 'none') &
+                # (df.dmo_status == 'none') &
+                (df.age_years >= 20) &
+                (pd.isna(df.dr_date_diagnosis)) &
+                # Add time since last screening condition
+                ((df.dr_date_last_screening.isna()) |
+                 (df.dr_date_last_screening < self.sim.date - pd.DateOffset(years=1)))
         )
 
         df.loc[eligible_population_for_eye_screening, 'selected_for_eye_screening'] = (
-            np.random.random_sample(size=len(df[eligible_population_for_eye_screening]))
-            < self.module.parameters['prob_eye_screening']
+                np.random.random_sample(size=len(df[eligible_population_for_eye_screening]))
+                < self.module.parameters['prob_eye_screening']
         )
 
         for idx in df.index[df.selected_for_eye_screening]:
@@ -865,11 +858,11 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 tclose=None)
 
     def do_at_generic_first_appt(
-        self,
-        person_id: int,
-        individual_properties: IndividualProperties,
-        schedule_hsi_event: HSIEventScheduler,
-        **kwargs,
+            self,
+            person_id: int,
+            individual_properties: IndividualProperties,
+            schedule_hsi_event: HSIEventScheduler,
+            **kwargs,
     ) -> None:
         pass
 
