@@ -152,7 +152,7 @@ def apply(
         if checkpoint_path is None:
             print("No cost checkpoint profile provided. Recomputing input costs.")
         else:
-            print(f"Recomputing input costs")
+            print("Recomputing input costs")
         start = perf_counter()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=PerformanceWarning)
@@ -287,7 +287,7 @@ def apply(
     results['num_deaths_averted'] = num_deaths_averted
     results['pc_deaths_averted'] = pc_deaths_averted
 
-    num_dalys = (
+    dalys = (
         extract_results(
             results_folder,
             module="tlo.methods.healthburden",
@@ -299,57 +299,29 @@ def apply(
     )
 
     if do_comparison:
-        num_dalys_averted = (
+        dalys_averted = (
             -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing'))
+                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing'))
 
         )
 
         pc_dalys_averted = 100.0 * compute_summary_statistics(
             -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T,
+                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing', scaled=True)).T,
             central_measure='median'
         ).iloc[0].unstack()
         # Run-by-run incremental cost-effectiveness ratio calculation
-        icers = incremental_scenario_cost.T /num_dalys_averted
+        icers = incremental_scenario_cost.T /dalys_averted
         icers_summarized = compute_summary_statistics(icers.T, central_measure='median').iloc[0].unstack()
-        num_dalys_averted = compute_summary_statistics(num_dalys_averted.T, central_measure='median').iloc[0].unstack()
+        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
 
-    num_dalys = compute_summary_statistics(num_dalys, central_measure='median')
-
-    # Staff count by Facility ID
-    available_staff_count_by_facid_and_officertype = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='number_of_hcw_staff',
-        custom_generate_series=lambda _df:get_staff_count_by_facid_and_officer_type(_df),
-        do_scaling=True,
-        autodiscover=True,
-    )
-
-    # Update above series to get staff count by Facility_Level
-    available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(
-        columns={'FacilityID': 'Facility_ID', 'Officer': 'OfficerType'})
-    available_staff_count_by_facid_and_officertype['Facility_ID'] = pd.to_numeric(
-        available_staff_count_by_facid_and_officertype['Facility_ID'])
-    available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype[
-        'Facility_ID'].map(facility_id_levels_dict)
-    idx = pd.IndexSlice
-    available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(
-        columns=[idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
-    available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(
-        available_staff_count_by_level_and_officer_type.reset_index(),
-        id_vars=['year', 'Facility_Level', 'OfficerType'])
-    # make sure facility level is stored as string
-    available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type[
-        'Facility_Level'].astype(str)
-    available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(
-        available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type[
-                                                            'Facility_Level'] == '5'].index)  # drop headquarters
-    # because we're only concerned with staff engaged in service delivery
-    available_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
+    dalys = compute_summary_statistics(dalys, central_measure='median')
 
 
+    # This gives us the capacity used for each cadre and level, for each draw and run
+    # From this we will extract the run-wise delta in capacity used relative to the Nothing scenario, for each cadre
+    # and summarise. However since no HSIs are delivered in the Nothing scenario, the capacity used in that scenario is zero,
+    # so the delta relative to Nothing is just the capacity used in each scenario.
     annual_capacity_used_by_cadre_and_level = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -358,13 +330,21 @@ def apply(
         do_scaling=True,
         autodiscover=True,
     )
+    # Sum across all years and facility levels; so we get the *total* capacity used over the whole period
+    # TODO: Check with Sakshi if this is what we want.
+    mask = annual_capacity_used_by_cadre_and_level.index.get_level_values(0).isin(range(2026, 2040))
+    capacity_used_by_cadre = (
+        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType']).
+        sum().
+        pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
 
-
-    results['num_dalys'] = num_dalys
-    results['num_dalys_averted'] = num_dalys_averted if do_comparison else None
+    results['dalys'] = dalys
+    results['dalys_averted'] = dalys_averted if do_comparison else None
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
     results['icers_summarized'] = icers_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
+    results['capacity_used_by_cadre'] = capacity_used_by_cadre
 
     return results
 
