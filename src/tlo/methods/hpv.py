@@ -200,6 +200,13 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         'hp_ever_infected_hr3': Property(
             Types.BOOL, 'Ever infected with hr3'),
 
+        'hp_persistent_hr1': Property(
+            Types.BOOL, 'Persistent hr1 infection, duration >= 12 months'),
+        'hp_persistent_hr2': Property(
+            Types.BOOL, 'Persistent hr2 infection, duration >= 12 months'),
+        'hp_persistent_hr3': Property(
+            Types.BOOL, 'Persistent hr3 infection, duration >= 12 months'),
+
         # "va_hpv": Property(Types.INT, "number of doses of hpv vaccine received"),
         # "va_hpv_all_doses": Property(Types.BOOL, "whether all doses have been received of the HPV vaccine"),
         # "hv_inf": Property(Types.BOOL,"Is person currently infected with HIV
@@ -252,6 +259,9 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'hp_ever_infected_hr2'] = False
         df.loc[df.is_alive, 'hp_ever_infected_hr3'] = False
         eligible = df.index[df.is_alive & (df.age_years >= 15)]
+        df.loc[df.is_alive, 'hp_persistent_hr1'] = False
+        df.loc[df.is_alive, 'hp_persistent_hr2'] = False
+        df.loc[df.is_alive, 'hp_persistent_hr3'] = False
 
         for group in self.HPV_GROUPS:
             p_init = self.parameters[f'init_prev_hpv_{group}']
@@ -268,16 +278,20 @@ class HPV(Module, GenericFirstAppointmentsMixin):
                 infection_date = self.sim.date - DateOffset(months=previous_infection)
 
                 df.at[person_id, f'hp_date_infected_{group}'] = infection_date
-                df.at[person_id, f'hp_date_clear_{group}'] = pd.NaT
+                # df.at[person_id, f'hp_date_clear_{group}'] = pd.NaT
                 df.at[person_id, f'hp_duration_{group}'] = previous_infection
+                df.at[person_id, f'hp_persistent_{group}'] = previous_infection >= 12
 
         initially_infected = df.index[df.is_alive & df.hp_is_infected]
         for person_id in initially_infected:
-            group_dates = [
-                df.at[person_id, f'hp_date_infected_{group}']
-                for group in self.HPV_GROUPS
-                if not pd.isna(df.at[person_id, f'hp_date_infected_{group}'])
-            ]
+            group_dates = []
+
+            for group in self.HPV_GROUPS:
+                date = df.at[person_id, f'hp_date_infected_{group}']
+
+                if not pd.isna(date):
+                    group_dates.append(date)
+
             if len(group_dates) > 0:
                 df.at[person_id, 'hp_date_first_infected'] = min(group_dates)
 
@@ -386,9 +400,6 @@ class HPV(Module, GenericFirstAppointmentsMixin):
 
         return min(max(p_clear, 0.0), 1.0)
 
-
-
-
     def _get_hpv_group_set(self, person_id):
         df = self.sim.population.props
         current_groups = set()
@@ -417,11 +428,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         updated_groups = current_groups.union(new_groups)
         self._set_hpv_group_set(person_id, updated_groups)
 
-        #set infection date for new groups
+        # set infection date for new groups
         for group in new_groups:
             df.at[person_id, f'hp_date_infected_{group}'] = self.sim.date
             df.at[person_id, f'hp_ever_infected_{group}'] = True
-            df.at[person_id, f'hp_date_clear_{group}'] = pd.NaT
             df.at[person_id,f'hp_duration_{group}'] = 0
 
         # start a new HPV infection process only if the person was uninfected/ self-clear
@@ -429,7 +439,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             df.at[person_id, 'hp_date_first_infected'] = self.sim.date
             df.at[person_id, 'hp_duration_all_clear'] = -1
 
-        #set first infection date
+        # set first infection date
         if pd.isna(df.at[person_id, 'hp_date_first_infected']):
             df.at[person_id, 'hp_date_first_infected'] = self.sim.date
 
@@ -440,11 +450,12 @@ class HPV(Module, GenericFirstAppointmentsMixin):
 
         df.at[person_id, f'hp_infected_{group}'] = False
         df.at[person_id, f'hp_date_infected_{group}'] = pd.NaT
-        df.at[person_id, f'hp_date_clear_{group}'] = pd.NaT
+        # df.at[person_id, f'hp_date_clear_{group}'] = pd.NaT
         df.at[person_id, f'hp_duration_{group}'] = -1
+        df.at[person_id, f'hp_persistent_{group}'] = False
 
-        still_infected= any(
-            df.at[person_id, f'hp_infected_{g}'] for g in self.HPV_GROUPS
+        still_infected = any(
+            df.at[person_id, f'hp_infected_{group}'] for group in self.HPV_GROUPS
         )
         df.at[person_id, 'hp_is_infected'] = still_infected
 
@@ -473,6 +484,35 @@ class HPV(Module, GenericFirstAppointmentsMixin):
     #     duration = min(duration, 48)
     #     return duration
 
+    def _update_persistence_status(self, threshold_months=12):
+        df = self.sim.population.props
+        eligible = df.is_alive & (df.age_years >= 15)
+
+        for group in self.HPV_GROUPS:
+            inf_col = f'hp_infected_{group}'
+            date_col = f'hp_date_infected_{group}'
+            dur_col = f'hp_duration_{group}'
+            pers_col = f'hp_persistent_{group}'
+
+            non_infected = eligible & ~df[inf_col].fillna(False)
+            df.loc[non_infected, dur_col] = -1
+            df.loc[non_infected, pers_col] = False
+
+            infected = eligible & df[inf_col].fillna(False)
+
+            for person_id in df.index[infected]:
+                date_inf = df.at[person_id, date_col]
+
+                if pd.isna(date_inf):
+                    df.at[person_id, dur_col] = -1
+                    df.at[person_id, pers_col] = False
+                    continue
+
+                duration = self._months_since(date_inf, self.sim.date)
+
+                df.at[person_id, dur_col] = duration
+                df.at[person_id, pers_col] = duration >= threshold_months
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -487,7 +527,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             adjacent=0.15,
             distant=0.05
         )
-        self._prev_logged_prev = {}
+        self._pre_logged_prev = {}
 
         for group in self.HPV_GROUPS:
             self.lm[group] = LinearModel(
@@ -495,8 +535,8 @@ class HPV(Module, GenericFirstAppointmentsMixin):
                 1.0,
 
                 Predictor('va_hpv')
-                .when(1,p[f'rr_{group}_vaccinated'])
-                .when(2,p[f'rr_{group}_vaccinated']),
+                .when(1, p[f'rr_{group}_vaccinated'])
+                .when(2, p[f'rr_{group}_vaccinated']),
 
                 # Predictor(f'hp_ever_infected_{group}')
                 # .when(True, p[f'rr_immunity_{group}'])
@@ -550,6 +590,9 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'hp_ever_infected_hr1'] = False
         df.at[child_id, 'hp_ever_infected_hr2'] = False
         df.at[child_id, 'hp_ever_infected_hr3'] = False
+        df.at[child_id, 'hp_persistent_hr1'] = False
+        df.at[child_id, 'hp_persistent_hr2'] = False
+        df.at[child_id, 'hp_persistent_hr3'] = False
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -563,9 +606,16 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         return health_values  # returns the series
 
     def report_summary_stats(self):
-        df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'hp_is_infected')
-        return {'infected': prevalence_by_age_group_sex}
+        def report_summary_stats(self):
+            df = self.sim.population.props
+            summary = {
+                'infected_any': get_counts_by_sex_and_age_group(df, 'hp_is_infected')}
+
+            for group in self.HPV_GROUPS:
+                summary[f'infected_{group}'] = get_counts_by_sex_and_age_group(df, f'hp_infected_{group}')
+                summary[f'persistent_{group}'] = get_counts_by_sex_and_age_group(df, f'hp_persistent_{group}')
+
+        return summary
 
 class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
     """This event is occurring regularly at one 6 months intervals and controls the infection process of HPV."""
@@ -686,6 +736,8 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
             if len(new_group) > 0:
                 module._add_new_infection_groups(person_id, new_group)
 
+        module._update_persistence_status(threshold_months=12)
+
 class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summmary of the numbers of people with respect to their 'hpv status'
@@ -731,7 +783,7 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         log_data['TotalInf'] = total_inf
         log_data['TotalPrev'] = sub['hp_is_infected'].mean()
 
-        for sex_name, sex_df in  [('M', sub.loc[sub.sex == 'M']),
+        for sex_name, sex_df in [('M', sub.loc[sub.sex == 'M']),
                                  ('F', sub.loc[sub.sex == 'F'])]:
             n = len(sex_df)
             log_data[f'{sex_name}_N'] = int(n)
@@ -787,7 +839,7 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
 
         # 4. Delta
-        prev_logged = getattr(module, '_prev_logged_prev', {})
+        prev_logged = getattr(module, '_pre_logged_prev', {})
         for key, current_val in prev_snapshot.items():
             previous_val = prev_logged.get(key, math.nan)
             if pd.isna(previous_val) or pd.isna(current_val):
@@ -795,10 +847,10 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             else:
                 log_data[f'{key}_Delta'] = current_val - previous_val
 
-        module._prev_logged_prev = prev_snapshot
+        module._pre_logged_prev = prev_snapshot
 
         # 5. multiplicity of infection
-        infection_people = df.index[df.is_alive & (df.age_years>=15) &df.hp_is_infected]
+        infection_people = df.index[df.is_alive & (df.age_years >= 15) & df.hp_is_infected]
         n_group_1 = 0
         n_group_2 = 0
         n_group_3 = 0
@@ -813,10 +865,10 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in infection_people:
             n_group = len(module._get_hpv_group_set(person_id))
-            sex = df.at[person_id,'sex']
+            sex = df.at[person_id, 'sex']
 
-            if n_group ==1:
-                n_group_1 +=1
+            if n_group == 1:
+                n_group_1 += 1
                 if sex == 'M':
                     male_n_group_1 += 1
                 elif sex =='F':
@@ -848,5 +900,36 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         log_data['FemaleGroup2'] = female_n_group_2
         log_data['FemaleGroup3'] = female_n_group_3
 
-        logger.info(key='summary', data=log_data)
+        # 6. Persistent infection 统计
+        for hpv_group in module.HPV_GROUPS:
+            pers_col = f'hp_persistent_{hpv_group}'
 
+            if pers_col not in sub.columns:
+                continue
+
+            persistent = sub[pers_col].fillna(False)
+
+            log_data[f'{hpv_group}_Persistent12_N'] = int(persistent.sum())
+            log_data[f'{hpv_group}_Persistent12_Prev'] = float(persistent.mean())
+
+            for sex_name, sex_df in [('M', sub.loc[sub.sex == 'M']),
+                                     ('F', sub.loc[sub.sex == 'F'])]:
+                n = len(sex_df)
+                if n > 0:
+                    log_data[f'{hpv_group}_Persistent12_{sex_name}_Prev'] = float(
+                        sex_df[pers_col].fillna(False).mean()
+                    )
+                else:
+                    log_data[f'{hpv_group}_Persistent12_{sex_name}_Prev'] = math.nan
+
+            for age_group in module.AGE_LABELS:
+                age_df = sub.loc[sub['age_group'] == age_group]
+                n = len(age_df)
+                if n > 0:
+                    log_data[f'{hpv_group}_Persistent12_{age_group}_Prev'] = float(
+                        age_df[pers_col].fillna(False).mean()
+                    )
+                else:
+                    log_data[f'{hpv_group}_Persistent12_{age_group}_Prev'] = math.nan
+
+        logger.info(key='summary', data=log_data)

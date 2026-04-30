@@ -57,6 +57,13 @@ log_config = {
 # # need to call epi before tb to get bcg vax
 seed = random.randint(0, 50000)
 # # seed = 41728  # set seed for reproducibility
+
+# HPV model labels
+AGE_LABELS = ["15_19", "20_24", "25_34", "35_44", "45_54", "55plus"]
+HPV_GROUPS = ["hr1", "hr2", "hr3"]
+SEXES = ["M", "F"]
+
+# 1. Run simulation
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
                  show_progress_bar=True, resourcefilepath=resourcefilepath)
 sim.register(
@@ -76,21 +83,22 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(),
     healthburden.HealthBurden(),
     epi.Epi(),
-    hpv.HPV(),
-    measles.Measles(),
     hiv.Hiv(),
+    measles.Measles(),
     tb.Tb(),
+    hpv.HPV(),
 )
-#
+
 # # set the scenario
 #sim.modules["HPV"].parameters["r_hpv"] = 0.01
 #sim.modules["HPV"].parameters["r_hpv_clear"] = 0.6
-#
+
 # # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-#
-# parse the results
+
+
+# 2. Parse and save results
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
@@ -127,10 +135,65 @@ hpv_df = pd.DataFrame(hpv_outputs)
 print(hpv_df)
 print(hpv_df.columns)
 
-# 1. Total infection
+
+# change Year / Month to Date
+hpv_df["Year"] = pd.to_numeric(hpv_df["Year"], errors="coerce")
+hpv_df["Month"] = pd.to_numeric(hpv_df["Month"], errors="coerce")
+
+hpv_df = hpv_df.dropna(subset=["Year", "Month"]).copy()
+hpv_df["Year"] = hpv_df["Year"].astype(int)
+hpv_df["Month"] = hpv_df["Month"].astype(int)
+
+hpv_df["Date"] = pd.to_datetime(
+    {
+        "year": hpv_df["Year"],
+        "month": hpv_df["Month"],
+        "day": 1,
+    }
+)
+hpv_df = hpv_df.sort_values("Date").reset_index(drop=True)
+
+# 4. Helper functions
+def compute_group_prev_by_sex(
+    df: pd.DataFrame,
+    hpv_group: str,
+    sex: str,
+    age_labels: list[str],
+) -> pd.Series:
+
+    inf_cols = [f"{hpv_group}_{sex}_{age}_Inf" for age in age_labels]
+    n_cols = [f"Any_{sex}_{age}_N" for age in age_labels]
+
+    missing_inf = [c for c in inf_cols if c not in df.columns]
+    missing_n = [c for c in n_cols if c not in df.columns]
+
+    if missing_inf or missing_n:
+        print(f"\nCannot compute {hpv_group}_{sex}_TotalPrev.")
+        if missing_inf:
+            print("Missing infection columns:", missing_inf)
+        if missing_n:
+            print("Missing denominator columns:", missing_n)
+
+        return pd.Series([float("nan")] * len(df), index=df.index)
+
+    total_inf = df[inf_cols].sum(axis=1)
+    total_n = df[n_cols].sum(axis=1)
+
+    return total_inf / total_n.replace(0, pd.NA)
+
+for sex in SEXES:
+    for group in HPV_GROUPS:
+        hpv_df[f"{group}_{sex}_TotalPrev"] = compute_group_prev_by_sex(
+            hpv_df,
+            hpv_group=group,
+            sex=sex,
+            age_labels=AGE_LABELS,
+        )
+
+# Plot 1: Total infection
 plt.figure(figsize=(8, 5))
-plt.plot(hpv_df["Year"], hpv_df["TotalPrev"], marker="o")
-plt.xlabel("Year")
+plt.plot(hpv_df["Date"], hpv_df["TotalPrev"], marker="o")
+plt.xlabel("Date")
 plt.ylabel("Total HPV prevalence")
 plt.title("Total HPV prevalence over time")
 plt.grid(True)
@@ -140,11 +203,11 @@ plt.show()
 
 # 2. HPV  prevalence in different gender
 plt.figure(figsize=(8, 5))
-plt.plot(hpv_df["Year"], hpv_df["M_Prev"], marker="o", label="Male")
-plt.plot(hpv_df["Year"], hpv_df["F_Prev"], marker="o", label="Female")
-plt.xlabel("Year")
-plt.ylabel("HPV prevalence")
-plt.title("HPV prevalence by sex")
+plt.plot(hpv_df["Date"], hpv_df["M_Prev"], marker="o", label="Male")
+plt.plot(hpv_df["Date"], hpv_df["F_Prev"], marker="o", label="Female")
+plt.xlabel("Date")
+plt.ylabel("Any HPV prevalence")
+plt.title("Any HPV prevalence by sex")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
@@ -153,10 +216,14 @@ plt.show()
 
 # 3. Prevalence of different HPV groups in female
 plt.figure(figsize=(8, 5))
-plt.plot(hpv_df["Year"], hpv_df["hr1_FemalePrev"], marker="o", label="hr1")
-plt.plot(hpv_df["Year"], hpv_df["hr2_FemalePrev"], marker="o", label="hr2")
-plt.plot(hpv_df["Year"], hpv_df["hr3_FemalePrev"], marker="o", label="hr3")
-plt.xlabel("Year")
+for group in HPV_GROUPS:
+    plt.plot(
+        hpv_df["Date"],
+        hpv_df[f"{group}_F_TotalPrev"],
+        marker="o",
+        label=group,
+    )
+plt.xlabel("Date")
 plt.ylabel("Prevalence")
 plt.title("Female HPV prevalence by group")
 plt.legend()
@@ -167,10 +234,14 @@ plt.show()
 
 # 4. Prevalence of different HPV groups in male
 plt.figure(figsize=(8, 5))
-plt.plot(hpv_df["Year"], hpv_df["hr1_MalePrev"], marker="o", label="hr1")
-plt.plot(hpv_df["Year"], hpv_df["hr2_MalePrev"], marker="o", label="hr2")
-plt.plot(hpv_df["Year"], hpv_df["hr3_MalePrev"], marker="o", label="hr3")
-plt.xlabel("Year")
+for group in HPV_GROUPS:
+    plt.plot(
+        hpv_df["Date"],
+        hpv_df[f"{group}_M_TotalPrev"],
+        marker="o",
+        label=group,
+    )
+plt.xlabel("Date")
 plt.ylabel("Prevalence")
 plt.title("Male HPV prevalence by group")
 plt.legend()
@@ -178,4 +249,149 @@ plt.grid(True)
 plt.tight_layout()
 plt.savefig(outputpath / "male_hpv_group_prevalence.png", dpi=300)
 plt.show()
+
+# Plot 5: Multiplicity of infection
+plt.figure(figsize=(8, 5))
+plt.plot(hpv_df["Date"], hpv_df["InfGroup1"], marker="o", label="1 HPV group")
+plt.plot(hpv_df["Date"], hpv_df["InfGroup2"], marker="o", label="2 HPV groups")
+plt.plot(hpv_df["Date"], hpv_df["InfGroup3"], marker="o", label="3 HPV groups")
+plt.xlabel("Date")
+plt.ylabel("Number of infected individuals")
+plt.title("Multiplicity of HPV infection")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "hpv_multiplicity_over_time.png", dpi=300)
+plt.show()
+
+# Plot 6: Multiplicity of infection by sex
+plt.figure(figsize=(9, 5))
+
+plt.plot(hpv_df["Date"], hpv_df["MaleGroup1"], marker="o", label="Male: 1 group")
+plt.plot(hpv_df["Date"], hpv_df["MaleGroup2"], marker="o", label="Male: 2 groups")
+plt.plot(hpv_df["Date"], hpv_df["MaleGroup3"], marker="o", label="Male: 3 groups")
+
+plt.plot(hpv_df["Date"], hpv_df["FemaleGroup1"], marker="o", label="Female: 1 group")
+plt.plot(hpv_df["Date"], hpv_df["FemaleGroup2"], marker="o", label="Female: 2 groups")
+plt.plot(hpv_df["Date"], hpv_df["FemaleGroup3"], marker="o", label="Female: 3 groups")
+
+plt.xlabel("Date")
+plt.ylabel("Number of infected individuals")
+plt.title("Multiplicity of HPV infection by sex")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "hpv_multiplicity_by_sex.png", dpi=300)
+plt.show()
+
+# Plot 7: Persistent HPV infection prevalence
+plt.figure(figsize=(8, 5))
+
+for group in HPV_GROUPS:
+    plt.plot(
+        hpv_df["Date"],
+        hpv_df[f"{group}_Persistent12_Prev"],
+        marker="o",
+        label=group,
+    )
+
+plt.xlabel("Date")
+plt.ylabel("Persistent infection prevalence")
+plt.title("Persistent HPV infection prevalence, >=12 months")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "hpv_persistent_prevalence.png", dpi=300)
+plt.show()
+
+# Plot 8: Persistent HPV infection by sex
+for group in HPV_GROUPS:
+    male_col = f"{group}_Persistent12_M_Prev"
+    female_col = f"{group}_Persistent12_F_Prev"
+
+    required_cols = ["Date", male_col, female_col]
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(hpv_df["Date"], hpv_df[male_col], marker="o", label="Male")
+    plt.plot(hpv_df["Date"], hpv_df[female_col], marker="o", label="Female")
+
+    plt.xlabel("Date")
+    plt.ylabel("Persistent infection prevalence")
+    plt.title(f"{group} persistent infection prevalence by sex")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(outputpath / f"{group}_persistent_by_sex.png", dpi=300)
+    plt.show()
+
+# Plot 9: Female any HPV prevalence by age group
+female_age_cols = [f"Any_F_{age}_Prev" for age in AGE_LABELS]
+
+plt.figure(figsize=(9, 5))
+
+for age in AGE_LABELS:
+    plt.plot(
+        hpv_df["Date"],
+        hpv_df[f"Any_F_{age}_Prev"],
+        marker="o",
+        label=age,
+    )
+
+plt.xlabel("Date")
+plt.ylabel("Any HPV prevalence")
+plt.title("Female any HPV prevalence by age group")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "female_any_hpv_by_age.png", dpi=300)
+plt.show()
+
+# Plot 10: Male any HPV prevalence by age group
+male_age_cols = [f"Any_M_{age}_Prev" for age in AGE_LABELS]
+
+plt.figure(figsize=(9, 5))
+
+for age in AGE_LABELS:
+    plt.plot(
+        hpv_df["Date"],
+        hpv_df[f"Any_M_{age}_Prev"],
+        marker="o",
+        label=age,
+    )
+
+plt.xlabel("Date")
+plt.ylabel("Any HPV prevalence")
+plt.title("Male any HPV prevalence by age group")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(outputpath / "male_any_hpv_by_age.png", dpi=300)
+plt.show()
+
+# Plot 11: Any HPV prevalence by HIV/ART status
+hiv_prev_cols = [
+    "Any_HIVneg_Prev",
+    "Any_HIVpos_unknown_Prev",
+    "Any_HIVpos_noART_Prev",
+    "Any_HIVpos_unsupp_Prev",
+    "Any_HIVpos_supp_Prev",
+]
+
+available_hiv_cols = [c for c in hiv_prev_cols if c in hpv_df.columns]
+
+if len(available_hiv_cols) > 0:
+    plt.figure(figsize=(9, 5))
+
+    for col in available_hiv_cols:
+        label = col.replace("Any_", "").replace("_Prev", "")
+        plt.plot(hpv_df["Date"], hpv_df[col], marker="o", label=label)
+
+    plt.xlabel("Date")
+    plt.ylabel("Any HPV prevalence")
+    plt.title("Any HPV prevalence by HIV/ART status")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(outputpath / "hpv_prevalence_by_hiv_status.png", dpi=300)
+    plt.show()
 
