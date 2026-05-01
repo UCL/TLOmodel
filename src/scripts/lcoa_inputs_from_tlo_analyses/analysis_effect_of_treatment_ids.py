@@ -14,15 +14,12 @@ import zipfile
 import pickle
 from pathlib import Path
 import pandas as pd
-import numpy as np
-from matplotlib import pyplot as plt
+
+
 from tlo import Date
 from tlo.util import create_age_range_lookup
 
-from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
-    do_bar_plot_with_ci,
-    plot_multiindex_dot_with_interval,
-)
+
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     get_counts_of_appts,
     get_counts_of_hsi_by_short_treatment_id,
@@ -63,7 +60,6 @@ from tlo.analysis.utils import (
     extract_results,
     get_color_short_treatment_id,
     make_age_grp_lookup,
-    squarify_neat,
     summarize,
 )
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
@@ -337,6 +333,10 @@ def apply(
         annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType']).
         sum().
         pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
+
+    capacity_used_by_cadre = (
+        compute_summary_statistics(capacity_used_by_cadre, central_measure='median')
     )
 
     results['dalys'] = dalys

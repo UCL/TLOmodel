@@ -437,6 +437,65 @@ def do_label_barh_plot(_df: pd.DataFrame, _ax):
                 size=7,
             )
 
+def plot_cadre_time_by_draw_stacked(
+    _df: pd.DataFrame,
+    stat: str = "central",
+    figsize: tuple[float, float] | None = None,
+):
+    """Plot horizontal stacked bars of cadre time use by draw for one summary stat."""
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+    available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
+    if stat not in available_stats:
+        raise ValueError(f"Statistic '{stat}' not found. Available stats: {available_stats.tolist()}")
+
+    _plot = _df.xs(stat, axis=1, level=stat_level_name).T.fillna(0.0)
+    if _plot.empty:
+        raise ValueError(f"No plottable data remain for stat '{stat}'.")
+
+    _plot = _plot.loc[_plot.sum(axis=1).sort_values(ascending=True).index]
+
+    if figsize is None:
+        fig_height = max(6, min(0.35 * len(_plot.index) + 3, 20))
+        figsize = (12, fig_height)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    cadre_colors = list(plt.get_cmap("tab10").colors)
+    left = np.zeros(len(_plot.index), dtype=float)
+    y = np.arange(len(_plot.index))
+
+    for i, cadre in enumerate(_plot.columns):
+        values = _plot[cadre].to_numpy(dtype=float)
+        ax.barh(
+            y,
+            values,
+            left=left,
+            color=cadre_colors[i % len(cadre_colors)],
+            label=str(cadre),
+        )
+        left += values
+
+    ax.set_yticks(y)
+    ax.set_yticklabels([str(draw) for draw in _plot.index])
+    ax.set_xlabel("Time used")
+    ax.set_ylabel("Draw")
+    ax.grid(axis="x")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(
+        loc="lower right",
+        fontsize=12,
+        handlelength=2.4,
+        handleheight=1.6,
+        borderpad=1.0,
+        labelspacing=0.8,
+        frameon=True,
+    )
+    fig.tight_layout()
+    return fig, ax
+
 def plot_hsi_counts_stacked_bar(_df: pd.DataFrame, plot_stat: str = "central"):
     """Plot horizontal stacked bars of HSI counts by draw for a selected summary statistic."""
     if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
