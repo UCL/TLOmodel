@@ -283,6 +283,9 @@ class DiabeticRetinopathy(Module):
         df.loc[df.is_alive & ~df.nc_diabetes, 'dr_status'] = 'none'
         df.loc[df.is_alive & ~df.nc_diabetes, 'dmo_status'] = 'none'
 
+        df.loc[df.is_alive & df.nc_diabetes, 'dr_status'] = 'none'
+        df.loc[df.is_alive & df.nc_diabetes, 'dmo_status'] = 'none'
+
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dmo_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
@@ -341,6 +344,9 @@ class DiabeticRetinopathy(Module):
                 size=len(dr_idx),
                 p=probs
             )
+
+        # Assign DMO for those with DR at baseline
+        self.update_dmo_status()
 
         # dr_stage_probs = p["init_prob_any_dr"]
         # Determine the stage of DR for those who have DM:
@@ -615,7 +621,7 @@ class DiabeticRetinopathy(Module):
         # Now only process people with valid DR status
         valid_dr_statuses = ['mild_or_moderate', 'severe', 'proliferative']
         dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses) & (df.dmo_status == 'none')].index
-        dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses)].index
+        # dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses)].index
 
         if not dr_idx.empty:
             for person in dr_idx:
@@ -692,6 +698,26 @@ class DiabeticRetinopathy(Module):
 
             # Propose new vision states
             proposed = transition_states(current, base_matrix, rng)
+            treated_idx = idx & on_treatment
+            if treated_idx.any():
+                current_treated = df.loc[treated_idx, 'vision_status']
+                proposed_treated = proposed.loc[treated_idx]
+
+                # Keep best (min index = better vision)
+                vision_categories = df.vision_status.cat.categories
+                cat_to_int = {cat: i for i, cat in enumerate(vision_categories)}
+
+                current_int = current_treated.map(cat_to_int)
+                proposed_int = proposed_treated.map(cat_to_int)
+
+                # improved = proposed_int < current_int
+                not_worse = proposed_int <= current_int
+
+                final_int = current_int.copy()
+                final_int[not_worse] = proposed_int[not_worse]
+
+                int_to_cat = {i: cat for cat, i in cat_to_int.items()}
+                proposed.loc[treated_idx] = final_int.map(int_to_cat)
 
             # on_treatment = df.loc[idx, 'dr_on_treatment']
             #
@@ -744,15 +770,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population: Population) -> None:
         df = population.props
 
-        # Getting all those with diagnosed diabetes from the cardio_metabolic_disorders module
-        alive_diabetes_diagnosed_in_cmd = df.is_alive & df.nc_diabetes & df.nc_diabetes_date_diagnosis.notna()
-
-        # Compute diabetes duration (years)
         diabetes_duration_years = pd.Series(0.0, index=df.index)
-
-        diabetes_duration_years.loc[alive_diabetes_diagnosed_in_cmd] = (
-            (self.sim.date - df.loc[alive_diabetes_diagnosed_in_cmd, 'nc_diabetes_date_diagnosis']).dt.days / 365.25
-        )
 
         # Compute the boolean threshold as a variable you can inspect
         # Boolean for >15 years
@@ -1238,6 +1256,8 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #     f'total_vision_{k}': v
         #     for k, v in df.loc[df.is_alive].vision_status.value_counts().items()
         # })
+
+        #Prevalence
         alive = df.loc[df.is_alive]
 
         for state in df.dr_status.cat.categories:
