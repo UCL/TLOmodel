@@ -6,28 +6,25 @@ from pathlib import Path
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
-from scripts.calibration_analyses.analysis_scripts import plot_legends
+
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     get_parameter_names_from_scenario_file,
-    get_periods_within_target_period,
     format_scenario_name,
-    target_period,
 )
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     make_graph_file_name,
     do_barh_plot_with_ci,
-    do_bar_plot_with_ci,
     plot_cadre_time_by_draw_stacked,
     plot_deaths_by_period_for_cause,
     plot_deaths_by_period_for_draw,
     plot_hsi_counts_by_period_for_draw,
     plot_population_by_year,
 )
-from tlo import Date
+
 
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs2
 
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2041, 1, 1))
+
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
 
@@ -72,7 +69,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     counts_of_hsi_in_implementation_period = primary_results['counts_of_hsi_by_period']
     counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2010-2041'], level=1)
     capacity_used_by_cadre = primary_results.get("capacity_used_by_cadre")
-
 
     result_df_by_period = pd.DataFrame([
         {'treatment_id_included': draw, 'nonzero_hsis': treatment_id, 'period': period}

@@ -86,10 +86,7 @@ def _aggregate_hr_by_intervention(
     if "central" not in capacity_used_by_cadre.columns:
         raise ValueError("results['capacity_used_by_cadre'] must contain a 'central' column.")
 
-    if capacity_used_by_cadre.index.nlevels == 1:
-        officer_types = capacity_used_by_cadre.index.astype(str).tolist()
-    else:
-        officer_types = capacity_used_by_cadre.index.get_level_values(0).astype(str).tolist()
+    officer_types = capacity_used_by_cadre.index.get_level_values(0).astype(str).tolist()
 
     mapping = _build_hr_mapping(officer_types)
     if not mapping:

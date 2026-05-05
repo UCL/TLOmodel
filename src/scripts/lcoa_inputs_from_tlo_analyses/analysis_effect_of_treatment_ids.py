@@ -172,6 +172,7 @@ def apply(
     results['input_costs'] = input_costs
 
     # Computing incremental costs
+    # TODO Check with Sakshi if these are annual costs; as everything else is annual.
     if do_comparison:
         print("Computing incremental_scenario_cost...")
         start = perf_counter()
@@ -190,9 +191,6 @@ def apply(
         ).pipe(set_param_names_as_column_index_level_0, param_names)
 
         incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
-
-
-
 
     # Get total population by year
     print("Extracting population data...")
@@ -307,7 +305,7 @@ def apply(
             central_measure='median'
         ).iloc[0].unstack()
         # Run-by-run incremental cost-effectiveness ratio calculation
-        icers = incremental_scenario_cost.T /dalys_averted
+        icers = incremental_scenario_cost.T / dalys_averted
         icers_summarized = compute_summary_statistics(icers.T, central_measure='median').iloc[0].unstack()
         dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
 
@@ -318,6 +316,7 @@ def apply(
     # From this we will extract the run-wise delta in capacity used relative to the Nothing scenario, for each cadre
     # and summarise. However since no HSIs are delivered in the Nothing scenario, the capacity used in that scenario is zero,
     # so the delta relative to Nothing is just the capacity used in each scenario.
+    # TODO: Check if this should be scaled with population or used as is.
     annual_capacity_used_by_cadre_and_level = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -326,12 +325,14 @@ def apply(
         do_scaling=True,
         autodiscover=True,
     )
-    # Sum across all years and facility levels; so we get the *total* capacity used over the whole period
+    # Sum across all facility levels and average across years; so we get the *average* annual capacity used over the whole period
     # TODO: Check with Sakshi if this is what we want.
     mask = annual_capacity_used_by_cadre_and_level.index.get_level_values(0).isin(range(2026, 2040))
     capacity_used_by_cadre = (
-        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType']).
+        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType', 'year']).
         sum().
+        groupby(['OfficerType']).
+        mean().
         pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
@@ -339,12 +340,29 @@ def apply(
         compute_summary_statistics(capacity_used_by_cadre, central_measure='median')
     )
 
+    # Get the total available caapacity by cadre needed for LCOA
+    # resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv
+    daily_capacity_by_cadre_and_level = (
+        pd.read_csv(resourcefilepath / "healthsystem" / "human_resources" / "actual" / "ResourceFile_Daily_Capabilities.csv")
+    )
+    # This gives the total minutes available per day by cadre and facility level.
+    # Sum across levels to get cadre specific constraints, and multiply by 365 to get annual capacity
+    annual_capacity_by_cadre = (
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365
+    )
+
+    # Add consumables budget to this dictionary so that we have everything in one place
+    # USD 225,602,946 (203136642 from donors + 22466304 from the government)
+    # Ref Revision of Malawi’s Health Bene ts Package: A Critical Analysis of Policy Formulation and Implementation
+    results['annual_consumables_budget'] = 225602946
+
     results['dalys'] = dalys
     results['dalys_averted'] = dalys_averted if do_comparison else None
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
     results['icers_summarized'] = icers_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
     results['capacity_used_by_cadre'] = capacity_used_by_cadre
+    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
 
     return results
 
