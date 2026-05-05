@@ -64,7 +64,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
 
     HPV_GROUPS = ['hr1', 'hr2', 'hr3']
     AGE_BINS = [15, 20, 25, 35, 45, 55, 200]
-    AGE_LABELS = ['15_19', '20_24', '25_34','35_44', '45_54', '55plus']
+    AGE_LABELS = ['15_19', '20_24', '25_34', '35_44', '45_54', '55plus']
 
     PARAMETERS = {
         "init_prev_hpv_hr1": Parameter(
@@ -147,7 +147,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             "Rate ratio for HPV clearance among PLWH on ART but not virally suppressed",
         ),
 
-        ## As MC suggested, remove the immunity part
+        # As MC suggested, remove the immunity part
         # "rr_immunity_hr1": Parameter(
         #     Types.REAL,
         #     "Relative risk for reinfection with hr1 if previously infected",
@@ -180,11 +180,11 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         'hp_date_first_infected': Property(
             Types.DATE, 'Start date of current HPV infection'),
         'hp_duration_hr1': Property(
-            Types.INT,'Duration for current hr1 infection'),
+            Types.INT, 'Duration for current hr1 infection'),
         'hp_duration_hr2': Property(
-            Types.INT,'Duration for current hr2 infection'),
+            Types.INT, 'Duration for current hr2 infection'),
         'hp_duration_hr3': Property(
-            Types.INT,'Duration for current hr3 infection'),
+            Types.INT, 'Duration for current hr3 infection'),
         'hp_duration_all_clear': Property(
             Types.INT, 'Duration for current all HPV infection'),
         # 'hp_date_clear_hr1': Property(
@@ -302,7 +302,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             labels=self.AGE_LABELS,
             right=False  # right side not included
         )
-    def _get_age_group(self,age_years):
+    def _get_age_group(self, age_years):
         for i in range(len(self.AGE_BINS)-1):
             if self.AGE_BINS[i] <= age_years < self.AGE_BINS[i + 1]:
                 return self.AGE_LABELS[i]
@@ -606,14 +606,13 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         return health_values  # returns the series
 
     def report_summary_stats(self):
-        def report_summary_stats(self):
-            df = self.sim.population.props
-            summary = {
-                'infected_any': get_counts_by_sex_and_age_group(df, 'hp_is_infected')}
+        df = self.sim.population.props
+        summary = {
+            'infected_any': get_counts_by_sex_and_age_group(df, 'hp_is_infected')}
 
-            for group in self.HPV_GROUPS:
-                summary[f'infected_{group}'] = get_counts_by_sex_and_age_group(df, f'hp_infected_{group}')
-                summary[f'persistent_{group}'] = get_counts_by_sex_and_age_group(df, f'hp_persistent_{group}')
+        for group in self.HPV_GROUPS:
+            summary[f'infected_{group}'] = get_counts_by_sex_and_age_group(df, f'hp_infected_{group}')
+            summary[f'persistent_{group}'] = get_counts_by_sex_and_age_group(df, f'hp_persistent_{group}')
 
         return summary
 
