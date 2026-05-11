@@ -103,3 +103,8 @@ Undernutrition_Feeding_Inpatient,3,2,2,2,2
 Undernutrition_Feeding_Outpatient,3,2,2,2,2
 Undernutrition_GrowthMonitoring,3,2,2,2,2
 lowest_priority_considered,3,-1,-1,-1,-1
+Dr_Dmo_Eye_Examination,3,2,2,2,2
+Dr_Dmo_Focal_Laser_Treatment,3,2,2,2,2
+Dr_Dmo_AntiVEGF_Treatment,3,2,2,2,2
+Dr_Laser_Pan_Retinal_Coagulation_Treatment,3,2,2,2,2
+Dr_Dmo_Review,3,2,2,2,2
