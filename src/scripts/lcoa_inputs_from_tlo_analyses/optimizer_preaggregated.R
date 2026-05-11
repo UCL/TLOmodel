@@ -1,5 +1,4 @@
 # Standalone preaggregated optimizer for Python integration.
-# Input contract:
 # - ce_dalys, conscost, and hr_* are preaggregated totals at full implementation.
 # - Decision variables represent fractions of each intervention implemented.
 # - feascov and substitute/compulsory constraints still bound implementation shares.
@@ -16,15 +15,15 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   ## script but is cumulative in this version
   dalys <- as.numeric(as.character(inputs$ce_dalys))
   ## Cumulative cost of drugs and commodities
-  drugcost <- as.numeric(as.character(inputs$conscost)) 
+  drugcost <- as.numeric(as.character(inputs$conscost))
   maxcoverage <- as.numeric(as.character(inputs$feascov)) # Maximum possible coverage (demand constraint)
   ## Preaggregated mode: unit case scaling
   cases <- rep(1, length(dalys))
-  ## Full cost per patient based on CE evidence
+  ## Full cost
   fullcost <- as.numeric(as.character(inputs$ce_cost))
-  ## Number of minutes of health worker time requires per intervention per person
+  ## Number of minutes of health worker time required per intervention
   hrneed <-
-    inputs[c("hr_clin", "hr_nur", "hr_pharm", "hr_lab", "hr_ment", "hr_nutri")] 
+    inputs[c("hr_clin", "hr_nur", "hr_pharm", "hr_lab", "hr_ment", "hr_nutri")]
   hrneed <- as.data.frame(apply(hrneed, 2, as.numeric))
 
   n <- length(dalys) # number of interventions included in the analysis
@@ -33,7 +32,7 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   # 3.1 Set up LPP
   ###################################
 
-  # Objective - maximize DALYs 
+  # Objective - maximize DALYs
   #****************************************************
   # Define net health
   cet <- cet_input
@@ -59,7 +58,7 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   # 2. HR Constraints
                                         #---------------------
   ## HR minutes required to deliver intervention to all cases in need
-  hr_minutes_need <- hrneed * cases[row(hrneed)] 
+  hr_minutes_need <- hrneed * cases[row(hrneed)]
 
   ## Update HR constraints so that nurses, pharmacists, medical officers, etc. represent joint constraints
   ## Medical officer + Clinical officer + Medical Assistant
@@ -69,7 +68,7 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   ## Pharmacist + Pharmacist Technician + Pharmacist Assistant
   pharmstaff.need <- hr_minutes_need[c("hr_pharm")]
   ## Lab officer + Lab technician + Lab assistant
-  labstaff.need <- hr_minutes_need[c("hr_lab")] 
+  labstaff.need <- hr_minutes_need[c("hr_lab")]
   # remove CHW
   mentalstaff.need <- hr_minutes_need[c("hr_ment")] # Mental health staff
   nutristaff.need <- hr_minutes_need[c("hr_nutri")] # Nutrition staff

@@ -8,17 +8,12 @@ from pandas.errors import (
 )
 import argparse
 from datetime import date
-import glob
-import os
-import zipfile
 import pickle
 from pathlib import Path
 import pandas as pd
 
 
 from tlo import Date
-from tlo.util import create_age_range_lookup
-
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     get_counts_of_appts,
@@ -351,9 +346,14 @@ def apply(
         daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365
     )
 
+    staff_count_by_cadre = (
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
+    )
+
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
-    # Ref Revision of Malawi’s Health Bene ts Package: A Critical Analysis of Policy Formulation and Implementation
+    # Revision of Malawi’s Health Benefits Package: A Critical Analysis of Policy Formulation and Implementation
+    # https://doi.org/10.1016/j.vhri.2023.10.007
     results['annual_consumables_budget'] = 225602946
 
     results['dalys'] = dalys
@@ -363,6 +363,7 @@ def apply(
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
     results['capacity_used_by_cadre'] = capacity_used_by_cadre
     results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
+    results['staff_count_by_cadre'] = staff_count_by_cadre
 
     return results
 
