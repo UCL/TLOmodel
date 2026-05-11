@@ -112,7 +112,27 @@ def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
     antibiotic therapy for PROM, clean birth practices, cord care and early initiation of breastfeeding
     """
     params = self.parameters
-    result = pd.Series(data=params['prob_early_onset_neonatal_sepsis_week_1'], index=df.index)
+    series = df.iloc[0]
+
+    result = params['prob_early_onset_neonatal_sepsis_week_1']
+    if externals['maternal_chorioamnionitis']:
+        result *= params['rr_eons_maternal_chorio']
+    if externals['maternal_prom']:
+        result *= params['rr_eons_maternal_prom']
+    if series.nb_early_preterm:
+        result *= params['rr_eons_preterm_neonate']
+    if series.nb_late_preterm:
+        result *= params['rr_eons_preterm_neonate']
+
+    if externals['received_abx_for_prom']:
+        result *= params['treatment_effect_abx_prom']
+    if series.nb_clean_birth:
+        result *= params['treatment_effect_clean_birth']
+    if series.nb_early_init_breastfeeding:
+        result *= params['treatment_effect_early_init_bf']
+
+    return pd.Series(data=result, index=df.index)
+
 
     result[externals['maternal_chorioamnionitis']] *= params['rr_eons_maternal_chorio']
     result[externals['maternal_prom']] *= params['rr_eons_maternal_prom']
