@@ -42,7 +42,7 @@ malawi_admin2 = gpd.read_file(
     "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
 )
 water_bodies = gpd.read_file(
-    "/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp"
+    "/Users/rem76/Desktop/Climate_Change_Health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp"
 )
 
 worldpop_gdf = gpd.read_file(
@@ -52,7 +52,7 @@ worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
 
 # Load netCDF data
 nc = Dataset(
-    '/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_wbgt/ACCESS-CM2/ssp245/wbgt_day_ACCESS-CM2_ssp245_malawi_2025_2040.nc',
+    '/Users/rem76/Desktop/Climate_Change_Health/nex_gddp_cmip6_malawi_wbgt/ACCESS-CM2/ssp245/wbgt_day_ACCESS-CM2_ssp245_malawi_2025_2040.nc',
     'r')
 print(nc.variables.keys())
 
