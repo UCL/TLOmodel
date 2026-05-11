@@ -163,13 +163,13 @@ tlo.methods.breast_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x13ebf3290>}
+     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x33709be10>}
 
-     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x13ebf0f90>}
+     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x337098390>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
