@@ -442,11 +442,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         fig, axes = plt.subplots(2, 4, figsize=(7 * 4, 5 * 2), squeeze=False, sharey=True)
 
     axes_flat = axes.flatten()
-
-    COLOUR_DELAYED = "#CC7000"
-    COLOUR_CANCELLED = "#A8102E"
-    COLOUR_TOTAL = "#7EBCE6"
-    COLOUR_RF = "#75AE70"
+    COLOUR_TOTAL = "#08519C"  # deep navy     — TLO total (dominant, thick line)
+    COLOUR_DELAYED = "#00838F"  # dark teal     — TLO delayed
+    COLOUR_CANCELLED = "#6A3D9A"  # indigo/violet — TLO cancelled
+    COLOUR_RF = "#E6550D"  # burnt orange  — DHIS2 ANC data
 
     PANEL_LABELS = list(string.ascii_uppercase)
 
@@ -481,12 +480,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         t_vals = d_vals + c_vals if len(d_vals) == len(c_vals) else np.array([])
 
         if len(d_dates):
-            ax.plot(d_dates, t_vals, color=COLOUR_TOTAL, lw=3, alpha=0.8, label="Total disrupted (TLO)")
+            ax.plot(d_dates, t_vals, color="#08519C", lw=2.5, alpha=0.7, label="Total disrupted (TLO)", zorder=1)
         if len(d_dates):
-            ax.plot(d_dates, d_vals, color=COLOUR_DELAYED, lw=1.5, alpha=0.6, label="Delayed (TLO)")
+            ax.plot(d_dates, d_vals, color="#00838F", lw=2.0, ls="--", alpha=1.0, label="Delayed (TLO)", zorder=2)
         if len(c_dates):
-            ax.plot(c_dates, c_vals, color=COLOUR_CANCELLED, lw=1.5, alpha=0.6, label="Cancelled (TLO)")
-
+            ax.plot(c_dates, c_vals, color="#9B2D8E", lw=2.0, ls=":", alpha=1.0, label="Cancelled (TLO)", zorder=3)
         if not mode_2:
             _rf_dates_mo, _rf_vals_mo = _get_rf(scenario_names[draw], monthly=True)
             if len(_rf_vals_mo):
