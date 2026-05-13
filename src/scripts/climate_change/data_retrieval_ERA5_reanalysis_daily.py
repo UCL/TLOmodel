@@ -2,9 +2,9 @@ import os
 
 import cdsapi
 
-years = [str(year) for year in range(2024, 2025)]
+years = [str(year) for year in range(2011, 2025)]
 
-base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total"
+base_dir = "/Users/rem76/Desktop/Climate_Change_Health/Data/Precipitation_data/Historical/daily_total"
 
 for year in years:
     year_dir = os.path.join(base_dir, year)
@@ -16,9 +16,7 @@ for year in years:
         "product_type": ["reanalysis"],
         "variable": ["total_precipitation"],
         "year": year,
-        "month": [
-            "10", "11", "12"
-        ],
+        "month": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
         "day": [
             "01", "02", "03",
             "04", "05", "06",
