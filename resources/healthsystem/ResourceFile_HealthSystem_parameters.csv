@@ -3,6 +3,8 @@ policy_name,Naive
 year_mode_switch,2100
 scale_to_effective_capabilities,FALSE
 Service_Availability,"[""*""]"
+year_service_availability_switch,2100
+service_availability_postSwitch,"[""*""]"
 use_funded_or_actual_staffing,funded_plus
 mode_appt_constraints,1
 mode_appt_constraints_postSwitch,1
