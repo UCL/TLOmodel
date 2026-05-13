@@ -4,6 +4,7 @@
 # - feascov and substitute/compulsory constraints still bound implementation shares.
 
 library(lpSolve)
+library(jsonlite)
 
 find_optimal_package <- function(inputs, objective_input, cet_input,
                                  drug_budget_input, drug_budget.scale,
@@ -16,7 +17,7 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   dalys <- as.numeric(as.character(inputs$ce_dalys))
   ## Cumulative cost of drugs and commodities
   drugcost <- as.numeric(as.character(inputs$conscost))
-  maxcoverage <- as.numeric(as.character(inputs$feascov)) # Maximum possible coverage (demand constraint)
+  maxcoverage <- 1 ## SB: Changed as I am not using use_feasiblecov_constraint
   ## Preaggregated mode: unit case scaling
   cases <- rep(1, length(dalys))
   ## Full cost
@@ -131,7 +132,6 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
 
   ## Each list here represents the number of staff (of each cadre) needed to deliver each intervention to all cases in need.
   ## Eg. for each cesarean section, 45 minutes of medical staff's time is needed (or 104,200 minutes for 2316 cases). On average 39,900 minutes are available per medical staff each year (257.3 million minutes in total divided by 6,400 medical staff). This means that for 2136 cases, 2.16 medical staff are needed (2316*45/(257.3m/6400))
-
   cons_hr <-
     cbind(clinicalstaff.need / (clinicalstaffmins.limit / clinicalstaff.limit),
           nursingstaff.need / (nursingstaffmins.limit / nursingstaff.limit),
@@ -294,14 +294,19 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   ###################################
   # 3.2 - Run LPP
   ###################################
-  solution.class <- lp("max", objective, cons.mat, cons.dir, cons.mat.limit, compute.sens = TRUE)
 
+  solution.class <- lp("max", objective, cons.mat, cons.dir, cons.mat.limit, compute.sens = TRUE)
+  print(solution.class$status) # 0 means optimal in lpSolve
+  print(solution.class$objval)
+
+  saveRDS(solution.class, file = "solution.rds")
   ###################################
   # 3.3 - Outputs
   ###################################
   # Export solution to a .csv file
   #------------------------------------
-  solution <- as.data.frame(solution.class$solution)
+    solution <- as.data.frame(solution.class$solution)
+
   solution_hr <- as.data.frame(solution.class$solution) # use this uncollapsed version of the dataframe for HR use calculations below
   # Collapse solution by intervention
   if (task_shifting_pharm == 1) {
@@ -368,4 +373,58 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
     "Proportion of HR capacity used by cadre" = hruse.prop,
     "CET based on solution" = cet_soln
   )
+}
+
+
+run_optimizer_from_csv <- function() {
+  inputs <- readr::read_csv("optimizer_inputs.csv", show_col_types = TRUE)
+  constraints <- readr::read_csv("hr_constraints.csv", show_col_types = TRUE )
+  hr.time.constraint <- c(
+    constraints$capacity[constraints$Officer_Category == "hr_clin"],
+    constraints$capacity[constraints$Officer_Category == "hr_nur"],
+    constraints$capacity[constraints$Officer_Category == "hr_pharm"],
+    constraints$capacity[constraints$Officer_Category == "hr_lab"],
+    constraints$capacity[constraints$Officer_Category == "hr_ment"],
+    constraints$capacity[constraints$Officer_Category == "hr_nutri"]
+  )
+
+  hr.size.constraint <- c(
+      constraints$staff_count[constraints$Officer_Category == "hr_clin"],
+      constraints$staff_count[constraints$Officer_Category == "hr_nur"],
+      constraints$staff_count[constraints$Officer_Category == "hr_pharm"],
+      constraints$staff_count[constraints$Officer_Category == "hr_lab"],
+      constraints$staff_count[constraints$Officer_Category == "hr_ment"],
+      constraints$staff_count[constraints$Officer_Category == "hr_nutri"]
+  )
+
+
+  res <- find_optimal_package(
+    inputs = inputs,
+    objective_input = "dalys",
+    cet_input = 600,
+    drug_budget_input = 225602946, #TODO - get this from constaint
+    drug_budget.scale = 1,
+    hr.time.constraint = hr.time.constraint,
+    hr.size = hr.size.constraint,
+    hr.scale = rep(1, length(hr.time.constraint)),
+    use_feasiblecov_constraint = 0,
+    feascov_scale = 1,
+    compcov_scale = 1,
+    compulsory_interventions = c(),
+    substitutes = c(),
+    task_shifting_pharm = 0
+  )
+
+  # Ensure JSON-safe output.
+  res_json <- lapply(res, function(x) {
+    if (is.matrix(x) || is.data.frame(x)) {
+      as.data.frame(x)
+    } else {
+      x
+    }
+  })
+
+  output_json_path <- "optimizer_results.json"
+
+  jsonlite::write_json(res_json, path = output_json_path, auto_unbox = TRUE, pretty = TRUE, digits = NA)
 }
