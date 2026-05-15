@@ -12,6 +12,7 @@ Usage:
 
 Outputs (all written to results_folder):
     prcc_disruption_summary.csv          — one row per draw, ready for PRCC script
+                                           includes wet-season columns (Nov–Apr)
     draw_checkpoints/draw_<N>.pkl        — lightweight per-draw checkpoints
 """
 
@@ -34,6 +35,9 @@ MAX_YEAR = 2041  # exclusive, so runs 2025–2040 inclusive
 SCALING_FACTOR = 145.39
 CI_LOWER = 0.025
 CI_UPPER = 0.975
+
+# Malawi wet season: November – April
+WET_MONTHS = {11, 12, 1, 2, 3, 4}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -66,6 +70,16 @@ def _align_and_rate(total_df, disrupted_df, delayed_df, cancelled_df):
 def _annual_stats(rate_df):
     annual = rate_df.groupby(_parse_ym(rate_df.index).str[:4]).mean().sort_index()
     return annual.mean(axis=1), annual.quantile(CI_LOWER, axis=1), annual.quantile(CI_UPPER, axis=1)
+
+
+def _wet_season_mean(rate_df):
+    """Mean disruption rate restricted to wet-season months (Nov–Apr)."""
+    ym = _parse_ym(rate_df.index)
+    months = pd.to_datetime(ym + "-01").month
+    wet_mask = months.isin(WET_MONTHS)
+    if not wet_mask.any():
+        return pd.Series(dtype=float)
+    return rate_df.loc[wet_mask.values].mean(axis=1).mean()
 
 
 def _concat_years(dfs):
@@ -142,7 +156,6 @@ def apply(results_folder: Path, output_folder: Path):
     # ─────────────────────────────────────────────────────────────────────────
     #  PRE-LOAD: one year × one log key at a time.
     #  Slice immediately per draw, del the raw full DataFrame.
-    #  Only load years/keys needed by draws_todo.
     # ─────────────────────────────────────────────────────────────────────────
 
     per_draw_total = {d: [] for d in draws_todo}
@@ -200,7 +213,7 @@ def apply(results_folder: Path, output_folder: Path):
         delayed_all = _concat_years(per_draw_delayed[draw]) * SCALING_FACTOR
         cancelled_all = _concat_years(per_draw_cancelled[draw]) * SCALING_FACTOR
 
-        # Collapse ym:facility:hsi → ym:facility  (much smaller)
+        # Collapse ym:facility:hsi → ym:facility
         total_2 = _collapse_hsi_types(total_all)
         delayed_2 = _collapse_hsi_types(delayed_all)
         cancelled_2 = _collapse_hsi_types(cancelled_all)
@@ -210,8 +223,14 @@ def apply(results_folder: Path, output_folder: Path):
         cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
         del total_2, delayed_2, cancelled_2
 
+        # Annual stats (year-round)
         dam, dal, dau = _annual_stats(delayed_rate_2)
         cam, cal, cau = _annual_stats(cancelled_rate_2)
+
+        # Wet-season means (Nov–Apr only)
+        dam_wet = _wet_season_mean(delayed_rate_2)
+        cam_wet = _wet_season_mean(cancelled_rate_2)
+
         del delayed_rate_2, cancelled_rate_2
 
         # ── Write PRCC row immediately ────────────────────────────────────────
@@ -219,9 +238,11 @@ def apply(results_folder: Path, output_folder: Path):
             "draw": draw,
             "prop_delayed": dam.mean(),
             "prop_cancelled": cam.mean(),
+            "prop_delayed_wet": dam_wet,
+            "prop_cancelled_wet": cam_wet,
         }]).to_csv(prcc_out, mode="a", header=not prcc_out.exists(), index=False)
 
-        # ── Checkpoint (tiny — just the annual Series) ────────────────────────
+        # ── Checkpoint ────────────────────────────────────────────────────────
         ckpt_path = ckpt_dir / f"draw_{draw}.pkl"
         with open(ckpt_path, "wb") as f:
             pickle.dump({
@@ -229,11 +250,13 @@ def apply(results_folder: Path, output_folder: Path):
                 "annual_delayed_mean": dam, "annual_delayed_lower": dal,
                 "annual_delayed_upper": dau, "annual_cancelled_mean": cam,
                 "annual_cancelled_lower": cal, "annual_cancelled_upper": cau,
+                "wet_delayed_mean": dam_wet,
+                "wet_cancelled_mean": cam_wet,
             }, f, protocol=4)
 
         # ── Free this draw's pre-loaded slices ────────────────────────────────
         del per_draw_total[draw], per_draw_delayed[draw], per_draw_cancelled[draw]
-        del dam, dal, dau, cam, cal, cau
+        del dam, dal, dau, cam, cal, cau, dam_wet, cam_wet
 
     print(f"\nDone. PRCC CSV written to:\n  {prcc_out}")
     print(f"Checkpoints in:\n  {ckpt_dir}")
