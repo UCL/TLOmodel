@@ -765,7 +765,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     begins at least after 3 years of being infected with Diabetes Mellitus."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population: Population) -> None:
         df = population.props
@@ -1217,7 +1217,7 @@ class HSI_Dr_Dmo_Review(HSI_Event, IndividualScopeEventMixin):
             if self.module.rng.random_sample() < p['prob_repeat_dmo_treatment']:
                 treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
                     if self.module.rng.random_sample() < p[
-                    'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
+                        'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
                 hs.schedule_hsi_event(
                     hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
                     topen=self.sim.date,
@@ -1231,7 +1231,7 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month"""
         self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        super().__init__(module, frequency=DateOffset(years=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger
