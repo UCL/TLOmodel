@@ -1,6 +1,3 @@
-"""
-comparison_actual_vs_expected_disruption_realfacility.py
-"""
 
 import argparse
 import string
@@ -34,7 +31,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     main_text = True
     parameter_uncertainty_analysis = False
-    mode_2 = True
+    mode_2 = False
     climate_analysis = False
     prop_supply_demand = False
     top_n_hsi = 10
@@ -137,6 +134,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             return _df.groupby("district")["Person_ID"].nunique().astype(float)
         return _fn
 
+    def _hsi_total_by_treatment(total_df):
+        """Absolute HSI count by TREATMENT_ID, summed over all months/facilities."""
+        hsi = _parse_hsi_type(total_df.index)
+        by_type = total_df.groupby(hsi).sum()
+        return by_type.mean(axis=1), by_type.quantile(CI_LOWER, axis=1), by_type.quantile(CI_UPPER, axis=1)
+
     def _parse_ym(index):
         return index.astype(str).str.split(":", n=1).str[0]
 
@@ -189,6 +192,46 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 cancelled_rate.quantile(CI_LOWER, axis=1), cancelled_rate.quantile(CI_UPPER, axis=1),
                 total_by_type.mean(axis=1))
 
+    def _high_rainfall_months(ssp_tag, quantile=0.90):
+        """
+        Returns a set of 'YYYY-MM' strings that are both in the wet season (Nov–Apr)
+        AND in the top quantile of precipitation among wet-season months only.
+        """
+        df = pd.read_csv(
+            resourcefilepath / "climate_change_impacts"
+            / f"ResourceFile_Precipitation_Disruptions_{ssp_tag}_mean_monthly_prediction_weather_by_facility.csv",
+            index_col=0,
+        )
+        df.index = df.index.astype(str)
+        year = df.index.str.split("-").str[0].astype(int)
+        month = df.index.str.split("-").str[1].astype(int)
+
+        # Filter to simulation period
+        period_mask = (year >= min_year) & (year <= max_year - 1)
+        df = df.loc[period_mask]
+        year = year[period_mask]
+        month = month[period_mask]
+
+        # Restrict to wet season months only before computing quantile
+        wet_mask = month.isin([11, 12, 1, 2, 3, 4])
+        df_wet = df.loc[wet_mask]
+        year_wet = year[wet_mask]
+        month_wet = month[wet_mask]
+
+        national_mean = df_wet.mean(axis=1)
+        threshold = national_mean.quantile(quantile)
+        high = national_mean >= threshold
+
+        return set(
+            year_wet[high].astype(str) + "-" + month_wet[high].astype(str).str.zfill(2)
+        )
+
+    def _high_rain_mask(df, high_rain_months):
+        """Boolean mask for rows whose YYYY-MM is in the top-10% rainfall set."""
+        return _parse_ym(df.index).isin(high_rain_months)
+
+    high_rain_months = _high_rainfall_months("ssp245")
+    print(f"High-rainfall months identified: {sorted(high_rain_months)}")
     target_year_sequence = range(min_year, max_year, spacing_of_years)
     tlo_facilities = set()
 
@@ -442,10 +485,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         fig, axes = plt.subplots(2, 4, figsize=(7 * 4, 5 * 2), squeeze=False, sharey=True)
 
     axes_flat = axes.flatten()
-    COLOUR_TOTAL = "#08519C"  # deep navy     — TLO total (dominant, thick line)
-    COLOUR_DELAYED = "#00838F"  # dark teal     — TLO delayed
-    COLOUR_CANCELLED = "#6A3D9A"  # indigo/violet — TLO cancelled
-    COLOUR_RF = "#E6550D"  # burnt orange  — DHIS2 ANC data
+    COLOUR_TOTAL = "#C0392B"
+    COLOUR_DELAYED = "#E67E22"
+    COLOUR_CANCELLED = "#D4AC0D"
+    COLOUR_RF = "#2980B9"
 
     PANEL_LABELS = list(string.ascii_uppercase)
 
@@ -480,16 +523,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         t_vals = d_vals + c_vals if len(d_vals) == len(c_vals) else np.array([])
 
         if len(d_dates):
-            ax.plot(d_dates, t_vals, color="#08519C", lw=2.5, alpha=0.7, label="Total disrupted (TLO)", zorder=1)
+            ax.plot(d_dates, t_vals, color=COLOUR_TOTAL, lw=2.5, alpha=0.7, label="Total disrupted (TLO)", zorder=1)
         if len(d_dates):
-            ax.plot(d_dates, d_vals, color="#00838F", lw=2.0, ls="--", alpha=1.0, label="Delayed (TLO)", zorder=2)
+            ax.plot(d_dates, d_vals, color=COLOUR_DELAYED, lw=2.0, ls="--", alpha=1.0, label="Delayed (TLO)", zorder=2)
         if len(c_dates):
-            ax.plot(c_dates, c_vals, color="#9B2D8E", lw=2.0, ls=":", alpha=1.0, label="Cancelled (TLO)", zorder=3)
+            ax.plot(c_dates, c_vals, color=COLOUR_CANCELLED, lw=2.0, ls=":", alpha=1.0, label="Cancelled (TLO)",
+                    zorder=3)
         if not mode_2:
             _rf_dates_mo, _rf_vals_mo = _get_rf(scenario_names[draw], monthly=True)
             if len(_rf_vals_mo):
                 ax.plot(_rf_dates_mo, _rf_vals_mo,
-                        color=COLOUR_RF, lw=2.5, ls="--", alpha=0.9, label="DHIS2 ANC Data")
+                        color=COLOUR_RF, lw=2.5, ls="--", alpha=0.5, label="DHIS2 ANC Data")
 
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         ax.xaxis.set_major_locator(mdates.YearLocator())
@@ -726,7 +770,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             axes3_flat[j].set_visible(False)
 
         fig3.suptitle(
-            f"Top {top_n_hsi} {fig_label} HSI types ({min_year}–{max_year - 1})\nwhiskers = 95% CI",
+            f"Top {top_n_hsi} {fig_label} HSI types ({min_year}–{max_year - 1})",
             fontsize=FS_SUPTITLE, fontweight="bold", y=1.01,
         )
         fig3.tight_layout()
@@ -734,6 +778,101 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                      dpi=300, bbox_inches="tight")
         plt.close(fig3)
 
+    # ─────────────────────────────────────────────────────────────────────────────
+    #  PLOT F: REGISTERED DISRUPTIONS vs ACTUAL DEFICIT IN HSIs RAN
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    non_nd_draws = [
+        (idx, draw)
+        for idx, draw in enumerate(scenarios_of_interest)
+        if scenario_names[draw] != "No Disruptions"
+    ]
+    n_scenarios = len(non_nd_draws)
+
+    # ── collect per-run totals ────────────────────────────────────────────────
+    nd_total_per_run = _collapse_hsi_types(all_draws_total_df[scenarios_of_interest[0]]).sum(axis=0)
+
+    registered_means, registered_lo, registered_hi = [], [], []
+    deficit_means, deficit_lo, deficit_hi = [], [], []
+    scen_labels = []
+
+    for idx, draw in non_nd_draws:
+        scen = scenario_names[draw]
+        scen_labels.append(scen)
+
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
+
+        per_run_disrupted = (delayed_2 + cancelled_2).sum(axis=0)  # registered
+        per_run_deficit = nd_total_per_run.values - total_2.sum(axis=0).values  # actual shortfall
+
+        registered_means.append(per_run_disrupted.mean())
+        registered_lo.append(per_run_disrupted.quantile(CI_LOWER))
+        registered_hi.append(per_run_disrupted.quantile(CI_UPPER))
+
+        deficit_means.append(per_run_deficit.mean())
+        deficit_lo.append(np.percentile(per_run_deficit, CI_LOWER * 100))
+        deficit_hi.append(np.percentile(per_run_deficit, CI_UPPER * 100))
+
+    registered_means = np.array(registered_means)
+    registered_lo = np.array(registered_lo)
+    registered_hi = np.array(registered_hi)
+    deficit_means = np.array(deficit_means)
+    deficit_lo = np.array(deficit_lo)
+    deficit_hi = np.array(deficit_hi)
+
+    # ── layout: one group per scenario, two bars each ────────────────────────
+    bar_height = 0.32
+    group_gap = 2 * bar_height + 0.25
+    y_centres = np.arange(n_scenarios) * group_gap
+
+    COLOUR_REGISTERED = "#C0392B"  # red  — what the model logged as disrupted
+    COLOUR_DEFICIT = "#2980B9"  # blue — actual shortfall in HSIs run
+
+    fig_f, ax_f = plt.subplots(figsize=(11, max(4, n_scenarios * group_gap * 0.9 + 1.5)))
+
+    # registered disruptions (upper bar in each group)
+    ax_f.barh(y_centres + bar_height / 2, registered_means / nd_total_per_run * 100,
+              height=bar_height, color=COLOUR_REGISTERED, alpha=0.85,
+              label="Registered as disrupted (delayed + cancelled)")
+    ax_f.errorbar(registered_means / nd_total_per_run * 100, y_centres + bar_height / 2,
+                  xerr=[registered_means / nd_total_per_run * 100 - registered_lo,
+                        registered_hi - registered_means / nd_total_per_run * 100],
+                  fmt="none", color="black", lw=1.0, capsize=3, alpha=0.6)
+
+    # actual deficit (lower bar in each group)
+    ax_f.barh(y_centres - bar_height / 2, deficit_means / nd_total_per_run * 100,
+              height=bar_height, color=COLOUR_DEFICIT, alpha=0.85,
+              label='Actual deficit in HSIs run\n(vs. "No Disruptions")')
+    ax_f.errorbar(deficit_means / nd_total_per_run * 100, y_centres - bar_height / 2,
+                  xerr=[deficit_means / nd_total_per_run * 100 - deficit_lo,
+                        deficit_hi - deficit_means / nd_total_per_run * 100],
+                  fmt="none", color="black", lw=1.0, capsize=3, alpha=0.6)
+
+    ax_f.set_yticks(y_centres)
+    ax_f.set_yticklabels(scen_labels, fontsize=FS_LABEL, fontweight="bold")
+    ax_f.invert_yaxis()
+
+    ax_f.set_xlabel("Number of HSIs", fontsize=FS_LABEL, fontweight="bold")
+    ax_f.set_title(
+        f"Weather disruptions vs. total deficit in HSIs run ({min_year}–{max_year - 1})",
+        fontsize=FS_TITLE, fontweight="bold",
+    )
+    ax_f.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=True)
+    ax_f.xaxis.get_offset_text().set_fontsize(FS_TICK)
+    plt.setp(ax_f.xaxis.get_majorticklabels(), fontsize=FS_TICK)
+
+    ax_f.legend(fontsize=FS_LEGEND, framealpha=0.95, edgecolor="gray", loc="lower right")
+    ax_f.grid(axis="x", color="lightgrey", linewidth=0.5, zorder=0)
+    ax_f.spines["top"].set_visible(False)
+    ax_f.spines["right"].set_visible(False)
+    ax_f.set_xlim(left=0)
+
+    fig_f.tight_layout()
+    fig_f.savefig(output_folder / f"registered_vs_deficit_hsi_{suffix}.png",
+                  dpi=300, bbox_inches="tight")
+    plt.close(fig_f)
     # ─────────────────────────────────────────────────────────────────────────────
     #  CSV OUTPUTS
     # ─────────────────────────────────────────────────────────────────────────────
@@ -898,6 +1037,53 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             "monthly_disruption_rate_std_%": round(monthly_rate_mean.std(), 4),
         })
     pd.DataFrame(summary_rows).to_csv(output_folder / f"main_text_summary_{suffix}.csv", index=False)
+
+    def _wet_season_mask(df):
+        """Boolean mask for rows whose YYYY-MM month is Jun–Sep (6–9)."""
+        months = _parse_ym(df.index).str.split("-").str[1].astype(int)
+        return months.isin([11, 12, 1, 2, 3, 4])
+
+    hsi_count_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+
+        # full year
+        per_run_full = total_2.sum(axis=0)
+
+        # wet season only (Jun–Sep)
+        mask = _wet_season_mask(total_2)
+        per_run_wet = total_2[mask].sum(axis=0)
+
+        for season, per_run in [("full_year", per_run_full), ("wet_season", per_run_wet)]:
+            hsi_count_rows.append({
+                "Scenario": scen,
+                "season": season,
+                "total_hsi_ran_mean": round(per_run.mean(), 1),
+                "total_hsi_ran_lower": round(per_run.quantile(CI_LOWER), 1),
+                "total_hsi_ran_upper": round(per_run.quantile(CI_UPPER), 1),
+            })
+
+    pd.DataFrame(hsi_count_rows).to_csv(
+        output_folder / f"hsi_ran_counts_by_season_{suffix}.csv", index=False
+    )
+
+    per_run_totals = {}
+    for draw in scenarios_of_interest:
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        per_run_totals[scenario_names[draw]] = total_2.sum(axis=0)  # Series, index = run
+
+    # Run-by-run ratios
+    nd = per_run_totals["No Disruptions"]
+    df_paired = pd.DataFrame({
+        "run": nd.index,
+        "ratio_A": per_run_totals["Default"].values / nd.values,  # climate effect mode 1
+        "ratio_C": per_run_totals["Worst Case"].values / nd.values,  # worst case vs baseline
+    })
+    df_paired["mean_ratio_A"] = df_paired["ratio_A"].mean()
+    df_paired["mean_ratio_A_ci_lower"] = df_paired["ratio_A"].quantile(0.025)
+    df_paired["mean_ratio_A_ci_upper"] = df_paired["ratio_A"].quantile(0.975)
+    df_paired.to_csv(output_folder / f"paired_run_ratios_{suffix}.csv", index=False)
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  DISRUPTED PERSONS BY DISTRICT CSV
@@ -1217,6 +1403,82 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     plt.close(fig6)
 
     # ─────────────────────────────────────────────────────────────────────────────
+    #  PLOT E: TOTAL HSI COUNT BY TREATMENT ID — GROUPED BY SCENARIO
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    top_n_total = 20  # ranked by No Disruptions volume
+
+    def _hsi_total_by_treatment(total_df):
+        hsi = _parse_hsi_type(total_df.index)
+        by_type = total_df.groupby(hsi).sum()
+        return by_type.mean(axis=1), by_type.quantile(CI_LOWER, axis=1), by_type.quantile(CI_UPPER, axis=1)
+
+    totals_by_scen = {}
+    for idx, draw in enumerate(scenarios_of_interest):
+        m, lo, hi = _hsi_total_by_treatment(all_draws_total_df[draw])
+        m = m[m.index.astype(str) != "nan"]
+        lo = lo.reindex(m.index, fill_value=0)
+        hi = hi.reindex(m.index, fill_value=0)
+        totals_by_scen[scenario_names[draw]] = {"mean": m, "lo": lo, "hi": hi}
+
+    # Rank by baseline volume
+    baseline_mean = totals_by_scen["No Disruptions"]["mean"]
+    top_types = baseline_mean.sort_values(ascending=False).head(top_n_total).index.tolist()
+
+    n_scen = len(scenarios_of_interest)
+    bar_height = 0.22
+    group_gap = n_scen * bar_height + 0.25
+    y_centres = np.arange(len(top_types)) * group_gap
+    offsets = np.linspace(-(n_scen - 1) / 2, (n_scen - 1) / 2, n_scen) * bar_height
+
+    SCENARIO_COLOURS_E = ["#4E9DC4", "#F4C27F", "#E07B72"]  # teal / amber / coral — matches DALYs style
+
+    fig_e, ax_e = plt.subplots(figsize=(12, max(8, len(top_types) * group_gap * 0.45 + 2)))
+
+    for s_idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        vals = totals_by_scen[scen]["mean"].reindex(top_types, fill_value=0).values
+        lo = totals_by_scen[scen]["lo"].reindex(top_types, fill_value=0).values
+        hi = totals_by_scen[scen]["hi"].reindex(top_types, fill_value=0).values
+
+        y = y_centres + offsets[s_idx]
+        col = SCENARIO_COLOURS_E[s_idx % len(SCENARIO_COLOURS_E)]
+
+        ax_e.barh(y, vals, height=bar_height, color=col, alpha=0.88, label=scen)
+        ax_e.errorbar(
+            vals, y,
+            xerr=[vals - lo, hi - vals],
+            fmt="none", color="black", lw=0.9, capsize=2, alpha=0.55,
+        )
+
+    # Y-axis: one tick per treatment ID, centred on the group
+    ax_e.set_yticks(y_centres)
+    ax_e.set_yticklabels(top_types, fontsize=FS_TICK)
+    ax_e.invert_yaxis()
+
+    ax_e.set_xlabel("Total HSIs (mean across runs)", fontsize=FS_LABEL, fontweight="bold")
+    ax_e.set_title(
+        f"Total HSIs by treatment type ({min_year}–{max_year - 1})",
+        fontsize=FS_TITLE, fontweight="bold",
+    )
+    ax_e.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=True)
+    ax_e.xaxis.get_offset_text().set_fontsize(FS_TICK)
+    plt.setp(ax_e.xaxis.get_majorticklabels(), fontsize=FS_TICK)
+
+    ax_e.legend(
+        title="Scenario", title_fontsize=FS_LEGEND,
+        fontsize=FS_LEGEND, framealpha=0.95, edgecolor="gray",
+        loc="lower right",
+    )
+    ax_e.grid(axis="x", color="lightgrey", linewidth=0.5, zorder=0)
+    ax_e.spines["top"].set_visible(False)
+    ax_e.spines["right"].set_visible(False)
+
+    fig_e.tight_layout()
+    fig_e.savefig(output_folder / f"hsi_total_by_treatment_id_{suffix}.png", dpi=300, bbox_inches="tight")
+    plt.close(fig_e)
+
+    # ─────────────────────────────────────────────────────────────────────────────
     #  PRCC + PER-RUN CSVs
     # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1266,6 +1528,135 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     pd.concat(all_per_run, ignore_index=True).to_csv(
         output_folder / f"per_run_hsi_counts_all_scenarios_{suffix}.csv", index=False)
 
+    # ── WET SEASON SUMMARY CSV (Nov–Apr) ─────────────────────────────────────
+
+    ws_summary_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
+
+        # filter to wet season rows
+        ws_mask = _wet_season_mask(total_2)
+        total_2 = total_2[ws_mask]
+        delayed_2 = delayed_2[ws_mask]
+        cancelled_2 = cancelled_2[ws_mask]
+
+        per_run_total = total_2.sum(axis=0)
+        per_run_delayed = delayed_2.sum(axis=0)
+        per_run_cancelled = cancelled_2.sum(axis=0)
+        per_run_disrupted = per_run_delayed + per_run_cancelled
+        denom = per_run_total + per_run_disrupted
+
+        if scen == "No Disruptions":
+            ws_summary_rows.append({
+                "Scenario": scen,
+                "total_hsi_count_mean": round(per_run_total.mean(), 1),
+                "total_hsi_count_lower": round(per_run_total.quantile(CI_LOWER), 1),
+                "total_hsi_count_upper": round(per_run_total.quantile(CI_UPPER), 1),
+                **{k: 0 for k in [
+                    "total_hsi_disrupted_mean", "total_hsi_disrupted_lower", "total_hsi_disrupted_upper",
+                    "total_hsi_cancelled_mean", "total_hsi_cancelled_lower", "total_hsi_cancelled_upper",
+                    "total_hsi_delayed_mean", "total_hsi_delayed_lower", "total_hsi_delayed_upper",
+                    "pct_disrupted_mean", "pct_disrupted_lower", "pct_disrupted_upper",
+                ]}
+            })
+        else:
+            ws_summary_rows.append({
+                "Scenario": scen,
+                "total_hsi_count_mean": round(per_run_total.mean(), 1),
+                "total_hsi_count_lower": round(per_run_total.quantile(CI_LOWER), 1),
+                "total_hsi_count_upper": round(per_run_total.quantile(CI_UPPER), 1),
+                "total_hsi_disrupted_mean": round(per_run_disrupted.mean(), 1),
+                "total_hsi_disrupted_lower": round(per_run_disrupted.quantile(CI_LOWER), 1),
+                "total_hsi_disrupted_upper": round(per_run_disrupted.quantile(CI_UPPER), 1),
+                "total_hsi_cancelled_mean": round(per_run_cancelled.mean(), 1),
+                "total_hsi_cancelled_lower": round(per_run_cancelled.quantile(CI_LOWER), 1),
+                "total_hsi_cancelled_upper": round(per_run_cancelled.quantile(CI_UPPER), 1),
+                "total_hsi_delayed_mean": round(per_run_delayed.mean(), 1),
+                "total_hsi_delayed_lower": round(per_run_delayed.quantile(CI_LOWER), 1),
+                "total_hsi_delayed_upper": round(per_run_delayed.quantile(CI_UPPER), 1),
+                "pct_disrupted_mean": round((per_run_disrupted / denom * 100).mean(), 4),
+                "pct_disrupted_lower": round((per_run_disrupted / denom * 100).quantile(CI_LOWER), 4),
+                "pct_disrupted_upper": round((per_run_disrupted / denom * 100).quantile(CI_UPPER), 4),
+            })
+
+    pd.DataFrame(ws_summary_rows).to_csv(
+        output_folder / f"wet_season_summary_{suffix}.csv", index=False
+    )
+
+    # ── HIGH-RAINFALL MONTHS SUMMARY CSV (top 10% precip) ─────────────────────
+
+    hr_summary_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
+
+        mask = _high_rain_mask(total_2, high_rain_months)
+        total_2 = total_2[mask]
+        delayed_2 = delayed_2[mask]
+        cancelled_2 = cancelled_2[mask]
+
+        per_run_total = total_2.sum(axis=0)
+        per_run_delayed = delayed_2.sum(axis=0)
+        per_run_cancelled = cancelled_2.sum(axis=0)
+        per_run_disrupted = per_run_delayed + per_run_cancelled
+        denom = per_run_total + per_run_disrupted
+
+        hr_summary_rows.append({
+            "Scenario": scen,
+            "n_months_in_top10pct": mask.sum() // max(1, total_2.shape[1]),  # approx
+            "total_hsi_count_mean": round(per_run_total.mean(), 1),
+            "total_hsi_disrupted_mean": round(per_run_disrupted.mean(), 1) if scen != "No Disruptions" else 0,
+            "pct_disrupted_mean": round((per_run_disrupted / denom * 100).mean(), 4) if scen != "No Disruptions" else 0,
+            "pct_disrupted_lower": round((per_run_disrupted / denom * 100).quantile(CI_LOWER),
+                                         4) if scen != "No Disruptions" else 0,
+            "pct_disrupted_upper": round((per_run_disrupted / denom * 100).quantile(CI_UPPER),
+                                         4) if scen != "No Disruptions" else 0,
+        })
+
+    pd.DataFrame(hr_summary_rows).to_csv(
+        output_folder / f"high_rainfall_months_summary_{suffix}.csv", index=False
+    )
+    # ── PEAK MONTH DISRUPTION ─────────────────────────────────────────────────
+
+    peak_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        if scen == "No Disruptions":
+            continue
+
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
+
+        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
+        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
+        total_rate_2 = delayed_rate_2.add(
+            cancelled_rate_2.reindex(delayed_rate_2.index, fill_value=0), fill_value=0
+        ).clip(upper=1.0)
+
+        # Collapse to monthly national mean across all facilities and runs
+        monthly_mean = total_rate_2.groupby(_parse_ym(total_rate_2.index)).mean().mean(axis=1)
+        monthly_lo = total_rate_2.groupby(_parse_ym(total_rate_2.index)).mean().quantile(CI_LOWER, axis=1)
+        monthly_hi = total_rate_2.groupby(_parse_ym(total_rate_2.index)).mean().quantile(CI_UPPER, axis=1)
+
+        peak_ym = monthly_mean.idxmax()
+        peak_rows.append({
+            "Scenario": scen,
+            "peak_month": peak_ym,
+            "pct_disrupted_mean": round(monthly_mean[peak_ym] * 100, 4),
+            "pct_disrupted_lower": round(monthly_lo[peak_ym] * 100, 4),
+            "pct_disrupted_upper": round(monthly_hi[peak_ym] * 100, 4),
+        })
+
+    pd.DataFrame(peak_rows).to_csv(
+        output_folder / f"peak_month_disruption_{suffix}.csv", index=False
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
