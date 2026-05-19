@@ -170,7 +170,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     min_year = 2025
     max_year = 2041
     main_text = True
-    mode_2 = True
+    mode_2 = False
     CI_LOWER = 0.025
     CI_UPPER = 0.975
 
