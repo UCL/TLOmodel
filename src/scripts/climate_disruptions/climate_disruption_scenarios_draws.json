@@ -3,7 +3,7 @@
   "scenario_seed": 0,
     "arguments": [
         "--resume-simulation",
-        "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/baseline_run_with_pop_mode_2-2026-03-27T134831Z/0"
+        "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/baseline_run_with_pop-2026-03-03T092729Z/0"
     ],
     "runs_per_draw": 5,
   "draws": [
@@ -17,7 +17,7 @@
             "scale_factor_appointment_urgency": 1.0,
           "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -52,7 +52,7 @@
             "scale_factor_appointment_urgency": 2.0,
             "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -87,7 +87,7 @@
             "scale_factor_appointment_urgency": 1.0,
           "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -122,7 +122,7 @@
             "scale_factor_appointment_urgency": 2.0,
             "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -157,7 +157,7 @@
             "scale_factor_appointment_urgency": 1.0,
           "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -192,7 +192,7 @@
             "scale_factor_appointment_urgency": 2.0,
             "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -227,7 +227,7 @@
             "scale_factor_appointment_urgency": 1.0,
           "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -262,7 +262,7 @@
             "scale_factor_appointment_urgency": 2.0,
             "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
+            "mode_appt_constraints_postSwitch": 1,
             "year_mode_switch": 2025,
           "cons_availability": "default",
           "cons_availability_postSwitch": "default",
@@ -288,6 +288,6 @@
       "draw_name": "7"
     }
   ],
-    "commit": "4a06b3116b952dba2d621904c8238544692c306d",
-    "github": "https://github.com/UCL/TLOmodel/tree/4a06b3116b952dba2d621904c8238544692c306d"
+    "commit": "f795138445afbe2421eab3eff49448aac1d9e0d4",
+    "github": "https://github.com/UCL/TLOmodel/tree/f795138445afbe2421eab3eff49448aac1d9e0d4"
 }
