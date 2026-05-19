@@ -26,11 +26,11 @@ from tlo import Date
 from tlo.analysis.utils import extract_results
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  CONFIGURATION  — edit these to match your run
+#  CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-N_DRAWS = 199
-MIN_YEAR = 2025
+N_DRAWS = 20
+MIN_YEAR = 2039
 MAX_YEAR = 2041  # exclusive, so runs 2025–2040 inclusive
 SCALING_FACTOR = 145.39
 CI_LOWER = 0.025
@@ -79,7 +79,7 @@ def _wet_season_mean(rate_df):
     wet_mask = months.isin(WET_MONTHS)
     if not wet_mask.any():
         return pd.Series(dtype=float)
-    return rate_df.loc[wet_mask.values].mean(axis=1).mean()
+    return rate_df.loc[wet_mask].mean(axis=1).mean()
 
 
 def _concat_years(dfs):
@@ -137,6 +137,7 @@ def apply(results_folder: Path, output_folder: Path):
     target_year_sequence = range(MIN_YEAR, MAX_YEAR)
 
     ckpt_dir = output_folder.parent / f"{output_folder.name}_draw_checkpoints"
+    print(ckpt_dir)
     ckpt_dir.mkdir(exist_ok=True)
 
     prcc_out = output_folder / "prcc_disruption_summary.csv"
@@ -228,6 +229,7 @@ def apply(results_folder: Path, output_folder: Path):
         cam, cal, cau = _annual_stats(cancelled_rate_2)
 
         # Wet-season means (Nov–Apr only)
+        print(delayed_rate_2)
         dam_wet = _wet_season_mean(delayed_rate_2)
         cam_wet = _wet_season_mean(cancelled_rate_2)
 
