@@ -15,7 +15,7 @@ no_disruption_params = {
         "scale_factor_appointment_urgency": 1.0,
         "scale_factor_severity_disruption_and_delay": 1.0,
         "mode_appt_constraints": 1,
-        "mode_appt_constraints_postSwitch": 2,
+        "mode_appt_constraints_postSwitch": 1,
         "year_mode_switch": YEAR_OF_CHANGE,
         "cons_availability": "default",
         "cons_availability_postSwitch": "default",
