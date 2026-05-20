@@ -47,9 +47,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _daily_person_counts
 
     def get_staff_counts(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+        the_hrh_target_period = (Date(2024, 1, 1), Date(2024, 1, 1))
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*the_hrh_target_period), :]
         _df_staff = (
-            pd.Series(_df.GenericClinic[0], name="staff_count")
+            pd.Series(_df.GenericClinic.iloc[0], name="staff_count")
             .rename_axis("facility_officer")
             .reset_index()
         )
@@ -85,9 +86,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _daily_person_counts
 
+    def get_patient_counts(_df):
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
+        # count overall patient volume, dropping duplicated person_ids between first attendance and anc on the same day
+        _daily_person_counts = _df.groupby("date")["Person_ID"].nunique()
+        _daily_person_counts.index = pd.to_datetime(_daily_person_counts.index)
+        _daily_person_counts.name = "daily_patient_volume"
+
+        return _daily_person_counts
+
     # log = load_pickled_dataframes(results_folder, 0, 0)
     # h = pd.DataFrame(
-    #     log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+    #     log['tlo.methods.healthsystem.']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
     # ).T
 
     hcw_count = extract_results(
@@ -99,29 +110,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     hcw_count = hcw_count[(0, 0)]
 
-    patient_volume_opd = extract_results(
+    patient_volume = extract_results(
         results_folder,
         module="tlo.methods.healthsystem",
         key="HSI_Event",
-        custom_generate_series=get_patient_counts_in_opd,
+        custom_generate_series=get_patient_counts,
         do_scaling=True
     )
 
-    patient_volume_emerg = extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem",
-        key="HSI_Event",
-        custom_generate_series=get_patient_counts_in_emerg,
-        do_scaling=True
-    )
+    # patient_volume_opd = extract_results(
+    #     results_folder,
+    #     module="tlo.methods.healthsystem",
+    #     key="HSI_Event",
+    #     custom_generate_series=get_patient_counts_in_opd,
+    #     do_scaling=True
+    # )
+    #
+    # patient_volume_emerg = extract_results(
+    #     results_folder,
+    #     module="tlo.methods.healthsystem",
+    #     key="HSI_Event",
+    #     custom_generate_series=get_patient_counts_in_emerg,
+    #     do_scaling=True
+    # )
 
-    patient_load_per_hcw_in_opd = patient_volume_opd / hcw_count.values[0]
-    patient_load_per_hcw_in_emerg = patient_volume_emerg / hcw_count.values[0]
+    # patient_load_per_hcw_in_opd = patient_volume_opd / hcw_count.values[0]
+    # patient_load_per_hcw_in_emerg = patient_volume_emerg / hcw_count.values[0]
+    #
+    # opd = patient_load_per_hcw_in_opd[(0, 0)].rename("Outpatient care")
+    # emerg = patient_load_per_hcw_in_emerg[(0, 0)].rename("Emergency/Intensive care")
+    #
+    # patient_load_per_hcw = pd.concat([opd, emerg], axis=1)
 
-    opd = patient_load_per_hcw_in_opd[(0, 0)].rename("Outpatient care")
-    emerg = patient_load_per_hcw_in_emerg[(0, 0)].rename("Emergency/Intensive care")
-
-    patient_load_per_hcw = pd.concat([opd, emerg], axis=1)
+    patient_load_per_hcw = patient_volume / hcw_count.values[0]
     patient_load_per_hcw = patient_load_per_hcw.fillna(0)
 
     patient_load_per_hcw = (
@@ -133,6 +154,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             value_name="daily_patient_load_per_hcw"
         )
     )
+    patient_load_per_hcw["coarse_loc_cat_str"] = "All service area"
 
     path_to_tlm_folder = (
         resourcefilepath
@@ -160,7 +182,7 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2010, 1, 1), Date(2010, 5, 31))
+        the_target_period=(Date(2024, 1, 1), Date(2024, 5, 31))
     )
 
 
