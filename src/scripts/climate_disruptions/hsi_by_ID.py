@@ -1,825 +1,544 @@
+"""
+Standalone script — Combined HSI volume + disruption figure.
+
+Layout: 1 row × 2 panels
+  Panel A (left):  Top N HSI types by total volume, grouped bars per scenario
+  Panel B (right): Top N HSI types by disruption rate, chosen scenario
+
+CSV outputs:
+  hsi_volume_by_type_{suffix}.csv
+  hsi_disruption_by_type_{suffix}.csv
+
+Usage:
+    python plot_hsi_volume_disruption_combined.py <results_folder>
+    python plot_hsi_volume_disruption_combined.py <results_folder> \\
+        --output_folder <out> --resources <res>
+"""
+
 import argparse
+import textwrap
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from scipy import stats
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    get_color_short_treatment_id,
-    load_pickled_dataframes,
-    summarize,
-)
+from tlo.analysis.utils import extract_results
 
-min_year = 2025
-max_year = 2041
-spacing_of_years = 1
-PREFIX_ON_FILENAME = '1'
-climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = False
-main_text = True
+# ─────────────────────────────────────────────────────────────────────────────
+#  STYLE CONSTANTS
+# ─────────────────────────────────────────────────────────────────────────────
+FS_TICK = 13
+FS_LABEL = 15
+FS_TITLE = 16
+FS_LEGEND = 12
+FS_PANEL = 17
+FS_SUPTITLE = 14
 
-log = load_pickled_dataframes(
-    Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/baseline_run_with_pop-2026-03-03T092729Z/"), 0,
-    0)
-population_scaling_factor = log['tlo.methods.demography']['scaling_factor']['scaling_factor'].iloc[0]
+COLOUR_DELAYED = "#E67E22"
+COLOUR_CANCELLED = "#D4AC0D"
 
-scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
-                      "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
+# One colour per scenario (matches order of scenarios_of_interest)
+SCENARIO_COLOURS = [
+    "#5B8DB8",  # No Disruptions  — steel blue
+    "#E8C882",  # Default         — gold/tan
+    "#E8968A",  # Worst Case      — salmon
+    "#82C882",  # extras for climate / supply-demand modes
+    "#C882C8",
+    "#82C8C8",
+    "#C8A882",
+    "#8282C8",
+]
 
-if climate_sensitivity_analysis:
-    scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
-                      "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
-    suffix = "climate_SA"
-    scenarios_of_interest = range(len(scenario_names))
-if parameter_sensitivity_analysis:
-    scenario_names_all = range(0, 10, 1)
-    scenario_names = scenario_names_all
-    suffix = "parameter_SA"
-
-if main_text:
-    scenario_names = ["No disruption", "Baseline", "Worst Case"]
-    suffix = "main_text"
-    scenarios_of_interest = [0, 1, 2]
-
-precipitation_files = {
-    "Baseline": "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
-    "SSP 1.26 High": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp126/highest_monthly_prediction_weather_by_facility.csv",
-    "SSP 1.26 Low": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp126/lowest_monthly_prediction_weather_by_facility.csv",
-    "SSP 1.26 Mean": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp126/mean_monthly_prediction_weather_by_facility.csv",
-    "SSP 2.45 High": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp245/highest_monthly_prediction_weather_by_facility.csv",
-    "SSP 2.45 Low": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp245/lowest_monthly_prediction_weather_by_facility.csv",
-    "SSP 2.45 Mean": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp245/mean_monthly_prediction_weather_by_facility.csv",
-    "SSP 5.85 High": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp585/highest_monthly_prediction_weather_by_facility.csv",
-    "SSP 5.85 Low": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp585/lowest_monthly_prediction_weather_by_facility.csv",
-    "SSP 5.85 Mean": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp585/mean_monthly_prediction_weather_by_facility.csv",
-}
-
-scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167'] * 4
+MAX_CHARS = 25
 
 
-def add_significance_stars(ax, x_positions, baseline_data, climate_data, y_offset_factor=0.05):
-    y_min, y_max = ax.get_ylim()
-    y_range = y_max - y_min
-    y_offset = y_range * y_offset_factor
+# ─────────────────────────────────────────────────────────────────────────────
+#  HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
 
-    for i, x_pos in enumerate(x_positions):
-        baseline_mean = baseline_data['mean'].iloc[i]
-        baseline_lower = baseline_data['lower'].iloc[i]
-        baseline_upper = baseline_data['upper'].iloc[i]
-
-        climate_mean = climate_data['mean'].iloc[i]
-        climate_lower = climate_data['lower'].iloc[i]
-        climate_upper = climate_data['upper'].iloc[i]
-
-        baseline_se = (baseline_upper - baseline_lower) / (2 * 1.96)
-        climate_se = (climate_upper - climate_lower) / (2 * 1.96)
-
-        diff = abs(climate_mean - baseline_mean)
-        pooled_se = np.sqrt(baseline_se ** 2 + climate_se ** 2)
-
-        if pooled_se > 0:
-            z_score = diff / pooled_se
-            p_value = 2 * (1 - stats.norm.cdf(z_score))
-        else:
-            p_value = 1.0
-
-        if p_value < 0.001:
-            star = '***'
-        elif p_value < 0.01:
-            star = '**'
-        elif p_value < 0.05:
-            star = '*'
-        else:
-            star = ''
-
-        if star:
-            y_pos = max(baseline_mean, climate_mean) + y_offset
-            ax.text(x_pos, y_pos, star,
-                    ha='center', va='bottom', fontsize=14, fontweight='bold',
-                    color='red')
+def _parse_ym(index):
+    return index.astype(str).str.split(":", n=1).str[0]
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
+def _parse_hsi_type(index):
+    return index.astype(str).str.split(":", n=2).str[2]
 
-    # ── Helper functions that do NOT close over target_period_final ───────────
 
-    def sum_event_counts(_df, column_name):
+def _wet_season_mask(df):
+    months = _parse_ym(df.index).str.split("-").str[1].astype(int)
+    return months.isin([11, 12, 1, 2, 3, 4])
+
+
+def _hsi_volume_by_type(total_df, CI_LOWER, CI_UPPER):
+    """Sum HSIs by type across all months/facilities; return mean and CI across runs."""
+    hsi = _parse_hsi_type(total_df.index)
+    by_type = total_df.groupby(hsi).sum()
+    by_type = by_type[by_type.index.astype(str) != "nan"]
+    return (
+        by_type.mean(axis=1),
+        by_type.quantile(CI_LOWER, axis=1),
+        by_type.quantile(CI_UPPER, axis=1),
+    )
+
+
+def _hsi_type_stats(total_df, delayed_df, cancelled_df, CI_LOWER, CI_UPPER):
+    hsi = _parse_hsi_type(total_df.index)
+    total_by_type = total_df.groupby(hsi).sum()
+    delayed_by_type = delayed_df.reindex(total_df.index, fill_value=0).groupby(hsi).sum()
+    cancelled_by_type = cancelled_df.reindex(total_df.index, fill_value=0).groupby(hsi).sum()
+    denom = total_by_type + delayed_by_type + cancelled_by_type
+    delayed_rate = delayed_by_type.div(denom).where(denom > 0, 0.0)
+    cancelled_rate = cancelled_by_type.div(denom).where(denom > 0, 0.0)
+    return (
+        delayed_rate.mean(axis=1), delayed_rate.quantile(CI_LOWER, axis=1),
+        delayed_rate.quantile(CI_UPPER, axis=1),
+        cancelled_rate.mean(axis=1), cancelled_rate.quantile(CI_LOWER, axis=1),
+        cancelled_rate.quantile(CI_UPPER, axis=1),
+        total_by_type.mean(axis=1),
+    )
+
+
+def _wrap_labels(labels, max_chars=MAX_CHARS):
+    return [textwrap.fill(str(lbl), width=max_chars) for lbl in labels]
+
+
+def _make_hsi_counts_by_real_facility_monthly(target_period):
+    def _fn(_df):
         _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
-        total = {}
-        for d in _df[column_name]:
-            for k, v in d.items():
-                total[k] = total.get(k, 0) + v
-        return pd.Series(sum(total.values()), name="total")
+        _df = _df.loc[_df["date"].between(*target_period)]
+        if _df.empty or "counts" not in _df.columns:
+            return pd.Series(dtype=float)
+        totals = {}
+        for _, row in _df.iterrows():
+            ym = row["date"].strftime("%Y-%m")
+            counts_dict = row["counts"] if isinstance(row["counts"], dict) else {}
+            for key, val in counts_dict.items():
+                parts = str(key).split(":", 1)
+                real_fac = parts[0]
+                hsi_type = parts[1] if len(parts) > 1 else "unknown"
+                composite = f"{ym}:{real_fac}:{hsi_type}"
+                totals[composite] = totals.get(composite, 0) + val
+        return pd.Series(totals, dtype=float)
 
-    def get_num_treatments_total(_df):
-        return sum_event_counts(_df, "hsi_event_key_to_counts")
+    return _fn
 
-    def get_num_treatments_total_delayed(_df):
+
+def _make_disrupted_by_real_facility_monthly(target_period):
+    def _fn(_df):
         _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
-        return pd.Series(len(_df), name="total")
+        _df = _df.loc[_df["date"].between(*target_period)]
+        if _df.empty or "RealFacility_ID" not in _df.columns:
+            return pd.Series(dtype=float)
+        _df = _df[_df["RealFacility_ID"].notna() & (_df["RealFacility_ID"] != "unknown")].copy()
+        _df["hsi_type"] = (
+            _df["TREATMENT_ID"].fillna("unknown").astype(str)
+            if "TREATMENT_ID" in _df.columns else "unknown"
+        )
+        _df["composite"] = (
+            _df["date"].dt.strftime("%Y-%m") + ":"
+            + _df["RealFacility_ID"].astype(str) + ":"
+            + _df["hsi_type"]
+        )
+        return _df["composite"].value_counts().astype(float)
 
-    def get_num_treatments_total_cancelled(_df):
-        _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
-        return pd.Series(len(_df), name="total")
+    return _fn
 
-    def get_population_total(_df):
-        _df["date"] = pd.to_datetime(_df["date"])
-        filtered_df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
-        numeric_df = filtered_df.drop(columns=["female", "male"], errors="ignore")
-        population_mean = numeric_df.sum(numeric_only=True).mean()
-        return pd.Series(population_mean, name="population")
 
-    # ── Per-year loop across draws ────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+#  MAIN
+# ─────────────────────────────────────────────────────────────────────────────
+
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    # ── configuration ────────────────────────────────────────────────────────
+    min_year = 2025
+    max_year = 2041
+    spacing_of_years = 1
+
+    main_text = True
+    parameter_uncertainty_analysis = False
+    mode_2 = False
+    climate_analysis = False
+    prop_supply_demand = False
+    wet_season = False
+
+    top_n_volume = 15  # HSI types shown in Panel A
+    top_n_disruption = 10  # HSI types shown in Panel B
+
+    # Which scenario to display in Panel B — must match a scenario_names entry.
+    # If it doesn't match, the script falls back to the first non-"No Disruptions" scenario.
+    disruption_panel_scenario = "Default"
+
+    SCALING_FACTOR = 145.39
+    CI_LOWER = 0.025
+    CI_UPPER = 0.975
+
+    if parameter_uncertainty_analysis:
+        scenario_names = list(range(200))
+        scenarios_of_interest = scenario_names
+        suffix = "parameter_UA_mode_2" if mode_2 else "parameter_UA_mode_1"
+    if main_text:
+        scenario_names = ["No Disruptions", "Default", "Worst Case"]
+        scenarios_of_interest = [0, 1, 2]
+        suffix = "main_text_mode_2" if mode_2 else "main_text_mode_1"
+    if climate_analysis:
+        scenario_names = [
+            "SSP126 Low Baseline",
+            "SSP126 Low Worst",
+            "SSP585 Low Baseline",
+            "SSP585 Low Worst",
+            "SSP585 High Baseline",
+            "SSP585 High Worst",
+            "SSP126 High Baseline",
+            "SSP126 High Worst",
+        ]
+        scenarios_of_interest = list(range(8))
+        suffix = "climate_scenarios"
+    if prop_supply_demand:
+        scenario_names = [
+            "Default Supply 0.1",
+            "Default Supply 0.5",
+            "Default Supply 0.9",
+            "Worst Case Supply 0.1",
+            "Worst Case Supply 0.5",
+            "Worst Case Supply 0.9",
+        ]
+        scenarios_of_interest = list(range(6))
+        suffix = "prop_supply_demand"
+        disruption_panel_scenario = "Default Supply 0.5"
+    if wet_season:
+        suffix += "_wet_season"
+
+    period_label = "wet season: Nov–Apr" if wet_season else f"{min_year}–{max_year - 1}"
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
-    all_draws_treatments_mean = []
-    all_draws_treatments_lower = []
-    all_draws_treatments_upper = []
+    # ── pre-load raw results ─────────────────────────────────────────────────
+    print("Loading raw results …")
+    raw_total = {}
+    raw_delayed = {}
+    raw_cancelled = {}
 
-    all_draws_weather_delayed_mean = []
-    all_draws_weather_delayed_lower = []
-    all_draws_weather_delayed_upper = []
+    for yr in target_year_sequence:
+        print(f"  {yr}")
+        period = (Date(yr, 1, 1), Date(yr, 12, 31))
+        raw_total[yr] = extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="hsi_event_counts_by_facility_monthly",
+            custom_generate_series=_make_hsi_counts_by_real_facility_monthly(period),
+            do_scaling=False,
+        )
+        raw_delayed[yr] = extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="Weather_delayed_HSI_Event_full_info",
+            custom_generate_series=_make_disrupted_by_real_facility_monthly(period),
+            do_scaling=False,
+        )
+        raw_cancelled[yr] = extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="Weather_cancelled_HSI_Event_full_info",
+            custom_generate_series=_make_disrupted_by_real_facility_monthly(period),
+            do_scaling=False,
+        )
 
-    all_draws_weather_cancelled_mean = []
-    all_draws_weather_cancelled_lower = []
-    all_draws_weather_cancelled_upper = []
+    def _concat_years(dfs):
+        return pd.concat(dfs).groupby(level=0).sum()
 
-    all_draws_treatments_mean_1000 = []
-    all_draws_treatments_lower_1000 = []
-    all_draws_treatments_upper_1000 = []
+    # ── per-draw processing ──────────────────────────────────────────────────
+    print("Processing draws …")
 
-    all_draws_weather_delayed_mean_1000 = []
-    all_draws_weather_cancelled_mean_1000 = []
+    all_draws_volume_mean = []
+    all_draws_volume_lower = []
+    all_draws_volume_upper = []
 
-    all_years_by_draw = {}
+    all_draws_hsi_delayed_mean = []
+    all_draws_hsi_delayed_lower = []
+    all_draws_hsi_delayed_upper = []
+    all_draws_hsi_cancelled_mean = []
+    all_draws_hsi_cancelled_lower = []
+    all_draws_hsi_cancelled_upper = []
+    all_draws_hsi_total = []
 
-    for draw in range(len(scenario_names_all)):
-        if draw not in scenarios_of_interest:
+    for draw in scenarios_of_interest:
+        scen = scenario_names[draw]
+        print(f"  draw {draw} ({scen})")
+
+        total_all = _concat_years(
+            [raw_total[yr][draw].fillna(0) for yr in target_year_sequence]
+        ) * SCALING_FACTOR
+
+        # wet season filter applied before everything else
+        if wet_season:
+            total_all = total_all[_wet_season_mask(total_all)]
+
+        vm, vl, vu = _hsi_volume_by_type(total_all, CI_LOWER, CI_UPPER)
+        all_draws_volume_mean.append(vm)
+        all_draws_volume_lower.append(vl)
+        all_draws_volume_upper.append(vu)
+
+        if scen == "No Disruptions":
+            for lst in [
+                all_draws_hsi_delayed_mean, all_draws_hsi_delayed_lower,
+                all_draws_hsi_delayed_upper, all_draws_hsi_cancelled_mean,
+                all_draws_hsi_cancelled_lower, all_draws_hsi_cancelled_upper,
+                all_draws_hsi_total,
+            ]:
+                lst.append(pd.Series(dtype=float))
             continue
 
-        all_years_data_treatments_mean = {}
-        all_years_data_treatments_upper = {}
-        all_years_data_treatments_lower = {}
+        delayed_all = _concat_years(
+            [raw_delayed[yr][draw].fillna(0) for yr in target_year_sequence]
+        ) * SCALING_FACTOR
+        cancelled_all = _concat_years(
+            [raw_cancelled[yr][draw].fillna(0) for yr in target_year_sequence]
+        ) * SCALING_FACTOR
 
-        all_years_data_weather_delayed_mean = {}
-        all_years_data_weather_delayed_upper = {}
-        all_years_data_weather_delayed_lower = {}
+        # reindex to match (possibly wet-season-filtered) total_all
+        delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
+        cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
 
-        all_years_data_weather_cancelled_mean = {}
-        all_years_data_weather_cancelled_upper = {}
-        all_years_data_weather_cancelled_lower = {}
-
-        all_years_data_population_mean = {}
-        all_years_data_population_lower = {}
-        all_years_data_population_upper = {}
-
-        for target_year in target_year_sequence:
-            TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
-
-            num_treatments_total = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='hsi_event_counts',
-                custom_generate_series=get_num_treatments_total,
-                do_scaling=False
-            ),
-                only_mean=True,
-                collapse_columns=True,
-            )[draw]
-
-            all_years_data_treatments_mean[target_year] = num_treatments_total['mean']
-            all_years_data_treatments_lower[target_year] = num_treatments_total['lower']
-            all_years_data_treatments_upper[target_year] = num_treatments_total['upper']
-
-            result_data_population = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.demography',
-                key='population',
-                custom_generate_series=get_population_total,
-                do_scaling=False
-            ),
-                only_mean=True,
-                collapse_columns=True,
-            )[draw]
-
-            all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_lower[target_year] = result_data_population['lower']
-            all_years_data_population_upper[target_year] = result_data_population['upper']
-
-            if scenario_names[draw] == 'No disruption':
-                all_years_data_weather_delayed_mean[target_year] = pd.Series([0], name='mean')
-                all_years_data_weather_delayed_lower[target_year] = pd.Series([0], name='lower')
-                all_years_data_weather_delayed_upper[target_year] = pd.Series([0], name='upper')
-
-                all_years_data_weather_cancelled_mean[target_year] = pd.Series([0], name='mean')
-                all_years_data_weather_cancelled_lower[target_year] = pd.Series([0], name='lower')
-                all_years_data_weather_cancelled_upper[target_year] = pd.Series([0], name='upper')
-            elif main_text:
-                num_weather_delayed_appointments = summarize(extract_results(
-                    results_folder,
-                    module="tlo.methods.healthsystem.summary",
-                    key="Weather_delayed_HSI_Event_full_info",
-                    custom_generate_series=get_num_treatments_total_delayed,
-                    do_scaling=False,
-                ),
-                    only_mean=True,
-                    collapse_columns=True,
-                )[draw]
-
-                all_years_data_weather_delayed_mean[target_year] = num_weather_delayed_appointments['mean']
-                all_years_data_weather_delayed_lower[target_year] = num_weather_delayed_appointments['lower']
-                all_years_data_weather_delayed_upper[target_year] = num_weather_delayed_appointments['upper']
-
-                num_weather_cancelled_appointments = summarize(
-                    extract_results(
-                        results_folder,
-                        module="tlo.methods.healthsystem.summary",
-                        key="Weather_cancelled_HSI_Event_full_info",
-                        custom_generate_series=get_num_treatments_total_cancelled,
-                        do_scaling=False,
-                    ),
-                    only_mean=True,
-                    collapse_columns=True,
-                )[draw]
-                all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments['mean']
-                all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments['lower']
-                all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments['upper']
-
-            # Population data for normalisation (second call kept for consistency)
-            result_data_population = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.demography',
-                key='population',
-                custom_generate_series=get_population_total,
-                do_scaling=False
-            ),
-                only_mean=True,
-                collapse_columns=True,
-            )[draw]
-
-            all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_lower[target_year] = result_data_population['lower']
-            all_years_data_population_upper[target_year] = result_data_population['upper']
-
-        df_all_years_treatments_mean = pd.DataFrame(all_years_data_treatments_mean)
-        df_all_years_treatments_lower = pd.DataFrame(all_years_data_treatments_lower)
-        df_all_years_treatments_upper = pd.DataFrame(all_years_data_treatments_upper)
-
-        df_all_years_weather_delayed_mean = pd.DataFrame(all_years_data_weather_delayed_mean)
-        df_all_years_weather_delayed_lower = pd.DataFrame(all_years_data_weather_delayed_lower)
-        df_all_years_weather_delayed_upper = pd.DataFrame(all_years_data_weather_delayed_upper)
-
-        df_all_years_weather_cancelled_mean = pd.DataFrame(all_years_data_weather_cancelled_mean)
-        df_all_years_weather_cancelled_lower = pd.DataFrame(all_years_data_weather_cancelled_lower)
-        df_all_years_weather_cancelled_upper = pd.DataFrame(all_years_data_weather_cancelled_upper)
-
-        df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
-
-        all_years_by_draw[draw] = {
-            'treatments': {
-                'mean': df_all_years_treatments_mean.sum(),
-                'lower': df_all_years_treatments_lower.sum(),
-                'upper': df_all_years_treatments_upper.sum()
-            },
-            'weather_delayed': {
-                'mean': df_all_years_weather_delayed_mean.sum(),
-                'lower': df_all_years_weather_delayed_lower.sum(),
-                'upper': df_all_years_weather_delayed_upper.sum()
-            },
-            'weather_cancelled': {
-                'mean': df_all_years_weather_cancelled_mean.sum(),
-                'lower': df_all_years_weather_cancelled_lower.sum(),
-                'upper': df_all_years_weather_cancelled_upper.sum()
-            },
-            'population': df_all_years_data_population_mean
-        }
-
-        fig, axes = plt.subplots(2, 2, figsize=(25, 20))
-
-        df_treatments_per_1000_mean = df_all_years_treatments_mean / df_all_years_data_population_mean.iloc[0, 0] * 1000
-        df_weather_delayed_per_1000_mean = df_all_years_weather_delayed_mean / df_all_years_data_population_mean.iloc[
-            0, 0] * 1000
-        df_weather_cancelled_per_1000_mean = df_all_years_weather_cancelled_mean / \
-                                             df_all_years_data_population_mean.iloc[0, 0] * 1000
-
-        df_all_years_treatments_mean.to_csv(output_folder / f"treatments_by_type_{draw}.csv")
-        df_all_years_weather_delayed_mean.to_csv(output_folder / f"weather_delayed_by_type_{draw}.csv")
-        df_all_years_weather_cancelled_mean.to_csv(output_folder / f"weather_cancelled_by_type_{draw}.csv")
-
-        all_draws_treatments_mean.append(pd.Series(df_all_years_treatments_mean.sum(), name=f'Draw {draw}'))
-        all_draws_weather_delayed_mean.append(pd.Series(df_all_years_weather_delayed_mean.sum(), name=f'Draw {draw}'))
-        all_draws_weather_cancelled_mean.append(
-            pd.Series(df_all_years_weather_cancelled_mean.sum(), name=f'Draw {draw}'))
-
-        all_draws_treatments_lower.append(pd.Series(df_all_years_treatments_lower.sum(), name=f'Draw {draw}'))
-        all_draws_weather_delayed_lower.append(pd.Series(df_all_years_weather_delayed_lower.sum(), name=f'Draw {draw}'))
-        all_draws_weather_cancelled_lower.append(
-            pd.Series(df_all_years_weather_cancelled_lower.sum(), name=f'Draw {draw}'))
-
-        all_draws_treatments_upper.append(pd.Series(df_all_years_treatments_upper.sum(), name=f'Draw {draw}'))
-        all_draws_weather_delayed_upper.append(pd.Series(df_all_years_weather_delayed_upper.sum(), name=f'Draw {draw}'))
-        all_draws_weather_cancelled_upper.append(
-            pd.Series(df_all_years_weather_cancelled_upper.sum(), name=f'Draw {draw}'))
-
-        all_draws_treatments_mean_1000.append(pd.Series(df_treatments_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_weather_delayed_mean_1000.append(
-            pd.Series(df_weather_delayed_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_weather_cancelled_mean_1000.append(
-            pd.Series(df_weather_cancelled_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-
-        if draw == 0:
-            baseline_treatments_by_year = df_all_years_treatments_mean.copy()
-            baseline_weather_delayed_by_year = df_all_years_weather_delayed_mean.copy()
-            baseline_weather_cancelled_by_year = df_all_years_weather_cancelled_mean.copy()
-            baseline_population = df_all_years_data_population_mean.copy()
-
-        plt.close(fig)
-
-    # ── Combine all draws ─────────────────────────────────────────────────────
-
-    df_treatments_all_draws_mean = pd.concat(all_draws_treatments_mean, axis=1)
-    df_weather_delayed_all_draws_mean = pd.concat(all_draws_weather_delayed_mean, axis=1)
-    df_weather_cancelled_all_draws_mean = pd.concat(all_draws_weather_cancelled_mean, axis=1)
-
-    df_treatments_all_draws_lower = pd.concat(all_draws_treatments_lower, axis=1)
-    df_weather_delayed_all_draws_lower = pd.concat(all_draws_weather_delayed_lower, axis=1)
-    df_weather_cancelled_all_draws_lower = pd.concat(all_draws_weather_cancelled_lower, axis=1)
-
-    df_treatments_all_draws_upper = pd.concat(all_draws_treatments_upper, axis=1)
-    df_weather_delayed_all_draws_upper = pd.concat(all_draws_weather_delayed_upper, axis=1)
-    df_weather_cancelled_all_draws_upper = pd.concat(all_draws_weather_cancelled_upper, axis=1)
-
-    df_treatments_all_draws_mean_1000 = pd.concat(all_draws_treatments_mean_1000, axis=1)
-    df_weather_delayed_all_draws_mean_1000 = pd.concat(all_draws_weather_delayed_mean_1000, axis=1)
-    df_weather_cancelled_all_draws_mean_1000 = pd.concat(all_draws_weather_cancelled_mean_1000, axis=1)
-
-    treatments_totals_mean = df_treatments_all_draws_mean.sum()
-    weather_delayed_totals_mean = df_weather_delayed_all_draws_mean.sum()
-    weather_cancelled_totals_mean = df_weather_cancelled_all_draws_mean.sum()
-
-    treatments_totals_lower = df_treatments_all_draws_lower.sum()
-    treatments_totals_upper = df_treatments_all_draws_upper.sum()
-    weather_delayed_totals_lower = df_weather_delayed_all_draws_lower.sum()
-    weather_delayed_totals_upper = df_weather_delayed_all_draws_upper.sum()
-    weather_cancelled_totals_lower = df_weather_cancelled_all_draws_lower.sum()
-    weather_cancelled_totals_upper = df_weather_cancelled_all_draws_upper.sum()
-
-    treatments_totals_err = np.array([
-        treatments_totals_mean - treatments_totals_lower,
-        treatments_totals_upper - treatments_totals_mean
-    ])
-    weather_delayed_totals_err = np.array([
-        weather_delayed_totals_mean - weather_delayed_totals_lower,
-        weather_delayed_totals_upper - weather_delayed_totals_mean
-    ])
-    weather_cancelled_totals_err = np.array([
-        weather_cancelled_totals_mean - weather_cancelled_totals_lower,
-        weather_cancelled_totals_upper - weather_cancelled_totals_mean
-    ])
-
-    # ── Final treatment-type breakdown ────────────────────────────────────────
-    # IMPORTANT: target_period_final is defined here; all functions that close
-    # over it must be defined AFTER this point.
-
-    target_year_final = max_year
-    target_period_final = (Date(2025, 1, 1), Date(target_year_final, 12, 31))
-    scenario_labels_final = ["No disruption", "Baseline", "Worst Case"]
-    scenario_indices_final = [0, 1, 2]
-    scenario_colors = {'No disruption': '#0081a7', 'Baseline': '#FEB95F', 'Worst Case': '#f07167'}
-    offsets = {'No disruption': -0.25, 'Baseline': 0.0, 'Worst Case': 0.25}
-
-    # ── Functions that close over target_period_final (defined after it) ──────
-
-    def get_counts_of_hsi_by_treatment_id(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(
-            pd.Timestamp(str(target_period_final[0])),
-            pd.Timestamp(str(target_period_final[1]))
-        )]
-        _counts_by_treatment_id = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
-        return _counts_by_treatment_id.groupby(level=0).sum()
-
-    def get_counts_of_hsi_by_short_treatment_id(_df):
-        """1-segment grouping — used for the stacked bar and diff plots."""
-        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
-        _short_treatment_id = _counts_by_treatment_id.index.map(
-            lambda x: x.split('_')[0] + "*"
+        hd_m, hd_l, hd_u, hc_m, hc_l, hc_u, htot = _hsi_type_stats(
+            total_all, delayed_all, cancelled_all, CI_LOWER, CI_UPPER
         )
-        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+        all_draws_hsi_delayed_mean.append(hd_m)
+        all_draws_hsi_delayed_lower.append(hd_l)
+        all_draws_hsi_delayed_upper.append(hd_u)
+        all_draws_hsi_cancelled_mean.append(hc_m)
+        all_draws_hsi_cancelled_lower.append(hc_l)
+        all_draws_hsi_cancelled_upper.append(hc_u)
+        all_draws_hsi_total.append(htot)
 
-    def get_cancelled_by_short_treatment_id(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(
-            pd.Timestamp(str(target_period_final[0])),
-            pd.Timestamp(str(target_period_final[1]))
-        )]
-        if len(_df) == 0 or 'TREATMENT_ID' not in _df.columns:
-            return pd.Series(dtype=float)
-        counts = _df['TREATMENT_ID'].value_counts()
-        short_id = counts.index.map(lambda x: x.split('_')[0] + "*")
-        return counts.groupby(by=short_id).sum()
+    # ── select HSI types for each panel ──────────────────────────────────────
 
-    def get_delayed_by_short_treatment_id(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(
-            pd.Timestamp(str(target_period_final[0])),
-            pd.Timestamp(str(target_period_final[1]))
-        )]
-        if len(_df) == 0 or 'TREATMENT_ID' not in _df.columns:
-            return pd.Series(dtype=float)
-        counts = _df['TREATMENT_ID'].value_counts()
-        short_id = counts.index.map(lambda x: x.split('_')[0] + "*")
-        return counts.groupby(by=short_id).sum()
+    # Panel A reference: No Disruptions volume (or first scenario if absent)
+    ref_idx = next(
+        (i for i, d in enumerate(scenarios_of_interest)
+         if scenario_names[d] == "No Disruptions"),
+        0,
+    )
+    ref_volume = all_draws_volume_mean[ref_idx]
+    ref_volume = ref_volume[ref_volume.index.astype(str) != "nan"]
+    # sorted descending; reversed so highest ends up at top of the horizontal chart
+    top_volume_types = (
+        ref_volume[ref_volume > 0]
+        .sort_values(ascending=False)
+        .head(top_n_volume)
+        .index.tolist()
+    )
+    top_volume_types_plot = list(reversed(top_volume_types))  # lowest at y=0, highest at y=N-1
 
-    def get_cancelled_by_longer_treatment_id(_df):
-        """2-segment grouping — used for the detailed top-N plot."""
-        _df = _df.loc[pd.to_datetime(_df['date']).between(
-            pd.Timestamp(str(target_period_final[0])),
-            pd.Timestamp(str(target_period_final[1]))
-        )]
-        if len(_df) == 0 or 'TREATMENT_ID' not in _df.columns:
-            return pd.Series(dtype=float)
-        counts = _df['TREATMENT_ID'].value_counts()
-        longer_id = counts.index.map(lambda x: '_'.join(x.split('_')[:2]) + "*")
-        return counts.groupby(by=longer_id).sum()
+    # Panel B: find index of chosen scenario
+    panel_b_idx = next(
+        (i for i, d in enumerate(scenarios_of_interest)
+         if scenario_names[d] == disruption_panel_scenario),
+        None,
+    )
+    if panel_b_idx is None:
+        panel_b_idx = next(
+            (i for i, d in enumerate(scenarios_of_interest)
+             if scenario_names[d] != "No Disruptions"),
+            0,
+        )
+        disruption_panel_scenario = scenario_names[scenarios_of_interest[panel_b_idx]]
+        print(f"  Panel B: '{disruption_panel_scenario}' not found — "
+              f"falling back to '{disruption_panel_scenario}'")
 
-    def get_delayed_by_longer_treatment_id(_df):
-        """2-segment grouping — used for the detailed top-N plot."""
-        _df = _df.loc[pd.to_datetime(_df['date']).between(
-            pd.Timestamp(str(target_period_final[0])),
-            pd.Timestamp(str(target_period_final[1]))
-        )]
-        if len(_df) == 0 or 'TREATMENT_ID' not in _df.columns:
-            return pd.Series(dtype=float)
-        counts = _df['TREATMENT_ID'].value_counts()
-        longer_id = counts.index.map(lambda x: '_'.join(x.split('_')[:2]) + "*")
-        return counts.groupby(by=longer_id).sum()
+    hd_m_b = all_draws_hsi_delayed_mean[panel_b_idx]
+    hd_l_b = all_draws_hsi_delayed_lower[panel_b_idx]
+    hd_u_b = all_draws_hsi_delayed_upper[panel_b_idx]
+    hc_m_b = all_draws_hsi_cancelled_mean[panel_b_idx]
+    hc_l_b = all_draws_hsi_cancelled_lower[panel_b_idx]
+    hc_u_b = all_draws_hsi_cancelled_upper[panel_b_idx]
 
-    def get_population_for_scaling(_df):
-        _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(
-            pd.Timestamp(str(target_period_final[0])),
-            pd.Timestamp(str(target_period_final[1]))
-        )]
-        numeric_df = _df.drop(columns=["female", "male"], errors="ignore")
-        population_mean = numeric_df.sum(numeric_only=True).mean()
-        return pd.Series(population_mean, name="population")
+    total_rate_b = (hd_m_b + hc_m_b).copy()
+    total_rate_b = total_rate_b[total_rate_b.index.astype(str) != "nan"]
+    top_disrupted_types = (
+        total_rate_b[total_rate_b > 0]
+        .sort_values(ascending=False)
+        .head(top_n_disruption)
+        .index.tolist()
+    )
+    top_disrupted_types_plot = list(reversed(top_disrupted_types))
 
-    # ── 1. Extract HSI data for all scenarios (short / 1-segment IDs) ────────
+    # ── CSV outputs ───────────────────────────────────────────────────────────
+    print("Writing CSVs …")
 
-    final_data = {}
-    final_data_with_ci = {}
-    for i, draw in enumerate(scenario_indices_final):
-        result_data_full = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
-                do_scaling=False
-            ),
-            only_mean=True,
-            collapse_columns=True,
-        )[draw]
-        final_data[scenario_labels_final[i]] = result_data_full['mean']
-        final_data_with_ci[scenario_labels_final[i]] = {
-            'mean': result_data_full['mean'].copy(),
-            'lower': result_data_full['lower'].copy(),
-            'upper': result_data_full['upper'].copy()
-        }
+    vol_rows = []
+    for scen_idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        vm = all_draws_volume_mean[scen_idx]
+        vl = all_draws_volume_lower[scen_idx]
+        vu = all_draws_volume_upper[scen_idx]
+        for hsi in vm.index:
+            vol_rows.append({
+                "scenario": scen,
+                "hsi_type": hsi,
+                "volume_mean": round(vm.get(hsi, 0), 1),
+                "volume_lower": round(vl.get(hsi, 0), 1),
+                "volume_upper": round(vu.get(hsi, 0), 1),
+            })
+    pd.DataFrame(vol_rows).sort_values(
+        ["scenario", "volume_mean"], ascending=[True, False]
+    ).to_csv(output_folder / f"hsi_volume_by_type_{suffix}.csv", index=False)
 
-    # ── 2. Extract population for each scenario ───────────────────────────────
-
-    population_by_scenario = {}
-    for i, draw in enumerate(scenario_indices_final):
-        pop = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.demography',
-                key='population',
-                custom_generate_series=get_population_for_scaling,
-                do_scaling=False,
-            ),
-            only_mean=True,
-            collapse_columns=True,
-        )[draw]
-        population_by_scenario[scenario_labels_final[i]] = float(pop['mean'].iloc[0])
-
-    # ── 3. Normalise to per 100,000 population ────────────────────────────────
-
-    for scenario_label in scenario_labels_final:
-        pop = population_by_scenario[scenario_label]
-        for stat in ['mean', 'lower', 'upper']:
-            final_data_with_ci[scenario_label][stat] = (
-                final_data_with_ci[scenario_label][stat] / pop * 100_000
-            )
-        final_data[scenario_label] = final_data_with_ci[scenario_label]['mean']
-
-    # ── 4. Build df_final from normalised 1-segment data ─────────────────────
-
-    df_final = pd.DataFrame(final_data).fillna(0)
-    df_final = df_final[df_final.index.map(lambda x: isinstance(x, str) and (x.endswith('*') or '_' in x))]
-    df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}.csv")
-
-    # ── 5. Extract cancelled/delayed data — both short and longer IDs ─────────
-
-    cancelled_data = {}
-    delayed_data = {}
-    cancelled_data_long = {}
-    delayed_data_long = {}
-
-    for i, draw in enumerate(scenario_indices_final):
-        if scenario_labels_final[i] == 'No disruption':
+    dis_rows = []
+    for scen_idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        if scen == "No Disruptions":
             continue
+        hd_m = all_draws_hsi_delayed_mean[scen_idx]
+        hd_l = all_draws_hsi_delayed_lower[scen_idx]
+        hd_u = all_draws_hsi_delayed_upper[scen_idx]
+        hc_m = all_draws_hsi_cancelled_mean[scen_idx]
+        hc_l = all_draws_hsi_cancelled_lower[scen_idx]
+        hc_u = all_draws_hsi_cancelled_upper[scen_idx]
+        htot = all_draws_hsi_total[scen_idx]
+        all_hsi = hd_m.index.union(hc_m.index)
+        all_hsi = all_hsi[all_hsi.astype(str) != "nan"]
+        for hsi in all_hsi:
+            dis_rows.append({
+                "scenario": scen,
+                "hsi_type": hsi,
+                "mean_total_count": round(htot.get(hsi, 0), 2),
+                "delayed_rate_mean": round(hd_m.get(hsi, 0), 6),
+                "delayed_rate_lower": round(hd_l.get(hsi, 0), 6),
+                "delayed_rate_upper": round(hd_u.get(hsi, 0), 6),
+                "cancelled_rate_mean": round(hc_m.get(hsi, 0), 6),
+                "cancelled_rate_lower": round(hc_l.get(hsi, 0), 6),
+                "cancelled_rate_upper": round(hc_u.get(hsi, 0), 6),
+                "total_disruption_rate_mean": round(hd_m.get(hsi, 0) + hc_m.get(hsi, 0), 6),
+                "total_disruption_rate_lower": round(hd_l.get(hsi, 0) + hc_l.get(hsi, 0), 6),
+                "total_disruption_rate_upper": round(hd_u.get(hsi, 0) + hc_u.get(hsi, 0), 6),
+            })
+    pd.DataFrame(dis_rows).sort_values(
+        ["scenario", "total_disruption_rate_mean"], ascending=[True, False]
+    ).to_csv(output_folder / f"hsi_disruption_by_type_{suffix}.csv", index=False)
 
-        # Short (1-segment) IDs
-        cancelled_result = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='Weather_cancelled_HSI_Event_full_info',
-                custom_generate_series=get_cancelled_by_short_treatment_id,
-                do_scaling=False,
-            ),
-            only_mean=True,
-            collapse_columns=True,
-        )[draw]
-        cancelled_data[scenario_labels_final[i]] = (
-            cancelled_result['mean'].copy() / float(population_by_scenario[scenario_labels_final[i]]) * 100_000
+    # ── PLOT ─────────────────────────────────────────────────────────────────
+    print("Plotting …")
+
+    n_scen = len(scenarios_of_interest)
+    bar_h_a = min(0.7, 0.75 / n_scen)  # per-scenario bar height in Panel A
+    bar_h_b = 0.55  # bar height in Panel B
+
+    n_a = len(top_volume_types_plot)
+    n_b = len(top_disrupted_types_plot)
+    fig_h = max(9, max(n_a * n_scen * bar_h_a * 1.8, n_b * bar_h_b * 2.2))
+
+    fig, (ax_a, ax_b) = plt.subplots(
+        1, 2,
+        figsize=(22, fig_h),
+        gridspec_kw={"width_ratios": [1.15, 1]},
+    )
+
+    # ── Panel A: total HSI volume by type ─────────────────────────────────────
+    y_centers = np.arange(n_a, dtype=float)
+
+    for scen_idx, draw in enumerate(scenarios_of_interest):
+        col = SCENARIO_COLOURS[scen_idx % len(SCENARIO_COLOURS)]
+        vm = all_draws_volume_mean[scen_idx]
+        vl = all_draws_volume_lower[scen_idx]
+        vu = all_draws_volume_upper[scen_idx]
+
+        means = np.array([vm.get(h, 0) for h in top_volume_types_plot])
+        lowers = np.array([vl.get(h, 0) for h in top_volume_types_plot])
+        uppers = np.array([vu.get(h, 0) for h in top_volume_types_plot])
+
+        # offset so bars within each group are stacked neatly
+        offset = (scen_idx - (n_scen - 1) / 2.0) * bar_h_a
+        y_pos = y_centers + offset
+
+        ax_a.barh(
+            y_pos, means,
+            height=bar_h_a * 0.9,
+            color=col, alpha=0.85,
+            label=scenario_names[draw],
+        )
+        ax_a.errorbar(
+            means, y_pos,
+            xerr=[means - lowers, uppers - means],
+            fmt="none", color="black", lw=0.8, capsize=2, alpha=0.5,
         )
 
-        delayed_result = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='Weather_delayed_HSI_Event_full_info',
-                custom_generate_series=get_delayed_by_short_treatment_id,
-                do_scaling=False,
-            ),
-            only_mean=True,
-            collapse_columns=True,
-        )[draw]
-        delayed_data[scenario_labels_final[i]] = (
-            delayed_result['mean'].copy() / float(population_by_scenario[scenario_labels_final[i]]) * 100_000
-        )
+    ax_a.set_yticks(y_centers)
+    ax_a.set_yticklabels(_wrap_labels(top_volume_types_plot), fontsize=FS_TICK)
+    ax_a.set_xlabel("Total HSIs (mean across runs)", fontsize=FS_LABEL, fontweight="bold")
+    ax_a.set_title(
+        f"(A) Total HSIs by treatment type\n({period_label})",
+        fontsize=FS_TITLE, fontweight="bold",
+    )
+    ax_a.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=True)
+    ax_a.xaxis.get_offset_text().set_fontsize(FS_TICK)
+    plt.setp(ax_a.xaxis.get_majorticklabels(), fontsize=FS_TICK)
+    ax_a.set_xlim(left=0)
+    ax_a.legend(
+        title="Scenario", fontsize=FS_LEGEND, title_fontsize=FS_LEGEND,
+        loc="lower right", framealpha=0.9,
+    )
+    ax_a.spines["top"].set_visible(False)
+    ax_a.spines["right"].set_visible(False)
+    ax_a.grid(axis="x", color="lightgrey", linewidth=0.5, zorder=0)
 
-        # Longer (2-segment) IDs
-        cancelled_result_long = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='Weather_cancelled_HSI_Event_full_info',
-                custom_generate_series=get_cancelled_by_longer_treatment_id,
-                do_scaling=False,
-            ),
-            only_mean=True,
-            collapse_columns=True,
-        )[draw]
-        cancelled_data_long[scenario_labels_final[i]] = (
-            cancelled_result_long['mean'].copy() / float(population_by_scenario[scenario_labels_final[i]]) * 100_000
-        )
+    # ── Panel B: disruption rates for chosen scenario ─────────────────────────
+    hd_m_b_plot = hd_m_b.reindex(top_disrupted_types_plot, fill_value=0)
+    hd_l_b_plot = hd_l_b.reindex(top_disrupted_types_plot, fill_value=0)
+    hd_u_b_plot = hd_u_b.reindex(top_disrupted_types_plot, fill_value=0)
+    hc_m_b_plot = hc_m_b.reindex(top_disrupted_types_plot, fill_value=0)
+    hc_l_b_plot = hc_l_b.reindex(top_disrupted_types_plot, fill_value=0)
+    hc_u_b_plot = hc_u_b.reindex(top_disrupted_types_plot, fill_value=0)
 
-        delayed_result_long = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='Weather_delayed_HSI_Event_full_info',
-                custom_generate_series=get_delayed_by_longer_treatment_id,
-                do_scaling=False,
-            ),
-            only_mean=True,
-            collapse_columns=True,
-        )[draw]
-        delayed_data_long[scenario_labels_final[i]] = (
-            delayed_result_long['mean'].copy() / float(population_by_scenario[scenario_labels_final[i]]) * 100_000
-        )
+    y_b = np.arange(n_b, dtype=float)
+    delayed_vals = hd_m_b_plot.values * 100
+    cancelled_vals = hc_m_b_plot.values * 100
+    total_vals = delayed_vals + cancelled_vals
+    total_lo = (hd_l_b_plot + hc_l_b_plot).values * 100
+    total_hi = (hd_u_b_plot + hc_u_b_plot).values * 100
 
-    # ── 6. Short-ID cancelled/delayed plot (all treatment types, 1-segment) ───
+    ax_b.barh(y_b, delayed_vals, height=bar_h_b,
+              color=COLOUR_DELAYED, alpha=0.75, label="Delayed")
+    ax_b.barh(y_b, cancelled_vals, height=bar_h_b, left=delayed_vals,
+              color=COLOUR_CANCELLED, alpha=0.75, label="Cancelled")
+    ax_b.errorbar(
+        total_vals, y_b,
+        xerr=[total_vals - total_lo, total_hi - total_vals],
+        fmt="none", color="black", lw=1.0, capsize=2, alpha=0.6,
+    )
 
-    df_cancelled = pd.DataFrame(cancelled_data).fillna(0)
-    df_cancelled = df_cancelled[df_cancelled.index.map(
-        lambda x: isinstance(x, str) and (x.endswith('*') or '_' in x))]
-    df_delayed = pd.DataFrame(delayed_data).fillna(0)
-    df_delayed = df_delayed[df_delayed.index.map(
-        lambda x: isinstance(x, str) and (x.endswith('*') or '_' in x))]
+    ax_b.set_yticks(y_b)
+    ax_b.set_yticklabels(_wrap_labels(top_disrupted_types_plot), fontsize=FS_TICK)
+    ax_b.set_xlabel("% of HSIs disrupted", fontsize=FS_LABEL, fontweight="bold")
+    ax_b.set_title(
+        f"(B) Weather-disrupted HSIs by type\n"
+        f"{disruption_panel_scenario} — top {top_n_disruption} ({period_label})",
+        fontsize=FS_TITLE, fontweight="bold",
+    )
+    plt.setp(ax_b.xaxis.get_majorticklabels(), fontsize=FS_TICK)
+    ax_b.set_xlim(left=0)
+    ax_b.legend(fontsize=FS_LEGEND, loc="lower right", framealpha=0.9)
+    ax_b.spines["top"].set_visible(False)
+    ax_b.spines["right"].set_visible(False)
+    ax_b.grid(axis="x", color="lightgrey", linewidth=0.5, zorder=0)
 
-    fig_cd, axes_cd = plt.subplots(1, 2, figsize=(18, len(df_cancelled.index) * 0.5 + 2), sharey=True)
-    for ax, df_plot, title in zip(
-        axes_cd,
-        [df_cancelled, df_delayed],
-        ['Weather-cancelled HSIs per 100,000', 'Weather-delayed HSIs per 100,000']
-    ):
-        y_positions_cd = np.arange(len(df_plot.index))
-        treatment_labels_cd = [t.replace("*", "") for t in df_plot.index]
-        offsets_cd = {'Baseline': -0.2, 'Worst Case': 0.2}
-        for scenario_label in ['Baseline', 'Worst Case']:
-            if scenario_label not in df_plot.columns:
-                continue
-            values = df_plot[scenario_label].reindex(df_plot.index).fillna(0)
-            ax.barh(y_positions_cd + offsets_cd[scenario_label], values,
-                    height=0.35, color=scenario_colors[scenario_label],
-                    label=scenario_label, alpha=0.8)
-        ax.set_yticks(y_positions_cd)
-        ax.set_yticklabels(treatment_labels_cd, fontsize=12)
-        ax.set_xlabel(title, fontsize=14)
-        ax.legend(title='Scenario', fontsize=11)
-        ax.invert_yaxis()
-    fig_cd.tight_layout()
-    fig_cd.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Cancelled_Delayed_by_TreatmentType_{suffix}.png", dpi=300)
-    plt.close(fig_cd)
-
-    # ── 7. Longer-ID top-N cancelled/delayed plot (2-segment, most affected) ──
-
-    TOP_N = 15
-    df_cancelled_long = pd.DataFrame(cancelled_data_long).fillna(0)
-    df_cancelled_long = df_cancelled_long[df_cancelled_long.index.map(
-        lambda x: isinstance(x, str) and (x.endswith('*') or '_' in x))]
-    df_delayed_long = pd.DataFrame(delayed_data_long).fillna(0)
-    df_delayed_long = df_delayed_long[df_delayed_long.index.map(
-        lambda x: isinstance(x, str) and (x.endswith('*') or '_' in x))]
-
-    df_cancelled_long_top = (df_cancelled_long
-                             .assign(_total=df_cancelled_long.sum(axis=1))
-                             .sort_values('_total', ascending=False)
-                             .head(TOP_N)
-                             .drop(columns='_total'))
-    df_delayed_long_top = (df_delayed_long
-                           .assign(_total=df_delayed_long.sum(axis=1))
-                           .sort_values('_total', ascending=False)
-                           .head(TOP_N)
-                           .drop(columns='_total'))
-
-    fig_top, axes_top = plt.subplots(1, 2, figsize=(22, TOP_N * 0.55 + 3), sharey=False)
-    for ax, df_plot, title in zip(
-        axes_top,
-        [df_cancelled_long_top, df_delayed_long_top],
-        [f'Top {TOP_N} Weather-Cancelled HSIs per 100,000',
-         f'Top {TOP_N} Weather-Delayed HSIs per 100,000']
-    ):
-        y_pos = np.arange(len(df_plot.index))
-        labels = [t.replace("*", "") for t in df_plot.index]
-        offsets_top = {'Baseline': -0.2, 'Worst Case': 0.2}
-        for scenario_label in ['Baseline', 'Worst Case']:
-            if scenario_label not in df_plot.columns:
-                continue
-            values = df_plot[scenario_label].fillna(0)
-            ax.barh(y_pos + offsets_top[scenario_label], values,
-                    height=0.35, color=scenario_colors[scenario_label],
-                    label=scenario_label, alpha=0.85)
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(labels, fontsize=12)
-        ax.set_xlabel(title, fontsize=14)
-        ax.legend(title='Scenario', fontsize=11)
-        ax.invert_yaxis()
-
-    fig_top.suptitle(f"Top {TOP_N} Most Weather-Disrupted HSI", fontsize=13, fontweight='bold')
-    fig_top.tight_layout()
-    fig_top.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Top{TOP_N}_Disrupted_HSIs_detailed_{suffix}.png", dpi=300)
-    plt.close(fig_top)
-
-    # ── 8. Significance vs "No disruption" for each treatment type ───────────
-
-    treatment_significance = {}
-    for scenario_label in ["Baseline", "Worst Case"]:
-        treatment_significance[scenario_label] = {}
-        for treatment in df_final.index:
-            ref_mean = final_data_with_ci['No disruption']['mean'].get(treatment, 0)
-            ref_lower = final_data_with_ci['No disruption']['lower'].get(treatment, 0)
-            ref_upper = final_data_with_ci['No disruption']['upper'].get(treatment, 0)
-
-            cmp_mean = final_data_with_ci[scenario_label]['mean'].get(treatment, 0)
-            cmp_lower = final_data_with_ci[scenario_label]['lower'].get(treatment, 0)
-            cmp_upper = final_data_with_ci[scenario_label]['upper'].get(treatment, 0)
-
-            ref_se = (ref_upper - ref_lower) / (2 * 1.96) if ref_upper > ref_lower else 0
-            cmp_se = (cmp_upper - cmp_lower) / (2 * 1.96) if cmp_upper > cmp_lower else 0
-
-            diff = abs(cmp_mean - ref_mean)
-            pooled_se = np.sqrt(ref_se ** 2 + cmp_se ** 2)
-
-            if pooled_se > 0 and diff > 0:
-                z_score = diff / pooled_se
-                p_value = 2 * (1 - stats.norm.cdf(z_score))
-                if p_value < 0.001:
-                    star = '***'
-                elif p_value < 0.01:
-                    star = '**'
-                elif p_value < 0.05:
-                    star = '*'
-                else:
-                    star = ''
-            else:
-                star = ''
-            treatment_significance[scenario_label][treatment] = star
-
-    # ── 9. Stacked bar chart ──────────────────────────────────────────────────
-
-    fig_final, ax_final = plt.subplots(figsize=(14, 8))
-    bottom = np.zeros(len(scenario_labels_final))
-
-    for treatment in df_final.index:
-        color = get_color_short_treatment_id(str(treatment))
-        if not isinstance(color, str):
-            color = '#888888'
-        values = df_final.loc[treatment]
-        ax_final.bar(scenario_labels_final, values, bottom=bottom, color=color, label=treatment)
-        bottom += values.values
-
-    ax_final.set_ylabel("HSIs per 100,000 population", fontsize=12)
-    ax_final.set_xlabel("Scenario", fontsize=12)
-
-    handles, labels = ax_final.get_legend_handles_labels()
-    clean_labels = [l.replace("*", "") for l in labels]
-    original_index = df_final.index
-    clean_index = original_index.str.replace("*", "", regex=False)
-    clean_to_original = dict(zip(clean_index, original_index))
-
-    new_labels = []
-    for label in clean_labels:
-        original = clean_to_original.get(label, label)
-        stars_by_scenario = [
-            f"{sc}: {treatment_significance[sc].get(original, '')}"
-            for sc in ["Baseline", "Worst Case"]
-            if treatment_significance[sc].get(original, '')
-        ]
-        if stars_by_scenario:
-            new_labels.append(f"{label} ({', '.join(stars_by_scenario)})")
-        else:
-            new_labels.append(label)
-
-    ax_final.legend(handles, new_labels, bbox_to_anchor=(1.05, 1), loc='upper left',
-                    title='Treatment Type\nvs No disruption\n(* p<0.05, ** p<0.01, *** p<0.001)',
-                    fontsize=11)
-    fig_final.tight_layout()
-    fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_{suffix}.png", dpi=300)
-    plt.close(fig_final)
-
-    # ── 10. Difference dot plot vs "No disruption" ────────────────────────────
-
-    fig_diff, ax_diff = plt.subplots(figsize=(12, len(df_final.index) * 0.5 + 2))
-    y_positions = np.arange(len(df_final.index))
-    treatment_labels = [t.replace("*", "") for t in df_final.index]
-
-    for scenario_label in ['Baseline', 'Worst Case']:
-        color = scenario_colors[scenario_label]
-        offset = offsets[scenario_label]
-
-        ref_means = final_data_with_ci['No disruption']['mean'].reindex(df_final.index).fillna(0)
-        cmp_means = final_data_with_ci[scenario_label]['mean'].reindex(df_final.index).fillna(0)
-        cmp_lowers = final_data_with_ci[scenario_label]['lower'].reindex(df_final.index).fillna(0)
-        cmp_uppers = final_data_with_ci[scenario_label]['upper'].reindex(df_final.index).fillna(0)
-
-        diffs = cmp_means - ref_means
-        xerr = np.array([
-            np.clip(cmp_means.values - cmp_lowers.values, 0, None),
-            np.clip(cmp_uppers.values - cmp_means.values, 0, None)
-        ])
-
-        ax_diff.errorbar(
-            x=diffs.values,
-            y=y_positions + offset,
-            xerr=xerr,
-            fmt='o', color=color, label=scenario_label,
-            capsize=3, markersize=5, linewidth=1.2,
-        )
-
-        x_offset = max(abs(diffs)) * 0.02 if max(abs(diffs)) > 0 else 0.01
-        for j, treatment in enumerate(df_final.index):
-            star = treatment_significance[scenario_label].get(treatment, '')
-            if star:
-                ax_diff.text(
-                    diffs.iloc[j] + x_offset,
-                    y_positions[j] + offset,
-                    star,
-                    ha='left', va='center', fontsize=11,
-                    color=color, fontweight='bold'
-                )
-
-    ax_diff.axvline(0, color='black', linewidth=1, linestyle='--', label='No disruption')
-    ax_diff.set_yticks(y_positions)
-    ax_diff.set_yticklabels(treatment_labels, fontsize=12)
-    ax_diff.set_xlabel("Difference in HSIs per 100,000 population vs No Disruption", fontsize=12)
-    ax_diff.legend(title='Scenario', fontsize=12)
-    ax_diff.grid(axis='x', alpha=0.3)
-    ax_diff.invert_yaxis()
-    fig_diff.tight_layout()
-    fig_diff.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_DiffPlot_{suffix}.png", dpi=300)
-    plt.close(fig_diff)
+    fig.tight_layout()
+    png_path = output_folder / f"hsi_volume_and_disruption_by_type_{suffix}.png"
+    fig.savefig(png_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  → {png_path}")
+    print("Done.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
+    parser.add_argument("--output_folder", type=Path, default=None)
+    parser.add_argument("--resources", type=Path, default=Path("./resources"))
     args = parser.parse_args()
-
     apply(
         results_folder=args.results_folder,
-        output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
+        output_folder=args.output_folder or args.results_folder,
+        resourcefilepath=args.resources,
     )

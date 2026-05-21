@@ -33,7 +33,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     mode_2 = False
     climate_analysis = False
     prop_supply_demand = False
-    top_n_hsi = 10
+    wet_season = True
 
     SCALING_FACTOR = 145.39
     CI_LOWER = 0.025
@@ -71,6 +71,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         ]
         scenarios_of_interest = list(range(6))
         suffix = "prop_supply_demand"
+    if wet_season:
+        suffix += "_wet_season"
 
     facilities_df = pd.read_csv(
         resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv",
@@ -96,6 +98,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 for key, val in counts_dict.items():
                     parts = str(key).split(":", 1)
                     real_fac = parts[0]
+                    nan_keys = [k for k in counts_dict.keys() if str(k).startswith("nan:") or ":" not in str(k)]
+
                     hsi_type = parts[1] if len(parts) > 1 else "unknown"
                     composite = f"{ym}:{real_fac}:{hsi_type}"
                     totals[composite] = totals.get(composite, 0) + val
@@ -223,7 +227,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         return months.isin([11, 12, 1, 2, 3, 4])
 
     high_rain_months = _high_rainfall_months("ssp245")
-    print(f"High-rainfall months identified: {sorted(high_rain_months)}")
     target_year_sequence = range(min_year, max_year, spacing_of_years)
     tlo_facilities = set()
 
@@ -329,6 +332,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
             _nd_total_dfs = [raw_total[yr][draw].fillna(0) for yr in target_year_sequence]
             all_draws_total_df[draw] = _concat_years(_nd_total_dfs) * SCALING_FACTOR
+
+            if wet_season:
+                ws_mask_nd = _wet_season_mask(all_draws_total_df[draw])
+                all_draws_total_df[draw] = all_draws_total_df[draw][ws_mask_nd]
+
             all_draws_delayed_df[draw] = pd.DataFrame(
                 0.0,
                 index=all_draws_total_df[draw].index,
@@ -357,13 +365,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             all_years_cancelled_persons_dfs.append(raw_cancelled_persons[target_year][draw].fillna(0))
 
         total_all = _concat_years(all_years_total_dfs) * SCALING_FACTOR
+        valid = _parse_facility(total_all.index) != "nan"
+
         delayed_all = _concat_years(all_years_delayed_dfs) * SCALING_FACTOR
         cancelled_all = _concat_years(all_years_cancelled_dfs) * SCALING_FACTOR
+        total_all = total_all[valid.values]
+        delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
+        cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
         disrupted_persons_all = (
             _concat_years(all_years_delayed_persons_dfs)
             .add(_concat_years(all_years_cancelled_persons_dfs), fill_value=0)
             * SCALING_FACTOR
         )
+        if wet_season:
+            ws_mask = _wet_season_mask(total_all)
+            total_all = total_all[ws_mask]
+            delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
+            cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
 
         all_draws_disrupted_persons_by_district[draw] = disrupted_persons_all
         tlo_facilities.update(_parse_facility(total_all.index).dropna())
@@ -415,6 +433,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         )
         df = df[df["RealFacility_ID"].isin(tlo_facilities)]
         df = df[(df["year"] >= min_year) & (df["year"] <= max_year - 1)]
+        if wet_season:
+            df = df[df["month"].isin([11, 12, 1, 2, 3, 4])]
         ann = df.groupby("year")["mean_all_service"].mean().reset_index().sort_values("year")
         ann["Date"] = pd.to_datetime(ann["year"].astype(str) + "-01-01")
         mo = df.groupby(["year", "month"])["mean_all_service"].mean().reset_index().sort_values(["year", "month"])
@@ -820,10 +840,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         })
     pd.DataFrame(summary_rows).to_csv(output_folder / f"main_text_summary_{suffix}.csv", index=False)
 
-    def _wet_season_mask(df):
-        """Boolean mask for rows whose YYYY-MM month is in the wet season (Nov–Apr)."""
-        months = _parse_ym(df.index).str.split("-").str[1].astype(int)
-        return months.isin([11, 12, 1, 2, 3, 4])
 
     hsi_count_rows = []
     for idx, draw in enumerate(scenarios_of_interest):
@@ -832,8 +848,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         per_run_full = total_2.sum(axis=0)
         mask = _wet_season_mask(total_2)
         per_run_wet = total_2[mask].sum(axis=0)
-        for season, per_run in [("full_year", per_run_full), ("wet_season", per_run_wet)]:
-            hsi_count_rows.append({
+        seasons = [("full_year", per_run_full), ("wet_season", per_run_wet)] if not wet_season else [
+            ("wet_season", per_run_wet)]
+        for season, per_run in seasons:            hsi_count_rows.append({
                 "Scenario": scen, "season": season,
                 "total_hsi_ran_mean": round(per_run.mean(), 1),
                 "total_hsi_ran_lower": round(per_run.quantile(CI_LOWER), 1),
@@ -1098,7 +1115,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             for _, row in highlighted.iterrows():
                 centroid = row.geometry.centroid
                 ax.annotate(row["ADM2_EN"], xy=(centroid.x, centroid.y),
-                            fontsize=FS_TICK - 1, color="royalblue", fontweight="bold",
+                            fontsize=FS_TICK - 1, color="black", fontweight="bold",
                             ha="center", va="center")
             cbar_ax = fig_map.axes[-1]
             cbar_ax.set_ylabel("% HSIs disrupted", fontsize=FS_LABEL, fontweight="bold")
@@ -1173,21 +1190,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     hr_summary_rows = []
     for idx, draw in enumerate(scenarios_of_interest):
         scen = scenario_names[draw]
-        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
-        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
-        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
-        mask = _high_rain_mask(total_2, high_rain_months)
-        total_2 = total_2[mask];
-        delayed_2 = delayed_2[mask];
-        cancelled_2 = cancelled_2[mask]
-        per_run_total = total_2.sum(axis=0);
-        per_run_delayed = delayed_2.sum(axis=0)
-        per_run_cancelled = cancelled_2.sum(axis=0);
+
+        hr_total = _collapse_hsi_types(all_draws_total_df[draw])
+        hr_delayed = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(hr_total.index, fill_value=0)
+        hr_cancelled = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(hr_total.index, fill_value=0)
+
+        hr_mask = _high_rain_mask(hr_total, high_rain_months)
+        hr_total = hr_total[hr_mask]
+
+        hr_delayed = hr_delayed[hr_mask]
+        hr_cancelled = hr_cancelled[hr_mask]
+
+        per_run_total = hr_total.sum(axis=0)
+        per_run_delayed = hr_delayed.sum(axis=0)
+        per_run_cancelled = hr_cancelled.sum(axis=0)
         per_run_disrupted = per_run_delayed + per_run_cancelled
         denom = per_run_total + per_run_disrupted
+
         hr_summary_rows.append({
             "Scenario": scen,
-            "n_months_in_top10pct": mask.sum() // max(1, total_2.shape[1]),
+            "n_months_in_top10pct": len(high_rain_months),
             "total_hsi_count_mean": round(per_run_total.mean(), 1),
             "total_hsi_disrupted_mean": round(per_run_disrupted.mean(), 1) if scen != "No Disruptions" else 0,
             "pct_disrupted_mean": round((per_run_disrupted / denom * 100).mean(), 4) if scen != "No Disruptions" else 0,
