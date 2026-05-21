@@ -2984,6 +2984,34 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
                 ]
 
 
+class RescalingHRCapabilities_ByYearAndOfficer(Event, PopulationScopeEventMixin):
+    """This event exists to scale the daily capabilities, with a factor for each Officer Type at each specified year."""
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
+        # assumption
+        HR_scaling_by_year_and_officer_type_factor = self.module.parameters[
+            "HR_scaling_by_year_and_officer_type_table"
+        ][self.module.parameters["HR_scaling_by_year_and_officer_type_mode"]].set_index("Officer_Category")
+
+        years_for_scaling = np.array(list(HR_scaling_by_year_and_officer_type_factor.columns()))
+        most_recent_year_for_scaling = years_for_scaling[years_for_scaling <= self.sim.date.year].max()
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract officer type
+                officer_type = matches.group(2)
+                self.module._daily_capabilities[clinic][officer] *= HR_scaling_by_year_and_officer_type_factor.at[
+                    officer_type, most_recent_year_for_scaling
+                ]
+
+
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
     """This event exists to scale the daily capabilities, with a factor for each district."""
 
