@@ -308,6 +308,26 @@ class HealthSystem(Module):
             "(factors informed by survey data); and, `custom` (user can freely set these factors as "
             "parameters in the analysis).",
         ),
+        "HR_scaling_by_year_and_officer_type_table": Parameter(
+            Types.DICT,
+            "Factors by which capabilities of medical officer types will be scaled at the start of "
+            "the years considered. This is the imported from an Excel workbook: keys are the worksheet "
+            "names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can "
+            "be added by adding worksheets to this workbook: the value of "
+            "`HR_scaling_by_year_and_officer_type_mode` indicates which sheet is used.",
+        ),
+        "HR_scaling_by_year_and_officer_type_mode": Parameter(
+            Types.STRING,
+            "Mode of HR scaling considered at the start of the simulation. This corresponds to the name"
+            "of the worksheet in `ResourceFile_HR_scaling_by_year_and_officer_type.xlsx` that should be used. "
+            "Options are: "
+            "`default` (capabilities are scaled by a factor of 1); "
+            "`historical_uniform` (factors across the cadres are the same, informated by the historical growth rate "
+            "in total HRH);"
+            "`historical_cadre_mix` (factors across the cadres are different, indicated by both the overall historical "
+            "increase rate and the gap_allocation HRH expansion scenario by She et al 2026); and,"
+            "`custom` (user can freely set these factors as parameters in the analysis).",
+        ),
         "HR_scaling_by_district_table": Parameter(
             Types.DICT,
             "Factors by which daily capabilities in different districts will be"
@@ -694,6 +714,22 @@ class HealthSystem(Module):
             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}"
         )
 
+        self.parameters["HR_scaling_by_year_and_officer_type_table"]: Dict = read_csv_files(
+            path_to_resourcefiles_for_healthsystem
+            / "human_resources"
+            / "scaling_capabilities"
+            / "ResourceFile_HR_scaling_by_year_and_officer_type",
+            files=None,  # all sheets read in
+        )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert (
+            self.parameters["HR_scaling_by_year_and_officer_type_mode"]
+            in self.parameters["HR_scaling_by_year_and_officer_type_table"]
+        ), (
+            f"Value of `HR_scaling_by_year_and_officer_type_mode` not recognised: "
+            f"{self.parameters['HR_scaling_by_year_and_officer_type_mode']}"
+        )
+
         self.parameters["HR_scaling_by_district_table"]: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
@@ -914,6 +950,9 @@ class HealthSystem(Module):
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+
+        # Schedule recurring event which will rescale daily capabilities annually.
+        sim.schedule_event(RescalingHRCapabilities_ByYearAndOfficer(self), Date(sim.date))
 
         # Schedule the logger to occur at the start of every year
         sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
