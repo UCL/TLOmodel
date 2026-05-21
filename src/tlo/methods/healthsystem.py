@@ -3043,7 +3043,10 @@ class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationSco
             "HR_scaling_by_year_and_officer_type_table"
         ][self.module.parameters["HR_scaling_by_year_and_officer_type_mode"]].set_index("Officer_Category")
 
-        years_for_scaling = np.array(list(HR_scaling_by_year_and_officer_type_factor.columns()))
+        HR_scaling_by_year_and_officer_type_factor.columns = (
+            HR_scaling_by_year_and_officer_type_factor.columns.astype(int)
+        )
+        years_for_scaling = np.array(HR_scaling_by_year_and_officer_type_factor.columns)
         most_recent_year_for_scaling = years_for_scaling[years_for_scaling <= self.sim.date.year].max()
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
@@ -3056,7 +3059,7 @@ class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationSco
                 # Update capabilities by scaling factor and absorption rate
                 self.module._daily_capabilities[clinic][officer] *= (HR_scaling_by_year_and_officer_type_factor.at[
                     officer_type, most_recent_year_for_scaling
-                ] * self.module.parameters["HR_absorption_rate"])
+                ] * self.module.parameters["HR_expansion_absorption_rate"])
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
