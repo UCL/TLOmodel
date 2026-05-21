@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -23,11 +24,6 @@ try:
 except NameError:
     resourcefilepath = "resources"
 
-def check_dtypes(simulation):
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
 log_config = {
     "filename": "hpv_test",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs/",  # The default output path is `./outputs`. Change it here, if necessary
@@ -39,10 +35,12 @@ log_config = {
     }
 }
 
-@pytest.fixture
-def sim(seed):
+HPV_GROUPS = hpv.HPV.HPV_GROUPS
+DATE_COLS = [f"hp_date_infected_{group}" for group in HPV_GROUPS]
+
+def make_sim(seed,log_config=None):
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=None, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
     sim.register(
@@ -56,115 +54,279 @@ def sim(seed):
             disable=True,  # disables the health system constraints so all HSI events run
         ),
         epi.Epi(),
+        hiv.Hiv(),
         hpv.HPV(),
-        hiv.Hiv
     )
 
     return sim
 
+@pytest.fixture
+def sim(seed):
+    return make_sim(seed=seed, log_config=None)
 
-def test_single_person(sim):
+def check_dtypes(simulation):
     """
-    run sim for one person
-    assign infection
-    check symptoms scheduled
-    check symptoms resolved correctly
+    Check that population property dtypes remain consistent.
     """
-    # set high death rate - change all symptom probabilities to 1
-    sim.modules['HPV'].parameters["symptom_prob"]["probability"] = 1
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
 
-    sim.make_initial_population(n=1)
+def get_any_hpv_infected(df):
+    """Return whether each person is infected with any HPV group."""
+    return df[DATE_COLS].notna().any(axis=1)
+
+
+def assert_hpv_state_consistent(simulation):
+    """Check that HPV date-based states, durations, and persistence flags are internally consistent."""
+
+    module = simulation.modules["HPV"]
+    df = simulation.population.props
+
+    module._update_persistence_status()
+
+    eligible = df.is_alive & (df.age_years >= 15)
+
+    for group in HPV_GROUPS:
+        date_col = f"hp_date_infected_{group}"
+        dur_col = f"hp_duration_{group}"
+        pers_col = f"hp_persistent_{group}"
+
+        infected = df[date_col].notna()
+        non_infected = df[date_col].isna()
+
+        # Non-infected people should not be persistent
+        assert not df.loc[non_infected, pers_col].fillna(False).any()
+
+        # Eligible infected people should have non-negative duration
+        assert (df.loc[eligible & infected, dur_col] >= 0).all()
+
+        # Eligible non-infected people should have duration -1.0
+        assert (df.loc[eligible & non_infected, dur_col] == -1.0).all()
+
+        # Persistent people must also be infected
+        assert df.loc[df[pers_col].fillna(False), date_col].notna().all()
+
+        # Persistent status should match duration threshold
+        threshold = module.parameters["persistent_threshold_months"]
+        expected_persistent = eligible & infected & (df[dur_col] >= threshold)
+        observed_persistent = df[pers_col].fillna(False)
+
+        assert (observed_persistent == expected_persistent).all()
+
+
+def test_hpv_initial_population_date_based_state(sim):
+
+    module = sim.modules["HPV"]
+    module.parameters["init_prev_hpv_hr1"] = 1.0
+    module.parameters["init_prev_hpv_hr2"] = 0.0
+    module.parameters["init_prev_hpv_hr3"] = 0.0
+
+    sim.make_initial_population(n=500)
     df = sim.population.props
-    person_id = 0
-    df.at[person_id, "hp_is_infected"] = True
 
-    # HPV onset event
-    inf_event = hpv.HPV(person_id=person_id, module=sim.modules['HPV'])
-    inf_event.apply(person_id)
-    assert not pd.isnull(df.at[person_id, "me_date_measles"])
+    eligible = df.is_alive & (df.age_years >= 15)
+    under15 = df.is_alive & (df.age_years < 15)
 
-    # check measles symptom resolve event and death scheduled
-    events_for_this_person = sim.find_events_for_person(person_id)
-    assert len(events_for_this_person) > 0
-    next_event_date, next_event_obj = events_for_this_person[0]
-    assert isinstance(next_event_obj, (measles.MeaslesDeathEvent, measles.MeaslesSymptomResolveEvent))
+    # All eligible people should be infected with hr1
+    assert df.loc[eligible, "hp_date_infected_hr1"].notna().all()
+
+    # Nobody should be infected with hr2/hr3
+    assert df.loc[df.is_alive, "hp_date_infected_hr2"].isna().all()
+    assert df.loc[df.is_alive, "hp_date_infected_hr3"].isna().all()
+
+    # Under-15 people should not be infected
+    assert df.loc[under15, "hp_date_infected_hr1"].isna().all()
+
+    # Initial infection durations should be between 0 and 23 months
+    assert (df.loc[eligible, "hp_duration_hr1"] >= 0).all()
+    assert (df.loc[eligible, "hp_duration_hr1"] < 24).all()
+
+    # Persistent status should match duration threshold
+    threshold = module.parameters["persistent_threshold_months"]
+    expected_persistent = df.loc[eligible, "hp_duration_hr1"] >= threshold
+    observed_persistent = df.loc[eligible, "hp_persistent_hr1"]
+
+    assert (observed_persistent == expected_persistent).all()
+
+    check_dtypes(sim)
+
+def test_hpv_add_and_clear_single_group(sim):
+
+    module = sim.modules["HPV"]
+    module.parameters["init_prev_hpv_hr1"] = 0.0
+    module.parameters["init_prev_hpv_hr2"] = 0.0
+    module.parameters["init_prev_hpv_hr3"] = 0.0
+
+    sim.make_initial_population(n=500)
+    df = sim.population.props
+
+    eligible_idx = df.index[df.is_alive & (df.age_years >= 15)]
+
+    if len(eligible_idx) == 0:
+        pytest.skip("No eligible person aged 15+ in the test population.")
+
+    person_id = eligible_idx[0]
+
+    # Initially not infected
+    assert not module._hp_is_infected(person_id)
+
+    # Add hr1 infection
+    module._add_new_infection_groups(person_id, {"hr1"})
+
+    assert module._is_group_infected(person_id, "hr1")
+    assert df.at[person_id, "hp_date_infected_hr1"] == sim.date
+    assert df.at[person_id, "hp_duration_hr1"] == 0
+    assert not df.at[person_id, "hp_persistent_hr1"]
+
+    # Clear hr1 infection
+    module._clear_single_group(person_id, "hr1")
+
+    assert not module._is_group_infected(person_id, "hr1")
+    assert pd.isna(df.at[person_id, "hp_date_infected_hr1"])
+    assert df.at[person_id, "hp_duration_hr1"] == -1
+    assert not df.at[person_id, "hp_persistent_hr1"]
+
+
+def test_hpv_clearance_probability_in_valid_range(sim):
+
+    module = sim.modules["HPV"]
+
+    module.parameters["init_prev_hpv_hr1"] = 0.0
+    module.parameters["init_prev_hpv_hr2"] = 0.0
+    module.parameters["init_prev_hpv_hr3"] = 0.0
+
+    sim.make_initial_population(n=500)
+    df = sim.population.props
+
+    eligible_idx = df.index[df.is_alive & (df.age_years >= 15)]
+
+    if len(eligible_idx) == 0:
+        pytest.skip("No eligible person aged 15+ in the test population.")
+
+    person_id = eligible_idx[0]
+
+    p_clear = module._get_clearance_probability(
+        group="hr1",
+        person_id=person_id,
+        duration_months=12.0,
+        interval_months=6.0,
+    )
+
+    assert 0.0 <= p_clear <= 1.0
+
+
+def test_hiv_can_modify_hpv_clearance_probability(sim):
+
+    module = sim.modules["HPV"]
+
+    module.parameters["init_prev_hpv_hr1"] = 0.0
+    module.parameters["init_prev_hpv_hr2"] = 0.0
+    module.parameters["init_prev_hpv_hr3"] = 0.0
+    module.parameters["rr_clear_hiv_no_art"] = 0.5
+
+    sim.make_initial_population(n=500)
+    df = sim.population.props
+
+    eligible_idx = df.index[df.is_alive & (df.age_years >= 15)]
+
+    if len(eligible_idx) == 0:
+        pytest.skip("No eligible person aged 15+ in the test population.")
+
+    person_id = eligible_idx[0]
+
+    # Baseline: HIV negative
+    if "hv_inf" in df.columns:
+        df.at[person_id, "hv_inf"] = False
+
+    p_clear_baseline = module._get_clearance_probability(
+        group="hr1",
+        person_id=person_id,
+        duration_months=12.0,
+        interval_months=6.0,
+    )
+
+    # HIV positive and not on ART / not virally suppressed
+    if "hv_inf" not in df.columns:
+        pytest.skip("HIV infection column hv_inf not available.")
+
+    df.at[person_id, "hv_inf"] = True
+
+    if "hv_art" in df.columns:
+        df.at[person_id, "hv_art"] = "not"
+
+    p_clear_hiv = module._get_clearance_probability(
+        group="hr1",
+        person_id=person_id,
+        duration_months=12.0,
+        interval_months=6.0,
+    )
+
+    assert 0.0 <= p_clear_hiv <= 1.0
+    assert p_clear_hiv <= p_clear_baseline
 
 
 @pytest.mark.slow
-def test_measles_cases_and_hsi_occurring(sim):
-    """ Run the measles module
-    check dtypes consistency
-    check infections occurring
-    check measles onset event scheduled
-    check symptoms assigned
-    check treatments occurring
-    """
+def test_hpv_simulation_runs_and_states_remain_consistent(sim):
 
-    end_date = Date(2011, 12, 31)
+    module = sim.modules["HPV"]
+
+    module.parameters["init_prev_hpv_hr1"] = 0.2
+    module.parameters["init_prev_hpv_hr2"] = 0.2
+    module.parameters["init_prev_hpv_hr3"] = 0.2
+
     popsize = 1000
+    end_date = Date(2011, 1, 1)
 
-    # set high transmission probability
-    sim.modules['Measles'].parameters['beta_baseline'] = 1.0
-
-    # set high death rate and change all symptom probabilities to 1
-    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
-    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 1.0 for k, v in cfr.items()}
-    sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
-
-    # Make the population
     sim.make_initial_population(n=popsize)
-
-    # check data types
     check_dtypes(sim)
+
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
+    assert_hpv_state_consistent(sim)
+
     df = sim.population.props
+    alive_15plus = df.is_alive & (df.age_years >= 15)
 
-    # check people getting measles
-    assert df['me_has_measles'].values.sum() > 0  # current cases of measles
+    any_hpv = get_any_hpv_infected(df)
+    total_prev = any_hpv.loc[alive_15plus].mean()
 
-    # check that everyone who is currently infected gets a measles onset or symptom resolve event
-    # they can have multiple symptom resolve events scheduled (by symptom onset and by treatment)
-    inf = df.loc[df.is_alive & df.me_has_measles].index.tolist()
-
-    for idx in inf:
-        events_for_this_person = sim.find_events_for_person(idx)
-        assert len(events_for_this_person) > 0
-        # assert measles event in event list for this person
-        assert "tlo.methods.measles" in str(events_for_this_person)
-        # find the first measles event
-        measles_event_date = [date for (date, event) in events_for_this_person if "tlo.methods.measles" in str(event)]
-        assert measles_event_date[0] >= df.loc[idx, "me_date_measles"]
-
-    # check symptoms assigned
-    # there is an incubation period, so infected people may not have rash immediately
-    # if on treatment for measles, must have rash for diagnosis
-    has_rash = sim.modules['SymptomManager'].who_has('rash')
-    current_measles_tx = df.index[df.is_alive & df.me_has_measles & df.me_on_treatment]
-    if current_measles_tx.any():
-        assert set(current_measles_tx) <= set(has_rash)
-
-    # check if any measles deaths occurred
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    assert 0.0 <= total_prev <= 1.0
 
 
 @pytest.mark.slow
-def test_measles_zero_death_rate(sim):
+def test_hpv_logging_columns_are_consistent(seed, tmp_path):
 
-    end_date = Date(2010, 12, 31)
-    popsize = 10_000
+    test_log_config = {
+        "filename": "hpv_test",
+        "directory": tmp_path,
+        "custom_levels": {
+            "*": logging.WARNING,
+            "tlo.methods.hpv": logging.INFO,
+        },
+    }
 
-    # set zero death rate
-    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
-    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
+    sim = make_sim(seed=seed, log_config=test_log_config)
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    df = sim.population.props
+    module = sim.modules["HPV"]
+    module.parameters["init_prev_hpv_hr1"] = 0.2
+    module.parameters["init_prev_hpv_hr2"] = 0.2
+    module.parameters["init_prev_hpv_hr3"] = 0.2
 
-    # no symptoms should equal no treatment (unless other rash has prompted incorrect tx: unlikely)
-    assert not (df.loc[df.is_alive, 'me_on_treatment']).all()
+    sim.make_initial_population(n=1000)
 
-    # check that there have been no deaths caused by measles
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        sim.simulate(end_date=Date(2012, 1, 1))
+
+    inconsistent_column_warnings = [
+        w for w in caught_warnings
+        if (
+            "InconsistentLoggedColumnsWarning" in w.category.__name__
+            or "Inconsistent columns in logged values" in str(w.message)
+        )
+    ]
+
+    assert len(inconsistent_column_warnings) == 0
+

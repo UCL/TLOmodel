@@ -135,22 +135,7 @@ hpv_df = pd.DataFrame(hpv_outputs)
 print(hpv_df)
 print(hpv_df.columns)
 
-
-# change Year / Month to Date
-hpv_df["Year"] = pd.to_numeric(hpv_df["Year"], errors="coerce")
-hpv_df["Month"] = pd.to_numeric(hpv_df["Month"], errors="coerce")
-
-hpv_df = hpv_df.dropna(subset=["Year", "Month"]).copy()
-hpv_df["Year"] = hpv_df["Year"].astype(int)
-hpv_df["Month"] = hpv_df["Month"].astype(int)
-
-hpv_df["Date"] = pd.to_datetime(
-    {
-        "year": hpv_df["Year"],
-        "month": hpv_df["Month"],
-        "day": 1,
-    }
-)
+hpv_df["Date"] = pd.to_datetime(hpv_df["date"])
 hpv_df = hpv_df.sort_values("Date").reset_index(drop=True)
 
 # 4. Helper functions
