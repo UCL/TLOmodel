@@ -321,7 +321,7 @@ class HealthSystem(Module):
             "Mode of HR scaling considered at the start of the simulation. This corresponds to the name"
             "of the worksheet in `ResourceFile_HR_scaling_by_year_and_officer_type.xlsx` that should be used. "
             "Options are: "
-            "`default` (capabilities are scaled by a factor of 1); "
+            "`no_historical_growth` (capabilities are scaled by a factor of 1); "
             "`historical_uniform` (factors across the cadres are the same, informated by the historical growth rate "
             "in total HRH);"
             "`historical_cadre_mix` (factors across the cadres are different, indicated by both the overall historical "
@@ -329,6 +329,11 @@ class HealthSystem(Module):
             "`custom` (user can freely set these factors as parameters in the analysis). "
             "Note that if use historical_ modes in this HRH scaling, use no_scaling mode in DynamicHRHScaling "
             "to avoid duplicates.",
+        ),
+        "HR_expansion_absorption_rate": Parameter(
+            Types.FLOAT,
+            "Rate at which HRH expansion is absorbed into the system, expressed as a fraction of the total HRH "
+            "expansion per year. A value of 1 meaning 100% of the expansion is absorbed each year.",
         ),
         "HR_scaling_by_district_table": Parameter(
             Types.DICT,
@@ -732,6 +737,8 @@ class HealthSystem(Module):
             f"{self.parameters['HR_scaling_by_year_and_officer_type_mode']}"
         )
 
+        self.parameters["HR_expansion_absorption_rate"] = 1
+
         self.parameters["HR_scaling_by_district_table"]: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
@@ -954,7 +961,7 @@ class HealthSystem(Module):
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
         # Schedule recurring event which will rescale daily capabilities annually.
-        sim.schedule_event(RescalingHRCapabilities_ByYearAndOfficer(self), Date(sim.date))
+        sim.schedule_event(RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(self), Date(sim.date))
 
         # Schedule the logger to occur at the start of every year
         sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
@@ -3025,7 +3032,7 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
                 ]
 
 
-class RescalingHRCapabilities_ByYearAndOfficer(Event, PopulationScopeEventMixin):
+class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationScopeEventMixin):
     """This event exists to scale the daily capabilities, with a factor for each Officer Type at each specified year."""
 
     def __init__(self, module):
@@ -3048,9 +3055,10 @@ class RescalingHRCapabilities_ByYearAndOfficer(Event, PopulationScopeEventMixin)
                 matches = re.match(pattern, officer)
                 # Extract officer type
                 officer_type = matches.group(2)
-                self.module._daily_capabilities[clinic][officer] *= HR_scaling_by_year_and_officer_type_factor.at[
+                # Update capabilities by scaling factor and absorption rate
+                self.module._daily_capabilities[clinic][officer] *= (HR_scaling_by_year_and_officer_type_factor.at[
                     officer_type, most_recent_year_for_scaling
-                ]
+                ] * self.module.parameters["HR_absorption_rate"])
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
