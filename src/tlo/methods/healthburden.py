@@ -44,6 +44,7 @@ class HealthBurden(Module):
         self._causes_of_yll = None
         self._causes_of_dalys = None
         self._years_written_to_log = []
+        self._yll_snapshot_for_monthly_log = None
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -101,6 +102,10 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
         self.years_life_lost_stacked_age_and_time_district = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
+        self._yll_snapshot_for_monthly_log = pd.Series(
+            0.0,
+            index=sim.modules['Demography'].PROPERTIES['district_of_residence'].categories
+        )
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
@@ -649,22 +654,52 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disability_monthly_summary = pd.DataFrame(
             disease_specific_daly_values_this_month.groupby(['sex', 'age_range', 'li_wealth', 'district_of_residence']).sum().fillna(0))
         # --- LIGHTWEIGHT MONTHLY LOG: total DALYs by district ---
-        monthly_dalys_by_district = (
+        yld_by_district_this_month = (
             disability_monthly_summary
+            .groupby(level='district_of_residence')
+            .sum()
+            .sum(axis=1)  # sum over causes
+        )
+
+        # YLL this month by district: compute delta from last snapshot
+        yll_df = self.module.years_life_lost_stacked_age_and_time
+        if not yll_df.empty and yll_df.shape[1] > 0:
+            yll_cumulative_by_district = (
+                yll_df.sum(axis=1)  # sum over causes
                 .groupby(level='district_of_residence')
                 .sum()
-                .sum(axis=1)  # sum over causes
-                .reset_index(name='dalys')
-                .assign(
-                    year=self.sim.date.year,
-                    month=self.sim.date.month,
-                )
+            )
+        else:
+            yll_cumulative_by_district = pd.Series(
+                0.0,
+                index=self.module._yll_snapshot_for_monthly_log.index
+            )
+
+        yll_by_district_this_month = (
+            yll_cumulative_by_district
+            .subtract(self.module._yll_snapshot_for_monthly_log, fill_value=0.0)
+            .clip(lower=0.0)  # guard against floating point drift
+        )
+        self.module._yll_snapshot_for_monthly_log = yll_cumulative_by_district
+
+        # Combine YLD + YLL
+        monthly_dalys_by_district = (
+            yld_by_district_this_month
+            .add(yll_by_district_this_month, fill_value=0.0)
+            .rename('dalys')
+            .reset_index()
+            .assign(
+                yld=yld_by_district_this_month.values,
+                yll=yll_by_district_this_month.values,
+                year=self.sim.date.year,
+                month=self.sim.date.month,
+            )
         )
         for _, row in monthly_dalys_by_district.iterrows():
             logger.info(
                 key='monthly_dalys_by_district',
                 data=row.to_dict(),
-                description='Total DALYs (YLD only) accrued in the previous month, by district'
+                description='Total DALYs (YLD + YLL) accrued in the previous month, by district'
             )
 
         # - add the year into the multi-index
