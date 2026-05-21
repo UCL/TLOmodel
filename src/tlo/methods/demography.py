@@ -460,7 +460,12 @@ class Demography(Module):
             'region_of_residence': _region_of_residence,
             'age_exact_years': 0.0,
             'age_years': 0,
-            'age_range': self.AGE_RANGE_LOOKUP[0]
+            'age_range': self.AGE_RANGE_LOOKUP[0],
+            'level_0': _level_0,
+            'level_1a': _level_1a,
+            'level_1b': _level_1b,
+            'level_2': _level_2,
+            'level_3': _level_3,
         }
         df.loc[child_id, child.keys()] = child.values()
 
