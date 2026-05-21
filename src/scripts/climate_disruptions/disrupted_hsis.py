@@ -369,7 +369,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
         delayed_all = _concat_years(all_years_delayed_dfs) * SCALING_FACTOR
         cancelled_all = _concat_years(all_years_cancelled_dfs) * SCALING_FACTOR
-        total_all = total_all[valid.values]
+        total_all = total_all[valid]
         delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
         cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
         disrupted_persons_all = (
