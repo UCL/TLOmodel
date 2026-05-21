@@ -33,7 +33,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     mode_2 = False
     climate_analysis = False
     prop_supply_demand = False
-    wet_season = True
+    wet_season = False
 
     SCALING_FACTOR = 145.39
     CI_LOWER = 0.025
