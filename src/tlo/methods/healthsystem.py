@@ -331,7 +331,7 @@ class HealthSystem(Module):
             "to avoid duplicates.",
         ),
         "HR_expansion_absorption_rate": Parameter(
-            Types.FLOAT,
+            Types.REAL,
             "Rate at which HRH expansion is absorbed into the system, expressed as a fraction of the total HRH "
             "expansion per year. A value of 1 meaning 100% of the expansion is absorbed each year.",
         ),
@@ -736,8 +736,6 @@ class HealthSystem(Module):
             f"Value of `HR_scaling_by_year_and_officer_type_mode` not recognised: "
             f"{self.parameters['HR_scaling_by_year_and_officer_type_mode']}"
         )
-
-        self.parameters["HR_expansion_absorption_rate"] = 1
 
         self.parameters["HR_scaling_by_district_table"]: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem
