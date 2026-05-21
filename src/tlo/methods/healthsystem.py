@@ -326,7 +326,9 @@ class HealthSystem(Module):
             "in total HRH);"
             "`historical_cadre_mix` (factors across the cadres are different, indicated by both the overall historical "
             "increase rate and the gap_allocation HRH expansion scenario by She et al 2026); and,"
-            "`custom` (user can freely set these factors as parameters in the analysis).",
+            "`custom` (user can freely set these factors as parameters in the analysis). "
+            "Note that if use historical_ modes in this HRH scaling, use no_scaling mode in DynamicHRHScaling "
+            "to avoid duplicates.",
         ),
         "HR_scaling_by_district_table": Parameter(
             Types.DICT,
