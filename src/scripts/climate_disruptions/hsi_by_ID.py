@@ -51,7 +51,7 @@ SCENARIO_COLOURS = [
     "#8282C8",
 ]
 
-MAX_CHARS = 25
+MAX_CHARS = 15
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -161,9 +161,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     mode_2 = False
     climate_analysis = False
     prop_supply_demand = False
-    wet_season = False
+    wet_season = True
 
-    top_n_volume = 15  # HSI types shown in Panel A
+    top_n_volume = 10  # HSI types shown in Panel A
     top_n_disruption = 10  # HSI types shown in Panel B
 
     # Which scenario to display in Panel B — must match a scenario_names entry.
@@ -270,7 +270,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         total_all = _concat_years(
             [raw_total[yr][draw].fillna(0) for yr in target_year_sequence]
         ) * SCALING_FACTOR
-
+        valid_fac = total_all.index.astype(str).str.split(":", n=2).str[1] != "nan"
+        total_all = total_all[valid_fac]
         # wet season filter applied before everything else
         if wet_season:
             total_all = total_all[_wet_season_mask(total_all)]
@@ -429,52 +430,65 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     n_b = len(top_disrupted_types_plot)
     fig_h = max(9, max(n_a * n_scen * bar_h_a * 1.8, n_b * bar_h_b * 2.2))
 
-    fig, (ax_a, ax_b) = plt.subplots(
-        1, 2,
-        figsize=(22, fig_h),
-        gridspec_kw={"width_ratios": [1.15, 1]},
+    fig, (ax_b, ax_c, ax_a) = plt.subplots(  # actually want a at end for flow
+        1, 3,
+        figsize=(33, fig_h),
+        gridspec_kw={"width_ratios": [1.15, 1, 1]},
     )
 
     # ── Panel A: total HSI volume by type ─────────────────────────────────────
+    ref_volume_full = all_draws_volume_mean[ref_idx]  # No Disruptions mean
+
     y_centers = np.arange(n_a, dtype=float)
 
-    for scen_idx, draw in enumerate(scenarios_of_interest):
-        col = SCENARIO_COLOURS[scen_idx % len(SCENARIO_COLOURS)]
+    # Collect non-baseline scenarios only
+    comparison_draws = [
+        (scen_idx, draw)
+        for scen_idx, draw in enumerate(scenarios_of_interest)
+        if scenario_names[draw] != "No Disruptions"
+    ]
+    n_comp = len(comparison_draws)
+    bar_h_a = min(0.7, 0.75 / n_comp)
+
+    for plot_i, (scen_idx, draw) in enumerate(comparison_draws):
+        col = SCENARIO_COLOURS[(scen_idx) % len(SCENARIO_COLOURS)]
         vm = all_draws_volume_mean[scen_idx]
         vl = all_draws_volume_lower[scen_idx]
         vu = all_draws_volume_upper[scen_idx]
 
-        means = np.array([vm.get(h, 0) for h in top_volume_types_plot])
-        lowers = np.array([vl.get(h, 0) for h in top_volume_types_plot])
-        uppers = np.array([vu.get(h, 0) for h in top_volume_types_plot])
+        ref = ref_volume_full.reindex(top_volume_types_plot).replace(0, np.nan)
 
-        # offset so bars within each group are stacked neatly
-        offset = (scen_idx - (n_scen - 1) / 2.0) * bar_h_a
+        pct_mean = ((vm.reindex(top_volume_types_plot) - ref) / ref * 100).fillna(0).values
+        pct_lower = ((vl.reindex(top_volume_types_plot) - ref) / ref * 100).fillna(0).values
+        pct_upper = ((vu.reindex(top_volume_types_plot) - ref) / ref * 100).fillna(0).values
+
+        offset = (plot_i - (n_comp - 1) / 2.0) * bar_h_a
         y_pos = y_centers + offset
 
         ax_a.barh(
-            y_pos, means,
+            y_pos, pct_mean,
             height=bar_h_a * 0.9,
             color=col, alpha=0.85,
             label=scenario_names[draw],
         )
         ax_a.errorbar(
-            means, y_pos,
-            xerr=[means - lowers, uppers - means],
+            pct_mean, y_pos,
+            xerr=[pct_mean - pct_lower, pct_upper - pct_mean],
             fmt="none", color="black", lw=0.8, capsize=2, alpha=0.5,
         )
 
+    ax_a.axvline(0, color="black", linewidth=0.9, linestyle="--", alpha=0.7)
     ax_a.set_yticks(y_centers)
     ax_a.set_yticklabels(_wrap_labels(top_volume_types_plot), fontsize=FS_TICK)
-    ax_a.set_xlabel("Total HSIs (mean across runs)", fontsize=FS_LABEL, fontweight="bold")
+    ax_a.set_xlabel(
+        '% difference in total HSIs vs "No Disruptions"',
+        fontsize=FS_LABEL, fontweight="bold",
+    )
     ax_a.set_title(
-        f"(A) Total HSIs by treatment type\n({period_label})",
+        f"(C) Change in HSI volume by treatment type\nvs baseline ({period_label})",
         fontsize=FS_TITLE, fontweight="bold",
     )
-    ax_a.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=True)
-    ax_a.xaxis.get_offset_text().set_fontsize(FS_TICK)
     plt.setp(ax_a.xaxis.get_majorticklabels(), fontsize=FS_TICK)
-    ax_a.set_xlim(left=0)
     ax_a.legend(
         title="Scenario", fontsize=FS_LEGEND, title_fontsize=FS_LEGEND,
         loc="lower right", framealpha=0.9,
@@ -512,7 +526,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     ax_b.set_yticklabels(_wrap_labels(top_disrupted_types_plot), fontsize=FS_TICK)
     ax_b.set_xlabel("% of HSIs disrupted", fontsize=FS_LABEL, fontweight="bold")
     ax_b.set_title(
-        f"(B) Weather-disrupted HSIs by type\n"
+        f"(A) Weather-disrupted HSIs by type\n"
         f"{disruption_panel_scenario} — top {top_n_disruption} ({period_label})",
         fontsize=FS_TITLE, fontweight="bold",
     )
@@ -522,6 +536,57 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     ax_b.spines["top"].set_visible(False)
     ax_b.spines["right"].set_visible(False)
     ax_b.grid(axis="x", color="lightgrey", linewidth=0.5, zorder=0)
+
+    # PANEL C: Least disrupted
+
+    # ── Panel C: least disrupted ──────────────────────────────────────────────
+    bottom_disrupted_types = (
+        total_rate_b[total_rate_b > 0]
+        .sort_values(ascending=True)
+        .head(top_n_disruption)
+        .index.tolist()
+    )
+    bottom_disrupted_types_plot = list(reversed(bottom_disrupted_types))
+    n_c = len(bottom_disrupted_types_plot)
+
+    hd_m_c_plot = hd_m_b.reindex(bottom_disrupted_types_plot, fill_value=0)
+    hd_l_c_plot = hd_l_b.reindex(bottom_disrupted_types_plot, fill_value=0)
+    hd_u_c_plot = hd_u_b.reindex(bottom_disrupted_types_plot, fill_value=0)
+    hc_m_c_plot = hc_m_b.reindex(bottom_disrupted_types_plot, fill_value=0)
+    hc_l_c_plot = hc_l_b.reindex(bottom_disrupted_types_plot, fill_value=0)
+    hc_u_c_plot = hc_u_b.reindex(bottom_disrupted_types_plot, fill_value=0)
+
+    y_c = np.arange(n_c, dtype=float)
+    delayed_vals_c = hd_m_c_plot.values * 100
+    cancelled_vals_c = hc_m_c_plot.values * 100
+    total_vals_c = delayed_vals_c + cancelled_vals_c
+    total_lo_c = (hd_l_c_plot + hc_l_c_plot).values * 100
+    total_hi_c = (hd_u_c_plot + hc_u_c_plot).values * 100
+
+    ax_c.barh(y_c, delayed_vals_c, height=bar_h_b,
+              color=COLOUR_DELAYED, alpha=0.75, label="Delayed")
+    ax_c.barh(y_c, cancelled_vals_c, height=bar_h_b, left=delayed_vals_c,
+              color=COLOUR_CANCELLED, alpha=0.75, label="Cancelled")
+    ax_c.errorbar(
+        total_vals_c, y_c,
+        xerr=[total_vals_c - total_lo_c, total_hi_c - total_vals_c],
+        fmt="none", color="black", lw=1.0, capsize=2, alpha=0.6,
+    )
+
+    ax_c.set_yticks(y_c)
+    ax_c.set_yticklabels(_wrap_labels(bottom_disrupted_types_plot), fontsize=FS_TICK)
+    ax_c.set_xlabel("% of HSIs disrupted", fontsize=FS_LABEL, fontweight="bold")
+    ax_c.set_title(
+        f"(B) Least weather-disrupted HSIs by type\n"
+        f"{disruption_panel_scenario} — bottom {top_n_disruption} ({period_label})",
+        fontsize=FS_TITLE, fontweight="bold",
+    )
+    plt.setp(ax_c.xaxis.get_majorticklabels(), fontsize=FS_TICK)
+    ax_c.set_xlim(left=0)
+    ax_c.legend(fontsize=FS_LEGEND, loc="lower right", framealpha=0.9)
+    ax_c.spines["top"].set_visible(False)
+    ax_c.spines["right"].set_visible(False)
+    ax_c.grid(axis="x", color="lightgrey", linewidth=0.5, zorder=0)
 
     fig.tight_layout()
     png_path = output_folder / f"hsi_volume_and_disruption_by_type_{suffix}.png"
