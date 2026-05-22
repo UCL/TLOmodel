@@ -3060,7 +3060,8 @@ class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationSco
                 sf = HR_scaling_by_year_and_officer_type_factor.at[
                     officer_type, most_recent_year_for_scaling
                 ]
-                sf_ar_adjusted = 1 + (sf-1) * self.module.parameters["HR_expansion_absorption_rate"]
+                ar = self.module.parameters["HR_expansion_absorption_rate"] if sf >= 1 else 1
+                sf_ar_adjusted = 1 + (sf-1) * ar
                 self.module._daily_capabilities[clinic][officer] *= sf_ar_adjusted
 
 
