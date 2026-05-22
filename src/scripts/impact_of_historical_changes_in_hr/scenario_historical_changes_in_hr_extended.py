@@ -1,8 +1,13 @@
-"""This Scenario file run the model under different assumptions for the historical changes in Human Resources for Health
+"""This Scenario file runs the model under different assumptions for the historical changes in Human Resources for Health
 
 Run on the batch system using:
 ```
 tlo batch-submit src/scripts/impact_of_historical_changes_in_hr/scenario_historical_changes_in_hr_extended.py
+```
+
+Or locally using:
+```
+tlo run src/scripts/impact_of_historical_changes_in_hr/scenario_historical_changes_in_hr_extended.py
 ```
 
 """
@@ -23,10 +28,10 @@ class HistoricalChangesInHRH(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
-        self.pop_size = 100_000
+        self.pop_size = 50
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -36,8 +41,8 @@ class HistoricalChangesInHRH(BaseScenario):
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.WARNING,
+                # 'tlo.methods.healthburden': logging.INFO,
+                # 'tlo.methods.healthsystem': logging.WARNING,
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
@@ -166,7 +171,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     "HR_scaling_by_year_and_officer_type_mode": 'no_historical_growth',
 
                     # Clarify the HRH expansion absorption rate
-                    "HR_absorption_rate": 1,
+                    "HR_expansion_absorption_rate": 1.0,
 
                 },
                 # -- *For the alternative scenario of increased demand and improved clinician performance* --
