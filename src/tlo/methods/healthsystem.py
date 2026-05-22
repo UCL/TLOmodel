@@ -3057,9 +3057,11 @@ class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationSco
                 # Extract officer type
                 officer_type = matches.group(2)
                 # Update capabilities by scaling factor and absorption rate
-                self.module._daily_capabilities[clinic][officer] *= (HR_scaling_by_year_and_officer_type_factor.at[
+                sf = HR_scaling_by_year_and_officer_type_factor.at[
                     officer_type, most_recent_year_for_scaling
-                ] * self.module.parameters["HR_expansion_absorption_rate"])
+                ]
+                sf_ar_adjusted = 1 + (sf-1) * self.module.parameters["HR_expansion_absorption_rate"]
+                self.module._daily_capabilities[clinic][officer] *= sf_ar_adjusted
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
