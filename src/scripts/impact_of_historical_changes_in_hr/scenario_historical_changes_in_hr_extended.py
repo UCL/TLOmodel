@@ -7,7 +7,9 @@ tlo batch-submit src/scripts/impact_of_historical_changes_in_hr/scenario_histori
 
 Or locally using:
 ```
-tlo run src/scripts/impact_of_historical_changes_in_hr/scenario_historical_changes_in_hr_extended.py
+
+tlo scenario-run src/scripts/impact_of_historical_changes_in_hr/scenario_historical_changes_in_hr_extended.py
+
 ```
 
 """
@@ -27,8 +29,8 @@ class HistoricalChangesInHRH(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
-        self.pop_size = 50
+        self.end_date = Date(2026, 1, 2)  # <-- End at the end of year 2030
+        self.pop_size = 30
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
@@ -129,7 +131,6 @@ class HistoricalChangesInHRH(BaseScenario):
                 {
                     'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                         'max_healthsystem_function': [False, True],
-                        'year_of_switch': 2020,
                     }
                 }
             ),
