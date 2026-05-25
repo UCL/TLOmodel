@@ -3030,24 +3030,28 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
                 ]
 
 
-class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationScopeEventMixin):
+class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(RegularEvent, PopulationScopeEventMixin):
     """This event exists to scale the daily capabilities, with a factor for each Officer Type at each specified year."""
 
     def __init__(self, module):
-        super().__init__(module)
+        # set the frequency
+        super().__init__(module, frequency=DateOffset(years=1))
 
-    def apply(self, population):
         # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
         # assumption
-        HR_scaling_by_year_and_officer_type_factor = self.module.parameters[
+        self.HR_scaling_by_year_and_officer_type_factor = self.module.parameters[
             "HR_scaling_by_year_and_officer_type_table"
         ][self.module.parameters["HR_scaling_by_year_and_officer_type_mode"]].set_index("Officer_Category")
 
-        HR_scaling_by_year_and_officer_type_factor.columns = (
-            HR_scaling_by_year_and_officer_type_factor.columns.astype(int)
+        self.HR_scaling_by_year_and_officer_type_factor.columns = (
+            self.HR_scaling_by_year_and_officer_type_factor.columns.astype(int)
         )
-        years_for_scaling = np.array(HR_scaling_by_year_and_officer_type_factor.columns)
-        most_recent_year_for_scaling = years_for_scaling[years_for_scaling <= self.sim.date.year].max()
+
+        self.years_for_scaling = np.array(self.HR_scaling_by_year_and_officer_type_factor.columns)
+
+    def apply(self, population):
+
+        most_recent_year_for_scaling = self.years_for_scaling[self.years_for_scaling <= self.sim.date.year].max()
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
@@ -3057,7 +3061,7 @@ class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(Event, PopulationSco
                 # Extract officer type
                 officer_type = matches.group(2)
                 # Update capabilities by scaling factor and absorption rate
-                sf = HR_scaling_by_year_and_officer_type_factor.at[
+                sf = self.HR_scaling_by_year_and_officer_type_factor.at[
                     officer_type, most_recent_year_for_scaling
                 ]
                 ar = self.module.parameters["HR_expansion_absorption_rate"] if sf >= 1 else 1
