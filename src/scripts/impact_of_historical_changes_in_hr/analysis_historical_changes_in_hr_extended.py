@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from scripts.impact_of_historical_changes_in_hr.scenario_historical_changes_in_hr import (
+from scripts.impact_of_historical_changes_in_hr.scenario_historical_changes_in_hr_extended import (
     HistoricalChangesInHRH,
 )
 from tlo import Date
@@ -21,7 +21,7 @@ from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, the_target_period: Tuple[Date, Date] = None):
 
     TARGET_PERIOD = the_target_period
-    hrh_check_period = (Date(2020, 1, 1), Date(2030, 12, 31))
+    hrh_check_period = (Date(2019, 1, 1), Date(2030, 12, 31))
 
     def target_period() -> str:
         """Returns the target period as a string of the form YYYY-YYYY"""
@@ -86,43 +86,100 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=['date', 'year', 'age_range', 'sex']) \
             .sum(axis=0)
 
-    # todo: to get HRH counts by cadre group and year
     def get_staff_counts(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
-        _df_staff = (
-            pd.Series(_df.GenericClinic[0], name="staff_count")
-            .rename_axis("facility_officer")
-            .reset_index()
+        _df['year'] = _df['date'].dt.year
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*hrh_check_period), ['year', 'GenericClinic']
+                      ].set_index('year').rename(columns={'GenericClinic': 'facility_officer'})
+        _df_staff = _df['facility_officer'].apply(pd.Series).stack().reset_index()
+        _df_staff.columns = ['year', 'facility_officer', 'staff_count']
+        _df_staff[['facility_id', 'officer_type']] = _df_staff['facility_officer'].str.extract(
+            r'FacilityID_(\d+)_Officer_(.*)'
         )
+        _df_staff['facility_id'] = _df_staff['facility_id'].astype(int)
 
-        _df_staff[["facility_id", "officer_type"]] = _df_staff["facility_officer"].str.extract(
-            r"FacilityID_(\d+)_Officer_(.*)"
-        )
+        main_cadres = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA']
+        _df_staff.loc[
+            ~_df_staff["officer_type"].isin(main_cadres),
+            "officer_type"
+        ] = "Other"
 
-        _df_staff["facility_id"] = _df_staff["facility_id"].astype(int)
-
-        _df_staff = _df_staff[["facility_id", "officer_type", "staff_count"]]
-
-        _df_staff = _df_staff.loc[_df_staff.officer_type != 'DCSA']
-
-        _df_staff = pd.Series(_df_staff.staff_count.sum())
-
-        _df_staff.index = [pd.to_datetime(_df["date"].iloc[0])]
-        _df_staff.name = 'yearly_staff_count'
-
+        _df_staff = _df_staff.groupby(['year', 'officer_type'])['staff_count'].sum()
         return _df_staff
 
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
     # HRH staff counts
-    hcw_count = extract_results(
+    hcw_count = (extract_results(
         results_folder,
         module="tlo.methods.healthsystem.summary",
         key="number_of_hcw_staff",
         custom_generate_series=get_staff_counts,
         do_scaling=False
+    )).pipe(set_param_names_as_column_index_level_0)
+    hcw_count.columns = hcw_count.columns.get_level_values(0)
+
+    hcw_count = (
+        hcw_count.stack()
+        .reset_index(name='value')
+        .rename(columns={'draw': 'scenario'})
     )
+
+    hcw_count = hcw_count.sort_values(['officer_type', 'scenario', 'year'])
+
+    hcw_count['scale_factor'] = (
+        hcw_count['value'] /
+        hcw_count.groupby(['officer_type', 'scenario'])['value'].shift(1)
+    )
+
+    # marker for each officer type
+    markers = {
+        'Clinical': 'o',
+        'Nursing_and_Midwifery': 's',
+        'Pharmacy': '^',
+        'DCSA': 'D',
+        'Other': 'X',
+    }
+
+    # color for each scenario
+    cmap = plt.cm.get_cmap('tab10', len(param_names))
+    colors = {
+        scenario: cmap(i)
+        for i, scenario in enumerate(param_names)
+    }
+
+    fig, ax = plt.subplots()
+
+    for officer in hcw_count['officer_type'].unique():
+        for scenario in hcw_count['scenario'].unique():
+            subset = hcw_count[
+                (hcw_count['officer_type'] == officer) &
+                (hcw_count['scenario'] == scenario)
+                ]
+
+            ax.plot(
+                subset['year'],
+                subset['value'],
+                linestyle="--",
+                marker=markers[officer],
+                color=colors[scenario],
+                label=f'{officer} - {scenario}',
+            )
+
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Number of staff')
+    ax.set_xticks(sorted(hcw_count['year'].unique()))
+
+    ax.legend(
+        loc='center left',
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8
+    )
+
+    plt.tight_layout()
+
+    plt.show()
+
 
     # Absolute Number of Deaths and DALYs
     num_deaths = extract_results(
