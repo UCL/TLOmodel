@@ -29,8 +29,8 @@ from tlo.analysis.utils import extract_results
 #  CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-N_DRAWS = 20
-MIN_YEAR = 2039
+N_DRAWS = 200
+MIN_YEAR = 2025
 MAX_YEAR = 2041  # exclusive, so runs 2025–2040 inclusive
 SCALING_FACTOR = 145.39
 CI_LOWER = 0.025
