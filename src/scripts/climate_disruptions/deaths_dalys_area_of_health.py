@@ -293,6 +293,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                       else SCENARIO_COLOURS_PALETTE[named_scenarios.index(scen) % len(SCENARIO_COLOURS_PALETTE)])
             offset = offsets_diff[scen]
             ref_means = df_dalys_all_draws_mean_1000[ref_scen]
+            ref_lowers = df_dalys_all_draws_lower_1000[ref_scen]  # ADD THIS
+            ref_uppers = df_dalys_all_draws_upper_1000[ref_scen]  # ADD THIS
             cmp_means = df_dalys_all_draws_mean_1000[scen]
             cmp_lowers = df_dalys_all_draws_lower_1000[scen]
             cmp_uppers = df_dalys_all_draws_upper_1000[scen]
@@ -300,8 +302,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             xerr = np.array([np.clip(cmp_means.values - cmp_lowers.values, 0, None),
                              np.clip(cmp_uppers.values - cmp_means.values, 0, None)])
 
-            diff_lower = diffs - xerr[0]
-            diff_upper = diffs + xerr[1]
+            diff_lower = diffs - np.sqrt(
+                (cmp_means - cmp_lowers) ** 2 + (ref_uppers - ref_means) ** 2
+            )
+            diff_upper = diffs + np.sqrt(
+                (cmp_uppers - cmp_means) ** 2 + (ref_means - ref_lowers) ** 2
+            )
             significant = ~((diff_lower <= 0) & (diff_upper >= 0))
 
             ax_b.errorbar(diffs.values, y_base + offset, xerr=xerr,
@@ -406,13 +412,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for scen in non_ref:
             colour = (MAIN_TEXT_COLOURS.get(scen, "#888888") if main_text
                       else SCENARIO_COLOURS_PALETTE[named_scenarios.index(scen) % len(SCENARIO_COLOURS_PALETTE)])
-            diffs = df_dist_mean[scen] - df_dist_mean[ref_scen]
-            xerr = np.array([np.clip(df_dist_mean[scen].values - df_dist_lower[scen].values, 0, None),
-                             np.clip(df_dist_upper[scen].values - df_dist_mean[scen].values, 0, None)])
             offset = offsets_dist_diff[scen]
 
-            diff_lower = diffs.values - xerr[0]
-            diff_upper = diffs.values + xerr[1]
+            ref_means_d = df_dist_mean[ref_scen]
+            ref_lowers_d = df_dist_lower[ref_scen]
+            ref_uppers_d = df_dist_upper[ref_scen]
+            cmp_means_d = df_dist_mean[scen]
+            cmp_lowers_d = df_dist_lower[scen]
+            cmp_uppers_d = df_dist_upper[scen]
+
+            diffs = cmp_means_d - ref_means_d
+            xerr = np.array([np.clip(cmp_means_d.values - cmp_lowers_d.values, 0, None),
+                             np.clip(cmp_uppers_d.values - cmp_means_d.values, 0, None)])
+
+            diff_lower = diffs - np.sqrt(
+                (cmp_means_d - cmp_lowers_d) ** 2 + (ref_uppers_d - ref_means_d) ** 2
+            )
+            diff_upper = diffs + np.sqrt(
+                (cmp_uppers_d - cmp_means_d) ** 2 + (ref_means_d - ref_lowers_d) ** 2
+            )
             significant = ~((diff_lower <= 0) & (diff_upper >= 0))
 
             ax_d.errorbar(diffs.values, y_dist + offset, xerr=xerr,

@@ -25,13 +25,13 @@ FS_SUPTITLE = 14
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     min_year = 2025
-    max_year = 2041
+    max_year = 2027
     spacing_of_years = 1
 
-    main_text = True
+    main_text = False
     parameter_uncertainty_analysis = False
     mode_2 = False
-    climate_analysis = False
+    climate_analysis = True
     prop_supply_demand = False
     wet_season = False
 

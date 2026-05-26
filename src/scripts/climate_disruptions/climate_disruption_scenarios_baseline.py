@@ -59,7 +59,7 @@ full_grid = [baseline_params, best_case_params, worst_case_params]
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0
+        self.seed = 1
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2041, 1, 1)
         self.pop_size = 100_000
