@@ -21,34 +21,22 @@ from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, the_target_period: Tuple[Date, Date] = None):
 
     TARGET_PERIOD = the_target_period
-    hrh_check_period = (Date(2019, 1, 1), Date(2030, 12, 31))
-
-    def target_period() -> str:
-        """Returns the target period as a string of the form YYYY-YYYY"""
-        return "-".join(str(t.year) for t in TARGET_PERIOD)
+    hrh_check_period = (Date(2018, 1, 1), Date(2026, 1, 1))
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
         e = HistoricalChangesInHRH()
         return tuple(e._scenarios.keys())
 
-    def get_num_deaths(_df):
+    def get_num_deaths_by_year_cause(_df):
         """Return total number of Deaths (total within the TARGET_PERIOD)"""
-        return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
+        _df['year'] = _df['date'].dt.year
+        _df = _df.groupby(['year', 'cause']) \
+            .agg({'person_id': 'count'}) \
+            .rename(columns={'person_id': 'num_deaths'})['num_deaths']
 
-    def get_num_dalys(_df):
-        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
-        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
-        results from runs that crashed mid-way through the simulation.
-        """
-        years_needed = [i.year for i in TARGET_PERIOD]
-        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
-        return pd.Series(
-            data=_df
-            .loc[_df.year.between(*years_needed)]
-            .drop(columns=['date', 'sex', 'age_range', 'year'])
-            .sum().sum()
-        )
+        return _df
 
     def set_param_names_as_column_index_level_0(_df):
         """Set the columns index (level 0) as the param_names."""
@@ -58,33 +46,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
         return _df
 
-    def get_total_num_dalys_by_label_htm(_df):
-        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
-        y = _df \
-            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-            .drop(columns=['date', 'year', 'sex', 'age_range']) \
-            .sum(axis=0)
-
-        # define course cause mapper for HIV, TB, MALARIA and OTHER
-        causes = {
-            'AIDS': 'HIV/AIDS',
-            'TB (non-AIDS)': 'TB',
-            'Malaria': 'Malaria',
-            'Lower respiratory infections': 'Lower respiratory infections',
-            'Neonatal Disorders': 'Neonatal Disorders',
-            'Maternal Disorders': 'Maternal Disorders',
-            '': 'Other',  # defined in order to use this dict to determine ordering of the causes in output
-        }
-        causes_relabels = y.index.map(causes).fillna('Other')
-
-        return y.groupby(by=causes_relabels).sum()[list(causes.values())]
-
     def get_total_num_dalys_by_label_all_causes(_df):
         """Return the total number of DALYS in the TARGET_PERIOD cause label."""
-        return _df \
+        _df = _df \
             .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-            .drop(columns=['date', 'year', 'age_range', 'sex']) \
-            .sum(axis=0)
+            .drop(columns=['date', 'age_range', 'sex']) \
+            .groupby('year') \
+            .sum() \
+            .reset_index() \
+            .melt(id_vars='year', var_name='cause', value_name='dalys') \
+            .set_index(['year', 'cause'])['dalys']
+
+        return _df
 
     def get_staff_counts(_df):
         _df['year'] = _df['date'].dt.year
@@ -135,9 +108,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # marker for each officer type
     markers = {
         'Clinical': 'o',
-        'Nursing_and_Midwifery': 's',
+        'Nursing_and_Midwifery': '*',
         'Pharmacy': '^',
-        'DCSA': 'D',
+        'DCSA': 'd',
         'Other': 'X',
     }
 
@@ -148,7 +121,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for i, scenario in enumerate(param_names)
     }
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 5))
 
     for officer in hcw_count['officer_type'].unique():
         for scenario in hcw_count['scenario'].unique():
@@ -180,44 +153,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     plt.show()
 
-
     # Absolute Number of Deaths and DALYs
-    num_deaths = extract_results(
+    num_deaths_by_year_cause = extract_results(
         results_folder,
         module='tlo.methods.demography',
         key='death',
-        custom_generate_series=get_num_deaths,
+        custom_generate_series=get_num_deaths_by_year_cause,
         do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0).stack(['draw', 'run']).reset_index(name='num_deaths')
 
-    num_dalys = extract_results(
-        results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
-        custom_generate_series=get_num_dalys,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
-
-    # %% Total numbers of deaths / DALYS
-    num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
-
-    # Results by disease (HTM/OTHER and split by age/sex)
-    total_num_dalys_by_label_results = extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked_by_age_and_time",
-        custom_generate_series=get_total_num_dalys_by_label_htm,
-        do_scaling=True,
-    ).pipe(set_param_names_as_column_index_level_0)
-
-    total_num_dalys_by_label_results_all_causes = extract_results(
+    num_dalys_by_year_cause = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
         key="dalys_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_label_all_causes,
         do_scaling=True,
-    ).pipe(set_param_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0).stack(['draw', 'run']).reset_index(name='num_dalys')
+
+    num_dalys_by_year_cause.to_csv(output_folder / 'num_dalys_by_year_cause (for Izzy).csv', index=False)
+    num_deaths_by_year_cause.to_csv(output_folder / 'num_deaths_by_year_cause (for Izzy).csv', index=False)
 
 
 if __name__ == "__main__":
@@ -225,17 +179,17 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
     args = parser.parse_args()
 
-    # Produce results for short-term analysis - 2020 - 2024 (incl.)
-    apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder,
-        resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
-    )
+    # # Produce results for short-term analysis - 2020 - 2024 (incl.)
+    # apply(
+    #     results_folder=args.results_folder,
+    #     output_folder=args.results_folder,
+    #     resourcefilepath=Path('./resources'),
+    #     the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
+    # )
     # Produce results for only later period 2025-2030 (incl.)
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2025, 1, 1), Date(2030, 12, 31))
+        the_target_period=(Date(2020, 1, 1), Date(2030, 12, 31))
     )
