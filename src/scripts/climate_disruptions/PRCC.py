@@ -1,10 +1,8 @@
 """
 PRCC Sensitivity Analysis Script
-Produces publication-ready PRCC figure for the climate disruption sensitivity analysis.
-
 Outputs:
-- (A/C/E) PRCC for Total DALYs, Prop. delayed, Prop. cancelled
-- (B/D/F) α vs β scatter coloured by each outcome
+- (A/B/C) PRCC for Total DALYs, Prop. delayed, Prop. cancelled
+- (D/E/F) α vs β scatter coloured by each outcome
 """
 
 import argparse
@@ -117,7 +115,6 @@ def calculate_prcc(params_df: pd.DataFrame, outcome_series: pd.Series) -> pd.Dat
 
 
 def plot_prcc_horizontal_bars(prcc_results, outcome_name, ax, show_ylabel=True):
-    """Publication-quality horizontal PRCC bar plot."""
     df = prcc_results.copy()
     df["abs_prcc"] = df["prcc"].abs()
     df = df.sort_values("abs_prcc", ascending=True).reset_index(drop=True)
@@ -157,7 +154,7 @@ def load_outputs_from_results(results_folder: Path) -> dict:
     disruption_file = results_folder / "prcc_disruption_summary.csv"
     if not disruption_file.exists():
         raise FileNotFoundError(
-            f"Run comparison_actual_vs_expected_disruption_realfacility.py first:\n  {disruption_file}"
+            f"Run prcc_data_from_param_draw.py first:\n  {disruption_file}"
         )
     disruption_df = pd.read_csv(disruption_file).set_index("draw")
 
@@ -221,8 +218,8 @@ def load_wet_season_outputs(results_folder: Path) -> dict:
 def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""):
     """
     2-row × 3-column figure.
-    Top row    : PRCC tornado bars   (A, C, E)
-    Bottom row : α vs β scatter      (B, D, F)
+    Top row    : PRCC tornado bars   (A, B, C)
+    Bottom row : α vs β scatter      (D, E, F)
     """
     outcome_items = [
         ("total_dalys", "Total DALYs"),
@@ -283,7 +280,7 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
             Patch(facecolor=COLOUR_NS, label="Non-significant"),
         ]
         fig.legend(handles=legend_elements, loc="lower center",
-                   bbox_to_anchor=(0.5, 0.005), ncol=3, fontsize=6.5,
+                   bbox_to_anchor=(0.5, 2.005), ncol=3, fontsize=6.5,
                    frameon=True, edgecolor="0.7", fancybox=False)
 
     return fig
