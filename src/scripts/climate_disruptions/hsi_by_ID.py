@@ -161,7 +161,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     mode_2 = False
     climate_analysis = False
     prop_supply_demand = False
-    wet_season = True
+    wet_season = False
 
     top_n_volume = 10  # HSI types shown in Panel A
     top_n_disruption = 10  # HSI types shown in Panel B
@@ -316,54 +316,73 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     # ── select HSI types for each panel ──────────────────────────────────────
 
     # Panel A reference: No Disruptions volume (or first scenario if absent)
-    ref_idx = next(
-        (i for i, d in enumerate(scenarios_of_interest)
-         if scenario_names[d] == "No Disruptions"),
-        0,
-    )
-    ref_volume = all_draws_volume_mean[ref_idx]
-    ref_volume = ref_volume[ref_volume.index.astype(str) != "nan"]
-    # sorted descending; reversed so highest ends up at top of the horizontal chart
-    top_volume_types = (
-        ref_volume[ref_volume > 0]
-        .sort_values(ascending=False)
-        .head(top_n_volume)
-        .index.tolist()
-    )
-    top_volume_types_plot = list(reversed(top_volume_types))  # lowest at y=0, highest at y=N-1
+        # Use the worst-case (or default) scenario's % difference to rank
+        # ── select HSI types for each panel ──────────────────────────────────────
 
-    # Panel B: find index of chosen scenario
-    panel_b_idx = next(
-        (i for i, d in enumerate(scenarios_of_interest)
-         if scenario_names[d] == disruption_panel_scenario),
-        None,
-    )
-    if panel_b_idx is None:
-        panel_b_idx = next(
+        # Reference: No Disruptions index — MUST be defined first
+        ref_idx = next(
             (i for i, d in enumerate(scenarios_of_interest)
-             if scenario_names[d] != "No Disruptions"),
+             if scenario_names[d] == "No Disruptions"),
             0,
         )
-        disruption_panel_scenario = scenario_names[scenarios_of_interest[panel_b_idx]]
-        print(f"  Panel B: '{disruption_panel_scenario}' not found — "
-              f"falling back to '{disruption_panel_scenario}'")
+        ref_volume_full = all_draws_volume_mean[ref_idx]
+        ref_volume_full = ref_volume_full[ref_volume_full.index.astype(str) != "nan"]
 
-    hd_m_b = all_draws_hsi_delayed_mean[panel_b_idx]
-    hd_l_b = all_draws_hsi_delayed_lower[panel_b_idx]
-    hd_u_b = all_draws_hsi_delayed_upper[panel_b_idx]
-    hc_m_b = all_draws_hsi_cancelled_mean[panel_b_idx]
-    hc_l_b = all_draws_hsi_cancelled_lower[panel_b_idx]
-    hc_u_b = all_draws_hsi_cancelled_upper[panel_b_idx]
+        # Rank Panel A by % deficit in Default
+        ranking_scen_idx = next(
+            (i for i, d in enumerate(scenarios_of_interest)
+             if scenario_names[d] == "Default"
+             and i < len(all_draws_volume_mean)),
+            next(
+                (i for i, d in enumerate(scenarios_of_interest)
+                 if scenario_names[d] != "No Disruptions"
+                 and i < len(all_draws_volume_mean)),
+                0,
+            ),
+        )
+        vm_rank = all_draws_volume_mean[ranking_scen_idx]
+        pct_diff_rank = (
+            (vm_rank - ref_volume_full) / ref_volume_full.replace(0, np.nan) * 100
+        ).dropna()
 
-    total_rate_b = (hd_m_b + hc_m_b).copy()
-    total_rate_b = total_rate_b[total_rate_b.index.astype(str) != "nan"]
-    top_disrupted_types = (
-        total_rate_b[total_rate_b > 0]
-        .sort_values(ascending=False)
-        .head(top_n_disruption)
-        .index.tolist()
-    )
-    top_disrupted_types_plot = list(reversed(top_disrupted_types))
+        top_volume_types = (
+            pct_diff_rank[pct_diff_rank < 0]
+            .sort_values(ascending=True)  # most negative first
+            .head(top_n_volume)
+            .index.tolist()
+        )
+        top_volume_types_plot = list(reversed(top_volume_types))  # largest deficit at top
+
+        # Panel B/C: find index of chosen disruption scenario
+        panel_b_idx = next(
+            (i for i, d in enumerate(scenarios_of_interest)
+             if scenario_names[d] == disruption_panel_scenario),
+            None,
+        )
+        if panel_b_idx is None:
+            panel_b_idx = next(
+                (i for i, d in enumerate(scenarios_of_interest)
+                 if scenario_names[d] != "No Disruptions"),
+                0,
+            )
+            disruption_panel_scenario = scenario_names[scenarios_of_interest[panel_b_idx]]
+
+        hd_m_b = all_draws_hsi_delayed_mean[panel_b_idx]
+        hd_l_b = all_draws_hsi_delayed_lower[panel_b_idx]
+        hd_u_b = all_draws_hsi_delayed_upper[panel_b_idx]
+        hc_m_b = all_draws_hsi_cancelled_mean[panel_b_idx]
+        hc_l_b = all_draws_hsi_cancelled_lower[panel_b_idx]
+        hc_u_b = all_draws_hsi_cancelled_upper[panel_b_idx]
+
+        total_rate_b = (hd_m_b + hc_m_b).copy()
+        total_rate_b = total_rate_b[total_rate_b.index.astype(str) != "nan"]
+        top_disrupted_types = (
+            total_rate_b[total_rate_b > 0]
+            .sort_values(ascending=False)
+            .head(top_n_disruption)
+            .index.tolist()
+        )
+        top_disrupted_types_plot = list(reversed(top_disrupted_types))
 
     # ── CSV outputs ───────────────────────────────────────────────────────────
     print("Writing CSVs …")
@@ -437,7 +456,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     )
 
     # ── Panel A: total HSI volume by type ─────────────────────────────────────
-    ref_volume_full = all_draws_volume_mean[ref_idx]  # No Disruptions mean
 
     y_centers = np.arange(n_a, dtype=float)
 
