@@ -29,11 +29,11 @@ class HistoricalChangesInHRH(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2026, 1, 2)  # <-- End at the end of year 2030
-        self.pop_size = 30
+        self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
+        self.pop_size = 100_000  # <-- Local small run: 30
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -43,8 +43,8 @@ class HistoricalChangesInHRH(BaseScenario):
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.demography.detail': logging.WARNING,
-                # 'tlo.methods.healthburden': logging.INFO,
-                # 'tlo.methods.healthsystem': logging.WARNING,
+                'tlo.methods.healthburden': logging.INFO,
+                'tlo.methods.healthsystem': logging.WARNING,
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
