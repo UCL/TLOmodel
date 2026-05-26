@@ -67,7 +67,7 @@ PUB_RC = {
 }
 
 # Suffix used by comparison_actual_vs_expected_disruption_realfacility.py
-COMPARISON_SUFFIX = "parameter_UA_mode_1"
+COMPARISON_SUFFIX = "parameter_SA_mode_1"
 
 # Malawi wet season: November – April
 WET_MONTHS = {11, 12, 1, 2, 3, 4}
@@ -189,22 +189,13 @@ def load_outputs_from_results(results_folder: Path) -> dict:
 
 
 def load_wet_season_outputs(results_folder: Path) -> dict:
-    """
-    Load wet-season-only (Nov–Apr) disruption rates per draw from the monthly CSV.
-    DALYs are intentionally excluded — use the year-round values from load_outputs_from_results.
-    """
-    monthly_file = results_folder / f"monthly_disruption_rates_realfacilityid_{COMPARISON_SUFFIX}.csv"
-    if not monthly_file.exists():
-        raise FileNotFoundError(
-            f"Monthly disruption CSV not found:\n  {monthly_file}\n"
-            f"Run comparison_actual_vs_expected_disruption_realfacility.py first."
-        )
-    df = pd.read_csv(monthly_file)
-    df["month"] = pd.to_datetime(df["year_month"] + "-01").dt.month
-    df_wet = df[df["month"].isin(WET_MONTHS)]
+    disruption_file = results_folder / "prcc_disruption_summary.csv"
+    if not disruption_file.exists():
+        raise FileNotFoundError(f"Run prcc_disruption_precompute.py first:\n  {disruption_file}")
+    df = pd.read_csv(disruption_file).set_index("draw")
 
-    wet_delayed = df_wet.groupby("draw")["delayed_rate_mean"].mean()
-    wet_cancelled = df_wet.groupby("draw")["cancelled_rate_mean"].mean()
+    wet_delayed = df["prop_delayed_wet"]
+    wet_cancelled = df["prop_cancelled_wet"]
 
     for name, s in [("prop_delayed_wet", wet_delayed), ("prop_cancelled_wet", wet_cancelled)]:
         print(f"  {name}: {s.notna().sum()} draws  [{s.min():.4g} – {s.max():.4g}]")
@@ -213,7 +204,6 @@ def load_wet_season_outputs(results_folder: Path) -> dict:
         "prop_delayed_wet": wet_delayed,
         "prop_cancelled_wet": wet_cancelled,
     }
-
 
 def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""):
     """
