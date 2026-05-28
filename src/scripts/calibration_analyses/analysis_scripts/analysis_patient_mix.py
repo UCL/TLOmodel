@@ -199,22 +199,72 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
                                                                 / daily_patient_load_per_hcw['Staff_Count'])
 
-    hcw_count = extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem.summary",
-        key="number_of_hcw_staff",
-        custom_generate_series=get_hcw_count,
-        do_scaling=False
+    # read in TLM estimates
+    path_to_tlm_folder = (
+        resourcefilepath
+        / "healthsystem"
+        / "human_resources"
+        / "TLM_2024"
     )
-    hcw_count = hcw_count[(0, 0)]
 
-    patient_volume = extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem",
-        key="HSI_Event",
-        custom_generate_series=get_patient_count,
-        do_scaling=True
+    hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
+    fac_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_6_pat_load.dta", convert_categoricals=True)
+
+    # check that districts and facility levels in the two tools are a subset of TLO output;
+    # district and facility level consistency in the two tools already checked in Stata
+    hcw_tms_pat_load["district"] = hcw_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
+    fac_tms_pat_load["district"] = fac_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
+
+    assert set(hcw_tms_pat_load['district'].unique()).issubset(
+        set(daily_patient_load_per_hcw['District'].unique())
     )
+    assert set(hcw_tms_pat_load['fac_level'].unique()).issubset(
+        set(daily_patient_load_per_hcw['Facility_Level'].unique())
+    )
+
+    # merge all three estimates in one dataframe, noting the source and keeping all observations
+    hcw_tms_pat_load = hcw_tms_pat_load.rename(columns={
+        "fac_level": "Facility_Level",
+        "district": "District",
+        "pat_day_tms_nr_adj": "Daily_Patient_Load_Per_HCW",
+    })
+    fac_tms_pat_load = fac_tms_pat_load.rename(columns={
+        "fac_level": "Facility_Level",
+        "district": "District",
+        "pat_load_per_hcw": "Daily_Patient_Load_Per_HCW",
+    })
+
+    hcw_tms_pat_load["Source"] = "HCW TMS"
+    fac_tms_pat_load["Source"] = "Facility Summary"
+    daily_patient_load_per_hcw["Source"] = "TLO"
+
+    pat_load_comparison = pd.concat([
+        hcw_tms_pat_load[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source",]],
+        fac_tms_pat_load[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source"]],
+        daily_patient_load_per_hcw[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source"]],
+    ], ignore_index=True)
+
+    assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
+
+    # make plots for patient load comparison at each level (1b, 2 and 3);
+    # y-axis is the district and x-axis is the patient load
+
+    # hcw_count = extract_results(
+    #     results_folder,
+    #     module="tlo.methods.healthsystem.summary",
+    #     key="number_of_hcw_staff",
+    #     custom_generate_series=get_hcw_count,
+    #     do_scaling=False
+    # )
+    # hcw_count = hcw_count[(0, 0)]
+    #
+    # patient_volume = extract_results(
+    #     results_folder,
+    #     module="tlo.methods.healthsystem",
+    #     key="HSI_Event",
+    #     custom_generate_series=get_patient_count,
+    #     do_scaling=True
+    # )
 
     # patient_volume_opd = extract_results(
     #     results_folder,
@@ -240,35 +290,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #
     # patient_load_per_hcw = pd.concat([opd, emerg], axis=1)
 
-    patient_load_per_hcw = patient_volume / hcw_count.values[0]
-    patient_load_per_hcw = patient_load_per_hcw.fillna(0)
-
-    patient_load_per_hcw = (
-        patient_load_per_hcw
-        .reset_index()
-        .melt(
-            id_vars="date",
-            var_name="coarse_loc_cat_str",
-            value_name="daily_patient_load_per_hcw"
-        )
-    )
-    patient_load_per_hcw["coarse_loc_cat_str"] = "All service area"
-
-    path_to_tlm_folder = (
-        resourcefilepath
-        / "healthsystem"
-        / "human_resources"
-        / "TLM_2024"
-    )
-
-    patient_load_per_hcw.to_stata(
-        path_to_tlm_folder / "tlo_pat_load.dta",
-        write_index=False,
-        convert_dates={"date": "td"}
-    )
+    # patient_load_per_hcw = patient_volume / hcw_count.values[0]
+    # patient_load_per_hcw = patient_load_per_hcw.fillna(0)
+    #
+    # patient_load_per_hcw = (
+    #     patient_load_per_hcw
+    #     .reset_index()
+    #     .melt(
+    #         id_vars="date",
+    #         var_name="coarse_loc_cat_str",
+    #         value_name="daily_patient_load_per_hcw"
+    #     )
+    # )
+    # patient_load_per_hcw["coarse_loc_cat_str"] = "All service area"
+    #
+    # path_to_tlm_folder = (
+    #     resourcefilepath
+    #     / "healthsystem"
+    #     / "human_resources"
+    #     / "TLM_2024"
+    # )
+    #
+    # patient_load_per_hcw.to_stata(
+    #     path_to_tlm_folder / "tlo_pat_load.dta",
+    #     write_index=False,
+    #     convert_dates={"date": "td"}
+    # )
 
     # issue: do not know how many staff members are in outpatient, emergency care, and inpatient
-    # issue: how to treat nan entries for emerg -> default 0?
 
 
 if __name__ == "__main__":
