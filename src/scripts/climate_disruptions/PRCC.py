@@ -257,7 +257,7 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
             ax_bot.set_xlabel("α — Disruption scaling", fontsize=8)
             if col == 0:
                 ax_bot.set_ylabel("β — Re-seeking scaling", fontsize=8)
-            ax_bot.set_title(out_label, fontweight="bold", fontsize=9, pad=4)
+            # ax_bot.set_title(out_label, fontweight="bold", fontsize=9, pad=4)
             ax_bot.text(-0.14 if col == 0 else -0.05, 1.08, f"({chr(65 + panel)})",
                         transform=ax_bot.transAxes, fontweight="bold", fontsize=9)
             ax_bot.spines["top"].set_visible(False)
@@ -270,7 +270,7 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
             Patch(facecolor=COLOUR_NS, label="Non-significant"),
         ]
         fig.legend(handles=legend_elements, loc="lower center",
-                   bbox_to_anchor=(0.5, 2.005), ncol=3, fontsize=6.5,
+                   bbox_to_anchor=(0.5, 1.005), ncol=3, fontsize=6.5,
                    frameon=True, edgecolor="0.7", fancybox=False)
 
     return fig
