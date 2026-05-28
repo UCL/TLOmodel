@@ -30,7 +30,7 @@ class HistoricalChangesInHRH(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
-        self.pop_size = 100_000  # <-- Local small run: 30
+        self.pop_size = 20_000  # <-- Local small run: 30; previous study run: 20_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
