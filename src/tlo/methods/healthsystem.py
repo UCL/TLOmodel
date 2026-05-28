@@ -2132,12 +2132,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     if self.sim.modules[
                         "HealthSeekingBehaviour"
                     ].force_any_symptom_to_lead_to_healthcareseeking:
+                        new_topen = self.sim.date + DateOffset(days=delay_days)
+                        new_tclose = new_topen + (item.tclose - item.topen)
+
                         self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                             priority=item.priority,
                             clinic_eligibility=item.clinic_eligibility,
-                            topen=self.sim.date + DateOffset(days=delay_days),
-                            tclose=self.sim.date + DateOffset(days=delay_days),
-                            hsi_event=item.hsi_event
+                            topen=new_topen,
+                            tclose=new_tclose,
+                            hsi_event=item.hsi_event,
                         )
                         self.module.call_and_record_weather_delayed_hsi_event(
                             hsi_event=item.hsi_event, priority=item.priority, real_facility_id=facility_used
@@ -2171,11 +2174,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         if np.random.random() < will_seek_care_prob:
                             will_seek_care = 1
                         if will_seek_care:
+                            new_topen = self.sim.date + DateOffset(days=delay_days)
+                            new_tclose = new_topen + (item.tclose - item.topen)
+
                             self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                                 priority=item.priority,
                                 clinic_eligibility=item.clinic_eligibility,
-                                topen=self.sim.date + DateOffset(days=delay_days),
-                                tclose=self.sim.date + DateOffset(days=delay_days),
+                                topen=new_topen,
+                                tclose=new_tclose,
                                 hsi_event=item.hsi_event,
                             )
                             self.module.call_and_record_weather_delayed_hsi_event(
