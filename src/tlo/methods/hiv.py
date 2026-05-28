@@ -4599,13 +4599,13 @@ class DummyHivModule(Module):
             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
     }
 
-    def __init__(self, name=None, hiv_prev=0.0, art_cov=0.0):
+    def __init__(self, name=None, hiv_prev=0.5, art_cov=0.9):
         super().__init__(name)
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
         logger.warning(
             key="message",
-            data="Switched off hiv",
+            data="Sampling 50% prevalence but high ART coverage",
         )
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass

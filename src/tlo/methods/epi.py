@@ -176,6 +176,13 @@ class Epi(Module):
         # update the 'all_doses' properties for initial population
         for vaccine, max_dose in self.all_doses.items():
             df.loc[df.is_alive, f"va_{vaccine}_all_doses"] = df.loc[df.is_alive, f"va_{vaccine}"] >= max_dose
+            
+        # If generating emulator training data, include hpv vaccination with 50% prob
+        if 'IndividualHistoryTracker' in self.sim.modules and self.sim.modules['IndividualHistoryTracker'].parameters['generate_emulator_data']:
+            df.loc[df.is_alive &
+                   (df.sex == 'F') &
+                   (df.age_years >= 15) &
+                   (np.random.random(len(df)) < 0.5), "va_hpv"] = self.all_doses["hpv"]
 
     def initialise_simulation(self, sim):
         # add an event to log to screen

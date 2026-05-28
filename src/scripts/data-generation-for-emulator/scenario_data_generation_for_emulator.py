@@ -22,7 +22,7 @@ import ast
 import numpy as np
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 5
+N_param_combo = 10
 
 def detect_and_convert(value):
     # try float
@@ -143,6 +143,7 @@ def sample_param_combo():
                 parameter_draws[draw][module_of_interest][row['parameter_name']] = new_val
 
             # 3. Resample consumable availability
+            # EXCLUDE FOR NOW
 
         return parameter_draws
 
