@@ -594,7 +594,7 @@ inc_diff_from_statusquo = compute_summary_statistics(
 )
 
 
-inc_diff_from_statusquo.to_excel(results_folder / "inc_diff_from_statusquo.xlsx")
+# inc_diff_from_statusquo.to_excel(results_folder / "inc_diff_from_statusquo.xlsx")
 
 
 pc_inc_diff_from_statusquo = 100.0 * compute_summary_statistics(
@@ -606,7 +606,7 @@ pc_inc_diff_from_statusquo = 100.0 * compute_summary_statistics(
     ), central_measure="mean", use_standard_error=True
 )
 
-pc_inc_diff_from_statusquo.to_excel(results_folder / "pc_inc_diff_from_statusquo.xlsx")
+# pc_inc_diff_from_statusquo.to_excel(results_folder / "pc_inc_diff_from_statusquo.xlsx")
 
 
 # Get the draw order from the original DataFrame
@@ -720,7 +720,7 @@ dalys_diff_from_statusquo = compute_summary_statistics(
             comparison='Status Quo')
     ).T
 ).iloc[0].unstack().reindex(param_names).drop(['Status Quo'])
-dalys_diff_from_statusquo.to_excel(results_folder / "dalys_diff_from_statusquo.xlsx")
+# dalys_diff_from_statusquo.to_excel(results_folder / "dalys_diff_from_statusquo.xlsx")
 
 
 pc_dalys_diff_from_statusquo = 100.0 * compute_summary_statistics(
@@ -763,7 +763,7 @@ daly_by_cause = extract_results(
         custom_generate_series=num_dalys_by_cause,
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
-daly_by_cause.to_excel(results_folder / "daly_by_cause.xlsx")
+# daly_by_cause.to_excel(results_folder / "daly_by_cause.xlsx")
 
 
 
@@ -776,7 +776,7 @@ dalys_labelled_diff_from_statusquo = compute_summary_statistics(
 )
 
 
-dalys_labelled_diff_from_statusquo.to_excel(results_folder / "dalys_labelled_diff_from_statusquo.xlsx")
+# dalys_labelled_diff_from_statusquo.to_excel(results_folder / "dalys_labelled_diff_from_statusquo.xlsx")
 
 
 pc_dalys_diff_from_statusquo = 100.0 * compute_summary_statistics(
@@ -803,8 +803,8 @@ aids_ci = aids_ci.reindex(draw_order)
 pc_aids_ci = pc_dalys_diff_from_statusquo.loc['AIDS'].unstack('stat')
 pc_aids_ci = pc_aids_ci.reindex(draw_order)
 
-aids_ci.to_excel(results_folder / "aids_dalys_diff_from_statusquo.xlsx")
-pc_aids_ci.to_excel(results_folder / "pc_aids_dalys_diff_from_statusquo.xlsx")
+# aids_ci.to_excel(results_folder / "aids_dalys_diff_from_statusquo.xlsx")
+# pc_aids_ci.to_excel(results_folder / "pc_aids_dalys_diff_from_statusquo.xlsx")
 
 # Plot
 plot_with_ci(
@@ -980,7 +980,7 @@ num_deaths_by_cause = extract_deaths_by_cause(results_folder)
 summary_num_deaths_by_cause = compute_summary_statistics(extract_deaths_by_cause(results_folder),
                                                  central_measure='mean')
 
-summary_num_deaths_by_cause.to_csv(results_folder / f'num_deaths_by_cause_{target_period()}.csv')
+# summary_num_deaths_by_cause.to_csv(results_folder / f'num_deaths_by_cause_{target_period()}.csv')
 
 
 num_deaths_averted = compute_summary_statistics(
@@ -990,7 +990,7 @@ num_deaths_averted = compute_summary_statistics(
     ), central_measure='mean'
 )
 
-num_deaths_averted.to_csv(results_folder / f'num_deaths_averted_{target_period()}.csv')
+# num_deaths_averted.to_csv(results_folder / f'num_deaths_averted_{target_period()}.csv')
 
 pc_deaths_averted = 100.0 * compute_summary_statistics(
     pd.DataFrame(
@@ -1001,7 +1001,7 @@ pc_deaths_averted = 100.0 * compute_summary_statistics(
     ), central_measure='mean',
 )
 
-pc_deaths_averted.to_csv(results_folder / f'pc_deaths_averted_{target_period()}.csv')
+# pc_deaths_averted.to_csv(results_folder / f'pc_deaths_averted_{target_period()}.csv')
 
 
 
@@ -1013,8 +1013,8 @@ aids_deaths_ci = aids_deaths_ci.reindex(draw_order)
 pc_aids_deaths_ci = pc_deaths_averted.loc['HIV/AIDS'].unstack('stat')
 pc_aids_deaths_ci = pc_aids_deaths_ci.reindex(draw_order)
 
-aids_deaths_ci.to_csv(results_folder / f'aids_deaths_averted{target_period()}.csv')
-pc_aids_deaths_ci.to_csv(results_folder / f'pc_aids_deaths_averted_{target_period()}.csv')
+# aids_deaths_ci.to_csv(results_folder / f'aids_deaths_averted{target_period()}.csv')
+# pc_aids_deaths_ci.to_csv(results_folder / f'pc_aids_deaths_averted_{target_period()}.csv')
 
 
 # Plot
@@ -1199,14 +1199,14 @@ treatment_by_year = extract_results(
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-treatment_by_year.to_excel(results_folder / "treatment_id_counts_by_year_draw_run.xlsx")
+# treatment_by_year.to_excel(results_folder / "treatment_id_counts_by_year_draw_run.xlsx")
 
 treatment_by_year_hiv = treatment_by_year.loc[
     treatment_by_year.index
         .get_level_values("treatment_id")
         .str.startswith("Hiv")
 ]
-treatment_by_year_hiv.to_excel(results_folder / "treatment_by_year_hiv.xlsx")
+# treatment_by_year_hiv.to_excel(results_folder / "treatment_by_year_hiv.xlsx")
 
 
 #########################
@@ -1459,7 +1459,7 @@ def appt_counts_to_hcw_minutes(appt_counts_final: pd.DataFrame,
 
 # --- usage ---
 minutes_by_appt_and_cadre = appt_counts_to_hcw_minutes(appt_counts_final, hcw_time, fill_missing_minutes=0.0)
-minutes_by_appt_and_cadre.to_excel(results_folder / "minutes_by_appt_and_cadre.xlsx")
+# minutes_by_appt_and_cadre.to_excel(results_folder / "minutes_by_appt_and_cadre.xlsx")
 
 
 minutes_per_year_summed_by_cadre = (
@@ -1467,23 +1467,23 @@ minutes_per_year_summed_by_cadre = (
     .groupby(level=["year", "hcw_cadre"])
     .sum()
 )
-minutes_per_year_summed_by_cadre.to_excel(results_folder / "minutes_per_year_summed_by_cadre.xlsx")
+# minutes_per_year_summed_by_cadre.to_excel(results_folder / "minutes_per_year_summed_by_cadre.xlsx")
 
 hours_per_year_cadre = minutes_per_year_summed_by_cadre / 60
-hours_per_year_cadre.to_excel(results_folder / "hours_per_year_cadre.xlsx")
+# hours_per_year_cadre.to_excel(results_folder / "hours_per_year_cadre.xlsx")
 
 minutes_all_years_summed_by_cadre = (
     minutes_by_appt_and_cadre
     .groupby(level=["hcw_cadre"])
     .sum()
 )
-minutes_all_years_summed_by_cadre.to_excel(results_folder / "minutes_all_years_summed_by_cadre.xlsx")
+# minutes_all_years_summed_by_cadre.to_excel(results_folder / "minutes_all_years_summed_by_cadre.xlsx")
 hours_all_years_cadre = minutes_all_years_summed_by_cadre / 60
-hours_all_years_cadre.to_excel(results_folder / "hours_all_years_cadre.xlsx")
+# hours_all_years_cadre.to_excel(results_folder / "hours_all_years_cadre.xlsx")
 
 summary_total_hcw_time = compute_summary_statistics(hours_all_years_cadre,
                                                     central_measure='mean')
-summary_total_hcw_time.to_excel(results_folder / "summary_total_hcw_time_cadre.xlsx")
+# summary_total_hcw_time.to_excel(results_folder / "summary_total_hcw_time_cadre.xlsx")
 
 summary_hcw_time_all_cadres_full = hours_all_years_cadre.sum(axis=0).to_frame().T
 summary_hcw_time_all_cadres = compute_summary_statistics(
@@ -1491,7 +1491,7 @@ summary_hcw_time_all_cadres = compute_summary_statistics(
     central_measure='mean'
 )
 
-summary_hcw_time_all_cadres.to_excel(results_folder / "summary_hcw_time_all_cadres.xlsx")
+# summary_hcw_time_all_cadres.to_excel(results_folder / "summary_hcw_time_all_cadres.xlsx")
 
 
 
@@ -1501,7 +1501,7 @@ summary_hrh_time_diff_from_statusquo = compute_summary_statistics(
         comparison="Status Quo"
     ), central_measure='mean',
 )
-summary_hrh_time_diff_from_statusquo.to_excel(results_folder / "summary_hrh_time_diff_from_statusquo.xlsx")
+# summary_hrh_time_diff_from_statusquo.to_excel(results_folder / "summary_hrh_time_diff_from_statusquo.xlsx")
 
 
 
@@ -1573,8 +1573,8 @@ hours_by_year_fac_cadre, hrh_costs_by_year_fac_cadre = hrh_time_costs_by_facilit
     fill_missing_cost=None   # or 0.0 if you want unmapped costs to contribute zero
 )
 
-hours_by_year_fac_cadre.to_excel(results_folder / "hours_by_year_fac_cadre.xlsx")
-hrh_costs_by_year_fac_cadre.to_excel(results_folder / "hrh_costs_by_year_fac_cadre.xlsx")
+# hours_by_year_fac_cadre.to_excel(results_folder / "hours_by_year_fac_cadre.xlsx")
+# hrh_costs_by_year_fac_cadre.to_excel(results_folder / "hrh_costs_by_year_fac_cadre.xlsx")
 
 
 # get the costs for all hcw by year
@@ -1583,11 +1583,11 @@ hrh_costs_by_year = (
     .groupby(level="year")
     .sum()
 )
-hrh_costs_by_year.to_excel(results_folder / "total_costs_by_year.xlsx")
+# hrh_costs_by_year.to_excel(results_folder / "total_costs_by_year.xlsx")
 
 # get total costs across all the years
 hrh_costs_all_years = hrh_costs_by_year_fac_cadre.sum()
-hrh_costs_all_years.to_excel(results_folder / "hrh_costs_all_years.xlsx")
+# hrh_costs_all_years.to_excel(results_folder / "hrh_costs_all_years.xlsx")
 
 
 # total_costs_all_years is a Series with MultiIndex (e.g. run, draw) or (draw, run)
@@ -1609,7 +1609,7 @@ hrh_cost_diff_from_statusquo = compute_summary_statistics(
     ), central_measure='mean',
 )
 
-hrh_cost_diff_from_statusquo.to_excel(results_folder / "hrh_cost_diff_from_statusquo.xlsx")
+# hrh_cost_diff_from_statusquo.to_excel(results_folder / "hrh_cost_diff_from_statusquo.xlsx")
 
 
 pc_hrh_cost_diff_from_statusquo = 100.0 * compute_summary_statistics(
@@ -1620,7 +1620,7 @@ pc_hrh_cost_diff_from_statusquo = 100.0 * compute_summary_statistics(
         scaled=True)
     ), only_central=True
 )
-pc_hrh_cost_diff_from_statusquo.to_excel(results_folder / "pc_hrh_cost_diff_from_statusquo.xlsx")
+# pc_hrh_cost_diff_from_statusquo.to_excel(results_folder / "pc_hrh_cost_diff_from_statusquo.xlsx")
 
 
 # format output for table
@@ -1650,13 +1650,13 @@ def format_cost_table(df):
 
 hrh_cost_diff_from_statusquo_table = format_cost_table(hrh_cost_diff_from_statusquo)
 
-hrh_cost_diff_from_statusquo_table.to_excel(results_folder / "hrh_cost_diff_from_statusquo_table.xlsx")
+# hrh_cost_diff_from_statusquo_table.to_excel(results_folder / "hrh_cost_diff_from_statusquo_table.xlsx")
 
 
 
 hrh_costs_all_years_table = format_cost_table(summary_hrh_total_costs)
 
-hrh_costs_all_years_table.to_excel(results_folder / "hrh_costs_all_years_table.xlsx")
+# hrh_costs_all_years_table.to_excel(results_folder / "hrh_costs_all_years_table.xlsx")
 
 
 
@@ -1716,8 +1716,8 @@ def plot_cadre_hours_vs_outcomes(
                 color=colour, ecolor=colour, elinewidth=1, alpha=0.9,
             )
 
-        ax.set_title(cadre)
-        ax.set_xlabel("Hours (difference)")
+        ax.set_title("Nursing" if cadre == "Nursing_and_Midwifery" else cadre)
+        ax.set_xlabel("Difference in hours vs Status Quo")
         ax.set_ylabel(ylabel)
         ax.grid(True, linestyle="--", alpha=0.4)
         ax.axhline(0, color="grey", linewidth=1, alpha=0.6)
@@ -1748,7 +1748,7 @@ num_hcw_hours_diff = compute_summary_statistics(
 )
 
 
-num_hcw_hours_diff.to_csv(results_folder / f'num_hcw_hours_diff_{target_period()}.csv')
+# num_hcw_hours_diff.to_csv(results_folder / f'num_hcw_hours_diff_{target_period()}.csv')
 
 draw_order = hours_all_years_cadre.columns.get_level_values("draw").unique()
 
@@ -1766,7 +1766,7 @@ plot_cadre_hours_vs_outcomes(
     scenario_colours=scenario_colours,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 11),
-    ylabel="New HIV infections (difference)",
+    ylabel="Difference in new HIV infections vs Status Quo",
     exclude_scenarios=["Program Scale-up"]
 )
 
@@ -1784,7 +1784,7 @@ plot_cadre_hours_vs_outcomes(
     scenario_colours=scenario_colours,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 11),
-    ylabel="AIDS deaths",
+    ylabel="Difference in AIDS deaths vs Status Quo",
     exclude_scenarios=["Program Scale-up"]
 )
 
@@ -1968,7 +1968,7 @@ cons_dispensed = extract_results(
 
 idx = pd.IndexSlice
 cons_dispensed = cons_dispensed.apply(pd.to_numeric, errors="coerce")
-cons_dispensed.to_excel(results_folder / f'cons_dispensed_{target_period()}.xlsx')
+# cons_dispensed.to_excel(results_folder / f'cons_dispensed_{target_period()}.xlsx')
 
 
 # Add consumable name and unit cost
@@ -2037,7 +2037,7 @@ cons_costed = apply_unit_costs(
     cons_costs_by_item_code,
     on_missing="warn_nan"
 ).pipe(set_param_names_as_column_index_level_0)
-cons_costed.to_excel(results_folder / f'cons_costed_{target_period()}.xlsx')
+# cons_costed.to_excel(results_folder / f'cons_costed_{target_period()}.xlsx')
 
 
 
@@ -2188,16 +2188,16 @@ cons_costed_hiv = (
 )
 
 
-cons_costed_hiv.to_excel(results_folder / f'cons_costed_hiv_{target_period()}.xlsx')
+# cons_costed_hiv.to_excel(results_folder / f'cons_costed_hiv_{target_period()}.xlsx')
 
 # sum across items, keeping only year
 cons_summed_by_year = cons_costed_hiv.groupby(level="year").sum()
-cons_summed_by_year.to_excel(results_folder / f'cons_summed_by_year_{target_period()}.xlsx')
+# cons_summed_by_year.to_excel(results_folder / f'cons_summed_by_year_{target_period()}.xlsx')
 
 
 # total costs by year / draw / run
 cons_hrh_costs_year_draw_run = cons_summed_by_year + hrh_costs_by_year
-cons_hrh_costs_year_draw_run.to_excel(results_folder / f'cons_hrh_costs_year_draw_run_{target_period()}.xlsx')
+# cons_hrh_costs_year_draw_run.to_excel(results_folder / f'cons_hrh_costs_year_draw_run_{target_period()}.xlsx')
 
 
 
@@ -2209,10 +2209,10 @@ summary_total_costs_year = compute_summary_statistics(
     cons_hrh_costs_year_draw_run,
     central_measure='mean'
 )
-summary_total_costs_year.to_excel(results_folder / f'summary_total_costs_year_{target_period()}.xlsx')
+# summary_total_costs_year.to_excel(results_folder / f'summary_total_costs_year_{target_period()}.xlsx')
 
 summary_total_costs_year_table = format_cost_table(summary_total_costs_year)
-summary_total_costs_year_table.to_excel(results_folder / f'summary_total_costs_year_table.xlsx')
+# summary_total_costs_year_table.to_excel(results_folder / f'summary_total_costs_year_table.xlsx')
 
 
 
@@ -2303,7 +2303,7 @@ summary_contract_funding = compute_summary_statistics(
     scen_runs,
     central_measure='mean'
 )
-summary_contract_funding.to_excel(results_folder / f'summary_contract_funding_{target_period()}.xlsx')
+# summary_contract_funding.to_excel(results_folder / f'summary_contract_funding_{target_period()}.xlsx')
 
 
 ####################################
@@ -2454,8 +2454,153 @@ plt.savefig(results_folder / "programme_costs_vs_funding_contractions.png")
 plt.show()
 
 
-# get the first year crossing threshold
 
+
+# one figure with the 3 funding trajectories and selected program strategies
+def plot_funding_and_selected_programs(
+    df_funding,
+    df_program,
+    selected_programs,  # List of program names to include
+    figsize=(14, 8),
+    a_fund=0.8,
+    a_prog=0.30,
+    lw=2.2,
+    stat_central="central",
+    fund_colours=("0.85", "#fddbc7", "#d1e5f0"),
+):
+    """
+    Single plot showing funding projections and selected program trajectories.
+    """
+    if df_funding.columns.nlevels != 2 or df_program.columns.nlevels != 2:
+        raise ValueError("Both inputs must have 2-level MultiIndex columns: (name, stat).")
+
+    scenario_colours = dict(zip(param_names, colours))
+
+    # Filter programs
+    all_programs = df_program.columns.get_level_values(0).unique()
+    programs = [p for p in selected_programs if p in all_programs]
+    if not programs:
+        raise ValueError("None of the selected programs found in the data.")
+
+    fund_groups = list(df_funding.columns.get_level_values(0).unique())
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Y-limits
+    program_data = df_program[[col for col in df_program.columns if col[0] in programs]]
+    ymin = min(
+        df_funding.xs("lower", level=1, axis=1).min().min(),
+        program_data.xs("lower", level=1, axis=1).min().min()
+    )
+    ymax = max(
+        df_funding.xs("upper", level=1, axis=1).max().max(),
+        program_data.xs("upper", level=1, axis=1).max().max()
+    )
+
+    # Plot funding trajectories (background shaded areas)
+    funding_handles = []
+    funding_labels = ["Constant", "2% contraction", "6% contraction"]
+
+    for k, g in enumerate(fund_groups):
+        c = fund_colours[k % len(fund_colours)]
+        funding_patch = ax.fill_between(
+            df_funding.index,
+            df_funding[(g, "lower")],
+            df_funding[(g, "upper")],
+            color=c,
+            alpha=a_fund,
+            linewidth=0,
+            zorder=1,
+            label=funding_labels[k] if k < len(funding_labels) else g
+        )
+        funding_handles.append(funding_patch)
+
+    # Plot selected program costs (lines with confidence bands)
+    program_handles = []
+    for i, p in enumerate(programs):
+        # Use scenario color if program name matches a scenario, otherwise cycle through colors
+        color = scenario_colours.get(p, colours[i % len(colours)])
+
+        # Confidence band
+        program_band = ax.fill_between(
+            df_program.index,
+            df_program[(p, "lower")],
+            df_program[(p, "upper")],
+            color=color,
+            alpha=a_prog,
+            linewidth=0,
+            zorder=3
+        )
+
+        # Central line
+        program_line = ax.plot(
+            df_program.index,
+            df_program[(p, stat_central)],
+            color=color,
+            lw=lw,
+            zorder=4,
+            label=f"{p}"
+        )[0]
+
+        program_handles.append(program_line)
+
+    ax.set_ylim(ymin, ymax)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Annual costs (USD)")
+    ax.set_title("Funding Trajectories vs Programme Costs")
+    ax.grid(False)
+    ax.yaxis.grid(True, alpha=0.18)
+    ax.set_axisbelow(True)
+
+    # Create funding legend (top legend in bottom left)
+    funding_legend = ax.legend(handles=funding_handles,
+                               title="Funding Trajectories",
+                               loc='lower left',
+                               bbox_to_anchor=(0.01, 0.15),  # Position above program legend
+                               frameon=True,
+                               title_fontsize=10,
+                               fontsize=9,
+                               borderaxespad=0)
+
+    # Add the funding legend back to the plot
+    ax.add_artist(funding_legend)
+
+    # Create program legend (bottom legend in bottom left)
+    program_legend = ax.legend(handles=program_handles,
+                               title="Programme Costs",
+                               loc='lower left',
+                               bbox_to_anchor=(0.01, 0.01),  # Bottom position
+                               frameon=True,
+                               title_fontsize=10,
+                               fontsize=9,
+                               borderaxespad=0,
+                               alignment='left')
+
+    fig.tight_layout()
+    return fig, ax
+
+
+# Plot
+selected_programs = [
+    'Status Quo',
+    'Reduce HIV testing',
+    'Remove Viral Load Testing',
+    'Reduce All Elements',
+]
+fig, ax = plot_funding_and_selected_programs(
+    summary_contract_funding,
+    summary_total_costs_year,
+    selected_programs=selected_programs
+)
+plt.savefig(results_folder / "selected_programs_vs_funding.png")
+plt.show()
+
+
+
+
+
+
+# get the first year crossing threshold
 
 def first_crossing_year_constant_funding(
     df_funding,
@@ -2506,7 +2651,7 @@ cross_years = first_crossing_year_constant_funding(
 )
 
 cross_years
-cross_years.to_excel(results_folder / 'year_crossing_funding_threshold.xlsx')
+# cross_years.to_excel(results_folder / 'year_crossing_funding_threshold.xlsx')
 
 
 cross_years = first_crossing_year_constant_funding(
@@ -2518,7 +2663,7 @@ cross_years = first_crossing_year_constant_funding(
 )
 
 cross_years
-cross_years.to_excel(results_folder / 'year_crossing_funding_threshold_moderate_2pc.xlsx')
+# cross_years.to_excel(results_folder / 'year_crossing_funding_threshold_moderate_2pc.xlsx')
 
 
 
@@ -2531,7 +2676,7 @@ cross_years = first_crossing_year_constant_funding(
 )
 
 cross_years
-cross_years.to_excel(results_folder / 'year_crossing_funding_threshold_severe_6pc.xlsx')
+# cross_years.to_excel(results_folder / 'year_crossing_funding_threshold_severe_6pc.xlsx')
 
 
 
@@ -2655,7 +2800,7 @@ tmp = dalys_per_usd_saved(
     aids_dalys_diff=aids_dalys_diff,
     cost_diff=hrh_cost_series)
 
-tmp[1].to_excel(results_folder / "dalys_per_hrh_usd_saved.xlsx")
+# tmp[1].to_excel(results_folder / "dalys_per_hrh_usd_saved.xlsx")
 
 
 
@@ -2663,4 +2808,4 @@ tmp = dalys_per_usd_saved(
     aids_dalys_diff=aids_dalys_diff,
     cost_diff=total_cost_diff_sum)
 
-tmp[1].to_excel(results_folder / "dalys_per_total_usd_saved.xlsx")
+# tmp[1].to_excel(results_folder / "dalys_per_total_usd_saved.xlsx")

@@ -64,7 +64,7 @@ TARGET_PERIOD = (Date(2025, 1, 1), Date(2050, 12, 31))
 
 
 # todo change
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2040, 12, 31))
+# TARGET_PERIOD = (Date(2025, 1, 1), Date(2040, 12, 31))
 
 
 
