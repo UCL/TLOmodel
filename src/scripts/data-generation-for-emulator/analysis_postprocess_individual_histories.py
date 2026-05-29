@@ -244,7 +244,6 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
     # Remove them from the original draws_parameters
     remove_diffs(draws_parameters,differences)
     print(draws_parameters)
-    print()
     print(differences)
     # Iterate over draws
     for draw in range(len(draws_parameters)):
@@ -257,6 +256,10 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
             
             # If individual not subsequently tracked beyond initial status, skip them
             if group.iloc[0]['Info']['iht_track_history'] is False:
+                continue
+                
+            # If individual born after start of the period, skip them
+            if group.iloc[0]['event_name'] == 'Birth':
                 continue
                 
             # If proceeding, will collect following
