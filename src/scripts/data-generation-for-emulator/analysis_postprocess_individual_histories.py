@@ -273,6 +273,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
             episode_start_properties = {}
             episode_end_properties = {}
             resource_access = {}
+            total_dalys_incurred = 0
 
             # Iterate over each row in this group
             for idx, row in group.iterrows():
@@ -288,6 +289,11 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                     
                 # Check if anything was accessed:
                 update_resource_access(info, resource_access)
+                
+                # If event is daly report, add it to total dalys incurred
+                # REVIEW: this is module specific
+                if row['event_name'] == 'monthly_daly_report':
+                    total_dalys_incurred += float(info['CervicalCancer'])
             
                 # REVIEW: this is module specific
                 if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1':
@@ -315,6 +321,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 data = {}
                 data['person_ID_in_draw'] = person_ID
                 data['draw'] = draw
+                data['tot_monthly_dalys'] = total_dalys_incurred
     
                 if episode_end_date is not None and episode_start_date is not None:
                     data['duration_of_episode'] = (episode_end_date - episode_start_date).days
