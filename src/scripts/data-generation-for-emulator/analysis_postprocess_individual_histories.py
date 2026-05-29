@@ -288,7 +288,6 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                     
                 # Check if anything was accessed:
                 update_resource_access(info, resource_access)
-                print(resource_access)
             
                 # REVIEW: this is module specific
                 if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1':
@@ -300,11 +299,11 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                     # Make note of date of event and of the properties of individual at the time of this event
                     episode_start_date = row['date']
                     episode_start_properties = progression_properties
-                    
+                
                 # Ensure episode started
                 if (episode_start_date is not None):
                     # Check if episode has resolved
-                    if progression_properties['is_alive'] is False or progression_properties['ce_hpv_cc_status'] == 'none':
+                    if progression_properties['is_alive']=='False' or progression_properties['ce_hpv_cc_status'] == 'none':
                         episode_end_date = row['date']
                         episode_end_properties = progression_properties
 
@@ -332,6 +331,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 print('data for individual', data)
 
                 data_for_draw.append(data)
+                
         
         df = pd.DataFrame(data_for_draw)
         
