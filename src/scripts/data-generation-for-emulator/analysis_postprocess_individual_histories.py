@@ -264,6 +264,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 
             # If proceeding, will collect following
             polling_event_found = False
+            episode_end_found = False
             
             # The changing or adding of properties from the first_event will be stored in progression_properties
             progression_properties = {}
@@ -296,7 +297,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                     total_dalys_incurred += float(info['CervicalCancer'])
             
                 # REVIEW: this is module specific
-                if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1':
+                if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1' and episode_start_date is None:
                     polling_event_found = True
 
                     # Retain a copy of Polling event
@@ -309,19 +310,25 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 # Ensure episode started
                 if (episode_start_date is not None):
                     # Check if episode has resolved
-                    if progression_properties['is_alive']=='False' or progression_properties['ce_hpv_cc_status'] == 'none':
+                    if episode_end_found is False and (progression_properties['is_alive']=='False' or progression_properties['ce_hpv_cc_status'] == 'none'):
+                        episode_end_found = True
                         episode_end_date = row['date']
                         episode_end_properties = progression_properties
 
             if episode_start_date is not None and episode_end_date is None:
                 print("Episode began but was not completed for this individual")
                 
-            if polling_event_found:
+            if polling_event_found and episode_end_found:
                 # To store for each individual:
                 data = {}
                 data['person_ID_in_draw'] = person_ID
                 data['draw'] = draw
                 data['tot_monthly_dalys'] = total_dalys_incurred
+    
+                if episode_start_date > episode_end_date:
+                    print("End date ", episode_end_date)
+                    print("Start date", episode_start_date)
+                    exit(-1)
     
                 if episode_end_date is not None and episode_start_date is not None:
                     data['duration_of_episode'] = (episode_end_date - episode_start_date).days
@@ -351,10 +358,13 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
         
         # Attend draw data
         list_of_df.append(df)
-        exit(-1)
-            
+        print("Overall dataset")
+        print(df.columns)
+        print(df)
+        
     # Concatenate this df to the overall dataset
     dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
+    dataset.to_csv('overalldata.csv')
     print(type(dataset))
     return dataset
 
@@ -398,8 +408,6 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
 
     # 4 Postprocess them, i.e. only extract outcomes of interest and add draw parameters
     dataset = postprocess_individual_histories(individual_histories, draws_parameters)
-    exit(-1)
-    print(dataset.columns)
     # Only parameters in draws_parameters are the ones common across all draws, so
     # can safely add info from one draw (0) to metadata
     metadata['parameters'] = draws_parameters[0]['parameters']
