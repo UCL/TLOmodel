@@ -1,4 +1,5 @@
 import argparse
+import pickle
 import string
 from pathlib import Path
 
@@ -25,15 +26,15 @@ FS_SUPTITLE = 14
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     min_year = 2025
-    max_year = 2027
+    max_year = 2041
     spacing_of_years = 1
 
-    main_text = False
+    main_text = True
     parameter_uncertainty_analysis = False
     mode_2 = False
-    climate_analysis = True
+    climate_analysis = False
     prop_supply_demand = False
-    wet_season = False
+    wet_season = True
 
     SCALING_FACTOR = 145.39
     CI_LOWER = 0.025
@@ -74,6 +75,422 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     if wet_season:
         suffix += "_wet_season"
 
+    # ── Cache: load if available, skip extraction ─────────────────────────────
+    cache_path = output_folder / f"_processed_cache_{suffix}.pkl"
+    use_cache = cache_path.exists()
+
+    def _safe_draw(df, draw):
+        """Return df[draw].fillna(0) safely; return empty Series/DF if draw absent."""
+        try:
+            return df[draw].fillna(0)
+        except KeyError:
+            idx = df.index if hasattr(df, "index") else pd.Index([])
+            return pd.DataFrame(dtype=float, index=idx)
+
+    if use_cache:
+        print(f"Loading cache from {cache_path} — skipping data extraction.")
+        with open(cache_path, "rb") as f:
+            _cache = pickle.load(f)
+        all_draws_monthly_delayed_mean = _cache["all_draws_monthly_delayed_mean"]
+        all_draws_monthly_cancelled_mean = _cache["all_draws_monthly_cancelled_mean"]
+        all_draws_monthly_delayed_lower = _cache["all_draws_monthly_delayed_lower"]
+        all_draws_monthly_delayed_upper = _cache["all_draws_monthly_delayed_upper"]
+        all_draws_monthly_cancelled_lower = _cache["all_draws_monthly_cancelled_lower"]
+        all_draws_monthly_cancelled_upper = _cache["all_draws_monthly_cancelled_upper"]
+        all_draws_annual_delayed_mean = _cache["all_draws_annual_delayed_mean"]
+        all_draws_annual_cancelled_mean = _cache["all_draws_annual_cancelled_mean"]
+        all_draws_annual_delayed_lower = _cache["all_draws_annual_delayed_lower"]
+        all_draws_annual_delayed_upper = _cache["all_draws_annual_delayed_upper"]
+        all_draws_annual_cancelled_lower = _cache["all_draws_annual_cancelled_lower"]
+        all_draws_annual_cancelled_upper = _cache["all_draws_annual_cancelled_upper"]
+        all_draws_hsi_delayed_mean = _cache["all_draws_hsi_delayed_mean"]
+        all_draws_hsi_delayed_lower = _cache["all_draws_hsi_delayed_lower"]
+        all_draws_hsi_delayed_upper = _cache["all_draws_hsi_delayed_upper"]
+        all_draws_hsi_cancelled_mean = _cache["all_draws_hsi_cancelled_mean"]
+        all_draws_hsi_cancelled_lower = _cache["all_draws_hsi_cancelled_lower"]
+        all_draws_hsi_cancelled_upper = _cache["all_draws_hsi_cancelled_upper"]
+        all_draws_hsi_total = _cache["all_draws_hsi_total"]
+        all_draws_total_df = _cache["all_draws_total_df"]
+        all_draws_delayed_df = _cache["all_draws_delayed_df"]
+        all_draws_cancelled_df = _cache["all_draws_cancelled_df"]
+        all_draws_disrupted_persons_by_district = _cache["all_draws_disrupted_persons_by_district"]
+        tlo_facilities = _cache["tlo_facilities"]
+        high_rain_months = _cache["high_rain_months"]
+
+    else:
+        # ── Full extraction ───────────────────────────────────────────────────
+
+        facilities_df = pd.read_csv(
+            resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv",
+            low_memory=False,
+        )[["Fname", "Dist", "Zonename", "Ftype"]].drop_duplicates(subset="Fname")
+        dist_fixes = {"Blanytyre": "Blantyre", "Nkhatabay": "Nkhata Bay",
+                      "Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        facilities_df["Dist"] = facilities_df["Dist"].replace(dist_fixes)
+        fac_to_district = facilities_df.set_index("Fname")["Dist"]
+
+        def _make_hsi_counts_by_real_facility_monthly(target_period):
+            def _fn(_df):
+                _df["date"] = pd.to_datetime(_df["date"])
+                _df = _df.loc[_df["date"].between(*target_period)]
+                if _df.empty or "counts" not in _df.columns:
+                    return pd.Series(dtype=float)
+                totals = {}
+                for _, row in _df.iterrows():
+                    ym = row["date"].strftime("%Y-%m")
+                    counts_dict = row["counts"] if isinstance(row["counts"], dict) else {}
+                    for key, val in counts_dict.items():
+                        parts = str(key).split(":", 1)
+                        real_fac = parts[0]
+                        nan_keys = [k for k in counts_dict.keys() if str(k).startswith("nan:") or ":" not in str(k)]
+                        hsi_type = parts[1] if len(parts) > 1 else "unknown"
+                        composite = f"{ym}:{real_fac}:{hsi_type}"
+                        totals[composite] = totals.get(composite, 0) + val
+                return pd.Series(totals, dtype=float)
+
+            return _fn
+
+        def _make_disrupted_by_real_facility_monthly(target_period):
+            def _fn(_df):
+                _df["date"] = pd.to_datetime(_df["date"])
+                _df = _df.loc[_df["date"].between(*target_period)]
+                if _df.empty or "RealFacility_ID" not in _df.columns:
+                    return pd.Series(dtype=float)
+                _df = _df[_df["RealFacility_ID"].notna() & (_df["RealFacility_ID"] != "unknown")].copy()
+                if "TREATMENT_ID" in _df.columns:
+                    _df["hsi_type"] = _df["TREATMENT_ID"].fillna("unknown").astype(str)
+                else:
+                    _df["hsi_type"] = "unknown"
+                _df["composite"] = (
+                    _df["date"].dt.strftime("%Y-%m") + ":"
+                    + _df["RealFacility_ID"].astype(str) + ":"
+                    + _df["hsi_type"]
+                )
+                return _df["composite"].value_counts().astype(float)
+
+            return _fn
+
+        def _make_disrupted_persons_by_district(target_period, fac_to_dist):
+            def _fn(_df):
+                _df["date"] = pd.to_datetime(_df["date"])
+                _df = _df.loc[_df["date"].between(*target_period)]
+                if _df.empty or "Person_ID" not in _df.columns or "RealFacility_ID" not in _df.columns:
+                    return pd.Series(dtype=float)
+                _df = _df[_df["RealFacility_ID"].notna() & (_df["RealFacility_ID"] != "unknown")].copy()
+                _df["district"] = _df["RealFacility_ID"].map(fac_to_dist)
+                _df = _df.dropna(subset=["district"])
+                return _df.groupby("district")["Person_ID"].nunique().astype(float)
+
+            return _fn
+
+        target_year_sequence = range(min_year, max_year, spacing_of_years)
+        tlo_facilities = set()
+
+        print("Pre-loading raw results for all years …")
+        raw_total = {}
+        raw_delayed = {}
+        raw_cancelled = {}
+        raw_delayed_persons = {}
+        raw_cancelled_persons = {}
+
+        for target_year in target_year_sequence:
+            print(f"  year {target_year}")
+            TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
+            raw_total[target_year] = extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="hsi_event_counts_by_facility_monthly",
+                custom_generate_series=_make_hsi_counts_by_real_facility_monthly(TARGET_PERIOD),
+                do_scaling=False,
+            )
+            raw_delayed[target_year] = extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="Weather_delayed_HSI_Event_full_info",
+                custom_generate_series=_make_disrupted_by_real_facility_monthly(TARGET_PERIOD),
+                do_scaling=False,
+            )
+            raw_cancelled[target_year] = extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="Weather_cancelled_HSI_Event_full_info",
+                custom_generate_series=_make_disrupted_by_real_facility_monthly(TARGET_PERIOD),
+                do_scaling=False,
+            )
+            raw_delayed_persons[target_year] = extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="Weather_delayed_HSI_Event_full_info",
+                custom_generate_series=_make_disrupted_persons_by_district(TARGET_PERIOD, fac_to_district),
+                do_scaling=False,
+            )
+            raw_cancelled_persons[target_year] = extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="Weather_cancelled_HSI_Event_full_info",
+                custom_generate_series=_make_disrupted_persons_by_district(TARGET_PERIOD, fac_to_district),
+                do_scaling=False,
+            )
+
+        print("Building draw DataFrames …")
+
+        all_draws_monthly_delayed_mean = [];
+        all_draws_monthly_cancelled_mean = []
+        all_draws_monthly_delayed_lower = [];
+        all_draws_monthly_delayed_upper = []
+        all_draws_monthly_cancelled_lower = [];
+        all_draws_monthly_cancelled_upper = []
+        all_draws_annual_delayed_mean = [];
+        all_draws_annual_cancelled_mean = []
+        all_draws_annual_delayed_lower = [];
+        all_draws_annual_delayed_upper = []
+        all_draws_annual_cancelled_lower = [];
+        all_draws_annual_cancelled_upper = []
+        all_draws_hsi_delayed_mean = [];
+        all_draws_hsi_delayed_lower = [];
+        all_draws_hsi_delayed_upper = []
+        all_draws_hsi_cancelled_mean = [];
+        all_draws_hsi_cancelled_lower = [];
+        all_draws_hsi_cancelled_upper = []
+        all_draws_hsi_total = []
+        all_draws_total_df = {};
+        all_draws_delayed_df = {};
+        all_draws_cancelled_df = {}
+        all_draws_disrupted_persons_by_district = {}
+
+        def _parse_ym_local(index):
+            return index.astype(str).str.split(":", n=1).str[0]
+
+        def _parse_facility_local(index):
+            return index.astype(str).str.split(":", n=2).str[1]
+
+        def _parse_hsi_type_local(index):
+            return index.astype(str).str.split(":", n=2).str[2]
+
+        def _wet_season_mask_local(df):
+            months = _parse_ym_local(df.index).str.split("-").str[1].astype(int)
+            return months.isin([11, 12, 1, 2, 3, 4])
+
+        def _collapse_hsi_types_local(df):
+            if df.empty:
+                return df
+            key_2 = _parse_ym_local(df.index) + ":" + _parse_facility_local(df.index)
+            return df.groupby(key_2).sum()
+
+        def _align_and_rate_local(total_df, disrupted_df, delayed_df=None, cancelled_df=None):
+            idx = total_df.index.union(disrupted_df.index)
+            t = total_df.reindex(idx, fill_value=0)
+            d = disrupted_df.reindex(idx, fill_value=0)
+            if delayed_df is not None and cancelled_df is not None:
+                t = t + delayed_df.reindex(idx, fill_value=0) + cancelled_df.reindex(idx, fill_value=0)
+            return d.div(t).where(t > 0, 0.0).clip(upper=1.0)
+
+        def _monthly_stats_local(rate_df):
+            rate_df = rate_df.copy()
+            monthly = rate_df.groupby(_parse_ym_local(rate_df.index)).mean().sort_index()
+            return monthly.mean(axis=1), monthly.quantile(CI_LOWER, axis=1), monthly.quantile(CI_UPPER, axis=1)
+
+        def _annual_stats_local(rate_df):
+            rate_df = rate_df.copy()
+            annual = rate_df.groupby(_parse_ym_local(rate_df.index).str[:4]).mean().sort_index()
+            return annual.mean(axis=1), annual.quantile(CI_LOWER, axis=1), annual.quantile(CI_UPPER, axis=1)
+
+        def _hsi_type_stats_local(total_df, delayed_df, cancelled_df):
+            hsi = _parse_hsi_type_local(total_df.index)
+            total_by_type = total_df.groupby(hsi).sum()
+            delayed_by_type = delayed_df.reindex(total_df.index, fill_value=0).groupby(hsi).sum()
+            cancelled_by_type = cancelled_df.reindex(total_df.index, fill_value=0).groupby(hsi).sum()
+            denom = total_by_type + delayed_by_type + cancelled_by_type
+            delayed_rate = delayed_by_type.div(denom).where(denom > 0, 0.0)
+            cancelled_rate = cancelled_by_type.div(denom).where(denom > 0, 0.0)
+            return (delayed_rate.mean(axis=1), delayed_rate.quantile(CI_LOWER, axis=1),
+                    delayed_rate.quantile(CI_UPPER, axis=1), cancelled_rate.mean(axis=1),
+                    cancelled_rate.quantile(CI_LOWER, axis=1), cancelled_rate.quantile(CI_UPPER, axis=1),
+                    total_by_type.mean(axis=1))
+
+        def _concat_years(dfs):
+            return pd.concat(dfs).groupby(level=0).sum()
+
+        for draw in scenarios_of_interest:
+            print(f"  draw {draw} ({scenario_names[draw]})")
+
+            if scenario_names[draw] == "No Disruptions":
+                all_months = pd.date_range(
+                    start=f"{min_year}-01-01", end=f"{max_year - 1}-12-01", freq="MS"
+                ).strftime("%Y-%m")
+                all_years_str = [str(y) for y in target_year_sequence]
+                zeros = pd.Series(0.0, index=all_months)
+                zeros_yr = pd.Series(0.0, index=all_years_str)
+                for lst in [all_draws_monthly_delayed_mean, all_draws_monthly_cancelled_mean,
+                            all_draws_monthly_delayed_lower, all_draws_monthly_delayed_upper,
+                            all_draws_monthly_cancelled_lower, all_draws_monthly_cancelled_upper]:
+                    lst.append(zeros)
+                for lst in [all_draws_annual_delayed_mean, all_draws_annual_cancelled_mean,
+                            all_draws_annual_delayed_lower, all_draws_annual_delayed_upper,
+                            all_draws_annual_cancelled_lower, all_draws_annual_cancelled_upper]:
+                    lst.append(zeros_yr)
+                empty = pd.Series(dtype=float)
+                for lst in [all_draws_hsi_delayed_mean, all_draws_hsi_delayed_lower, all_draws_hsi_delayed_upper,
+                            all_draws_hsi_cancelled_mean, all_draws_hsi_cancelled_lower,
+                            all_draws_hsi_cancelled_upper, all_draws_hsi_total]:
+                    lst.append(empty)
+
+                _nd_total_dfs = [_safe_draw(raw_total[yr], draw) for yr in target_year_sequence]
+                all_draws_total_df[draw] = _concat_years(_nd_total_dfs) * SCALING_FACTOR
+                valid_nd = _parse_facility_local(all_draws_total_df[draw].index) != "nan"
+                all_draws_total_df[draw] = all_draws_total_df[draw][valid_nd]
+                if wet_season:
+                    ws_mask_nd = _wet_season_mask_local(all_draws_total_df[draw])
+                    all_draws_total_df[draw] = all_draws_total_df[draw][ws_mask_nd]
+
+                all_draws_delayed_df[draw] = pd.DataFrame(
+                    0.0,
+                    index=all_draws_total_df[draw].index,
+                    columns=all_draws_total_df[draw].columns,
+                )
+                all_draws_cancelled_df[draw] = pd.DataFrame(
+                    0.0,
+                    index=all_draws_total_df[draw].index,
+                    columns=all_draws_total_df[draw].columns,
+                )
+                tlo_facilities.update(_parse_facility_local(all_draws_total_df[draw].index).dropna())
+                all_draws_disrupted_persons_by_district[draw] = None
+                continue
+
+            all_years_total_dfs = []
+            all_years_delayed_dfs = []
+            all_years_cancelled_dfs = []
+            all_years_delayed_persons_dfs = []
+            all_years_cancelled_persons_dfs = []
+
+            for target_year in target_year_sequence:
+                all_years_total_dfs.append(_safe_draw(raw_total[target_year], draw))
+                all_years_delayed_dfs.append(_safe_draw(raw_delayed[target_year], draw))
+                all_years_cancelled_dfs.append(_safe_draw(raw_cancelled[target_year], draw))
+                all_years_delayed_persons_dfs.append(_safe_draw(raw_delayed_persons[target_year], draw))
+                all_years_cancelled_persons_dfs.append(_safe_draw(raw_cancelled_persons[target_year], draw))
+
+            total_all = _concat_years(all_years_total_dfs) * SCALING_FACTOR
+            valid = _parse_facility_local(total_all.index) != "nan"
+
+            delayed_all = _concat_years(all_years_delayed_dfs) * SCALING_FACTOR
+            cancelled_all = _concat_years(all_years_cancelled_dfs) * SCALING_FACTOR
+            total_all = total_all[valid]
+            delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
+            cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
+            disrupted_persons_all = (
+                _concat_years(all_years_delayed_persons_dfs)
+                .add(_concat_years(all_years_cancelled_persons_dfs), fill_value=0)
+                * SCALING_FACTOR
+            )
+            if wet_season:
+                ws_mask = _wet_season_mask_local(total_all)
+                total_all = total_all[ws_mask]
+                delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
+                cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
+
+            all_draws_disrupted_persons_by_district[draw] = disrupted_persons_all
+            tlo_facilities.update(_parse_facility_local(total_all.index).dropna())
+            all_draws_total_df[draw] = total_all
+            all_draws_delayed_df[draw] = delayed_all
+            all_draws_cancelled_df[draw] = cancelled_all
+
+            total_2 = _collapse_hsi_types_local(total_all)
+            delayed_2 = _collapse_hsi_types_local(delayed_all)
+            cancelled_2 = _collapse_hsi_types_local(cancelled_all)
+            delayed_rate_2 = _align_and_rate_local(total_2, delayed_2, delayed_2, cancelled_2)
+            cancelled_rate_2 = _align_and_rate_local(total_2, cancelled_2, delayed_2, cancelled_2)
+
+            dm, dl, du = _monthly_stats_local(delayed_rate_2)
+            cm, cl, cu = _monthly_stats_local(cancelled_rate_2)
+            all_draws_monthly_delayed_mean.append(dm);
+            all_draws_monthly_delayed_lower.append(dl)
+            all_draws_monthly_delayed_upper.append(du);
+            all_draws_monthly_cancelled_mean.append(cm)
+            all_draws_monthly_cancelled_lower.append(cl);
+            all_draws_monthly_cancelled_upper.append(cu)
+
+            dam, dal, dau = _annual_stats_local(delayed_rate_2)
+            cam, cal, cau = _annual_stats_local(cancelled_rate_2)
+            all_draws_annual_delayed_mean.append(dam);
+            all_draws_annual_delayed_lower.append(dal)
+            all_draws_annual_delayed_upper.append(dau);
+            all_draws_annual_cancelled_mean.append(cam)
+            all_draws_annual_cancelled_lower.append(cal);
+            all_draws_annual_cancelled_upper.append(cau)
+
+            hd_m, hd_l, hd_u, hc_m, hc_l, hc_u, hd_tot = _hsi_type_stats_local(
+                total_all, delayed_all, cancelled_all)
+            all_draws_hsi_delayed_mean.append(hd_m);
+            all_draws_hsi_delayed_lower.append(hd_l)
+            all_draws_hsi_delayed_upper.append(hd_u);
+            all_draws_hsi_cancelled_mean.append(hc_m)
+            all_draws_hsi_cancelled_lower.append(hc_l);
+            all_draws_hsi_cancelled_upper.append(hc_u)
+            all_draws_hsi_total.append(hd_tot)
+
+        # ── Compute high-rainfall months after tlo_facilities is populated ────
+        def _high_rainfall_months(ssp_tag, quantile=0.90):
+            df = pd.read_csv(
+                resourcefilepath / "climate_change_impacts"
+                / f"ResourceFile_Precipitation_Disruptions_{ssp_tag}_mean_monthly_prediction_weather_by_facility.csv",
+                index_col=0,
+            )
+            tlo_cols = [c for c in df.columns if c in tlo_facilities]
+            if tlo_cols:
+                df = df[tlo_cols]
+            df.index = df.index.astype(str)
+            year = df.index.str.split("-").str[0].astype(int)
+            month = df.index.str.split("-").str[1].astype(int)
+            period_mask = (year >= min_year) & (year <= max_year - 1)
+            df = df.loc[period_mask]
+            year = year[period_mask];
+            month = month[period_mask]
+            wet_mask = month.isin([11, 12, 1, 2, 3, 4])
+            df_wet = df.loc[wet_mask]
+            year_wet = year[wet_mask];
+            month_wet = month[wet_mask]
+            national_mean = df_wet.mean(axis=1)
+            threshold = national_mean.quantile(quantile)
+            high = national_mean >= threshold
+            return set(year_wet[high].astype(str) + "-" + month_wet[high].astype(str).str.zfill(2))
+
+        high_rain_months = _high_rainfall_months("ssp245")
+
+        # ── Save cache ────────────────────────────────────────────────────────
+        _cache = {
+            "all_draws_monthly_delayed_mean": all_draws_monthly_delayed_mean,
+            "all_draws_monthly_cancelled_mean": all_draws_monthly_cancelled_mean,
+            "all_draws_monthly_delayed_lower": all_draws_monthly_delayed_lower,
+            "all_draws_monthly_delayed_upper": all_draws_monthly_delayed_upper,
+            "all_draws_monthly_cancelled_lower": all_draws_monthly_cancelled_lower,
+            "all_draws_monthly_cancelled_upper": all_draws_monthly_cancelled_upper,
+            "all_draws_annual_delayed_mean": all_draws_annual_delayed_mean,
+            "all_draws_annual_cancelled_mean": all_draws_annual_cancelled_mean,
+            "all_draws_annual_delayed_lower": all_draws_annual_delayed_lower,
+            "all_draws_annual_delayed_upper": all_draws_annual_delayed_upper,
+            "all_draws_annual_cancelled_lower": all_draws_annual_cancelled_lower,
+            "all_draws_annual_cancelled_upper": all_draws_annual_cancelled_upper,
+            "all_draws_hsi_delayed_mean": all_draws_hsi_delayed_mean,
+            "all_draws_hsi_delayed_lower": all_draws_hsi_delayed_lower,
+            "all_draws_hsi_delayed_upper": all_draws_hsi_delayed_upper,
+            "all_draws_hsi_cancelled_mean": all_draws_hsi_cancelled_mean,
+            "all_draws_hsi_cancelled_lower": all_draws_hsi_cancelled_lower,
+            "all_draws_hsi_cancelled_upper": all_draws_hsi_cancelled_upper,
+            "all_draws_hsi_total": all_draws_hsi_total,
+            "all_draws_total_df": all_draws_total_df,
+            "all_draws_delayed_df": all_draws_delayed_df,
+            "all_draws_cancelled_df": all_draws_cancelled_df,
+            "all_draws_disrupted_persons_by_district": all_draws_disrupted_persons_by_district,
+            "tlo_facilities": tlo_facilities,
+            "high_rain_months": high_rain_months,
+        }
+        with open(cache_path, "wb") as f:
+            pickle.dump(_cache, f)
+        print(f"Cache saved → {cache_path}")
+
+    # ── Helpers that depend on loaded/cached data ─────────────────────────────
+
     facilities_df = pd.read_csv(
         resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv",
         low_memory=False,
@@ -85,62 +502,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     fac_to_ftype = facilities_df.set_index("Fname")["Ftype"]
     fac_to_zone = facilities_df.set_index("Fname")["Zonename"]
 
-    def _make_hsi_counts_by_real_facility_monthly(target_period):
-        def _fn(_df):
-            _df["date"] = pd.to_datetime(_df["date"])
-            _df = _df.loc[_df["date"].between(*target_period)]
-            if _df.empty or "counts" not in _df.columns:
-                return pd.Series(dtype=float)
-            totals = {}
-            for _, row in _df.iterrows():
-                ym = row["date"].strftime("%Y-%m")
-                counts_dict = row["counts"] if isinstance(row["counts"], dict) else {}
-                for key, val in counts_dict.items():
-                    parts = str(key).split(":", 1)
-                    real_fac = parts[0]
-                    nan_keys = [k for k in counts_dict.keys() if str(k).startswith("nan:") or ":" not in str(k)]
-
-                    hsi_type = parts[1] if len(parts) > 1 else "unknown"
-                    composite = f"{ym}:{real_fac}:{hsi_type}"
-                    totals[composite] = totals.get(composite, 0) + val
-            return pd.Series(totals, dtype=float)
-        return _fn
-
-    def _make_disrupted_by_real_facility_monthly(target_period):
-        def _fn(_df):
-            _df["date"] = pd.to_datetime(_df["date"])
-            _df = _df.loc[_df["date"].between(*target_period)]
-            if _df.empty or "RealFacility_ID" not in _df.columns:
-                return pd.Series(dtype=float)
-            _df = _df[_df["RealFacility_ID"].notna() & (_df["RealFacility_ID"] != "unknown")].copy()
-            if "TREATMENT_ID" in _df.columns:
-                _df["hsi_type"] = _df["TREATMENT_ID"].fillna("unknown").astype(str)
-            else:
-                _df["hsi_type"] = "unknown"
-            _df["composite"] = (
-                _df["date"].dt.strftime("%Y-%m") + ":"
-                + _df["RealFacility_ID"].astype(str) + ":"
-                + _df["hsi_type"]
-            )
-            return _df["composite"].value_counts().astype(float)
-        return _fn
-
-    def _make_disrupted_persons_by_district(target_period, fac_to_dist):
-        def _fn(_df):
-            _df["date"] = pd.to_datetime(_df["date"])
-            _df = _df.loc[_df["date"].between(*target_period)]
-            if _df.empty or "Person_ID" not in _df.columns or "RealFacility_ID" not in _df.columns:
-                return pd.Series(dtype=float)
-            _df = _df[_df["RealFacility_ID"].notna() & (_df["RealFacility_ID"] != "unknown")].copy()
-            _df["district"] = _df["RealFacility_ID"].map(fac_to_dist)
-            _df = _df.dropna(subset=["district"])
-            return _df.groupby("district")["Person_ID"].nunique().astype(float)
-        return _fn
-
-    def _hsi_total_by_treatment(total_df):
-        hsi = _parse_hsi_type(total_df.index)
-        by_type = total_df.groupby(hsi).sum()
-        return by_type.mean(axis=1), by_type.quantile(CI_LOWER, axis=1), by_type.quantile(CI_UPPER, axis=1)
+    target_year_sequence = range(min_year, max_year, spacing_of_years)
 
     def _parse_ym(index):
         return index.astype(str).str.split(":", n=1).str[0]
@@ -194,233 +556,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 cancelled_rate.quantile(CI_LOWER, axis=1), cancelled_rate.quantile(CI_UPPER, axis=1),
                 total_by_type.mean(axis=1))
 
-    def _high_rainfall_months(ssp_tag, quantile=0.90):
-        df = pd.read_csv(
-            resourcefilepath / "climate_change_impacts"
-            / f"ResourceFile_Precipitation_Disruptions_{ssp_tag}_mean_monthly_prediction_weather_by_facility.csv",
-            index_col=0,
-        )
-        df.index = df.index.astype(str)
-        year = df.index.str.split("-").str[0].astype(int)
-        month = df.index.str.split("-").str[1].astype(int)
-        period_mask = (year >= min_year) & (year <= max_year - 1)
-        df = df.loc[period_mask]
-        year = year[period_mask]
-        month = month[period_mask]
-        wet_mask = month.isin([11, 12, 1, 2, 3, 4])
-        df_wet = df.loc[wet_mask]
-        year_wet = year[wet_mask]
-        month_wet = month[wet_mask]
-        national_mean = df_wet.mean(axis=1)
-        threshold = national_mean.quantile(quantile)
-        high = national_mean >= threshold
-        return set(
-            year_wet[high].astype(str) + "-" + month_wet[high].astype(str).str.zfill(2)
-        )
-
     def _high_rain_mask(df, high_rain_months):
         return _parse_ym(df.index).isin(high_rain_months)
 
     def _wet_season_mask(df):
-        """Boolean mask for rows whose YYYY-MM month is in the wet season (Nov–Apr)."""
         months = _parse_ym(df.index).str.split("-").str[1].astype(int)
         return months.isin([11, 12, 1, 2, 3, 4])
-
-    high_rain_months = _high_rainfall_months("ssp245")
-    target_year_sequence = range(min_year, max_year, spacing_of_years)
-    tlo_facilities = set()
-
-    print("Pre-loading raw results for all years …")
-    raw_total = {}
-    raw_delayed = {}
-    raw_cancelled = {}
-    raw_delayed_persons = {}
-    raw_cancelled_persons = {}
-
-    for target_year in target_year_sequence:
-        print(f"  year {target_year}")
-        TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
-
-        raw_total[target_year] = extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="hsi_event_counts_by_facility_monthly",
-            custom_generate_series=_make_hsi_counts_by_real_facility_monthly(TARGET_PERIOD),
-            do_scaling=False,
-        )
-        raw_delayed[target_year] = extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="Weather_delayed_HSI_Event_full_info",
-            custom_generate_series=_make_disrupted_by_real_facility_monthly(TARGET_PERIOD),
-            do_scaling=False,
-        )
-        raw_cancelled[target_year] = extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="Weather_cancelled_HSI_Event_full_info",
-            custom_generate_series=_make_disrupted_by_real_facility_monthly(TARGET_PERIOD),
-            do_scaling=False,
-        )
-        raw_delayed_persons[target_year] = extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="Weather_delayed_HSI_Event_full_info",
-            custom_generate_series=_make_disrupted_persons_by_district(TARGET_PERIOD, fac_to_district),
-            do_scaling=False,
-        )
-        raw_cancelled_persons[target_year] = extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="Weather_cancelled_HSI_Event_full_info",
-            custom_generate_series=_make_disrupted_persons_by_district(TARGET_PERIOD, fac_to_district),
-            do_scaling=False,
-        )
-
-    print("Pre-loading complete. Processing draws …")
-
-    all_draws_monthly_delayed_mean = [];
-    all_draws_monthly_cancelled_mean = []
-    all_draws_monthly_delayed_lower = [];
-    all_draws_monthly_delayed_upper = []
-    all_draws_monthly_cancelled_lower = [];
-    all_draws_monthly_cancelled_upper = []
-    all_draws_annual_delayed_mean = [];
-    all_draws_annual_cancelled_mean = []
-    all_draws_annual_delayed_lower = [];
-    all_draws_annual_delayed_upper = []
-    all_draws_annual_cancelled_lower = [];
-    all_draws_annual_cancelled_upper = []
-    all_draws_hsi_delayed_mean = [];
-    all_draws_hsi_delayed_lower = [];
-    all_draws_hsi_delayed_upper = []
-    all_draws_hsi_cancelled_mean = [];
-    all_draws_hsi_cancelled_lower = [];
-    all_draws_hsi_cancelled_upper = []
-    all_draws_hsi_total = []
-    all_draws_total_df = {};
-    all_draws_delayed_df = {};
-    all_draws_cancelled_df = {}
-    all_draws_disrupted_persons_by_district = {}
-
-    def _concat_years(dfs):
-        return pd.concat(dfs).groupby(level=0).sum()
-
-    for draw in scenarios_of_interest:
-        print(draw)
-
-        if scenario_names[draw] == "No Disruptions":
-            all_months = pd.date_range(
-                start=f"{min_year}-01-01", end=f"{max_year - 1}-12-01", freq="MS"
-            ).strftime("%Y-%m")
-            all_years_str = [str(y) for y in target_year_sequence]
-            zeros = pd.Series(0.0, index=all_months)
-            zeros_yr = pd.Series(0.0, index=all_years_str)
-            for lst in [all_draws_monthly_delayed_mean, all_draws_monthly_cancelled_mean,
-                        all_draws_monthly_delayed_lower, all_draws_monthly_delayed_upper,
-                        all_draws_monthly_cancelled_lower, all_draws_monthly_cancelled_upper]:
-                lst.append(zeros)
-            for lst in [all_draws_annual_delayed_mean, all_draws_annual_cancelled_mean,
-                        all_draws_annual_delayed_lower, all_draws_annual_delayed_upper,
-                        all_draws_annual_cancelled_lower, all_draws_annual_cancelled_upper]:
-                lst.append(zeros_yr)
-            empty = pd.Series(dtype=float)
-            for lst in [all_draws_hsi_delayed_mean, all_draws_hsi_delayed_lower, all_draws_hsi_delayed_upper,
-                        all_draws_hsi_cancelled_mean, all_draws_hsi_cancelled_lower,
-                        all_draws_hsi_cancelled_upper, all_draws_hsi_total]:
-                lst.append(empty)
-
-            _nd_total_dfs = [raw_total[yr][draw].fillna(0) for yr in target_year_sequence]
-            all_draws_total_df[draw] = _concat_years(_nd_total_dfs) * SCALING_FACTOR
-
-            if wet_season:
-                ws_mask_nd = _wet_season_mask(all_draws_total_df[draw])
-                all_draws_total_df[draw] = all_draws_total_df[draw][ws_mask_nd]
-
-            all_draws_delayed_df[draw] = pd.DataFrame(
-                0.0,
-                index=all_draws_total_df[draw].index,
-                columns=all_draws_total_df[draw].columns,
-            )
-            all_draws_cancelled_df[draw] = pd.DataFrame(
-                0.0,
-                index=all_draws_total_df[draw].index,
-                columns=all_draws_total_df[draw].columns,
-            )
-            tlo_facilities.update(_parse_facility(all_draws_total_df[draw].index).dropna())
-            all_draws_disrupted_persons_by_district[draw] = None
-            continue
-
-        all_years_total_dfs = []
-        all_years_delayed_dfs = []
-        all_years_cancelled_dfs = []
-        all_years_delayed_persons_dfs = []
-        all_years_cancelled_persons_dfs = []
-
-        for target_year in target_year_sequence:
-            all_years_total_dfs.append(raw_total[target_year][draw].fillna(0))
-            all_years_delayed_dfs.append(raw_delayed[target_year][draw].fillna(0))
-            all_years_cancelled_dfs.append(raw_cancelled[target_year][draw].fillna(0))
-            all_years_delayed_persons_dfs.append(raw_delayed_persons[target_year][draw].fillna(0))
-            all_years_cancelled_persons_dfs.append(raw_cancelled_persons[target_year][draw].fillna(0))
-
-        total_all = _concat_years(all_years_total_dfs) * SCALING_FACTOR
-        valid = _parse_facility(total_all.index) != "nan"
-
-        delayed_all = _concat_years(all_years_delayed_dfs) * SCALING_FACTOR
-        cancelled_all = _concat_years(all_years_cancelled_dfs) * SCALING_FACTOR
-        total_all = total_all[valid]
-        delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
-        cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
-        disrupted_persons_all = (
-            _concat_years(all_years_delayed_persons_dfs)
-            .add(_concat_years(all_years_cancelled_persons_dfs), fill_value=0)
-            * SCALING_FACTOR
-        )
-        if wet_season:
-            ws_mask = _wet_season_mask(total_all)
-            total_all = total_all[ws_mask]
-            delayed_all = delayed_all.reindex(total_all.index, fill_value=0)
-            cancelled_all = cancelled_all.reindex(total_all.index, fill_value=0)
-
-        all_draws_disrupted_persons_by_district[draw] = disrupted_persons_all
-        tlo_facilities.update(_parse_facility(total_all.index).dropna())
-        all_draws_total_df[draw] = total_all
-        all_draws_delayed_df[draw] = delayed_all
-        all_draws_cancelled_df[draw] = cancelled_all
-
-        total_2 = _collapse_hsi_types(total_all)
-        delayed_2 = _collapse_hsi_types(delayed_all)
-        cancelled_2 = _collapse_hsi_types(cancelled_all)
-        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
-        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
-
-        dm, dl, du = _monthly_stats(delayed_rate_2)
-        cm, cl, cu = _monthly_stats(cancelled_rate_2)
-        all_draws_monthly_delayed_mean.append(dm);
-        all_draws_monthly_delayed_lower.append(dl)
-        all_draws_monthly_delayed_upper.append(du);
-        all_draws_monthly_cancelled_mean.append(cm)
-        all_draws_monthly_cancelled_lower.append(cl);
-        all_draws_monthly_cancelled_upper.append(cu)
-
-        dam, dal, dau = _annual_stats(delayed_rate_2)
-        cam, cal, cau = _annual_stats(cancelled_rate_2)
-        all_draws_annual_delayed_mean.append(dam);
-        all_draws_annual_delayed_lower.append(dal)
-        all_draws_annual_delayed_upper.append(dau);
-        all_draws_annual_cancelled_mean.append(cam)
-        all_draws_annual_cancelled_lower.append(cal);
-        all_draws_annual_cancelled_upper.append(cau)
-
-        hd_m, hd_l, hd_u, hc_m, hc_l, hc_u, hd_tot = _hsi_type_stats(total_all, delayed_all, cancelled_all)
-        all_draws_hsi_delayed_mean.append(hd_m);
-        all_draws_hsi_delayed_lower.append(hd_l)
-        all_draws_hsi_delayed_upper.append(hd_u);
-        all_draws_hsi_cancelled_mean.append(hc_m)
-        all_draws_hsi_cancelled_lower.append(hc_l);
-        all_draws_hsi_cancelled_upper.append(hc_u)
-        all_draws_hsi_total.append(hd_tot)
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  RESOURCE FILE DISRUPTION OVERLAY
@@ -486,7 +627,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     COLOUR_DELAYED = "#E67E22"
     COLOUR_CANCELLED = "#D4AC0D"
     COLOUR_RF = "#2980B9"
-
+    SCENARIO_COLOURS = ["#ADB993", "#EDC7CF", "#6F8AB7"]
     PANEL_LABELS = list(string.ascii_uppercase)
 
     def _series_to_dates_pct(s):
@@ -525,7 +666,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if len(c_dates):
             ax.plot(c_dates, c_vals, color=COLOUR_CANCELLED, lw=2.0, ls=":", alpha=1.0, label="Cancelled (TLO)",
                     zorder=3)
-        if not mode_2:
+        if not mode_2 and not climate_analysis:
             _rf_dates_mo, _rf_vals_mo = _get_rf(scenario_names[draw], monthly=True)
             if len(_rf_vals_mo):
                 ax.plot(_rf_dates_mo, _rf_vals_mo,
@@ -559,7 +700,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     # ─────────────────────────────────────────────────────────────────────────────
 
     fig2, ax2 = plt.subplots(figsize=(10, 5))
-    SCENARIO_COLOURS = ["#ADB993", "#EDC7CF", "#6F8AB7"]
     for idx, draw in enumerate(scenarios_of_interest):
         col = SCENARIO_COLOURS[idx % len(SCENARIO_COLOURS)]
         d_m = all_draws_annual_delayed_mean[idx];
@@ -673,7 +813,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         fig_b2.savefig(output_folder / f"supply_demand_split_and_volume_{suffix}.png",
                        dpi=300, bbox_inches="tight")
         plt.close(fig_b2)
-
 
     # ─────────────────────────────────────────────────────────────────────────────
     #  CSV OUTPUTS
@@ -840,7 +979,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         })
     pd.DataFrame(summary_rows).to_csv(output_folder / f"main_text_summary_{suffix}.csv", index=False)
 
-
     hsi_count_rows = []
     for idx, draw in enumerate(scenarios_of_interest):
         scen = scenario_names[draw]
@@ -850,7 +988,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         per_run_wet = total_2[mask].sum(axis=0)
         seasons = [("full_year", per_run_full), ("wet_season", per_run_wet)] if not wet_season else [
             ("wet_season", per_run_wet)]
-        for season, per_run in seasons:            hsi_count_rows.append({
+        for season, per_run in seasons:
+            hsi_count_rows.append({
                 "Scenario": scen, "season": season,
                 "total_hsi_ran_mean": round(per_run.mean(), 1),
                 "total_hsi_ran_lower": round(per_run.quantile(CI_LOWER), 1),
@@ -983,7 +1122,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         output_folder / f"facility_level_disruption_summary_{suffix}.csv", index=False)
 
     # ─────────────────────────────────────────────────────────────────────────────
-    #  MAP: Per-district HSI disruption rate
+    #  MAP: Per-district HSI disruption rate  (maps only, no bar chart)
     # ─────────────────────────────────────────────────────────────────────────────
 
     malawi_admin2 = gpd.read_file(
@@ -1032,74 +1171,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     map_panels = [(k, t) for k, t in map_panels if k in district_rates_df.columns]
 
     if map_panels:
-        import matplotlib.gridspec as gridspec
-
         n_map_cols = len(map_panels)
-        map_height = 8
-        bar_height_in = 4
-        fig_width = 6 * n_map_cols
-
-        fig_map = plt.figure(figsize=(fig_width, bar_height_in + map_height))
-        bar_frac = bar_height_in / (bar_height_in + map_height)
-        map_frac = map_height / (bar_height_in + map_height)
-        row_gap = 0.05
-
-        gs = gridspec.GridSpec(
-            1, n_map_cols, figure=fig_map,
-            left=0.05, right=0.95, bottom=0.02, top=map_frac - row_gap, wspace=0.0,
+        fig_map, axes_map_arr = plt.subplots(
+            1, n_map_cols, figsize=(6 * n_map_cols, 8), squeeze=False,
         )
-        axes_map = [fig_map.add_subplot(gs[0, i]) for i in range(n_map_cols)]
-
-        bar_width_frac = 0.5
-        bar_left = (1.0 - bar_width_frac) / 2.0
-        bar_bottom = map_frac + row_gap
-        bar_height_frac = bar_frac - row_gap - 0.05
-        ax_bar = fig_map.add_axes([bar_left, bar_bottom, bar_width_frac, bar_height_frac])
-
-        bar_scen_labels = []
-        bar_means = []
-        bar_lowers = []
-        bar_uppers = []
-        for idx, draw in enumerate(scenarios_of_interest):
-            per_run_total = _collapse_hsi_types(all_draws_total_df[draw]).sum(axis=0)
-            bar_scen_labels.append(scenario_names[draw])
-            bar_means.append(per_run_total.mean())
-            bar_lowers.append(per_run_total.quantile(CI_LOWER))
-            bar_uppers.append(per_run_total.quantile(CI_UPPER))
-
-        bar_means = np.array(bar_means);
-        bar_lowers = np.array(bar_lowers);
-        bar_uppers = np.array(bar_uppers)
-        baseline_mean = bar_means[0]
-        diff_means = bar_means - baseline_mean
-        diff_lowers = bar_lowers - baseline_mean
-        diff_uppers = bar_uppers - baseline_mean
-        plot_labels = bar_scen_labels[1:];
-        plot_means = diff_means[1:]
-        plot_lowers = diff_lowers[1:];
-        plot_uppers = diff_uppers[1:]
-        plot_colours = [SCENARIO_COLOURS[i % len(SCENARIO_COLOURS)] for i in range(1, len(bar_scen_labels))]
-        n_bars = len(plot_labels);
-        x_pos = np.arange(n_bars)
-        yerr_lo = plot_means - plot_lowers;
-        yerr_hi = plot_uppers - plot_means
-
-        ax_bar.bar(x_pos, abs(plot_means),
-                   yerr=[abs(yerr_lo), abs(yerr_hi)],
-                   color=plot_colours, alpha=0.85,
-                   error_kw={"lw": 1.5, "capsize": 5, "capthick": 1.5, "ecolor": "black"}, width=0.6)
-        ax_bar.axhline(0, color="black", linewidth=0.8, linestyle="--")
-        ax_bar.set_xticks(x_pos)
-        ax_bar.set_xticklabels(plot_labels, fontsize=FS_TICK)
-        ax_bar.set_ylabel('Deficit in HSIs\nvs. "No Disruptions"', fontsize=FS_LABEL, fontweight="bold")
-        ax_bar.ticklabel_format(style="sci", axis="y", scilimits=(0, 0), useMathText=True)
-        ax_bar.yaxis.get_offset_text().set_fontsize(FS_TICK)
-        plt.setp(ax_bar.yaxis.get_majorticklabels(), fontsize=FS_TICK)
-        ax_bar.set_title("(A) ", fontsize=FS_TITLE, fontweight="bold", loc="left")
-        ax_bar.spines["top"].set_visible(False)
-        ax_bar.spines["right"].set_visible(False)
-
-        # ── Map panels ──────────────────────────────────────────────────────────
+        axes_map = axes_map_arr[0]
         HIGHLIGHT_DISTRICTS = ["Nkhata Bay", "Rumphi", "Nkhotakota"]
 
         for i, (ax, (scen_key, title)) in enumerate(zip(axes_map, map_panels)):
@@ -1120,19 +1196,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             cbar_ax = fig_map.axes[-1]
             cbar_ax.set_ylabel("% HSIs disrupted", fontsize=FS_LABEL, fontweight="bold")
             cbar_ax.tick_params(labelsize=FS_TICK)
-            panel_letter = PANEL_LABELS[i + 1]
+            panel_letter = PANEL_LABELS[i]
             ax.set_title(f"({panel_letter}) {title}", fontsize=FS_TITLE, fontweight="bold")
             ax.axis("off")
 
         district_rates_df.to_csv(output_folder / f"district_hsi_disruption_percentage_{suffix}.csv")
-
+        fig_map.tight_layout()
         fig_map.savefig(
             output_folder / f"map_hsi_disruption_rate_by_district_{suffix}.png",
             dpi=300, bbox_inches="tight",
         )
         plt.close(fig_map)
-
-
 
     # ── WET SEASON SUMMARY CSV (Nov–Apr) ─────────────────────────────────────
 
@@ -1190,23 +1264,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     hr_summary_rows = []
     for idx, draw in enumerate(scenarios_of_interest):
         scen = scenario_names[draw]
-
         hr_total = _collapse_hsi_types(all_draws_total_df[draw])
         hr_delayed = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(hr_total.index, fill_value=0)
         hr_cancelled = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(hr_total.index, fill_value=0)
-
         hr_mask = _high_rain_mask(hr_total, high_rain_months)
-        hr_total = hr_total[hr_mask]
-
-        hr_delayed = hr_delayed[hr_mask]
+        hr_total = hr_total[hr_mask];
+        hr_delayed = hr_delayed[hr_mask];
         hr_cancelled = hr_cancelled[hr_mask]
-
-        per_run_total = hr_total.sum(axis=0)
+        per_run_total = hr_total.sum(axis=0);
         per_run_delayed = hr_delayed.sum(axis=0)
-        per_run_cancelled = hr_cancelled.sum(axis=0)
+        per_run_cancelled = hr_cancelled.sum(axis=0);
         per_run_disrupted = per_run_delayed + per_run_cancelled
         denom = per_run_total + per_run_disrupted
-
         hr_summary_rows.append({
             "Scenario": scen,
             "n_months_in_top10pct": len(high_rain_months),
@@ -1220,6 +1289,89 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         })
     pd.DataFrame(hr_summary_rows).to_csv(output_folder / f"high_rainfall_months_summary_{suffix}.csv", index=False)
 
+    # ── PROPORTION OF WET-SEASON DISRUPTIONS IN TOP-10% RAINFALL MONTHS ──────
+
+    hr_prop_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        if scen == "No Disruptions":
+            continue
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw])
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw])
+        disrupted_all_wet = delayed_2.add(cancelled_2.reindex(delayed_2.index, fill_value=0), fill_value=0)
+        per_run_disrupted_wet = disrupted_all_wet.sum(axis=0)
+        hr_mask = _high_rain_mask(disrupted_all_wet, high_rain_months)
+        disrupted_hr = disrupted_all_wet[hr_mask]
+        per_run_disrupted_hr = disrupted_hr.sum(axis=0)
+        prop = per_run_disrupted_hr / per_run_disrupted_wet.replace(0, np.nan)
+        hr_prop_rows.append({
+            "Scenario": scen,
+            "n_months_in_top10pct": len(high_rain_months),
+            "total_disrupted_wet_season_mean": round(per_run_disrupted_wet.mean(), 1),
+            "total_disrupted_top10pct_months_mean": round(per_run_disrupted_hr.mean(), 1),
+            "pct_wet_season_disruptions_in_top10pct_mean": round(prop.mean() * 100, 2),
+            "pct_wet_season_disruptions_in_top10pct_lower": round(prop.quantile(CI_LOWER) * 100, 2),
+            "pct_wet_season_disruptions_in_top10pct_upper": round(prop.quantile(CI_UPPER) * 100, 2),
+        })
+    pd.DataFrame(hr_prop_rows).to_csv(
+        output_folder / f"proportion_disruptions_in_top10pct_months_{suffix}.csv", index=False)
+    # ── VOLUME-WEIGHTED DISRUPTION RATE: HIGH VS NORMAL RAINFALL MONTHS ──────
+
+    vw_wet_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        if scen == "No Disruptions":
+            continue
+
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
+
+        hr_mask = _high_rain_mask(total_2, high_rain_months)
+        normal_mask = ~hr_mask
+
+        def _vw_rate(t, d, c, mask):
+            """Volume-weighted disruption rate per run, then CI across runs."""
+            t_m = t[mask];
+            d_m = d[mask];
+            c_m = c[mask]
+            disrupted = d_m.sum(axis=0) + c_m.sum(axis=0)
+            denom = t_m.sum(axis=0) + disrupted
+            rate = disrupted.div(denom.replace(0, np.nan)).fillna(0)
+            return rate.mean(), rate.quantile(CI_LOWER), rate.quantile(CI_UPPER)
+
+        hr_mean, hr_lo, hr_hi = _vw_rate(total_2, delayed_2, cancelled_2, hr_mask)
+        nor_mean, nor_lo, nor_hi = _vw_rate(total_2, delayed_2, cancelled_2, normal_mask)
+
+        ratio_per_run = (
+            (delayed_2[hr_mask].sum(axis=0) + cancelled_2[hr_mask].sum(axis=0))
+            .div((total_2[hr_mask].sum(axis=0)
+                  + delayed_2[hr_mask].sum(axis=0)
+                  + cancelled_2[hr_mask].sum(axis=0)).replace(0, np.nan))
+            /
+            (delayed_2[normal_mask].sum(axis=0) + cancelled_2[normal_mask].sum(axis=0))
+            .div((total_2[normal_mask].sum(axis=0)
+                  + delayed_2[normal_mask].sum(axis=0)
+                  + cancelled_2[normal_mask].sum(axis=0)).replace(0, np.nan))
+        ).fillna(0)
+
+        vw_wet_rows.append({
+            "Scenario": scen,
+            "n_high_precip_months": len(high_rain_months),
+            "vw_rate_high_precip_mean_%": round(hr_mean * 100, 4),
+            "vw_rate_high_precip_lower_%": round(hr_lo * 100, 4),
+            "vw_rate_high_precip_upper_%": round(hr_hi * 100, 4),
+            "vw_rate_normal_months_mean_%": round(nor_mean * 100, 4),
+            "vw_rate_normal_months_lower_%": round(nor_lo * 100, 4),
+            "vw_rate_normal_months_upper_%": round(nor_hi * 100, 4),
+            "ratio_high_to_normal_mean": round(ratio_per_run.mean(), 4),
+            "ratio_high_to_normal_lower": round(ratio_per_run.quantile(CI_LOWER), 4),
+            "ratio_high_to_normal_upper": round(ratio_per_run.quantile(CI_UPPER), 4),
+            "absolute_diff_mean_%": round((hr_mean - nor_mean) * 100, 4),
+        })
+
+    pd.DataFrame(vw_wet_rows).to_csv(
+        output_folder / f"vw_disruption_high_vs_normal_rainfall_{suffix}.csv", index=False)
     # ── PEAK MONTH DISRUPTION ─────────────────────────────────────────────────
 
     peak_rows = []
