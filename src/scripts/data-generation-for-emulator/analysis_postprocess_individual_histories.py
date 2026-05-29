@@ -243,8 +243,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
     differences = collect_diffs(draws_parameters)
     # Remove them from the original draws_parameters
     remove_diffs(draws_parameters,differences)
-    print(draws_parameters)
-    print(differences)
+
     # Iterate over draws
     for draw in range(len(draws_parameters)):
     
@@ -252,7 +251,6 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
         
         # For each draw, group by individual
         for person_ID, group in individual_histories[draw].groupby('person_ID_in_draw'):
-            print("At person_ID", person_ID)
             
             # If individual not subsequently tracked beyond initial status, skip them
             if group.iloc[0]['Info']['iht_track_history'] is False:
@@ -316,7 +314,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                         episode_end_properties = progression_properties
 
             if episode_start_date is not None and episode_end_date is None:
-                print("Episode began but was not completed for this individual")
+                print("Episode began but was not completed for this individual, draw = ", draw, ", person_ID = ", person_ID )
                 
             if polling_event_found and episode_end_found:
                 # To store for each individual:
@@ -342,7 +340,6 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 
                 resource_access_flatten = flatten_resource_access(resource_access)
                 data.update(resource_access_flatten)
-                print('data for individual', data)
 
                 data_for_draw.append(data)
                 
@@ -352,20 +349,22 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
         # Now for this draw, attach draw parameter selection to individual as conditional variables
         # for k,v in draws_parameters.items()
         for key,value in differences['parameters'].items():
-            print(key, value)
             for module_key, module_value in value.items():
-                df[module_key] = module_value[draw]
+                df["draw_parameter_" + module_key] = module_value[draw]
         
         # Attend draw data
         list_of_df.append(df)
-        print("Overall dataset")
-        print(df.columns)
-        print(df)
         
     # Concatenate this df to the overall dataset
     dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
+
+    # For ease of inspection, put all param draw data at the end of df
+    cols = list(dataset.columns)
+    draw_cols = [c for c in cols if c.startswith("draw_parameter")]
+    other_cols = [c for c in cols if not c.startswith("draw_parameter")]
+    dataset = dataset[other_cols + draw_cols]
+    
     dataset.to_csv('overalldata.csv')
-    print(type(dataset))
     return dataset
 
 
@@ -402,7 +401,6 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
 
     # 3. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
-    print(len(individual_histories))
     for d in range(len(individual_histories)):
         individual_histories[d].to_csv(f'individual_histories_draw{d}.csv')
 
