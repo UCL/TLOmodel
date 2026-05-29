@@ -246,8 +246,686 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
 
-    # make plots for patient load comparison at each level (1b, 2 and 3);
-    # y-axis is the district and x-axis is the patient load
+    # *** make comparison plots ***
+    from matplotlib.ticker import MultipleLocator
+
+    # shared settings and helper function
+
+    facility_levels = ["1a", "2", "3", "4"]
+    sources = ["TLO", "HCW TMS", "Facility Summary"]
+
+    markers = {
+        "HCW TMS": "o",
+        "Facility Summary": "^",
+        "TLO": "d"
+    }
+
+    source_colors = {
+        "TLO": "green",
+        "HCW TMS": "blue",
+        "Facility Summary": "orange"
+    }
+
+    PLOT_STYLE = {
+        "font.size": 16,
+        "axes.labelsize": 16,
+        "xtick.labelsize": 15,
+        "ytick.labelsize": 15,
+        "legend.fontsize": 16
+    }
+
+    plt.rcParams.update(PLOT_STYLE)
+
+    patient_load_col = "Daily_Patient_Load_Per_HCW"
+
+    def annotate_small_n_horizontal(
+        ax,
+        y_positions,
+        upper_bounds,
+        counts,
+        threshold=10,
+        symbol="*"
+    ):
+        mask = counts < threshold
+
+        for yy, xx in zip(
+            np.asarray(y_positions)[mask],
+            np.asarray(upper_bounds)[mask]
+        ):
+            ax.text(
+                xx,
+                yy,
+                symbol,
+                ha="left",
+                va="center",
+                fontsize=15,
+                color="red"
+            )
+
+    def annotate_small_n_vertical(
+        ax,
+        x_positions,
+        upper_bounds,
+        counts,
+        threshold=10,
+        symbol="*"
+    ):
+        mask = counts < threshold
+
+        for xx, yy in zip(
+            np.asarray(x_positions)[mask],
+            np.asarray(upper_bounds)[mask]
+        ):
+            ax.text(
+                xx,
+                yy,
+                symbol,
+                ha="center",
+                va="bottom",
+                fontsize=14,
+                color="red"
+            )
+
+    # prepare data: keep districts appearing in HCW TMS
+
+    common_districts = (
+        pat_load_comparison
+        .loc[pat_load_comparison["Source"] == "HCW TMS", "District"]
+        .unique()
+    )
+
+    df_plot = pat_load_comparison[
+        pat_load_comparison["District"].isin(common_districts)
+    ].copy()
+
+    # ** median + IQR plots **
+
+    def summarise_median_iqr(data, group_cols):
+        return (
+            data
+            .groupby(group_cols)[patient_load_col]
+            .agg(
+                median="median",
+                q25=lambda x: x.quantile(0.25),
+                q75=lambda x: x.quantile(0.75),
+                n="count"
+            )
+            .reset_index()
+        )
+
+    # Plot 1: by facility level
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_median_iqr(
+        df_plot,
+        ["District", "Facility_Level", "Source"]
+    )
+
+    offset = 0.2
+
+    fig, axes = plt.subplots(
+        1,
+        len(facility_levels),
+        figsize=(20, 12),
+        sharex="all"
+    )
+
+    for ax, fac_level in zip(axes, facility_levels):
+
+        temp = summary[
+            summary["Facility_Level"] == fac_level
+            ].copy()
+
+        districts = sorted(temp["District"].unique())
+        y = np.arange(len(districts))
+
+        for i, src in enumerate(sources):
+            dat = (
+                temp[temp["Source"] == src]
+                .set_index("District")
+                .reindex(districts)
+            )
+
+            xerr = np.vstack([
+                dat["median"] - dat["q25"],
+                dat["q75"] - dat["median"]
+            ])
+
+            ax.errorbar(
+                x=dat["median"],
+                y=y + (i - 1) * offset,
+                xerr=xerr,
+                fmt=markers[src],
+                color=source_colors[src],
+                markersize=8,
+                elinewidth=1.5,
+                capsize=2,
+                capthick=1.5,
+                linestyle="none",
+                label=src
+            )
+
+            annotate_small_n_horizontal(
+                ax=ax,
+                y_positions=y + (i - 1) * offset,
+                upper_bounds=dat["q75"],
+                counts=dat["n"]
+            )
+
+        ax.set_title(f"Facility Level {fac_level}")
+
+        ax.set_yticks(y)
+        ax.set_yticklabels(districts)
+        ax.invert_yaxis()
+
+        ax.xaxis.set_major_locator(MultipleLocator(20))
+        ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+        ax.grid(axis="x", which="major", alpha=0.5)
+        ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+        ax.tick_params(axis="both")
+
+    # axes[0].set_ylabel("District")
+    fig.supxlabel(
+        "Median Daily Patient Load per HCW",
+        y=0.04
+    )
+
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=3,
+        frameon=False
+    )
+
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    plt.show()
+
+    # Plot 2: overall facility levels
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_median_iqr(
+        df_plot,
+        ["District", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 12))
+
+    districts = sorted(summary["District"].unique())
+    y = np.arange(len(districts))
+
+    offset = 0.2
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("District")
+            .reindex(districts)
+        )
+
+        xerr = np.vstack([
+            dat["median"] - dat["q25"],
+            dat["q75"] - dat["median"]
+        ])
+
+        ax.errorbar(
+            x=dat["median"],
+            y=y + (i - 1) * offset,
+            xerr=xerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_horizontal(
+            ax=ax,
+            y_positions=y + (i - 1) * offset,
+            upper_bounds=dat["q75"],
+            counts=dat["n"]
+        )
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(districts)
+    ax.invert_yaxis()
+
+    ax.set_xlabel("Median Daily Patient Load per HCW")
+    ax.set_ylabel("District or Central Hospital")
+
+    ax.xaxis.set_major_locator(MultipleLocator(20))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+    ax.grid(axis="x", which="major", alpha=0.5)
+    ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+    ax.legend(frameon=False, loc="best")
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 3: over all districts
+    # x-axis = facility level, y-axis = patient load
+
+    summary = summarise_median_iqr(
+        df_plot,
+        ["Facility_Level", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    x = np.arange(len(facility_levels))
+    offset = 0.12
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("Facility_Level")
+            .reindex(facility_levels)
+        )
+
+        y = dat["median"]
+
+        yerr = np.vstack([
+            dat["median"] - dat["q25"],
+            dat["q75"] - dat["median"]
+        ])
+
+        ax.errorbar(
+            x=x + (i - 1) * offset,
+            y=y,
+            yerr=yerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_vertical(
+            ax=ax,
+            x_positions=x + (i - 1) * offset,
+            upper_bounds=dat["q75"],
+            counts=dat["n"]
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(facility_levels)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Facility Level")
+    ax.set_ylabel("Median Daily Patient Load per HCW")
+
+    ax.legend(frameon=False)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 4: over all districts and facility levels
+    # x-axis = source, y-axis = patient load
+
+    summary = (
+        summarise_median_iqr(
+            df_plot,
+            ["Source"]
+        )
+        .set_index("Source")
+        .reindex(sources)
+        .reset_index()
+    )
+
+    yerr = np.vstack([
+        summary["median"] - summary["q25"],
+        summary["q75"] - summary["median"]
+    ])
+
+    colors = [source_colors[src] for src in sources]
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    bars = ax.bar(
+        x=np.arange(len(sources)),
+        height=summary["median"],
+        yerr=yerr,
+        capsize=5,
+        color=colors,
+        alpha=0.7,
+        width=0.7
+    )
+
+    annotate_small_n_vertical(
+        ax=ax,
+        x_positions=np.arange(len(sources)),
+        upper_bounds=summary["q75"],
+        counts=summary["n"]
+    )
+
+    ax.set_xticks(np.arange(len(sources)))
+    ax.set_xticklabels(sources)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Source")
+    ax.set_ylabel("Median Daily Patient Load per HCW")
+
+    plt.tight_layout()
+    plt.show()
+
+    # ** mean + 95%CI plots **
+
+    def summarise_mean_ci95(data, group_cols):
+        summary = (
+            data
+            .groupby(group_cols)[patient_load_col]
+            .agg(
+                mean="mean",
+                sd="std",
+                n="count"
+            )
+            .reset_index()
+        )
+
+        summary["se"] = summary["sd"] / np.sqrt(summary["n"])
+        summary["ci95"] = 1.96 * summary["se"]
+
+        summary["ci95"] = summary["ci95"].fillna(0)
+
+        return summary
+
+    # Plot 1: by facility level
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_mean_ci95(
+        df_plot,
+        ["District", "Facility_Level", "Source"]
+    )
+
+    offset = 0.2
+
+    fig, axes = plt.subplots(
+        1,
+        len(facility_levels),
+        figsize=(20, 12),
+        sharex="all"
+    )
+
+    for ax, fac_level in zip(axes, facility_levels):
+
+        temp = summary[
+            summary["Facility_Level"] == fac_level
+            ].copy()
+
+        districts = sorted(temp["District"].unique())
+        y = np.arange(len(districts))
+
+        for i, src in enumerate(sources):
+            dat = (
+                temp[temp["Source"] == src]
+                .set_index("District")
+                .reindex(districts)
+            )
+
+            lower_err = np.minimum(dat["ci95"], dat["mean"])
+            upper_err = dat["ci95"]
+
+            xerr = np.vstack([
+                lower_err,
+                upper_err
+            ])
+
+            ax.errorbar(
+                x=dat["mean"],
+                y=y + (i - 1) * offset,
+                xerr=xerr,
+                fmt=markers[src],
+                color=source_colors[src],
+                markersize=8,
+                elinewidth=1.5,
+                capsize=2,
+                capthick=1.5,
+                linestyle="none",
+                label=src
+            )
+
+            annotate_small_n_horizontal(
+                ax=ax,
+                y_positions=y + (i - 1) * offset,
+                upper_bounds=dat["mean"] + dat["ci95"],
+                counts=dat["n"]
+            )
+
+        ax.set_title(f"Facility Level {fac_level}")
+
+        ax.set_yticks(y)
+        ax.set_yticklabels(districts)
+        ax.invert_yaxis()
+
+        ax.xaxis.set_major_locator(MultipleLocator(20))
+        ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+        ax.grid(axis="x", which="major", alpha=0.5)
+        ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+        ax.tick_params(axis="both")
+
+    fig.supxlabel(
+        "Daily Patient Load per HCW",
+        y=0.04
+    )
+
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=3,
+        frameon=False
+    )
+
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    plt.show()
+
+    # Plot 2: overall facility levels
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_mean_ci95(
+        df_plot,
+        ["District", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 12))
+
+    districts = sorted(summary["District"].unique())
+    y = np.arange(len(districts))
+
+    offset = 0.2
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("District")
+            .reindex(districts)
+        )
+
+        lower_err = np.minimum(dat["ci95"], dat["mean"])
+        upper_err = dat["ci95"]
+
+        xerr = np.vstack([
+            lower_err,
+            upper_err
+        ])
+
+        ax.errorbar(
+            x=dat["mean"],
+            y=y + (i - 1) * offset,
+            xerr=xerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_horizontal(
+            ax=ax,
+            y_positions=y + (i - 1) * offset,
+            upper_bounds=dat["mean"] + dat["ci95"],
+            counts=dat["n"]
+        )
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(districts)
+    ax.invert_yaxis()
+
+    ax.set_xlabel("Mean Daily Patient Load per HCW")
+    ax.set_ylabel("District or Central Hospital")
+
+    ax.xaxis.set_major_locator(MultipleLocator(20))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+    ax.grid(axis="x", which="major", alpha=0.5)
+    ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+    ax.legend(frameon=False, loc="best")
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 3: over all districts
+    # x-axis = facility level, y-axis = patient load
+
+    summary = summarise_mean_ci95(
+        df_plot,
+        ["Facility_Level", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    x = np.arange(len(facility_levels))
+    offset = 0.12
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("Facility_Level")
+            .reindex(facility_levels)
+        )
+
+        y = dat["mean"]
+
+        lower_err = np.minimum(dat["ci95"], dat["mean"])
+        upper_err = dat["ci95"]
+
+        yerr = np.vstack([
+            lower_err,
+            upper_err
+        ])
+
+        ax.errorbar(
+            x=x + (i - 1) * offset,
+            y=y,
+            yerr=yerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_vertical(
+            ax=ax,
+            x_positions=x + (i - 1) * offset,
+            upper_bounds=dat["mean"] + dat["ci95"],
+            counts=dat["n"]
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(facility_levels)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Facility Level")
+    ax.set_ylabel("Mean Daily Patient Load per HCW")
+
+    ax.legend(frameon=False)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 4: over all districts and facility levels
+    # x-axis = source, y-axis = patient load
+
+    summary = (
+        summarise_mean_ci95(
+            df_plot,
+            ["Source"]
+        )
+        .set_index("Source")
+        .reindex(sources)
+        .reset_index()
+    )
+
+    lower_err = np.minimum(summary["ci95"], summary["mean"])
+    upper_err = summary["ci95"]
+
+    yerr = np.vstack([
+        lower_err,
+        upper_err
+    ])
+
+    colors = [source_colors[src] for src in sources]
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    bars = ax.bar(
+        x=np.arange(len(sources)),
+        height=summary["mean"],
+        yerr=yerr,
+        capsize=5,
+        color=colors,
+        alpha=0.7,
+        width=0.7
+    )
+
+    annotate_small_n_vertical(
+        ax=ax,
+        x_positions=np.arange(len(sources)),
+        upper_bounds=summary["mean"] + summary["ci95"],
+        counts=summary["n"]
+    )
+
+    ax.set_xticks(np.arange(len(sources)))
+    ax.set_xticklabels(sources)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Source")
+    ax.set_ylabel("Mean Daily Patient Load per HCW")
+
+    plt.tight_layout()
+    plt.show()
 
     # hcw_count = extract_results(
     #     results_folder,
