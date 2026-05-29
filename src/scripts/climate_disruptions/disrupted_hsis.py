@@ -430,7 +430,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             all_draws_hsi_total.append(hd_tot)
 
         # ── Compute high-rainfall months after tlo_facilities is populated ────
-        def _high_rainfall_months(ssp_tag, quantile=0.90):
+        def _high_rainfall_months(ssp_tag, quantile=0.91):
             df = pd.read_csv(
                 resourcefilepath / "climate_change_impacts"
                 / f"ResourceFile_Precipitation_Disruptions_{ssp_tag}_mean_monthly_prediction_weather_by_facility.csv",
@@ -499,11 +499,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                   "Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
     facilities_df["Dist"] = facilities_df["Dist"].replace(dist_fixes)
     fac_to_district = facilities_df.set_index("Fname")["Dist"]
-    fac_to_ftype = facilities_df.set_index("Fname")["Ftype"]
-    fac_to_zone = facilities_df.set_index("Fname")["Zonename"]
-
-    target_year_sequence = range(min_year, max_year, spacing_of_years)
-
     def _parse_ym(index):
         return index.astype(str).str.split(":", n=1).str[0]
 
@@ -527,34 +522,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             t = t + delayed_df.reindex(idx, fill_value=0) + cancelled_df.reindex(idx, fill_value=0)
         return d.div(t).where(t > 0, 0.0).clip(upper=1.0)
 
-    def _monthly_stats(rate_df):
-        rate_df = rate_df.copy()
-        monthly = rate_df.groupby(_parse_ym(rate_df.index)).mean().sort_index()
-        return monthly.mean(axis=1), monthly.quantile(CI_LOWER, axis=1), monthly.quantile(CI_UPPER, axis=1)
-
-    def _annual_stats(rate_df):
-        rate_df = rate_df.copy()
-        annual = rate_df.groupby(_parse_ym(rate_df.index).str[:4]).mean().sort_index()
-        return annual.mean(axis=1), annual.quantile(CI_LOWER, axis=1), annual.quantile(CI_UPPER, axis=1)
-
     def _facility_stats(rate_df, total_df):
         rate_df = rate_df.copy()
         total_df = total_df.reindex(rate_df.index, fill_value=0)
         fac = _parse_facility(rate_df.index)
         return rate_df.groupby(fac).mean().mean(axis=1), total_df.groupby(fac).sum().mean(axis=1)
-
-    def _hsi_type_stats(total_df, delayed_df, cancelled_df):
-        hsi = _parse_hsi_type(total_df.index)
-        total_by_type = total_df.groupby(hsi).sum()
-        delayed_by_type = delayed_df.reindex(total_df.index, fill_value=0).groupby(hsi).sum()
-        cancelled_by_type = cancelled_df.reindex(total_df.index, fill_value=0).groupby(hsi).sum()
-        denom = total_by_type + delayed_by_type + cancelled_by_type
-        delayed_rate = delayed_by_type.div(denom).where(denom > 0, 0.0)
-        cancelled_rate = cancelled_by_type.div(denom).where(denom > 0, 0.0)
-        return (delayed_rate.mean(axis=1), delayed_rate.quantile(CI_LOWER, axis=1),
-                delayed_rate.quantile(CI_UPPER, axis=1), cancelled_rate.mean(axis=1),
-                cancelled_rate.quantile(CI_LOWER, axis=1), cancelled_rate.quantile(CI_UPPER, axis=1),
-                total_by_type.mean(axis=1))
 
     def _high_rain_mask(df, high_rain_months):
         return _parse_ym(df.index).isin(high_rain_months)
@@ -654,7 +626,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if scenario_names[draw] == "No Disruptions":
             continue
         ax = axes_flat[plot_idx]
-
         d_dates, d_vals = _series_to_dates_pct(all_draws_monthly_delayed_mean[idx])
         c_dates, c_vals = _series_to_dates_pct(all_draws_monthly_cancelled_mean[idx])
         t_vals = d_vals + c_vals if len(d_vals) == len(c_vals) else np.array([])
@@ -1315,9 +1286,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         })
     pd.DataFrame(hr_prop_rows).to_csv(
         output_folder / f"proportion_disruptions_in_top10pct_months_{suffix}.csv", index=False)
-    # ── VOLUME-WEIGHTED DISRUPTION RATE: HIGH VS NORMAL RAINFALL MONTHS ──────
 
-    vw_wet_rows = []
+    # ── PER-FACILITY TOP-10% PRECIPITATION MONTHS ─────────────────────────────
+
+    def _high_precip_facility_month_set(ssp_tag, quantile=0.90):
+        """
+        Returns a set of 'YYYY-MM:facility' strings where that facility's
+        precipitation exceeds its own 90th percentile across wet-season months.
+        """
+        df = pd.read_csv(
+            resourcefilepath / "climate_change_impacts"
+            / f"ResourceFile_Precipitation_Disruptions_{ssp_tag}_mean_monthly_prediction_weather_by_facility.csv",
+            index_col=0,
+        )
+        # restrict to tlo_facilities and study period wet-season months
+        tlo_cols = [c for c in df.columns if c in tlo_facilities]
+        df = df[tlo_cols]
+        df.index = df.index.astype(str)
+        year = df.index.str.split("-").str[0].astype(int)
+        month = df.index.str.split("-").str[1].astype(int)
+        mask = (year >= min_year) & (year <= max_year - 1) & month.isin([11, 12, 1, 2, 3, 4])
+        df = df.loc[mask]
+
+        high_set = set()
+        for facility in df.columns:
+            s = df[facility].dropna()
+            threshold = s.quantile(quantile)
+            for ym in s[s >= threshold].index:
+                parts = ym.split("-")
+                ym_padded = f"{parts[0]}-{parts[1].zfill(2)}"
+                high_set.add(f"{ym_padded}:{facility}")
+        return high_set
+
+    high_precip_fac_months = _high_precip_facility_month_set("ssp245")
+    # ── PER-FACILITY: % OF DISRUPTIONS IN THAT FACILITY'S OWN TOP 10% MONTHS ──
+
     for idx, draw in enumerate(scenarios_of_interest):
         scen = scenario_names[draw]
         if scen == "No Disruptions":
@@ -1327,51 +1330,56 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
         cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
 
-        hr_mask = _high_rain_mask(total_2, high_rain_months)
-        normal_mask = ~hr_mask
+        disrupted_2 = delayed_2 + cancelled_2
+        fac = _parse_facility(total_2.index)
 
-        def _vw_rate(t, d, c, mask):
-            """Volume-weighted disruption rate per run, then CI across runs."""
-            t_m = t[mask];
-            d_m = d[mask];
-            c_m = c[mask]
-            disrupted = d_m.sum(axis=0) + c_m.sum(axis=0)
-            denom = t_m.sum(axis=0) + disrupted
-            rate = disrupted.div(denom.replace(0, np.nan)).fillna(0)
-            return rate.mean(), rate.quantile(CI_LOWER), rate.quantile(CI_UPPER)
+        fac_conc_rows = []
+        for f in fac.unique():
+            if f == "nan":
+                continue
 
-        hr_mean, hr_lo, hr_hi = _vw_rate(total_2, delayed_2, cancelled_2, hr_mask)
-        nor_mean, nor_lo, nor_hi = _vw_rate(total_2, delayed_2, cancelled_2, normal_mask)
+            fac_mask = fac == f
+            dis_fac = disrupted_2[fac_mask]  # rows = months, cols = runs
+            total_fac = total_2[fac_mask]
 
-        ratio_per_run = (
-            (delayed_2[hr_mask].sum(axis=0) + cancelled_2[hr_mask].sum(axis=0))
-            .div((total_2[hr_mask].sum(axis=0)
-                  + delayed_2[hr_mask].sum(axis=0)
-                  + cancelled_2[hr_mask].sum(axis=0)).replace(0, np.nan))
-            /
-            (delayed_2[normal_mask].sum(axis=0) + cancelled_2[normal_mask].sum(axis=0))
-            .div((total_2[normal_mask].sum(axis=0)
-                  + delayed_2[normal_mask].sum(axis=0)
-                  + cancelled_2[normal_mask].sum(axis=0)).replace(0, np.nan))
-        ).fillna(0)
+            # per run: total disruptions at this facility across all months
+            total_disrupted_per_run = dis_fac.sum(axis=0)
 
-        vw_wet_rows.append({
-            "Scenario": scen,
-            "n_high_precip_months": len(high_rain_months),
-            "vw_rate_high_precip_mean_%": round(hr_mean * 100, 4),
-            "vw_rate_high_precip_lower_%": round(hr_lo * 100, 4),
-            "vw_rate_high_precip_upper_%": round(hr_hi * 100, 4),
-            "vw_rate_normal_months_mean_%": round(nor_mean * 100, 4),
-            "vw_rate_normal_months_lower_%": round(nor_lo * 100, 4),
-            "vw_rate_normal_months_upper_%": round(nor_hi * 100, 4),
-            "ratio_high_to_normal_mean": round(ratio_per_run.mean(), 4),
-            "ratio_high_to_normal_lower": round(ratio_per_run.quantile(CI_LOWER), 4),
-            "ratio_high_to_normal_upper": round(ratio_per_run.quantile(CI_UPPER), 4),
-            "absolute_diff_mean_%": round((hr_mean - nor_mean) * 100, 4),
-        })
+            # per run: disruption rate per month (rows) across runs (cols)
+            denom_fac = (total_fac + dis_fac).replace(0, np.nan)
+            rate_per_month = dis_fac / denom_fac  # shape: (n_months, n_runs)
 
-    pd.DataFrame(vw_wet_rows).to_csv(
-        output_folder / f"vw_disruption_high_vs_normal_rainfall_{suffix}.csv", index=False)
+            # for each run, find the 90th percentile disruption rate threshold
+            # then flag months above it and sum their disruptions
+            conc_per_run = pd.Series(dtype=float, index=dis_fac.columns)
+            for run in dis_fac.columns:
+                r = rate_per_month[run].dropna()
+                if r.empty or total_disrupted_per_run[run] == 0:
+                    conc_per_run[run] = 0
+                    continue
+                thresh = r.quantile(0.90)
+                top_months = r[r >= thresh].index
+                dis_in_top = dis_fac.loc[top_months, run].sum()
+                conc_per_run[run] = dis_in_top / total_disrupted_per_run[run] * 100
+
+            fac_conc_rows.append({
+                "scenario": scen,
+                "facility": f,
+                "pct_disruptions_in_top10pct_mean": round(conc_per_run.mean(), 2),
+                "pct_disruptions_in_top10pct_lower": round(conc_per_run.quantile(CI_LOWER), 2),
+                "pct_disruptions_in_top10pct_upper": round(conc_per_run.quantile(CI_UPPER), 2),
+                "n_months_total": int(fac_mask.sum()),
+            })
+
+        pd.DataFrame(fac_conc_rows).to_csv(
+            output_folder / f"facility_disruption_concentration_{scen.replace(' ', '_')}_{suffix}.csv",
+            index=False,
+        )
+        print(f"\n{scen} — disruption concentration summary:")
+        df_conc = pd.DataFrame(fac_conc_rows)
+        print(f"  Mean across facilities: {df_conc['pct_disruptions_in_top10pct_mean'].mean():.1f}%")
+        print(f"  Median:                 {df_conc['pct_disruptions_in_top10pct_mean'].median():.1f}%")
+        print(f"  90th pct:               {df_conc['pct_disruptions_in_top10pct_mean'].quantile(0.9):.1f}%")
     # ── PEAK MONTH DISRUPTION ─────────────────────────────────────────────────
 
     peak_rows = []
