@@ -196,8 +196,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         daily_patient_load_per_hcw["Facility_ID"] == 130, "District"
     ] = "Central Hospitals (Central)"
 
+    # 0.5649 is the prob. that any HCW is on duty on any day (estimates from CHAI data)
+    # given TLO assume the same HCWs in the HS
+    # alongside, we assume the patient seeking care independently of the availability of HCWs?
+    # otherwise, would need to adjust patient volume in the nominator, too; by which, the adjustments may cancel out.
+    # daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
+    #                                                             / (daily_patient_load_per_hcw['Staff_Count'] * 0.5649)
+    #                                                             )
+
     daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
-                                                                / daily_patient_load_per_hcw['Staff_Count'])
+                                                                / (daily_patient_load_per_hcw['Staff_Count'] * 1.0)
+                                                                )
 
     # read in TLM estimates
     path_to_tlm_folder = (
