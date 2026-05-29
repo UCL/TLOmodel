@@ -369,21 +369,25 @@ def check_info_value_changes(df):
 
     problems = {}  # store issues
 
+    # These keys (related to HS access) can be consecutively reported even if no changes occur
+    # Therefore, exclude them from comparison
+    keys_to_exclude = ['footprint','level','treatment_ID','ConsCall0', 'ConsCall1', 'equipment', 'bed_days', 'hs_is_inpatient']
+
     # iterate group-by-group
     for E, g in df.groupby("entity"):
         prev_info = {}
 
         for _, row in g.iterrows():
-            current_info = row["Info"]
+            if row["event_name"]!='monthly_daly_report':
+                current_info = row["Info"]
+                for key, value in current_info.items():
+                    if key in prev_info and (key not in keys_to_exclude):
+                        # compare with previous value
+                        if prev_info[key] == value and key not in problems.keys():
+                            problems[key] = value
 
-            for key, value in current_info.items():
-                if key in prev_info and key != 'footprint' and key != 'level':
-                    # compare with previous value
-                    if prev_info[key] == value and key not in problems.keys():
-                        problems[key] = value
-
-            # update latest value
-            prev_info = row["Info"]
+                # update latest value
+                prev_info = row["Info"]
 
     return problems
     

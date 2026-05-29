@@ -238,19 +238,14 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
 
     # Find differences between two draws; parameters that are common across draws can be added to metadata, differences will be added to dataset.
     # Find all common parameters across draws
-    # REVIEW: Artificially inflate differences:
-    draws_parameters[0]['parameters']['CervicalCancer']['different_param'] = 30
-    draws_parameters[1]['parameters']['CervicalCancer']['different_param'] = 39
-    draws_parameters[0]['parameters']['CervicalCancer']['same_param'] = 2
-    draws_parameters[1]['parameters']['CervicalCancer']['same_param'] = 2
-    draws_parameters[1]['parameters']['CervicalCancer']['different_param+2'] = 57
+    
     # Collect differences
     differences = collect_diffs(draws_parameters)
     # Remove them from the original draws_parameters
     remove_diffs(draws_parameters,differences)
     print(draws_parameters)
+    print()
     print(differences)
-
     # Iterate over draws
     for draw in range(len(draws_parameters)):
     
@@ -259,11 +254,14 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
         # For each draw, group by individual
         for person_ID, group in individual_histories[draw].groupby('person_ID_in_draw'):
             print("At person_ID", person_ID)
+            
+            # If individual not subsequently tracked beyond initial status, skip them
             if group.iloc[0]['Info']['iht_track_history'] is False:
                 continue
                 
             # If proceeding, will collect following
             polling_event_found = False
+            
             # The changing or adding of properties from the first_event will be stored in progression_properties
             progression_properties = {}
             running_date = None
@@ -343,6 +341,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
         
         # Attend draw data
         list_of_df.append(df)
+        exit(-1)
             
     # Concatenate this df to the overall dataset
     dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
@@ -380,7 +379,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
     metadata['scenario_script_commit_hash'] = scenario_json_data['commit']
     metadata['job_ID'] = os.path.basename(os.path.normpath(results_folder))
     draws_parameters = scenario_json_data['draws']
-    
+
     # 3. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
     print(len(individual_histories))
@@ -389,6 +388,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
 
     # 4 Postprocess them, i.e. only extract outcomes of interest and add draw parameters
     dataset = postprocess_individual_histories(individual_histories, draws_parameters)
+    exit(-1)
     print(dataset.columns)
     # Only parameters in draws_parameters are the ones common across all draws, so
     # can safely add info from one draw (0) to metadata
