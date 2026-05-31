@@ -397,12 +397,14 @@ run_optimizer_from_csv <- function() {
       constraints$staff_count[constraints$Officer_Category == "hr_nutri"]
   )
 
-
+  ## Multiply drug_budget_input by the length of the intervention period
+  ## because all other inputs are over the
+  ## intervention period
   res <- find_optimal_package(
     inputs = inputs,
     objective_input = "dalys",
     cet_input = 600,
-    drug_budget_input = 225602946, #TODO - get this from constaint
+    drug_budget_input = 225602946 * 15, #TODO - get this from constaint
     drug_budget.scale = 1,
     hr.time.constraint = hr.time.constraint,
     hr.size = hr.size.constraint,

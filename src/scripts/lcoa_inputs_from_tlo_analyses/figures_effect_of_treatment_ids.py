@@ -54,6 +54,9 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     dalys_averted = primary_results.get('dalys_averted')
     pc_dalys_averted = primary_results.get('pc_dalys_averted')
     icers = primary_results.get('icers_summarized')
+    incremental_scenario_cost = primary_results.get('incremental_scenario_cost')
+    dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
+
     comparison_metrics_available = all(
         metric is not None
         for metric in (
@@ -62,6 +65,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
             dalys_averted,
             pc_dalys_averted,
             icers,
+            incremental_scenario_cost
         )
     )
     print(f"Comparison metrics available: {comparison_metrics_available}")
@@ -96,14 +100,17 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
             ['2010-2010', '2011-2011', '2012-2012', '2013-2013',
              '2014-2014', '2015-2015', '2016-2016', '2017-2017',
              '2018-2018', '2019-2019', '2020-2020', '2021-2021',
-             '2022-2022', '2023-2023', '2024-2024', '2025-2025']
+             '2022-2022', '2023-2023', '2024-2024', '2025-2025', '2010-2041']
         )
+        # Filter rows to retain those in implementation period only
         mask_other_periods = (
             ~counts_of_hsi_in_implementation_period.
             index.
             get_level_values("period").
-            isin(pre_switch_periods)
+            isin(pre_switch_periods) &
+            (counts_of_hsi_in_implementation_period > 0).any(axis=1)
         )
+        # In the pre-implentation period only retain the treatment id of interest to avoid plot clutter
         mask_early_periods = (
             counts_of_hsi_in_implementation_period.index.get_level_values("period").isin(pre_switch_periods) &
             (counts_of_hsi_in_implementation_period.index.get_level_values("appt_type") == draw.replace("_*", ""))
@@ -183,7 +190,24 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
     if comparison_metrics_available:
         print("Plotting comparison metrics: deaths/DALYs averted, percentages, and ICERs.")
-        deaths_averted_sorted = (num_deaths_averted.sort_values(by="central", ascending=True) / 1e3)
+        dalys_averted_sorted = (dalys_averted.sort_values(by="central", ascending=True) / 1e3)
+        dalys_order = dalys_averted_sorted.index
+        fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "DALYS Averted by Each Treatment ID"
+        do_barh_plot_with_ci(dalys_averted_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("DALYs averted (/1000)")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
+        print("Saved: DALYS Averted by Each Treatment ID")
+
+        deaths_averted_sorted = (num_deaths_averted / 1e3).reindex(dalys_order)
         fig_height = max(6, min(0.28 * len(deaths_averted_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
         name_of_plot = "Deaths Averted by Each Treatment ID"
@@ -199,21 +223,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         plt.close(fig)
         print("Saved: Deaths Averted by Each Treatment ID")
 
-        dalys_averted_sorted = (dalys_averted.sort_values(by="central", ascending=True) / 1e3)
-        fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
-        fig, ax = plt.subplots(figsize=(10, fig_height))
-        name_of_plot = "DALYS Averted by Each Treatment ID"
-        do_barh_plot_with_ci(dalys_averted_sorted, ax)
-        ax.set_title(name_of_plot)
-        ax.set_xlabel("DALYs averted (/1000)")
-        ax.grid(axis="x")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.tight_layout()
-        fig.savefig(outfile)
-        plt.close(fig)
-        print("Saved: DALYS Averted by Each Treatment ID")
 
         pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="central", ascending=True))
         fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
@@ -255,6 +264,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
         mask = ~icers_sorted.index.get_level_values("draw").isin(["Hiv_Test_*", "CervicalCancer_Screening_Xpert_*", "BreastCancer_PalliativeCare_*"])
         icers_sorted = icers_sorted[mask]
+        icers_sorted = icers_sorted.reindex(dalys_order.intersection(icers_sorted.index))
         fig_height = max(6, min(0.28 * len(icers_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
         name_of_plot = "ICERs for Each Treatment ID"
@@ -269,6 +279,102 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig.savefig(outfile)
         plt.close(fig)
         print("Saved: ICERs for Each Treatment ID")
+
+        incremental_cost_sorted = incremental_scenario_cost.reindex(dalys_order)
+        fig_height = max(6, min(0.28 * len(incremental_cost_sorted.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        name_of_plot = "Incremental Cost for Each Treatment ID"
+        do_barh_plot_with_ci(incremental_cost_sorted, ax)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("Incremental cost (USD)")
+        ax.grid(axis="x")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
+        print("Saved: Incremental Cost for Each Treatment ID")
+
+        facet_order = (
+            dalys_order
+            .intersection(incremental_cost_sorted.dropna().index)
+            .intersection(icers_sorted.dropna().index)
+        )
+        dalys_facet = dalys_averted_sorted.reindex(facet_order)
+        costs_facet = incremental_cost_sorted.reindex(facet_order)
+        icers_facet = icers_sorted.reindex(facet_order)
+
+        fig_height = max(6, min(0.28 * len(facet_order) + 4, 18))
+        fig, axes = plt.subplots(1, 3, figsize=(20, fig_height), sharey=True)
+        name_of_plot = "DALYs, Incremental Cost, and ICERs by Treatment ID"
+
+        do_barh_plot_with_ci(dalys_facet, axes[0])
+        axes[0].set_title("DALYs")
+        axes[0].set_xlabel("DALYs averted (/1000)")
+
+        do_barh_plot_with_ci(costs_facet, axes[1])
+        axes[1].set_title("Costs")
+        axes[1].set_xlabel("Incremental cost (USD)")
+
+        do_barh_plot_with_ci(icers_facet, axes[2])
+        axes[2].set_title("ICERs")
+        axes[2].set_xlabel("ICER (USD per DALY averted)")
+
+        if isinstance(dalys_and_costs_from_lcoa, pd.DataFrame):
+            lcoa_overlay = (
+                dalys_and_costs_from_lcoa[["treatment_id", "overall_dalys", "overall_costs", "icer"]]
+                .dropna(subset=["treatment_id"])
+                .drop_duplicates(subset=["treatment_id"], keep="first")
+                .set_index("treatment_id")
+            )
+            facet_overlay = pd.DataFrame({"draw": facet_order})
+            facet_overlay["treatment_id"] = facet_overlay["draw"].str.replace(r"_\*$", "", regex=True)
+            facet_overlay = facet_overlay.join(lcoa_overlay, on="treatment_id")
+
+            daly_overlay = facet_overlay["overall_dalys"].notna()
+            if daly_overlay.any():
+                # DALY bars are plotted as /1000, so convert overlay values to the same units.
+                axes[0].scatter(
+                    facet_overlay.loc[daly_overlay, "overall_dalys"] / 1e3,
+                    facet_overlay.index[daly_overlay],
+                    c="black",
+                    s=16,
+                    zorder=10,
+                )
+
+            cost_overlay = facet_overlay["overall_costs"].notna()
+            if cost_overlay.any():
+                axes[1].scatter(
+                    facet_overlay.loc[cost_overlay, "overall_costs"],
+                    facet_overlay.index[cost_overlay],
+                    c="black",
+                    s=16,
+                    zorder=10,
+                )
+
+            icer_overlay = facet_overlay["icer"].notna()
+            if icer_overlay.any():
+                axes[2].scatter(
+                    facet_overlay.loc[icer_overlay, "icer"],
+                    facet_overlay.index[icer_overlay],
+                    c="black",
+                    s=16,
+                    zorder=10,
+                )
+
+        for ax in axes:
+            ax.grid(axis="x")
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+        axes[0].set_ylabel("Treatment ID")
+        fig.suptitle(name_of_plot, y=1.02)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
+        print("Saved: DALYs, Incremental Cost, and ICERs by Treatment ID")
 
     print("Finished generating figures.")
 

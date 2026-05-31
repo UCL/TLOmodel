@@ -62,6 +62,7 @@ from tlo.analysis.utils import (
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2041-01-01 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
+
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
 EXCLUDED_HSIs = [
@@ -165,6 +166,15 @@ def apply(
                 pickle.dump(input_costs, f)
             print(f"Saved input costs checkpoint to: {checkpoint_path}")
     results['input_costs'] = input_costs
+
+    # TODO Ask Sakshi: the hrh costs are the same across all draw; therefore incremental costs and cost for medical consumables
+    # are the same for each draw. Does that make sense?
+    # Consumables cost per intervention
+    total_cons_cost = input_costs.groupby(['draw', 'run', 'cost_category'])['cost'].sum()
+    total_cons_cost = compute_summary_statistics(total_cons_cost.unstack(['draw', 'run']), 'median')
+    total_cons_cost = set_param_names_as_column_index_level_0(total_cons_cost, param_names)
+
+    results['total_cons_cost'] = total_cons_cost
 
     # Computing incremental costs
     # TODO Check with Sakshi if these are annual costs; as everything else is annual.
@@ -320,14 +330,12 @@ def apply(
         do_scaling=True,
         autodiscover=True,
     )
-    # Sum across all facility levels and average across years; so we get the *average* annual capacity used over the whole period
+    # Sum across all facility levels and  years; so we get the *total* capacity used over the whole period
     # TODO: Check with Sakshi if this is what we want.
     mask = annual_capacity_used_by_cadre_and_level.index.get_level_values(0).isin(range(2026, 2040))
     capacity_used_by_cadre = (
-        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType', 'year']).
+        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType']).
         sum().
-        groupby(['OfficerType']).
-        mean().
         pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
@@ -342,8 +350,9 @@ def apply(
     )
     # This gives the total minutes available per day by cadre and facility level.
     # Sum across levels to get cadre specific constraints, and multiply by 365 to get annual capacity
+    # and then by the length of the period
     annual_capacity_by_cadre = (
-        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365 * 15
     )
 
     staff_count_by_cadre = (
@@ -364,6 +373,47 @@ def apply(
     results['capacity_used_by_cadre'] = capacity_used_by_cadre
     results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
     results['staff_count_by_cadre'] = staff_count_by_cadre
+
+    # Extract DALYs and costs from the LCOA input workbook (EHP_BasedOnLCOA sheet).
+    lcoa_workbook_path = Path(__file__).resolve().parent / "ResourceFile_PriorityRanking_ALLPOLICIES_EHP_dalys_costs.xlsx"
+    lcoa_df = pd.read_excel(lcoa_workbook_path, sheet_name="EHP_BasedOnLCOA")
+    col_a, col_i, col_j, col_k, col_l, col_m = (
+        lcoa_df.columns[0],
+        lcoa_df.columns[8],
+        lcoa_df.columns[9],
+        lcoa_df.columns[10],
+        lcoa_df.columns[11],
+        lcoa_df.columns[12],
+    )
+    dalys_and_costs_from_lcoa = lcoa_df[[col_a, col_i, col_j, col_k, col_l, col_m]].rename(
+        columns={
+            col_a: "treatment_id",
+            col_i: "icer",
+            col_j: "dalys_per_patient",
+            col_k: "cost_per_case",
+            col_l: "eligible_cases",
+            col_m: "lcoa_flag",
+        }
+    )
+    for numeric_col in ["icer", "dalys_per_patient", "cost_per_case", "eligible_cases"]:
+        dalys_and_costs_from_lcoa[numeric_col] = pd.to_numeric(
+            dalys_and_costs_from_lcoa[numeric_col], errors="coerce"
+        )
+    dalys_and_costs_from_lcoa["overall_dalys"] = (
+        dalys_and_costs_from_lcoa["dalys_per_patient"] * dalys_and_costs_from_lcoa["eligible_cases"]
+    )
+    dalys_and_costs_from_lcoa["overall_costs"] = (
+        dalys_and_costs_from_lcoa["cost_per_case"] * dalys_and_costs_from_lcoa["eligible_cases"]
+    )
+    dalys_and_costs_from_lcoa = dalys_and_costs_from_lcoa[
+        dalys_and_costs_from_lcoa["treatment_id"].notna()
+        & (
+            dalys_and_costs_from_lcoa["overall_dalys"].notna()
+            | dalys_and_costs_from_lcoa["overall_costs"].notna()
+            | dalys_and_costs_from_lcoa["icer"].notna()
+        )
+    ]
+    results["dalys_and_costs_from_lcoa"] = dalys_and_costs_from_lcoa
 
     return results
 
