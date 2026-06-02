@@ -69,7 +69,7 @@ class HistoricalChangesInHRH(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "Baseline (no historical growth)":
+            "Counterfactual (no historical growth)":
             self._common_baseline(),
 
             "Historical growth (uniform)":
@@ -125,15 +125,27 @@ class HistoricalChangesInHRH(BaseScenario):
                 }
             ),
 
-            "Historical growth (uniform) + HealthSystemPerformance(max)":
-            mix_scenarios(
-                self._hrh_growth_baseline(),
-                {
-                    'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                        'max_healthsystem_function': [False, True],
+            "Best settings assembled":
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
+                            "policy_name": "LCOA_EHP",
+                            "cons_availability_postSwitch": "all",
+                        }
                     }
-                }
-            ),
+                ),
+
+            # "Historical growth (uniform) + HealthSystemPerformance(max)":
+            # mix_scenarios(
+            #     self._hrh_growth_baseline(),
+            #     {
+            #         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+            #             'max_healthsystem_function': [False, True],
+            #         }
+            #     }
+            # ),
 
         }
 
