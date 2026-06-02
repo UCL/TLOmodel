@@ -208,6 +208,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #                                                             / (daily_patient_load_per_hcw['Staff_Count'] * 1.0)
     #                                                             )
 
+    tab = pd.crosstab(
+        daily_patient_load_per_hcw["District"],
+        daily_patient_load_per_hcw["Facility_Level"],
+        dropna=False
+    )
+
+    print(tab)
+
     # read in TLM estimates
     path_to_tlm_folder = (
         resourcefilepath
