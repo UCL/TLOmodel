@@ -311,7 +311,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Check total DALYs
     # %% Define parameter names
-    counterfactual_scenario = 'Baseline (no historical growth)'
+    counterfactual_scenario = 'Counterfactual (no historical growth)'
     actual_scenario = 'Historical growth (uniform)'
 
     # Absolute Number of Deaths and DALYs
@@ -397,7 +397,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).iloc[0].unstack().reindex(param_names).drop([actual_scenario])
 
     # DEATHS
-    name_of_plot = f'Deaths Averted vs Actual, {target_period()}'
+    name_of_plot = f'Deaths Averted vs Historical growth (uniform), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         pc_deaths_averted,  # num_deaths_averted
         annotations=None,
@@ -408,7 +408,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     f"{int(round(num_deaths_averted.loc[actual_scenario, 'mean'], -3))} ({int(round(num_deaths_averted.loc[actual_scenario, 'lower'], -3))} - {int(round(num_deaths_averted.loc[actual_scenario, 'upper'], -3))})\n"
     #     f"{round(pc_deaths_averted.loc[actual_scenario, 'mean'])} ({round(pc_deaths_averted.loc[actual_scenario, 'lower'], 1)} - {round(pc_deaths_averted.loc[actual_scenario, 'upper'], 1)})% of that in Counterfactual"
     #     )
-    # ax.set_title(f"{name_of_plot}\n{annotation}")
+    ax.set_title(f"{name_of_plot}")
     ax.set_ylabel('Deaths Averted vs Historical growth (uniform)')
     # fig.set_figwidth(5)
     fig.tight_layout()
@@ -417,7 +417,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # DALYS
-    name_of_plot = f'DALYs Averted vs Actual, {target_period()}'
+    name_of_plot = f'DALYs Averted vs Historical growth (uniform), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         pc_dalys_averted,  # (num_dalys_averted / 1e6),
         annotations=None,
@@ -428,7 +428,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     f"{int(round(num_dalys_averted.loc[actual_scenario, 'mean'], -4))} ({int(round(num_dalys_averted.loc[actual_scenario, 'lower'], -4))} - {int(round(num_dalys_averted.loc[actual_scenario, 'upper'], -4))})\n"
     #     f"{round(pc_dalys_averted.loc[actual_scenario, 'mean'])} ({round(pc_dalys_averted.loc[actual_scenario, 'lower'], 1)} - {round(pc_dalys_averted.loc[actual_scenario, 'upper'], 1)})% of that in Counterfactual"
     #     )
-    # ax.set_title(f"{name_of_plot}\n{annotation}")
+    ax.set_title(f"{name_of_plot}")
     ax.set_ylabel('DALYS Averted vs Historical growth (uniform)')
     # fig.set_figwidth(5)
     fig.tight_layout()
