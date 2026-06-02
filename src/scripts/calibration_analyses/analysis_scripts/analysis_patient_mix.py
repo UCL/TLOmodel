@@ -200,13 +200,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # given TLO assume the same HCWs in the HS
     # alongside, we assume the patient seeking care independently of the availability of HCWs?
     # otherwise, would need to adjust patient volume in the nominator, too; by which, the adjustments may cancel out.
-    # daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
-    #                                                             / (daily_patient_load_per_hcw['Staff_Count'] * 0.5649)
-    #                                                             )
-
     daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
-                                                                / (daily_patient_load_per_hcw['Staff_Count'] * 1.0)
+                                                                / (daily_patient_load_per_hcw['Staff_Count'] * 0.5649)
                                                                 )
+
+    # daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
+    #                                                             / (daily_patient_load_per_hcw['Staff_Count'] * 1.0)
+    #                                                             )
 
     # read in TLM estimates
     path_to_tlm_folder = (
@@ -585,33 +585,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plot 4: over all districts and facility levels
     # x-axis = source, y-axis = patient load
 
-    summary = (
-        summarise_median_iqr(
-            df_plot,
-            ["Source"]
-        )
-        .set_index("Source")
-        .reindex(sources)
-        .reset_index()
-    )
-
-    yerr = np.vstack([
-        summary["median"] - summary["q25"],
-        summary["q75"] - summary["median"]
-    ])
-
     colors = [source_colors[src] for src in sources]
 
     fig, ax = plt.subplots(figsize=(7, 6))
 
-    bars = ax.bar(
-        x=np.arange(len(sources)),
-        height=summary["median"],
-        yerr=yerr,
-        capsize=5,
-        color=colors,
-        alpha=0.7,
-        width=0.7
+    box_data = [
+        df_plot.loc[
+            df_plot["Source"] == src,
+            patient_load_col
+        ].dropna()
+        for src in sources
+    ]
+
+    box = ax.boxplot(
+        box_data,
+        positions=np.arange(len(sources)),
+        widths=0.7,
+        patch_artist=True,
+        showfliers=False
+    )
+
+    for patch, color in zip(box["boxes"], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+
+    summary = (
+        df_plot
+        .groupby("Source")[patient_load_col]
+        .agg(
+            n="count",
+            q75=lambda x: x.quantile(0.75)
+        )
+        .reindex(sources)
+        .reset_index()
     )
 
     annotate_small_n_vertical(
@@ -628,7 +634,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
 
     ax.set_xlabel("Source")
-    ax.set_ylabel("Median Daily Patient Load per HCW")
+    ax.set_ylabel("Daily Patient Load per HCW")
 
     plt.tight_layout()
     plt.show()
