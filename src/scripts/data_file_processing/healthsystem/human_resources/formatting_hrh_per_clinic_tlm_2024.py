@@ -15,6 +15,11 @@ path_to_tlm_tool_six = (
 
 hrh_per_clinic = pd.read_excel(path_to_tlm_tool_six, sheet_name="Facility Level TMS")
 
+# issue: inconsistent cadre names
+
+# todo: calculate number of HCWs who actually see patients
+
+# issue: some duplicate rows
 id_vars = [
     "Facility ID",
     "Clinic/ward/department",
