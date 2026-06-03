@@ -311,8 +311,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Check total DALYs
     # %% Define parameter names
-    counterfactual_scenario = 'Counterfactual (no historical growth)'
-    actual_scenario = 'Historical growth (uniform)'
+    counterfactual_scenario = 'Main Counterfactual'
+    actual_scenario = 'Main Actual'
 
     # Absolute Number of Deaths and DALYs
     num_deaths = extract_results(
