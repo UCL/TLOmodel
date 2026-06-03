@@ -180,7 +180,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     self._common_baseline(),
                     {
                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, True],
+                            'max_healthsystem_function': [False, False],
                         },
                         "HealthSystem": {
                             "policy_name": "LCOA_EHP",
@@ -194,7 +194,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     self._common_baseline(),
                     {
                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, True],
+                            'max_healthsystem_function': [False, False],
                         },
                         "HealthSystem": {
                             "policy_name": "LCOA_EHP",
