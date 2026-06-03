@@ -127,6 +127,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for _idx, row in _df.iterrows()
         }, axis=1).T
 
+    def get_num_treatments_by_year_treatment(_df):
+        """Return the number of treatments by short treatment id and year (within the TARGET_PERIOD)"""
+        _df['year'] = _df['date'].dt.year
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year', 'TREATMENT_ID']].set_index('year')
+        _df = _df['TREATMENT_ID'].apply(pd.Series)
+        _df.columns = _df.columns.map(lambda x: x.split('_')[0] + "*")
+        _df = _df.T.groupby(level=0).sum().T
+        _df = _df.stack()
+        _df.index = _df.index.set_names(["year", "treatment_type"])
+        _df.name = "count"
+        return _df
+
     def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
          extent of the error bar."""
@@ -453,8 +465,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0).stack(['draw', 'run']).reset_index(name='num_dalys')
 
+    # And absolute Number of treatments upon analysis needs
+    num_treatments_by_year_treatment = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments_by_year_treatment,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0).stack(['draw', 'run']).reset_index(name='num_treatments')
+
     num_dalys_by_year_cause.to_csv(output_folder / 'num_dalys_by_year_cause (for Izzy).csv', index=False)
     num_deaths_by_year_cause.to_csv(output_folder / 'num_deaths_by_year_cause (for Izzy).csv', index=False)
+    num_treatments_by_year_treatment.to_csv(
+        output_folder / 'num_treatments_by_year_treatment (for Izzy).csv', index=False
+    )
 
 
 if __name__ == "__main__":
