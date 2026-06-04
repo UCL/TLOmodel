@@ -166,8 +166,14 @@ if __name__ == "__main__":
     scenario_info = get_scenario_info(results_folder)
 
     # Get scenario names directly from Scenario class
-
     param_names = tuple(StaffingScenario()._scenarios.keys())
+
+    # Keep only scenarios with Default Healthsystem Function
+    default_hs_scenarios = [
+        "Baseline Nurses / Default Healthsystem Function",
+        "Fewer Nurses / Default Healthsystem Function",
+        "More Nurses / Default Healthsystem Function",
+    ]
 
     # Total deaths
     total_deaths = extract_total_deaths(results_folder).pipe(
@@ -176,6 +182,12 @@ if __name__ == "__main__":
     )
 
     summarized_total_deaths = summarize(total_deaths)
+
+    # Filter to Default Healthsystem Function scenarios only
+    summarized_total_deaths = summarized_total_deaths.loc[
+                              :,
+                              summarized_total_deaths.columns.get_level_values(0).isin(default_hs_scenarios)
+                              ]
 
     fig_1, ax_1 = plot_summarized_total_deaths(summarized_total_deaths)
 
@@ -186,6 +198,12 @@ if __name__ == "__main__":
     )
 
     summarized_deaths_by_age = summarize(deaths_by_age)
+
+    # Filter to Default Healthsystem Function scenarios only
+    summarized_deaths_by_age = summarized_deaths_by_age.loc[
+                               :,
+                               summarized_deaths_by_age.columns.get_level_values(0).isin(default_hs_scenarios)
+                               ]
 
     fig_2, ax_2 = plot_summarized_deaths_by_age(summarized_deaths_by_age)
 
