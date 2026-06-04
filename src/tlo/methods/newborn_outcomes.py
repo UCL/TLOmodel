@@ -1477,13 +1477,13 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
 class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixin):
     """"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'NewbornOutcomes_ConsumableLog'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1501,6 +1501,14 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
         logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: cannot not run with '
                                          'this configuration')
         return False
+
+    def _get_facility_level_for_pnc(self, person_id):
+        nci = self.module.newborn_care_info
+
+        if (person_id in nci) and (nci[person_id]['delivery_setting'] == 'hospital'):
+            return self.module.rng.choice(['1b', '2'])
+        else:
+            return '1a'
 
 class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
     """ This is BreastfeedingStatusUpdateEventSixMonths. It is scheduled via the breastfeeding function.
