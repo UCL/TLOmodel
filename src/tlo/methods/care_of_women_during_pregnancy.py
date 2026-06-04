@@ -2666,7 +2666,8 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             pac_opt_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_sepsis_optional'])
 
         if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
-            pac_cons.update(self.module.item_codes_preg_consumables['blood_transfusion'])
+            # TODO: determine if we should be modelling this...
+            # pac_cons.update(self.module.item_codes_preg_consumables['blood_transfusion'])
             pac_opt_cons.update(self.module.item_codes_preg_consumables['iv_drug_equipment'])
 
 

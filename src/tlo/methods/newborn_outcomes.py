@@ -975,7 +975,13 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_not_breathing_at_birth']:
             if mni[mother_id]['neo_will_receive_resus_if_needed']:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
-                # pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
+
+                cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    cons_log, priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=1))
+
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
 
@@ -1468,6 +1474,33 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
                                          'this configuration')
         return False
 
+class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, person_id, facility_level_of_this_hsi):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, NewbornOutcomes)
+
+        self.TREATMENT_ID = 'NewbornOutcomes_ConsumableLog'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+
+    def apply(self, person_id, squeeze_factor):
+
+        resus_item_code = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
+
+        pregnancy_helper_functions.check_int_deliverable(
+            self.module, int_name='neo_resus', hsi_event=self,
+            cons=resus_item_code, to_log=True)
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: did not run')
+        return False
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: cannot not run with '
+                                         'this configuration')
+        return False
 
 class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
     """ This is BreastfeedingStatusUpdateEventSixMonths. It is scheduled via the breastfeeding function.

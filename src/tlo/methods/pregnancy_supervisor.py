@@ -60,7 +60,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
-        
+
         self.default_mni_values = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
                               'didnt_seek_care': False,
                               'cons_not_avail': False,
@@ -147,7 +147,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                             'single_twin_still_birth': False,  # True (T) or False (F)
                             'will_receive_pnc': 'none',
                             'passed_through_week_one': False}
-                            
+
         self.default_all_mni_values = self.default_mni_values
         self.default_all_mni_values.update(self.default_labour_values)
 
@@ -2513,6 +2513,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         general_death_data = {'antenatal_sbr': rate(c['antenatal_stillbirth'], total_births, 1000),
                               'intrapartum_sbr': rate(c['intrapartum_stillbirth'], total_births, 1000),
+                              'antenatal_stillbirths': c['antenatal_stillbirth'],
+                              'intrapartum_stillbirths': c['intrapartum_stillbirth'],
                               'total_stillbirths': stillbirths,
                               'sbr': rate(stillbirths, total_births, 1000),
                               'neonatal_deaths': neonatal_deaths,

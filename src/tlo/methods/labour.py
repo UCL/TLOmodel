@@ -2959,21 +2959,20 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, indication='other')
 
-        # -------------------------- Newborn resuscitation ------------------------------------------------------------
-        # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
-        # the intervention
+        # # -------------------------- Newborn resuscitation ------------------------------------------------------------
+        # # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
+        # # the intervention
         if not mni[person_id]['sought_care_for_complication']:
-            # TODO: potential issue is that this consumable is being logged now for every birth as opposed to
-            #  for each birth where resuscitation of the newborn is required
 
-            neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self.module, int_name='neo_resus', hsi_event=self,
-                q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
-                cons=self.module.item_codes_lab_consumables['resuscitation'],
-                equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'})
+             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
+                 self.module, int_name='neo_resus', hsi_event=self,
+                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
+                 cons=self.module.item_codes_lab_consumables['resuscitation'],
+                 equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'},
+                 to_log=False)
 
-            if neo_resus_delivered:
-                mni[person_id]['neo_will_receive_resus_if_needed'] = True
+             if neo_resus_delivered:
+                 mni[person_id]['neo_will_receive_resus_if_needed'] = True
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care

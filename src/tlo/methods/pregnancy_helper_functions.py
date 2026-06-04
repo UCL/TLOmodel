@@ -235,9 +235,10 @@ def get_list_of_items(self, item_list):
 #     return int_will_run
 
 
-def check_int_deliverable(self, int_name, hsi_event,
-                                 q_param=None, cons=None, alt_con=None, opt_cons=None, equipment=None,
-                                 dx_test=None):
+def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
+                          alt_con=None, opt_cons=None,
+                          equipment=None, dx_test=None,
+                          to_log=True):
     """
     This function is called to determine if an intervention within the MNH modules can be delivered to an individual
     during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
@@ -246,13 +247,14 @@ def check_int_deliverable(self, int_name, hsi_event,
      (if applicable) the results of any dx_tests. Equipment is also declared.
 
    :param self: module
-    param int_name: items for code look up
-    param hsi_event: module
-    param q_param: items for code look up
-    param cons: module
-    param opt_cons: items for code look up
-    param equipment: module
-    param dx_test: items for code look up
+    param int_name: name of intervention
+    param hsi_event: hsi_event
+    param q_param: any quality parameters
+    param cons: required consumable item codes
+    param opt_cons: optional consumable item codes
+    param equipment: required equipment
+    param dx_test: dx_test
+    param to_log: whether consumables are logged AND intervention delivery is logged
     """
     df = self.sim.population.props
     individual_id = hsi_event.target
@@ -326,7 +328,7 @@ def check_int_deliverable(self, int_name, hsi_event,
 
         # analysis says "it runs"; dx gate may still block effect
         will_run = passes_dx_gate()
-        if will_run:
+        if will_run and to_log:
             c[f"{int_name}_deliv"] += 1
             if cons is not None and opt_cons is not None:
                 log_cons_when_forcing_intervention_delivery()
@@ -371,13 +373,13 @@ def check_int_deliverable(self, int_name, hsi_event,
     if cons is None:
         consumables_ok = True
     else:
-        consumables_ok = hsi_event.get_consumables(item_codes=cons, to_log=True)
+        consumables_ok = hsi_event.get_consumables(item_codes=cons, to_log=to_log)
         if (not consumables_ok) and (alt_con is not None):
             consumables_ok = hsi_event.get_consumables(item_codes=alt_con)
 
     # optional consumables (don’t gate success)
     if opt_cons is not None:
-        hsi_event.get_consumables(optional_item_codes=opt_cons, to_log=True)
+        hsi_event.get_consumables(optional_item_codes=opt_cons, to_log=to_log)
 
     # diagnostic gate: either none required or test passes
     test_ok = (dx_test is None) or  self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -385,7 +387,7 @@ def check_int_deliverable(self, int_name, hsi_event,
 
     will_run = bool(quality_ok and consumables_ok and test_ok)
 
-    if will_run:
+    if will_run and to_log:
         c[f"{int_name}_deliv"] += 1
     return will_run
 

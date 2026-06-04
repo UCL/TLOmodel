@@ -9,10 +9,13 @@ from scipy.stats import t
 import pandas as pd
 from tableone import TableOne
 
+from tlo import Date
 from tlo.analysis.utils import extract_results, get_scenario_outputs, get_scenario_info, parse_log_file
-
+from src.scripts.costing.cost_estimation import (do_stacked_bar_plot_of_cost_by_category,
+    estimate_input_cost_of_scenarios, summarize_cost_data
+)
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
-
+resourcefilepath = Path("./resources")
 
 # create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
@@ -143,7 +146,7 @@ results = {k:get_ps_data_frames(k, results_folder) for k in
            ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
             'yearly_mnh_counter_dict', 'intervention_coverage']}
 
-def get_deaths_demog(group, multiplier):
+def get_deaths_dalys_demog(group, multiplier):
     direct_deaths = extract_results(
                 results_folder,
                 module="tlo.methods.demography",
@@ -183,8 +186,33 @@ def get_deaths_demog(group, multiplier):
 
     return [direct_deaths, dd_sum, dd_mr, dd_mr_sum, dalys_df, dalys_df_sum]
 
-mat_deaths_dalys = get_deaths_demog('Maternal', 100_000)
-neo_deaths_dalys = get_deaths_demog('Neonatal', 1000)
+mat_deaths_dalys = get_deaths_dalys_demog('Maternal', 100_000)
+neo_deaths_dalys = get_deaths_dalys_demog('Neonatal', 1000)
+
+# get combined dalys
+total_dalys = pd.DataFrame(
+    mat_deaths_dalys[4].to_numpy() + neo_deaths_dalys[4].to_numpy(),
+    index=['total_dalys'],
+    columns=mat_deaths_dalys[4].columns)
+total_dalys_sum = summarize_confidence_intervals(total_dalys)
+
+# Get still births
+#  TODO: use IP stillbirths for DALY calculations only
+stillbirths = results['deaths_and_stillbirths']['crude'].loc[['total_stillbirths']]
+stillbirths_summ = summarize_confidence_intervals(stillbirths)
+sbr = results['deaths_and_stillbirths']['crude'].loc[['sbr']]
+sbr_summ = summarize_confidence_intervals(sbr)
+
+# add IP stillbirth to DALYs
+# TODO replace with IB stillbirth only
+# TODO adjust YLL for IP stillbirths
+
+yll_from_sb = stillbirths * 90.0
+adjusted_dalys = pd.DataFrame(
+    total_dalys.to_numpy() + yll_from_sb.to_numpy(),
+    index=['adj_total_dalys'],
+    columns=total_dalys.columns)
+adj_dalys_summ = summarize_confidence_intervals(adjusted_dalys)
 
 results.update({
                 'mat_deaths': {'crude': mat_deaths_dalys[0], 'summarised': mat_deaths_dalys[1]},
@@ -193,6 +221,10 @@ results.update({
                 'nmr': {'crude': neo_deaths_dalys[2], 'summarised': neo_deaths_dalys[3]},
                 'mat_dalys': {'crude': mat_deaths_dalys[4], 'summarised': mat_deaths_dalys[5]},
                 'neo_dalys': {'crude': neo_deaths_dalys[4], 'summarised': neo_deaths_dalys[5]},
+                'total_dalys': {'crude': total_dalys, 'summarised': total_dalys_sum},
+                'total_stillbirths': {'crude': stillbirths, 'summarised': stillbirths_summ},
+                'sbr': {'crude': sbr, 'summarised': sbr_summ},
+                'adj_total_dalys': {'crude': adjusted_dalys, 'summarised': adj_dalys_summ},
                 })
 
 # Summarised results
@@ -326,7 +358,236 @@ get_diff_plots(neo_deaths_2, 'NMR (demog log)')
 get_diff_plots(mat_dalys_diffs, 'Maternal DALYs')
 get_diff_plots(neo_dalys_diffs, 'neonatal DALYs')
 
+
+# TEST COSTS DIFFER FROM BASELINE
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2025, 12, 31))
+list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
+
+
+# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+#                                      resourcefilepath=resourcefilepath,
+#                                      suspended_results_folder=results_folder,
+#                                      _draws=draws,
+#                                      _years=list_of_relevant_years_for_costing,
+#                                      cost_only_used_staff= True,
+#                                      _discount_rate=0.03)
 #
+# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+
+# Read in costs (takes a long time to generate)
+# TODO: are these results scaled?
+input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
+input_costs = input_costs.set_index('Unnamed: 0')
+
+cost_by_draw_and_year = input_costs.groupby(['draw', 'run', 'year'])['cost'].sum()
+cost_by_draw_and_year_df = cost_by_draw_and_year.reset_index().pivot(index='year', columns=['draw','run'], values='cost')
+
+cost_diff = {}
+baseline = cost_by_draw_and_year_df[0]
+
+for draw, intervention in zip(draws, int_analysis):
+    diff_df = cost_by_draw_and_year_df[draw] - baseline
+    diff_df.columns = pd.MultiIndex.from_tuples([(draw, v) for v in range(len(diff_df.columns))],
+                                                names=['draw', 'run'])
+    results_diff = summarize_confidence_intervals(diff_df)
+    cost_diff.update({intervention: results_diff.values.flatten().tolist()})
+
+get_diff_plots(cost_diff, 'Cost')
+
+medical_consumables_df = (
+    input_costs[input_costs["cost_category"].eq("medical consumables")]
+      .pivot_table(
+          index="year",
+          columns=["draw", "run"],
+          values="cost",
+          aggfunc="sum"
+      )
+      .sort_index(axis=1))
+
+# TODO make more robust so we dont have to define year
+medical_consumables_summ = summarize_confidence_intervals(medical_consumables_df)
+medical_cons_by_scenario = {k: [medical_consumables_summ.loc[2025, (d, 'lower')],
+                                medical_consumables_summ.loc[2025, (d, 'mean')],
+                                medical_consumables_summ.loc[2025, (d, 'upper')]] for k, d in zip (int_analysis, draws)}
+barcharts(medical_cons_by_scenario, 'Cost (USD)', 'Total Consumables Costs')
+
+# todo adjust consumables coming from MRP, investiage why cons reduction for newborn resus (could we look at cons breakdown) ANSWER FOR MRP (BLOOD AND BENPEN ARE DRIVING THE COST DIFFERENCE)
+
+
+
+# TODO: THIS CODE WILL EXTRACT DIFFERENCE BETWEEN BASELINE AND USED CONS IN CONS UNIT
+
+from collections import defaultdict
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+
+    for _, row in _df.iterrows():
+        for item, num in row['Item_Used'].items():
+            counts_of_available[item] += num
+        for item, num in row['Item_NotAvailable'].items():  # eval(row['Item_NotAvailable'])
+            counts_of_not_available[item] += num
+
+    return pd.concat(
+        {'Used': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
+
+
+cons_req = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True) # todo change to False
+
+cons_req.fillna(0, inplace=True)
+
+cons_costs = pd.read_csv(Path("./resources/costing") /'ResourceFile_Costing_Consumables.csv')
+
+# costed_scenario_cons = cons_req.copy()
+price_lookup = (
+    cons_costs
+    .assign(Item_Code=cons_costs["Item_Code"].astype(str).str.strip())
+    .set_index("Item_Code")["Price_per_unit"])
+item_codes = (
+    cons_req.index.get_level_values(0)
+    .astype(str)
+    .str.strip())
+prices = item_codes.map(price_lookup)
+missing_price_mask = prices.isna()
+multipliers = prices.fillna(1)
+costed_scenario_cons = cons_req.mul(multipliers.to_numpy(), axis=0)
+
+diff_results = {}
+
+def get_cost_used_cons(level):
+    return costed_scenario_cons.loc[costed_scenario_cons.index.get_level_values(1) == "Used"].xs(level, level=0, axis=1)
+
+baseline = get_cost_used_cons(0)
+for draw, int in zip(draws, int_analysis):
+     diff_df = get_cost_used_cons(draw) - baseline
+     diff_df.columns = pd.MultiIndex.from_tuples([(draw, v) for v in range(len(diff_df.columns))],
+                                                 names=['draw', 'run'])
+     diff_df.index =  diff_df.index.droplevel(1)
+     results_diff = summarize_confidence_intervals(diff_df)
+     results_diff.fillna(0)
+     diff_results.update({int: results_diff})
+
+for k in diff_results.keys():
+
+    if k != "baseline":
+
+        # Extract values
+        categories = np.array(list(diff_results[k].index))
+
+        mins = np.array([arr[0] for arr in diff_results[k].values])
+        means = np.array([arr[1] for arr in diff_results[k].values])
+        maxs = np.array([arr[2] for arr in diff_results[k].values])
+
+        # Sort by mean difference
+        order = np.argsort(means)
+
+        categories = categories[order]
+        mins = mins[order]
+        means = means[order]
+        maxs = maxs[order]
+
+        y = np.arange(len(categories))
+
+        # Error bars
+        errors = np.vstack([
+            means - mins,
+            maxs - means
+        ])
+
+        # Identify top/bottom 10
+        bottom10 = np.argsort(means)[:10]
+        top10 = np.argsort(means)[-10:]
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(11, 34))
+
+        # All consumables
+        ax.errorbar(
+            means,
+            y,
+            xerr=errors,
+            fmt='o',
+            color='lightgrey',
+            ecolor='lightgrey',
+            markersize=3,
+            capsize=2,
+            elinewidth=0.8,
+            linewidth=0.8,
+            label='Other consumables'
+        )
+
+        # Largest decreases
+        ax.errorbar(
+            means[bottom10],
+            y[bottom10],
+            xerr=errors[:, bottom10],
+            fmt='o',
+            color='red',
+            ecolor='red',
+            markersize=5,
+            capsize=3,
+            elinewidth=1,
+            label='10 largest decreases'
+        )
+
+        # Largest increases
+        ax.errorbar(
+            means[top10],
+            y[top10],
+            xerr=errors[:, top10],
+            fmt='o',
+            color='green',
+            ecolor='green',
+            markersize=5,
+            capsize=3,
+            elinewidth=1,
+            label='10 largest increases'
+        )
+
+        # Baseline reference line
+        ax.axvline(0, color='black', linestyle='--', linewidth=1)
+
+        # Show all consumable IDs
+        ax.set_yticks(y)
+        ax.set_yticklabels(categories, fontsize=7)
+
+        # Labels/title
+        ax.set_xlabel("Crude difference from baseline scenario")
+        ax.set_ylabel("Consumable item")
+        ax.set_title(
+            f"Difference in Cost per Consumable from Baseline Scenario vs {k}"
+        )
+
+        # Grid only on x-axis
+        ax.grid(axis="x", alpha=0.35)
+
+        # Legend
+        ax.legend(loc="best")
+
+        # Save and show
+        fig.tight_layout()
+
+        fig.savefig(
+            f"{g_path}/cons_cost_diff_{k}_horizontal_highlighted.png",
+            dpi=300,
+            bbox_inches="tight"
+        )
+
+        plt.show()
+
 # def get_tornado_plot(data, outcome):
 #     grouped_data = {}
 #     data.pop('baseline', None)
