@@ -30,10 +30,10 @@ class HistoricalChangesInHRH(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
-        self.pop_size = 20_000  # <-- Local small run: 30; previous study run: 20_000
+        self.pop_size = 20_000  # <-- Local small run: 30; previous study run: 20_000; for publication: 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 5  # for publication: 10
 
     def log_configuration(self):
         return {
@@ -69,71 +69,71 @@ class HistoricalChangesInHRH(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "Main Counterfactual":
-            self._common_baseline(),
-
-            "Main Actual":
-            self._hrh_growth_baseline(),
-
-            "Historical growth (cadre-mix)":
-            mix_scenarios(
-                self._common_baseline(),
-                {
-                    "HealthSystem": {
-                        "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
-                    }
-                }
-            ),
-
-            "Historical growth + LCOA policy":
-            mix_scenarios(
-                self._hrh_growth_baseline(),
-                {
-                    "HealthSystem": {
-                        "policy_name": "LCOA_EHP",
-                    }
-                }
-            ),
-
-            "Historical growth + Consumables (better)":
-            mix_scenarios(
-                self._hrh_growth_baseline(),
-                {
-                    "HealthSystem": {
-                        "cons_availability_postSwitch": "scenario6",
-                    }
-                }
-            ),
-
-            "Historical growth + Consumables (perfect)":
-                mix_scenarios(
-                    self._hrh_growth_baseline(),
-                    {
-                        "HealthSystem": {
-                            "cons_availability_postSwitch": "all",
-                        }
-                    }
-                ),
-
-            "Historical growth + Low absorption rate":
-            mix_scenarios(
-                self._hrh_growth_baseline(),
-                {
-                    "HealthSystem": {
-                        "HR_expansion_absorption_rate": 0.5,
-                    }
-                }
-            ),
-
-            "Historical growth + Max HS performance":
-            mix_scenarios(
-                self._hrh_growth_baseline(),
-                {
-                    'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                        'max_healthsystem_function': [False, True],
-                    }
-                }
-            ),
+            # "Main Counterfactual":
+            # self._common_baseline(),
+            #
+            # "Main Actual":
+            # self._hrh_growth_baseline(),
+            #
+            # "Historical growth (cadre-mix)":
+            # mix_scenarios(
+            #     self._common_baseline(),
+            #     {
+            #         "HealthSystem": {
+            #             "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
+            #         }
+            #     }
+            # ),
+            #
+            # "Historical growth + LCOA policy":
+            # mix_scenarios(
+            #     self._hrh_growth_baseline(),
+            #     {
+            #         "HealthSystem": {
+            #             "policy_name": "LCOA_EHP",
+            #         }
+            #     }
+            # ),
+            #
+            # "Historical growth + Consumables (better)":
+            # mix_scenarios(
+            #     self._hrh_growth_baseline(),
+            #     {
+            #         "HealthSystem": {
+            #             "cons_availability_postSwitch": "scenario6",
+            #         }
+            #     }
+            # ),
+            #
+            # "Historical growth + Consumables (perfect)":
+            #     mix_scenarios(
+            #         self._hrh_growth_baseline(),
+            #         {
+            #             "HealthSystem": {
+            #                 "cons_availability_postSwitch": "all",
+            #             }
+            #         }
+            #     ),
+            #
+            # "Historical growth + Low absorption rate":
+            # mix_scenarios(
+            #     self._hrh_growth_baseline(),
+            #     {
+            #         "HealthSystem": {
+            #             "HR_expansion_absorption_rate": 0.5,
+            #         }
+            #     }
+            # ),
+            #
+            # "Historical growth + Max HS performance":
+            # mix_scenarios(
+            #     self._hrh_growth_baseline(),
+            #     {
+            #         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+            #             'max_healthsystem_function': [False, True],
+            #         }
+            #     }
+            # ),
 
             "No growth + LCOA policy":
                 mix_scenarios(
