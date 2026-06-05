@@ -322,6 +322,8 @@ def apply(
     # and summarise. However since no HSIs are delivered in the Nothing scenario, the capacity used in that scenario is zero,
     # so the delta relative to Nothing is just the capacity used in each scenario.
     # TODO: Check if this should be scaled with population or used as is.
+    # Note that Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
+    # To get the actual minutes, we need to multiply by the total available minutes.
     annual_capacity_used_by_cadre_and_level = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -358,6 +360,15 @@ def apply(
     staff_count_by_cadre = (
         daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
     )
+
+    # Proportion of capacity used by year and cadre, relative to the total available capacity by cadre
+    proportion_capacity_used_by_cadre = (
+        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType', 'year']).
+        sum().
+        pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    ).div(annual_capacity_by_cadre / 15, axis=0, level=0)
+    proportion_capacity_used_by_cadre = compute_summary_statistics(proportion_capacity_used_by_cadre, central_measure='median')
+    results['proportion_capacity_used_by_cadre'] = proportion_capacity_used_by_cadre
 
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
