@@ -12,7 +12,7 @@ class EmoncScenario(BaseScenario):
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 9
+        self.number_of_draws = 10
         self.runs_per_draw = 20
 
     def log_configuration(self):
@@ -42,22 +42,42 @@ class EmoncScenario(BaseScenario):
         if draw_number == 1:
             return {'PregnancySupervisor': {
                     'analysis_year': 2025}}
-
         else:
-            interventions_for_analysis = [['sepsis_treatment', 'neo_sepsis_treatment'],   # TODO: abx for prom HTN?PAC?
-                                          ['anti_htn_mgso4'], # TODO: drop HTN?
-                                          ['pph_treatment_uterotonics', 'amtsl'],
-                                          ['pph_treatment_mrrp'],
-                                          ['post_abortion_care_core'],   # TODO: retained products?
-                                          ['neo_resus'],
-                                          ['blood_transfusion'],
-                                          ['caesarean_section_oth_surg']]
+            interventions_for_analysis = [["ectopic_pregnancy_treatment", "post_abortion_care_core"],
+                                          ["sepsis_treatment"],
+                                          ["pph_treatment_uterotonics", "pph_treatment_mrrp", "blood_transfusion"],
+                                          ["avd_ol"],
+                                          ["anti_htn_mgso4", "avd_spe_ec"],
+                                          ["caesarean_section_oth_surg"],
+                                          ["neo_sepsis_treatment"],
+                                          ["kmc"],
+                                          ["neo_resus"]] # TODO: determine if we want to make this indication spec.
 
             return {'PregnancySupervisor': {
-                    'analysis_year': 2025,
-                    'interventions_analysis': True,
-                    'interventions_under_analysis': interventions_for_analysis[draw_number-2],
-                    'intervention_analysis_availability': 1.0}}
+                        'analysis_year': 2025,
+                        'interventions_analysis': True,
+                        'interventions_under_analysis': interventions_for_analysis[draw_number-1],
+                        'intervention_analysis_availability': 1.0}}
+
+        # if draw_number == 1:
+        #     return {'PregnancySupervisor': {
+        #             'analysis_year': 2025}}
+        #
+        # else:
+        #     interventions_for_analysis = [['sepsis_treatment', 'neo_sepsis_treatment'],   # TODO: abx for prom HTN?PAC?
+        #                                   ['anti_htn_mgso4'], # TODO: drop HTN?
+        #                                   ['pph_treatment_uterotonics', 'amtsl'],
+        #                                   ['pph_treatment_mrrp'],
+        #                                   ['post_abortion_care_core'],   # TODO: retained products?
+        #                                   ['neo_resus'],
+        #                                   ['blood_transfusion'],
+        #                                   ['caesarean_section_oth_surg']]
+        #
+        #     return {'PregnancySupervisor': {
+        #             'analysis_year': 2025,
+        #             'interventions_analysis': True,
+        #             'interventions_under_analysis': interventions_for_analysis[draw_number-2],
+        #             'intervention_analysis_availability': 1.0}}
 
 
 if __name__ == '__main__':

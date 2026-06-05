@@ -1899,7 +1899,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             if not mni[person_id]['cpd']:
 
                 avd_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='avd', hsi_event=hsi_event,
+                    self, int_name=f'avd_{indication}', hsi_event=hsi_event,
                     q_param=[params['prob_hcw_avail_avd'], params[f'mean_hcw_competence_{deliv_location}']],
                     cons=self.item_codes_lab_consumables['vacuum'],
                     opt_cons=self.item_codes_lab_consumables['obstructed_labour'],
@@ -2138,8 +2138,17 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
+        if ((df.at[person_id, "pn_anaemia_following_pregnancy"] != 'severe') and
+            (df.at[person_id, 'la_uterine_rupture'] or
+             df.at[person_id, 'pn_postpartum_haem_secondary'] or
+            df.at[person_id, 'la_postpartum_haem'] or
+             (df.at[person_id, 'la_antepartum_haem'] != 'none'))):
+            intervention = "blood_transfusion"
+        else:
+            intervention = "blood_transfusion_anaemia"
+
         blood_transfusion_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='blood_transfusion', hsi_event=hsi_event,
+            self, int_name=intervention, hsi_event=hsi_event,
             q_param=[params['prob_hcw_avail_blood_tran'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['blood_transfusion'],
             opt_cons=self.item_codes_lab_consumables['blood_test_equipment'],
@@ -2154,6 +2163,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                     pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'severe_anaemia_resolution',
                                                                   self.sim.date)
                     df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
+
+
 
     def assessment_and_treatment_of_anaemia(self, hsi_event):
         """

@@ -1302,7 +1302,7 @@ class CareOfWomenDuringPregnancy(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         blood_transfusion_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='blood_transfusion', hsi_event=hsi_event,
+            self, int_name='blood_transfusion_anaemia', hsi_event=hsi_event,
             q_param=[l_params['prob_hcw_avail_blood_tran'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['blood_transfusion'],
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
