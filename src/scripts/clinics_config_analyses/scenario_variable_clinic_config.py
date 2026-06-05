@@ -1,0 +1,102 @@
+"""
+This file contains all the definitions of scenarios for the Master's project testing
+clinic configuration.
+
+It runs the full model under a set of scenario in which TREATMENT_IDs are mapped to various clinics.
+
+To check scenarios are generated correctly:
+```
+tlo scenario-run --draw-only src/scripts/clinics_config_analyses/scenario_variable_clinic_config.py
+```
+
+Run on the batch system using:
+
+```
+tlo batch-submit src/scripts/clinics_config_analyses/scenario_variable_clinic_config.py
+```
+
+or locally using:
+```
+tlo scenario-run src/scripts/clinics_config_analyses/scenario_variable_clinic_config.py
+```
+
+"""
+
+from pathlib import Path
+from typing import Dict
+from tlo import Date, logging
+from tlo.analysis.utils import mix_scenarios, get_parameters_for_status_quo
+from tlo.methods.fullmodel import fullmodel
+from tlo.scenario import BaseScenario
+
+
+class ScenarioDefinitions:
+    @property
+    def YEAR_OF_MODE_SWITCH(self) -> int:
+        return 2026
+
+    def baseline(self) -> Dict:
+        """Return the Dict with values for the parameter changes that define the baseline scenario."""
+        return mix_scenarios(
+            get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
+            {
+                "HealthSystem": {
+                    "cons_availability": "default",
+                    "year_cons_availability_switch": self.YEAR_OF_MODE_SWITCH,
+                    "cons_availability_postSwitch": "all",
+                    "mode_appt_constraints": 1,
+                    "year_mode_switch": self.YEAR_OF_MODE_SWITCH,
+                    "mode_appt_constraints_postSwitch": 2,
+                    "scale_to_effective_capabilities": True,
+                    # allow historical HRH scaling to occur 2018-2024
+                    # 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+                    "yearly_HR_scaling_mode": "historical_scaling",
+                },
+            },
+        )
+
+
+class VariableClinicConfig(BaseScenario):
+    def __init__(self):
+        super().__init__()
+        self.seed = 0
+        self.start_date = Date(2010, 1, 1)
+        self.end_date = Date(2037, 1, 1)
+        self.pop_size = 100_000
+        self._scenarios = self._get_scenarios()
+        self.number_of_draws = len(self._scenarios)
+        self.runs_per_draw = 5
+
+    def log_configuration(self):
+        return {
+            "filename": "variable_clinic_config",
+            "directory": Path("./outputs"),
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
+        }
+
+    def modules(self):
+        return fullmodel()
+
+    def draw_parameters(self, draw_number, rng):
+        if draw_number < len(self._scenarios):
+            return list(self._scenarios.values())[draw_number]
+
+    def _get_scenarios(self) -> Dict[str, Dict]:
+
+        scenario_definitions = ScenarioDefinitions()
+
+        scenarios = {'baseline': scenario_definitions.baseline()}
+
+        return scenarios
+
+
+if __name__ == "__main__":
+    from tlo.cli import scenario_run
+
+    scenario_run([__file__])
