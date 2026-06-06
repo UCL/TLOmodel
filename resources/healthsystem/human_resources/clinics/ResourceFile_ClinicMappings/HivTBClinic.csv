@@ -1,0 +1,16 @@
+Treatment,Clinic
+Hiv_Prevention_Circumcision,HIV_TB_Clinic
+Hiv_Prevention_Infant,HIV_TB_Clinic
+Hiv_Prevention_Prep,HIV_TB_Clinic
+Hiv_Test,HIV_TB_Clinic
+Hiv_Test_Selftest,HIV_TB_Clinic
+Hiv_Treatment,HIV_TB_Clinic
+Hiv_PalliativeCare,HIV_TB_Clinic
+Tb_Prevention_Ipt,HIV_TB_Clinic
+Tb_Test_Clinical,HIV_TB_Clinic
+Tb_Test_Culture,HIV_TB_Clinic
+Tb_Test_FollowUp,HIV_TB_Clinic
+Tb_Test_Screening,HIV_TB_Clinic
+Tb_Test_Xray,HIV_TB_Clinic
+Tb_Treatment,HIV_TB_Clinic
+Tb_PalliativeCare,HIV_TB_Clinic
