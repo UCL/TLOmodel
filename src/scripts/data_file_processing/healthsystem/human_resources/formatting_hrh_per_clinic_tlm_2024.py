@@ -137,9 +137,9 @@ tool_six_main["pat_load_per_hcw_main"] = tool_six_main["num_of_patients"] / tool
 tool_six_main["pat_load_per_hcw_all"] = tool_six_main["num_of_patients"] / tool_six_main["num_of_staff_all"]
 tool_six_main["pat_load_per_hcw_main_and_support"] = (tool_six_main["num_of_patients"] /
                                                       tool_six_main["num_of_staff_main_and_support"])
-
+# todo: how to deal with inf pat_load_per_hcw_main? (1 hospital attendant/patient attendant cases)
 # todo: check/correct some duplicate rows
-# todo: keep only day shift
+# todo: keep only day shift/compare open and close date
 
 
 duplicated_rows = hrh_per_clinic[
