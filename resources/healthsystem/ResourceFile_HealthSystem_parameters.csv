@@ -25,4 +25,4 @@ use_funded_or_actual_staffing_postSwitch,funded_plus
 year_use_funded_or_actual_staffing_switch,2100
 cons_override_treatment_ids,[]
 cons_override_treatment_ids_prob_avail,1.0
-clinic_configuration_name,RMNCHClinic
+clinic_configuration_name,FlexiblePrimaryCareClinic
