@@ -1,3 +1,8 @@
+"""
+This file cleans the TLM tool 6 data to extract patient load per HCW per day.
+The output file needs to be run in Stata tool_6_prepare_data.do to generate tool_6_pat_load.dta for plots.
+"""
+
 from pathlib import Path
 
 import numpy as np
