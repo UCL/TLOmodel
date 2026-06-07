@@ -116,7 +116,10 @@ id_vars = [
     "Opening date and time",
     "Closing date and time",
     "Total number of patients verified by records",
-    "Number of staff"
+    "Number of staff",
+    "Cadres of staff and number of staff per cadre",
+    "Facility Type",
+    "District"
 ]
 tool_six_main = pd.concat([hrh_per_clinic[id_vars], cadre_num_formatted_with_categories], axis=1)
 
@@ -127,7 +130,10 @@ tool_six_main = tool_six_main.rename(
         "Opening date and time": "opening_date",
         "Closing date and time": "closing_date",
         "Total number of patients verified by records": "num_of_patients",
-        "Number of staff": "num_of_staff_raw"
+        "Number of staff": "num_of_staff_raw",
+        "Cadres of staff and number of staff per cadre": "cadre_and_count_raw",
+        "Facility Type": "facility_type",
+        "District": "district"
     }
 )
 
@@ -137,11 +143,32 @@ tool_six_main["pat_load_per_hcw_main"] = tool_six_main["num_of_patients"] / tool
 tool_six_main["pat_load_per_hcw_all"] = tool_six_main["num_of_patients"] / tool_six_main["num_of_staff_all"]
 tool_six_main["pat_load_per_hcw_main_and_support"] = (tool_six_main["num_of_patients"] /
                                                       tool_six_main["num_of_staff_main_and_support"])
-# todo: how to deal with inf pat_load_per_hcw_main? (1 hospital attendant/patient attendant cases)
-# todo: check/correct some duplicate rows
-# todo: keep only day shift/compare open and close date
+
+tool_six_main["same_obs_day"] = (
+    tool_six_main["opening_date"].dt.normalize()
+    == tool_six_main["closing_date"].dt.normalize()
+)
+
+tool_six_main["opening_hours"] = (
+    tool_six_main["closing_date"] - tool_six_main["opening_date"]
+).dt.total_seconds() / 3600
+
+tool_six_main = tool_six_main.loc[(tool_six_main["same_obs_day"]) &  # do not consider night shift, 24-hour shift, etc.
+                                  (tool_six_main["opening_hours"] > 0) &  # drop incorrect info
+                                  np.isfinite(tool_six_main["pat_load_per_hcw_main"])
+                                  # few inf rows is due to only supporting staff working that day
+                                 ].copy()
+
+tool_six_main.to_csv(
+    resourcefilepath / "healthsystem" / "human_resources" / "TLM_2024"
+    / "TLM_Tool_6_Facility_Level_TMS_v1_cleaned_v5.csv")
 
 
-duplicated_rows = hrh_per_clinic[
-    hrh_per_clinic.duplicated(subset=id_vars, keep=False)
-]
+# # check the different between num_of_staff_all and num_of_staff_raw
+# tool_six_main["num_of_staff_diff"] = tool_six_main["num_of_staff_raw"] - tool_six_main["num_of_staff_all"]
+#
+# # checked that 10 rows are involved; some have different number of patients/staff; no clear why duplicated;
+# # so keep them for now
+# duplicated_rows = tool_six_main[
+#     tool_six_main.duplicated(subset=["facility_id", "clinic", "opening_date", "closing_date"], keep=False)
+# ]
