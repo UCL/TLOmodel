@@ -472,8 +472,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots(figsize=(10, 12))
 
-    districts = sorted(summary["District"].unique())
-    y = np.arange(len(districts))
+    districts_ordered = (
+        summary
+        .loc[summary["Source"] == "HCW TMS"]
+        .sort_values("median", ascending=False)["District"]
+        .tolist()
+    )
+    y = np.arange(len(districts_ordered))
 
     offset = 0.2
 
@@ -481,7 +486,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         dat = (
             summary[summary["Source"] == src]
             .set_index("District")
-            .reindex(districts)
+            .reindex(districts_ordered)
         )
 
         xerr = np.vstack([
@@ -511,7 +516,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     ax.set_yticks(y)
-    ax.set_yticklabels(districts)
+    ax.set_yticklabels(districts_ordered)
     ax.invert_yaxis()
 
     ax.set_xlabel("Median Daily Patient Load per HCW")
@@ -772,7 +777,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots(figsize=(10, 12))
 
-    districts = sorted(summary["District"].unique())
+    districts = districts_ordered.copy()
     y = np.arange(len(districts))
 
     offset = 0.2
