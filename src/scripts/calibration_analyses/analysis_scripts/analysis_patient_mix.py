@@ -647,7 +647,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
 
     ax.set_xlabel("Source")
-    ax.set_ylabel("Daily Patient Load per HCW")
+    ax.set_ylabel("Median Daily Patient Load per HCW")
 
     plt.tight_layout()
     plt.show()
@@ -750,7 +750,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.tick_params(axis="both")
 
     fig.supxlabel(
-        "Daily Patient Load per HCW",
+        "Mean Daily Patient Load per HCW",
         y=0.04
     )
 
