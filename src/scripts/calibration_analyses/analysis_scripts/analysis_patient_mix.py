@@ -777,8 +777,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots(figsize=(10, 12))
 
-    districts = districts_ordered.copy()
-    y = np.arange(len(districts))
+    districts_ordered = (
+        summary
+        .loc[summary["Source"] == "HCW TMS"]
+        .sort_values("mean", ascending=False)["District"]
+        .tolist()
+    )
+    y = np.arange(len(districts_ordered))
 
     offset = 0.2
 
@@ -786,7 +791,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         dat = (
             summary[summary["Source"] == src]
             .set_index("District")
-            .reindex(districts)
+            .reindex(districts_ordered)
         )
 
         lower_err = np.minimum(dat["ci95"], dat["mean"])
@@ -819,7 +824,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     ax.set_yticks(y)
-    ax.set_yticklabels(districts)
+    ax.set_yticklabels(districts_ordered)
     ax.invert_yaxis()
 
     ax.set_xlabel("Mean Daily Patient Load per HCW")
