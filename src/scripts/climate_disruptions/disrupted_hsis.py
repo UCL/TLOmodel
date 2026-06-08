@@ -34,7 +34,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     mode_2 = False
     climate_analysis = False
     prop_supply_demand = False
-    wet_season = True
+    wet_season = False
 
     SCALING_FACTOR = 145.39
     CI_LOWER = 0.025
@@ -599,6 +599,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     COLOUR_DELAYED = "#E67E22"
     COLOUR_CANCELLED = "#D4AC0D"
     COLOUR_RF = "#2980B9"
+    COLOUR_DEFICIT = "#27AE60"
     SCENARIO_COLOURS = ["#ADB993", "#EDC7CF", "#6F8AB7"]
     PANEL_LABELS = list(string.ascii_uppercase)
 
@@ -606,6 +607,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         if s.empty:
             return pd.DatetimeIndex([]), np.array([])
         return pd.to_datetime(s.index.astype(str) + "-01"), s.values * 100
+
+    # ── Pre-compute No Disruptions monthly total for deficit calculation ──────
+    nd_draw = None
+    nd_monthly_total = None
+    if "No Disruptions" in scenario_names:
+        nd_draw = scenarios_of_interest[scenario_names.index("No Disruptions")]
+        nd_total_2 = _collapse_hsi_types(all_draws_total_df[nd_draw])
+        nd_monthly_total = nd_total_2.groupby(_parse_ym(nd_total_2.index)).sum().mean(axis=1)
 
     global_ymax = 0.0
     for idx, draw in enumerate(scenarios_of_interest):
@@ -619,6 +628,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             _, _rf_vals_pre = _get_rf(scenario_names[draw], monthly=True)
             if len(_rf_vals_pre):
                 global_ymax = max(global_ymax, _rf_vals_pre.max())
+        # also account for deficit line in y-axis scaling
+        if nd_monthly_total is not None:
+            scen_total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+            scen_monthly = scen_total_2.groupby(_parse_ym(scen_total_2.index)).sum().mean(axis=1)
+            common = nd_monthly_total.index.intersection(scen_monthly.index)
+            nd_a = nd_monthly_total.reindex(common)
+            sc_a = scen_monthly.reindex(common)
+            deficit_pre = ((nd_a - sc_a) / nd_a.replace(0, np.nan) * 100).clip(lower=0)
+            if not deficit_pre.empty:
+                global_ymax = max(global_ymax, deficit_pre.max())
     global_ymax *= 1.05
 
     plot_idx = 0
@@ -643,13 +662,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 ax.plot(_rf_dates_mo, _rf_vals_mo,
                         color=COLOUR_RF, lw=2.5, ls="--", alpha=0.5, label="DHIS2 ANC Data")
 
+        # ── HSI deficit line: % reduction in total HSIs vs No Disruptions ─────
+        if nd_monthly_total is not None:
+            scen_total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+            scen_monthly = scen_total_2.groupby(_parse_ym(scen_total_2.index)).sum().mean(axis=1)
+            common_months = nd_monthly_total.index.intersection(scen_monthly.index)
+            nd_aligned = nd_monthly_total.reindex(common_months)
+            scen_aligned = scen_monthly.reindex(common_months)
+            deficit_pct = ((nd_aligned - scen_aligned) / nd_aligned.replace(0, np.nan) * 100).clip(lower=0)
+            deficit_dates = pd.to_datetime(common_months.astype(str) + "-01")
+            ax.plot(deficit_dates, deficit_pct.values,
+                    color=COLOUR_DEFICIT, lw=2.0, ls="-.", alpha=0.9,
+                    label="HSI deficit vs. No Disruptions (%)", zorder=4)
+
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         ax.xaxis.set_major_locator(mdates.YearLocator())
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right", fontsize=FS_TICK)
         plt.setp(ax.yaxis.get_majorticklabels(), fontsize=FS_TICK)
         ax.set_xlabel("Year", fontsize=FS_LABEL, fontweight="bold")
         if plot_idx % n_cols == 0:
-            ax.set_ylabel("% HSIs disrupted", fontsize=FS_LABEL, fontweight="bold")
+            ax.set_ylabel("% HSIs disrupted / deficit", fontsize=FS_LABEL, fontweight="bold")
         ax.set_title(scenario_names[draw], fontsize=FS_TITLE, fontweight="bold")
         ax.set_ylim(bottom=0, top=global_ymax)
         ax.set_xlim(left=pd.Timestamp("2025-01-01"), right=pd.Timestamp("2040-12-31"))
@@ -1128,7 +1160,47 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         district_rates[scen] = df_tmp.groupby("district").apply(_weighted_mean)
 
     district_rates_df = pd.DataFrame(district_rates) * 100
+    district_monthly_rows = []
+    for idx, draw in enumerate(scenarios_of_interest):
+        scen = scenario_names[draw]
+        if scen == "No Disruptions":
+            continue
+        total_2 = _collapse_hsi_types(all_draws_total_df[draw])
+        delayed_2 = _collapse_hsi_types(all_draws_delayed_df[draw]).reindex(total_2.index, fill_value=0)
+        cancelled_2 = _collapse_hsi_types(all_draws_cancelled_df[draw]).reindex(total_2.index, fill_value=0)
+        delayed_rate_2 = _align_and_rate(total_2, delayed_2, delayed_2, cancelled_2)
+        cancelled_rate_2 = _align_and_rate(total_2, cancelled_2, delayed_2, cancelled_2)
+        total_rate_2 = delayed_rate_2.add(
+            cancelled_rate_2.reindex(delayed_rate_2.index, fill_value=0), fill_value=0).clip(upper=1.0)
 
+        fac = _parse_facility(total_rate_2.index)
+        ym = _parse_ym(total_rate_2.index)
+        district = fac.map(fac_to_district)
+        volume = total_2.reindex(total_rate_2.index, fill_value=0).mean(axis=1)
+
+        df_tmp = pd.DataFrame({
+            "ym": ym.values,
+            "district": district.values,
+            "rate": total_rate_2.mean(axis=1).values,
+            "rate_lower": total_rate_2.quantile(CI_LOWER, axis=1).values,
+            "rate_upper": total_rate_2.quantile(CI_UPPER, axis=1).values,
+            "volume": volume.values,
+        }).dropna(subset=["district"])
+
+        def _wm(g, col):
+            return (g[col] * g["volume"]).sum() / g["volume"].sum() if g["volume"].sum() > 0 else 0
+
+        grp = df_tmp.groupby(["ym", "district"])
+        result = pd.DataFrame({
+            "disruption_rate_mean": grp.apply(lambda g: _wm(g, "rate")),
+            "disruption_rate_lower": grp.apply(lambda g: _wm(g, "rate_lower")),
+            "disruption_rate_upper": grp.apply(lambda g: _wm(g, "rate_upper")),
+        }).reset_index()
+        result["scenario"] = scen
+        district_monthly_rows.append(result)
+
+    pd.concat(district_monthly_rows).to_csv(
+        output_folder / f"district_monthly_disruption_rate_{suffix}.csv", index=False)
     if main_text:
         map_panels = [("Default", "Default"), ("Worst Case", "Worst Case")]
     elif prop_supply_demand:
