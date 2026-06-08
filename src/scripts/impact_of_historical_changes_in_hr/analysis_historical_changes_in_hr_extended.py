@@ -479,6 +479,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_treatments_by_year_treatment.to_csv(
         output_folder / 'num_treatments_by_year_treatment (for Izzy).csv', index=False
     )
+    hcw_count.to_csv(output_folder / 'hcw_count (for Izzy).csv', index=False)
 
 
 if __name__ == "__main__":
