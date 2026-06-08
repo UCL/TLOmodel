@@ -464,81 +464,81 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     fig = plt.figure(figsize=(33, 5 + bottom_row_h))
     gs = gridspec.GridSpec(
-        2, 3,
+        1, 3,
         figure=fig,
-        height_ratios=[1, max(2.0, bottom_row_h / 4)],
+        # height_ratios=[0, max(2.0, bottom_row_h / 4)],
         hspace=0.4,
         wspace=0.35,
     )
-    ax_top = fig.add_subplot(gs[0, :])  # full-width top row
-    ax_a = fig.add_subplot(gs[1, 0])  # % volume change
-    ax_b = fig.add_subplot(gs[1, 1])  # most disrupted
-    ax_c = fig.add_subplot(gs[1, 2])  # least disrupted
+    # ax_top = fig.add_subplot(gs[0, :])  # full-width top row
+    ax_a = fig.add_subplot(gs[0, 0])  # % volume change
+    ax_b = fig.add_subplot(gs[0, 1])  # most disrupted
+    ax_c = fig.add_subplot(gs[0, 2])  # least disrupted
 
-    # ── Row 1: stacked bar — HSI volume by scenario ───────────────────────────
-    successful_means, delayed_means_bar, cancelled_means_bar = [], [], []
-    total_stack_per_run_list = []
-
-    for scen_idx, draw in enumerate(scenarios_of_interest):
-        t = all_draws_per_run_total[scen_idx]
-        d = all_draws_per_run_delayed[scen_idx]
-        c = all_draws_per_run_cancelled[scen_idx]
-        stack = t + d + c
-        successful_means.append(t.mean())
-        delayed_means_bar.append(d.mean())
-        cancelled_means_bar.append(c.mean())
-        total_stack_per_run_list.append(stack)
-
-    successful_means = np.array(successful_means)
-    delayed_means_bar = np.array(delayed_means_bar)
-    cancelled_means_bar = np.array(cancelled_means_bar)
-    total_stack = successful_means + delayed_means_bar + cancelled_means_bar
-
-    yerr_lo = np.array([
-        total_stack[i] - s.quantile(CI_LOWER)
-        for i, s in enumerate(total_stack_per_run_list)
-    ])
-    yerr_hi = np.array([
-        s.quantile(CI_UPPER) - total_stack[i]
-        for i, s in enumerate(total_stack_per_run_list)
-    ])
-
-    bar_colours = [
-        SCENARIO_COLOURS_BAR[i % len(SCENARIO_COLOURS_BAR)]
-        for i in range(n_scen)
-    ]
-    x_pos = np.arange(n_scen)
-
-    b1 = ax_top.bar(x_pos, successful_means,
-                    color=bar_colours, alpha=0.75, width=0.6, label="Successful")
-    b2 = ax_top.bar(x_pos, delayed_means_bar, bottom=successful_means,
-                    color=COLOUR_DELAYED, alpha=0.85, width=0.6, label="Delayed")
-    b3 = ax_top.bar(x_pos, cancelled_means_bar,
-                    bottom=successful_means + delayed_means_bar,
-                    color=COLOUR_CANCELLED, alpha=0.85, width=0.6, label="Cancelled")
-    ax_top.errorbar(
-        x_pos, total_stack,
-        yerr=[yerr_lo, yerr_hi],
-        fmt="none", color="black", lw=1.5, capsize=5, capthick=1.5,
-    )
-
-    ax_top.set_xticks(x_pos)
-    ax_top.set_xticklabels(
-        [scenario_names[d] for d in scenarios_of_interest], fontsize=FS_TICK
-    )
-    ax_top.set_ylabel("Total HSIs", fontsize=FS_LABEL, fontweight="bold")
-    ax_top.ticklabel_format(style="sci", axis="y", scilimits=(0, 0), useMathText=True)
-    ax_top.yaxis.get_offset_text().set_fontsize(FS_TICK)
-    plt.setp(ax_top.yaxis.get_majorticklabels(), fontsize=FS_TICK)
-    ax_top.legend(
-        handles=[b1, b2, b3], fontsize=FS_LEGEND, framealpha=0.9, loc="upper right"
-    )
-    ax_top.set_title(
-        f"(A) Total HSI volume by scenario ({period_label})",
-        fontsize=FS_TITLE, fontweight="bold", loc="left",
-    )
-    ax_top.spines["top"].set_visible(False)
-    ax_top.spines["right"].set_visible(False)
+    # # ── Row 1: stacked bar — HSI volume by scenario ───────────────────────────
+    # successful_means, delayed_means_bar, cancelled_means_bar = [], [], []
+    # total_stack_per_run_list = []
+    #
+    # for scen_idx, draw in enumerate(scenarios_of_interest):
+    #     t = all_draws_per_run_total[scen_idx]
+    #     d = all_draws_per_run_delayed[scen_idx]
+    #     c = all_draws_per_run_cancelled[scen_idx]
+    #     stack = t + d + c
+    #     successful_means.append(t.mean())
+    #     delayed_means_bar.append(d.mean())
+    #     cancelled_means_bar.append(c.mean())
+    #     total_stack_per_run_list.append(stack)
+    #
+    # successful_means = np.array(successful_means)
+    # delayed_means_bar = np.array(delayed_means_bar)
+    # cancelled_means_bar = np.array(cancelled_means_bar)
+    # total_stack = successful_means + delayed_means_bar + cancelled_means_bar
+    #
+    # yerr_lo = np.array([
+    #     total_stack[i] - s.quantile(CI_LOWER)
+    #     for i, s in enumerate(total_stack_per_run_list)
+    # ])
+    # yerr_hi = np.array([
+    #     s.quantile(CI_UPPER) - total_stack[i]
+    #     for i, s in enumerate(total_stack_per_run_list)
+    # ])
+    #
+    # bar_colours = [
+    #     SCENARIO_COLOURS_BAR[i % len(SCENARIO_COLOURS_BAR)]
+    #     for i in range(n_scen)
+    # ]
+    # x_pos = np.arange(n_scen)
+    #
+    # b1 = ax_top.bar(x_pos, successful_means,
+    #                 color=bar_colours, alpha=0.75, width=0.6, label="Successful")
+    # b2 = ax_top.bar(x_pos, delayed_means_bar, bottom=successful_means,
+    #                 color=COLOUR_DELAYED, alpha=0.85, width=0.6, label="Delayed")
+    # b3 = ax_top.bar(x_pos, cancelled_means_bar,
+    #                 bottom=successful_means + delayed_means_bar,
+    #                 color=COLOUR_CANCELLED, alpha=0.85, width=0.6, label="Cancelled")
+    # ax_top.errorbar(
+    #     x_pos, total_stack,
+    #     yerr=[yerr_lo, yerr_hi],
+    #     fmt="none", color="black", lw=1.5, capsize=5, capthick=1.5,
+    # )
+    #
+    # ax_top.set_xticks(x_pos)
+    # ax_top.set_xticklabels(
+    #     [scenario_names[d] for d in scenarios_of_interest], fontsize=FS_TICK
+    # )
+    # ax_top.set_ylabel("Total HSIs", fontsize=FS_LABEL, fontweight="bold")
+    # ax_top.ticklabel_format(style="sci", axis="y", scilimits=(0, 0), useMathText=True)
+    # ax_top.yaxis.get_offset_text().set_fontsize(FS_TICK)
+    # plt.setp(ax_top.yaxis.get_majorticklabels(), fontsize=FS_TICK)
+    # ax_top.legend(
+    #     handles=[b1, b2, b3], fontsize=FS_LEGEND, framealpha=0.9, loc="upper right"
+    # )
+    # ax_top.set_title(
+    #     f"(A) Total HSI volume by scenario ({period_label})",
+    #     fontsize=FS_TITLE, fontweight="bold", loc="left",
+    # )
+    # ax_top.spines["top"].set_visible(False)
+    # ax_top.spines["right"].set_visible(False)
 
     # ── Row 2, Panel B: most disrupted HSI types ──────────────────────────────
     hd_m_b_plot = hd_m_b.reindex(top_disrupted_types_plot, fill_value=0)
@@ -662,7 +662,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         fontsize=FS_LABEL, fontweight="bold",
     )
     ax_a.set_title(
-        f"(D) Change in HSI volume by treatment type\nvs No Disruptions ({period_label})",
+        f"(A) Change in HSI volume by treatment type\nvs No Disruptions ({period_label})",
         fontsize=FS_TITLE, fontweight="bold",
     )
     plt.setp(ax_a.xaxis.get_majorticklabels(), fontsize=FS_TICK)
