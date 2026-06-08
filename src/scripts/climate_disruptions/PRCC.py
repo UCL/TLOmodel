@@ -116,9 +116,9 @@ def calculate_prcc(params_df: pd.DataFrame, outcome_series: pd.Series) -> pd.Dat
 
 def plot_prcc_horizontal_bars(prcc_results, outcome_name, ax, show_ylabel=True):
     df = prcc_results.copy()
-    df["abs_prcc"] = df["prcc"].abs()
-    df = df.sort_values("abs_prcc", ascending=True).reset_index(drop=True)
-
+    param_order = list(PARAMETER_INFO.keys())  # defined order: α, β, δ, γ, ε
+    df["sort_key"] = df["parameter"].map({p: i for i, p in enumerate(param_order)})
+    df = df.sort_values("sort_key", ascending=False).reset_index(drop=True)
     labels = []
     for param in df["parameter"]:
         info = PARAMETER_INFO.get(param)
@@ -182,9 +182,10 @@ def load_outputs_from_results(results_folder: Path) -> dict:
               f"[{series.min():.4g} – {series.max():.4g}]")
 
     return {
-        "total_dalys": total_dalys,
         "prop_delayed": disruption_df["prop_delayed"],
         "prop_cancelled": disruption_df["prop_cancelled"],
+        "total_dalys": total_dalys,
+
     }
 
 
@@ -212,9 +213,10 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
     Bottom row : α vs β scatter      (D, E, F)
     """
     outcome_items = [
+        ("prop_delayed", "Prop. HSIs delayed"),
+        ("prop_cancelled", "Prop. HSIs cancelled"),
         ("total_dalys", "Total DALYs"),
-        ("prop_delayed", "Prop. delayed"),
-        ("prop_cancelled", "Prop. cancelled"),
+
     ]
     alpha_col = "scale_factor_prob_disruption"
     beta_col = "scale_factor_reseeking_healthcare_post_disruption"
@@ -228,7 +230,6 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
                          "left": 0.13, "right": 0.97},
         )
 
-        panel = 0
         for col, (out_key, out_label) in enumerate(outcome_items):
 
             # ── Top row: PRCC tornado ────────────────────────────────────────
@@ -236,9 +237,8 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
             prcc = calculate_prcc(params_df, outputs[out_key])
             prcc.to_csv(output_folder / f"prcc_{out_key}{fig_suffix}.csv", index=False)
             plot_prcc_horizontal_bars(prcc, out_label, ax_top, show_ylabel=(col == 0))
-            ax_top.text(-0.14 if col == 0 else -0.05, 1.08, f"({chr(65 + panel)})",
+            ax_top.text(-0.14 if col == 0 else -0.05, 1.08, f"({chr(65 + col)})",
                         transform=ax_top.transAxes, fontweight="bold", fontsize=9)
-            panel += 1
 
             # ── Bottom row: α–β scatter ──────────────────────────────────────
             ax_bot = axes[1, col]
@@ -258,11 +258,10 @@ def create_combined_prcc_figure(params_df, outputs, output_folder, fig_suffix=""
             if col == 0:
                 ax_bot.set_ylabel("β — Re-seeking scaling", fontsize=8)
             # ax_bot.set_title(out_label, fontweight="bold", fontsize=9, pad=4)
-            ax_bot.text(-0.14 if col == 0 else -0.05, 1.08, f"({chr(65 + panel)})",
+            ax_bot.text(-0.14 if col == 0 else -0.05, 1.08, f"({chr(65 + col + len(outcome_items))})",
                         transform=ax_bot.transAxes, fontweight="bold", fontsize=9)
             ax_bot.spines["top"].set_visible(False)
             ax_bot.spines["right"].set_visible(False)
-            panel += 1
 
         legend_elements = [
             Patch(facecolor=COLOUR_POS, label="Positive (p < 0.05)"),
@@ -317,9 +316,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     # ── Wet-season combined figure (DALYs year-round, disruption wet-season only)
     wet_season_outputs = {
-        "total_dalys": outputs["total_dalys"],  # year-round
         "prop_delayed": wet_outputs["prop_delayed_wet"],
         "prop_cancelled": wet_outputs["prop_cancelled_wet"],
+        "total_dalys": outputs["total_dalys"],
     }
     fig_wet = create_combined_prcc_figure(params_df, wet_season_outputs, output_folder,
                                           fig_suffix="_wetseason")
