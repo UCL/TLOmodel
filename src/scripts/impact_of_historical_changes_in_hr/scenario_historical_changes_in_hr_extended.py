@@ -69,7 +69,7 @@ class HistoricalChangesInHRH(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "Main Counterfactual":
+            "Main Counterfactual/No growth + Lower bound settings":
             self._common_baseline(),
 
             "Main Actual":
@@ -115,7 +115,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "Historical growth + Low absorption rate":
+            "Historical growth + Low absorption rate/Historical growth + Lower bound settings":
             mix_scenarios(
                 self._hrh_growth_baseline(),
                 {

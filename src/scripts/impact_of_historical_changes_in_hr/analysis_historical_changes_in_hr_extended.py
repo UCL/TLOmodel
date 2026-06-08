@@ -242,7 +242,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
 
     # color for each scenario
-    cmap = plt.cm.get_cmap('tab10', len(param_names))
+    cmap = plt.cm.get_cmap('tab20', len(param_names))
     colors = {
         scenario: cmap(i)
         for i, scenario in enumerate(param_names)
@@ -323,7 +323,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Check total DALYs
     # %% Define parameter names
-    counterfactual_scenario = 'Main Counterfactual'
+    counterfactual_scenario = 'Main Counterfactual/No growth + Lower bound settings'
     actual_scenario = 'Main Actual'
 
     # Absolute Number of Deaths and DALYs
