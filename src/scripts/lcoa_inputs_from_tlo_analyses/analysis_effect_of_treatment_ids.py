@@ -317,11 +317,6 @@ def apply(
     dalys = compute_summary_statistics(dalys, central_measure='median')
 
 
-    # This gives us the capacity used for each cadre and level, for each draw and run
-    # From this we will extract the run-wise delta in capacity used relative to the Nothing scenario, for each cadre
-    # and summarise. However since no HSIs are delivered in the Nothing scenario, the capacity used in that scenario is zero,
-    # so the delta relative to Nothing is just the capacity used in each scenario.
-    # TODO: Check if this should be scaled with population or used as is.
     # Note that Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
     # To get the actual minutes, we need to multiply by the total available minutes.
     annual_capacity_used_by_cadre_and_level = extract_results(
@@ -329,21 +324,14 @@ def apply(
         module='tlo.methods.healthsystem.summary',
         key='Capacity_By_FacID_and_Officer',
         custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
-        do_scaling=True,
+        do_scaling=False, # Not scaling as this is a fraction calculated during runtime.
         autodiscover=True,
-    )
-    # Sum across all facility levels and  years; so we get the *total* capacity used over the whole period
-    # TODO: Check with Sakshi if this is what we want.
-    mask = annual_capacity_used_by_cadre_and_level.index.get_level_values(0).isin(range(2026, 2040))
-    capacity_used_by_cadre = (
-        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType']).
-        sum().
-        pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+
+    results['annual_capacity_used_by_cadre_and_level'] = (
+        compute_summary_statistics(annual_capacity_used_by_cadre_and_level, 'median')
     )
 
-    capacity_used_by_cadre = (
-        compute_summary_statistics(capacity_used_by_cadre, central_measure='median')
-    )
 
     # Get the total available caapacity by cadre needed for LCOA
     # resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv
@@ -353,22 +341,57 @@ def apply(
     # This gives the total minutes available per day by cadre and facility level.
     # Sum across levels to get cadre specific constraints, and multiply by 365 to get annual capacity
     # and then by the length of the period
-    annual_capacity_by_cadre = (
-        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365 * 15
+    annual_capacity_available_by_cadre_and_level = (
+        daily_capacity_by_cadre_and_level.groupby(['Officer_Category', 'Facility_Level'])['Total_Mins_Per_Day'].sum() * 365
     )
+
+    annual_capacity_available_by_cadre_and_level.index = (
+        annual_capacity_available_by_cadre_and_level.index.rename(['OfficerType', 'FacilityLevel'])
+    )
+
+    # Now we use the fraction of time used from the results to get the actual minutes used
+    series_reindexed = annual_capacity_available_by_cadre_and_level.reindex(
+        annual_capacity_used_by_cadre_and_level.index.droplevel('year')
+    )
+
+    series_reindexed.index = annual_capacity_used_by_cadre_and_level.index
+
+    actual_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
+    results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
+    # Load the salary per minutes by cadre and facility level
+    # ResourceFile_Minute_Salary_HR.csv is produced using Bingling's code,
+    # except that she was dropping Facility_Level, which I have retained.
+    salary_by_cadre_and_level = (
+        pd.read_csv(resourcefilepath / "costing"  / "ResourceFile_Minute_Salary_HR.csv")
+    )
+    salary_by_cadre_and_level =(
+        salary_by_cadre_and_level
+        .groupby(['Facility_Level', 'Officer_Type_Code'])['Minute_Salary_USD']
+        .mean()
+        .rename_axis(index={'Facility_Level': 'FacilityLevel', 'Officer_Type_Code': 'OfficerType'})
+    ).reorder_levels(['OfficerType', 'FacilityLevel'])
+    # Multiply actual minutes used by the salary per minute to get the total
+    # salary cost by cadre and facility level
+    series_reindexed = salary_by_cadre_and_level.reindex(
+        actual_capacity_used_by_cadre_and_level.index.droplevel('year')
+    )
+
+    series_reindexed.index = actual_capacity_used_by_cadre_and_level.index
+
+    actual_cost_by_cadre_and_level = (
+        actual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
+    )
+
+    # Finally we need it by cadre, so we sum across facility levels and then
+    # summarise
+    actual_cost_by_cadre_and_level = (
+        actual_cost_by_cadre_and_level.groupby(['year', 'OfficerType']).sum()
+    )
+    results['annual_cost_by_cadre'] = compute_summary_statistics(actual_cost_by_cadre_and_level, 'median')
 
     staff_count_by_cadre = (
         daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
     )
-
-    # Proportion of capacity used by year and cadre, relative to the total available capacity by cadre
-    proportion_capacity_used_by_cadre = (
-        annual_capacity_used_by_cadre_and_level[mask].groupby(['OfficerType', 'year']).
-        sum().
-        pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    ).div(annual_capacity_by_cadre / 15, axis=0, level=0)
-    proportion_capacity_used_by_cadre = compute_summary_statistics(proportion_capacity_used_by_cadre, central_measure='median')
-    results['proportion_capacity_used_by_cadre'] = proportion_capacity_used_by_cadre
 
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
@@ -381,8 +404,6 @@ def apply(
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
     results['icers_summarized'] = icers_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
-    results['capacity_used_by_cadre'] = capacity_used_by_cadre
-    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
     results['staff_count_by_cadre'] = staff_count_by_cadre
 
     # Extract DALYs and costs from the LCOA input workbook (EHP_BasedOnLCOA sheet).

@@ -710,3 +710,298 @@ def plot_population_by_year(_df: pd.DataFrame):
 
     fig.tight_layout()
     return fig, ax
+
+
+def plot_proportion_capacity_used_by_cadre_over_time_for_draw(_df: pd.DataFrame, draw: str):
+    """Plot grouped bars by year for one draw; each bar-group decomposes by cadre with CI error bars."""
+    if _df is None:
+        raise ValueError("`proportion_capacity_used_by_cadre` is None.")
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("Expected a 2-level index: (OfficerType, year).")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("Expected a 2-level columns index: (draw, stat).")
+
+    officer_level_name = "OfficerType" if "OfficerType" in _df.index.names else _df.index.names[0]
+    year_level_name = "year" if "year" in _df.index.names else _df.index.names[1]
+    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
+
+    available_draws = pd.Index(_df.columns.get_level_values(draw_level_name).unique())
+    if draw not in available_draws:
+        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws.tolist()}")
+
+    draw_df = _df[draw].copy()
+    required_stats = {"central", "lower", "upper"}
+    if not required_stats.issubset(draw_df.columns):
+        raise ValueError(
+            f"Missing required stats {sorted(required_stats)} in draw '{draw}'. "
+            f"Found: {draw_df.columns.tolist()}"
+        )
+
+    years = sorted(pd.Index(draw_df.index.get_level_values(year_level_name).unique()).tolist())
+    cadres = sorted(pd.Index(draw_df.index.get_level_values(officer_level_name).unique()).tolist())
+    x = np.arange(len(years), dtype=float)
+    bar_width = min(0.8 / max(len(cadres), 1), 0.12)
+    offsets = (np.arange(len(cadres)) - (len(cadres) - 1) / 2) * bar_width
+
+    fig_width = max(10, min(1.3 * len(years) + 6, 24))
+    fig_height = max(6, min(0.22 * len(cadres) + 6, 14))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    for i, cadre in enumerate(cadres):
+        cadre_df = draw_df.xs(cadre, level=officer_level_name).reindex(years)
+        central = pd.to_numeric(cadre_df["central"], errors="coerce").fillna(0.0).to_numpy()
+        lower = pd.to_numeric(cadre_df["lower"], errors="coerce").fillna(0.0).to_numpy()
+        upper = pd.to_numeric(cadre_df["upper"], errors="coerce").fillna(0.0).to_numpy()
+        lower_err = np.clip(central - lower, a_min=0.0, a_max=None)
+        upper_err = np.clip(upper - central, a_min=0.0, a_max=None)
+
+        ax.bar(
+            x + offsets[i],
+            central,
+            width=bar_width,
+            label=str(cadre),
+            yerr=np.vstack([lower_err, upper_err]),
+            capsize=2,
+            error_kw={"elinewidth": 0.8, "capthick": 0.8},
+            alpha=0.9,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(y) for y in years], rotation=45, ha="right")
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Proportion of Capacity Used")
+    ax.grid(axis="y", alpha=0.3)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(title="Cadre", loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=8, frameon=True)
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_cost_by_cadre_over_time_for_draw(
+    _df: pd.DataFrame,
+    draw: str,
+    title: str | None = None,
+):
+    """Plot capacity used over time for one draw, with one line per officer type."""
+    if _df is None:
+        raise ValueError("`_df` is None.")
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("Expected a 2-level index: (year, OfficerType).")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("Expected a 2-level columns index: (draw, stat).")
+
+    year_level_name = "year" if "year" in _df.index.names else _df.index.names[0]
+    officer_level_name = "OfficerType" if "OfficerType" in _df.index.names else _df.index.names[1]
+    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
+
+    available_draws = pd.Index(_df.columns.get_level_values(draw_level_name).unique())
+    if draw not in available_draws:
+        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws.tolist()}")
+
+    draw_df = _df[draw].copy()
+    required_stats = {"central", "lower", "upper"}
+    if not required_stats.issubset(draw_df.columns):
+        raise ValueError(
+            f"Missing required stats {sorted(required_stats)} in draw '{draw}'. "
+            f"Found: {draw_df.columns.tolist()}"
+        )
+
+    years = sorted(pd.Index(draw_df.index.get_level_values(year_level_name).unique()).tolist())
+    officers = sorted(pd.Index(draw_df.index.get_level_values(officer_level_name).unique()).tolist(), key=str)
+    x = np.arange(len(years), dtype=float)
+
+    fig_width = max(10, min(1.3 * len(years) + 4, 24))
+    fig_height = max(6, min(0.28 * len(officers) + 4, 16))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    officer_colors = list(plt.get_cmap("tab10").colors)
+    plotted_any = False
+
+    for i, officer_type in enumerate(officers):
+        officer_df = draw_df.xs(officer_type, level=officer_level_name).reindex(years)
+        if officer_df.empty:
+            continue
+
+        central = pd.to_numeric(officer_df["central"], errors="coerce").fillna(0.0).to_numpy()
+        lower = pd.to_numeric(officer_df["lower"], errors="coerce").fillna(0.0).to_numpy()
+        upper = pd.to_numeric(officer_df["upper"], errors="coerce").fillna(0.0).to_numpy()
+
+        if not (central.any() or lower.any() or upper.any()):
+            continue
+
+        color = officer_colors[i % len(officer_colors)]
+        ax.plot(
+            x,
+            central,
+            marker="o",
+            linewidth=1.8,
+            markersize=4,
+            color=color,
+            label=str(officer_type),
+        )
+        ax.fill_between(
+            x,
+            lower,
+            upper,
+            color=color,
+            alpha=0.12,
+            linewidth=0,
+        )
+        plotted_any = True
+
+    if not plotted_any:
+        raise ValueError(f"No plottable officer types remain for draw '{draw}'.")
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(year) for year in years], rotation=45, ha="right")
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Capacity used")
+    ax.grid(axis="y", alpha=0.3)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    handles, labels = ax.get_legend_handles_labels()
+    deduplicated_handles_by_label = dict(zip(labels, handles))
+    ax.legend(
+        handles=list(deduplicated_handles_by_label.values()),
+        labels=list(deduplicated_handles_by_label.keys()),
+        title="OfficerType",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        frameon=True,
+    )
+
+    if title is not None:
+        ax.set_title(title)
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_capacity_used_by_cadre_and_level_over_time_for_draw(
+    _df: pd.DataFrame,
+    draw: str,
+    title: str | None = None,
+):
+    """Plot line charts by year for one draw, faceted by facility level."""
+    if _df is None:
+        raise ValueError("`annual_capacity_used_by_cadre_and_level` is None.")
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 3:
+        raise ValueError("Expected a 3-level index: (year, OfficerType, FacilityLevel).")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("Expected a 2-level columns index: (draw, stat).")
+
+    year_level_name = "year" if "year" in _df.index.names else _df.index.names[0]
+    officer_level_name = "OfficerType" if "OfficerType" in _df.index.names else _df.index.names[1]
+    facility_level_name = "FacilityLevel" if "FacilityLevel" in _df.index.names else _df.index.names[2]
+    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
+
+    available_draws = pd.Index(_df.columns.get_level_values(draw_level_name).unique())
+    if draw not in available_draws:
+        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws.tolist()}")
+
+    draw_df = _df[draw].copy()
+    required_stats = {"central", "lower", "upper"}
+    if not required_stats.issubset(draw_df.columns):
+        raise ValueError(
+            f"Missing required stats {sorted(required_stats)} in draw '{draw}'. "
+            f"Found: {draw_df.columns.tolist()}"
+        )
+
+    years = sorted(pd.Index(draw_df.index.get_level_values(year_level_name).unique()).tolist())
+    cadres = sorted(pd.Index(draw_df.index.get_level_values(officer_level_name).unique()).tolist(), key=str)
+    facility_levels = sorted(pd.Index(draw_df.index.get_level_values(facility_level_name).unique()).tolist(), key=str)
+
+    if not facility_levels:
+        raise ValueError(f"No facility levels found for draw '{draw}'.")
+
+    x = np.arange(len(years), dtype=float)
+    fig_width = max(11, min(1.3 * len(years) + 6, 24))
+    valid_facility_levels: list[str] = []
+    facility_frames: dict[str, pd.DataFrame] = {}
+    for facility_level in facility_levels:
+        level_df = draw_df.xs(facility_level, level=facility_level_name).reindex(
+            pd.MultiIndex.from_product(
+                [years, cadres],
+                names=[year_level_name, officer_level_name],
+            ),
+            fill_value=0.0,
+        )
+        if level_df.empty:
+            continue
+        if not level_df.loc[:, ["central", "lower", "upper"]].fillna(0.0).to_numpy().any():
+            continue
+        valid_facility_levels.append(facility_level)
+        facility_frames[facility_level] = level_df
+
+    if not valid_facility_levels:
+        raise ValueError(f"No plottable facility levels remain for draw '{draw}'.")
+
+    fig_height = max(4.5 * len(valid_facility_levels), 5)
+    fig, axes = plt.subplots(
+        len(valid_facility_levels),
+        1,
+        figsize=(fig_width, fig_height),
+        sharex=True,
+    )
+    axes = np.atleast_1d(axes)
+
+    cadre_colors = list(plt.get_cmap("tab10").colors)
+
+    for axis, facility_level in zip(axes, valid_facility_levels):
+        level_df = facility_frames[facility_level]
+
+        for i, cadre in enumerate(cadres):
+            cadre_df = level_df.xs(cadre, level=officer_level_name).reindex(years)
+            central = pd.to_numeric(cadre_df["central"], errors="coerce").fillna(0.0).to_numpy()
+            lower = pd.to_numeric(cadre_df["lower"], errors="coerce").fillna(0.0).to_numpy()
+            upper = pd.to_numeric(cadre_df["upper"], errors="coerce").fillna(0.0).to_numpy()
+
+            axis.plot(
+                x,
+                central,
+                label=str(cadre),
+                color=cadre_colors[i % len(cadre_colors)],
+                marker="o",
+                linewidth=1.8,
+                markersize=4,
+            )
+            axis.fill_between(
+                x,
+                lower,
+                upper,
+                color=cadre_colors[i % len(cadre_colors)],
+                alpha=0.12,
+                linewidth=0,
+            )
+
+        axis.set_ylabel("Fraction of available capacity used")
+        axis.set_title(f"Facility level {facility_level}")
+        axis.grid(axis="y", alpha=0.3)
+        axis.spines["top"].set_visible(False)
+        axis.spines["right"].set_visible(False)
+
+    axes[-1].set_xticks(x)
+    axes[-1].set_xticklabels([str(y) for y in years], rotation=45, ha="right")
+
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    deduplicated_handles_by_label = dict(zip(labels, handles))
+    fig.legend(
+        deduplicated_handles_by_label.values(),
+        deduplicated_handles_by_label.keys(),
+        loc='upper left',
+        bbox_to_anchor=(0.75, 0.75),
+        ncols = 2,
+        fontsize=8,
+        frameon=True,
+    )
+
+    if title is not None:
+        fig.suptitle(title)
+        fig.tight_layout(rect=(0, 0, 0.86, 0.96))
+    else:
+        fig.tight_layout()
+    return fig, axes[0]

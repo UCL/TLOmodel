@@ -15,11 +15,12 @@ from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     make_graph_file_name,
     do_barh_plot_with_ci,
-    plot_cadre_time_by_draw_stacked,
     plot_deaths_by_period_for_cause,
     plot_deaths_by_period_for_draw,
     plot_hsi_counts_by_period_for_draw,
     plot_population_by_year,
+    plot_capacity_used_by_cadre_and_level_over_time_for_draw,
+    plot_cost_by_cadre_over_time_for_draw
 )
 
 
@@ -38,70 +39,6 @@ def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
     return loaded
 
 
-def plot_proportion_capacity_used_by_cadre_over_time_for_draw(_df: pd.DataFrame, draw: str):
-    """Plot grouped bars by year for one draw; each bar-group decomposes by cadre with CI error bars."""
-    if _df is None:
-        raise ValueError("`proportion_capacity_used_by_cadre` is None.")
-    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
-        raise ValueError("Expected a 2-level index: (OfficerType, year).")
-    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
-        raise ValueError("Expected a 2-level columns index: (draw, stat).")
-
-    officer_level_name = "OfficerType" if "OfficerType" in _df.index.names else _df.index.names[0]
-    year_level_name = "year" if "year" in _df.index.names else _df.index.names[1]
-    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
-
-    available_draws = pd.Index(_df.columns.get_level_values(draw_level_name).unique())
-    if draw not in available_draws:
-        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws.tolist()}")
-
-    draw_df = _df[draw].copy()
-    required_stats = {"central", "lower", "upper"}
-    if not required_stats.issubset(draw_df.columns):
-        raise ValueError(
-            f"Missing required stats {sorted(required_stats)} in draw '{draw}'. "
-            f"Found: {draw_df.columns.tolist()}"
-        )
-
-    years = sorted(pd.Index(draw_df.index.get_level_values(year_level_name).unique()).tolist())
-    cadres = sorted(pd.Index(draw_df.index.get_level_values(officer_level_name).unique()).tolist())
-    x = np.arange(len(years), dtype=float)
-    bar_width = min(0.8 / max(len(cadres), 1), 0.12)
-    offsets = (np.arange(len(cadres)) - (len(cadres) - 1) / 2) * bar_width
-
-    fig_width = max(10, min(1.3 * len(years) + 6, 24))
-    fig_height = max(6, min(0.22 * len(cadres) + 6, 14))
-    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-
-    for i, cadre in enumerate(cadres):
-        cadre_df = draw_df.xs(cadre, level=officer_level_name).reindex(years)
-        central = pd.to_numeric(cadre_df["central"], errors="coerce").fillna(0.0).to_numpy()
-        lower = pd.to_numeric(cadre_df["lower"], errors="coerce").fillna(0.0).to_numpy()
-        upper = pd.to_numeric(cadre_df["upper"], errors="coerce").fillna(0.0).to_numpy()
-        lower_err = np.clip(central - lower, a_min=0.0, a_max=None)
-        upper_err = np.clip(upper - central, a_min=0.0, a_max=None)
-
-        ax.bar(
-            x + offsets[i],
-            central,
-            width=bar_width,
-            label=str(cadre),
-            yerr=np.vstack([lower_err, upper_err]),
-            capsize=2,
-            error_kw={"elinewidth": 0.8, "capthick": 0.8},
-            alpha=0.9,
-        )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels([str(y) for y in years], rotation=45, ha="right")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Proportion of Capacity Used")
-    ax.grid(axis="y", alpha=0.3)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.legend(title="Cadre", loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=8, frameon=True)
-    fig.tight_layout()
-    return fig, ax
 
 
 def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path = None):
@@ -123,6 +60,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
     icers = primary_results.get('icers_summarized')
     incremental_scenario_cost = primary_results.get('incremental_scenario_cost')
     dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
+    annual_cost_by_cadre = primary_results.get('annual_cost_by_cadre')
 
     comparison_metrics_available = all(
         metric is not None
@@ -139,8 +77,8 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
 
     counts_of_hsi_in_implementation_period = primary_results['counts_of_hsi_by_period']
     counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2010-2041'], level=1)
-    capacity_used_by_cadre = primary_results.get("capacity_used_by_cadre")
-    proportion_capacity_used_by_cadre = primary_results.get("proportion_capacity_used_by_cadre")
+    annual_capacity_used_by_cadre_and_level = primary_results.get("annual_capacity_used_by_cadre_and_level")
+
 
     result_df_by_period = pd.DataFrame([
         {'treatment_id_included': draw, 'nonzero_hsis': treatment_id, 'period': period}
@@ -193,31 +131,45 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         fig.savefig(outfile)
         plt.close(fig)
 
-    print("Plotting capacity used by cadres across draws.")
-    fig, ax = plot_cadre_time_by_draw_stacked(capacity_used_by_cadre, stat="central")
-    name_of_plot = "Capacity Used by Cadres (2026-2040)"
-    ax.set_title(name_of_plot)
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.savefig(outfile)
-    plt.close(fig)
-
-    if proportion_capacity_used_by_cadre is not None:
-        print("Plotting capacity used over time (one figure per treatment ID).")
+    if annual_capacity_used_by_cadre_and_level is not None:
+        print("Plotting capacity used by cadre and facility level over time (one figure per treatment ID).")
         for param in param_names:
             if param == "Nothing":
                 continue
             draw = format_scenario_name(param)
             try:
-                fig, ax = plot_proportion_capacity_used_by_cadre_over_time_for_draw(
-                    proportion_capacity_used_by_cadre,
+                name_of_plot = f"Capacity Used by Cadre and Facility Level Over Time for {draw}"
+                fig, ax = plot_capacity_used_by_cadre_and_level_over_time_for_draw(
+                    annual_capacity_used_by_cadre_and_level,
                     draw,
+                    title=name_of_plot,
                 )
             except ValueError as exc:
-                print(f"Skipping capacity-over-time plot for draw '{draw}': {exc}")
+                print(f"Skipping capacity-by-level plot for draw '{draw}': {exc}")
                 continue
 
-            name_of_plot = f"Capacity Used Over Time by Cadre for {draw}"
-            ax.set_title(name_of_plot)
+            outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+            fig.savefig(outfile)
+            plt.close(fig)
+
+    if annual_cost_by_cadre is not None:
+        print("Plotting annual costs by cadre and over time (one figure per treatment ID).")
+        for param in param_names:
+            print(f"### {param}")
+            if param == "Nothing":
+                continue
+            draw = format_scenario_name(param)
+            try:
+                name_of_plot = f"Cost by Cadre Over Time for {draw}"
+                fig, ax = plot_cost_by_cadre_over_time_for_draw(
+                    annual_cost_by_cadre,
+                    draw,
+                    title=name_of_plot,
+                )
+            except ValueError as exc:
+                print(f"Skipping capacity-by-level plot for draw '{draw}': {exc}")
+                continue
+
             outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
             fig.savefig(outfile)
             plt.close(fig)
