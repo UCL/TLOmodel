@@ -640,6 +640,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                 global_ymax = max(global_ymax, deficit_pre.max())
     global_ymax *= 1.05
 
+    deficit_monthly_rows = []
     plot_idx = 0
     for idx, draw in enumerate(scenarios_of_interest):
         if scenario_names[draw] == "No Disruptions":
@@ -650,7 +651,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
         t_vals = d_vals + c_vals if len(d_vals) == len(c_vals) else np.array([])
 
         if len(d_dates):
-            ax.plot(d_dates, t_vals, color=COLOUR_TOTAL, lw=2.5, alpha=0.7, label="Total disrupted (TLO)", zorder=1)
+            ax.plot(d_dates, t_vals, color=COLOUR_TOTAL, lw=2.5, alpha=0.7, label="Direct weather disrupted (TLO)",
+                    zorder=1)
         if len(d_dates):
             ax.plot(d_dates, d_vals, color=COLOUR_DELAYED, lw=2.0, ls="--", alpha=1.0, label="Delayed (TLO)", zorder=2)
         if len(c_dates):
@@ -675,13 +677,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
                     color=COLOUR_DEFICIT, lw=2.0, ls="-.", alpha=0.9,
                     label="HSI deficit vs. No Disruptions (%)", zorder=4)
 
+            # ── NEW: capture the deficit series with per-run CI for CSV ───────
+            scen_monthly_runs = scen_total_2.groupby(_parse_ym(scen_total_2.index)).sum()
+            nd_monthly_runs = nd_total_2.groupby(_parse_ym(nd_total_2.index)).sum()
+            common_runs = nd_monthly_runs.columns.intersection(scen_monthly_runs.columns)
+            nd_runs = nd_monthly_runs.reindex(index=common_months, columns=common_runs)
+            sc_runs = scen_monthly_runs.reindex(index=common_months, columns=common_runs)
+            deficit_runs = ((nd_runs - sc_runs) / nd_runs.replace(0, np.nan) * 100).clip(lower=0)
+            for ym in common_months:
+                row_vals = deficit_runs.loc[ym].dropna()
+                deficit_monthly_rows.append({
+                    "Scenario": scenario_names[draw],
+                    "year_month": ym,
+                    "hsi_deficit_pct_mean": round(deficit_pct.get(ym, np.nan), 4),
+                    "hsi_deficit_pct_lower": round(row_vals.quantile(CI_LOWER), 4) if len(row_vals) else np.nan,
+                    "hsi_deficit_pct_upper": round(row_vals.quantile(CI_UPPER), 4) if len(row_vals) else np.nan,
+                })
+
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         ax.xaxis.set_major_locator(mdates.YearLocator())
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right", fontsize=FS_TICK)
         plt.setp(ax.yaxis.get_majorticklabels(), fontsize=FS_TICK)
         ax.set_xlabel("Year", fontsize=FS_LABEL, fontweight="bold")
         if plot_idx % n_cols == 0:
-            ax.set_ylabel("% HSIs disrupted / deficit", fontsize=FS_LABEL, fontweight="bold")
+            ax.set_ylabel("HSI deficit vs. No Disruptions (%)", fontsize=FS_LABEL, fontweight="bold")
         ax.set_title(scenario_names[draw], fontsize=FS_TITLE, fontweight="bold")
         ax.set_ylim(bottom=0, top=global_ymax)
         ax.set_xlim(left=pd.Timestamp("2025-01-01"), right=pd.Timestamp("2040-12-31"))
@@ -691,8 +710,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             ax.legend(fontsize=FS_LEGEND, framealpha=0.95, edgecolor="gray", fancybox=True)
         plot_idx += 1
 
+
     for j in range(plot_idx, len(axes_flat)):
         axes_flat[j].set_visible(False)
+    for j in range(plot_idx, len(axes_flat)):
+        axes_flat[j].set_visible(False)
+
+    # ── NEW: export monthly HSI deficit + peak-deficit summary ───────────────
+    if deficit_monthly_rows:
+        deficit_df = pd.DataFrame(deficit_monthly_rows)
+        deficit_df.to_csv(
+            output_folder / f"hsi_deficit_monthly_{suffix}.csv", index=False)
+
+        peak_def_rows = []
+        for scen, g in deficit_df.groupby("Scenario"):
+            pk = g.loc[g["hsi_deficit_pct_mean"].idxmax()]
+            peak_def_rows.append({
+                "Scenario": scen,
+                "mean_monthly_deficit_pct": round(g["hsi_deficit_pct_mean"].mean(), 4),
+                "peak_month": pk["year_month"],
+                "peak_deficit_pct_mean": pk["hsi_deficit_pct_mean"],
+                "peak_deficit_pct_lower": pk["hsi_deficit_pct_lower"],
+                "peak_deficit_pct_upper": pk["hsi_deficit_pct_upper"],
+            })
+        pd.DataFrame(peak_def_rows).to_csv(
+            output_folder / f"hsi_deficit_peak_summary_{suffix}.csv", index=False)
 
     fig.tight_layout()
     fig.savefig(output_folder / f"comparison_disruption_monthly_{suffix}.png", dpi=300, bbox_inches="tight")
