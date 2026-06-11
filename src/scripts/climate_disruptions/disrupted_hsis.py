@@ -713,8 +713,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
 
     for j in range(plot_idx, len(axes_flat)):
         axes_flat[j].set_visible(False)
-    for j in range(plot_idx, len(axes_flat)):
-        axes_flat[j].set_visible(False)
 
     # ── NEW: export monthly HSI deficit + peak-deficit summary ───────────────
     if deficit_monthly_rows:
@@ -1286,6 +1284,72 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path):
             ax.axis("off")
 
         district_rates_df.to_csv(output_folder / f"district_hsi_disruption_percentage_{suffix}.csv")
+
+        # ── Per-district HSI DEFICIT (total shortfall vs No Disruption) ───────
+        # Volume of HSIs delivered per district, scenario vs No Disruption.
+        # Deficit = (ND - scenario) / ND, clipped >=0. This is the indirect-
+        # inclusive total shortfall, NOT the direct disruption rate above.
+        nd_total_fac = _collapse_hsi_types(all_draws_total_df[nd_draw])
+        nd_fac_vol = nd_total_fac.groupby(_parse_facility(nd_total_fac.index)).sum().mean(axis=1)
+        nd_by_district = nd_fac_vol.groupby(
+            pd.Series(nd_fac_vol.index, index=nd_fac_vol.index).map(fac_to_district)
+        ).sum()
+        nd_by_district.sort_values().to_csv(
+            output_folder / f"nd_hsi_volume_by_district_{suffix}.csv", header=["nd_hsi_volume"])
+        print("Smallest-volume districts (deficit denominator):")
+        print(nd_by_district.sort_values().head(6))
+        district_deficit = {}
+        for _idx_d, _draw_d in enumerate(scenarios_of_interest):
+            _scen_d = scenario_names[_draw_d]
+            if _scen_d == "No Disruptions":
+                continue
+            sc_total_fac = _collapse_hsi_types(all_draws_total_df[_draw_d])
+            sc_fac_vol = sc_total_fac.groupby(_parse_facility(sc_total_fac.index)).sum().mean(axis=1)
+            sc_by_district = sc_fac_vol.groupby(
+                pd.Series(sc_fac_vol.index, index=sc_fac_vol.index).map(fac_to_district)
+            ).sum()
+            common_d = nd_by_district.index.intersection(sc_by_district.index)
+            district_deficit[_scen_d] = (
+                (nd_by_district[common_d] - sc_by_district[common_d])
+                / nd_by_district[common_d].replace(0, np.nan) * 100
+            ).clip(lower=0)
+
+        pd.DataFrame(district_deficit).to_csv(
+            output_folder / f"district_hsi_deficit_percentage_{suffix}.csv")
+
+        # ── Deficit COMPOSITION by district × HSI type (diagnostic) ───────────
+        # Which TREATMENT_IDs drive each district's deficit. Uses the raw
+        # ym:fac:hsi_type index (NOT _collapse_hsi_types, which drops the type).
+        def _dist_type_volume(_draw):
+            _df = all_draws_total_df[_draw]  # index: ym:fac:hsi_type
+            _fac = _parse_facility(_df.index)
+            _hsi = _parse_hsi_type(_df.index)
+            _dist = _fac.map(fac_to_district)
+            _vol = _df.mean(axis=1)  # mean across runs
+            _out = pd.DataFrame({"district": _dist.values,
+                                 "hsi_type": _hsi.values,
+                                 "vol": _vol.values}).dropna(subset=["district"])
+            return _out.groupby(["district", "hsi_type"])["vol"].sum()
+
+        nd_dt = _dist_type_volume(nd_draw)
+        comp_rows = []
+        for _idx_c, _draw_c in enumerate(scenarios_of_interest):
+            _scen_c = scenario_names[_draw_c]
+            if _scen_c == "No Disruptions":
+                continue
+            sc_dt = _dist_type_volume(_draw_c)
+            _common = nd_dt.index.union(sc_dt.index)
+            _ndv = nd_dt.reindex(_common, fill_value=0)
+            _scv = sc_dt.reindex(_common, fill_value=0)
+            _comp = pd.DataFrame({
+                "scenario": _scen_c,
+                "nd_volume": _ndv.values,
+                "scenario_volume": _scv.values,
+                "deficit_count": (_ndv - _scv).values,
+            }, index=_common).reset_index()  # -> columns: district, hsi_type, ...
+            comp_rows.append(_comp)
+        pd.concat(comp_rows).to_csv(
+            output_folder / f"district_hsi_type_deficit_composition_{suffix}.csv", index=False)
         fig_map.tight_layout()
         fig_map.savefig(
             output_folder / f"map_hsi_disruption_rate_by_district_{suffix}.png",
