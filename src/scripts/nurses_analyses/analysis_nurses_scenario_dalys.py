@@ -696,15 +696,17 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=30):
         .index
     )
 
-    default_more = (
-        default_more.loc[default_top]
-        .sort_values("mean", ascending=True)
-    )
+    # default_more = (
+    #     default_more.loc[default_top]
+    #     .sort_values("mean", ascending=True)
+    # )
+    default_more = default_more.reindex(cause_order)
 
-    default_fewer = (
-        default_fewer.loc[default_top]
-        .reindex(default_more.index)
-    )
+    # default_fewer = (
+    #     default_fewer.loc[default_top]
+    #     .reindex(default_more.index)
+    # )
+    default_fewer = default_fewer.reindex(cause_order)
 
     # Top causes for IMPROVED healthsystem
     improved_top = (
@@ -715,18 +717,20 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=30):
         .index
     )
 
-    improved_more = (
-        improved_more.loc[improved_top]
-        .sort_values("mean", ascending=True)
-    )
+    # improved_more = (
+    #     improved_more.loc[improved_top]
+    #     .sort_values("mean", ascending=True)
+    # )
+    improved_more = improved_more.reindex(cause_order)
 
-    improved_fewer = (
-        improved_fewer.loc[improved_top]
-        .reindex(improved_more.index)
-    )
+    # improved_fewer = (
+    #     improved_fewer.loc[improved_top]
+    #     .reindex(improved_more.index)
+    # )
+    improved_fewer = improved_fewer.reindex(cause_order)
 
     # Plot
-    fig, axes = plt.subplots(ncols=2, figsize=(14, 10), sharey=False,)
+    fig, axes = plt.subplots(ncols=2, figsize=(14, 10), sharey=True)
 
     panel_data = [
         (
@@ -824,15 +828,17 @@ def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=30):
         .index
     )
 
-    default_more = (
-        default_more.loc[default_top]
-        .sort_values("mean", ascending=True)
-    )
+    # default_more = (
+    #     default_more.loc[default_top]
+    #     .sort_values("mean", ascending=True)
+    # )
+    default_more = default_more.reindex(death_order)
 
-    default_fewer = (
-        default_fewer.loc[default_top]
-        .reindex(default_more.index)
-    )
+    # default_fewer = (
+    #     default_fewer.loc[default_top]
+    #     .reindex(default_more.index)
+    # )
+    default_fewer = default_fewer.reindex(death_order)
 
     # Top causes for IMPROVED healthsystem
     improved_top = (
@@ -843,18 +849,20 @@ def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=30):
         .index
     )
 
-    improved_more = (
-        improved_more.loc[improved_top]
-        .sort_values("mean", ascending=True)
-    )
+    # improved_more = (
+    #     improved_more.loc[improved_top]
+    #     .sort_values("mean", ascending=True)
+    # )
+    improved_more = improved_more.reindex(death_order)
 
-    improved_fewer = (
-        improved_fewer.loc[improved_top]
-        .reindex(improved_more.index)
-    )
+    # improved_fewer = (
+    #     improved_fewer.loc[improved_top]
+    #     .reindex(improved_more.index)
+    # )
+    improved_fewer = improved_fewer.reindex(death_order)
 
     # Plot
-    fig, axes = plt.subplots(ncols=2, figsize=(14, 10), sharey=False,)
+    fig, axes = plt.subplots(ncols=2, figsize=(14, 10), sharey=True)
 
     panel_data = [
         (
@@ -1343,6 +1351,13 @@ if __name__ == "__main__":
     assert (total_deaths.index == total_deaths_cause.index).all()
     assert (abs(total_deaths.values - total_deaths_cause.values) < 1e-7).all()
 
+    # find the descending order of causes in terms of total deaths in baseline scenario
+    mean_deaths_by_cause = deaths_by_cause.groupby(axis=1, level="draw").mean().sort_values(
+        by="Baseline Nurses / Default Healthsystem Function",
+        ascending=True,
+    )
+    death_order = mean_deaths_by_cause.index.tolist()
+
     deaths_by_cause_default = (
         deaths_by_cause.loc[
             :,
@@ -1444,6 +1459,13 @@ if __name__ == "__main__":
     total_dalys_cause = dalys_by_cause.sum(axis=0)
     assert (total_dalys.index == total_dalys_cause.index).all()
     assert (abs(total_dalys.values - total_dalys_cause.values) < 1e-7).all()
+
+    # find the descending order of causes in terms of total dalys in baseline scenario
+    mean_dalys_by_cause = dalys_by_cause.groupby(axis=1, level="draw").mean().sort_values(
+        by="Baseline Nurses / Default Healthsystem Function",
+        ascending=True,
+    )
+    cause_order = mean_dalys_by_cause.index.tolist()
 
     # Default Healthsystem
     dalys_by_cause_default = (
