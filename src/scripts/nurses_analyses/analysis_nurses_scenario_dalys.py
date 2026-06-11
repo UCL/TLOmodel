@@ -357,19 +357,15 @@ def calculate_percent_dalys_averted(
     year_mask = np.isin(years, list(comparison_years))
 
     annual_dalys = annual_dalys.loc[year_mask]
+    annual_dalys_agg = annual_dalys.sum(axis=0)
 
-    pct_diff = (
+    pct_diff = pd.DataFrame(
         -100.0
-        * find_difference_relative_to_comparison_series_dataframe(
-            annual_dalys,
+        * find_difference_relative_to_comparison_series(
+            annual_dalys_agg,
             comparison=baseline_scenario,
             scaled=True,
         )
-    )
-
-    # sum across years but keep DataFrame structure
-    pct_diff = pd.DataFrame(
-        pct_diff.sum(axis=0)
     ).T
 
     summarized = summarize(pct_diff)
@@ -401,20 +397,17 @@ def calculate_percent_deaths_averted(
     """
     years = annual_deaths.index.astype(int)
     year_mask = np.isin(years, list(comparison_years))
-    annual_deaths = annual_deaths.loc[year_mask]
 
-    pct_diff = (
+    annual_deaths = annual_deaths.loc[year_mask]
+    annual_deaths_agg = annual_deaths.sum(axis=0)
+
+    pct_diff = pd.DataFrame(
         -100.0
-        * find_difference_relative_to_comparison_series_dataframe(
-            annual_deaths,
+        * find_difference_relative_to_comparison_series(
+            annual_deaths_agg,
             comparison=baseline_scenario,
             scaled=True,
         )
-    )
-
-    # sum across years but keep DataFrame structure
-    pct_diff = pd.DataFrame(
-        pct_diff.sum(axis=0)
     ).T
 
     summarized = summarize(pct_diff)
