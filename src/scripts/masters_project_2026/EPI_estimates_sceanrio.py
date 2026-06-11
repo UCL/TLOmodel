@@ -21,7 +21,6 @@ status_quo_params = {
         "scale_to_effective_capabilities": True,
         "policy_name": "Naive",
         "services_affected_precip": "none",  # no climate disruption
-        "tclose_overwrite": 1000,
     },
     "SymptomManager": {
         "spurious_symptoms": True,
