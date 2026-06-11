@@ -429,38 +429,6 @@ def calculate_percent_deaths_averted(
     return pd.DataFrame(results).T
 
 
-# Calculate % DALYs averted by cause
-def calculate_percent_dalys_averted_by_cause(
-    summarized_dalys_by_cause,
-    baseline_scenario,
-):
-    """
-    Returns DataFrame indexed by cause with columns:
-        more_nurses
-        fewer_nurses
-    """
-
-    scenario_names = (summarized_dalys_by_cause.columns.get_level_values(0).unique())
-    baseline = summarized_dalys_by_cause[(baseline_scenario, "mean")]
-    results = pd.DataFrame(index=baseline.index)
-
-    for scenario in scenario_names:
-        if scenario == baseline_scenario:
-            continue
-
-        scenario_values = summarized_dalys_by_cause[(scenario, "mean")]
-        percent_averted = ((baseline - scenario_values) / baseline * 100.0)
-
-        if "More Nurses" in scenario:
-            results["More nurses"] = percent_averted
-
-        elif "Fewer Nurses" in scenario:
-            # Make negative for mirrored plotting
-            results["Fewer nurses"] = -percent_averted
-
-    return results
-
-
 # Calculate % deaths averted by cause
 def calculate_percent_deaths_averted_by_cause(
     deaths_by_cause,
@@ -677,7 +645,7 @@ def plot_percent_deaths_averted_comparison(default_df,improved_df,):
 
 
 # Plot % DALYs averted by cause
-def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=10,):
+def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=30):
 
     # Extracting scenario dataframes
     default_more = default_df[
@@ -758,7 +726,7 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=10,):
     )
 
     # Plot
-    fig, axes = plt.subplots(ncols=2, figsize=(14, 8), sharey=False,)
+    fig, axes = plt.subplots(ncols=2, figsize=(14, 10), sharey=False,)
 
     panel_data = [
         (
@@ -790,8 +758,9 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=10,):
                 more["upper"] - more["mean"],
             ],
             fmt="none",
-            capsize=4,
+            capsize=2,
             color="black",
+            alpha=0.5,
         )
 
         # CI bars: Fewer nurses
@@ -803,8 +772,9 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=10,):
                 fewer["upper"] - fewer["mean"],
             ],
             fmt="none",
-            capsize=4,
+            capsize=2,
             color="black",
+            alpha=0.5,
         )
 
         ax.axvline(0, color="black", linewidth=1)
@@ -826,7 +796,7 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=10,):
 
 
 # Plot % deaths averted by cause
-def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=10,):
+def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=30):
 
     # Extracting scenario dataframes
     default_more = default_df[
@@ -884,7 +854,7 @@ def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=10,):
     )
 
     # Plot
-    fig, axes = plt.subplots(ncols=2, figsize=(14, 8), sharey=False,)
+    fig, axes = plt.subplots(ncols=2, figsize=(14, 10), sharey=False,)
 
     panel_data = [
         (
@@ -915,8 +885,9 @@ def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=10,):
                 more["upper"] - more["mean"],
             ],
             fmt="none",
-            capsize=4,
+            capsize=2,
             color="black",
+            alpha=0.5,
         )
 
         ax.errorbar(
@@ -927,8 +898,9 @@ def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=10,):
                 fewer["upper"] - fewer["mean"],
             ],
             fmt="none",
-            capsize=4,
+            capsize=2,
             color="black",
+            alpha=0.5
         )
 
         ax.axvline(0, color="black", linewidth=1)
@@ -1363,6 +1335,14 @@ if __name__ == "__main__":
         param_names=param_names,
     )
 
+    # check that total deaths equal to sum of deaths by cause
+    total_deaths = annual_deaths.loc[
+        (annual_deaths.index >= 2027) & (annual_deaths.index <= 2034)
+        ].sum(axis=0)
+    total_deaths_cause = deaths_by_cause.sum(axis=0)
+    assert (total_deaths.index == total_deaths_cause.index).all()
+    assert (abs(total_deaths.values - total_deaths_cause.values) < 1e-7).all()
+
     deaths_by_cause_default = (
         deaths_by_cause.loc[
             :,
@@ -1398,7 +1378,7 @@ if __name__ == "__main__":
     fig_10, ax_10 = plot_percent_deaths_averted_by_cause(
         percent_deaths_by_cause_default,
         percent_deaths_by_cause_improved,
-        top_n=10,
+        top_n=30,
     )
 
     # Extract deaths by age group
@@ -1408,6 +1388,11 @@ if __name__ == "__main__":
         set_param_names_as_column_index_level_0,
         param_names=param_names,
     )
+
+    # check that total deaths equal to sum of deaths by age group
+    total_deaths_age = deaths_by_age_group.sum(axis=0)
+    assert (total_deaths.index == total_deaths_age.index).all()
+    assert (abs(total_deaths.values - total_deaths_age.values) < 1e-7).all()
 
     deaths_by_age_group_default = (
         deaths_by_age_group.loc[
@@ -1452,6 +1437,14 @@ if __name__ == "__main__":
         param_names=param_names,
     )
 
+    # check that total dalys equal to sum of dalys by cause
+    total_dalys = annual_dalys.loc[
+        (annual_dalys.index >= 2027) & (annual_dalys.index <= 2034)
+        ].sum(axis=0)
+    total_dalys_cause = dalys_by_cause.sum(axis=0)
+    assert (total_dalys.index == total_dalys_cause.index).all()
+    assert (abs(total_dalys.values - total_dalys_cause.values) < 1e-7).all()
+
     # Default Healthsystem
     dalys_by_cause_default = (
         dalys_by_cause.loc[
@@ -1489,7 +1482,7 @@ if __name__ == "__main__":
     fig_9, ax_9 = plot_percent_dalys_averted_by_cause(
         percent_by_cause_default,
         percent_by_cause_improved,
-        top_n=10,
+        top_n=30,
     )
 
     # Extract DALYs by age group
@@ -1499,6 +1492,11 @@ if __name__ == "__main__":
         set_param_names_as_column_index_level_0,
         param_names=param_names,
     )
+
+    # check that total dalys equal to sum of dalys by age groups
+    total_dalys_age = dalys_by_age_group.sum(axis=0)
+    assert (total_dalys.index == total_dalys_age.index).all()
+    assert (abs(total_dalys.values - total_dalys_age.values) < 1e-7).all()
 
     dalys_by_age_group_default = (
         dalys_by_age_group.loc[
