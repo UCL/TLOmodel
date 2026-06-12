@@ -165,37 +165,15 @@ def apply(
             with open(checkpoint_path, "wb") as f:
                 pickle.dump(input_costs, f)
             print(f"Saved input costs checkpoint to: {checkpoint_path}")
+
+
+    # Map draw numbers to draw names in input costs
+    draw_lookup = dict(enumerate(param_names))
+    input_costs.loc[:, "draw_name"] = input_costs["draw"].map(draw_lookup)
+    input_costs.drop(columns=["draw"], inplace=True)
+    input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     results['input_costs'] = input_costs
 
-    # TODO Ask Sakshi: the hrh costs are the same across all draw; therefore incremental costs and cost for medical consumables
-    # are the same for each draw. Does that make sense?
-    # Consumables cost per intervention
-    total_cons_cost = input_costs.groupby(['draw', 'run', 'cost_category'])['cost'].sum()
-    total_cons_cost = compute_summary_statistics(total_cons_cost.unstack(['draw', 'run']), 'median')
-    total_cons_cost = set_param_names_as_column_index_level_0(total_cons_cost, param_names)
-
-    results['total_cons_cost'] = total_cons_cost
-
-    # Computing incremental costs
-    # TODO Check with Sakshi if these are annual costs; as everything else is annual.
-    if do_comparison:
-        print("Computing incremental_scenario_cost...")
-        start = perf_counter()
-        total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-        incremental_scenario_cost = (pd.DataFrame(
-            find_difference_relative_to_comparison(
-                total_input_cost,
-                comparison=0,)
-        ))
-
-        elapsed = perf_counter() - start
-        print(f"\n=== TIMING: computing incremental_scenario_cost took {elapsed:.3f}s ===\n", flush=True)
-
-        incremental_scenario_cost = (
-            incremental_scenario_cost.T.reorder_levels(["draw", "run"], axis=1).sort_index(axis=1)
-        ).pipe(set_param_names_as_column_index_level_0, param_names)
-
-        incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
 
     # Get total population by year
     print("Extracting population data...")
@@ -297,27 +275,9 @@ def apply(
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
-    if do_comparison:
-        dalys_averted = (
-            -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing'))
+    results['dalys'] = compute_summary_statistics(dalys, central_measure='median')
 
-        )
-
-        pc_dalys_averted = 100.0 * compute_summary_statistics(
-            -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing', scaled=True)).T,
-            central_measure='median'
-        ).iloc[0].unstack()
-        # Run-by-run incremental cost-effectiveness ratio calculation
-        icers = incremental_scenario_cost.T / dalys_averted
-        icers_summarized = compute_summary_statistics(icers.T, central_measure='median').iloc[0].unstack()
-        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
-
-    dalys = compute_summary_statistics(dalys, central_measure='median')
-
-
-    # Note that Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
+    # Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
     # To get the actual minutes, we need to multiply by the total available minutes.
     annual_capacity_used_by_cadre_and_level = extract_results(
         results_folder,
@@ -326,10 +286,10 @@ def apply(
         custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
         do_scaling=False, # Not scaling as this is a fraction calculated during runtime.
         autodiscover=True,
-    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
 
     results['annual_capacity_used_by_cadre_and_level'] = (
-        compute_summary_statistics(annual_capacity_used_by_cadre_and_level, 'median')
+        compute_summary_statistics(annual_capacity_used_by_cadre_and_level.pipe(set_param_names_as_column_index_level_0, param_names=param_names), 'median')
     )
 
 
@@ -358,6 +318,18 @@ def apply(
 
     actual_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
     results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
+    # We need the time used by cadre in 2026
+    actual_capacity_used_by_cadre = (
+        actual_capacity_used_by_cadre_and_level
+        .groupby(['OfficerType', 'year'])
+        .sum()
+    )
+    actual_capacity_used_by_cadre_2026 = actual_capacity_used_by_cadre.xs(2026, level='year', axis=0)
+
+    results['actual_capacity_used_by_cadre_2026'] = (
+        compute_summary_statistics(actual_capacity_used_by_cadre_2026, 'median')
+    )
+    print(results['actual_capacity_used_by_cadre_2026'])
     # Load the salary per minutes by cadre and facility level
     # ResourceFile_Minute_Salary_HR.csv is produced using Bingling's code,
     # except that she was dropping Facility_Level, which I have retained.
@@ -382,16 +354,90 @@ def apply(
         actual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
     )
 
-    # Finally we need it by cadre, so we sum across facility levels and then
-    # summarise
-    actual_cost_by_cadre_and_level = (
-        actual_cost_by_cadre_and_level.groupby(['year', 'OfficerType']).sum()
-    )
-    results['annual_cost_by_cadre'] = compute_summary_statistics(actual_cost_by_cadre_and_level, 'median')
+    # The costing script calculates the HRH costs for the total cadre, not for the strength used.
+    # We will remove the HRH costs from the input_costs; this includes other things besides salary
+    # Then we will add to the remaining costs the salary costs calculated above. This will gives us
+    # the total input costs for the intervention. Note that for the moment, we are ignoring non-salary HRH costs.
 
-    staff_count_by_cadre = (
-        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
+    # Wrangling to make the actual_cost_by_cadre_and_level the same same as input_costs
+    actual_cost_by_cadre_and_level = (
+        actual_cost_by_cadre_and_level
+        .stack(level=['draw', 'run'])
+        .rename('cost')
+        .reset_index()
     )
+
+    actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.rename(columns={
+        'OfficerType':   'cost_subgroup',
+        'FacilityLevel': 'Facility_Level',
+    })
+    actual_cost_by_cadre_and_level['cost_subcategory'] = 'salary_for_cadres_used'
+    actual_cost_by_cadre_and_level['cost_category'] = 'human resources for health'
+
+    actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level[[
+        'draw', 'run', 'year',
+        'cost_subcategory',
+        'Facility_Level',
+        'cost_subgroup',
+        'cost',
+        'cost_category',
+    ]]
+
+    actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.reset_index(drop=True)
+
+    mask = actual_cost_by_cadre_and_level['year'] > 2025
+    # Now combine with input_costs
+    input_costs = input_costs[input_costs['cost_category'] != 'human resources for health']
+    input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level[mask]])
+
+    # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
+    annual_cons_cost = input_costs.groupby(['draw', 'run', 'cost_category', 'year'])['cost'].sum()
+    mask = (
+        (annual_cons_cost.index.get_level_values('year') == 2026) &
+        (annual_cons_cost.index.get_level_values('cost_category') == 'medical consumables')
+    )
+    annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
+
+    results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026, 'median')).T
+
+    # Computing incremental costs
+    if do_comparison:
+        print("Computing incremental_scenario_cost...")
+        start = perf_counter()
+        total_input_cost = input_costs_with_proportional_hrh_costs.groupby(['draw', 'run'])['cost'].sum()
+        incremental_scenario_cost = (pd.DataFrame(
+            find_difference_relative_to_comparison(
+                total_input_cost,
+                comparison=0,)
+        ))
+
+        elapsed = perf_counter() - start
+        print(f"\n=== TIMING: computing incremental_scenario_cost took {elapsed:.3f}s ===\n", flush=True)
+
+        incremental_scenario_cost = (
+            incremental_scenario_cost.T.reorder_levels(["draw", "run"], axis=1).sort_index(axis=1)
+        )
+
+        incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
+
+
+    if do_comparison:
+        dalys_averted = (
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing'))
+
+        )
+
+        pc_dalys_averted = 100.0 * compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing', scaled=True)).T,
+            central_measure='median'
+        ).iloc[0].unstack()
+        # Run-by-run incremental cost-effectiveness ratio calculation
+        icers = incremental_scenario_cost.T / dalys_averted
+        icers_summarized = compute_summary_statistics(icers.T, central_measure='median').iloc[0].unstack()
+        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
+
 
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
@@ -404,7 +450,7 @@ def apply(
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
     results['icers_summarized'] = icers_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
-    results['staff_count_by_cadre'] = staff_count_by_cadre
+
 
     # Extract DALYs and costs from the LCOA input workbook (EHP_BasedOnLCOA sheet).
     lcoa_workbook_path = Path(__file__).resolve().parent / "ResourceFile_PriorityRanking_ALLPOLICIES_EHP_dalys_costs.xlsx"
