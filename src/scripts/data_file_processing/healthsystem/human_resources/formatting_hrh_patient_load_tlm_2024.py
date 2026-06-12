@@ -70,10 +70,48 @@ assert set(cadre_num_formatted.columns).issubset(
     set(cadre_name["formatted"].drop_duplicates())
 )
 
-cadre_cat = cadre_name["main_hcw_seeing_patient"].drop_duplicates().reset_index(drop=True)
-cadre_num_formatted_with_categories = cadre_num_formatted.copy()
+# calculate the total number of staff
+cadre_num_formatted["num_of_staff_all"] = cadre_num_formatted.sum(axis=1)
 
-cadre_num_formatted_with_categories["num_of_staff_all"] = cadre_num_formatted_with_categories.sum(axis=1)
+# creat number of staff of coarse hcw cadres
+hcw_cadre = cadre_name["hcw_coarse_cadre"].drop_duplicates().reset_index(drop=True)
+cadre_num_formatted_with_cadres = cadre_num_formatted.copy()
+
+for cat in hcw_cadre:
+    cadre_list = (
+        cadre_name
+        .loc[cadre_name["hcw_coarse_cadre"] == cat, "formatted"]
+        .dropna()
+        .unique()
+    )
+
+    existing_cols = [
+        col for col in cadre_list
+        if col in cadre_num_formatted_with_cadres.columns
+    ]
+
+    if existing_cols:
+        cadre_num_formatted_with_cadres[cat] = (
+            cadre_num_formatted_with_cadres[existing_cols]
+            .fillna(0)
+            .sum(axis=1)
+        )
+    else:
+        cadre_num_formatted_with_cadres[cat] = 0
+
+cadre_num_formatted_with_cadres["num_of_staff_b^"] = (
+    cadre_num_formatted_with_cadres[hcw_cadre]
+    .sum(axis=1)
+)
+assert (cadre_num_formatted_with_cadres["num_of_staff_b^"] ==
+        cadre_num_formatted_with_cadres["num_of_staff_all"]
+        ).all()
+
+cadre_num_formatted_with_cadres.drop(columns=["num_of_staff_b^"], inplace=True)
+
+# create number of staff of main/supporting/Other categories
+cadre_cat = cadre_name["main_hcw_seeing_patient"].drop_duplicates().reset_index(drop=True)
+cadre_num_formatted_with_categories = cadre_num_formatted_with_cadres.copy()
 
 for cat in cadre_cat:
     cadre_list = (
@@ -107,12 +145,12 @@ assert (cadre_num_formatted_with_categories["num_of_staff_a^"] ==
 
 cadre_num_formatted_with_categories.drop(columns=["num_of_staff_a^"], inplace=True)
 
-cadre_num_formatted_with_categories["num_of_staff_main_and_support"] =(
-    cadre_num_formatted_with_categories[["Main", "Supporting staff"]].sum(axis=1)
+cadre_num_formatted_with_categories["num_of_staff_main_and_support"] = (
+    cadre_num_formatted_with_categories[["Main category", "Supporting staff category"]].sum(axis=1)
 )
 
 cadre_num_formatted_with_categories = cadre_num_formatted_with_categories.rename(
-    columns={"Main": "num_of_staff_main"}
+    columns={"Main category": "num_of_staff_main"}
 )
 
 id_vars = [
@@ -177,3 +215,5 @@ tool_six_main.to_csv(
 # duplicated_rows = tool_six_main[
 #     tool_six_main.duplicated(subset=["facility_id", "clinic", "opening_date", "closing_date"], keep=False)
 # ]
+
+# *** analyse the difference
