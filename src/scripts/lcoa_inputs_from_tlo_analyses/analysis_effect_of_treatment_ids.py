@@ -398,7 +398,7 @@ def apply(
     )
     annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
 
-    results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026, 'median')).T
+    results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026.to_frame().T, 'median')).T
 
     # Computing incremental costs
     if do_comparison:
@@ -408,7 +408,7 @@ def apply(
         incremental_scenario_cost = (pd.DataFrame(
             find_difference_relative_to_comparison(
                 total_input_cost,
-                comparison=0,)
+                comparison='Nothing',)
         ))
 
         elapsed = perf_counter() - start
