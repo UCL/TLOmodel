@@ -351,6 +351,7 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         name_of_plot = "DALYs, Incremental Cost, and ICERs by Treatment ID"
 
         do_barh_plot_with_ci(dalys_facet, axes[0])
+        axes[0].set_xscale('log')
         axes[0].set_title("DALYs")
         axes[0].set_xlabel("DALYs averted (/1000)")
 

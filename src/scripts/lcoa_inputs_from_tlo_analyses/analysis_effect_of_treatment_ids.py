@@ -16,6 +16,7 @@ import pandas as pd
 from tlo import Date
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
+    format_scenario_name,
     get_counts_of_appts,
     get_counts_of_hsi_by_short_treatment_id,
     get_num_dalys_by_cause_label,
@@ -169,10 +170,15 @@ def apply(
 
     # Map draw numbers to draw names in input costs
     draw_lookup = dict(enumerate(param_names))
-    input_costs.loc[:, "draw_name"] = input_costs["draw"].map(draw_lookup)
+    formatted_draw_lookup = {
+        draw: format_scenario_name(name)
+        for draw, name in draw_lookup.items()
+    }
+    input_costs.loc[:, "draw_name"] = input_costs["draw"].map(formatted_draw_lookup)
     input_costs.drop(columns=["draw"], inplace=True)
     input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     results['input_costs'] = input_costs
+    print(input_costs.tail())
 
 
     # Get total population by year
@@ -298,6 +304,15 @@ def apply(
     daily_capacity_by_cadre_and_level = (
         pd.read_csv(resourcefilepath / "healthsystem" / "human_resources" / "actual" / "ResourceFile_Daily_Capabilities.csv")
     )
+    staff_count_by_cadre = (
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
+    )
+    results['staff_count_by_cadre'] = staff_count_by_cadre
+
+    annual_capacity_by_cadre = (
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365
+    )
+    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
     # This gives the total minutes available per day by cadre and facility level.
     # Sum across levels to get cadre specific constraints, and multiply by 365 to get annual capacity
     # and then by the length of the period
@@ -445,7 +460,7 @@ def apply(
     # https://doi.org/10.1016/j.vhri.2023.10.007
     results['annual_consumables_budget'] = 225602946
 
-    results['dalys'] = dalys
+    results['dalys'] = compute_summary_statistics(dalys, 'median')
     results['dalys_averted'] = dalys_averted if do_comparison else None
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
     results['icers_summarized'] = icers_summarized if do_comparison else None

@@ -10,6 +10,7 @@ from typing import Any
 import pandas as pd
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import format_scenario_name
 
+# python src/scripts/lcoa_inputs_from_tlo_analyses/run_preaggregated_optimizer.py --analysis-results-pkl outputs/generated_outputs/2041-01-01_fullresults.pkl
 
 OPTIMIZER_HR_COLS = ["hr_clin", "hr_nur", "hr_pharm", "hr_lab", "hr_ment", "hr_nutri"]
 REQUIRED_OPT_INPUT_COLS = [
@@ -58,13 +59,13 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
 
     dalys_averted = results.get("dalys_averted")
     incremental_cost = results.get("incremental_scenario_cost")
-    capacity_used = _rename_hrh_map(results.get("capacity_used_by_cadre"))
-    conscost = results.get('total_cons_cost')
+    capacity_used = _rename_hrh_map(results.get('actual_capacity_used_by_cadre_2026'))
+    conscost = results.get('annual_cons_cost_2026')
 
     ce_dalys = dalys_averted['central']
     ce_cost = incremental_cost['central']
     hr_needs = capacity_used.xs("central", level="stat", axis=1).T
-    conscost = conscost.xs('central', level='stat', axis=1).T
+    conscost = conscost.xs('central', level='stat', axis=0)
 
     interventions = sorted(set(ce_dalys.index).intersection(set(ce_cost.index)))
     if not interventions:
@@ -76,7 +77,7 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
             "intervention": interventions,
             "ce_dalys": [float(ce_dalys.loc[i]) for i in interventions],
             "ce_cost": [float(ce_cost.loc[i]) for i in interventions],
-            "conscost": [float(conscost.loc[i, "medical consumables"]) for i in interventions],
+            "conscost": [float(conscost.loc[i, "cost"]) for i in interventions],
             "hr_clin": [float(hr_needs.loc[i, "hr_clin"]) for i in interventions],
             "hr_nur": [float(hr_needs.loc[i, "hr_nur"]) for i in interventions],
             "hr_pharm": [float(hr_needs.loc[i, "hr_pharm"]) for i in interventions],
