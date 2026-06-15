@@ -370,7 +370,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .reset_index()
         )
 
-    # Plot 1: by facility level
+    # Plot 1: by facility level and district
     # y-axis = district, x-axis = patient load
 
     summary = summarise_median_iqr(
@@ -442,6 +442,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
 
         ax.tick_params(axis="both")
+        ax.tick_params(axis="x", labelrotation=90)
 
     # axes[0].set_ylabel("District")
     fig.supxlabel(
@@ -673,7 +674,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return summary
 
-    # Plot 1: by facility level
+    # Plot 1: by facility level and district
     # y-axis = district, x-axis = patient load
 
     summary = summarise_mean_ci95(
@@ -748,6 +749,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
 
         ax.tick_params(axis="both")
+        ax.tick_params(axis="x", labelrotation=90)
 
     fig.supxlabel(
         "Mean Daily Patient Load per HCW",
