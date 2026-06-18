@@ -43,7 +43,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 2000
 
 
@@ -113,6 +113,18 @@ def plot_prevalence(df, prefix, title):
 #     plt.ylabel("New Cases")
 #     plt.xlabel("Time")
 #     plt.show()
+
+def plot_prevalence_among_diabetics(df, prefix, title):
+
+    cols = [c for c in df.columns if c.startswith(prefix)]
+
+    prev = df[cols].div(df['total_alive_diabetics'], axis=0)
+
+    prev.plot(figsize=(12,6))
+    plt.title(title)
+    plt.ylabel("Prevalence among diabetics")
+    plt.xlabel("Time")
+    plt.show()
 
 
 def plot_incidence(df, prefix, title):
@@ -275,6 +287,8 @@ try:
     plot_dmo_by_dr_stage(df_with)
     plot_vision_attribution(df_with)
 
+    plot_prevalence_among_diabetics(df_with,'total_vision_','Vision Prevalence Among Diabetics (With Health System)')
+
     # WITHOUT HEALTH SYSTEM
     plot_prevalence(df_without, 'total_dr_', 'DR Prevalence (No Health System)')
     plot_incidence(df_without, 'inc_dr_', 'DR Incidence (No Health System)')
@@ -287,6 +301,10 @@ try:
 
     plot_dr_status(df_without, 'DR Status (Without Health System)')
     plot_dmo_status(df_without, 'DMO Status (Without Health System)')
+
+    plot_prevalence_among_diabetics(df_without, 'total_vision_', 'Vision Prevalence Among Diabetics (No Health System)')
+
+
 
 except Exception as e:
     print(f"Error running simulation: {str(e)}")

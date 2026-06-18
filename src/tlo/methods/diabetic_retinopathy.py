@@ -666,7 +666,15 @@ class DiabeticRetinopathy(Module):
         rng = self.rng
         old_vision = df['vision_status'].copy()
 
-        alive_diabetes = df.is_alive & df.nc_diabetes
+        # alive_diabetes = df.is_alive & df.nc_diabetes
+        alive_diabetes = (
+            df.is_alive &
+            df.nc_diabetes &
+            (
+                (df.dr_status != "none") |
+                (df.dmo_status != "none")
+            )
+        )
         if not alive_diabetes.any():
             return
 
@@ -765,7 +773,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     begins at least after 3 years of being infected with Diabetes Mellitus."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=1))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population: Population) -> None:
         df = population.props
@@ -1231,7 +1239,7 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month"""
         self.repeat = 1
-        super().__init__(module, frequency=DateOffset(years=self.repeat))
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger
@@ -1287,6 +1295,9 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for state in df.vision_status.cat.categories:
             # out[f'total_vision_{state}'] = (alive.vision_status == state).sum()
             out[f'total_vision_{state}'] = int((alive.vision_status == state).sum())
+
+        # To calculate prevalence among total alive diabetics
+        out['total_alive_diabetics'] = int(alive.nc_diabetes.sum())
 
         # DR incidence
         dr_inc = {
