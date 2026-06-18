@@ -310,6 +310,10 @@ def get_yearly_hr_count(_df):
         Path("./resources/healthsystem/organisation/ResourceFile_Master_Facilities_List.csv")
     ).set_index("Facility_ID")
 
+    # Temporarily add District info for facilities at levels 3+
+    for fid in {128, 129, 130, 131, 132}:
+        mfl.loc[fid, "District"] = mfl.loc[fid, "Facility_Name"]
+
     # Map facilities to districts
     districts = [
         mfl.loc[fid, "District"] if fid in mfl.index else "Unknown"
@@ -461,6 +465,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         set_param_names_as_column_index_level_0,
         param_names=param_names
     )
+
+    # for local check
+    # staff_counts = staff_counts.reset_index()
 
     # STEP 3: summarize runs
     print(type(staff_counts))
