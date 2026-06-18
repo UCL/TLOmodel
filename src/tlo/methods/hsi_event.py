@@ -57,7 +57,6 @@ class HSIEventQueueItem(NamedTuple):
 
     """
 
-    clinic_eligibility: str
     priority: int
     topen: Date
     rand_queue_counter: (
@@ -66,6 +65,7 @@ class HSIEventQueueItem(NamedTuple):
     queue_counter: (
         int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
     )
+    clinic_eligibility: str
     tclose: Date
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
     # later in module (see https://stackoverflow.com/a/36286947/4798943)

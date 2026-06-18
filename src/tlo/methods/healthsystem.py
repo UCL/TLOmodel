@@ -1582,9 +1582,8 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
+            priority, topen, rand_queue, self.hsi_event_queue_counter, clinic_eligibility, tclose, hsi_event
         )
-
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
 
@@ -2138,6 +2137,7 @@ class HealthSystem(Module):
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 clinic = event.clinic_eligibility
+
                 event = event.hsi_event
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
@@ -2148,7 +2148,7 @@ class HealthSystem(Module):
                     ok_to_run = self.do_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
-
+                
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = self.bed_days.issue_bed_days_according_to_availability(
@@ -2189,6 +2189,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         did_run=True,
                         priority=_priority,
+                        clinic=clinic
                     )
 
                 # if not ok_to_run
@@ -2211,6 +2212,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         did_run=False,
                         priority=_priority,
+                        clinic=clinic
                     )
 
         return _to_be_held_over
@@ -2319,7 +2321,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Traverse the queue and split events into the two lists (due-individual, not_due)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
             event = hp.heappop(self.module.HSI_EVENT_QUEUE)
-
             if self.sim.date > event.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(hsi_event=event.hsi_event, priority=event.priority)
