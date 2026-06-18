@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
@@ -25,6 +26,110 @@ APPOINTMENT_TYPE_FIXED_COLORS = {"AccidentsandEmerg": "black"}
 def make_graph_file_name(stub):
     filename = stub.replace('*', '_star_').replace(' ', '_').replace('/', '').lower()
     return f"{filename}.png"
+
+
+def _coerce_include_exclude_flag(value) -> int:
+    """Map a table value to 1 for include, 0 for exclude, and 2 for NA."""
+    if pd.isna(value):
+        return 2
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"na", "n/a", "nan", "none", ""}:
+            return 2
+        if normalized in {"include", "included", "yes", "true", "t", "1"}:
+            return 1
+        if normalized in {"exclude", "excluded", "no", "false", "f", "0"}:
+            return 0
+        raise ValueError(f"Unrecognized include/exclude flag value: {value!r}")
+
+    if isinstance(value, (bool, np.bool_)):
+        return int(value)
+
+    if isinstance(value, (int, np.integer, float, np.floating)):
+        if value in {0, 0.0}:
+            return 0
+        if value in {1, 1.0}:
+            return 1
+        raise ValueError(f"Numeric include/exclude flag must be 0 or 1, found {value!r}")
+
+    return int(bool(value))
+
+
+def plot_treatment_id_include_exclude_table(
+    flags_df: pd.DataFrame,
+    title: str | None = None,
+):
+    """Plot a treatment-ID include/exclude matrix as a colored table."""
+    if not isinstance(flags_df, pd.DataFrame):
+        raise TypeError("`flags_df` must be a pandas DataFrame.")
+
+    treatment_id_column = next(
+        (column for column in flags_df.columns if str(column).strip().lower() == "treatment_id"),
+        None,
+    )
+    if treatment_id_column is not None:
+        ordered_flags = flags_df.copy().set_index(treatment_id_column)
+    else:
+        ordered_flags = flags_df.copy()
+
+    valid_row_labels = [
+        row_label
+        for row_label in ordered_flags.index
+        if pd.notna(row_label) and str(row_label).strip().lower() not in {"na", "n/a", "nan", "none", ""}
+    ]
+    ordered_flags = ordered_flags.loc[valid_row_labels]
+
+    if ordered_flags.empty:
+        raise ValueError("No plottable rows remain in the include/exclude table.")
+
+    ordered_flags = ordered_flags.loc[
+        :,
+        [column for column in ordered_flags.columns if str(column).strip().lower() != "treatment_id"],
+    ]
+
+    if ordered_flags.columns.empty:
+        raise ValueError("`flags_df` must have at least one column.")
+
+    numeric_flags = ordered_flags.apply(lambda col: col.map(_coerce_include_exclude_flag))
+    data = numeric_flags.to_numpy(dtype=int)
+
+    fig_width = max(6, min(1 * len(ordered_flags.columns) + 2.0, 24))
+    fig_height = max(4.5, min(1 * len(ordered_flags.index) + 1.2, 22))
+
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    cmap = ListedColormap(["#d73027", "#1a9850", "#bdbdbd"])
+    ax.imshow(data, cmap=cmap, vmin=0, vmax=2, interpolation="nearest", aspect="equal")
+
+    ax.set_xticks(np.arange(len(ordered_flags.columns)))
+    ax.set_yticks(np.arange(len(ordered_flags.index)))
+    ax.set_xticklabels(
+        [str(column) for column in ordered_flags.columns],
+        rotation=90,
+        ha="center",
+        rotation_mode="anchor",
+        fontsize=12,
+    )
+    ax.set_yticklabels([str(row) for row in ordered_flags.index], fontsize=14)
+    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False, length=0, pad=12)
+    ax.xaxis.set_ticks_position("top")
+    ax.xaxis.set_label_position("top")
+
+    ax.set_xticks(np.arange(-0.5, len(ordered_flags.columns), 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, len(ordered_flags.index), 1), minor=True)
+    ax.grid(which="minor", color="white", linestyle="-", linewidth=1.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    if title is not None:
+        ax.set_title(title, pad=18)
+
+    #fig.subplots_adjust(left=0.8, right=0.88, top=0.1, bottom=0)
+    return fig, ax
 
 
 def get_color_by_appointment_type(appointment_types) -> dict:

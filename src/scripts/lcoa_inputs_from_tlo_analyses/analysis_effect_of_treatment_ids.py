@@ -178,7 +178,7 @@ def apply(
     input_costs.drop(columns=["draw"], inplace=True)
     input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     results['input_costs'] = input_costs
-    print(input_costs.tail())
+    print(input_costs['draw'].unique())
 
 
     # Get total population by year
@@ -292,30 +292,40 @@ def apply(
         custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
         do_scaling=False, # Not scaling as this is a fraction calculated during runtime.
         autodiscover=True,
-    )
+    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
 
     results['annual_capacity_used_by_cadre_and_level'] = (
-        compute_summary_statistics(annual_capacity_used_by_cadre_and_level.pipe(set_param_names_as_column_index_level_0, param_names=param_names), 'median')
+        compute_summary_statistics(annual_capacity_used_by_cadre_and_level, 'median')
     )
 
+    baseline = results['annual_capacity_used_by_cadre_and_level'].xs('Nothing', level='draw', axis=1)
+    obs_productivity_in_2025 = baseline.xs(2025, level='year')
 
     # Get the total available caapacity by cadre needed for LCOA
     # resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv
     daily_capacity_by_cadre_and_level = (
         pd.read_csv(resourcefilepath / "healthsystem" / "human_resources" / "actual" / "ResourceFile_Daily_Capabilities.csv")
     )
+    annual_capacity_by_cadre_and_level = (
+        daily_capacity_by_cadre_and_level.groupby(['Officer_Category', 'Facility_Level'])['Total_Mins_Per_Day'].sum() * 365
+    )
+    # Scale annual_capacity_by_cadre by the observed productivity in 2025
+    annual_capacity_by_cadre_and_level.index.names = ['OfficerType', 'FacilityLevel']
+    # If no fraction of available capacity is used, then the observed productivity in 2025 will be 0.
+    # In that case, we want to use a multiplier of 1.0
+    multiplier = obs_productivity_in_2025['central'].where(obs_productivity_in_2025['central'] != 0, other=1.0)
+    annual_capacity_by_cadre_and_level_scaled = annual_capacity_by_cadre_and_level * multiplier
+    annual_capacity_by_cadre = annual_capacity_by_cadre_and_level_scaled.groupby('OfficerType').sum()
+
+    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
+
     staff_count_by_cadre = (
         daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
     )
     results['staff_count_by_cadre'] = staff_count_by_cadre
 
-    annual_capacity_by_cadre = (
-        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Total_Mins_Per_Day'].sum() * 365
-    )
-    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
     # This gives the total minutes available per day by cadre and facility level.
     # Sum across levels to get cadre specific constraints, and multiply by 365 to get annual capacity
-    # and then by the length of the period
     annual_capacity_available_by_cadre_and_level = (
         daily_capacity_by_cadre_and_level.groupby(['Officer_Category', 'Facility_Level'])['Total_Mins_Per_Day'].sum() * 365
     )
@@ -330,6 +340,7 @@ def apply(
     )
 
     series_reindexed.index = annual_capacity_used_by_cadre_and_level.index
+    assert series_reindexed.notna().all()
 
     actual_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
     results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
@@ -406,28 +417,31 @@ def apply(
     input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level[mask]])
 
     # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
-    annual_cons_cost = input_costs.groupby(['draw', 'run', 'cost_category', 'year'])['cost'].sum()
+    annual_cons_cost = input_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
     mask = (
         (annual_cons_cost.index.get_level_values('year') == 2026) &
         (annual_cons_cost.index.get_level_values('cost_category') == 'medical consumables')
     )
     annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
-
     results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026.to_frame().T, 'median')).T
+
+    # Overall costs in 2026
+    mask = (input_costs_with_proportional_hrh_costs['year'] == 2026)
+
+    annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs[mask].groupby(['draw', 'run'])['cost'].sum()
+    results['annual_scenario_cost_2026'] = (
+        compute_summary_statistics(annual_scenario_cost_2026.to_frame().T).iloc[0].unstack()
+    )
 
     # Computing incremental costs
     if do_comparison:
         print("Computing incremental_scenario_cost...")
-        start = perf_counter()
         total_input_cost = input_costs_with_proportional_hrh_costs.groupby(['draw', 'run'])['cost'].sum()
         incremental_scenario_cost = (pd.DataFrame(
             find_difference_relative_to_comparison(
                 total_input_cost,
                 comparison='Nothing',)
         ))
-
-        elapsed = perf_counter() - start
-        print(f"\n=== TIMING: computing incremental_scenario_cost took {elapsed:.3f}s ===\n", flush=True)
 
         incremental_scenario_cost = (
             incremental_scenario_cost.T.reorder_levels(["draw", "run"], axis=1).sort_index(axis=1)
@@ -437,6 +451,14 @@ def apply(
 
 
     if do_comparison:
+        dalys_2026 = dalys.xs('2026-2026', level='period')
+        dalys_averted_2026 = (
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(dalys_2026.sum(), comparison='Nothing'))
+
+        )
+        results['dalys_averted_2026'] = compute_summary_statistics(dalys_averted_2026.T, 'median').iloc[0].unstack()
+
         dalys_averted = (
             -1.0 * pd.DataFrame(
                 find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing'))

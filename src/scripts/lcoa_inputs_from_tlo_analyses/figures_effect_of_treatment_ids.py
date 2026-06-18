@@ -20,7 +20,8 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_hsi_counts_by_period_for_draw,
     plot_population_by_year,
     plot_capacity_used_by_cadre_and_level_over_time_for_draw,
-    plot_cost_by_cadre_over_time_for_draw
+    plot_cost_by_cadre_over_time_for_draw,
+    plot_treatment_id_include_exclude_table,
 )
 
 
@@ -28,6 +29,41 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
+
+
+def build_dummy_include_exclude_table() -> pd.DataFrame:
+    """Create a small include/exclude matrix for figure testing."""
+    treatment_ids = [
+        "Antenatal_Care",
+        "Cervical_Cancer_Screening",
+        "Diabetes_Followup",
+        "HIV_Testing",
+        "Malaria_Treatment",
+    ]
+    flags = pd.DataFrame(
+        [
+            [True, False, True, True, False],
+            [False, True, None, True, True],
+            [True, True, True, False, False],
+            [False, None, True, True, True],
+            [True, False, False, True, None],
+        ],
+        index=treatment_ids,
+        columns=treatment_ids,
+    )
+    flags.index.name = "treatment_id"
+    return flags
+
+
+def save_demo_include_exclude_table(output_folder: Path):
+    """Generate and save a demo include/exclude table figure."""
+    flags_df = build_dummy_include_exclude_table()
+    fig, ax = plot_treatment_id_include_exclude_table(flags_df, title="Demo Treatment ID Include/Exclude Table")
+    output_folder.mkdir(parents=True, exist_ok=True)
+    outfile = output_folder / make_graph_file_name("Demo Treatment ID Include/Exclude Table")
+    fig.savefig(outfile, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {outfile}")
 
 
 def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
@@ -41,10 +77,23 @@ def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
 
 
 
-def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path = None):
+def apply(
+    results_files: list[Path],
+    output_folder: Path,
+    resourcefilepath: Path = None,
+    include_exclude_demo: bool = False,
+):
     """Produce standard plots describing effect of each TREATMENT_ID."""
     print("Starting figure generation for treatment-ID effects.")
+    hbp = pd.read_csv(os.path.join("src/scripts/lcoa_inputs_from_tlo_analyses" ,"health_benefit_package.csv"))
+    fig, ax = plot_treatment_id_include_exclude_table(hbp.iloc[range(43), :])
+    outfile = os.path.join(output_folder, make_graph_file_name("HBP derived from simulated inputs"))
+    fig.savefig(outfile)
+    plt.close(fig)
+
+
     print(f"Output folder: {output_folder}")
+    output_folder.mkdir(parents=True, exist_ok=True)
 
     param_names = get_parameter_names_from_scenario_file()
     print(f"Loaded parameter names: {len(param_names)}")
@@ -351,7 +400,6 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         name_of_plot = "DALYs, Incremental Cost, and ICERs by Treatment ID"
 
         do_barh_plot_with_ci(dalys_facet, axes[0])
-        axes[0].set_xscale('log')
         axes[0].set_title("DALYs")
         axes[0].set_xlabel("DALYs averted (/1000)")
 
@@ -418,12 +466,19 @@ def apply(results_files: list[Path], output_folder: Path, resourcefilepath: Path
         plt.close(fig)
         print("Saved: DALYs, Incremental Cost, and ICERs by Treatment ID")
 
+
     print("Finished generating figures.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("results_files", type=Path, nargs="+")
+    parser.add_argument("results_files", type=Path, nargs="*")
     parser.add_argument("--output_folder", type=Path, required=True)
+
     args = parser.parse_args()
 
-    apply(results_files=args.results_files, output_folder=args.output_folder, resourcefilepath=Path("./resources"))
+    if args.results_files:
+        apply(
+            results_files=args.results_files,
+            output_folder=args.output_folder,
+            resourcefilepath=Path("./resources")
+        )

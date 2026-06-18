@@ -284,12 +284,20 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   print(dim(cons.mat.limit))
 
   # Direction of relationship
-  cons.dir <- rep("<=", 1 + 8 + n)
-  cons.dir <- c(cons.dir, rep(">=", n), rep(">=", comp.count))
-  cons.dir <- c(cons.dir, rep("<=", length(substitutes)))
+  # Build the direction vector from the actual constraint blocks so it stays aligned with cons.mat.
+  cons.dir <- c(
+    rep("<=", nrow(t(cons_drug))),
+    rep("<=", nrow(t(cons_hr))),
+    rep("<=", nrow(t(cons.feascov))),
+    rep(">=", nrow(t(cons.feascov))),
+    rep(">=", comp.count),
+    rep("<=", length(substitutes))
+  )
   # % cons.dir <- c(cons.dir,rep("<=",length(complements))) %
-  length(cons.dir)
-  length(cons.dir) <- dim(cons.mat.limit)[1] # Assert that the length of the directions list is the same as that of the constraints matrix
+  print(cons.mat)
+  print(cons.dir)
+  print(cons.mat.limit)
+  stopifnot(length(cons.dir) == nrow(cons.mat))
 
   ###################################
   # 3.2 - Run LPP
@@ -404,7 +412,7 @@ run_optimizer_from_csv <- function() {
     inputs = inputs,
     objective_input = "dalys",
     cet_input = 600,
-    drug_budget_input = 225602946 * 15, #TODO - get this from constaint
+    drug_budget_input = 225602946 , #TODO - get this from constaint
     drug_budget.scale = 1,
     hr.time.constraint = hr.time.constraint,
     hr.size = hr.size.constraint,
@@ -429,4 +437,13 @@ run_optimizer_from_csv <- function() {
   output_json_path <- "optimizer_results.json"
 
   jsonlite::write_json(res_json, path = output_json_path, auto_unbox = TRUE, pretty = TRUE, digits = NA)
+}
+
+write_hbp_to_csv <- function(solution, outfile) {
+  inputs <- readr::read_csv("optimizer_inputs.csv", show_col_types = TRUE)
+  inputs$flag <- "exclude"
+  idx <- which(solution$solution > 0)
+  inputs$flag[idx] <- "include"
+  readr::write_csv(inputs, outfile)
+  
 }

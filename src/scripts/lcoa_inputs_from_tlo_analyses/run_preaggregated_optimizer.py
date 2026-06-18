@@ -57,16 +57,18 @@ def _coerce_central_series(df: pd.DataFrame) -> pd.Series:
 
 def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
 
-    dalys_averted = results.get("dalys_averted")
-    incremental_cost = results.get("incremental_scenario_cost")
-    capacity_used = _rename_hrh_map(results.get('actual_capacity_used_by_cadre_2026'))
-    conscost = results.get('annual_cons_cost_2026')
-
+    dalys_averted = results.get('dalys_averted_2026')
     ce_dalys = dalys_averted['central']
+    
+    incremental_cost = results.get('annual_scenario_cost_2026')
     ce_cost = incremental_cost['central']
-    hr_needs = capacity_used.xs("central", level="stat", axis=1).T
+    
+    conscost = results.get('annual_cons_cost_2026')
     conscost = conscost.xs('central', level='stat', axis=0)
-
+    
+    capacity_used = _rename_hrh_map(results.get('actual_capacity_used_by_cadre_2026'))
+    hr_needs = capacity_used.xs("central", level="stat", axis=1).T
+    
     interventions = sorted(set(ce_dalys.index).intersection(set(ce_cost.index)))
     if not interventions:
         raise ValueError("No overlapping interventions found between DALYs and costs.")
@@ -125,7 +127,7 @@ def main() -> None:
     hr_constraints_csv = Path("src/scripts/lcoa_inputs_from_tlo_analyses/hr_constraints.csv")
 
     opt_inputs.to_csv(optimizer_input_csv, index=True)
-    hr_constraints.to_csv(hr_constraints_csv, index=True)
+    hr_constraints.to_csv(hr_constraints_csv, index=True, index_label="Officer_Category")
 
     print(f"Wrote optimizer input CSV: {optimizer_input_csv}")
     print(f"Wrote optimizer constraints CSV: {hr_constraints_csv}")
