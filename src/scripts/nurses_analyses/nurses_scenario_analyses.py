@@ -35,11 +35,11 @@ class StaffingScenario(BaseScenario):
         self.resources = get_root_path() / "resources"
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
-        self.pop_size = 100000
+        self.end_date = Date(2012, 1, 2)
+        self.pop_size = 30
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -92,6 +92,7 @@ class StaffingScenario(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
+        year_of_hr_scaling = 2011
         return {
             "Baseline Nurses / Default Healthsystem Function":
                 mix_scenarios(
@@ -99,7 +100,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "default",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -110,7 +111,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -121,7 +122,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -132,7 +133,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "default",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -143,7 +144,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -154,7 +155,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -165,7 +166,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -176,7 +177,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
-                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -187,7 +188,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
-                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -198,7 +199,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
-                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -209,7 +210,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_CNP",
-                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
@@ -220,7 +221,7 @@ class StaffingScenario(BaseScenario):
                     {
                         "HealthSystem": {
                             'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_CNP",
-                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
                         },
                     },
                 ),
