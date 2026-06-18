@@ -158,6 +158,72 @@ class StaffingScenario(BaseScenario):
                         },
                     },
                 ),
+
+            "More CNP staff / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                        },
+                    },
+                ),
+
+            "More CNP staff / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                        },
+                    },
+                ),
+
+            "More Nurses by District / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
+                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                        },
+                    },
+                ),
+
+            "More Nurses by District / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
+                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                        },
+                    },
+                ),
+
+            "More CNP staff by District / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_CNP",
+                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                        },
+                    },
+                ),
+
+            "More CNP staff by District / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_CNP",
+                            "year_HR_scaling_by_district_and_officer_type": 2027,
+                        },
+                    },
+                ),
         }
 
 
