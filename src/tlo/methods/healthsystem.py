@@ -3049,12 +3049,12 @@ class RescaleHRCapabilities_ByDistrictAndOfficerType(Event, PopulationScopeEvent
                 facility_id = int(matches.group(1))
                 officer_type = matches.group(2)
                 # Extract district
-                if facility_id.isin(range(128)):
+                if facility_id in range(128):
                     district = self.module._facility_by_facility_id[facility_id].name.split('_')[-1]
-                elif facility_id.isin([128, 129, 130,131, 132]):
+                elif facility_id in {128, 129, 130,131, 132}:
                     district = self.module._facility_by_facility_id[facility_id].name
                 else:
-                    district = ""
+                    district = "N/A"
                 # Scaling
                 if (
                     (district in HR_scaling_factor_by_district_and_officer_type.index) and
