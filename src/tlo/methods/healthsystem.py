@@ -3039,7 +3039,6 @@ class RescaleHRCapabilities_ByDistrictAndOfficerType(Event, PopulationScopeEvent
                 self.module.parameters["HR_scaling_by_district_and_officer_type_mode"]
             ]
             .set_index("District")
-            .to_dict()
         )
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
@@ -3048,13 +3047,21 @@ class RescaleHRCapabilities_ByDistrictAndOfficerType(Event, PopulationScopeEvent
                 matches = re.match(pattern, officer)
                 # Extract ID and officer type from
                 facility_id = int(matches.group(1))
-                district = self.module._facility_by_facility_id[facility_id].name.split('_')[-1]
+                officer_type = matches.group(2)
+                # Extract district
+                if facility_id.isin(range(128)):
+                    district = self.module._facility_by_facility_id[facility_id].name.split('_')[-1]
+                elif facility_id.isin([128, 129, 130,131, 132]):
+                    district = self.module._facility_by_facility_id[facility_id].name
+                else:
+                    district = ""
+                # Scaling
                 if (
-                    (district in HR_scaling_factor_by_district_and_officer_type) and
-                    (officer in HR_scaling_factor_by_district_and_officer_type.columns)
+                    (district in HR_scaling_factor_by_district_and_officer_type.index) and
+                    (officer_type in HR_scaling_factor_by_district_and_officer_type.columns)
                 ):
                     self.module._daily_capabilities[clinic][officer] *= (
-                        HR_scaling_factor_by_district_and_officer_type.loc[district, officer]
+                        HR_scaling_factor_by_district_and_officer_type.loc[district, officer_type]
                     )
 
 
