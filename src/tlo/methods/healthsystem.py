@@ -3051,7 +3051,7 @@ class RescaleHRCapabilities_ByDistrictAndOfficerType(Event, PopulationScopeEvent
                 # Extract district
                 if facility_id in range(128):
                     district = self.module._facility_by_facility_id[facility_id].name.split('_')[-1]
-                elif facility_id in {128, 129, 130,131, 132}:
+                elif facility_id in {128, 129, 130, 131, 132}:
                     district = self.module._facility_by_facility_id[facility_id].name
                 else:
                     district = "N/A"
