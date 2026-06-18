@@ -714,6 +714,22 @@ class HealthSystem(Module):
             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}"
         )
 
+        self.parameters["HR_scaling_by_district_and_officer_type_table"]: Dict = read_csv_files(
+            path_to_resourcefiles_for_healthsystem
+            / "human_resources"
+            / "scaling_capabilities"
+            / "ResourceFile_HR_scaling_by_district_and_officer_type",
+            files=None,  # all sheets read in
+        )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert (
+            self.parameters["HR_scaling_by_district_and_officer_type_mode"]
+            in self.parameters["HR_scaling_by_district_and_officer_type_table"]
+        ), (
+            f"Value of `HR_scaling_by_district_and_officer_type_mode` not recognised: "
+            f"{self.parameters['HR_scaling_by_district_and_officer_type_mode']}"
+        )
+
         self.parameters["HR_scaling_by_district_table"]: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
