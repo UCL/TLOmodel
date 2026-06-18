@@ -109,7 +109,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios,
                     {
                         "HealthSystem": {
-                            'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
+                            'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
                             "year_HR_scaling_by_level_and_officer_type": 2027,
                         },
                     },
@@ -120,7 +120,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios,
                     {
                         "HealthSystem": {
-                            'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
                             "year_HR_scaling_by_level_and_officer_type": 2027,
                         },
                     },
@@ -142,7 +142,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_max_healthsystem_scenarios,
                     {
                         "HealthSystem": {
-                            'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
+                            'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
                             "year_HR_scaling_by_level_and_officer_type": 2027,
                         },
                     },
@@ -153,7 +153,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_max_healthsystem_scenarios,
                     {
                         "HealthSystem": {
-                            'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
                             "year_HR_scaling_by_level_and_officer_type": 2027,
                         },
                     },
