@@ -927,7 +927,7 @@ class HealthSystem(Module):
         # Schedule a one-off rescaling of _daily_capabilities broken down by district and officer type.
         # This occurs on 1st January of the year specified in the parameters.
         sim.schedule_event(
-            ConstantRescalingHRCapabilities(self),
+            RescaleHRCapabilities_ByDistrictAndOfficerType(self),
             Date(self.parameters["year_HR_scaling_by_district_and_officer_type"], 1, 1),
         )
 
