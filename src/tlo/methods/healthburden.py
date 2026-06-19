@@ -33,7 +33,7 @@ class HealthBurden(Module):
         super().__init__(name)
 
         # instance variables
-        self.multi_index_for_age_and_wealth_and_time = None
+        self.multi_index_for_age_and_wealth_and_time_and_region= None
         self.years_life_lost = None
         self.years_life_lost_stacked_time = None
         self.years_life_lost_stacked_age_and_time = None
@@ -91,18 +91,15 @@ class HealthBurden(Module):
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
         district_index = sim.modules['Demography'].PROPERTIES['district_of_residence'].categories
 
-        self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
-            [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
-
         self.multi_index_for_age_and_wealth_and_time_and_region = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, district_index, year_index],
             names=['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year'])
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
-        self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
+        self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
+        self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
+        self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
+        self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_region)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
@@ -325,9 +322,9 @@ class HealthBurden(Module):
                 .set_index(['sex', 'li_wealth', 'district_of_residence'], append=True) \
                 .reorder_levels(['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year'])[_yll.name]
 
-        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
+        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
+        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
+        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
 
         # date from which years of life are lost
         date_of_death = self.sim.date
@@ -360,10 +357,10 @@ class HealthBurden(Module):
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum()) \
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3, 4]).sum()) \
             .assign(age_range=age_range_to_stack_to) \
             .set_index(['age_range'], append=True)['person_years'] \
-            .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
+            .reorder_levels(['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause_of_death not in self.years_life_lost.columns:
@@ -375,15 +372,16 @@ class HealthBurden(Module):
         # Add the life-years-lost from this death to the running total in LifeYearsLost dataframe
         self.years_life_lost[cause_of_death] = self.years_life_lost[cause_of_death].add(
             yll, fill_value=0)
+
         self.years_life_lost_stacked_time[cause_of_death] = self.years_life_lost_stacked_time[cause_of_death].add(
             yll_stacked_by_time, fill_value=0)
         self.years_life_lost_stacked_age_and_time[cause_of_death] = \
             self.years_life_lost_stacked_age_and_time[cause_of_death].add(yll_stacked_by_age_and_time, fill_value=0)
 
         # Check that the index of the YLL dataframe is not changed
-        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
+        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
+        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
+        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
 
     def decompose_yll_by_age_and_time(self, start_date, end_date, date_of_birth):
         """
