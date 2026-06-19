@@ -91,7 +91,24 @@ class VariableClinicConfig(BaseScenario):
 
         scenario_definitions = ScenarioDefinitions()
 
-        scenarios = {'baseline': scenario_definitions.baseline()}
+        scenarios = {
+            'baseline': scenario_definitions.baseline(),
+            'HivTBClinic': mix_scenarios(
+                scenario_definitions.baseline(), {"HealthSystem": {"clinic_configuration_name": "HivTBClinic"}}
+            ),
+            'FlexiblePrimaryCareClinic': mix_scenarios(
+                scenario_definitions.baseline(), {"HealthSystem": {"clinic_configuration_name": "FlexiblePrimaryCareClinic"}}
+            ),
+            'IntegratedPrimaryCareClinic': mix_scenarios(
+                scenario_definitions.baseline(), {"HealthSystem": {"clinic_configuration_name": "IntegratedPrimaryCareClinic"}}
+            ),
+            'NCDClinics': mix_scenarios(
+                scenario_definitions.baseline(), {"HealthSystem": {"clinic_configuration_name": "NCDClinics"}}
+            ),
+            'RMNCHClinic': mix_scenarios(
+                scenario_definitions.baseline(), {"HealthSystem": {"clinic_configuration_name": "RMNCHClinic"}}
+            ),
+        }
 
         return scenarios
 
