@@ -466,8 +466,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         param_names=param_names
     )
 
-    # for local check
+    # # for local check
+    # staff_counts = staff_counts
+    # staff_counts = staff_counts.xs(0, level="run", axis=1)
     # staff_counts = staff_counts.reset_index()
+    # staff_counts.to_csv(output_folder / "staff_counts_check.csv")
 
     # STEP 3: summarize runs
     print(type(staff_counts))
