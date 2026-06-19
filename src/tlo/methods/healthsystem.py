@@ -1582,7 +1582,7 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
+            priority, topen, rand_queue, self.hsi_event_queue_counter, clinic_eligibility, tclose, hsi_event
         )
 
         # Add to queue:
@@ -2189,6 +2189,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         did_run=True,
                         priority=_priority,
+                        clinic=clinic
                     )
 
                 # if not ok_to_run
@@ -2211,6 +2212,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         did_run=False,
                         priority=_priority,
+                        clinic=clinic
                     )
 
         return _to_be_held_over
