@@ -423,9 +423,12 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', slice(None), slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
-    assert yll.loc[('F', '5-9', slice(None), slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
-    assert yll.loc[('F', ['0-4', '5-9'], slice(None), slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / DAYS_IN_YEAR)
+    assert (yll.loc[('F', '0-4', slice(None), slice(None), 2010)].sum().sum()
+            == approx(0.5, abs=2.0 / DAYS_IN_YEAR))
+    assert (yll.loc[('F', '5-9', slice(None), slice(None), 2010)].sum().sum()
+            == approx(0.5, abs=2.0 / DAYS_IN_YEAR))
+    assert (yll.loc[('F', ['0-4', '5-9'], slice(None), slice(None), 2010)].sum().sum()
+            == approx(1.0, abs=0.5 / DAYS_IN_YEAR))
 
 
 @pytest.mark.slow
