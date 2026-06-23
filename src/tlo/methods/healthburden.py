@@ -418,7 +418,7 @@ class HealthBurden(Module):
         if year in self._years_written_to_log:
             return  # Skip if the year has already been logged.
 
-        def summarise_results_for_this_year(df, level=[0, 1]) -> pd.DataFrame:
+        def summarise_results_for_this_year(df, level=[0, 1, 2, 3]) -> pd.DataFrame:
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
             multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
             summary of sex/age-group; and level=[2] gives a summary only by wealth category."""
