@@ -3046,11 +3046,11 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
                     event = HSIEventQueueItem(
-                        clinic_eligibility,
                         enforced_priority,
                         event.topen,
                         event.rand_queue_counter,
                         event.queue_counter,
+                        clinic_eligibility,
                         event.tclose,
                         event.hsi_event,
                     )
