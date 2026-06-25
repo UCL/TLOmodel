@@ -8,7 +8,7 @@ class EmoncScenario(BaseScenario):
     """Scenario for cohort model"""
     def __init__(self):
         super().__init__()
-        self.seed = 537184
+        self.seed = 7969672
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
         self.pop_size = 40_000

@@ -975,6 +975,7 @@ class NewbornOutcomes(Module):
                                           f'mother delivering at home')
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
+            int_name = "neo_resus_preterm" if is_preterm else "neo_resus_all"
 
             if (mni[mother_id]['neo_will_receive_resus_if_needed'] or
                 (is_preterm and ("neo_resus_preterm" in analysis_ints)) or
@@ -982,7 +983,8 @@ class NewbornOutcomes(Module):
 
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
 
-                cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id)
+                cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id, int_name=int_name)
+
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     cons_log, priority=0,
                     topen=self.sim.date,
@@ -1487,7 +1489,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
 class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixin):
     """"""
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, int_name):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
