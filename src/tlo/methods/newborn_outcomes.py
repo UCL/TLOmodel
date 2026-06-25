@@ -1493,6 +1493,7 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
+        self.int_name = int_name
         self.TREATMENT_ID = 'PostnatalCare_Resus_ConsumableLog'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
@@ -1502,7 +1503,7 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
         resus_item_code = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
 
         pregnancy_helper_functions.check_int_deliverable(
-            self.module, int_name='neo_resus', hsi_event=self,
+            self.module, int_name=self.int_name, hsi_event=self,
             cons=resus_item_code, to_log=True)
 
     def did_not_run(self):
