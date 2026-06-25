@@ -72,8 +72,8 @@ def generate_mnh_outcome_counter():
                 "gdm_treatment_orals", "gdm_treatment_insulin", "post_abortion_care_core",
                 "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd_ol", "avd_spe_ec",
                 "avd_other", "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
-                "caesarean_section_oth_surg", "fistula_treatment", "neo_resus", "kmc",
-                "neo_sepsis_treatment"]
+                "caesarean_section_oth_surg", "fistula_treatment", "neo_resus_all", "neo_resus_preterm", "kmc",
+                "neo_sepsis_treatment_preterm", "neo_sepsis_treatment_all"]
 
     interventions = []
 
@@ -263,7 +263,6 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     l_params = self.sim.modules["Labour"].current_parameters
     c = self.sim.modules["PregnancySupervisor"].mnh_outcome_counter
 
-    print(int_name)
     assert int_name in p_params["all_interventions"]
     c[f"{int_name}_req"] += 1
 
@@ -377,7 +376,7 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     else:
         consumables_ok = hsi_event.get_consumables(item_codes=cons, to_log=to_log)
         if (not consumables_ok) and (alt_con is not None):
-            consumables_ok = hsi_event.get_consumables(item_codes=alt_con)
+            consumables_ok = hsi_event.get_consumables(item_codes=alt_con, to_log=to_log)
 
     # optional consumables (don’t gate success)
     if opt_cons is not None:

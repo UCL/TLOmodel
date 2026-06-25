@@ -967,13 +967,19 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.at[person_id, 'mother_id']
+        is_preterm = df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']
+        analysis_ints = self.sim.modules["PregnancySupervisor"].current_parameters['interventions_under_analysis']
 
         if mni[mother_id]['delivery_setting'] == 'home_birth':
             logger.info(key='error', data=f'Child {person_id} has received resuscitation despite their '
                                           f'mother delivering at home')
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
-            if mni[mother_id]['neo_will_receive_resus_if_needed']:
+
+            if (mni[mother_id]['neo_will_receive_resus_if_needed'] or
+                (is_preterm and ("neo_resus_preterm" in analysis_ints)) or
+                "neo_resus_all" in analysis_ints):
+
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
 
                 cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id)
@@ -998,16 +1004,20 @@ class NewbornOutcomes(Module):
         l_params = self.sim.modules['Labour'].current_parameters
         pnc_location = 'hc' if facility_type == '1a' else 'hp'
 
+        int_name = "neo_sepsis_treatment_preterm" if (df.at[person_id, 'nb_early_preterm'] or
+                                                      df.at[person_id, 'nb_late_preterm']) else "neo_sepsis_treatment_all"
+
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
-        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
-           df.at[person_id, 'pn_sepsis_early_neonatal']:
+        if (df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or
+            df.at[person_id, 'pn_sepsis_late_neonatal'] or
+           df.at[person_id, 'pn_sepsis_early_neonatal']):
 
             if facility_type != '1a':
 
                 neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='neo_sepsis_treatment', hsi_event=hsi_event,
+                    self, int_name=int_name, hsi_event=hsi_event,
                     q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_supportive_care_core'],
                     opt_cons=self.item_codes_nb_consumables['sepsis_supportive_care_optional'],
@@ -1019,7 +1029,7 @@ class NewbornOutcomes(Module):
             # The same pattern is then followed for health centre care
             else:
                 neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='neo_sepsis_treatment', hsi_event=hsi_event,
+                    self, int_name=int_name, hsi_event=hsi_event,
                     q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_abx'],
                     opt_cons=self.item_codes_nb_consumables['iv_drug_equipment'],

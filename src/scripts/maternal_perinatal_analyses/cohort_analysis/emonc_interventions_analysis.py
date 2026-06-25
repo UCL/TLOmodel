@@ -43,17 +43,35 @@ class EmoncScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2025}}
         else:
-            interventions_for_analysis = [["ectopic_pregnancy_treatment", "post_abortion_care_core"],
-                                          ["sepsis_treatment"],
-                                          ["pph_treatment_uterotonics", "pph_treatment_mrrp", "blood_transfusion"],
-                                          ["avd_ol"],
-                                          ["anti_htn_mgso4", "avd_spe_ec"],
-                                          ["caesarean_section_oth_surg"],
-                                          ["neo_sepsis_treatment"],
-                                          ["kmc"],
-                                          ["neo_resus"]] # TODO: determine if we want to make this indication spec.
+             interventions_for_analysis = [# Ectopic case management & post - abortion case management
+                                           ["ectopic_pregnancy_treatment", "post_abortion_care_core"],
 
-            return {'PregnancySupervisor': {
+                                           # Maternal sepsis case management
+                                           ["sepsis_treatment"],
+
+                                           # Treatment of antepartum and postpartum hemorrhage
+                                           ["pph_treatment_uterotonics", "pph_treatment_mrrp", "blood_transfusion"],
+
+                                           # Management of obstructed labor
+                                           ["avd_ol"],
+
+                                           # Management of pre-eclampsia and eclampsia
+                                           ["anti_htn_mgso4", "avd_spe_ec"],
+
+                                           # Caesarean section (uncomplicated and complicated) & other surgery
+                                           ["caesarean_section_oth_surg"],
+
+                                           # Newborn sepsis case management
+                                           ["neo_sepsis_treatment_all"],
+
+                                           # Essential care of preterm of sick newborn including KMC
+                                           ["kmc", "neo_resus_preterm", "neo_sepsis_treatment_preterm"],
+
+                                           # Newborn resuscitation
+                                           ["neo_resus_all"]]
+
+
+             return {'PregnancySupervisor': {
                         'analysis_year': 2025,
                         'interventions_analysis': True,
                         'interventions_under_analysis': interventions_for_analysis[draw_number-1],
