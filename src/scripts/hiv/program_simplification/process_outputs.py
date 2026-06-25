@@ -2500,7 +2500,8 @@ def plot_funding_and_selected_programs(
 
     # Plot funding trajectories (background shaded areas)
     funding_handles = []
-    funding_labels = ["Constant", "2% contraction", "6% contraction"]
+    # funding_labels = ["Constant", "2% contraction", "6% contraction"]
+    funding_labels = ["Constant"]
 
     for k, g in enumerate(fund_groups):
         c = fund_colours[k % len(fund_colours)]
@@ -2548,14 +2549,14 @@ def plot_funding_and_selected_programs(
     ax.set_ylim(ymin, ymax)
     ax.set_xlabel("Year")
     ax.set_ylabel("Annual costs (USD)")
-    ax.set_title("Funding Trajectories vs Programme Costs")
+    ax.set_title("Programme cost trajectories")
     ax.grid(False)
     ax.yaxis.grid(True, alpha=0.18)
     ax.set_axisbelow(True)
 
     # Create funding legend (top legend in bottom left)
     funding_legend = ax.legend(handles=funding_handles,
-                               title="Funding Trajectories",
+                               title="Funding Trajectory",
                                loc='lower left',
                                bbox_to_anchor=(0.01, 0.15),  # Position above program legend
                                frameon=True,
@@ -2568,7 +2569,7 @@ def plot_funding_and_selected_programs(
 
     # Create program legend (bottom legend in bottom left)
     program_legend = ax.legend(handles=program_handles,
-                               title="Programme Costs",
+                               title="Scenarios",
                                loc='lower left',
                                bbox_to_anchor=(0.01, 0.01),  # Bottom position
                                frameon=True,
@@ -2588,10 +2589,16 @@ selected_programs = [
     'Remove Viral Load Testing',
     'Reduce All Elements',
 ]
+
+all_except_scaleup = tuple(x for x in param_names if x != 'Program Scale-up')
+all_except_scaleup_sq = tuple(x for x in all_except_scaleup if x != 'Status Quo')
+
+constant_funding = summary_contract_funding.loc[:, summary_contract_funding.columns.get_level_values(0).str.contains("constant")]
+
 fig, ax = plot_funding_and_selected_programs(
-    summary_contract_funding,
+    constant_funding,
     summary_total_costs_year,
-    selected_programs=selected_programs
+    selected_programs=all_except_scaleup_sq
 )
 plt.savefig(results_folder / "selected_programs_vs_funding.png")
 plt.show()
@@ -2923,7 +2930,8 @@ def plot_combined_cadre_and_funding(
 
     # Plot funding trajectories (background shaded areas)
     funding_handles = []
-    funding_labels = ["Constant", "2% contraction", "6% contraction"]
+    # funding_labels = ["Constant", "2% contraction", "6% contraction"]
+    funding_labels = ["Constant"]
 
     for k, g in enumerate(fund_groups):
         c = fund_colours[k % len(fund_colours)]
@@ -2970,33 +2978,33 @@ def plot_combined_cadre_and_funding(
     funding_ax.set_ylim(ymin, ymax)
     funding_ax.set_xlabel("Year")
     funding_ax.set_ylabel("Annual costs (USD)")
-    funding_ax.set_title("Cost Trajectories")
+    funding_ax.set_title("Programme Cost Trajectories")
     funding_ax.grid(False)
     funding_ax.yaxis.grid(True, alpha=0.18)
     funding_ax.set_axisbelow(True)
 
     # Create funding legend
-    funding_legend = funding_ax.legend(handles=funding_handles,
-                                       title="Funding Trajectories",
-                                       loc='lower left',
-                                       bbox_to_anchor=(0.01, 0.2),
-                                       frameon=True,
-                                       title_fontsize=9,
-                                       fontsize=8,
-                                       borderaxespad=0)
-
-    funding_ax.add_artist(funding_legend)
+    # funding_legend = funding_ax.legend(handles=funding_handles,
+    #                                    title="Funding Trajectory",
+    #                                    loc='lower left',
+    #                                    bbox_to_anchor=(0.01, 0.2),
+    #                                    frameon=True,
+    #                                    title_fontsize=9,
+    #                                    fontsize=8,
+    #                                    borderaxespad=0)
+    #
+    # funding_ax.add_artist(funding_legend)
 
     # Create program legend
-    program_legend = funding_ax.legend(handles=program_handles,
-                                       title="Programme Costs",
-                                       loc='lower left',
-                                       bbox_to_anchor=(0.01, 0.01),
-                                       frameon=True,
-                                       title_fontsize=9,
-                                       fontsize=8,
-                                       borderaxespad=0,
-                                       alignment='left')
+    # program_legend = funding_ax.legend(handles=program_handles,
+    #                                    title="Scenario",
+    #                                    loc='lower left',
+    #                                    bbox_to_anchor=(0.01, 0.01),
+    #                                    frameon=True,
+    #                                    title_fontsize=9,
+    #                                    fontsize=8,
+    #                                    borderaxespad=0,
+    #                                    alignment='left')
 
     # Create scenario legend for the cadre plots (top right of figure)
     handles = [
@@ -3009,6 +3017,19 @@ def plot_combined_cadre_and_funding(
                                  loc="upper right", bbox_to_anchor=(0.99, 0.97),
                                  bbox_transform=fig.transFigure, frameon=True,
                                  title_fontsize=9, fontsize=8)
+
+    # Add panel labels to bottom-left of each panel
+    panel_labels = ["A", "B", "C", "D"]
+
+    for ax, label in zip(axes.flat, panel_labels):
+        ax.text(
+            0.02, 0.03, label,
+            transform=ax.transAxes,
+            fontsize=14,
+            fontweight="bold",
+            va="bottom",
+            ha="left"
+        )
 
     plt.tight_layout()
     return fig, axes
@@ -3025,9 +3046,9 @@ selected_programs = [
 fig, axes = plot_combined_cadre_and_funding(
     num_hcw_hours_diff_edit=num_hcw_hours_diff_edit,
     epi_df=dalys_ci,
-    df_funding=summary_contract_funding,
+    df_funding=constant_funding,
     df_program=summary_total_costs_year,
-    selected_programs=selected_programs,
+    selected_programs=all_except_scaleup_sq,
     scenario_colours=scenario_colours,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     ylabel="Difference in HIV/AIDS DALYs vs Status Quo",

@@ -23,8 +23,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 500
-# scenario = 0
+popsize = 5000
 
 # set up the log config
 # add deviance measure logger if needed
@@ -60,10 +59,6 @@ sim.register(*fullmodel(use_simplified_births=False,
                          "use_funded_or_actual_staffing": "actual"},
     },
 ))
-
-# # set the scenario
-# sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
