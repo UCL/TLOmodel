@@ -150,14 +150,17 @@ def find_mean_difference_extra_relative_to_comparison_dataframe(
 
 
 def get_num_deaths_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date]) -> pd.Series:
-    """Return total deaths by label within target period."""
-    return _df.loc[pd.to_datetime(_df.date).between(*target_period_tuple)].groupby(_df["label"]).size()
+    """Return total deaths by label within target years."""
+    start_year, end_year = (i.year for i in target_period_tuple)
+    years = pd.to_datetime(_df.date).dt.year
+    return _df.loc[years.between(start_year, end_year)].groupby(_df["label"]).size()
 
 
 def get_num_dalys_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date]) -> pd.Series:
-    """Return total DALYS by label within target period."""
+    """Return total DALYS by label within target years."""
+    start_year, end_year = (i.year for i in target_period_tuple)
     return (
-        _df.loc[_df.year.between(*[i.year for i in target_period_tuple])]
+        _df.loc[_df.year.between(start_year, end_year)]
         .drop(columns=["date", "sex", "age_range", "year"])
         .sum()
     )
@@ -178,9 +181,11 @@ def make_get_num_deaths_by_cause_label_and_period(
         for year in range(start_year, end_year + 1)
     }
     target_period_label = target_period(target_period_tuple)
+    start_year, end_year = (i.year for i in target_period_tuple)
 
     def _get_num_deaths_by_cause_label_and_period(_df: pd.DataFrame) -> pd.Series:
-        _df_in_target = _df.loc[pd.to_datetime(_df.date).between(*target_period_tuple)].copy()
+        years = pd.to_datetime(_df.date).dt.year
+        _df_in_target = _df.loc[years.between(start_year, end_year)].copy()
         _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
         _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
 
@@ -234,9 +239,10 @@ def get_num_deaths_by_age_group(
     age_grp_lookup: dict,
     target_period_tuple: tuple[Date, Date],
 ):
-    """Return total deaths by age-group in target period."""
+    """Return total deaths by age-group in target years."""
+    start_year, end_year = (i.year for i in target_period_tuple)
     return (
-        _df.loc[pd.to_datetime(_df.date).between(*target_period_tuple)]
+        _df.loc[pd.to_datetime(_df.date).dt.year.between(start_year, end_year)]
         .groupby(_df["age"].map(age_grp_lookup).astype(make_age_grp_types()))
         .size()
     )
@@ -246,8 +252,10 @@ def get_total_num_death_by_agegrp_and_label(
     _df: pd.DataFrame,
     target_period_tuple: tuple[Date, Date],
 ) -> pd.Series:
-    """Return deaths in target period by age-group and cause label."""
-    _df_limited_to_dates = _df.loc[_df["date"].between(*target_period_tuple)]
+    """Return deaths in target years by age-group and cause label."""
+    start_year, end_year = (i.year for i in target_period_tuple)
+    years = pd.to_datetime(_df["date"]).dt.year
+    _df_limited_to_dates = _df.loc[years.between(start_year, end_year)]
     age_group = to_age_group(_df_limited_to_dates["age"])
     return _df_limited_to_dates.groupby([age_group, "label"])["person_id"].size()
 
@@ -271,16 +279,18 @@ def get_counts_of_hsi_by_short_treatment_id(
     _df: pd.DataFrame,
     target_period_tuple: tuple[Date, Date],
 ) -> pd.Series:
-    """Get counts of short treatment ids occurring in target period."""
-    mask = pd.to_datetime(_df["date"]).between(*target_period_tuple)
+    """Get counts of short treatment ids occurring in target years."""
+    start_year, end_year = (i.year for i in target_period_tuple)
+    mask = pd.to_datetime(_df["date"]).dt.year.between(start_year, end_year)
     _counts_by_treatment_id = _df.loc[mask, "TREATMENT_ID"].apply(pd.Series).sum().astype(int)
     return _counts_by_treatment_id
 
 
 def get_counts_of_appts(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date]) -> pd.Series:
-    """Get counts of appointments of each type being used in target period."""
+    """Get counts of appointments of each type being used in target years."""
+    start_year, end_year = (i.year for i in target_period_tuple)
     return (
-        _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple), "Number_By_Appt_Type_Code"]
+        _df.loc[pd.to_datetime(_df["date"]).dt.year.between(start_year, end_year), "Number_By_Appt_Type_Code"]
         .apply(pd.Series)
         .sum()
         .astype(int)
@@ -302,9 +312,11 @@ def make_get_counts_of_appts_by_period(
         for year in range(start_year, end_year + 1)
     }
     target_period_label = target_period(target_period_tuple)
+    start_year, end_year = (i.year for i in target_period_tuple)
 
     def _get_counts_of_appts_by_period(_df: pd.DataFrame) -> pd.Series:
-        _df_in_target = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple)].copy()
+        years = pd.to_datetime(_df["date"]).dt.year
+        _df_in_target = _df.loc[years.between(start_year, end_year)].copy()
         _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
         _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
 
@@ -337,9 +349,11 @@ def make_get_counts_of_hsis_by_period(
         for year in range(start_year, end_year + 1)
     }
     target_period_label = target_period(target_period_tuple)
+    start_year, end_year = (i.year for i in target_period_tuple)
 
     def _get_counts_of_hsis_by_period(_df: pd.DataFrame) -> pd.Series:
-        _df_in_target = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple)].copy()
+        years = pd.to_datetime(_df["date"]).dt.year
+        _df_in_target = _df.loc[years.between(start_year, end_year)].copy()
         _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
         _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
 
