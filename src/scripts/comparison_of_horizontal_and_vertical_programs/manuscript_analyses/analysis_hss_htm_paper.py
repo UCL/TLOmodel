@@ -77,6 +77,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum().sum()
         )
 
+    def get_num_dalys_by_wealth(_df):
+        """Return total number of DALYs by label, summed over the TARGET_PERIOD.
+
+        Raises an error if any year in TARGET_PERIOD is missing, to guard against
+        using results from runs that crashed part-way through the simulation.
+        """
+        years_needed = [i.year for i in TARGET_PERIOD]
+
+        assert set(_df["year"].unique()).issuperset(years_needed), "Some years are not recorded."
+
+        return pd.Series(
+            data=(
+                _df
+                .loc[_df["year"].between(min(years_needed), max(years_needed))]
+                .drop(columns=["date", "year"], errors="ignore")
+                .sum(numeric_only=True)
+                .sum()
+            )
+        )
+
     def set_param_names_as_column_index_level_0(_df):
         """Set the columns index (level 0) as the param_names."""
         ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
@@ -426,6 +446,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    num_dalys_by_wealth = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_by_wealth_stacked_by_age_and_time',
+        custom_generate_series=get_num_dalys_by_wealth,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = compute_summary_statistics(num_dalys, central_measure='median').loc[0].unstack().reindex(
         param_names)
@@ -735,6 +763,76 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     total_num_dalys_by_all_causes_by_year.to_csv(
         results_folder / 'total_num_dalys_by_all_causes_by_year.csv')
+
+
+
+    def get_total_num_dalys_by_wealth(_df):
+        """Return the total number of DALYs in the TARGET_PERIOD by wealth."""
+        years_needed = [d.year for d in TARGET_PERIOD]
+
+        assert set(_df["year"].unique()).issuperset(years_needed), "Some years are not recorded."
+        y = (
+            _df
+            .loc[_df["year"].between(*years_needed)]
+            .drop(columns=["date", "year"], errors="ignore")
+            .groupby("li_wealth")
+            .sum(numeric_only=True)
+            .sum(axis=1)
+        )
+
+        y.index.name = "wealth"
+
+        return y
+
+    num_dalys_by_wealth = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_wealth,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_dalys_by_wealth.to_csv(
+        results_folder / 'num_dalys_by_wealth.csv')
+
+
+
+    def get_total_num_dalys_by_wealth_and_cause(_df):
+        """Return total DALYs in the TARGET_PERIOD by wealth and cause."""
+        years_needed = [d.year for d in TARGET_PERIOD]
+
+        assert set(_df["year"].unique()).issuperset(years_needed), "Some years are not recorded."
+
+        y = (
+            _df
+            .loc[_df["year"].between(*years_needed)]
+            .drop(columns=["date", "year"], errors="ignore")
+            .groupby("li_wealth")
+            .sum(numeric_only=True)
+        )
+
+        # Convert from DataFrame with:
+        #   index   = li_wealth
+        #   columns = causes
+        # into Series with MultiIndex:
+        #   index = li_wealth, cause
+        y = y.stack()
+
+        y.index.names = ["wealth", "cause"]
+
+        return y
+
+    num_dalys_by_wealth_and_cause = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_wealth_and_cause,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_dalys_by_wealth_and_cause.to_csv(
+        results_folder / 'num_dalys_by_wealth_and_cause.csv')
+
 
 
 
