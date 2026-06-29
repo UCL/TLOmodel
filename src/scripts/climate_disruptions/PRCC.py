@@ -113,7 +113,6 @@ def calculate_prcc(params_df: pd.DataFrame, outcome_series: pd.Series) -> pd.Dat
 
     return pd.DataFrame(results)
 
-
 def plot_prcc_horizontal_bars(prcc_results, outcome_name, ax, show_ylabel=True):
     df = prcc_results.copy()
     param_order = list(PARAMETER_INFO.keys())  # defined order: α, β, δ, γ, ε
@@ -136,10 +135,27 @@ def plot_prcc_horizontal_bars(prcc_results, outcome_name, ax, show_ylabel=True):
     y_pos = np.arange(len(df))
     ax.barh(y_pos, df["prcc"], color=colors, edgecolor="white", linewidth=0.4,
             height=0.62, alpha=0.92, zorder=3)
+
+    # ── annotate each bar with its PRCC value ────────────────────────────────
+    for y, val in zip(y_pos, df["prcc"]):
+        # place the label just outside the bar tip, flipping side with the sign
+        offset = 0.04 if val >= 0 else -0.04
+        ha = "left" if val >= 0 else "right"
+        # for very long bars, put the label inside the tip in white so it stays on-panel
+        if abs(val) > 0.85:
+            x_text = val - offset
+            ha = "right" if val >= 0 else "left"
+            colour = "white"
+        else:
+            x_text = val + offset
+            colour = "black"
+        ax.text(x_text, y, f"{val:+.2f}", va="center", ha=ha,
+                fontsize=6.5, color=colour, zorder=5)
+
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels if show_ylabel else [""] * len(labels), fontsize=7)
     ax.axvline(0, color="black", linewidth=0.8, zorder=4)
-    ax.set_xlim(-1.05, 1.05)
+    ax.set_xlim(-1.15, 1.15)  # widened slightly to give the labels room
     ax.set_xticks([-1, -0.5, 0, 0.5, 1])
     ax.set_xlabel("PRCC", fontsize=8)
     ax.set_title(outcome_name, fontweight="bold", fontsize=9, pad=4)
