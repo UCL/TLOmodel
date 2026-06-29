@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from tlo.analysis.utils import CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
+
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     get_parameter_names_from_scenario_file,
     format_scenario_name,
@@ -26,7 +28,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 
 
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs2
-# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs10runs
+# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs10runs
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
@@ -73,6 +75,85 @@ def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
         with open(results_file, "rb") as f:
             loaded[results_file] = pickle.load(f)
     return loaded
+
+
+def plot_dalys_by_cause_label_stacked_by_draw(
+    _df: pd.DataFrame,
+    draw_labels: list[str] | None = None,
+    plot_stat: str = "central",
+):
+    """Plot stacked DALYs by cause label for each draw."""
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("_df index must be a 2-level MultiIndex with levels for label and period.")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+
+    label_level_name = "label" if "label" in _df.index.names else _df.index.names[0]
+    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+
+    available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
+    if plot_stat not in available_stats:
+        raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
+
+    plot_df = _df.xs(plot_stat, axis=1, level=stat_level_name)
+    plot_df = plot_df.groupby(level=label_level_name).sum().T.fillna(0.0)
+    plot_df.index.name = draw_level_name
+
+    ordered_causes = [
+        cause_label for cause_label in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys()
+        if cause_label in plot_df.columns
+    ]
+    unordered_causes = sorted(
+        cause_label for cause_label in plot_df.columns if cause_label not in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
+    )
+    plot_df = plot_df.loc[:, ordered_causes + unordered_causes]
+
+    if draw_labels is not None:
+        available_draws = pd.Index(plot_df.index)
+        ordered_draws = [draw for draw in draw_labels if draw in available_draws]
+        plot_df = plot_df.reindex(ordered_draws)
+
+    if plot_df.empty:
+        raise ValueError("No plottable DALY data remain after reshaping by draw and cause label.")
+
+    fig_width = max(10, min(0.8 * len(plot_df.index) + 4, 24))
+    fig_height = max(6, min(0.35 * len(plot_df.index) + 3, 14))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    x = np.arange(len(plot_df.index))
+    bottom = np.zeros(len(plot_df.index), dtype=float)
+    for cause_label in plot_df.columns:
+        values = plot_df[cause_label].to_numpy(dtype=float)
+        if not np.any(values):
+            continue
+        ax.bar(
+            x,
+            values,
+            bottom=bottom,
+            color=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_label, "grey"),
+            label=str(cause_label),
+            width=0.8,
+        )
+        bottom += values
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(draw) for draw in plot_df.index], rotation=45, ha="right")
+    ax.set_xlabel("Draw label")
+    ax.set_ylabel("DALYs")
+    ax.grid(axis="y")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(
+        title="Cause label",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        title_fontsize=9,
+        frameon=True,
+    )
+    fig.tight_layout()
+    return fig, ax
 
 
 
@@ -127,7 +208,7 @@ def apply(
     print(f"Comparison metrics available: {comparison_metrics_available}")
 
 
-    counts_of_hsi = counts_of_hsi.drop(['2010-2041'], level=1)
+    counts_of_hsi = counts_of_hsi.drop(['2010-2040'], level=1)
 
     result_rows = []
     for draw in counts_of_hsi.columns.get_level_values(0).unique():
@@ -160,7 +241,7 @@ def apply(
             ['2010-2010', '2011-2011', '2012-2012', '2013-2013',
              '2014-2014', '2015-2015', '2016-2016', '2017-2017',
              '2018-2018', '2019-2019', '2020-2020', '2021-2021',
-             '2022-2022', '2023-2023', '2024-2024', '2025-2025', '2010-2041']
+             '2022-2022', '2023-2023', '2024-2024', '2025-2025', '2010-2040']
         )
         # Filter rows to retain those in implementation period only
         mask_other_periods = (
@@ -235,14 +316,28 @@ def apply(
     name_of_plot = "Population size by year"
     ax.set_title(name_of_plot)
     ax.set_ylabel("Population size (millions)")
-    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    fig.savefig(outfile)
     plt.close(fig)
 
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
-    num_dalys_by_cause_label_implementation = primary_results['dalys'].drop(['2010-2041'], level=1)
+    num_dalys_by_cause_label_implementation = primary_results['dalys'].drop(['2010-2040'], level=1)
 
-    num_deaths_by_cause_label_implementation = primary_results['num_deaths'].drop(['2010-2041'], level=1)
+    num_deaths_by_cause_label_implementation = primary_results['num_deaths'].drop(['2010-2040'], level=1)
     print("Prepared deaths and DALYs by cause for plotting.")
+
+    daly_draw_labels = [format_scenario_name(param) for param in param_names]
+    print("Plotting stacked DALYs by cause label for each draw.")
+    fig, ax = plot_dalys_by_cause_label_stacked_by_draw(
+        num_dalys_by_cause_label_implementation,
+        draw_labels=daly_draw_labels,
+    )
+    name_of_plot = "DALYs by Cause Label for Each Draw"
+    ax.set_title(name_of_plot)
+    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    fig.savefig(outfile, bbox_inches="tight")
+    plt.close(fig)
+    print("Saved: DALYs by Cause Label for Each Draw")
 
     for param in param_names:
         draw = format_scenario_name(param)

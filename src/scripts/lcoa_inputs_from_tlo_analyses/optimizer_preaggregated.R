@@ -385,6 +385,9 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
 
 run_optimizer_from_csv <- function() {
   inputs <- readr::read_csv("optimizer_inputs.csv", show_col_types = TRUE)
+  idx <- which(inputs$ce_dalys < 0)
+  inputs$ce_dalys[idx] <- 0
+  readr::write_csv(inputs, "modified_inputs.csv")
   constraints <- readr::read_csv("hr_constraints.csv", show_col_types = TRUE )
   hr.time.constraint <- c(
     constraints$capacity[constraints$Officer_Category == "hr_clin"],
