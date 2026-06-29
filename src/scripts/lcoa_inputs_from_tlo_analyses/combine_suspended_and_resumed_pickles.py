@@ -2,6 +2,10 @@
 
 # python src/scripts/lcoa_inputs_from_tlo_analyses/combine_suspended_and_resumed_pickles.py --suspended_results_folder outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z --resumed_results_folder outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z_folder --output_folder outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined
 
+# python src/scripts/lcoa_inputs_from_tlo_analyses/combine_suspended_and_resumed_pickles.py \
+#   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-06-03T155555Z \
+#   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-06-10T104916Z \
+#   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined
 
 import argparse
 import pickle

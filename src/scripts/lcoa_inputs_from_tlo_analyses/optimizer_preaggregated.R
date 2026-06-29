@@ -302,7 +302,6 @@ find_optimal_package <- function(inputs, objective_input, cet_input,
   ###################################
   # 3.2 - Run LPP
   ###################################
-
   solution.class <- lp("max", objective, cons.mat, cons.dir, cons.mat.limit, compute.sens = TRUE)
   print(solution.class$status) # 0 means optimal in lpSolve
   print(solution.class$objval)
@@ -410,8 +409,8 @@ run_optimizer_from_csv <- function() {
   ## intervention period
   res <- find_optimal_package(
     inputs = inputs,
-    objective_input = "dalys",
-    cet_input = 600,
+    objective_input = "nethealth",
+    cet_input = 65.8,
     drug_budget_input = 225602946 , #TODO - get this from constaint
     drug_budget.scale = 1,
     hr.time.constraint = hr.time.constraint,

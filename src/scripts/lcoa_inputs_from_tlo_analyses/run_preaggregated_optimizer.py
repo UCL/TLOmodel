@@ -57,10 +57,14 @@ def _coerce_central_series(df: pd.DataFrame) -> pd.Series:
 
 def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
 
-    dalys_averted = results.get('dalys_averted_2026')
+    # Use full-horizon incremental outcomes for the objective.
+    # The 2026-only snapshot is still useful for annual constraints, but it
+    # makes the objective far too pessimistic for interventions whose benefits
+    # accrue over multiple years.
+    dalys_averted = results.get('dalys_averted')
     ce_dalys = dalys_averted['central']
     
-    incremental_cost = results.get('annual_scenario_cost_2026')
+    incremental_cost = results.get('incremental_scenario_cost')
     ce_cost = incremental_cost['central']
     
     conscost = results.get('annual_cons_cost_2026')

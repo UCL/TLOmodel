@@ -26,7 +26,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 
 
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs2
-
+# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs10runs
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
@@ -110,6 +110,8 @@ def apply(
     incremental_scenario_cost = primary_results.get('incremental_scenario_cost')
     dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
     annual_cost_by_cadre = primary_results.get('annual_cost_by_cadre')
+    counts_of_hsi = primary_results['counts_of_hsi_by_period']
+    annual_capacity_used_by_cadre_and_level = primary_results.get("annual_capacity_used_by_cadre_and_level")
 
     comparison_metrics_available = all(
         metric is not None
@@ -124,20 +126,23 @@ def apply(
     )
     print(f"Comparison metrics available: {comparison_metrics_available}")
 
-    counts_of_hsi_in_implementation_period = primary_results['counts_of_hsi_by_period']
-    counts_of_hsi_in_implementation_period = counts_of_hsi_in_implementation_period.drop(['2010-2041'], level=1)
-    annual_capacity_used_by_cadre_and_level = primary_results.get("annual_capacity_used_by_cadre_and_level")
 
+    counts_of_hsi = counts_of_hsi.drop(['2010-2041'], level=1)
 
-    result_df_by_period = pd.DataFrame([
-        {'treatment_id_included': draw, 'nonzero_hsis': treatment_id, 'period': period}
-        for draw in counts_of_hsi_in_implementation_period.columns.get_level_values(0).unique()
-        for treatment_id, period in (
-            ((counts_of_hsi_in_implementation_period[draw] != 0).any(axis=1))[
-                (counts_of_hsi_in_implementation_period[draw] != 0).any(axis=1)
-            ].index
-        )
-    ])
+    result_rows = []
+    for draw in counts_of_hsi.columns.get_level_values(0).unique():
+        # Keep only rows where this draw has at least one non-zero HSI count.
+        non_zero_rows = (counts_of_hsi[draw] != 0).any(axis=1)
+        for treatment_id, period in counts_of_hsi[draw].loc[non_zero_rows].index:
+            result_rows.append(
+                {
+                    'treatment_id_included': draw,
+                    'nonzero_hsis': treatment_id,
+                    'period': period,
+                }
+            )
+
+    result_df_by_period = pd.DataFrame(result_rows)
     result_df_by_period['treatment_id_included'] = result_df_by_period['treatment_id_included'].str.replace(
         '_\\*$', '', regex=True
     )
@@ -159,18 +164,18 @@ def apply(
         )
         # Filter rows to retain those in implementation period only
         mask_other_periods = (
-            ~counts_of_hsi_in_implementation_period.
+            ~counts_of_hsi.
             index.
             get_level_values("period").
             isin(pre_switch_periods) &
-            (counts_of_hsi_in_implementation_period > 0).any(axis=1)
+            (counts_of_hsi > 0).any(axis=1)
         )
         # In the pre-implentation period only retain the treatment id of interest to avoid plot clutter
         mask_early_periods = (
-            counts_of_hsi_in_implementation_period.index.get_level_values("period").isin(pre_switch_periods) &
-            (counts_of_hsi_in_implementation_period.index.get_level_values("appt_type") == draw.replace("_*", ""))
+            counts_of_hsi.index.get_level_values("period").isin(pre_switch_periods) &
+            (counts_of_hsi.index.get_level_values("appt_type") == draw.replace("_*", ""))
         )
-        plot_this = counts_of_hsi_in_implementation_period[mask_other_periods | mask_early_periods]
+        plot_this = counts_of_hsi[mask_other_periods | mask_early_periods]
         fig, ax = plot_hsi_counts_by_period_for_draw(
             plot_this,
             draw,
