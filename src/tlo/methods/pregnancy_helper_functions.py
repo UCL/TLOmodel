@@ -44,7 +44,8 @@ def generate_mnh_outcome_counter():
                     # newborn outcomes
                     'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
                     'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph', 'severe_enceph',
-                    'enceph_timing', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
+                    'enceph_timing_on_birth', 'enceph_timing_after_birth', 'respiratory_distress_syndrome',
+                    'not_breathing_at_birth', 'low_birth_weight',
                     'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
 
                     # death outcomes
