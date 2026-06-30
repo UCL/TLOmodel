@@ -32,6 +32,7 @@ class Skeleton(Module):
         - `on_birth(mother, child)`
         - `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
         -  `report_daly_values()` [If this is disease module]
+        - `report_prevalence()` [If this is disease module]
     """
 
     # Declares modules that need to be registered in simulation and initialised before
@@ -51,7 +52,8 @@ class Skeleton(Module):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -145,6 +147,12 @@ class Skeleton(Module):
         To return a value of 0.0 (fully health) for everyone, use:
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive],data=0.0)
+        """
+        raise NotImplementedError
+
+    def report_summary_stats(self) -> dict[str, [float|dict]]:
+        """
+        This reports on the summary statistics of a disease/condition currently (e.g. current prevalence).
         """
         raise NotImplementedError
 

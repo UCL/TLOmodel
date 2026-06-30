@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3271f7fbcbdea523d9ad833b78f7ba9bb35079447b56d04020ad5b3917d98ea5
-size 200
+parameter_name,value
+sensitivity_of_assessment,1.0
+medication_item_code,226.0
+pr_assessed_other_symptoms,1.0
+pr_treatment_works,0.0
+pr_diagnosed,0.05
+pr_seeking_further_appt_if_drug_not_available,1.0

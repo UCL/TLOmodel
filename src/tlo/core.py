@@ -7,8 +7,9 @@ disease modules.
 from __future__ import annotations
 
 import json
+import warnings
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Literal
 
 import numpy as np
 import pandas as pd
@@ -120,6 +121,14 @@ class Specifiable:
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
+    def __init__(self,
+                 type_: Types,
+                 description: str,
+                 categories: List[str] = None,
+                 *,
+                 metadata: Optional[Dict[str, Any]] = None):
+        super().__init__(type_, description, categories)
+        self.metadata = metadata or {}
 
 
 class Property(Specifiable):
@@ -170,7 +179,7 @@ class Property(Specifiable):
         """
         Default value for this property, which will be used to fill the respective columns
         of the population dataframe, for example.
-        
+
         If not explicitly set, it will fall back on the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``.
         If a value is provided, it must:
 
@@ -321,20 +330,32 @@ class Module:
 
         :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
+
         resource.set_index('parameter_name', inplace=True)
         skipped_data_types = ('DATA_FRAME', 'SERIES')
+        acceptable_labels = ['unassigned', 'undetermined', 'universal', 'local', 'scenario']
+        param_defaults = {'param_label': 'unassigned', 'prior_min': None, 'prior_max': None }
+
+        for _col in param_defaults.keys():
+            if _col not in resource.columns:
+                resource[_col] = param_defaults[_col]
         # for each supported parameter, convert to the correct type
         for parameter_name in resource.index[resource.index.notnull()]:
             parameter_definition = self.PARAMETERS[parameter_name]
-
             if parameter_definition.type_.name in skipped_data_types:
                 continue
 
             # For each parameter, raise error if the value can't be coerced
-            parameter_value = resource.at[parameter_name, 'value']
+            parameter_value, prior_min, prior_max = resource.loc[parameter_name, ['value', 'prior_min', 'prior_max']]
+            parameter_label = resource.at[parameter_name, 'param_label']
+            assert parameter_label in acceptable_labels, (
+                f'unrecognised parameter label for {parameter_name}: {parameter_label}'
+            )
+
             error_message = (
-                f"The value of '{parameter_value}' for parameter '{parameter_name}' "
-                f"could not be parsed as a {parameter_definition.type_.name} data type"
+                f"some values are not of type {parameter_definition.type_.name} and "
+                f"could not be parsed as a {parameter_definition.type_.name} data type. "
+                f"parameter name is {parameter_name}, values {[parameter_value, prior_min, prior_max]}"
             )
             if parameter_definition.python_type is list:
                 try:
@@ -342,6 +363,10 @@ class Module:
                     # because it raises error instead of joining two strings without a comma
                     parameter_value = json.loads(parameter_value)
                     assert isinstance(parameter_value, list)
+                    if pd.notnull(prior_min):
+                        assert isinstance(json.loads(prior_min), list)
+                    if pd.notnull(prior_max):
+                        assert isinstance(json.loads(prior_max), list)
                 except (json.decoder.JSONDecodeError, TypeError, AssertionError) as exception:
                     raise ValueError(error_message) from exception
             elif parameter_definition.python_type == pd.Categorical:
@@ -358,11 +383,38 @@ class Module:
                 # All other data types, assign to the python_type defined in Parameter class
                 try:
                     parameter_value = parameter_definition.python_type(parameter_value)
+                    if not isinstance(parameter_definition.python_type, pd.Timestamp):
+                        if pd.notnull(prior_min):
+                            parameter_definition.python_type(prior_min)
+                        if pd.notnull(prior_max):
+                            parameter_definition.python_type(prior_max)
                 except Exception as exception:
                     raise ValueError(error_message) from exception
 
             # Save the values to the parameters
             self.parameters[parameter_name] = parameter_value
+            # Assign metadata to the Parameter object
+            parameter_definition.metadata.update(
+                param_label=parameter_label,
+                prior_min=prior_min,
+                prior_max=prior_max
+                )
+
+    def declare_parameter_metadata(self,
+                                   parameter_name: str,
+                                   param_label: Optional[Literal["local", "universal", "undetermined"]] = None,
+                                   prior_min: Optional = None,
+                                   prior_max: Optional = None) -> None:
+        """Declare metadata for a parameter"""
+        if parameter_name not in self.PARAMETERS:
+            raise ValueError(f"Parameter {parameter_name} not declared in PARAMETERS dictionary")
+
+        if self.PARAMETERS[parameter_name].metadata != {}:
+            warnings.warn(f"Parameter {parameter_name} already has metadata declared")
+
+        self.PARAMETERS[parameter_name].metadata.update(
+            param_label=param_label, prior_min=prior_min, prior_max=prior_max)
+
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """Read parameter values from file, if required.
@@ -386,8 +438,8 @@ class Module:
 
         Modules that wish to implement this behaviour do not need to implement this method,
         it will be inherited automatically. Modules that wish to perform additional steps
-        during the initialise_population stage should reimplement this method and call 
-        
+        during the initialise_population stage should reimplement this method and call
+
         ```python
         super().initialise_population(population=population)
         ```

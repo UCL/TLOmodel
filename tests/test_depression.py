@@ -29,17 +29,17 @@ except NameError:
 def test_configuration_of_properties(seed):
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 depression.Depression())
 
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2013, month=1, day=1))
@@ -116,20 +116,18 @@ def test_hsi_functions(tmpdir, seed):
     #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population.
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0,
-                                           cons_availability='all',
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(mode_appt_constraints=1, cons_availability='all',
                                            hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 depression.Depression())
 
     # Make it more likely that individual with depression seeks care
     sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
@@ -147,7 +145,7 @@ def test_hsi_functions(tmpdir, seed):
     df['de_ever_depr'] = False
     df['de_date_init_most_rec_depr'] = pd.NaT
     df['de_date_depr_resolved'] = pd.NaT
-    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
     df['de_ever_diagnosed_depression'] = False
     df['de_on_antidepr'] = False
     df['de_ever_talk_ther'] = False
@@ -175,20 +173,18 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0,
-                                           cons_availability='none',
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(mode_appt_constraints=1, cons_availability='none',
                                            hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 depression.Depression())
 
     # Make it more likely that individual with depression seeks care
     sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
@@ -206,7 +202,7 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
     df['de_ever_depr'] = False
     df['de_date_init_most_rec_depr'] = pd.NaT
     df['de_date_depr_resolved'] = pd.NaT
-    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
     df['de_ever_diagnosed_depression'] = False
     df['de_on_antidepr'] = False
     df['de_ever_talk_ther'] = False
@@ -239,18 +235,18 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
     }
 
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, log_config=log_config)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed,
+                     log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 depression.Depression())
 
     # Make it more likely that individual with depression seeks care
     sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
@@ -268,7 +264,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
     df['de_ever_depr'] = False
     df['de_date_init_most_rec_depr'] = pd.NaT
     df['de_date_depr_resolved'] = pd.NaT
-    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
     df['de_ever_diagnosed_depression'] = False
     df['de_on_antidepr'] = False
     df['de_ever_talk_ther'] = False

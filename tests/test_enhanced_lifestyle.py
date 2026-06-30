@@ -15,7 +15,7 @@ from tlo.methods import demography, enhanced_lifestyle
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 4, 1)
-popsize = 10000
+popsize = 100_000
 
 
 @pytest.fixture

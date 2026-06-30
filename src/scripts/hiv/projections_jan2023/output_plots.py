@@ -9,6 +9,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from tlo.analysis.utils import compare_number_of_deaths
 from tlo.util import read_csv_files
@@ -44,7 +45,7 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
 # %%: DATA
 # ---------------------------------------------------------------------- #
 start_date = 2010
-end_date = 2020
+end_date = 2024
 
 # load all the data for calibration
 
@@ -94,12 +95,12 @@ data_tb_ntp = data_tb_ntp.drop(columns=["year"])
 xls = read_csv_files(resourcefilepath / "ResourceFile_HIV", files=None)
 
 # HIV UNAIDS data
-data_hiv_unaids = xls["unaids_infections_art2021"]
+data_hiv_unaids = xls["unaids_infections_art2023"]
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids["year"], format="%Y")
 data_hiv_unaids = data_hiv_unaids.drop(columns=["year"])
 
 # HIV UNAIDS data
-data_hiv_unaids_deaths = xls["unaids_mortality_dalys2021"]
+data_hiv_unaids_deaths = xls["unaids_mortality_dalys2023"]
 data_hiv_unaids_deaths.index = pd.to_datetime(
     data_hiv_unaids_deaths["year"], format="%Y"
 )
@@ -116,22 +117,36 @@ data_hiv_program.index = pd.to_datetime(data_hiv_program["year"], format="%Y")
 data_hiv_program = data_hiv_program.drop(columns=["year"])
 
 # MPHIA HIV data - age-structured
-data_hiv_mphia_inc = xls["MPHIA_incidence2015"]
-data_hiv_mphia_inc_estimate = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"
+data_hiv_mphia_inc = xls["MPHIA_incidence2020"]
+data_hiv_mphia_inc_2015 = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2015), "total_percent_annual_incidence"
 ].values[0]
 data_hiv_mphia_inc_lower = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_lower"
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2015), "total_percent_annual_incidence_lower"
 ].values[0]
 data_hiv_mphia_inc_upper = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_upper"
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2015), "total_percent_annual_incidence_upper"
 ].values[0]
-data_hiv_mphia_inc_yerr = [
-    abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_estimate),
-    abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_estimate),
+data_hiv_mphia_inc_yerr2015 = [
+    abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_2015),
+    abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_2015),
 ]
 
-data_hiv_mphia_prev = xls["MPHIA_prevalence_art2015"]
+data_hiv_mphia_inc_2020 = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2020), "total_percent_annual_incidence"
+].values[0]
+data_hiv_mphia_inc_lower = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2020), "total_percent_annual_incidence_lower"
+].values[0]
+data_hiv_mphia_inc_upper = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2020), "total_percent_annual_incidence_upper"
+].values[0]
+data_hiv_mphia_inc_yerr2020 = [
+    abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_2020),
+    abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_2020),
+]
+
+data_hiv_mphia_prev = xls["MPHIA_prevalence_art2020"]
 
 # DHS HIV data
 data_hiv_dhs_prev = xls["DHS_prevalence"]
@@ -144,6 +159,11 @@ data_hiv_moh_tests = data_hiv_moh_tests.drop(columns=["year"])
 # MoH HIV ART data
 # todo this is quarterly
 data_hiv_moh_art = xls["MoH_number_art"]
+
+spectrum_tx_cascade = xls["spectrum_treatment_cascade"]
+
+# ART dispensation data
+data_arv_schedule = xls["arv_dispensation_schedule"]
 
 
 # ---------------------------------------------------------------------- #
@@ -273,14 +293,22 @@ title_str = "HIV Prevalence in Adults Aged 15-49 (%)"
 make_plot(
     title_str=title_str,
     model=prev_and_inc_over_time["hiv_prev_adult_1549"] * 100,
-    data_mid=data_hiv_unaids["prevalence_age15_49"] * 100,
-    data_low=data_hiv_unaids["prevalence_age15_49_lower"] * 100,
-    data_high=data_hiv_unaids["prevalence_age15_49_upper"] * 100,
+    data_mid=data_hiv_unaids["prevalence_age15_49"],
+    data_low=data_hiv_unaids["prevalence_age15_49_lower"],
+    data_high=data_hiv_unaids["prevalence_age15_49_upper"],
 )
 
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[4],
+    data_hiv_mphia_prev.loc[
+        data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
+    ].values[0],
+    "gx",
+)
+
+plt.plot(
+    prev_and_inc_over_time.index[9],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
     ].values[0],
@@ -332,22 +360,32 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 # HIV Incidence 15-49
-title_str = "HIV Incidence in Adults (15-49) (per 100 pyar)"
+title_str = "HIV Incidence in Adults (15-49) (per 1000 py)"
 make_plot(
     title_str=title_str,
-    model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 100,
-    data_mid=data_hiv_unaids["incidence_per1000_age15_49"] / 10,
-    data_low=data_hiv_unaids["incidence_per1000_age15_49_lower"] / 10,
-    data_high=data_hiv_unaids["incidence_per1000_age15_49_upper"] / 10,
+    model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 1000,
+    data_mid=data_hiv_unaids["incidence_per1000_age15_49"],
+    data_low=data_hiv_unaids["incidence_per1000_age15_49_lower"],
+    data_high=data_hiv_unaids["incidence_per1000_age15_49_upper"],
 )
 
 # MPHIA
 plt.errorbar(
     prev_and_inc_over_time.index[6],
-    data_hiv_mphia_inc_estimate,
-    yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
+    data_hiv_mphia_inc_2015*10,
+    yerr=[[data_hiv_mphia_inc_yerr2015[0]*10], [data_hiv_mphia_inc_yerr2015[1]*10]],
     fmt="o",
+    color="C1",
 )
+
+plt.errorbar(
+    prev_and_inc_over_time.index[9],
+    data_hiv_mphia_inc_2020*10,
+    yerr=[[data_hiv_mphia_inc_yerr2020[0]*10], [data_hiv_mphia_inc_yerr2020[1]*10]],
+    fmt="o",
+    color="C1",
+)
+
 
 # handles for legend
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
@@ -367,8 +405,6 @@ make_plot(
     title_str=title_str,
     model=prev_and_inc_over_time["hiv_prev_child"] * 100,
     data_mid=data_hiv_aidsinfo["prevalence_0_14"] * 100,
-    data_low=data_hiv_aidsinfo["prevalence_0_14_lower"] * 100,
-    data_high=data_hiv_aidsinfo["prevalence_0_14_upper"] * 100,
 )
 # MPHIA
 plt.plot(
@@ -395,13 +431,11 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 # HIV Incidence Children
-title_str = "HIV Incidence in Children (0-14) per 100 py"
+title_str = "HIV Incidence in Children (0-14) per 1000 py"
 make_plot(
     title_str=title_str,
-    model=prev_and_inc_over_time["hiv_child_inc"] * 100,
-    data_mid=data_hiv_aidsinfo["incidence0_14_per100py"],
-    data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
-    data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
+    model=prev_and_inc_over_time["hiv_child_inc"] * 1000,
+    data_mid=data_hiv_aidsinfo["incidence0_14_per1000py"],
 )
 # plt.savefig(
 #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
@@ -473,8 +507,8 @@ make_plot(
     title_str="Mortality to HIV-AIDS per 1000 capita, data=UNAIDS",
     model=total_aids_deaths_rate_100kpy,
     data_mid=data_hiv_unaids_deaths["AIDS_mortality_per_100k"],
-    data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
-    data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
+    # data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
+    # data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
 )
 
 plt.show()
@@ -637,85 +671,64 @@ Tb_tx_coverage = output["tlo.methods.tb"]["tb_treatment"]
 Tb_tx_coverage = Tb_tx_coverage.set_index("date")
 Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
 
+# HIV
 cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
 cov_over_time = cov_over_time.set_index("date")
 
 # ---------------------------------------------------------------------- #
 
 # HIV Treatment Cascade ("90-90-90") Plot for Adults
+spectrum_adult = spectrum_tx_cascade.loc[spectrum_tx_cascade["age"] == "adults"]
+
+# Prepare data
 dx = cov_over_time["dx_adult"] * 100
 art_among_dx = (cov_over_time["art_coverage_adult"] / cov_over_time["dx_adult"]) * 100
 vs_among_art = (cov_over_time["art_coverage_adult_VL_suppression"]) * 100
 
-pd.concat(
-    {
-        "diagnosed": dx,
-        "art_among_diagnosed": art_among_dx,
-        "vs_among_those_on_art": vs_among_art,
-    },
-    axis=1,
-).plot()
+dx.index = dx.index.year
+art_among_dx.index = art_among_dx.index.year
+vs_among_art.index = vs_among_art.index.year
 
-plt.gca().spines["right"].set_color("none")
-plt.gca().spines["top"].set_color("none")
-plt.title("ART Cascade for Adults (15+)")
+years = spectrum_adult["year"]
 
-# data from UNAIDS 2021
-# todo scatter the error bars
-# unaids: diagnosed
-x_values = data_hiv_program.index
-y_values = data_hiv_program["percent_know_status"]
-y_lower = abs(y_values - data_hiv_program["percent_know_status_lower"])
-y_upper = abs(y_values - data_hiv_program["percent_know_status_upper"])
-plt.errorbar(
-    x_values,
-    y_values,
-    yerr=[y_lower, y_upper],
-    ls="none",
-    marker="o",
-    markeredgecolor="C0",
-    markerfacecolor="C0",
-    ecolor="C0",
-)
+fig, axs = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
 
-# unaids: diagnosed and on art
-x_values = data_hiv_program.index + pd.DateOffset(months=3)
-y_values = data_hiv_program["percent_know_status_on_art"]
-y_lower = abs(y_values - data_hiv_program["percent_know_status_on_art_lower"])
-y_upper = abs(y_values - data_hiv_program["percent_know_status_on_art_upper"])
-plt.errorbar(
-    x_values,
-    y_values,
-    yerr=[y_lower, y_upper],
-    ls="none",
-    marker="o",
-    markeredgecolor="C1",
-    markerfacecolor="C1",
-    ecolor="C1",
-)
+# Plot 1: Diagnosed
+dx.plot(ax=axs[0], label='Model Diagnosed', color='C0', marker=None)
+axs[0].scatter(years, spectrum_adult["know_status"], marker='x', color='C0', s=80, label='UNAIDS Diagnosed')
 
-# unaids: virally suppressed
-x_values = data_hiv_program.index + pd.DateOffset(months=6)
-y_values = data_hiv_program["percent_on_art_viral_suppr"]
-y_lower = abs(y_values - data_hiv_program["percent_on_art_viral_suppr_lower"])
-y_upper = abs(y_values - data_hiv_program["percent_on_art_viral_suppr_upper"])
-# y_values.index = x_values
-# y_lower.index = x_values
-# y_lower.index = x_values
-plt.errorbar(
-    x_values,
-    y_values,
-    yerr=[y_lower, y_upper],
-    ls="none",
-    marker="o",
-    markeredgecolor="g",
-    markerfacecolor="g",
-    ecolor="g",
-)
-plt.ylim((20, 100))
-plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+axs[0].set_ylim(20, 100)
+axs[0].set_title("Diagnosed (15+)")
+axs[0].spines["right"].set_color("none")
+axs[0].spines["top"].set_color("none")
+axs[0].legend()
 
+# Plot 2: ART among Diagnosed
+art_among_dx.plot(ax=axs[1], label='Model ART among Diagnosed', color='C1', marker=None)
+axs[1].scatter(years, spectrum_adult["prob_art_if_dx"], marker='x', color='C1', s=80, label='UNAIDS ART among Diagnosed')
+axs[1].set_ylim(20, 100)
+axs[1].set_title("ART among Diagnosed (15+)")
+axs[1].spines["right"].set_color("none")
+axs[1].spines["top"].set_color("none")
+axs[1].legend()
+
+# Plot 3: Viral Suppression among ART
+vs_among_art.plot(ax=axs[2], label='Model Viral Suppression on ART', color='C2', marker=None)
+axs[2].scatter(years, spectrum_adult["virally_suppressed_on_art"], marker='x', color='C2', s=80, label='UNAIDS Viral Suppression')
+axs[2].set_ylim(20, 100)
+axs[2].set_title("Viral Suppression among ART (15+)")
+axs[2].spines["right"].set_color("none")
+axs[2].spines["top"].set_color("none")
+axs[2].legend()
+
+# Y-axis label for all subplots
+fig.text(0.04, 0.5, 'Percentage (%)', va='center', rotation='vertical', fontsize=12)
+
+plt.tight_layout(rect=[0.05, 0, 1, 1])
+plt.savefig(outputpath / ("HIV_art_cascade_subplots_" + datestamp + ".pdf"), format='pdf')
 plt.show()
+
+
 
 # ---------------------------------------------------------------------- #
 
@@ -926,3 +939,125 @@ plt.show()
 # agg_tests.to_excel(writer, sheet_name="numbers_tests")
 # referral_type_proportion.to_excel(writer, sheet_name="proportion_tests")
 # writer.save()
+
+
+# # # ---------------------------------------------------------------------- #
+# plot dispensation schedules by year and group
+
+# plot the data
+def plot_arv_dispensation_schedule(data: pd.DataFrame):
+    # Prepare data
+    data = data.copy()
+    data['year'] = data['year'].astype(str)
+    data['length_of_dispensation_months'] = data['length_of_dispensation_months'].astype(str)
+
+    # Get unique values
+    sub_groups = sorted(data['sub_group'].unique())
+    unique_lengths = sorted(data['length_of_dispensation_months'].unique(), key=int)
+    colours = sns.color_palette("Spectral", n_colors=len(unique_lengths))
+    colour_map = dict(zip(unique_lengths, colours))
+
+    # Set up subplot grid
+    n_rows, n_cols = 3, 2
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 12), sharey=True)
+    axes = axes.flatten()
+
+    for i, group in enumerate(sub_groups):
+        subset = data[data['sub_group'] == group]
+        pivot_df = subset.pivot_table(
+            index='year',
+            columns='length_of_dispensation_months',
+            values='probability',
+            aggfunc='sum',
+            fill_value=0
+        ).reindex(columns=unique_lengths)
+
+        pivot_df.plot(
+            kind='bar',
+            stacked=True,
+            color=[colour_map[col] for col in pivot_df.columns],
+            ax=axes[i]
+        )
+        axes[i].set_title(group.capitalize())
+        axes[i].set_xlabel("Year")
+        axes[i].set_ylabel("Probability")
+        axes[i].legend_.remove()
+
+    # Remove any unused subplots
+    for j in range(i + 1, n_rows * n_cols):
+        fig.delaxes(axes[j])
+
+    # Add a single legend
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, title="Dispensation Length (months)", loc='lower right', ncol=len(unique_lengths))
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+
+plot_arv_dispensation_schedule(data_arv_schedule)
+
+
+
+# model outputs
+model_arv = output["tlo.methods.hiv"]["arv_dispensing_intervals"]
+
+
+def plot_model_arv_schedule_grid(data: pd.DataFrame):
+    # Melt to long format
+    long_df = data.melt(id_vars='date', var_name='key', value_name='probability')
+
+    # Extract group and interval
+    long_df[['group', 'interval']] = long_df['key'].str.extract(r'group=(.*?)\|interval=(.*)')
+    long_df['year'] = pd.to_datetime(long_df['date']).dt.year.astype(str)
+
+    # Prepare for plotting
+    groups = sorted(long_df['group'].unique())
+    intervals = sorted(long_df['interval'].unique(), key=lambda x: ['<3', '3-5', '6+'].index(x))
+    colours = sns.color_palette("Spectral", n_colors=len(intervals))
+    colour_map = dict(zip(intervals, colours))
+
+    # Set up subplot grid
+    n_rows, n_cols = 3, 2
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 10), sharey=True)
+    axes = axes.flatten()
+
+    for i, group in enumerate(groups):
+        subset = long_df[long_df['group'] == group]
+        pivot_df = subset.pivot_table(
+            index='year',
+            columns='interval',
+            values='probability',
+            aggfunc='sum',
+            fill_value=0
+        ).reindex(columns=intervals)
+
+        pivot_df.plot(
+            kind='bar',
+            stacked=True,
+            color=[colour_map[iv] for iv in pivot_df.columns],
+            ax=axes[i]
+        )
+        axes[i].set_title(group.replace('_', ' ').capitalize())
+        axes[i].set_xlabel("Year")
+        axes[i].set_ylabel("Probability")
+        axes[i].legend_.remove()
+
+    # Remove any unused subplots
+    for j in range(i + 1, n_rows * n_cols):
+        fig.delaxes(axes[j])
+
+    # Shared legend at bottom right
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles, labels,
+        title="Dispensation Interval (months)",
+        loc='lower right',
+        bbox_to_anchor=(0.98, 0.02)
+    )
+
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.show()
+
+
+plot_model_arv_schedule_grid(model_arv)

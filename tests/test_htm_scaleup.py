@@ -98,13 +98,13 @@ def test_hiv_scale_up(seed):
     assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[
         original_params.parameter_name == "beta", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_params.loc[
-        new_params.parameter == "prob_prep_for_fsw_after_hiv_test", "target_value"].values[0]
+        new_params.parameter_name == "prob_prep_for_fsw_after_hiv_test", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_params.loc[
-        new_params.parameter == "prob_prep_for_agyw", "target_value"].values[0]
+        new_params.parameter_name == "prob_prep_for_agyw", "value"].values[0]
     assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == new_params.loc[
-        new_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "target_value"].values[0]
+        new_params.parameter_name == "probability_of_being_retained_on_prep_every_3_months", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == new_params.loc[
-        new_params.parameter == "prob_circ_after_hiv_test", "target_value"].values[0]
+        new_params.parameter_name == "prob_circ_after_hiv_test", "value"].values[0]
 
     # check malaria parameters unchanged
     mal_original_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
@@ -176,43 +176,43 @@ def test_htm_scale_up(seed):
     assert sim.modules["Hiv"].parameters["beta"] < original_hiv_params.loc[
         original_hiv_params.parameter_name == "beta", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "prob_prep_for_fsw_after_hiv_test", "target_value"].values[0]
+        new_hiv_params.parameter_name == "prob_prep_for_fsw_after_hiv_test", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "prob_prep_for_agyw", "target_value"].values[0]
+        new_hiv_params.parameter_name == "prob_prep_for_agyw", "value"].values[0]
     assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "target_value"].values[0]
+        new_hiv_params.parameter_name == "probability_of_being_retained_on_prep_every_3_months", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "prob_circ_after_hiv_test", "target_value"].values[0]
+        new_hiv_params.parameter_name == "prob_circ_after_hiv_test", "value"].values[0]
 
     # check malaria parameters changed
     new_mal_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
                                    files="scaleup_parameters")
 
     assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == new_mal_params.loc[
-        new_mal_params.parameter == "prob_malaria_case_tests", "target_value"].values[0]
+        new_mal_params.parameter_name == "prob_malaria_case_tests", "value"].values[0]
     assert sim.modules["Malaria"].parameters["rdt_testing_rates"]["Rate_rdt_testing"].eq(new_mal_params.loc[
-        new_mal_params.parameter == "rdt_testing_rates", "target_value"].values[0]).all()
+        new_mal_params.parameter_name == "rdt_testing_rates", "value"].values[0]).all()
 
     # some irs coverage levels should now = 1.0
     assert sim.modules["Malaria"].itn_irs['irs_rate'].any() == 1.0
     # itn rates for 2019 onwards
     assert sim.modules["Malaria"].parameters["itn"] == new_mal_params.loc[
-        new_mal_params.parameter == "itn", "target_value"].values[0]
+        new_mal_params.parameter_name == "itn", "value"].values[0]
 
     # check tb parameters changed
     new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
-    new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
+    new_tb_params.value = new_tb_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
-        new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
+        new_tb_params.parameter_name == "tb_treatment_coverage", "value"].values[0]).all()
     assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_ds", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_ds", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_mdr", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_mdr", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_0_4", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_0_4", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_5_14", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_5_14", "value"].values[0]
     assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
-        new_tb_params.parameter == "first_line_test", "target_value"].values[0]
+        new_tb_params.parameter_name == "first_line_test", "value"].values[0]
 

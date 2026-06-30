@@ -342,11 +342,11 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
         _log_config = None
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(),
         # Disable sorting + checks to avoid error due to missing dependencies
         sort_modules=False,
@@ -354,7 +354,8 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     )
 
     if data is not None:
-        sim.modules['HealthSystem'].parameters['availability_estimates'] = data
+        sim.modules['HealthSystem'].parameters['data_source_for_cons_availability_estimates'] = 'data'
+        sim.modules['HealthSystem'].parameters['availability_estimates'] = {'data' :data}
 
     sim.make_initial_population(n=100)
 
@@ -466,6 +467,23 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
         return_individual_results=True
     )
 
+    # Check that providing a treatment id within the following health system parameter sets treatment availability to
+    # 100%
+    sim.modules['HealthSystem'].override_cons_availability_for_treatment_ids(
+        treatment_ids=[hsi_event.TREATMENT_ID],
+        prob_available=1.0)
+
+    assert True is hsi_event.get_consumables(item_codes=item_code_not_available[0])
+    assert hsi_event.TREATMENT_ID in sim.modules['HealthSystem'].consumables.treatment_ids_overridden
+    assert 1.0 == sim.modules['HealthSystem'].consumables.treatment_ids_overridden_avail
+
+    # check that when the parameter is reset to an empty list that there is no overriding
+    sim.modules['HealthSystem'].override_cons_availability_for_treatment_ids(
+        treatment_ids=[])
+
+    assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0])
+    assert 0 == len(sim.modules['HealthSystem'].consumables.treatment_ids_overridden)
+
 
 def test_outputs_to_log(tmpdir):
     """Check that logging from Consumables is as expected."""
@@ -514,9 +532,13 @@ def test_outputs_to_log(tmpdir):
 
 def test_check_format_of_consumables_file():
     """Run the check on the file used by default for the Consumables data"""
+    path_to_file = resourcefilepath / 'healthsystem' / 'consumables'
     check_format_of_consumables_file(
-        pd.read_csv(
-            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
+        pd.read_csv(path_to_file / 'ResourceFile_Consumables_availability_small.csv'),
+        fac_ids=fac_ids
+    )
+    check_format_of_consumables_file(
+        pd.read_csv(path_to_file / 'ResourceFile_Consumables_availability_small_original.csv'),
         fac_ids=fac_ids
     )
 
@@ -605,17 +627,23 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     sim = Simulation(
         start_date=Date(2010, 1, 1),
         seed=seed,
+        resourcefilepath=resourcefilepath
     )
 
     # Register the core modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
+    sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date)
     hs = sim.modules['HealthSystem']
     consumables = hs.consumables
+    assert consumables.availability == 'default'
+
+    # store default consumables availabilieis
+    default_consumables_availability = consumables._prob_item_codes_available.copy()
 
     # - Get the item_codes for each category
     designations = hs.parameters['consumables_item_designations']
@@ -628,41 +656,113 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
         designations.index[designations['is_drug_or_vaccine']]
     ).intersection(consumables.item_codes)
 
-    options_for_availability = consumables._options_for_availability
+    options_for_availability = sorted(consumables._options_for_availability)
 
     for availability in options_for_availability:
-        # Manipulate consumables availability initially to be all medicines being available
+
+        # Manipulate availability, as would be set from the outside following initiation
         consumables.availability = availability
 
-        # Check that probabilities of availability are as expected:
-        if availability == 'all':
-            target_items = items_all
-        elif availability == 'all_medicines_available':
-            target_items = items_medicines
-        elif availability == 'all_diagnostics_available':
-            target_items = items_diagnostics
-        elif availability == 'all_medicines_and_other_available':
-            target_items = items_medicines.union(items_other)
-        elif availability == 'all_vital_available':
-            target_items = items_vital
-        elif availability == 'all_drug_or_vaccine_available':
-            target_items = items_drug_or_vaccine
-        elif availability == 'none':
-            target_items = set()
-        elif availability == 'default':
-            continue
+        if availability not in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
+                                  'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                                  'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                                  'scenario13', 'scenario14', 'scenario15'
+                                  ):
+
+            # Check that probabilities of availability are as expected:
+            if availability == 'all':
+                target_items = items_all
+            elif availability == 'all_medicines_available':
+                target_items = items_medicines
+            elif availability == 'all_diagnostics_available':
+                target_items = items_diagnostics
+            elif availability == 'all_medicines_and_other_available':
+                target_items = items_medicines.union(items_other)
+            elif availability == 'all_vital_available':
+                target_items = items_vital
+            elif availability == 'all_drug_or_vaccine_available':
+                target_items = items_drug_or_vaccine
+            elif availability == 'none':
+                target_items = set()
+            elif availability == 'default':
+                continue
+            else:
+                raise ValueError(f'Unexpected availability: {availability}')
+
+            # - Check probabilities for selected items are 1.0
+            if target_items:
+                assert (
+                    consumables._prob_item_codes_available.loc[(slice(None), slice(None), list(target_items))] == 1.0
+                ).all()
+
+            # - Check that probabilities for other items are not all equal to 1.0
+            non_target_items = list(items_all - target_items)
+            if non_target_items:
+                assert not (
+                    consumables._prob_item_codes_available.loc[(slice(None), slice(None), non_target_items)] == 1.0
+                ).all()
+
         else:
-            raise ValueError(f'Unexpected availability: {availability}')
+            # For the other scenarios, the availbility should be different to what it was at default
+            comparison = consumables._prob_item_codes_available.equals(default_consumables_availability)
+            assert isinstance(comparison, bool), 'Comparison went wrong: {availability=}'
+            assert not consumables._prob_item_codes_available.equals(default_consumables_availability),  \
+                f"No change in actual avaialbility when: {availability=}"
 
-        # - Check probabilities for selected items are 1.0
-        if target_items:
-            assert (
-                consumables._prob_item_codes_available.loc[(slice(None), slice(None), list(target_items))] == 1.0
-            ).all()
 
-        # - Check that probabilities for other items are not all equal to 1.0
-        non_target_items = list(items_all - target_items)
-        if non_target_items:
-            assert not (
-                consumables._prob_item_codes_available.loc[(slice(None), slice(None), non_target_items)] == 1.0
-            ).all()
+def test_switch_between_different_cons_availability_databases(seed):
+    """Check that option to change consumable availability data source works as expected"""
+
+    # Import the 'raw' datasets for consumables availability
+    path_to_files = resourcefilepath / 'healthsystem' / 'consumables'
+    options_for_availability = {
+        'original': pd.read_csv(path_to_files / 'ResourceFile_Consumables_availability_small_original.csv'),
+        'updated': pd.read_csv(path_to_files / 'ResourceFile_Consumables_availability_small.csv'),
+    }
+
+    # Sample availability of the raw datasets, where we know they are different:
+    _facility_id = 2
+    _month = 1
+    def get_sample_availability(df):
+        return df.loc[
+            (df.Facility_ID == _facility_id) & (df.month == _month),
+            ['item_code', 'available_prop']
+        ].set_index('item_code')['available_prop'].to_dict()
+    sample_availability_in_raw_data = {k : get_sample_availability(v) for k, v in options_for_availability.items()}
+
+    # Confirm that the samples from these two raw datasets are different
+    assert sample_availability_in_raw_data['original'] != sample_availability_in_raw_data['updated']
+
+    # Use different options (swithced after module registration) and confirm that the live data being used in the
+    # module matches the intended raw data
+    for which_option in options_for_availability.keys():
+        sim = Simulation(
+            start_date=Date(2010, 1, 1),
+            seed=seed,
+            resourcefilepath=resourcefilepath
+        )
+
+
+        # Register the core modules
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+        )
+
+        # Make the decision to switch following module registration
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.modules['HealthSystem'].parameters['data_source_for_cons_availability_estimates'] = which_option
+
+        # Initialise the simulation and capture the 'live' data being used in the Consumables module
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=sim.start_date)
+        hs = sim.modules['HealthSystem']
+        consumables_live_data = hs.consumables._availability_data
+
+        # check availability actually held by consumables class during simulation matches intended data source
+        sample_availability_in_live_data = consumables_live_data.loc[
+            (consumables_live_data.Facility_ID == _facility_id) & (consumables_live_data.month == _month),
+            ['item_code', 'available_prop']
+        ].set_index('item_code')['available_prop'].to_dict()
+
+        assert sample_availability_in_live_data == sample_availability_in_raw_data[which_option]

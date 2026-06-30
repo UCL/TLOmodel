@@ -22,9 +22,11 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     oesophagealcancer,
@@ -32,6 +34,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
+    tb,
 )
 
 # Where will outputs go
@@ -55,24 +58,26 @@ def run_sim(service_availability):
         'directory': outputpath
     }
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+    sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(service_availability=service_availability),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 labour.Labour(),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 oesophagealcancer.OesophagealCancer(),
+                 prostate_cancer.ProstateCancer(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 epi.Epi(),
+                 tb.Tb(),
+                 hiv.Hiv(),
                  )
 
     # Run the simulation
@@ -119,7 +124,7 @@ def get_summary_stats(logfile):
 
     # 4) DEATHS wrt age (total over whole simulation)
     deaths = output['tlo.methods.demography']['death']
-    deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+    deaths['age_group'] = deaths['age'].map(demography.Demography().AGE_RANGE_LOOKUP)
 
     x = deaths.loc[deaths.cause == 'ProstateCancer'].copy()
     x['age_group'] = x['age_group'].astype(make_age_grp_types())
@@ -193,7 +198,7 @@ plt.show()
 deaths = results_no_healthsystem['prostate_cancer_deaths']
 deaths.index = deaths.index.astype(make_age_grp_types())
 # # make a series with the right categories and zero so formats nicely in the grapsh:
-agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
+agegrps = demography.Demography().AGE_RANGE_CATEGORIES
 totdeaths = pd.Series(index=agegrps, data=np.nan)
 totdeaths.index = totdeaths.index.astype(make_age_grp_types())
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)

@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:af8acdf0ec01608da3af5d64f86e7f55311c3816f63662e4d6c39fd33717711d
-size 55
+parameter_name,value,param_label,prior_min,prior_max,prior_note
+chronic_ischemic_hd_symptoms,0.02,local,0,1,vague prior
