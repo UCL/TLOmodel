@@ -105,21 +105,53 @@ class EffectOfEachTreatment(BaseScenario):
         #   {f"Only {treatment}": [treatment] for treatment in treatments}
         # )
         ehp_from_rwe = (
-            ["Alri_Pneumonia_Treatment_Outpatient", "AntenatalCare_FollowUp",
-             "AntenatalCare_Outpatient", "Contraception_Routine",
-             "Epi_Childhood_DtpHibHep", "Epi_Childhood_MeaslesRubella",
-             "Epi_Childhood_Rota", "Epi_Pregnancy_Td",
-             "Hiv_Prevention_Circumcision", "Hiv_Prevention_Infant", "Hiv_Test",
-             "DeliveryCare_Basic", "DeliveryCare_Comprehensive", "DeliveryCare_Neonatal",
-             "PostnatalCare_Maternal_Inpatient", "PostnatalCare_Maternal",
-             "Malaria_Prevention_Iptp", "Malaria_Treatment",
-             "PostnatalCare_Neonatal", "PostnatalCare_Neonatal_Inpatient",
+            ["Alri_Pneumonia_Treatment_Outpatient",
+             "AntenatalCare_FollowUp",
+             "AntenatalCare_Outpatient",
+             "Contraception_Routine",
+             "Epi_Childhood_DtpHibHep",
+             "Epi_Childhood_MeaslesRubella",
+             "Epi_Childhood_Rota",
+             "Epi_Pregnancy_Td",
+             "Hiv_Prevention_Circumcision",
+             "Hiv_Prevention_Infant",
+             "Hiv_Test",
+             "DeliveryCare_Basic",
+             "DeliveryCare_Comprehensive",
+             "DeliveryCare_Neonatal",
+             "PostnatalCare_Maternal_Inpatient",
+             "PostnatalCare_Maternal",
+             "Malaria_Prevention_Iptp",
+             "Malaria_Treatment",
+             "PostnatalCare_Neonatal",
+             "PostnatalCare_Neonatal_Inpatient",
              "PostnatalCare_TreatmentForObstetricFistula",
-             "Tb_Prevention_Ipt", "Tb_Treatment"]
+             "Tb_Prevention_Ipt",
+             "Tb_Treatment"]
+        )
+
+        ehp_from_tlo = (
+             ["Alri_Pneumonia_Treatment_Outpatient_*",
+              "AntenatalCare_Outpatient_*",
+              "CardioMetabolicDisorders_Treatment_*",
+              "Contraception_Routine_*",
+              "Diarrhoea_Treatment_Inpatient_*",
+              "Diarrhoea_Treatment_Outpatient_*",
+              "Epi_Childhood_MeaslesRubella_*",
+              "Hiv_Prevention_Prep_*",
+              "Hiv_Treatment_*",
+              "Malaria_Treatment_*",
+              "Malaria_Treatment_Complicated_*",
+              "Measles_Treatment_*",
+              "Schisto_MDA_*",
+              "Undernutrition_Feeding_*",
+              "Undernutrition_Feeding_Inpatient_*",
+              "Undernutrition_Feeding_Outpatient_*",
+              "Undernutrition_Feeding_Supplementary_*"]
         )
 
         scenario_definitions = ScenarioDefinitions()
-        service_availability = dict({"LCOA EHP from RWE": ehp_from_rwe})
+        service_availability = dict({"LCOA EHP from RWE": ehp_from_rwe, "LCOA EHP from TLO": ehp_from_tlo})
 
         scenarios = {
             key: mix_scenarios(
