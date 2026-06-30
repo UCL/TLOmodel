@@ -600,11 +600,25 @@ class NewbornOutcomes(Module):
         """
         params = self.current_parameters
         df = self.sim.population.props
+        mother_id = df.at[child_id, 'mother_id']
+        is_preterm = df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']
+        analysis_ints = self.sim.modules["PregnancySupervisor"].current_parameters['interventions_under_analysis']
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # We use a linear model equation to determine risk of encephalopathy on birth
         if timing == 'on_birth':
             result = self.eval(self.nb_linear_models['encephalopathy'], child_id)
+
         else:
+
+            assert not (is_preterm and ("neo_resus_preterm" in analysis_ints))
+            assert not "neo_resus_all" in analysis_ints
+
+            if not analysis_ints:
+                assert not mni[mother_id]['neo_will_receive_resus_if_needed']
+
+            assert not df.at[child_id, 'nb_received_neonatal_resus']
+
             # Or, if we are applying risk to a non-encephalopathic newborn who was not breathing at birth
             result = self.rng.random_sample() < params['prob_enceph_no_resus']
 
@@ -621,6 +635,7 @@ class NewbornOutcomes(Module):
                 df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'enceph_timing_{timing}'] += 1
 
             # Check all encephalopathy cases receive a grade
             if df.at[child_id, 'nb_encephalopathy'] == 'none':
@@ -1502,6 +1517,7 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
 
         resus_item_code = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
 
+        # TO DO: could the result not be different?
         pregnancy_helper_functions.check_int_deliverable(
             self.module, int_name=self.int_name, hsi_event=self,
             cons=resus_item_code, to_log=True)

@@ -43,8 +43,8 @@ def generate_mnh_outcome_counter():
 
                     # newborn outcomes
                     'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
-                    'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
-                    'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
+                    'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph', 'severe_enceph',
+                    'enceph_timing', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
                     'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
 
                     # death outcomes
@@ -264,7 +264,9 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     c = self.sim.modules["PregnancySupervisor"].mnh_outcome_counter
 
     assert int_name in p_params["all_interventions"]
-    c[f"{int_name}_req"] += 1
+
+    if to_log:
+        c[f"{int_name}_req"] += 1
 
     # --- helpers ---
     rng = self.rng.random_sample
@@ -363,8 +365,6 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
                     c[f"{int_name}_deliv"] += 1
                 return will_run
 
-        # If analysis in progress but not an HSI/flag combo we care about, fall through to "normal" logic.
-
     # --- 3) Normal logic: quality + consumables + dx-test ---
     quality_ok = (q_param is None) or all(rng() < v for v in q_param)
     if quality_ok and equipment is not None:
@@ -390,6 +390,7 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
 
     if will_run and to_log:
         c[f"{int_name}_deliv"] += 1
+
     return will_run
 
 

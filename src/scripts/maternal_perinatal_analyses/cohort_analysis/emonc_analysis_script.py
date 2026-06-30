@@ -103,7 +103,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'testing_scenario_522676'
+scenario = 'testing_scenario_682612'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
@@ -113,14 +113,15 @@ if not os.path.isdir(g_path):
         os.makedirs(f'{outputspath}graphs_{scenario}')
 
 int_analysis = ['baseline',
-                'antibiotics',
-                'magnesium_sulphate',
-                'uterotonics',
-                'mrrp',
-                'rpc',
-                'neonatal_resus',
-                'blood_transfusion']
-#  todo: add surgery
+                'abortion',
+                'mat_sepsis_cm',
+                'pph_cm',
+                'ol_cm',
+                'spe_ec_cm',
+                'cs_surg',
+                'neo_sep_cm',
+                'preterm_cm',
+                'neo_resus']
 
 info = get_scenario_info(results_folder)
 draws = [x for x in range(info['number_of_draws'])]
@@ -358,6 +359,7 @@ get_diff_plots(neo_deaths_2, 'NMR (demog log)')
 get_diff_plots(mat_dalys_diffs, 'Maternal DALYs')
 get_diff_plots(neo_dalys_diffs, 'neonatal DALYs')
 
+# COST CALCULATIONS
 
 # TEST COSTS DIFFER FROM BASELINE
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2025, 12, 31))
