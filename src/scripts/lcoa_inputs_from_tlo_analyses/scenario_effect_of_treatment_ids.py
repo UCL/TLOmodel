@@ -95,22 +95,31 @@ class EffectOfEachTreatment(BaseScenario):
         The sequences of scenarios systematically omits all but one TREATMENT_ID that is defined in the model."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
-        treatments = get_filtered_treatment_ids(depth=None)
+        # treatments = get_filtered_treatment_ids(depth=None)
         # Return 'Service_Availability' values, with scenarios for nothing, and ones for which all but one
         # treatment is omitted
-        service_availability = dict({"Nothing": []})
+        # service_availability = dict({"Nothing": []})
         # For each treatment group, create scenarios keeping only one treatment from that group
         # Commenting to allow draw 0 to be run and suspended.
-        service_availability.update(
-            {f"Only {treatment}": [treatment] for treatment in treatments}
+        # service_availability.update(
+        #   {f"Only {treatment}": [treatment] for treatment in treatments}
+        # )
+        ehp_from_rwe = (
+            ["Alri_Pneumonia_Treatment_Outpatient", "AntenatalCare_FollowUp",
+             "AntenatalCare_Outpatient", "Contraception_Routine",
+             "Epi_Childhood_DtpHibHep", "Epi_Childhood_MeaslesRubella",
+             "Epi_Childhood_Rota", "Epi_Pregnancy_Td",
+             "Hiv_Prevention_Circumcision", "Hiv_Prevention_Infant", "Hiv_Test",
+             "DeliveryCare_Basic", "DeliveryCare_Comprehensive", "DeliveryCare_Neonatal",
+             "PostnatalCare_Maternal_Inpatient", "PostnatalCare_Maternal",
+             "Malaria_Prevention_Iptp", "Malaria_Treatment",
+             "PostnatalCare_Neonatal", "PostnatalCare_Neonatal_Inpatient",
+             "PostnatalCare_TreatmentForObstetricFistula",
+             "Tb_Prevention_Ipt", "Tb_Treatment"]
         )
-        # overwrite service availability dictionary to run specific scenarios for testing
-        service_availability = dict(
-            {"Nothing": [],
-             "Only AntenatalCare_FollowUp_*": ['AntenatalCare_FollowUp_*'],
-             "Only BladderCancer_PalliativeCare_*": ['BladderCancer_PalliativeCare_*']}
-        )
+
         scenario_definitions = ScenarioDefinitions()
+        service_availability = dict({"LCOA EHP from RWE": ehp_from_rwe})
 
         scenarios = {
             key: mix_scenarios(

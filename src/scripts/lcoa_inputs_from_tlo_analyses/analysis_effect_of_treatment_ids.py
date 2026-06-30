@@ -62,7 +62,7 @@ from tlo.analysis.utils import (
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2041-01-01 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=10runstest --load-input-costs-from-checkpoint=True
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
@@ -301,7 +301,7 @@ def apply(
     baseline = results['annual_capacity_used_by_cadre_and_level'].xs('Nothing', level='draw', axis=1)
     obs_productivity_in_2025 = baseline.xs(2025, level='year')
 
-    # Get the total available caapacity by cadre needed for LCOA
+    # Get the total available capacity by cadre needed for LCOA
     # resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv
     daily_capacity_by_cadre_and_level = (
         pd.read_csv(resourcefilepath / "healthsystem" / "human_resources" / "actual" / "ResourceFile_Daily_Capabilities.csv")
@@ -368,6 +368,11 @@ def apply(
         .mean()
         .rename_axis(index={'Facility_Level': 'FacilityLevel', 'Officer_Type_Code': 'OfficerType'})
     ).reorder_levels(['OfficerType', 'FacilityLevel'])
+
+    # Scale down the costs by observed productivity in 2025.
+    print("Scaling down the salary costs by observed productivity in 2025")
+    salary_by_cadre_and_level = salary_by_cadre_and_level / multiplier
+
     # Multiply actual minutes used by the salary per minute to get the total
     # salary cost by cadre and facility level
     series_reindexed = salary_by_cadre_and_level.reindex(

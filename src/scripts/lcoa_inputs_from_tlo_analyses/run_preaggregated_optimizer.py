@@ -10,7 +10,7 @@ from typing import Any
 import pandas as pd
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import format_scenario_name
 
-# python src/scripts/lcoa_inputs_from_tlo_analyses/run_preaggregated_optimizer.py --analysis-results-pkl outputs/generated_outputs/2041-01-01_fullresults.pkl
+# python src/scripts/lcoa_inputs_from_tlo_analyses/run_preaggregated_optimizer.py --analysis-results-pkl outputs/generated_outputs/2040-12-31_fullresults.pkl
 
 OPTIMIZER_HR_COLS = ["hr_clin", "hr_nur", "hr_pharm", "hr_lab", "hr_ment", "hr_nutri"]
 REQUIRED_OPT_INPUT_COLS = [
@@ -63,16 +63,16 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
     # accrue over multiple years.
     dalys_averted = results.get('dalys_averted')
     ce_dalys = dalys_averted['central']
-    
+
     incremental_cost = results.get('incremental_scenario_cost')
     ce_cost = incremental_cost['central']
-    
+
     conscost = results.get('annual_cons_cost_2026')
     conscost = conscost.xs('central', level='stat', axis=0)
-    
+
     capacity_used = _rename_hrh_map(results.get('actual_capacity_used_by_cadre_2026'))
     hr_needs = capacity_used.xs("central", level="stat", axis=1).T
-    
+
     interventions = sorted(set(ce_dalys.index).intersection(set(ce_cost.index)))
     if not interventions:
         raise ValueError("No overlapping interventions found between DALYs and costs.")

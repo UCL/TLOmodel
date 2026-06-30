@@ -27,7 +27,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 )
 
 
-# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2041-01-01_fullresults.pkl --output_folder=figs2
+# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs2
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs10runs
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
