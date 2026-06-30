@@ -38,8 +38,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources'
 
 # %% Run the simulation
-start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+start_date = Date(2014, 1, 1)
+end_date = Date(2025, 1, 1)
 popsize = 2000
 
 
@@ -60,7 +60,7 @@ seed = random.randint(0, 50000)
 
 # HPV model labels
 AGE_LABELS = ["15_19", "20_24", "25_34", "35_44", "45_54", "55plus"]
-HPV_GROUPS = ["hr1", "hr2", "hr3"]
+HPV_GROUPS = ["hr1", "hr2", "hr3","hr4"]
 SEXES = ["M", "F"]
 
 # 1. Run simulation
@@ -240,6 +240,7 @@ plt.figure(figsize=(8, 5))
 plt.plot(hpv_df["Date"], hpv_df["InfGroup1"], marker="o", label="1 HPV group")
 plt.plot(hpv_df["Date"], hpv_df["InfGroup2"], marker="o", label="2 HPV groups")
 plt.plot(hpv_df["Date"], hpv_df["InfGroup3"], marker="o", label="3 HPV groups")
+plt.plot(hpv_df["Date"], hpv_df["InfGroup4"], marker="o", label="4 HPV groups")
 plt.xlabel("Date")
 plt.ylabel("Number of infected individuals")
 plt.title("Multiplicity of HPV infection")
@@ -255,10 +256,12 @@ plt.figure(figsize=(9, 5))
 plt.plot(hpv_df["Date"], hpv_df["MaleGroup1"], marker="o", label="Male: 1 group")
 plt.plot(hpv_df["Date"], hpv_df["MaleGroup2"], marker="o", label="Male: 2 groups")
 plt.plot(hpv_df["Date"], hpv_df["MaleGroup3"], marker="o", label="Male: 3 groups")
+plt.plot(hpv_df["Date"], hpv_df["MaleGroup4"], marker="o", label="Male: 4 groups")
 
 plt.plot(hpv_df["Date"], hpv_df["FemaleGroup1"], marker="o", label="Female: 1 group")
 plt.plot(hpv_df["Date"], hpv_df["FemaleGroup2"], marker="o", label="Female: 2 groups")
 plt.plot(hpv_df["Date"], hpv_df["FemaleGroup3"], marker="o", label="Female: 3 groups")
+plt.plot(hpv_df["Date"], hpv_df["FemaleGroup4"], marker="o", label="Female: 4 groups")
 
 plt.xlabel("Date")
 plt.ylabel("Number of infected individuals")
@@ -380,3 +383,105 @@ if len(available_hiv_cols) > 0:
     plt.savefig(outputpath / "hpv_prevalence_by_hiv_status.png", dpi=300)
     plt.show()
 
+# Plot 12 Any HPV prevalence by HIV status (negative vs positive)
+hiv_pos_n_cols = [
+    "Any_HIVpos_noART_N",
+    "Any_HIVpos_unsupp_N",
+    "Any_HIVpos_supp_N",
+]
+hiv_pos_inf_cols = [
+    "Any_HIVpos_noART_Inf",
+    "Any_HIVpos_unsupp_Inf",
+    "Any_HIVpos_supp_Inf",
+]
+
+if all(col in hpv_df.columns for col in hiv_pos_n_cols + hiv_pos_inf_cols):
+    hpv_df["Any_HIVpos_N"] = hpv_df[hiv_pos_n_cols].sum(axis=1)
+    hpv_df["Any_HIVpos_Inf"] = hpv_df[hiv_pos_inf_cols].sum(axis=1)
+    hpv_df["Any_HIVpos_Prev"] = (
+        hpv_df["Any_HIVpos_Inf"] /
+        hpv_df["Any_HIVpos_N"].replace(0, pd.NA)
+    )
+else:
+    print("Cannot compute Any_HIVpos_Prev: missing HIV-positive count columns.")
+
+required_cols = ["Any_HIVneg_Prev", "Any_HIVpos_Prev"]
+
+if all(col in hpv_df.columns for col in required_cols):
+    plt.figure(figsize=(9, 5))
+    plt.plot(hpv_df["Date"], hpv_df["Any_HIVneg_Prev"], marker="o", label="HIV negative")
+    plt.plot(hpv_df["Date"], hpv_df["Any_HIVpos_Prev"], marker="o", label="HIV positive")
+
+    plt.xlabel("Date")
+    plt.ylabel("Any HPV prevalence")
+    plt.title("Any HPV prevalence by HIV status")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(outputpath / "hpv_prevalence_hiv_negative_vs_positive.png", dpi=300)
+    plt.show()
+else:
+    print("Cannot plot HIV negative vs positive prevalence: missing columns.")
+
+# Plot 13: Female overall HPV vaccine coverage across all ages
+required_cols = [
+    "HPVVaccinated_F_9_14_N",
+    "HPVVaccinated_F_9_14_Denominator",
+    "HPVVaccinated_F_N",
+    "F_N",
+]
+
+if all(col in hpv_df.columns for col in required_cols):
+    hpv_df["HPVVaccinated_F_9+_N"] = (
+        hpv_df["HPVVaccinated_F_9_14_N"] + hpv_df["HPVVaccinated_F_N"]
+    )
+    hpv_df["HPVVaccinated_F_9+_Denominator"] = (
+        hpv_df["HPVVaccinated_F_9_14_Denominator"] + hpv_df["F_N"]
+    )
+    hpv_df["HPVVaccinated_F_9+_Coverage"] = (
+        hpv_df["HPVVaccinated_F_9+_N"] /
+        hpv_df["HPVVaccinated_F_9+_Denominator"].replace(0, pd.NA)
+    )
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(
+        hpv_df["Date"],
+        hpv_df["HPVVaccinated_F_9+_Coverage"],
+        marker="o",
+        label="females 9 and above"
+    )
+    plt.xlabel("Date")
+    plt.ylabel("HPV vaccine coverage")
+    plt.title("Female HPV vaccine coverage over time")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(outputpath / "female_hpv_vaccine_coverage_over_time.png", dpi=300)
+    plt.show()
+else:
+    print("Cannot compute female 9+ vaccine coverage: missing columns.")
+
+# plot14: Female HPV vaccine coverage by age group over time
+female_vax_age_cols = ["HPVVaccinated_F_9_14_Coverage"] + [
+    f"HPVVaccinated_F_{age}_Coverage" for age in AGE_LABELS
+]
+
+available_female_vax_age_cols = [c for c in female_vax_age_cols if c in hpv_df.columns]
+
+if len(available_female_vax_age_cols) > 0:
+    plt.figure(figsize=(10, 6))
+
+    for col in available_female_vax_age_cols:
+        label = col.replace("HPVVaccinated_F_", "").replace("_Coverage", "")
+        plt.plot(hpv_df["Date"], hpv_df[col], marker="o", label=label)
+
+    plt.xlabel("Date")
+    plt.ylabel("HPV vaccine coverage")
+    plt.title("Female HPV vaccine coverage by age group")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(outputpath / "female_hpv_vaccine_coverage_by_age.png", dpi=300)
+    plt.show()
+else:
+    print("No female age-specific vaccine coverage columns found.")

@@ -30,9 +30,10 @@ logger.setLevel(logging.INFO)
 class HPV(Module, GenericFirstAppointmentsMixin):
     """This is an HPV infection Process.
     Groups:
-        g1 = HPV16/18
-        g2 = other vaccine-covered high-risk HPV (31/33/45/52/58)
-        g3 = other high-risk HPV (35/39/51/56/59/68)
+        hr1 = HPV16
+        hr2 = HPV18/45
+        hr3 = HPV31/33/35/52/58
+        hr4 = other high-risk HPV
 
     It demonstrates the following behaviours in respect of the healthsystem module:
 
@@ -63,7 +64,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {}
 
-    HPV_GROUPS = ['hr1', 'hr2', 'hr3']
+    HPV_GROUPS = ['hr1', 'hr2', 'hr3','hr4']
     AGE_BINS = [15, 20, 25, 35, 45, 55, 200]
     AGE_LABELS = ['15_19', '20_24', '25_34', '35_44', '45_54', '55plus']
 
@@ -71,15 +72,19 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         # ------------------ Initial prevalence ------------------ #
         "init_prev_hpv_hr1": Parameter(
             Types.REAL,
-            "Initial prevalence of hpv 16/18 infection",
+            "Initial prevalence of hpv 16 infection",
         ),
         "init_prev_hpv_hr2": Parameter(
             Types.REAL,
-            "Initial prevalence of HPV 31/33/45/52/58 infection",
+            "Initial prevalence of HPV 18/45 infection",
         ),
         "init_prev_hpv_hr3": Parameter(
             Types.REAL,
-            "Initial prevalence of other HR types"
+            "Initial prevalence of HPV 31/33/52/58/35 infection"
+        ),
+        "init_prev_hpv_hr4": Parameter(
+            Types.REAL,
+            "Initial prevalence of other hr-HPV infection",
         ),
 
         # ------------------  HPV Transmission  ------------------ #
@@ -106,7 +111,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Relative risk for hr3 infection if vaccinated",
         ),
-
+        "rr_hr4_vaccinated": Parameter(
+            Types.REAL,
+            "Relative risk for hr4 infection if vaccinated",
+        ),
         "rr_hpv_age50plus": Parameter(
             Types.REAL,
             "Relative risk multiplier for age >=50",
@@ -125,6 +133,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         "median_clear_hr3": Parameter(
             Types.REAL,
             "Median months to self-clear for hr3 infection",
+        ),
+        "median_clear_hr4": Parameter(
+            Types.REAL,
+            "Median months to self-clear for hr4 infection",
         ),
         "clear_shape": Parameter(
             Types.REAL,
@@ -154,6 +166,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "Frequency in months for updating HPV infection and clearance events",
         ),
+        "hpv_logging_frequency_months": Parameter(
+            Types.INT,
+            "Frequency in months for logging events",
+        ),
         "persistent_threshold_months": Parameter(
             Types.REAL,
             "Duration threshold in months for defining persistent HPV infection",
@@ -167,12 +183,16 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.DATE, 'Date of infection of hr2'),
         'hp_date_infected_hr3': Property(
             Types.DATE, 'Date of infection of hr3'),
+        'hp_date_infected_hr4': Property(
+            Types.DATE, 'Date of infection of hr4'),
         'hp_duration_hr1': Property(
             Types.REAL, 'Duration for current hr1 infection'),
         'hp_duration_hr2': Property(
             Types.REAL, 'Duration for current hr2 infection'),
         'hp_duration_hr3': Property(
             Types.REAL, 'Duration for current hr3 infection'),
+        'hp_duration_hr4': Property(
+            Types.REAL, 'Duration for current hr4 infection'),
         'hp_duration_all_clear': Property(
             Types.REAL, 'Duration for current all HPV infection'),
         'hp_persistent_hr1': Property(
@@ -181,6 +201,8 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.BOOL, 'Persistent hr2 infection, duration >= 12 months'),
         'hp_persistent_hr3': Property(
             Types.BOOL, 'Persistent hr3 infection, duration >= 12 months'),
+        'hp_persistent_hr4': Property(
+            Types.BOOL, 'Persistent hr4 infection, duration >= 12 months'),
     }
 
     def __init__(self, name=None):
@@ -509,18 +531,20 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         )
         self._pre_logged_prev = {}
 
+        self._last_event_counts = {}
+
         event = HpvInfectionEvent(
             self,
-            frequency_months=p['hpv_event_frequency_months']
+            frequency_months=int(p['hpv_event_frequency_months'])
         )
         sim.schedule_event(
             event,
-            sim.date + DateOffset(months=p['hpv_event_frequency_months'])
+            sim.date + DateOffset(months=int(p['hpv_event_frequency_months']))
         )
 
         sim.schedule_event(
-            HpvLoggingEvent(self),
-            sim.date + DateOffset(months=6)
+            HpvLoggingEvent(self,frequency_months=int(p['hpv_logging_frequency_months'])),
+            sim.date + DateOffset(months=int(p['hpv_logging_frequency_months']))
         )
 
     def on_birth(self, mother_id, child_id):
@@ -575,9 +599,30 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         module = self.module
         now = self.sim.date
 
+        event_counts = {
+            'NewInf_Total': 0,
+            'Clear_Total': 0,
+        }
+
+        # HPV group-specific counters
+        for group in module.HPV_GROUPS:
+            event_counts[f'NewInf_{group}'] = 0
+            event_counts[f'Clear_{group}'] = 0
+
+        # Sex-specific counters
+        for sex_name in ['M', 'F']:
+            event_counts[f'NewInf_{sex_name}'] = 0
+            event_counts[f'Clear_{sex_name}'] = 0
+
+        # Age-group-specific counters
+        for age_group in module.AGE_LABELS:
+            event_counts[f'NewInf_{age_group}'] = 0
+            event_counts[f'Clear_{age_group}'] = 0
+
         # 1. define eligible population
         eligible = df.index[df.is_alive & (df.age_years >= 15)]
         if len(eligible) == 0:
+            module._last_event_counts = event_counts
             return
 
         interval_months = float(self.frequency_months)
@@ -609,6 +654,17 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                 )
 
                 if module.rng.random() < p_clear:
+                    sex = df.at[person_id, 'sex']
+                    age_group = module._get_age_group(df.at[person_id, 'age_years'])
+
+                    event_counts['Clear_Total'] += 1
+                    event_counts[f'Clear_{group}'] += 1
+
+                    if sex in ['M', 'F']:
+                        event_counts[f'Clear_{sex}'] += 1
+
+                    if age_group in module.AGE_LABELS:
+                        event_counts[f'Clear_{age_group}'] += 1
                     module._clear_single_group(person_id, group)
 
         module._update_persistence_status()
@@ -681,14 +737,27 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                     new_group.add(group)
 
             if len(new_group) > 0:
+                sex = df.at[person_id, 'sex']
+                age_group = module._get_age_group(df.at[person_id, 'age_years'])
+
+                for group in new_group:
+                    event_counts['NewInf_Total'] += 1
+                    event_counts[f'NewInf_{group}'] += 1
+
+                    if sex in ['M', 'F']:
+                        event_counts[f'NewInf_{sex}'] += 1
+
+                    if age_group in module.AGE_LABELS:
+                        event_counts[f'NewInf_{age_group}'] += 1
                 module._add_new_infection_groups(person_id, new_group)
 
         module._update_persistence_status()
+        module._last_event_counts = event_counts
 
 class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
+    def __init__(self, module, frequency_months):
         """Produce a summmary of the numbers of people with respect to their 'hpv status'"""
-        self.repeat = 6
+        self.repeat = int(frequency_months)
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, HPV)
 
@@ -701,13 +770,82 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         eligible = df.index[df.is_alive & (df.age_years >= 15)]
         log_data = {'EligibleN':int(len(eligible)),}
+        alive = df.loc[df.is_alive].copy()
+
+        if 'va_hpv' in alive.columns:
+            alive['hpv_vaccinated'] = alive['va_hpv'].isin([1, 2])
+
+            girls_9_14 = alive.loc[
+                (alive.sex == 'F') &
+                (alive.age_years >= 9) &
+                (alive.age_years < 15)
+                ]
+
+            n_girls_9_14 = len(girls_9_14)
+
+            log_data['HPVVaccinated_F_9_14_N'] = (
+                int(girls_9_14['hpv_vaccinated'].sum())
+                if n_girls_9_14 > 0 else 0
+            )
+
+            log_data['HPVVaccinated_F_9_14_Coverage'] = (
+                float(girls_9_14['hpv_vaccinated'].mean())
+                if n_girls_9_14 > 0 else math.nan
+            )
+
+            log_data['HPVVaccinated_F_9_14_Denominator'] = int(n_girls_9_14)
+
+        else:
+            log_data['HPVVaccinated_F_9_14_N'] = 0
+            log_data['HPVVaccinated_F_9_14_Coverage'] = math.nan
+            log_data['HPVVaccinated_F_9_14_Denominator'] = 0
 
         if len(eligible) == 0:
             logger.info(key='summary', data=log_data)
             return
 
+
         sub = df.loc[eligible].copy()
         sub['hp_is_infected'] = module._get_hpv_any_infected_series(index=sub.index)
+
+        if 'va_hpv' in sub.columns:
+            sub['hpv_vaccinated'] = sub['va_hpv'].isin([1, 2])
+
+            log_data['HPVVaccinated_N'] = int(sub['hpv_vaccinated'].sum())
+            log_data['HPVVaccinated_Coverage'] = float(sub['hpv_vaccinated'].mean())
+
+            for sex_name, sex_df in [('M', sub.loc[sub.sex == 'M']),
+                                     ('F', sub.loc[sub.sex == 'F'])]:
+                n = len(sex_df)
+                log_data[f'HPVVaccinated_{sex_name}_N'] = int(sex_df['hpv_vaccinated'].sum()) if n > 0 else 0
+                log_data[f'HPVVaccinated_{sex_name}_Coverage'] = float(
+                    sex_df['hpv_vaccinated'].mean()) if n > 0 else math.nan
+
+            # Age-specific vaccine coverage
+            sub['age_group'] = module._get_age_group_series(sub['age_years'])
+
+            for age_group in module.AGE_LABELS:
+                age_df = sub.loc[sub['age_group'] == age_group]
+                n = len(age_df)
+
+                log_data[f'HPVVaccinated_{age_group}_N'] = int(age_df['hpv_vaccinated'].sum()) if n > 0 else 0
+                log_data[f'HPVVaccinated_{age_group}_Coverage'] = float(
+                    age_df['hpv_vaccinated'].mean()) if n > 0 else math.nan
+
+            # Female age-specific vaccine coverage
+            female_df = sub.loc[sub.sex == 'F']
+
+            for age_group in module.AGE_LABELS:
+                age_df = female_df.loc[female_df['age_group'] == age_group]
+                n = len(age_df)
+
+                log_data[f'HPVVaccinated_F_{age_group}_N'] = int(age_df['hpv_vaccinated'].sum()) if n > 0 else 0
+                log_data[f'HPVVaccinated_F_{age_group}_Coverage'] = float(
+                    age_df['hpv_vaccinated'].mean()) if n > 0 else math.nan
+
+        else:
+            log_data['HPVVaccinated_N'] = 0
+            log_data['HPVVaccinated_Coverage'] = math.nan
 
         for hpv_group in module.HPV_GROUPS:
             sub[f'hp_infected_{hpv_group}'] = module._get_group_infected_series(
@@ -836,14 +974,17 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_group_1 = 0
         n_group_2 = 0
         n_group_3 = 0
+        n_group_4 = 0
 
         male_n_group_1 = 0
         male_n_group_2 = 0
         male_n_group_3 = 0
+        male_n_group_4 = 0
 
         female_n_group_1 = 0
         female_n_group_2 = 0
         female_n_group_3 = 0
+        female_n_group_4 = 0
 
         for person_id in infection_people:
             n_group = len(module._get_hpv_group_set(person_id))
@@ -870,17 +1011,27 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 elif sex =='F':
                     female_n_group_3 += 1
 
+            elif n_group == 4:
+                n_group_4 += 1
+                if sex == 'M':
+                    male_n_group_4 += 1
+                elif sex =='F':
+                    female_n_group_4 += 1
+
         log_data['InfGroup1'] = n_group_1
         log_data['InfGroup2'] = n_group_2
         log_data['InfGroup3'] = n_group_3
+        log_data['InfGroup4'] = n_group_4
 
         log_data['MaleGroup1'] = male_n_group_1
         log_data['MaleGroup2'] = male_n_group_2
         log_data['MaleGroup3'] = male_n_group_3
+        log_data['MaleGroup4'] = male_n_group_4
 
         log_data['FemaleGroup1'] = female_n_group_1
         log_data['FemaleGroup2'] = female_n_group_2
         log_data['FemaleGroup3'] = female_n_group_3
+        log_data['FemaleGroup4'] = female_n_group_4
 
         # 6. Persistent infection 统计
         for hpv_group in module.HPV_GROUPS:
@@ -913,5 +1064,11 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     )
                 else:
                     log_data[f'{hpv_group}_Persistent12_{age_group}_Prev'] = math.nan
+
+        # 7. Incidence and clearance counts from the latest HPV infection event
+        last_event_counts = getattr(module, '_last_event_counts', {})
+
+        for key, value in last_event_counts.items():
+            log_data[key] = value
 
         logger.info(key='summary', data=log_data)
