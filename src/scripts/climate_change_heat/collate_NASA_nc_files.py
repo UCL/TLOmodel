@@ -2,11 +2,11 @@ import xarray as xr
 from pathlib import Path
 
 BASE_DIR = Path(
-    "/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_ncss"
+    "/Users/rachelmurray-watson/Documents/Heat_data/NASA_GDDP-CMIP6"
 )
 
 OUT_DIR = Path(
-    "/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_combined"
+    "/Users/rachelmurray-watson/Documents/Heat_data/NASA_GDDP-CMIP6/Combined"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -22,6 +22,10 @@ for model_dir in BASE_DIR.iterdir():
         continue
 
     model = model_dir.name
+
+    # Don't recurse into the Combined output directory itself
+    if model == "Combined":
+        continue
 
     for scenario in SCENARIOS:
         for variable in VARIABLES:
@@ -50,11 +54,8 @@ for model_dir in BASE_DIR.iterdir():
                 parallel=False
             )
 
-            out_model_dir = OUT_DIR / model / scenario
-            out_model_dir.mkdir(parents=True, exist_ok=True)
-
             out_file = (
-                out_model_dir
+                OUT_DIR
                 / f"{variable}_day_{model}_{scenario}_malawi_{YEAR_START}_{YEAR_END}.nc"
             )
 

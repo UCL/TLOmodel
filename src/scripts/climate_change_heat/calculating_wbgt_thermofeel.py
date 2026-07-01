@@ -61,11 +61,11 @@ MISSING_VALUE = np.nan
 # ============================================================================
 
 DATA_DIR = Path(
-    "/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_combined"
+    "/Users/rachelmurray-watson/Documents/Heat_data/NASA_GDDP-CMIP6/Combined"
 )
 
 OUT_DIR = Path(
-    "/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_wbgt"
+    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -598,18 +598,27 @@ def estimate_daily_mean_cossza(lat, doy):
 # ============================================================================
 
 def load_variable(model_dir, scenario, variable, year_start, year_end):
-    """Load a variable from the combined netCDF file."""
-    model = model_dir.name
-    filepath = (
-        model_dir / scenario /
-        f"{variable}_day_{model}_{scenario}_malawi_{year_start}_{year_end}.nc"
-    )
+    """Load a variable from the combined netCDF file.
 
-    if not filepath.exists():
+    Returns None if the file doesn't exist, can't be opened, or doesn't
+    contain the expected variable. This is intentionally lenient: for
+    OPTIONAL_VARS (e.g. "ps", which NASA NEX-GDDP-CMIP6 doesn't publish
+    at all), a missing/unreadable file just means the script falls back
+    to a default rather than crashing.
+    """
+    model = model_dir.name
+    filepath = f"/Users/rachelmurray-watson/Documents/Heat_data/NASA_GDDP-CMIP6/Combined/{variable}_day_{model}_{scenario}_malawi_{year_start}_{year_end}.nc"
+
+    from pathlib import Path
+    if not Path(filepath).exists():
         return None
 
-    ds = xr.open_dataset(filepath)
-    return ds[variable]
+    try:
+        ds = xr.open_dataset(filepath)
+        return ds[variable]
+    except (FileNotFoundError, OSError, KeyError) as e:
+        print(f"    Could not load {variable} from {filepath}: {e}")
+        return None
 
 
 def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
@@ -643,7 +652,12 @@ def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
     hurs = variables["hurs"]
     rsds = variables["rsds"]
     sfcwind = variables["sfcWind"]
+    tas_times = set(tas.indexes["time"].values)
+    wind_times = set(sfcwind.indexes["time"].values)
 
+    missing_from_wind = sorted(tas_times - wind_times)
+    print(f"{len(missing_from_wind)} dates missing from sfcWind")
+    print(missing_from_wind[:10], "...", missing_from_wind[-10:])
     # Pressure: use ps if available, otherwise assume 850 hPa (typical for Malawi elevation)
     if "ps" in variables:
         ps_hpa = variables["ps"] / 100.0  # Convert Pa to hPa
@@ -686,8 +700,16 @@ def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
             p_hpa = ps_hpa.values if hasattr(ps_hpa, 'values') else ps_hpa
 
         # Get day of year for solar geometry
-        time_dt = pd.Timestamp(time_val).to_pydatetime()
-        doy = time_dt.timetuple().tm_yday
+        # NEX-GDDP-CMIP6 uses a 365-day "noleap" calendar, so time_val may be
+        # a cftime object (e.g. cftime.DatetimeNoLeap) rather than a standard
+        # numpy.datetime64 / pandas.Timestamp. Handle both cases directly
+        # instead of routing through pd.Timestamp (which cannot parse cftime).
+        if hasattr(time_val, "timetuple"):
+            # Works for both cftime.datetime subclasses and python datetime
+            doy = time_val.timetuple().tm_yday
+        else:
+            # Fallback: numpy.datetime64 -> pandas Timestamp -> pydatetime
+            doy = pd.Timestamp(time_val).to_pydatetime().timetuple().tm_yday
 
         # Calculate daily mean solar zenith angle
         cossza = estimate_daily_mean_cossza(lat_grid, doy)

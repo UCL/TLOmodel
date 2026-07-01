@@ -2,9 +2,9 @@ import os
 
 import cdsapi
 
-years = [str(year) for year in range(2024, 2025)]
+years = [str(year) for year in range(2010, 2025)]
 
-base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Temperature_data/2m/Historical/hourly/"
+base_dir = "Users/rachelmurray/Documents/Heat_data/ERA5"
 
 for year in years:
     year_dir = os.path.join(base_dir, year)
