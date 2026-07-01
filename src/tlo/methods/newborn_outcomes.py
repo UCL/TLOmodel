@@ -585,10 +585,13 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
 
+        comp = "early_onset_sepsis_pt" if (df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) \
+            else "early_onset_sepsis"
+
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
         if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
@@ -610,7 +613,6 @@ class NewbornOutcomes(Module):
             result = self.eval(self.nb_linear_models['encephalopathy'], child_id)
 
         else:
-
             assert not (is_preterm and ("neo_resus_preterm" in analysis_ints))
             assert not "neo_resus_all" in analysis_ints
 
@@ -634,7 +636,16 @@ class NewbornOutcomes(Module):
             else:
                 df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
+            if is_preterm:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+                    f'{df.at[child_id, "nb_encephalopathy"]}_pt'] += 1
+                if df.at[child_id, "nb_preterm_respiratory_distress"]:
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['rds_enceph_dc'] += 1
+
+            else:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+                    f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
+
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'enceph_timing_{timing}'] += 1
 
             # Check all encephalopathy cases receive a grade
@@ -678,7 +689,12 @@ class NewbornOutcomes(Module):
         # explicitly modelled
         elif self.rng.random_sample() < params['prob_failure_to_transition']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
+
+            if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth_pt'] += 1
+            else:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
+
 
     def scheduled_week_one_postnatal_event(self, individual_id):
         """

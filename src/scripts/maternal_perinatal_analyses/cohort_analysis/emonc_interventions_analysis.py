@@ -43,20 +43,29 @@ class EmoncScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2025}}
         else:
+
+             # TODO : UPDATE THESE NOW WEVE ADDED NEW INTERVENTIONS
+
              interventions_for_analysis = [# Ectopic case management & post - abortion case management
-                                           ["ectopic_pregnancy_treatment", "post_abortion_care_core"],
+                                           ["ectopic_pregnancy_treatment",
+                                            "post_abortion_care_core"],
 
                                            # Maternal sepsis case management
                                            ["sepsis_treatment"],
 
                                            # Treatment of antepartum and postpartum hemorrhage
-                                           ["pph_treatment_uterotonics", "pph_treatment_mrrp", "blood_transfusion"],
+                                           ["pph_treatment_uterotonics",
+                                            "pph_treatment_mrrp",
+                                            "blood_transfusion_pph",
+                                            "blood_transfusion_aph"],
 
                                            # Management of obstructed labor
                                            ["avd_ol"],
 
                                            # Management of pre-eclampsia and eclampsia
-                                           ["anti_htn_mgso4", "avd_spe_ec"],
+                                           ["iv_anti_htns",
+                                            "mgso4",
+                                            "avd_spe_ec"],
 
                                            # Caesarean section (uncomplicated and complicated) & other surgery
                                            ["caesarean_section_oth_surg"],

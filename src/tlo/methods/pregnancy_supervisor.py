@@ -2436,6 +2436,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
         c = self.module.mnh_outcome_counter
+        la_params = self.sim.modules['Labour'].current_parameters
 
         # DENOMINATORS
         # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
@@ -2466,9 +2467,13 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_sepsis = c['clinical_chorioamnionitis'] + c['sepsis_intrapartum'] + c['sepsis_postnatal']
         total_pph = c['primary_postpartum_haemorrhage'] + c['secondary_postpartum_haemorrhage']
         total_fistula = c['vesicovaginal_fistula'] + c['rectovaginal_fistula']
-        total_neo_sepsis = c['early_onset_sepsis'] + c['late_onset_sepsis']
-        total_neo_enceph = c['mild_enceph'] + c['moderate_enceph'] + c['severe_enceph']
-        total_neo_resp_conds = c['respiratory_distress_syndrome'] + c['not_breathing_at_birth'] + total_neo_enceph
+        total_neo_sepsis = (c['early_onset_sepsis'] + c['late_onset_sepsis'] + c['early_onset_sepsis_pt'] +
+                            c['late_onset_sepsis_pt'])
+        total_neo_enceph = (c['mild_enceph'] + c['moderate_enceph'] + c['severe_enceph'] +
+                            c['mild_enceph_pt'] + c['moderate_enceph_pt'] + c['severe_enceph_pt'])
+        total_neo_resp_conds = (c['respiratory_distress_syndrome'] +
+                                c['not_breathing_at_birth'] + c['not_breathing_at_birth_pt'] +
+                                total_neo_enceph)
         total_cba = (c['congenital_heart_anomaly'] + c['limb_or_musculoskeletal_anomaly'] +
                      c['urogenital_anomaly'] + c['digestive_anomaly'] + c['other_anomaly'])
 
@@ -2493,6 +2498,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'postpartum_haem': rate(total_pph, live_births, 1000),
                           'fistula': rate(total_fistula, live_births, 1000),
                           'pn_anaemia': rate(total_pn_anaemia_cases, c['six_week_survivors'], 100)})
+
 
         # NEWBORN COMPLICATIONS
         logger.info(key='nb_comp_incidence',
@@ -2551,6 +2557,69 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'n_pnc1+': rate(n_pnc1, total_births, 100)})
 
         # Intervention met need
+        def met_need(treatments, cases):
+            if cases == 0:
+                return 0
+
+            return (treatments / cases) * 100
+
+        pph_ua_need_blood = c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])
+        pph_mrp_need_blood = c['pph_retained_placenta'] * (1 - la_params['prob_successful_manual_removal_placenta'])
+
+        logger.info(key="met_need",
+                    data={'pac_ep': met_need((c['post_abortion_care_core'] + c['ectopic_pregnancy_treatment']),
+                                             (c['ectopic_unruptured'] + c['complicated_spontaneous_abortion'] +
+                                              c['complicated_induced_abortion'])),
+
+                          'm_sepsis_cm': met_need(c['sepsis_treatment_deliv'],
+                                                  total_sepsis),
+
+                          'haem_cm_ut': met_need(c['pph_treatment_uterotonics_deliv'],
+                                                 c['pph_uterine_atony']),
+
+                          'haem_cm_mrp': met_need(c['pph_treatment_mrrp_deliv'],
+                                                  c['pph_retained_placenta']),
+
+                          'haem_cm_blood_pph': met_need(c['blood_transfusion_pph_deliv'],
+                                                        pph_ua_need_blood + pph_mrp_need_blood),
+
+                          'heam_cm_blood_aph': met_need(c['blood_transfusion_aph_deliv'],
+                                                        total_aph + c['uterine_rupture']),
+
+                          'ol_cm': met_need(c['avd_ol_deliv'],
+                                            (c['obstruction_malpos_malpres'] + c['obstruction_other'])),
+
+                          'spe_cm_htns': met_need(c['iv_anti_htns_deliv'],
+                                                     c['severe_pre_eclamp']),
+
+                          'spe_cm_mgso4': met_need(c['mgso4_spe_deliv'],
+                                                      c['severe_pre_eclamp']),
+
+                          'ec_cm_mgso4': met_need(c['mgso4_ec_deliv'],
+                                              c['eclampsia']),
+
+                          'cs_surg': 0,
+
+                          'n_sepsis_cm': met_need(c['neo_sepsis_treatment_all_deliv'],
+                                                  total_neo_sepsis),
+
+                          'ptb_cm_resus': met_need(c['neo_resus_preterm_deliv'],
+                                                   (c['respiratory_distress_syndrome'] +
+                                                   (c['mild_enceph_pt'] + c['moderate_enceph_pt'] +
+                                                    c['severe_enceph_pt'])) + c['not_breathing_at_birth_pt']
+                                                    - c['rds_enceph_dc']),
+
+                          'ptb_cm_sepsis': met_need(c['neo_sepsis_treatment_preterm'],
+                                                    (c['early_onset_sepsis_pt'] + c['late_onset_sepsis_pt'])),
+
+                          'ptb_cm_kmc': met_need(c['kmc_deliv'],
+                                                 c['low_birth_weight']),
+
+                          'neo_resus': met_need(c['neo_resus_all_deliv'] + c['neo_resus_preterm_deliv'],
+                                                total_neo_resp_conds)
+                          })
+
+        # Intervention met need for those seeking care
         int_data = {}
         for int in self.module.current_parameters['all_interventions']:
             assert c[f'{int}_deliv'] <= c[f'{int}_req']

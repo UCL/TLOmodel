@@ -1787,7 +1787,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
             mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
+                self, int_name='mgso4_spe', hsi_event=hsi_event,
                 q_param=[params['prob_hcw_avail_anticonvulsant'], params[f'mean_hcw_competence_{deliv_location}']],
                 cons=self.item_codes_lab_consumables['magnesium_sulfate'],
                 opt_cons=self.item_codes_lab_consumables['eclampsia_management_optional'])
@@ -1810,7 +1810,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
 
             iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
+                self, int_name='iv_anti_htns', hsi_event=hsi_event,
                 cons=self.item_codes_lab_consumables['iv_antihypertensives'],
                 alt_con=self.item_codes_lab_consumables['iv_antihypertensives_other'],
                 opt_cons=self.item_codes_lab_consumables['iv_drug_equipment'])
@@ -1827,7 +1827,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 cons = {_i: dose for _i in self.item_codes_lab_consumables['oral_antihypertensives']}
 
                 oral_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='anti_htn_mgso4', hsi_event=hsi_event, cons=cons)
+                    self, int_name='oral_anti_htns', hsi_event=hsi_event, cons=cons)
 
                 if oral_anti_htns_delivered:
                     df.at[person_id, 'la_gest_htn_on_treatment'] = True
@@ -1851,7 +1851,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
            (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia'):
 
             mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
+                self, int_name='mgso4_ec', hsi_event=hsi_event,
                 q_param=[params['prob_hcw_avail_anticonvulsant'], params[f'mean_hcw_competence_{deliv_location}']],
                 cons=self.item_codes_lab_consumables['magnesium_sulfate'],
                 opt_cons=self.item_codes_lab_consumables['eclampsia_management_optional'])
@@ -2138,12 +2138,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
-        if ((df.at[person_id, "pn_anaemia_following_pregnancy"] != 'severe') and
-            (df.at[person_id, 'la_uterine_rupture'] or
-             df.at[person_id, 'pn_postpartum_haem_secondary'] or
-            df.at[person_id, 'la_postpartum_haem'] or
-             (df.at[person_id, 'la_antepartum_haem'] != 'none'))):
-            intervention = "blood_transfusion"
+        if df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary']:
+            intervention = 'blood_transfusion_pph'
+        elif (df.at[person_id, 'la_antepartum_haem'] != 'none') or df.at[person_id, 'la_uterine_rupture']:
+            intervention = 'blood_transfusion_aph'
         else:
             intervention = "blood_transfusion_anaemia"
 

@@ -19,57 +19,31 @@ resourcefilepath = Path("./resources")
 
 # create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
-def get_table_one():
-    columns = ['age_years', 'la_parity', 'region_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
-                'li_urban', 'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
-    categorical = ['region_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban',
-                    'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
-    continuous = ['age_years', 'la_parity']
+#  ======================================= DEFINE SCENARIO INFORMATION  ===============================================
+scenario = 'testing_scenario_682612'
+results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
-    rename = {'age_years': 'Age (years)',
-               'la_parity': 'Parity',
-               'region_of_residence': 'Region',
-               'li_wealth': 'Wealth Quintile',
-               'li_bmi': 'BMI level',
-               'li_mar_stat': 'Marital Status',
-               'li_ed_lev': 'Education Level',
-               'li_urban': 'Urban/Rural',
-               'ps_prev_spont_abortion': 'Previous Miscarriage',
-               'ps_prev_stillbirth': 'Previous Stillbirth',
-               'ps_prev_pre_eclamp': 'Previous Pre-eclampsia',
-               'ps_prev_gest_diab': 'Previous Gestational Diabetes',
-              }
+# Create a folder to store graphs (if it hasn't already been created when ran previously)
+g_path = f'{outputspath}graphs_{scenario}'
 
-    all_preg_df = pd.read_excel(Path("./resources/ResourceFile_MaternalCohort") /
-                                        'ResourceFile_All2025PregnanciesCohortModel.xlsx')
-    population = 30_000
+if not os.path.isdir(g_path):
+        os.makedirs(f'{outputspath}graphs_{scenario}')
 
-    # Only select rows equal to the desired population size
-    if population <= len(all_preg_df):
-        preg_pop = all_preg_df.loc[0:population-1]
-    else:
-        # Calculate the number of rows needed to reach the desired length
-        additional_rows = population - len(all_preg_df)
+int_analysis = ['baseline',
+                'abortion',
+                'mat_sepsis_cm',
+                'pph_cm',
+                'ol_cm',
+                'spe_ec_cm',
+                'cs_surg',
+                'neo_sep_cm',
+                'preterm_cm',
+                'neo_resus']
 
-        # Initialize an empty DataFrame for additional rows
-        rows_to_add = pd.DataFrame(columns=all_preg_df.columns)
+info = get_scenario_info(results_folder)
+draws = [x for x in range(info['number_of_draws'])]
 
-        # Loop to fill the required additional rows
-        while additional_rows > 0:
-            if additional_rows >= len(all_preg_df):
-                rows_to_add = pd.concat([rows_to_add, all_preg_df], ignore_index=True)
-                additional_rows -= len(all_preg_df)
-            else:
-                rows_to_add = pd.concat([rows_to_add, all_preg_df.iloc[:additional_rows]], ignore_index=True)
-                additional_rows = 0
-
-        # Concatenate the original DataFrame with the additional rows
-        preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
-
-    mytable = TableOne(preg_pop[columns], categorical=categorical,
-                       continuous=continuous, rename=rename, pval=False)
-    print(mytable.tabulate(tablefmt = "fancy_grid"))
-    mytable.to_excel(Path(f"{outputspath}/{scenario}/0/table_one.xlsx") )
+#  ======================================= DEFINE HELPER FUNCTIONS  =================================================
 
 def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
     """Utility function to compute summary statistics
@@ -103,29 +77,6 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'testing_scenario_682612'
-results_folder= get_scenario_outputs(scenario, outputspath)[-1]
-
-# Create a folder to store graphs (if it hasn't already been created when ran previously)
-g_path = f'{outputspath}graphs_{scenario}'
-
-if not os.path.isdir(g_path):
-        os.makedirs(f'{outputspath}graphs_{scenario}')
-
-int_analysis = ['baseline',
-                'abortion',
-                'mat_sepsis_cm',
-                'pph_cm',
-                'ol_cm',
-                'spe_ec_cm',
-                'cs_surg',
-                'neo_sep_cm',
-                'preterm_cm',
-                'neo_resus']
-
-info = get_scenario_info(results_folder)
-draws = [x for x in range(info['number_of_draws'])]
-
 # Access dataframes generated from pregnancy supervisor
 def get_ps_data_frames(key, results_folder):
     def sort_df(_df):
@@ -142,10 +93,6 @@ def get_ps_data_frames(key, results_folder):
     results_df_summ = summarize_confidence_intervals(results_df)
 
     return {'crude':results_df, 'summarised':results_df_summ}
-
-results = {k:get_ps_data_frames(k, results_folder) for k in
-           ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
-            'yearly_mnh_counter_dict', 'intervention_coverage']}
 
 def get_deaths_dalys_demog(group, multiplier):
     direct_deaths = extract_results(
@@ -186,6 +133,14 @@ def get_deaths_dalys_demog(group, multiplier):
     dalys_df_sum = summarize_confidence_intervals(dalys_df)
 
     return [direct_deaths, dd_sum, dd_mr, dd_mr_sum, dalys_df, dalys_df_sum]
+
+#  ========================================== EXTRACT CORE DATA  =====================================================
+results = {k:get_ps_data_frames(k, results_folder) for k in
+           ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
+            'yearly_mnh_counter_dict', 'intervention_coverage']}
+
+# ======================================== FIGURE 1 - MET NEED =======================================================
+
 
 mat_deaths_dalys = get_deaths_dalys_demog('Maternal', 100_000)
 neo_deaths_dalys = get_deaths_dalys_demog('Neonatal', 1000)
@@ -652,3 +607,56 @@ for k in diff_results.keys():
 #
 # get_tornado_plot(mat_dalys_diffs, 'Maternal DALYs')
 # get_tornado_plot(neo_dalys_diffs, 'Neonatal DALYs')
+
+# Table 1
+# def get_table_one():
+#     columns = ['age_years', 'la_parity', 'region_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
+#                 'li_urban', 'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
+#     categorical = ['region_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban',
+#                     'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
+#     continuous = ['age_years', 'la_parity']
+#
+#     rename = {'age_years': 'Age (years)',
+#                'la_parity': 'Parity',
+#                'region_of_residence': 'Region',
+#                'li_wealth': 'Wealth Quintile',
+#                'li_bmi': 'BMI level',
+#                'li_mar_stat': 'Marital Status',
+#                'li_ed_lev': 'Education Level',
+#                'li_urban': 'Urban/Rural',
+#                'ps_prev_spont_abortion': 'Previous Miscarriage',
+#                'ps_prev_stillbirth': 'Previous Stillbirth',
+#                'ps_prev_pre_eclamp': 'Previous Pre-eclampsia',
+#                'ps_prev_gest_diab': 'Previous Gestational Diabetes',
+#               }
+#
+#     all_preg_df = pd.read_excel(Path("./resources/ResourceFile_MaternalCohort") /
+#                                         'ResourceFile_All2025PregnanciesCohortModel.xlsx')
+#     population = 40_000
+#
+#     # Only select rows equal to the desired population size
+#     if population <= len(all_preg_df):
+#         preg_pop = all_preg_df.loc[0:population-1]
+#     else:
+#         # Calculate the number of rows needed to reach the desired length
+#         additional_rows = population - len(all_preg_df)
+#
+#         # Initialize an empty DataFrame for additional rows
+#         rows_to_add = pd.DataFrame(columns=all_preg_df.columns)
+#
+#         # Loop to fill the required additional rows
+#         while additional_rows > 0:
+#             if additional_rows >= len(all_preg_df):
+#                 rows_to_add = pd.concat([rows_to_add, all_preg_df], ignore_index=True)
+#                 additional_rows -= len(all_preg_df)
+#             else:
+#                 rows_to_add = pd.concat([rows_to_add, all_preg_df.iloc[:additional_rows]], ignore_index=True)
+#                 additional_rows = 0
+#
+#         # Concatenate the original DataFrame with the additional rows
+#         preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
+#
+#     mytable = TableOne(preg_pop[columns], categorical=categorical,
+#                        continuous=continuous, rename=rename, pval=False)
+#     print(mytable.tabulate(tablefmt = "fancy_grid"))
+#     mytable.to_excel(Path(f"{outputspath}/{scenario}/0/table_one.xlsx") )

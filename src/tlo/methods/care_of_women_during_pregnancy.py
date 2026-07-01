@@ -4,6 +4,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from scripts.profiling.heavy_use_of_bed_days import person_id
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, pregnancy_helper_functions
@@ -1332,7 +1333,7 @@ class CareOfWomenDuringPregnancy(Module):
                         self.item_codes_preg_consumables['oral_antihypertensives'].items()}
 
         oral_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='anti_htn_mgso4', hsi_event=hsi_event, cons=updated_cons)
+            self, int_name='oral_anti_htns', hsi_event=hsi_event, cons=updated_cons)
 
         if oral_anti_htns_delivered:
             df.at[individual_id, 'ac_gest_htn_on_treatment'] = True
@@ -1349,7 +1350,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
 
         iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
+            self, int_name='iv_anti_htns', hsi_event=hsi_event,
             cons=self.item_codes_preg_consumables['iv_antihypertensives'],
             alt_con=self.item_codes_preg_consumables['iv_antihypertensives_other'],
             opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'],
@@ -1381,8 +1382,10 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         l_params = self.sim.modules['Labour'].current_parameters
 
+        int = 'msgo4_spe' if df.at[person_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
+
         mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
+            self, int_name=int, hsi_event=hsi_event,
             q_param=[l_params['prob_hcw_avail_anticonvulsant'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['magnesium_sulfate'],
             opt_cons=self.item_codes_preg_consumables['eclampsia_management_optional'],

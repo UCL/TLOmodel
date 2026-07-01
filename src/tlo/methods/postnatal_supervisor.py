@@ -788,7 +788,10 @@ class PostnatalSupervisor(Module):
         for person in onset_sepsis.loc[onset_sepsis].index:
             if person in nci:
                 nci[person]['sepsis_postnatal'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
+
+            comp = "late_onset_sepsis_pt" if (df.at[person, 'nb_early_preterm'] or df.at[person, 'nb_late_preterm']) \
+                else 'late_onset_sepsis'
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
 
         # Then we determine if care will be sought for newly septic newborns
         care_seeking = pd.Series(
