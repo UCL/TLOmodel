@@ -578,30 +578,23 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / "organisation" / "ResourceFile_Master_Facilities_List.csv"
         )
 
-        # Data on the clinics configurations and mappings to be used.
-        filepath = (
+        # Data on the clinics configurations and mappings. The active configuration is selected in
+        # pre_initialise_population, after scenario overrides have been applied.
+        self._clinic_configurations = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
             / "clinics"
-            / "ResourceFile_ClinicConfigurations"
-            / f"{self.parameters['clinic_configuration_name']}.csv"
+            / "ResourceFile_ClinicConfigurations",
+            files=None,
         )
 
-        self._clinic_configuration = pd.read_csv(filepath)
-        filepath = (
+        self._clinic_mappings = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
             / "clinics"
-            / "ResourceFile_ClinicMappings"
-            / f"{self.parameters['clinic_configuration_name']}.csv"
+            / "ResourceFile_ClinicMappings",
+            files=None,
         )
-
-        self._clinic_mapping = pd.read_csv(filepath)
-        self._clinic_names = self._clinic_configuration.columns.difference(
-            ["Facility_ID", "Officer_Type_Code"]
-        )
-        # Ensure that a valid clinic configuration has been specified
-        self.validate_clinic_configuration(self._clinic_configuration)
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters["Officer_Types_Table"] = pd.read_csv(
@@ -725,6 +718,21 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet["year"].values for sheet in self.parameters["yearly_HR_scaling"].values())
 
+    def set_clinic_configuration(self, clinic_configuration_name: str) -> None:
+        """Select the clinic configuration and mapping to use."""
+        if clinic_configuration_name not in self._clinic_configurations:
+            raise ValueError(f"Value of `clinic_configuration_name` not recognised: {clinic_configuration_name}")
+        if clinic_configuration_name not in self._clinic_mappings:
+            raise ValueError(
+                f"No clinic mapping file found for `clinic_configuration_name`: {clinic_configuration_name}"
+            )
+
+        self._clinic_configuration = self._clinic_configurations[clinic_configuration_name].copy()
+        self._clinic_mapping = self._clinic_mappings[clinic_configuration_name].copy()
+        self._clinic_names = self._clinic_configuration.columns.difference(["Facility_ID", "Officer_Type_Code"])
+
+        self.validate_clinic_configuration(self._clinic_configuration)
+
     def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
         """Validate the contents of the clinics capabilities dataframe.
         :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
@@ -775,6 +783,9 @@ class HealthSystem(Module):
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
+
+        # Select the clinic configuration after scenario overrides have been applied.
+        self.set_clinic_configuration(self.parameters["clinic_configuration_name"])
 
         # Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)
         self.process_healthsystem_organisation_files()
@@ -2148,7 +2159,7 @@ class HealthSystem(Module):
                     ok_to_run = self.do_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
-                
+
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = self.bed_days.issue_bed_days_according_to_availability(
