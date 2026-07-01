@@ -15,6 +15,9 @@ from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
 
 
+DALY_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
+
+
 def find_difference_relative_to_comparison_series(
     _ser: pd.Series,
     comparison: str,
@@ -66,15 +69,27 @@ def set_param_names_as_column_index_level_0(_df, param_names):
 
 
 def extract_annual_dalys(results_folder):
+
     def get_num_dalys_yearly(df: pd.DataFrame) -> pd.Series:
         """Return total DALYs for each year."""
-        # Sum all cause columns after removing metadata columns
+
+        # Add year if it isn't already present
+        if "year" not in df.columns:
+            df = df.assign(year=df["date"].dt.year)
+
+        cause_cols = [
+            c
+            for c in df.columns
+            if c not in DALY_METADATA_COLUMNS
+            and pd.api.types.is_numeric_dtype(df[c])
+        ]
+
         yearly = (
-            df.drop(columns=["date", "sex", "age_range"], errors="ignore")
-            .groupby("year")
-            .sum()
-            .sum(axis=1)
+            df.groupby("year")[cause_cols]
+              .sum()
+              .sum(axis=1)
         )
+
         return yearly
 
     return extract_results(
@@ -297,8 +312,11 @@ def extract_dalys_by_cause(results_folder):
         df = df.assign(year=df["date"].dt.year)
         df = df[df["year"].between(2027, 2034)]
         # Removing metadata columns
-        metadata_cols = ["date", "sex", "age_range", "year",]
-        cause_cols = [c for c in df.columns if c not in metadata_cols]
+        cause_cols = [
+            c for c in df.columns
+            if c not in DALY_METADATA_COLUMNS
+               and pd.api.types.is_numeric_dtype(df[c])
+        ]
         # Sum DALYs for each cause
         return df[cause_cols].sum()
 
@@ -321,10 +339,11 @@ def extract_dalys_by_age_group(results_folder):
         df = df.assign(year=df["date"].dt.year)
         df = df[df["year"].between(2027, 2034)]
 
-        # Metadata columns to exclude
-        metadata_cols = ["date", "sex", "age_range", "year",]
-        # DALY cause columns
-        cause_cols = [c for c in df.columns if c not in metadata_cols]
+        cause_cols = [
+            c for c in df.columns
+            if c not in DALY_METADATA_COLUMNS
+               and pd.api.types.is_numeric_dtype(df[c])
+        ]
 
         # Sum DALYs across causes first
         df["total_dalys"] = df[cause_cols].sum(axis=1)
