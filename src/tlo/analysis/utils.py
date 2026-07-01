@@ -662,7 +662,8 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         for run_folder in run_folders:
             # Find the original log-file written by the simulation
             if compressed_file_name_prefix is None:
-                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+                logfile_name = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+                logfile = Path(run_folder.path) / logfile_name
             else:
                 compressed_file_name = [
                     x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
