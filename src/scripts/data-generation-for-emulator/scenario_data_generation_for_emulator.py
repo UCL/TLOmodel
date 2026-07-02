@@ -154,7 +154,7 @@ class TrackIndividualHistories(BaseScenario):
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=20)
-        self.pop_size = 100
+        self.pop_size = 6000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
@@ -221,7 +221,7 @@ class TrackIndividualHistories(BaseScenario):
             get_parameters_for_status_quo(),
             {
                 "HealthSystem": {
-                    "mode_appt_constraints": 1,                 
+                    "mode_appt_constraints": 1,
                 },
                 "IndividualHistoryTracker": {
                     "generate_emulator_data": True,
