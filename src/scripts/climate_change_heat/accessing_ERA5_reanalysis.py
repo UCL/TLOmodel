@@ -1,51 +1,46 @@
 import os
-
 import cdsapi
 
 years = [str(year) for year in range(2010, 2025)]
 
+variables = [
+    "2m_temperature",
+    "2m_dewpoint_temperature",
+    "10m_u_component_of_wind",
+    "10m_v_component_of_wind",
+    "surface_solar_radiation_downwards",
+    "total_sky_direct_solar_radiation_at_surface",
+    "surface_pressure",
+]
+
 base_dir = "Users/rachelmurray/Documents/Heat_data/ERA5"
 
-for year in years:
-    year_dir = os.path.join(base_dir, year)
-    if not os.path.exists(year_dir):
-        os.makedirs(year_dir)
-    os.chdir(year_dir)
-    dataset = "reanalysis-era5-single-levels"
-    request = {
-        "product_type": ["reanalysis"],
-        "variable": [
-        "2m_temperature",
-    ],
-        "year": year,
-        "month": ["1", "2", "3", "4", "5", "6", "7", "8", "9",
-            "10", "11", "12"
-        ],
-        "day": [
-            "01", "02", "03",
-            "04", "05", "06",
-            "07", "08", "09",
-            "10", "11", "12",
-            "13", "14", "15",
-            "16", "17", "18",
-            "19", "20", "21",
-            "22", "23", "24",
-            "25", "26", "27",
-            "28", "29", "30",
-            "31"
-        ],
-        "time": ["00:00", "01:00", "02:00",
-                 "03:00", "04:00", "05:00",
-                 "06:00", "07:00", "08:00",
-                 "09:00", "10:00", "11:00",
-                 "12:00", "13:00", "14:00",
-                 "15:00", "16:00", "17:00",
-                 "18:00", "19:00", "20:00",
-                 "21:00", "22:00", "23:00"],
-        "data_format": "netcdf",
-        "download_format": "unarchived",
-        "area": [-9.36366167, 32.67161823, -17.12627881, 35.91841716]
-    }
+client = cdsapi.Client()
 
-    client = cdsapi.Client()
-    client.retrieve(dataset, request).download()
+for year in years:
+    for variable in variables:
+        # one subdirectory per variable, mirroring your NEX-GDDP layout
+        var_dir = os.path.join(base_dir, variable, year)
+        os.makedirs(var_dir, exist_ok=True)
+        os.chdir(var_dir)
+
+        out_file = f"{variable}_{year}.nc"
+        if os.path.exists(out_file):
+            print(f"Skipping {variable} {year} — already downloaded")
+            continue
+
+        dataset = "reanalysis-era5-single-levels"
+        request = {
+            "product_type": ["reanalysis"],
+            "variable": [variable],
+            "year": year,
+            "month": [f"{m:02d}" for m in range(1, 13)],
+            "day": [f"{d:02d}" for d in range(1, 32)],
+            "time": [f"{h:02d}:00" for h in range(24)],
+            "data_format": "netcdf",
+            "download_format": "unarchived",
+            "area": [-9.36366167, 32.67161823, -17.12627881, 35.91841716],
+        }
+
+        print(f"Requesting {variable} for {year}...")
+        client.retrieve(dataset, request).download(out_file)
