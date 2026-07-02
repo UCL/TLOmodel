@@ -13,7 +13,7 @@ variables = [
     "surface_pressure",
 ]
 
-base_dir = "Users/rachelmurray/Documents/Heat_data/ERA5"
+base_dir = "/Users/rachelmurray-watson/Documents/Heat_data/ERA5"
 
 client = cdsapi.Client()
 
