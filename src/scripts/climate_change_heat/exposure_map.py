@@ -258,7 +258,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
         # Create time mask for this target year (OND season)
-        ond_mask = (months >= 10) & (months <= 12)
+        #ond_mask = (months >= 10) & (months <= 12)
+        ond_mask = months !=13 #i.e. no mask
 
         # Store district-level data for each scenario
         all_scenarios_population_by_district_mean = {}
@@ -384,7 +385,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     linewidth=0.2,
                     legend=True,
                     legend_kwds={
-                        'label': f"% of OND {bracket_name} > {data['threshold']}°C",
+                        'label': f"% of {bracket_name} > {data['threshold']}°C",
                         'shrink': 0.6
                     },
                     vmin=0,
@@ -395,7 +396,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 bracket_label = "Day (tasmax)" if bracket_name == "day" else "Night (tasmin)"
                 ax.set_title(
                     f"WBGT {bracket_label} > {data['threshold']}°C ({threshold_name.capitalize()})\n"
-                    f"OND {target_year} ({data['total_days']} days)",
+                    f" {target_year} ({data['total_days']} days)",
                     fontsize=10
                 )
 

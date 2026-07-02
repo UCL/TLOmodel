@@ -32,24 +32,24 @@ scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
 
 ## Needed for mapping (using the first scenario's data for mapping)
 malawi_admin2 = gpd.read_file(
-    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
+    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
 )
-water_bodies = gpd.read_file(
-    "/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp"
-)
+# water_bodies = gpd.read_file(
+#     "/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp"
+# )
 
 worldpop_gdf = gpd.read_file(
-    "/Users/rem76/PycharmProjects/TLOmodel/resources/climate_change_impacts/worldpop_density_with_districts.shp"
+    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/worldpop_density_with_districts.shp"
 )
 worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
 
 # Get WBGT
 
 # Load netCDF data
-nc = Dataset('/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_wbgt/ACCESS-CM2/ssp245/wbgt_day_ACCESS-CM2_ssp245_malawi_2025_2040.nc', 'r')
+nc = Dataset('/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split/ACCESS-CM2/ssp245/wbgt_daynight_ACCESS-CM2_ssp245_malawi_2025_2040.nc', 'r')
 print(nc.variables.keys())
 
-wbgt_data = nc.variables['wbgt'][:]  # adjust variable name if needed
+wbgt_data = nc.variables['wbgt_day'][:]  # adjust variable name if needed
 lat_data = nc.variables['lat'][:]
 lon_data = nc.variables['lon'][:]
 
@@ -180,6 +180,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 continue
             scenario_name = scenario_names[draw]
             if total_population:
+
                 result_data_population = summarize(
                         extract_results(
                             results_folder,
@@ -190,7 +191,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         ),
                         only_mean=True,
                         collapse_columns=True,
-                    )[draw]
+                    )
+                row = result_data_population.loc[draw]
+                mean_by_district = row.xs("mean", level="stat")
+                lower_by_district = row.xs("lower", level="stat")
+                upper_by_district = row.xs("upper", level="stat")
+
+                all_scenarios_population_by_district_mean[draw] = mean_by_district
+                all_scenarios_population_by_district_lower[draw] = lower_by_district
+                all_scenarios_population_by_district_upper[draw] = upper_by_district
 
             else:
                 over_65_M = summarize(
@@ -203,7 +212,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ),
                     only_mean=True,
                     collapse_columns=True,
-                    )[draw]
+                    )
+                row_m = over_65_M.loc[draw]
+
                 over_65_F = summarize(
                     extract_results(
                         results_folder,
@@ -214,12 +225,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ),
                     only_mean=True,
                     collapse_columns=True,
-                    )[draw]
-                result_data_population = over_65_M + over_65_F
+                    )
+                row_f = over_65_F.loc[draw]
 
-            all_scenarios_population_by_district_mean[draw] = result_data_population['mean']
-            all_scenarios_population_by_district_lower[draw] = result_data_population['lower']
-            all_scenarios_population_by_district_upper[draw] = result_data_population['upper']
+                result_data_population = row_m + row_f
+                mean_by_district = result_data_population.xs("mean", level="stat")
+                lower_by_district = result_data_population.xs("lower", level="stat")
+                upper_by_district = result_data_population.xs("upper", level="stat")
+                all_scenarios_population_by_district_mean[draw] = mean_by_district
+                all_scenarios_population_by_district_lower[draw] = lower_by_district
+                all_scenarios_population_by_district_upper[draw] = upper_by_district
 
         # Create maps for each scenario
         fig, axes = plt.subplots(1, 2, figsize=(10, 10))
@@ -230,8 +245,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # malawi_admin2.plot(
             #     column="Population", ax=axes[i], legend=True, cmap="Blues", edgecolor="black")
             axes[i].axis("off")
-            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
-            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
+            #water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
+            #water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
 
             # set a lookup table
         district_pop_lookup = (
@@ -258,7 +273,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                               legend_kwds={'label': 'WBGT (°C)', 'shrink': 0.7})
         fig.tight_layout()
         plt.show()
-        #fig.savefig(output_folder / f"exposed_population_{target_year}.png", dpi=300, bbox_inches="tight")
+        fig.savefig(output_folder / f"exposed_population_{target_year}.png", dpi=300, bbox_inches="tight")
         plt.close(fig)
 
     all_years_data_population_mean[target_year] = all_scenarios_population_by_district_mean

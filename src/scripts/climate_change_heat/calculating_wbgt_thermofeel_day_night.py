@@ -65,7 +65,7 @@ DATA_DIR = Path(
 )
 
 OUT_DIR = Path(
-    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6"
+    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Splitz"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
