@@ -323,8 +323,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Check total DALYs
     # %% Define parameter names
-    counterfactual_scenario = 'Main Counterfactual/No growth + Lower bound settings'
-    actual_scenario = 'Main Actual'
+    counterfactual_scenario = 'No growth + Upper bound settings++'
+    actual_scenario = 'Historical growth + Upper bound settings++'
 
     # Absolute Number of Deaths and DALYs
     num_deaths = extract_results(
@@ -375,41 +375,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
-                comparison=actual_scenario)
+                comparison=counterfactual_scenario)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop([actual_scenario])
+    ).iloc[0].unstack().reindex(param_names).drop([counterfactual_scenario])
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
-                comparison=actual_scenario,
+                comparison=counterfactual_scenario,
                 scaled=True)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop([actual_scenario])
+    ).iloc[0].unstack().reindex(param_names).drop([counterfactual_scenario])
 
     num_dalys_averted = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
-                comparison=actual_scenario)
+                comparison=counterfactual_scenario)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop([actual_scenario])
+    ).iloc[0].unstack().reindex(param_names).drop([counterfactual_scenario])
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
-                comparison=actual_scenario,
+                comparison=counterfactual_scenario,
                 scaled=True)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop([actual_scenario])
+    ).iloc[0].unstack().reindex(param_names).drop([counterfactual_scenario])
 
     # DEATHS
-    name_of_plot = f'Deaths Averted vs Historical growth (uniform), {target_period()}'
+    name_of_plot = f'Deaths Averted vs No growth, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         pc_deaths_averted,  # num_deaths_averted
         annotations=None,
@@ -421,7 +421,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     f"{round(pc_deaths_averted.loc[actual_scenario, 'mean'])} ({round(pc_deaths_averted.loc[actual_scenario, 'lower'], 1)} - {round(pc_deaths_averted.loc[actual_scenario, 'upper'], 1)})% of that in Counterfactual"
     #     )
     ax.set_title(f"{name_of_plot}")
-    ax.set_ylabel('Deaths Averted vs Historical growth (uniform)')
+    ax.set_ylabel('Deaths Averted vs No growth')
     # fig.set_figwidth(5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -429,7 +429,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # DALYS
-    name_of_plot = f'DALYs Averted vs Historical growth (uniform), {target_period()}'
+    name_of_plot = f'DALYs Averted vs No growth, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         pc_dalys_averted,  # (num_dalys_averted / 1e6),
         annotations=None,
@@ -441,7 +441,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     f"{round(pc_dalys_averted.loc[actual_scenario, 'mean'])} ({round(pc_dalys_averted.loc[actual_scenario, 'lower'], 1)} - {round(pc_dalys_averted.loc[actual_scenario, 'upper'], 1)})% of that in Counterfactual"
     #     )
     ax.set_title(f"{name_of_plot}")
-    ax.set_ylabel('DALYS Averted vs Historical growth (uniform)')
+    ax.set_ylabel('DALYS Averted vs No growth')
     # fig.set_figwidth(5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
