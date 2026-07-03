@@ -367,7 +367,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 data['draw'] = draw
                 data['tot_monthly_dalys'] = total_dalys_incurred
                 for ip in indiv_params:
-                    data['individ_param_' + ip] = episode_start_properties[ip]
+                    data['individ_parameter_' + ip] = episode_start_properties[ip]
     
                 if episode_end_date is not None and episode_start_date is not None:
                     data['duration_of_episode'] = (episode_end_date - episode_start_date).days
