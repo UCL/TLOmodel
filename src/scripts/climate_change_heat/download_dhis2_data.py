@@ -97,9 +97,16 @@ def fetch_year_chunk(session: requests.Session, dx_uid: str, year: int) -> pd.Da
     Pull one indicator/data element for one calendar year, aggregated to
     ORG_UNIT_LEVEL beneath ORG_UNIT_ID, using the analytics endpoint.
     Retries on transient failures (timeouts, 5xx) before giving up.
+
+    IMPORTANT: pe must list the 12 monthly period IDs (e.g. "201501") rather
+    than the bare year ("2015") — DHIS2 treats a bare 4-digit value as the
+    ANNUAL period, which silently returns one yearly total per facility
+    instead of 12 monthly rows.
     """
+    monthly_periods = ";".join(f"{year}{month:02d}" for month in range(1, 13))
+
     params = {
-        "dimension": [f"dx:{dx_uid}", f"pe:{year}", f"ou:LEVEL-{ORG_UNIT_LEVEL};{ORG_UNIT_ID}"],
+        "dimension": [f"dx:{dx_uid}", f"pe:{monthly_periods}", f"ou:LEVEL-{ORG_UNIT_LEVEL};{ORG_UNIT_ID}"],
         "displayProperty": "NAME",
         "outputIdScheme": "NAME",
     }

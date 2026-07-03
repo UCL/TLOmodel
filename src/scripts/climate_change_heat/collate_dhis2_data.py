@@ -73,10 +73,11 @@ def load_and_standardise(path: Path) -> pd.DataFrame | None:
         c = col.strip().lower()
         if c in ("organisation unit", "orgunit", "org unit", "ou"):
             rename_map[col] = "facility"
-        elif c == "period":
+        elif c in ("period", "pe"):
             rename_map[col] = "period"
         elif c == "value":
             rename_map[col] = "value"
+        # 'dx' (data item code) is dropped — we already track the indicator via filename label
     df = df.rename(columns=rename_map)
 
     missing = {"facility", "period", "value"} - set(df.columns)
@@ -124,12 +125,23 @@ def main():
 
     long_df = pd.concat(frames, ignore_index=True)
 
-    # DHIS2 monthly periods are typically 'YYYYMM' strings — parse to a proper date
-    long_df["period_parsed"] = pd.to_datetime(long_df["period"], format="%Y%m", errors="coerce")
+    # DHIS2 periods can come back as 'YYYYMM' codes or, with outputIdScheme=NAME,
+    # human-readable names like 'January 2015' — try both formats.
+    period_str = long_df["period"].astype(str).str.strip()
+    parsed_numeric = pd.to_datetime(period_str, format="%Y%m", errors="coerce")
+    parsed_name = pd.to_datetime(period_str, format="%B %Y", errors="coerce")
+    long_df["period_parsed"] = parsed_numeric.fillna(parsed_name)
+
     n_unparsed = long_df["period_parsed"].isna().sum()
     if n_unparsed:
-        print(f"Warning: {n_unparsed} rows had a period that didn't parse as YYYYMM — "
-              f"check period format (examples: {long_df.loc[long_df['period_parsed'].isna(), 'period'].unique()[:5]})")
+        bad_examples = long_df.loc[long_df["period_parsed"].isna(), "period"].unique()[:5]
+        print(f"\n*** WARNING: {n_unparsed}/{len(long_df)} rows had a period that didn't parse ***")
+        print(f"    Example unparsed period values: {bad_examples}")
+        print("    Neither 'YYYYMM' nor 'Month YYYY' format matched — check the period format DHIS2 returned.")
+        if n_unparsed == len(long_df):
+            print("    ALL rows failed to parse — stopping here rather than silently producing an empty")
+            print("    wide panel (pivot_table drops rows with NaN index keys without warning).")
+            sys.exit(1)
 
     long_df = long_df.sort_values(["indicator", "facility", "period_parsed"])
     long_df.to_csv(LONG_OUTPUT_PATH, index=False)
