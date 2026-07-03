@@ -395,8 +395,8 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
         df = pd.DataFrame(data_for_draw)
         
         # Move individ params to end of dataframe
-        df = df[[c for c in df.columns if 'individ_param' not in c] +
-             [c for c in df.columns if 'individ_param' in c]]
+        df = df[[c for c in df.columns if 'individ_parameter' not in c] +
+             [c for c in df.columns if 'individ_parameter' in c]]
         
         # Now for this draw, attach draw parameter selection to individual as conditional variables
         # for k,v in draws_parameters.items()
