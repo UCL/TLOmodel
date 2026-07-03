@@ -1827,7 +1827,7 @@ class HealthSystem(Module):
         """
         [the_age, the_wealth, the_sex] = self.sim.population.props.loc[
             hsi_event.target,
-            ["age_range", "li_wealth", "sex"]
+            ["age_years", "li_wealth", "sex"]
         ]
 
         # HSI-Event
@@ -1851,7 +1851,7 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
         clinic: str,
-        age_of_person: str,
+        age_of_person: int,
         wealth_of_person: int,
         sex_of_person: str,
     ):
@@ -1870,7 +1870,7 @@ class HealthSystem(Module):
             "Facility_ID": facility_id if facility_id is not None else -99,
             "Equipment": sorted(event_details.equipment),
             "Clinic": clinic if clinic is not None else "None",
-            "Age": age_of_person,
+            "Age_Years": age_of_person,
             "Sex": sex_of_person,
             "Wealth": wealth_of_person,
         }
