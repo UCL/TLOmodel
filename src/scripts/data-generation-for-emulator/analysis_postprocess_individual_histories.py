@@ -18,6 +18,9 @@ from datetime import datetime
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
 
+module_name = 'CervicalCancer'
+indiv_params = ['hv_inf', 'hv_art', 'hv_diagnosed', 'age_exact_years', 'va_hpv']
+
 
 eval_env = {
         'datetime': datetime,  # Add the datetime class to the eval environment
@@ -81,12 +84,15 @@ def collect_diffs(dicts):
 
     return diffs
         
-def flatten_resource_access(data):
+def flatten_resource_access(data, followup=False):
     result = {}
     for level, resources in data.items():
         for res_type, counter in resources.items():
             for item, count in counter.items():
-                key = f"Level{level}_{res_type}_{item}"
+                if followup:
+                    key = f"FollowUp_Level{level}_{res_type}_{item}"
+                else:
+                    key = f"Level{level}_{res_type}_{item}"
                 result[key] = count
     return result
         
@@ -269,9 +275,11 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
             running_date = None
             episode_start_date = None
             episode_end_date = None
+            episode_followup_end_date = None
             episode_start_properties = {}
             episode_end_properties = {}
-            resource_access = {}
+            resource_access_during_episode = {}
+            resource_access_after_episode = {}
             total_dalys_incurred = 0
 
             # Iterate over each row in this group
@@ -280,20 +288,36 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 info = row['Info']
                 running_date = row['date']
                 
+                # The episode is 'concluded' but still see followup events
+                if (
+                    episode_end_date is not None
+                    and (
+                        module_name in row['event_name']
+                    )
+                ):
+                    episode_followup_end_date = running_date
+
+
                 # Update running properties
                 if len(progression_properties) == 0:
                     progression_properties = info
                 else:
                     progression_properties.update(info)
-                    
+
                 # Check if anything was accessed:
-                update_resource_access(info, resource_access)
+                if episode_end_date is not None and episode_followup_end_date is not None:
+                    # Resources accessed after end of episode, i.e. long term monitoring
+                    update_resource_access(info, resource_access_after_episode)
+                else:
+                    # Resources accessed during episode
+                    update_resource_access(info, resource_access_during_episode)
                 
                 # If event is daly report, add it to total dalys incurred
                 # REVIEW: this is module specific
                 if row['event_name'] == 'monthly_daly_report':
-                    total_dalys_incurred += float(info['CervicalCancer'])
+                    total_dalys_incurred += float(info[module_name])
             
+                # Identify polling event and store relevant properties
                 # REVIEW: this is module specific
                 if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1' and episode_start_date is None:
                     polling_event_found = True
@@ -305,28 +329,45 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                     episode_start_date = row['date']
                     episode_start_properties = progression_properties
                 
-                # Ensure episode started
+                # If episode started...
                 if (episode_start_date is not None):
-                    # Check if episode has resolved
-                    if episode_end_found is False and (progression_properties['is_alive']=='False' or progression_properties['ce_hpv_cc_status'] == 'none'):
+                    # ...check whether it should be concluded
+                    if (
+                        episode_end_found is False
+                        and (
+                            progression_properties['is_alive']=='False'
+                            or progression_properties['ce_hpv_cc_status'] == 'none'
+                            or pd.Timestamp(progression_properties['ce_cured_date_cc']) == row['date']
+                        )
+                    ):
                         episode_end_found = True
                         episode_end_date = row['date']
                         episode_end_properties = progression_properties
 
-            if episode_start_date is not None and episode_end_date is None:
-                print("Episode began but was not completed for this individual, draw = ", draw, ", person_ID = ", person_ID )
-                
+            # ============================================================
+            # Have now checked all available events for individual, check that they make sense
+            
+            # If found the start of the episode, but not the end, flag it!
+            if polling_event_found and episode_start_date is not None and episode_end_date is None:
+                if episode_start_date.year < 2011:
+                    print("Woman was included in original poll but resolution to episode cannot be found!")
+                    print("person_ID", person_ID, "draw", draw)
+                else:
+                    # Woman was too young to be included in original poll but developed cc in later life
+                    pass
+            # If found both start of event and end
             if polling_event_found and episode_end_found:
+            
+                # Check that dates make sense
+                assert episode_start_date < episode_end_date, "Order of dates illogical"
+            
                 # To store for each individual:
                 data = {}
                 data['person_ID_in_draw'] = person_ID
                 data['draw'] = draw
                 data['tot_monthly_dalys'] = total_dalys_incurred
-    
-                if episode_start_date > episode_end_date:
-                    print("End date ", episode_end_date)
-                    print("Start date", episode_start_date)
-                    exit(-1)
+                for ip in indiv_params:
+                    data['individ_param_' + ip] = episode_start_properties[ip]
     
                 if episode_end_date is not None and episode_start_date is not None:
                     data['duration_of_episode'] = (episode_end_date - episode_start_date).days
@@ -338,13 +379,24 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
                 else:
                     data['is_alive_after_ce'] = None
                 
-                resource_access_flatten = flatten_resource_access(resource_access)
+                resource_access_flatten = flatten_resource_access(resource_access_during_episode)
                 data.update(resource_access_flatten)
+                
+                # Add follow-up appointments if they were detected
+                if episode_followup_end_date is not None:
+                    assert episode_followup_end_date > episode_end_date
+                    data['duration_of_followup'] = (episode_followup_end_date - episode_end_date).days
+                    
+                    followup_resource_access_flatten = flatten_resource_access(resource_access_after_episode, followup=True)
+                    data.update(followup_resource_access_flatten)
 
                 data_for_draw.append(data)
                 
-        
         df = pd.DataFrame(data_for_draw)
+        
+        # Move individ params to end of dataframe
+        df = df[[c for c in df.columns if 'individ_param' not in c] +
+             [c for c in df.columns if 'individ_param' in c]]
         
         # Now for this draw, attach draw parameter selection to individual as conditional variables
         # for k,v in draws_parameters.items()
@@ -403,7 +455,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
     individual_histories = extract_individual_histories(results_folder)
     for d in range(len(individual_histories)):
         individual_histories[d].to_csv(f'individual_histories_draw{d}.csv')
-
+    
     # 4 Postprocess them, i.e. only extract outcomes of interest and add draw parameters
     dataset = postprocess_individual_histories(individual_histories, draws_parameters)
     # Only parameters in draws_parameters are the ones common across all draws, so
