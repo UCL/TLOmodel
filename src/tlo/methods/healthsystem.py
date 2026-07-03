@@ -1825,6 +1825,10 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
         """
+        [the_age, the_wealth, the_sex] = self.sim.population.props.loc[
+            hsi_event.target,
+            ["age_range", "li_wealth", "sex"]
+        ]
 
         # HSI-Event
         self.write_to_hsi_log(
@@ -1834,6 +1838,9 @@ class HealthSystem(Module):
             did_run=did_run,
             priority=priority,
             clinic=clinic,
+            age_of_person=the_age,
+            wealth_of_person=the_wealth,
+            sex_of_person=the_sex,
         )
 
     def write_to_hsi_log(
@@ -1844,6 +1851,9 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
         clinic: str,
+        age_of_person: str,
+        wealth_of_person: int,
+        sex_of_person: str,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
@@ -1860,6 +1870,9 @@ class HealthSystem(Module):
             "Facility_ID": facility_id if facility_id is not None else -99,
             "Equipment": sorted(event_details.equipment),
             "Clinic": clinic if clinic is not None else "None",
+            "Age": age_of_person,
+            "Sex": sex_of_person,
+            "Wealth": wealth_of_person,
         }
 
         logger.debug(key="HSI_Event", data=hsi_record, description="record of each HSI event")
