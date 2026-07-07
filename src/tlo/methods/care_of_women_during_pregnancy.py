@@ -1381,7 +1381,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         l_params = self.sim.modules['Labour'].current_parameters
 
-        int = 'msgo4_spe' if df.at[person_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
+        int = 'msgo4_spe' if df.at[individual_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
 
         mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name=int, hsi_event=hsi_event,
