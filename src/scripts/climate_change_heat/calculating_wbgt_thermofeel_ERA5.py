@@ -292,10 +292,9 @@ def calculate_wbgt_era5():
     fdir_frac = (fdir_wm2 / solar.where(solar > 1, 1)).clip(0, 1)  # direct fraction, not raw W/m^2
 
     ps_hpa = sp / 100.0
-
-    lats = t2m.lat.values
-    lons = t2m.lon.values
-    times = t2m.time.values
+    lats = t2m.latitude.values
+    lons = t2m.longitude.values
+    times = t2m.valid_time.values
     lon_grid, lat_grid = np.meshgrid(lons, lats)
 
     print(f"Calculating WBGT (Liljegren method) for {len(times)} hourly timesteps...")
@@ -310,13 +309,13 @@ def calculate_wbgt_era5():
             print(f"  Timestep {t_idx}/{len(times)}")
 
         ts = pd.Timestamp(time_val)
-        t_air = t2m.isel(time=t_idx).values
-        td = d2m.isel(time=t_idx).values
+        t_air = t2m.isel(valid_time=t_idx).values
+        td = d2m.isel(valid_time=t_idx).values
         rh = rh_from_dewpoint(t_air, td)
-        p_hpa = ps_hpa.isel(time=t_idx).values
-        sol = solar.isel(time=t_idx).values
-        fd = fdir_frac.isel(time=t_idx).values
-        spd = speed.isel(time=t_idx).values
+        p_hpa = ps_hpa.isel(valid_time=t_idx).values
+        sol = solar.isel(valid_time=t_idx).values
+        fd = fdir_frac.isel(valid_time=t_idx).values
+        spd = speed.isel(valid_time=t_idx).values
 
         # real solar geometry for this exact hour — no daily-mean approximation
         cossza = calculate_cos_solar_zenith_angle(
