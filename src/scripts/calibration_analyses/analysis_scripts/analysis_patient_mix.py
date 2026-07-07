@@ -216,7 +216,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     print(tab)
 
-    # read in TLM estimates
+    # todo: filter months and districts and extract patient proportions of age/sex/wealth/clinic/fac_level groups
+
+    # path to TLM data sources
     path_to_tlm_folder = (
         resourcefilepath
         / "healthsystem"
@@ -224,13 +226,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         / "TLM_2024"
     )
 
+    # read in TLM estimates
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
     fac_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_6_pat_load.dta", convert_categoricals=True)
+    pat_exit = pd.read_stata(path_to_tlm_folder / "tool_2_pat_exit.dta", convert_categoricals=True)
 
     # check that districts and facility levels in the two tools are a subset of TLO output;
     # district and facility level consistency in the two tools already checked in Stata
     hcw_tms_pat_load["district"] = hcw_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
     fac_tms_pat_load["district"] = fac_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
+    pat_exit["district"] = pat_exit["district"].replace({"Mzuzu": "Mzuzu City"})
 
     assert set(hcw_tms_pat_load['district'].unique()).issubset(
         set(daily_patient_load_per_hcw['District'].unique())
@@ -238,8 +243,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert set(hcw_tms_pat_load['fac_level'].unique()).issubset(
         set(daily_patient_load_per_hcw['Facility_Level'].unique())
     )
+    assert set(pat_exit['district'].unique()).issubset(
+        set(daily_patient_load_per_hcw['District'].unique())
+    )
+    assert set(pat_exit['fac_level'].unique()).issubset(
+        set(daily_patient_load_per_hcw['Facility_Level'].unique())
+    )
 
-    # merge all three estimates in one dataframe, noting the source and keeping all observations
+    # *** patient mix comparisons ***
+    def pat_prop_per_subgroup_total_period(_df, subgroup="fac_level"):
+        _df = _df[["respondent_id", subgroup]].groupby(subgroup).count().reset_index().rename(
+            columns={"respondent_id": "pat_volume", subgroup: "subgroup"})
+        _df["category"] = subgroup
+        _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
+        return _df
+
+   # todo: add clinic cat and clinic coarse cat to tool 2
+    subgroups = ["fac_level", "age_years", "wealthq", "sex", "clinic"]
+    pat_mix = pd.concat(
+        [pat_prop_per_subgroup_total_period(pat_exit, subgroup=s) for s in subgroups],
+        ignore_index=True
+    )
+
+    # *** patient load per hcw per day comparison ***
+    # merge all three patient load estimates in one dataframe, noting the source and keeping all observations
     hcw_tms_pat_load = hcw_tms_pat_load.rename(columns={
         "fac_level": "Facility_Level",
         "district": "District",
