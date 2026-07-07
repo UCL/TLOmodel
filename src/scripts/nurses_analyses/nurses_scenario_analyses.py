@@ -39,7 +39,7 @@ class StaffingScenario(BaseScenario):
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -94,115 +94,115 @@ class StaffingScenario(BaseScenario):
         """
         year_of_hr_scaling = 2027
         return {
-            # "Baseline Nurses / Default Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "default",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "Fewer Nurses / Default Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "More Nurses / Default Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "Baseline Nurses / Improved Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_max_healthsystem_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "default",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "Fewer Nurses / Improved Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_max_healthsystem_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "More Nurses / Improved Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_max_healthsystem_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "More CNP staff / Default Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "More CNP staff / Improved Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_max_healthsystem_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
-            #                 "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "More Nurses by District / Default Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
-            #                 "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
-            #
-            # "More Nurses by District / Improved Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_max_healthsystem_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
-            #                 "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
+            "Baseline Nurses / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "default",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "Fewer Nurses / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "More Nurses / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "Baseline Nurses / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "default",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "Fewer Nurses / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "worse_staffing_N",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "More Nurses / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_N",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "More CNP staff / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "More CNP staff / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "establishment_staffing_CNP",
+                            "year_HR_scaling_by_level_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "More Nurses by District / Default Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
+
+            "More Nurses by District / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_N",
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
 
             "More CNP staff by District / Default Healthsystem Function":
                 mix_scenarios(
@@ -215,16 +215,16 @@ class StaffingScenario(BaseScenario):
                     },
                 ),
 
-            # "More CNP staff by District / Improved Healthsystem Function":
-            #     mix_scenarios(
-            #         self._default_of_all_max_healthsystem_scenarios,
-            #         {
-            #             "HealthSystem": {
-            #                 'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_CNP",
-            #                 "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
-            #             },
-            #         },
-            #     ),
+            "More CNP staff by District / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_district_and_officer_type_mode': "establishment_by_district_and_CNP",
+                            "year_HR_scaling_by_district_and_officer_type": year_of_hr_scaling,
+                        },
+                    },
+                ),
         }
 
 
