@@ -74,7 +74,9 @@ class EmoncScenario(BaseScenario):
                                            ["neo_sepsis_treatment_all"],
 
                                            # Essential care of preterm of sick newborn including KMC
-                                           ["kmc", "neo_resus_preterm", "neo_sepsis_treatment_preterm"],
+                                           ["kmc",
+                                            "neo_resus_preterm",
+                                            "neo_sepsis_treatment_preterm"],
 
                                            # Newborn resuscitation
                                            ["neo_resus_all"]]

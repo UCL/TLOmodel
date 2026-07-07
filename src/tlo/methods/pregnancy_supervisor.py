@@ -2505,6 +2505,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data={'twin_birth': rate(c['twin_birth'], deliveries, 100),
                           'nb_sepsis': rate(total_neo_sepsis, live_births, 1000),
                           'nb_enceph': rate(total_neo_enceph, live_births, 1000),
+                          'enceph_timing_on_birth': c['enceph_timing_on_birth'],
+                          'enceph_timing_after_birth': c['enceph_timing_after_birth'],
                           'nb_resp_diff': rate(total_neo_resp_conds, live_births, 100),
                           'nb_cba': rate(total_cba, live_births, 1000),
                           'nb_rds': rate(c['respiratory_distress_syndrome'], total_preterm_birth, 1000),
@@ -2598,7 +2600,16 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'ec_cm_mgso4': met_need(c['mgso4_ec_deliv'],
                                               c['eclampsia']),
 
-                          'cs_surg': 0,
+                          'cs_surg_aph': met_need(c['caesarean_section_oth_surg_ip'],
+                                                  (c['uterine_rupture'] +
+                                                  total_aph +
+                                                   c['cs_spe_ec'] +
+                                                   c['cs_ol'] +
+                                                   c['cs_previous_scar'] +
+                                                   c['cs_other'])),
+
+                          'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp'],
+                                                  0),
 
                           'n_sepsis_cm': met_need(c['neo_sepsis_treatment_all_deliv'],
                                                   total_neo_sepsis),

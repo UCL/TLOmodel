@@ -20,7 +20,7 @@ resourcefilepath = Path("./resources")
 # create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
 #  ======================================= DEFINE SCENARIO INFORMATION  ===============================================
-scenario = 'testing_scenario_682612'
+scenario = 'testing_scenario_705829'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)

@@ -39,7 +39,7 @@ def generate_mnh_outcome_counter():
                     'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
                     'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
                     'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
-                    'pn_anaemia_severe',
+                    'pn_anaemia_severe', 'cs_spe_ec', 'cs_ol', 'cs_la_aph', 'cs_ur', 'cs_previous_scar', 'cs_other',
 
                     # newborn outcomes
                     'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',

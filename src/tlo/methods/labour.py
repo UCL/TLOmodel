@@ -2107,7 +2107,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         pph_surg_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='caesarean_section_oth_surg', hsi_event=hsi_event,
+            self, int_name='caesarean_section_oth_surg_pp', hsi_event=hsi_event,
             q_param=[params['prob_hcw_avail_surg'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['obstetric_surgery_core'],
             opt_cons=self.item_codes_lab_consumables['obstetric_surgery_optional'],
@@ -3189,8 +3189,11 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # delivered
         if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
 
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+                f'cs_{mni[person_id]["cs_indication"]}'] += 1
+
             cs_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self.module, int_name='caesarean_section_oth_surg', hsi_event=self,
+                self.module, int_name='caesarean_section_oth_surg_ip', hsi_event=self,
                 q_param=[params['prob_hcw_avail_surg'], params['mean_hcw_competence_hp']],
                 cons=self.module.item_codes_lab_consumables['caesarean_delivery_core'],
                 opt_cons=self.module.item_codes_lab_consumables['caesarean_delivery_optional'])
