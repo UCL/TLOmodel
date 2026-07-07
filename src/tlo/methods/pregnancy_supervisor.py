@@ -2569,7 +2569,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         pph_mrp_need_blood = c['pph_retained_placenta'] * (1 - la_params['prob_successful_manual_removal_placenta'])
 
         logger.info(key="met_need",
-                    data={'pac_ep': met_need((c['post_abortion_care_core'] + c['ectopic_pregnancy_treatment']),
+                    data={'pac_ep': met_need((c['post_abortion_care_core_deliv'] +
+                                              c['ectopic_pregnancy_treatment_deliv']),
                                              (c['ectopic_unruptured'] + c['complicated_spontaneous_abortion'] +
                                               c['complicated_induced_abortion'])),
 
@@ -2600,7 +2601,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'ec_cm_mgso4': met_need(c['mgso4_ec_deliv'],
                                               c['eclampsia']),
 
-                          'cs_surg_aph': met_need(c['caesarean_section_oth_surg_ip'],
+                          'cs_surg_aph': met_need(c['caesarean_section_oth_surg_ip_deliv'],
                                                   (c['uterine_rupture'] +
                                                   total_aph +
                                                    c['cs_spe_ec'] +
@@ -2608,8 +2609,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                    c['cs_previous_scar'] +
                                                    c['cs_other'])),
 
-                          'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp'],
-                                                  0),
+                          'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp_deliv'],
+                                                  pph_ua_need_blood + pph_mrp_need_blood),
 
                           'n_sepsis_cm': met_need(c['neo_sepsis_treatment_all_deliv'],
                                                   total_neo_sepsis),
@@ -2620,7 +2621,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                     c['severe_enceph_pt'])) + c['not_breathing_at_birth_pt']
                                                     - c['rds_enceph_dc']),
 
-                          'ptb_cm_sepsis': met_need(c['neo_sepsis_treatment_preterm'],
+                          'ptb_cm_sepsis': met_need(c['neo_sepsis_treatment_preterm_deliv'],
                                                     (c['early_onset_sepsis_pt'] + c['late_onset_sepsis_pt'])),
 
                           'ptb_cm_kmc': met_need(c['kmc_deliv'],

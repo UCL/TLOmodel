@@ -44,8 +44,6 @@ class EmoncScenario(BaseScenario):
                     'analysis_year': 2025}}
         else:
 
-             # TODO : UPDATE THESE NOW WEVE ADDED NEW INTERVENTIONS
-
              interventions_for_analysis = [# Ectopic case management & post - abortion case management
                                            ["ectopic_pregnancy_treatment",
                                             "post_abortion_care_core"],
@@ -64,11 +62,13 @@ class EmoncScenario(BaseScenario):
 
                                            # Management of pre-eclampsia and eclampsia
                                            ["iv_anti_htns",
-                                            "mgso4",
+                                            "mgso4_spe",
+                                            "mgso4_ec",
                                             "avd_spe_ec"],
 
                                            # Caesarean section (uncomplicated and complicated) & other surgery
-                                           ["caesarean_section_oth_surg"],
+                                           ["caesarean_section_oth_surg_ip",
+                                            "caesarean_section_oth_surg_pp"],
 
                                            # Newborn sepsis case management
                                            ["neo_sepsis_treatment_all"],

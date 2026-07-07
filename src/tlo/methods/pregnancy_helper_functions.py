@@ -70,13 +70,13 @@ def generate_mnh_outcome_counter():
 
     all_ints = ["urine_dipstick", "bp_measurement", "iron_folic_acid", "protein_supplement", "calcium_supplement",
                 "hb_test", "syphilis_test", "syphilis_treatment", "gdm_test", "full_blood_count",
-                "blood_transfusion_anaemia","blood_transfusion",
-                "anti_htn_mgso4", "abx_for_prom", "gdm_treatment_diet",
+                "blood_transfusion_anaemia", "blood_transfusion_aph", "blood_transfusion_pph", "oral_anti_htns",
+                "iv_anti_htns", "mgso4_spe", "mgso4_ec", "abx_for_prom", "gdm_treatment_diet",
                 "gdm_treatment_orals", "gdm_treatment_insulin", "post_abortion_care_core",
                 "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd_ol", "avd_spe_ec",
                 "avd_other", "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
-                "caesarean_section_oth_surg", "fistula_treatment", "neo_resus_all", "neo_resus_preterm", "kmc",
-                "neo_sepsis_treatment_preterm", "neo_sepsis_treatment_all"]
+                "caesarean_section_oth_surg_ip", "caesarean_section_oth_surg_pp", "fistula_treatment", "neo_resus_all",
+                "neo_resus_preterm", "kmc", "neo_sepsis_treatment_preterm", "neo_sepsis_treatment_all"]
 
     interventions = []
 
