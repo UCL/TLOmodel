@@ -4,7 +4,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from scripts.profiling.heavy_use_of_bed_days import person_id
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, pregnancy_helper_functions

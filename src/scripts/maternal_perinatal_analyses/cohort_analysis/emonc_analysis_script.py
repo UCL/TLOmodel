@@ -141,11 +141,14 @@ results = {k:get_ps_data_frames(k, results_folder) for k in
 
 # ======================================== FIGURE 1 - MET NEED =======================================================
 
+#  TODO
 
+# ============================ TABLE 2 - DEATHS, DALYS, TOTAL COSTS BY SCENARIO =======================================
+# Get maternal/newborn death data
 mat_deaths_dalys = get_deaths_dalys_demog('Maternal', 100_000)
 neo_deaths_dalys = get_deaths_dalys_demog('Neonatal', 1000)
 
-# get combined dalys
+# Get combined dalys
 total_dalys = pd.DataFrame(
     mat_deaths_dalys[4].to_numpy() + neo_deaths_dalys[4].to_numpy(),
     index=['total_dalys'],
@@ -153,16 +156,10 @@ total_dalys = pd.DataFrame(
 total_dalys_sum = summarize_confidence_intervals(total_dalys)
 
 # Get still births
-#  TODO: use IP stillbirths for DALY calculations only
-stillbirths = results['deaths_and_stillbirths']['crude'].loc[['total_stillbirths']]
-stillbirths_summ = summarize_confidence_intervals(stillbirths)
-sbr = results['deaths_and_stillbirths']['crude'].loc[['sbr']]
-sbr_summ = summarize_confidence_intervals(sbr)
+stillbirths = results['deaths_and_stillbirths']['crude'].loc[['intrapartum_stillbirths']]
 
-# add IP stillbirth to DALYs
-# TODO replace with IB stillbirth only
-# TODO adjust YLL for IP stillbirths
-
+# Add IP stillbirth to DALYs
+# TODO finalise YLL for stillbirths
 yll_from_sb = stillbirths * 90.0
 adjusted_dalys = pd.DataFrame(
     total_dalys.to_numpy() + yll_from_sb.to_numpy(),
@@ -178,11 +175,14 @@ results.update({
                 'mat_dalys': {'crude': mat_deaths_dalys[4], 'summarised': mat_deaths_dalys[5]},
                 'neo_dalys': {'crude': neo_deaths_dalys[4], 'summarised': neo_deaths_dalys[5]},
                 'total_dalys': {'crude': total_dalys, 'summarised': total_dalys_sum},
-                'total_stillbirths': {'crude': stillbirths, 'summarised': stillbirths_summ},
-                'sbr': {'crude': sbr, 'summarised': sbr_summ},
                 'adj_total_dalys': {'crude': adjusted_dalys, 'summarised': adj_dalys_summ},
                 })
 
+
+
+
+
+# ==================================================== DEBUGGING PLOTS ================================================
 # Summarised results
 def get_data(df, key, draw):
     return (df.loc[key, (draw, 'lower')],
