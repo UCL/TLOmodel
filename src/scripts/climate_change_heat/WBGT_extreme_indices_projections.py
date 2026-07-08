@@ -266,12 +266,20 @@ def compute_facility_level_indices(wbgt_day, wbgt_night, lat, lon, times,
 
 def rank_models(all_model_dfs):
     """Rank models by their mean WBGTx_day across all facilities and months.
+    Models with NaN mean (no valid data) are excluded with a warning.
     Returns a sorted list of (model_id, mean_wbgtx) from lowest to highest."""
     rankings = []
+    nan_models = []
     for df in all_model_dfs:
         model_id = df["model"].iloc[0]
         mean_val = df["wbgtx_day"].mean()
-        rankings.append((model_id, mean_val))
+        if np.isnan(mean_val):
+            nan_models.append(model_id)
+        else:
+            rankings.append((model_id, mean_val))
+    if nan_models:
+        print(f"  ⚠ {len(nan_models)} model(s) have no valid WBGT data and "
+              f"are excluded from ranking: {nan_models}")
     rankings.sort(key=lambda x: x[1])
     return rankings
 
@@ -280,6 +288,10 @@ def select_representative_models(rankings):
     """Pick three whole models: lowest, median, highest mean WBGT.
     For an even number of models, the median is the lower-middle one."""
     n = len(rankings)
+    if n < 3:
+        print(f"  ⚠ Only {n} valid model(s) — cannot select low/median/high")
+        return {role: rankings[min(i, n-1)][0]
+                for i, role in enumerate(["low", "median", "high"])}
     low_model = rankings[0][0]
     high_model = rankings[-1][0]
     median_idx = (n - 1) // 2  # lower-middle for even n
@@ -329,6 +341,19 @@ def main():
         print(f"Loading {nc_path.name}")
         wbgt_day, wbgt_night, lat, lon, times = load_daynight_wbgt(nc_path)
         print(f"  {len(times)} daily timesteps")
+
+        # Skip models with no valid data (handles both NaN and masked arrays)
+        valid_count = np.count_nonzero(np.isfinite(
+            np.ma.filled(wbgt_day, np.nan)))
+        total_count = wbgt_day.size
+        frac_invalid = 1.0 - (valid_count / total_count)
+        if valid_count == 0:
+            print(f"  ⚠ {model_id}: no valid data in wbgt_day — "
+                  "skipping entirely")
+            continue
+        elif frac_invalid > 0.5:
+            print(f"  ⚠ {model_id}: {frac_invalid:.0%} invalid in wbgt_day "
+                  "— proceeding but results may be unreliable")
 
         # --- Country-wide ---
         if not args.skip_country_level:
