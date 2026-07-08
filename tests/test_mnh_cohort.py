@@ -93,8 +93,10 @@ def test_run_sim_with_mnh_cohort_and_emonc_analyisis(tmpdir, seed):
     register_modules(sim)
 
     sim.modules['PregnancySupervisor'].parameters['analysis_year'] = 2025
-    sim.modules['PregnancySupervisor'].parameters['interventions_under_analysis'] = sim.modules['PregnancySupervisor'].parameters['all_interventions']
+    sim.modules['PregnancySupervisor'].parameters['interventions_under_analysis'] = sim.modules[
+        'PregnancySupervisor'].parameters['all_interventions']
     sim.modules['PregnancySupervisor'].parameters['intervention_analysis_availability'] = 1.0
+    sim.modules['PregnancySupervisor'].parameters['interventions_analysis'] = True
 
     sim.make_initial_population(n=500)
 

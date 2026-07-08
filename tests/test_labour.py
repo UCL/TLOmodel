@@ -684,6 +684,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     params['success_rate_uterine_repair'] = 1.0
 
     # Run the surgery and check the treatment has been delivered
+    mni[mother_id]['cs_indication'] = 'ur'
     ip_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
     assert df.at[mother_id, 'la_uterine_rupture_treatment']
     assert not df.at[mother_id, 'la_has_had_hysterectomy']
