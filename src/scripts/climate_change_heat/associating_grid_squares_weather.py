@@ -1,222 +1,345 @@
+"""
+wbgt_facility_panels_all_indicators.py
+
+    match + extract WBGT           -> once, for the union of facilities
+    for each indicator:
+        slice reporting panel      -> date x facility (that indicator's facilities)
+        align WBGT + covariates     -> same facility set/order
+        write three files           -> per indicator
+
+Reads the combined wide panel from combine_dhis2_data.py
+(one row per facility-month, one column per indicator).
+
+Outputs, per indicator (columns identical and identically ordered across the three):
+    historical_{var}_by_facility_{INDICATOR}.csv        date x facility
+    monthly_reporting_{INDICATOR}_by_facility_wbgt.csv  date x facility
+    expanded_facility_info_wbgt_{INDICATOR}.csv         covariate x facility
+"""
+
 import difflib
 import os
-import geopandas as gpd
+import re
+
 import numpy as np
 import pandas as pd
 import xarray as xr
 from scipy.spatial.distance import cdist
 
-# Configuration
-ANC = True
-Inpatient = False
-baseline = False
-baseline_all_years = False
+# ---------------------------------------------------------------------------
+# CONFIG
+# ---------------------------------------------------------------------------
+# Combined wide panel from combine_dhis2_data.py:
+#   columns = [facility, period_parsed, <one column per indicator>]
+DHIS2_WIDE_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
+                   "DHIS2_Malawi/combined/dhis2_panel_wide_facility_month.csv")
+DHIS2_FACILITY_COL = "facility"
+DHIS2_PERIOD_COL = "period_parsed"
+# Which indicator columns to process. None = every column except the two
+# structural columns above. Set a list to restrict, e.g. ["anc1_coverage"].
+INDICATORS = None
 
-# Load health facility data
-if ANC:
-    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
-elif Inpatient:
-    reporting_data = pd.read_csv(
-        '/Users/rem76/Desktop/Climate_change_health/Data/Inpatient_Data/HMIS_Total_Number_Admissions.csv')
-else:
-    reporting_data = pd.read_csv(
-        '/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv')
+WBGT_DIRECTORY = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5")
+WBGT_FILE_PREFIX = "wbgt_monthly_"
+WBGT_VARS = ['wbgt_day', 'wbgt_night']    # e.g. ["wbgt_day", "wbgt_night"] for CMIP6 files
+WBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
+WBGT_LAT_COORD = "lat"     # 'lat' in the CMIP6-derived files
+WBGT_LON_COORD = "lon"    # 'lon' in the CMIP6-derived files
 
-# Drop facilities with all NAs
-reporting_data = reporting_data.dropna(subset=reporting_data.columns[3:], how='all')
+FACILITIES_CSV = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_lat_long_region.csv")
 
-# Aggregate over months
-monthly_reporting_data_by_facility = {}
-if ANC:
-    months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if
-                 "HMIS Total Antenatal Visits " in col)
-elif Inpatient:
-    months = set(col.split("HMIS Total # of Admissions (including Maternity) ")[1] for col in reporting_data.columns if
-                 "HMIS Total # of Admissions (including Maternity) " in col)
-else:
-    months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
+FACILITIES_SHP = ("/Users/rachelmurray-watson/Desktop/Climate_change_health/"
+                  "Data/facilities_with_districts.shp")
+MALAWI_GRID_SHP = ("/Users/rachelmurray-watson/Desktop/Climate_change_health/"
+                   "Data/malawi_grid.shp")
 
-# Sort months chronologically
-months = [date.strip() for date in months]
-dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
-months = dates.sort_values().strftime('%B %Y').tolist()
+OUTPUT_DIR = ("/Users/rachelmurray-watson/Desktop/Climate_change_health/"
+              "Data/Temperature_data/WBGT/")
 
-for month in months:
-    columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[
-        reporting_data.columns.str.endswith(month)].tolist()
-    data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
-    numeric_data = data_of_interest_by_month.select_dtypes(include='number')
-    monthly_mean_by_facility = numeric_data.mean(axis=1)
-    monthly_reporting_data_by_facility[month] = monthly_mean_by_facility
+COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
+                  "Ftype", "A109__Latitude", "A109__Longitude"]
 
-monthly_reporting_by_facility = pd.DataFrame(monthly_reporting_data_by_facility)
-monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname"].values
+FUZZY_CUTOFF = 0.70
 
-# Load WBGT data
-wbgt_directory = "/Users/rem76/Desktop/Climate_change_health/Data/Temperature_data/WBGT/Historical/"
-wbgt_files = [f for f in os.listdir(wbgt_directory) if f.startswith('wbgt_monthly_') and f.endswith('.nc')]
-
-wbgt_file_path = os.path.join(wbgt_directory, wbgt_files[0])
-
-ds_wbgt = xr.open_dataset(wbgt_file_path)
-wbgt_data = ds_wbgt['wbgt'].values  # shape: (time, lat, lon)
-lat_data = ds_wbgt['latitude'].values
-long_data = ds_wbgt['longitude'].values
-time_data = pd.to_datetime(ds_wbgt['valid_time'].values)
-
-# Load Malawi grid
-malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
-
-# Extract wbgt by grid square
-wbgt_by_grid = {}
-for grid_idx, polygon in enumerate(malawi_grid["geometry"]):
-    minx, miny, maxx, maxy = polygon.bounds
-
-    # Find closest indices for grid bounds
-    index_for_x_min = ((long_data - minx) ** 2).argmin()
-    index_for_y_min = ((lat_data - miny) ** 2).argmin()
-
-    # Extract wbgt for this grid (using corner point for simplicity)
-    wbgt_data_for_grid = wbgt_data[:, index_for_y_min, index_for_x_min]
-    wbgt_by_grid[grid_idx] = wbgt_data_for_grid.tolist()
-
-
-# Load facility location data
-general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
-facilities_with_lat_long = pd.read_csv(
-    "/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
-
-# Match facilities to wbgt data
-wbgt_data_by_facility = {}
-facilities_with_location = []
-
-for reporting_facility in monthly_reporting_by_facility["facility"]:
-    # Try to match facility name
-    matching_facility_name = difflib.get_close_matches(
-        reporting_facility,
-        facilities_with_lat_long['Fname'],
-        n=3,
-        cutoff=0.90
-    )
-
-    if matching_facility_name:
-        match_name = matching_facility_name[0]
-        lat_for_facility = facilities_with_lat_long.loc[
-            facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"
-        ].iloc[0]
-        long_for_facility = facilities_with_lat_long.loc[
-            facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"
-        ].iloc[0]
-
-        if pd.isna(lat_for_facility):
-            print(f"No coordinates for {reporting_facility}")
-            continue
-
-        facilities_with_location.append(reporting_facility)
-
-        # Find closest grid point
-        index_for_x = ((long_data - long_for_facility) ** 2).argmin()
-        index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
-
-        # Extract wbgt for this facility
-        wbgt_data_for_facility = wbgt_data[:, index_for_y, index_for_x]
-        wbgt_data_by_facility[reporting_facility] = wbgt_data_for_facility.tolist()
-
-    # Handle special cases
-    elif reporting_facility == "Central East Zone":
-        grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0]
-        wbgt_data_by_facility[reporting_facility] = wbgt_by_grid[grid]
-        facilities_with_location.append(reporting_facility)
-
-    elif reporting_facility == "Central Hospital":
-        grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0]
-        wbgt_data_by_facility[reporting_facility] = wbgt_by_grid[grid]
-        facilities_with_location.append(reporting_facility)
-
-    else:
-        continue
-
-
-# Create DataFrame with wbgt data
-wbgt_df = pd.DataFrame.from_dict(wbgt_data_by_facility, orient='index').T
-wbgt_df.columns = facilities_with_location
-
-# Add time index
-wbgt_df.index = time_data[:len(wbgt_df)]
-wbgt_df.index.name = "date"
-
-# Prepare reporting data
-monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
-monthly_reporting_by_facility.index.name = "date"
-monthly_reporting_by_facility = monthly_reporting_by_facility.loc[
-                                :, monthly_reporting_by_facility.columns.isin(facilities_with_location)
-                                ]
-monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
-
-# Get additional facility information
-included_facilities_with_lat_long = facilities_with_lat_long[
-    facilities_with_lat_long["Fname"].isin(facilities_with_location)
-]
-
-additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype",
-                   'A109__Latitude', 'A109__Longitude']
-expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
-
-# Clean district names
-expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")
-expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Nkhatabay", "Nkhata Bay")
-
-expanded_facility_info.set_index("Fname", inplace=True)
-
-# Calculate minimum distances between facilities
-coordinates = expanded_facility_info[['A109__Latitude', 'A109__Longitude']].values
-distances = cdist(coordinates, coordinates, metric='euclidean')
-np.fill_diagonal(distances, np.inf)
-expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
-
-# Calculate average wbgt by facility
-average_wbgt_by_facility = {
-    facility: np.mean(wbgt_values)
-    for facility, wbgt_values in wbgt_data_by_facility.items()
+# Stub — populate from real mismatches in the unmatched list, not assumptions.
+ABBREVIATIONS = {
+    r"\bhc\b": "health centre",
+    r"\bh/c\b": "health centre",
+    r"\bdist\b": "district",
+    r"\bhosp\b": "hospital",
 }
 
-average_wbgt_df = pd.DataFrame.from_dict(
-    average_wbgt_by_facility, orient='index', columns=['average_wbgt']
-)
-average_wbgt_df.index.name = "Fname"
+# Reporting names resolved by district rule rather than name matching.
+# If these no longer appear in your DHIS2 org-unit names, leave empty and the
+# shapefile dependency is never touched.
+SPECIAL_CASES = {
+    "Central East Zone": "Nkhotakota",
+    "Central Hospital": "Lilongwe City",
+}
 
-expanded_facility_info['average_wbgt'] = expanded_facility_info.index.map(
-    average_wbgt_df['average_wbgt']
-)
+# ---------------------------------------------------------------------------
+# Load combined DHIS2 wide panel
+# ---------------------------------------------------------------------------
+print(f"DHIS2 wide panel: {DHIS2_WIDE_PATH}")
+dhis2 = pd.read_csv(DHIS2_WIDE_PATH)
+for col in (DHIS2_FACILITY_COL, DHIS2_PERIOD_COL):
+    if col not in dhis2.columns:
+        raise KeyError(f"'{col}' not in wide panel (found {list(dhis2.columns)[:8]}...)")
 
-expanded_facility_info = expanded_facility_info.T
-expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
+dhis2[DHIS2_PERIOD_COL] = pd.to_datetime(dhis2[DHIS2_PERIOD_COL], errors="coerce")
+if dhis2[DHIS2_PERIOD_COL].isna().any():
+    raise ValueError("Some period values didn't parse as dates in the wide panel")
 
-# Save outputs
-output_dir = "/Users/rem76/Desktop/Climate_change_health/Data/"
+indicator_cols = ([c for c in dhis2.columns
+                   if c not in (DHIS2_FACILITY_COL, DHIS2_PERIOD_COL)]
+                  if INDICATORS is None else list(INDICATORS))
+missing = [c for c in indicator_cols if c not in dhis2.columns]
+if missing:
+    raise KeyError(f"Requested indicators not in panel: {missing}")
+print(f"Indicators to process ({len(indicator_cols)}): {indicator_cols}")
 
-if ANC:
-    wbgt_df.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/historical_wbgt_by_smaller_facilities_with_ANC_lm.csv"))
-    expanded_facility_info.to_csv(
-        os.path.join(output_dir, "Temperature_data/WBGT/expanded_facility_info_wbgt_by_smaller_facility_lm_with_ANC.csv"))
-    monthly_reporting_by_facility.to_csv(
-        os.path.join(output_dir, "Temperature_data/WBGT/monthly_reporting_ANC_by_smaller_facility_lm_wbgt.csv"))
-    print("Saved ANC outputs")
+# Union of all reporting facilities (matching is done on this set, once)
+all_reporting_facilities = dhis2[DHIS2_FACILITY_COL].dropna().unique().tolist()
+print(f"Reporting facilities (union across indicators): {len(all_reporting_facilities)}")
 
-elif Inpatient:
-    wbgt_df.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/historical_wbgt_by_smaller_facilities_with_Inpatient_lm.csv"))
-    expanded_facility_info.to_csv(
-        os.path.join(output_dir, "Temperature_data/WBGT/expanded_facility_info_wbgt_by_smaller_facility_lm_with_Inpatient.csv"))
-    monthly_reporting_by_facility.to_csv(
-        os.path.join(output_dir, "Temperature_data/WBGT/monthly_reporting_Inpatient_by_smaller_facility_lm_wbgt.csv"))
-else:
-    wbgt_df.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/historical_wbgt_by_smaller_facility_lm.csv"))
-    expanded_facility_info.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/expanded_facility_info_wbgt_by_smaller_facility_lm.csv"))
-    monthly_reporting_by_facility.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/monthly_reporting_by_smaller_facility_lm_wbgt.csv"))
+# ---------------------------------------------------------------------------
+# Load WBGT netCDF (once)
+# ---------------------------------------------------------------------------
+wbgt_files = sorted(f for f in os.listdir(WBGT_DIRECTORY)
+                    if f.startswith(WBGT_FILE_PREFIX) and f.endswith(".nc"))
+if not wbgt_files:
+    raise FileNotFoundError(f"No '{WBGT_FILE_PREFIX}*.nc' in {WBGT_DIRECTORY}")
+if len(wbgt_files) > 1:
+    print(f"⚠ {len(wbgt_files)} WBGT files found; using {wbgt_files[0]}")
+wbgt_file_path = os.path.join(WBGT_DIRECTORY, wbgt_files[0])
+print(f"WBGT data:        {wbgt_file_path}")
+
+ds_wbgt = xr.open_dataset(wbgt_file_path)
+missing_vars = [v for v in WBGT_VARS if v not in ds_wbgt]
+if missing_vars:
+    raise KeyError(f"{missing_vars} not in file "
+                   f"(available: {list(ds_wbgt.data_vars)}) — update WBGT_VARS")
+wbgt_data = {var: ds_wbgt[var].values for var in WBGT_VARS}  # (time, lat, lon)
+lat_data = ds_wbgt[WBGT_LAT_COORD].values
+long_data = ds_wbgt[WBGT_LON_COORD].values
+time_data = pd.to_datetime(ds_wbgt[WBGT_TIME_COORD].values)
+
+# ---------------------------------------------------------------------------
+# Match facilities + extract WBGT — ONCE, for the union of facilities
+# ---------------------------------------------------------------------------
+facilities_with_lat_long = pd.read_csv(FACILITIES_CSV)
+
+
+def clean_name(name):
+    """Lowercase, strip parenthetical suffixes, expand abbreviations with
+    word-boundary regex, drop stray punctuation."""
+    name = str(name).lower().strip()
+    name = re.sub(r"\s*\([^)]*\)", "", name)
+    name = re.sub(r"[.,]", "", name)
+    name = re.sub(r"\s+", " ", name)
+    for pattern, expansion in ABBREVIATIONS.items():
+        name = re.sub(pattern, expansion, name)
+    return name.strip()
+
+
+facilities_clean = {clean_name(f): f
+                    for f in facilities_with_lat_long["Fname"].dropna().unique()}
+print(f"\nRegistry facilities: {len(facilities_clean)}")
+
+
+def get_special_case_wbgt(district):
+    """District-rule exposure: WBGT at the malawi_grid cell for that district.
+    Shapefiles are loaded lazily, only if a special case is present."""
+    import geopandas as gpd
+    if not hasattr(get_special_case_wbgt, "_cache"):
+        general_facilities = gpd.read_file(FACILITIES_SHP)
+        malawi_grid = gpd.read_file(MALAWI_GRID_SHP)
+        wbgt_by_grid = {}
+        for grid_idx, polygon in enumerate(malawi_grid["geometry"]):
+            minx, miny, maxx, maxy = polygon.bounds
+            ix = ((long_data - minx) ** 2).argmin()
+            iy = ((lat_data - miny) ** 2).argmin()
+            wbgt_by_grid[grid_idx] = {var: wbgt_data[var][:, iy, ix]
+                                      for var in WBGT_VARS}
+        get_special_case_wbgt._cache = (general_facilities, wbgt_by_grid)
+    general_facilities, wbgt_by_grid = get_special_case_wbgt._cache
+    grid = general_facilities[
+        general_facilities["District"] == district]["Grid_Index"].iloc[0]
+    return wbgt_by_grid[grid]
+
+
+wbgt_data_by_facility = {var: {} for var in WBGT_VARS}
+matched_facilities = []            # matched, in first-seen order
+facility_name_mapping = {}         # reporting name -> registry name (or itself)
+unmatched_facilities = []
+match_stats = {"exact": 0, "fuzzy": 0, "special_case": 0, "failed": 0}
+
+print("\n" + "=" * 80)
+print("MATCHING FACILITIES (once, for all indicators)")
+print("=" * 80)
+
+for reporting_facility in all_reporting_facilities:
+
+    if reporting_facility in SPECIAL_CASES:
+        district = SPECIAL_CASES[reporting_facility]
+        grid_wbgt = get_special_case_wbgt(district)
+        for var in WBGT_VARS:
+            wbgt_data_by_facility[var][reporting_facility] = grid_wbgt[var].tolist()
+        matched_facilities.append(reporting_facility)
+        facility_name_mapping[reporting_facility] = reporting_facility
+        match_stats["special_case"] += 1
+        print(f"★ SPECIAL: '{reporting_facility}' -> grid rule ({district})")
+        continue
+
+    reporting_clean = clean_name(reporting_facility)
+    original_facility_name = None
+
+    if reporting_clean in facilities_clean:
+        original_facility_name = facilities_clean[reporting_clean]
+        match_stats["exact"] += 1
+    else:
+        close = difflib.get_close_matches(
+            reporting_clean, facilities_clean.keys(), n=1, cutoff=FUZZY_CUTOFF)
+        if close:
+            original_facility_name = facilities_clean[close[0]]
+            match_stats["fuzzy"] += 1
+            print(f"≈ FUZZY: '{reporting_facility}' -> '{original_facility_name}'")
+
+    if original_facility_name is None:
+        unmatched_facilities.append(reporting_facility)
+        match_stats["failed"] += 1
+        continue
+
+    facility_row = facilities_with_lat_long[
+        facilities_with_lat_long["Fname"] == original_facility_name].iloc[0]
+    lat_for_facility = facility_row["A109__Latitude"]
+    long_for_facility = facility_row["A109__Longitude"]
+
+    if pd.isna(lat_for_facility) or pd.isna(long_for_facility):
+        unmatched_facilities.append(reporting_facility)
+        match_stats["failed"] += 1
+        continue
+
+    matched_facilities.append(reporting_facility)
+    facility_name_mapping[reporting_facility] = original_facility_name
+
+    index_for_x = ((long_data - long_for_facility) ** 2).argmin()
+    index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
+    for var in WBGT_VARS:
+        wbgt_data_by_facility[var][reporting_facility] = \
+            wbgt_data[var][:, index_for_y, index_for_x].tolist()
+
+print(f"\nMatched {len(matched_facilities)}/{len(all_reporting_facilities)} "
+      f"(exact {match_stats['exact']}, fuzzy {match_stats['fuzzy']}, "
+      f"special {match_stats['special_case']}); failed {match_stats['failed']}")
+if unmatched_facilities:
+    print(f"Unmatched ({len(unmatched_facilities)}): {unmatched_facilities[:20]}"
+          + (" ..." if len(unmatched_facilities) > 20 else ""))
+
+# ---------------------------------------------------------------------------
+# Build full WBGT panels + covariate table — ONCE, for all matched facilities
+# ---------------------------------------------------------------------------
+wbgt_dfs_full = {}
+for var in WBGT_VARS:
+    df = pd.DataFrame.from_dict(wbgt_data_by_facility[var], orient="index").T
+    df.columns = list(wbgt_data_by_facility[var].keys())
+    df.index = time_data[: len(df)]
+    df.index.name = "date"
+    wbgt_dfs_full[var] = df[matched_facilities]   # consistent column order
+
+registry_indexed = facilities_with_lat_long.drop_duplicates(
+    "Fname").set_index("Fname")
+
+info_rows = []
+for reporting_facility in matched_facilities:
+    registry_name = facility_name_mapping[reporting_facility]
+    if registry_name in registry_indexed.index:
+        row = registry_indexed.loc[registry_name, COVARIATE_COLS].copy()
+    else:
+        row = pd.Series(index=COVARIATE_COLS, dtype=object)
+    row.name = reporting_facility
+    info_rows.append(row)
+
+facility_info_full = pd.DataFrame(info_rows)
+facility_info_full.index.name = "facility"
+facility_info_full["Dist"] = facility_info_full["Dist"].replace(
+    {"Blanytyre": "Blantyre", "Nkhatabay": "Nkhata Bay"})
+
+# minimum distance uses the FULL matched set (nearest neighbour among all
+# matched facilities, not just one indicator's reporters)
+coords = facility_info_full[
+    ["A109__Latitude", "A109__Longitude"]].astype(float).values
+dmat = cdist(coords, coords, metric="euclidean")
+np.fill_diagonal(dmat, np.inf)
+dmat[np.isnan(dmat)] = np.inf
+min_dist = dmat.min(axis=1)
+facility_info_full["minimum_distance"] = np.where(
+    np.isfinite(min_dist), min_dist, np.nan)
+
+for var in WBGT_VARS:
+    facility_info_full[f"average_{var}"] = facility_info_full.index.map(
+        {fac: np.nanmean(vals)
+         for fac, vals in wbgt_data_by_facility[var].items()})
+
+# ---------------------------------------------------------------------------
+# Per-indicator loop: slice reporting panel, align, write three files
+# ---------------------------------------------------------------------------
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+matched_set = set(matched_facilities)
+
+print("\n" + "=" * 80)
+print("WRITING PER-INDICATOR FILE SETS")
+print("=" * 80)
+
+for indicator in indicator_cols:
+    # Pivot this indicator to date x facility from the long wide panel
+    reporting_wide = dhis2.pivot_table(
+        index=DHIS2_PERIOD_COL, columns=DHIS2_FACILITY_COL,
+        values=indicator, aggfunc="first").sort_index()
+    reporting_wide.index.name = "date"
+
+    # Facilities that (a) matched and (b) actually report this indicator,
+    # in the shared matched-facility order for cross-file alignment
+    reports_this = reporting_wide.columns[
+        reporting_wide.notna().any(axis=0)]
+    facs = [f for f in matched_facilities
+            if f in matched_set and f in set(reports_this)]
+
+    if not facs:
+        print(f"  {indicator}: no matched facilities report this — skipping")
+        continue
+
+    reporting_out = reporting_wide[facs]
+
+    # Align WBGT panels and covariate table to the SAME facility set/order
+    wbgt_out = {var: wbgt_dfs_full[var][facs] for var in WBGT_VARS}
+    info_out = facility_info_full.loc[facs].T   # covariate x facility
+
+    # Save
+    for var in WBGT_VARS:
+        p = os.path.join(OUTPUT_DIR,
+                         f"historical_{var}_by_facility_{indicator}.csv")
+        wbgt_out[var].to_csv(p)
+    reporting_out.to_csv(os.path.join(
+        OUTPUT_DIR, f"monthly_reporting_{indicator}_by_facility_wbgt.csv"))
+    info_out.to_csv(os.path.join(
+        OUTPUT_DIR, f"expanded_facility_info_wbgt_{indicator}.csv"))
+
+    print(f"  {indicator}: {len(facs)} facilities, "
+          f"{reporting_out.shape[0]} reporting months, "
+          f"{len(time_data)} WBGT months")
+
+# ---------------------------------------------------------------------------
+# Alignment note (WBGT vs reporting month coverage)
+# ---------------------------------------------------------------------------
+dhis2_months = pd.to_datetime(dhis2[DHIS2_PERIOD_COL]).dt.to_period("M")
+wbgt_months = pd.Series(time_data).dt.to_period("M")
+if set(dhis2_months) - set(wbgt_months):
+    print("\n⚠ Some DHIS2 months have no WBGT coverage — the regression script "
+          "aligns panels by row position, so confirm the date ranges match "
+          "before flattening.")
 
 print("\nProcessing complete!")
-print(f"wbgt data saved with {len(facilities_with_location)} facilities")
-print(f"Time range: {wbgt_df.index[0]} to {wbgt_df.index[-1]}")
+print(f"WBGT extracted once for {len(matched_facilities)} facilities; "
+      f"{len(indicator_cols)} indicator file sets written to {OUTPUT_DIR}")
 
-# Clean up
 ds_wbgt.close()
