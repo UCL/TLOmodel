@@ -613,14 +613,6 @@ class NewbornOutcomes(Module):
             result = self.eval(self.nb_linear_models['encephalopathy'], child_id)
 
         else:
-            assert not (is_preterm and ("neo_resus_preterm" in analysis_ints))
-            assert not "neo_resus_all" in analysis_ints
-
-            if not analysis_ints:
-                assert not mni[mother_id]['neo_will_receive_resus_if_needed']
-
-            assert not df.at[child_id, 'nb_received_neonatal_resus']
-
             # Or, if we are applying risk to a non-encephalopathic newborn who was not breathing at birth
             result = self.rng.random_sample() < params['prob_enceph_no_resus']
 
@@ -962,8 +954,7 @@ class NewbornOutcomes(Module):
         person_id = hsi_event.target
         params = self.current_parameters
 
-        if (df.at[person_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight') or \
-           (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
+        if df.at[person_id, 'nb_low_birth_weight_status'] not in {'normal_birth_weight', 'macrosomia'}:
 
             kmc_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='kmc', hsi_event=hsi_event, q_param=[params['prob_kmc_available']])

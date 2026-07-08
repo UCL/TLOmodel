@@ -39,7 +39,8 @@ def generate_mnh_outcome_counter():
                     'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
                     'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
                     'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
-                    'pn_anaemia_severe', 'cs_spe_ec', 'cs_ol', 'cs_la_aph', 'cs_ur', 'cs_previous_scar', 'cs_other',
+                    'pn_anaemia_severe', 'cs_spe_ec', 'cs_ol', 'cs_an_aph_pp', 'cs_an_aph_pa', 'cs_an_aph', 'cs_la_aph',
+                    'cs_ur', 'cs_previous_scar','cs_other',
 
                     # newborn outcomes
                     'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
@@ -71,7 +72,7 @@ def generate_mnh_outcome_counter():
     all_ints = ["urine_dipstick", "bp_measurement", "iron_folic_acid", "protein_supplement", "calcium_supplement",
                 "hb_test", "syphilis_test", "syphilis_treatment", "gdm_test", "full_blood_count",
                 "blood_transfusion_anaemia", "blood_transfusion_aph", "blood_transfusion_pph", "oral_anti_htns",
-                "iv_anti_htns", "mgso4_spe", "mgso4_ec", "abx_for_prom", "gdm_treatment_diet",
+                "iv_anti_htns_ec", "iv_anti_htns_gh", "mgso4_spe", "mgso4_ec", "abx_for_prom", "gdm_treatment_diet",
                 "gdm_treatment_orals", "gdm_treatment_insulin", "post_abortion_care_core",
                 "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd_ol", "avd_spe_ec",
                 "avd_other", "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
@@ -329,17 +330,19 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
         and (int_name in p_params["interventions_under_analysis"])):
 
         can_run = rng() < p_params["intervention_analysis_availability"]
+
         if not can_run:
             return False
 
-        # analysis says "it runs"; dx gate may still block effect
-        will_run = passes_dx_gate()
-        if will_run and to_log:
+        elif to_log:
             c[f"{int_name}_deliv"] += 1
             if cons is not None and opt_cons is not None:
                 log_cons_when_forcing_intervention_delivery()
 
-        return will_run
+        if dx_test is not None:
+            return passes_dx_gate()
+
+        return can_run
 
     # --- 2) Labour / PS analysis override for specific HSIs ---
     if l_params["la_analysis_in_progress"] or (
@@ -389,12 +392,15 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     test_ok = (dx_test is None) or  self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
             dx_tests_to_run=dx_test, hsi_event=hsi_event)
 
-    will_run = bool(quality_ok and consumables_ok and test_ok)
-
-    if will_run and to_log:
+    # We log if the intervention is delivered at all (e.g. cons and staff available). Result of any test shouldnt
+    # impact logging
+    if bool(quality_ok and consumables_ok) and to_log:
         c[f"{int_name}_deliv"] += 1
 
-    return will_run
+    # We only want to return "True" if intervention is delivered AND, if its a test, it detects what its testing for
+    run_or_run_with_pos_result = bool(quality_ok and consumables_ok and test_ok)
+
+    return run_or_run_with_pos_result
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):

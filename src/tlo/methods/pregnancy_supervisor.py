@@ -2592,8 +2592,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'ol_cm': met_need(c['avd_ol_deliv'],
                                             (c['obstruction_malpos_malpres'] + c['obstruction_other'])),
 
-                          'spe_cm_htns': met_need(c['iv_anti_htns_deliv'],
-                                                     c['severe_pre_eclamp']),
+                          'spe_ec_cm_htns': met_need(c['iv_anti_htns_ec_deliv'],
+                                                     c['severe_pre_eclamp'] + c['eclampsia']),
 
                           'spe_cm_mgso4': met_need(c['mgso4_spe_deliv'],
                                                       c['severe_pre_eclamp']),

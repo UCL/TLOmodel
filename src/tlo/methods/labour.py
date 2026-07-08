@@ -1807,10 +1807,28 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         person_id = hsi_event.target
 
         # If the treatment  has already been delivered the function won't run
-        if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
+        severe_htn = {'severe_gest_htn', 'severe_pre_eclamp','eclampsia'}
+        severe_spe_ec = {'severe_pre_eclamp', 'eclampsia'}
+
+        if df.at[person_id, 'ps_htn_disorders'] in severe_htn or df.at[person_id, 'pn_htn_disorders'] in severe_htn:
+
+            has_severe_gest_htn = (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn' or
+                                   df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn')
+
+            if not has_severe_gest_htn and df.at[person_id, 'ac_iv_anti_htn_treatment']:
+                return
+
+            int_name = (
+                "iv_anti_htns_ec"
+                if (
+                    df.at[person_id, 'ps_htn_disorders'] in severe_spe_ec
+                    or df.at[person_id, 'pn_htn_disorders'] in severe_spe_ec
+                )
+                else "iv_anti_htns_gh"
+            )
 
             iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='iv_anti_htns', hsi_event=hsi_event,
+                self, int_name=int_name, hsi_event=hsi_event,
                 cons=self.item_codes_lab_consumables['iv_antihypertensives'],
                 alt_con=self.item_codes_lab_consumables['iv_antihypertensives_other'],
                 opt_cons=self.item_codes_lab_consumables['iv_drug_equipment'])

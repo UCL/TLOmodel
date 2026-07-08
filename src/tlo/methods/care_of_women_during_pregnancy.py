@@ -1347,9 +1347,11 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
+        int_name = 'iv_anti_htns_ec' if (df.at[individual_id, 'ps_htn_disorders'] in
+                                         {'severe_pre_eclam', 'eclampsia'}) else "iv_anti_htns_gh"
 
         iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='iv_anti_htns', hsi_event=hsi_event,
+            self, int_name=int_name, hsi_event=hsi_event,
             cons=self.item_codes_preg_consumables['iv_antihypertensives'],
             alt_con=self.item_codes_preg_consumables['iv_antihypertensives_other'],
             opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'],
@@ -1381,7 +1383,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         l_params = self.sim.modules['Labour'].current_parameters
 
-        int = 'msgo4_spe' if df.at[individual_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
+        int = 'mgso4_spe' if df.at[individual_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
 
         mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name=int, hsi_event=hsi_event,

@@ -39,7 +39,8 @@ class EmoncScenario(BaseScenario):
                  mnh_cohort_module.MaternalNewbornHealthCohort()]
 
     def draw_parameters(self, draw_number, rng):
-        if draw_number == 1:
+
+        if draw_number == 0:
             return {'PregnancySupervisor': {
                     'analysis_year': 2025}}
         else:
@@ -87,26 +88,6 @@ class EmoncScenario(BaseScenario):
                         'interventions_analysis': True,
                         'interventions_under_analysis': interventions_for_analysis[draw_number-1],
                         'intervention_analysis_availability': 1.0}}
-
-        # if draw_number == 1:
-        #     return {'PregnancySupervisor': {
-        #             'analysis_year': 2025}}
-        #
-        # else:
-        #     interventions_for_analysis = [['sepsis_treatment', 'neo_sepsis_treatment'],   # TODO: abx for prom HTN?PAC?
-        #                                   ['anti_htn_mgso4'], # TODO: drop HTN?
-        #                                   ['pph_treatment_uterotonics', 'amtsl'],
-        #                                   ['pph_treatment_mrrp'],
-        #                                   ['post_abortion_care_core'],   # TODO: retained products?
-        #                                   ['neo_resus'],
-        #                                   ['blood_transfusion'],
-        #                                   ['caesarean_section_oth_surg']]
-        #
-        #     return {'PregnancySupervisor': {
-        #             'analysis_year': 2025,
-        #             'interventions_analysis': True,
-        #             'interventions_under_analysis': interventions_for_analysis[draw_number-2],
-        #             'intervention_analysis_availability': 1.0}}
 
 
 if __name__ == '__main__':

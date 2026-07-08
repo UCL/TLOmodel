@@ -3,15 +3,17 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
     labour,
+    mnh_cohort_module,
     newborn_outcomes,
     pregnancy_helper_functions,
 )
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.hsi_event import FacilityInfo
+from tlo.analysis.utils import parse_log_file
 
 start_date = Date(2010, 1, 1)
 

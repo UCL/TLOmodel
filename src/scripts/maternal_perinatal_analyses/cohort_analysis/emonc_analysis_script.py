@@ -139,12 +139,6 @@ results = {k:get_ps_data_frames(k, results_folder) for k in
            ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
             'yearly_mnh_counter_dict', 'intervention_coverage']}
 
-# ======================================== FIGURE 1 - MET NEED =======================================================
-
-#  TODO
-
-# ============================ TABLE 2 - DEATHS, DALYS, TOTAL COSTS BY SCENARIO =======================================
-# Get maternal/newborn death data
 mat_deaths_dalys = get_deaths_dalys_demog('Maternal', 100_000)
 neo_deaths_dalys = get_deaths_dalys_demog('Neonatal', 1000)
 
@@ -178,11 +172,33 @@ results.update({
                 'adj_total_dalys': {'crude': adjusted_dalys, 'summarised': adj_dalys_summ},
                 })
 
+#  ========================================== EXTRACT COST DATA  =====================================================
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2025, 12, 31))
+list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
+
+# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+#                                      resourcefilepath=resourcefilepath,
+#                                      suspended_results_folder=results_folder,
+#                                      _draws=draws,
+#                                      _years=list_of_relevant_years_for_costing,
+#                                      cost_only_used_staff= True,
+#                                      _discount_rate=0.03)
+#
+# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+
+# Read in costs (takes a long time to generate)
+# TODO: are these results scaled?
+input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
+input_costs = input_costs.set_index('Unnamed: 0')
+
+#  todo: above service costs
 
 
 
 
-# ==================================================== DEBUGGING PLOTS ================================================
+# ============================================ FIG 1 - MET NEED =======================================================
+# ================================ TABLE 1 - DEATHS/DALYS/COSTS =======================================================
+# ============================================ DEBUGGING PLOTS =======================================================
 # Summarised results
 def get_data(df, key, draw):
     return (df.loc[key, (draw, 'lower')],
@@ -314,27 +330,18 @@ get_diff_plots(neo_deaths_2, 'NMR (demog log)')
 get_diff_plots(mat_dalys_diffs, 'Maternal DALYs')
 get_diff_plots(neo_dalys_diffs, 'neonatal DALYs')
 
+
+# ======================================== FIGURE 1 - MET NEED =======================================================
+
+#  TODO
+
+# ============================ TABLE 2 - DEATHS, DALYS, TOTAL COSTS BY SCENARIO =======================================
+# Get maternal/newborn death data
+
 # COST CALCULATIONS
 
 # TEST COSTS DIFFER FROM BASELINE
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2025, 12, 31))
-list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
 
-
-# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
-#                                      resourcefilepath=resourcefilepath,
-#                                      suspended_results_folder=results_folder,
-#                                      _draws=draws,
-#                                      _years=list_of_relevant_years_for_costing,
-#                                      cost_only_used_staff= True,
-#                                      _discount_rate=0.03)
-#
-# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
-
-# Read in costs (takes a long time to generate)
-# TODO: are these results scaled?
-input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
-input_costs = input_costs.set_index('Unnamed: 0')
 
 cost_by_draw_and_year = input_costs.groupby(['draw', 'run', 'year'])['cost'].sum()
 cost_by_draw_and_year_df = cost_by_draw_and_year.reset_index().pivot(index='year', columns=['draw','run'], values='cost')

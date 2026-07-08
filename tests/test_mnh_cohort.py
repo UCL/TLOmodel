@@ -87,17 +87,24 @@ def test_mnh_cohort_module_updates_properties_as_expected(tmpdir, seed):
 
 
 def test_run_sim_with_mnh_cohort_and_emonc_analyisis(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=12345, resourcefilepath=resourcefilepath,
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
                      log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
 
     sim.modules['PregnancySupervisor'].parameters['analysis_year'] = 2025
-    sim.modules['PregnancySupervisor'].parameters['interventions_analysis'] = True
     sim.modules['PregnancySupervisor'].parameters['interventions_under_analysis'] = sim.modules['PregnancySupervisor'].parameters['all_interventions']
     sim.modules['PregnancySupervisor'].parameters['intervention_analysis_availability'] = 1.0
-    sim.make_initial_population(n=5000)
+
+    sim.make_initial_population(n=500)
 
     sim.simulate(end_date=Date(2026, 1, 2))
 
+    output= parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Test that 100% of requested interventions are delivered
+    int_cov = output['tlo.methods.pregnancy_supervisor']['intervention_coverage']
+    for col in int_cov:
+        if col != "date" and int_cov.at[0, col] is not None:
+            assert int_cov.at[0, col] == 100.0
 
