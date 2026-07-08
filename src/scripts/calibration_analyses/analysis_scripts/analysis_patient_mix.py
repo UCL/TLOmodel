@@ -208,15 +208,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                                 / (daily_patient_load_per_hcw['Staff_Count'] * 1.0)
                                                                 )
 
-    tab = pd.crosstab(
-        daily_patient_load_per_hcw["District"],
-        daily_patient_load_per_hcw["Facility_Level"],
-        dropna=False
-    )
-
-    print(tab)
-
-    # todo: filter months and districts and extract patient proportions of age/sex/wealth/clinic/fac_level groups
+    # # check the TLO outputs sample size
+    # tab = pd.crosstab(
+    #     daily_patient_load_per_hcw["District"],
+    #     daily_patient_load_per_hcw["Facility_Level"],
+    #     dropna=False
+    # )
+    #
+    # print(tab)
 
     # path to TLM data sources
     path_to_tlm_folder = (
@@ -230,6 +229,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
     fac_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_6_pat_load.dta", convert_categoricals=True)
     pat_exit = pd.read_stata(path_to_tlm_folder / "tool_2_pat_exit.dta", convert_categoricals=True)
+
+    # create age groups for patient exit data
+
 
     # check that districts and facility levels in the two tools are a subset of TLO output;
     # district and facility level consistency in the two tools already checked in Stata
@@ -258,8 +260,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
         return _df
 
-   # todo: add clinic cat and clinic coarse cat to tool 2
-    subgroups = ["fac_level", "age_years", "wealthq", "sex", "clinic"]
+    subgroups = ["fac_level", "age_group_tlo", "wealth_tlo", "sex", "loc_cat"]
     pat_mix = pd.concat(
         [pat_prop_per_subgroup_total_period(pat_exit, subgroup=s) for s in subgroups],
         ignore_index=True
