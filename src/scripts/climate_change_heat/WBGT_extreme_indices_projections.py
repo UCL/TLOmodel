@@ -169,9 +169,13 @@ def monthly_max_of_rolling_within_month(daily_series: pd.Series,
     The first (window-1) days of each month are NaN (no full window yet),
     so they cannot inflate the max.
     """
-    return daily_series.groupby(daily_series.index.to_period("M")).apply(
+    result = daily_series.groupby(daily_series.index.to_period("M")).apply(
         lambda month: month.rolling(window, min_periods=window).mean().max()
     )
+    # Convert PeriodIndex back to month-end DatetimeIndex so this aligns
+    # with monthly_max (which uses resample("ME") -> DatetimeIndex).
+    result.index = result.index.to_timestamp(how="end").normalize()
+    return result
 
 
 def add_lags(df, index_cols, lag_months):
@@ -257,25 +261,30 @@ def compute_facility_level_indices(wbgt_day, wbgt_night, lat, lon, times,
 
 
 # ---------------------------------------------------------------------------
-# Ensemble summary
+# Ensemble: rank models by overall mean WBGT, pick low / median / high
 # ---------------------------------------------------------------------------
 
-def compute_ensemble_summary(all_model_dfs):
-    """Median, p25, p75 across models per facility-month."""
-    stacked = pd.concat(all_model_dfs, ignore_index=True)
-    index_cols = [c for c in stacked.columns
-                  if c.startswith("wbgt")]
-    grouped = stacked.groupby(["facility_id", "date"])[index_cols]
-    summary = grouped.agg(["median", lambda x: x.quantile(0.25),
-                           lambda x: x.quantile(0.75)])
-    # flatten multi-level column names
-    summary.columns = [f"{col}_{stat}" if stat != "median"
-                       else f"{col}_median"
-                       for col, stat in summary.columns]
-    # rename the lambda columns
-    summary.columns = [c.replace("<lambda_0>", "p25").replace("<lambda_1>", "p75")
-                       for c in summary.columns]
-    return summary.reset_index()
+def rank_models(all_model_dfs):
+    """Rank models by their mean WBGTx_day across all facilities and months.
+    Returns a sorted list of (model_id, mean_wbgtx) from lowest to highest."""
+    rankings = []
+    for df in all_model_dfs:
+        model_id = df["model"].iloc[0]
+        mean_val = df["wbgtx_day"].mean()
+        rankings.append((model_id, mean_val))
+    rankings.sort(key=lambda x: x[1])
+    return rankings
+
+
+def select_representative_models(rankings):
+    """Pick three whole models: lowest, median, highest mean WBGT.
+    For an even number of models, the median is the lower-middle one."""
+    n = len(rankings)
+    low_model = rankings[0][0]
+    high_model = rankings[-1][0]
+    median_idx = (n - 1) // 2  # lower-middle for even n
+    median_model = rankings[median_idx][0]
+    return {"low": low_model, "median": median_model, "high": high_model}
 
 
 # ---------------------------------------------------------------------------
@@ -355,18 +364,30 @@ def main():
                   f"lag columns")
             all_facility_dfs.append(facility_df)
 
-    # --- Ensemble summary ---
+    # --- Model ranking: pick low / median / high whole models ---
     if len(all_facility_dfs) > 1:
-        print(f"\nComputing ensemble summary across {len(all_facility_dfs)} "
-              "models...")
-        ensemble = compute_ensemble_summary(all_facility_dfs)
-        ens_path = (args.output_dir /
-                    f"wbgt_extreme_indices_facility_ensemble_"
-                    f"{WBGT_SCENARIO}.csv")
-        ensemble.to_csv(ens_path, index=False)
-        print(f"Ensemble summary: {ens_path.name}")
-        print(f"  {ensemble['facility_id'].nunique()} facilities x "
-              f"{ensemble['date'].nunique()} months")
+        rankings = rank_models(all_facility_dfs)
+        print(f"\nModel ranking by mean WBGTx_day (lowest → highest):")
+        for model_id, mean_val in rankings:
+            print(f"  {model_id:25s}  {mean_val:.2f}°C")
+
+        representatives = select_representative_models(rankings)
+        print(f"\nRepresentative models:")
+        print(f"  Low:    {representatives['low']}")
+        print(f"  Median: {representatives['median']}")
+        print(f"  High:   {representatives['high']}")
+
+        # Write a small summary CSV for reference
+        ranking_df = pd.DataFrame(rankings, columns=["model", "mean_wbgtx_day"])
+        ranking_df["role"] = ""
+        for role, model_id in representatives.items():
+            ranking_df.loc[ranking_df.model == model_id, "role"] = role
+        rank_path = (args.output_dir /
+                     f"model_ranking_{WBGT_SCENARIO}.csv")
+        ranking_df.to_csv(rank_path, index=False)
+        print(f"\nModel ranking saved: {rank_path.name}")
+        print("Use the low/median/high per-model facility files for the "
+              "3-model spread in projections.")
 
     print("\nDone!")
 
