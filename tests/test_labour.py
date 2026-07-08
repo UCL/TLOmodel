@@ -328,6 +328,7 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
     assert date_event == sim.date
 
     # Run the caesarean HSI
+    mni[updated_id]['cs_indication'] = 'other'
     cs_hsi = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
         person_id=updated_id, module=sim.modules['Labour'], timing='intrapartum', facility_level_of_this_hsi='1b')
     cs_hsi.apply(person_id=updated_id, squeeze_factor=0.0)

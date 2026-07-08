@@ -11,7 +11,7 @@ class EmoncScenario(BaseScenario):
         self.seed = 7969672
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
-        self.pop_size = 15_000
+        self.pop_size = 40_000
         self.number_of_draws = 10
         self.runs_per_draw = 20
 
@@ -62,7 +62,7 @@ class EmoncScenario(BaseScenario):
                                            ["avd_ol"],
 
                                            # Management of pre-eclampsia and eclampsia
-                                           ["iv_anti_htns",
+                                           ["iv_anti_htns_ec",
                                             "mgso4_spe",
                                             "mgso4_ec",
                                             "avd_spe_ec"],
