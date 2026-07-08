@@ -73,7 +73,7 @@ OUTPUT_DIR = Path(
 # Update these to match the actual Master Health Facility Registry columns
 # (same placeholders as in wbgt_facility_panel.py - keep both files in sync).
 FACILITIES_CSV_PATH = Path(
-    "/Users/rachelmurray-watson/Documents/Heat_data/facilities_with_lat_long_region.csv"
+    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_lat_long_region.csv"
 )
 FACILITY_ID_COL = "Fname"
 LAT_COL = "A109__Latitude"
