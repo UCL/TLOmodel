@@ -47,13 +47,11 @@ WBGT_LON_COORD = "lon"    # 'lon' in the CMIP6-derived files
 
 FACILITIES_CSV = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_lat_long_region.csv")
 
-FACILITIES_SHP = ("/Users/rachelmurray-watson/Desktop/Climate_change_health/"
-                  "Data/facilities_with_districts.shp")
-MALAWI_GRID_SHP = ("/Users/rachelmurray-watson/Desktop/Climate_change_health/"
+FACILITIES_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_districts.shp")
+MALAWI_GRID_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/"
                    "Data/malawi_grid.shp")
 
-OUTPUT_DIR = ("/Users/rachelmurray-watson/Desktop/Climate_change_health/"
-              "Data/Temperature_data/WBGT/")
+OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/All_predictors_processed/")
 
 COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
                   "Ftype", "A109__Latitude", "A109__Longitude"]
@@ -289,7 +287,6 @@ matched_set = set(matched_facilities)
 print("\n" + "=" * 80)
 print("WRITING PER-INDICATOR FILE SETS")
 print("=" * 80)
-
 for indicator in indicator_cols:
     # Pivot this indicator to date x facility from the long wide panel
     reporting_wide = dhis2.pivot_table(
@@ -297,8 +294,6 @@ for indicator in indicator_cols:
         values=indicator, aggfunc="first").sort_index()
     reporting_wide.index.name = "date"
 
-    # Facilities that (a) matched and (b) actually report this indicator,
-    # in the shared matched-facility order for cross-file alignment
     reports_this = reporting_wide.columns[
         reporting_wide.notna().any(axis=0)]
     facs = [f for f in matched_facilities
@@ -309,12 +304,53 @@ for indicator in indicator_cols:
         continue
 
     reporting_out = reporting_wide[facs]
-
-    # Align WBGT panels and covariate table to the SAME facility set/order
     wbgt_out = {var: wbgt_dfs_full[var][facs] for var in WBGT_VARS}
-    info_out = facility_info_full.loc[facs].T   # covariate x facility
+    info_out = facility_info_full.loc[facs].T
+
+    # ----------------------------------------------------------------
+    # NEW: long-format regression panel
+    #   rows = (facility x date), columns = wbgt vars + indicator value
+    # ----------------------------------------------------------------
+    # Stack each WBGT variable from wide (date x facility) -> long
+    wbgt_long_parts = []
+    for var in WBGT_VARS:
+        part = (
+            wbgt_out[var]
+            .stack(future_stack=True)                     # (date, facility) MultiIndex
+            .rename(var)
+            .reset_index()
+            .rename(columns={"level_1": "facility"})  # date already named
+        )
+        wbgt_long_parts.append(part.set_index(["facility", "date"]))
+
+    # Merge all WBGT vars on the same (facility, date) index
+    wbgt_long = pd.concat(wbgt_long_parts, axis=1).reset_index()
+
+    # Stack the indicator the same way
+    indicator_long = (
+        reporting_out.stack(future_stack=True).rename(indicator).reset_index().rename(columns={"level_1": "facility"})
+    )
+
+    # Merge WBGT + indicator on facility + date
+    panel = pd.merge(wbgt_long, indicator_long,
+                     on=["facility", "date"], how="left")
+
+    # Optionally attach static covariates (altitude, district, etc.)
+    static_cols = COVARIATE_COLS + ["minimum_distance"]
+    panel = pd.merge(
+        panel,
+        facility_info_full[static_cols].reset_index(),   # index = facility
+        on="facility", how="left"
+    )
+
+    panel = panel.sort_values(["facility", "date"]).reset_index(drop=True)
 
     # Save
+    p_panel = os.path.join(OUTPUT_DIR,
+                           f"regression_panel_{indicator}.csv")
+    panel.to_csv(p_panel, index=False)
+
+    # --- existing outputs unchanged ---
     for var in WBGT_VARS:
         p = os.path.join(OUTPUT_DIR,
                          f"historical_{var}_by_facility_{indicator}.csv")
@@ -326,8 +362,7 @@ for indicator in indicator_cols:
 
     print(f"  {indicator}: {len(facs)} facilities, "
           f"{reporting_out.shape[0]} reporting months, "
-          f"{len(time_data)} WBGT months")
-
+          f"{len(time_data)} WBGT months  -> regression_panel written")
 # ---------------------------------------------------------------------------
 # Alignment note (WBGT vs reporting month coverage)
 # ---------------------------------------------------------------------------
