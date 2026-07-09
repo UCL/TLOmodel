@@ -179,13 +179,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert set(patient_volume_facility_id.Facility_ID.drop_duplicates()).issubset(
         set(hcw_count_facility_id.Facility_ID.drop_duplicates())
     )
-    daily_patient_load_per_hcw = patient_volume_facility_id[["Facility_ID", "Patient_Volume"]].merge(
+    daily_patient_load_per_hcw = patient_volume_facility_id[["Date", "Facility_ID", "Patient_Volume"]].merge(
         hcw_count_facility_id[["Facility_ID", "District", "Facility_Level", "Region", "Staff_Count"]],
         on=["Facility_ID"], how="right")
     # fill NAN entries
     daily_patient_load_per_hcw.loc[
-        daily_patient_load_per_hcw["Facility_Level"] == "4", ["Patient_Volume", "District", "Region"]
-    ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
+        daily_patient_load_per_hcw["Facility_Level"] == "4", ["Patient_Volume", "District", "Region", "Date"]
+    ] = [0, "Central Hospitals (Southern)", "Southern", patient_volume_facility_id.loc[0, "Date"]]  # ZMH
     daily_patient_load_per_hcw.loc[
         daily_patient_load_per_hcw["Facility_ID"] == 128, "District"
     ] = "Central Hospitals (Southern)"
@@ -196,18 +196,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         daily_patient_load_per_hcw["Facility_ID"] == 130, "District"
     ] = "Central Hospitals (Central)"
 
-    # 0.5649 is the prob. that any HCW is on duty on any day (estimates from CHAI data)
-    # given TLO assume the same HCWs in the HS
-    # alongside, we assume the patient seeking care independently of the availability of HCWs?
-    # otherwise, would need to adjust patient volume in the nominator, too; by which, the adjustments may cancel out.
-    # daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
-    #                                                             / (daily_patient_load_per_hcw['Staff_Count'] * 0.5649)
-    #                                                             )
-
-    daily_patient_load_per_hcw['Daily_Patient_Load_Per_HCW'] = (daily_patient_load_per_hcw['Patient_Volume']
-                                                                / (daily_patient_load_per_hcw['Staff_Count'] * 1.0)
-                                                                )
-
     # # check the TLO outputs sample size
     # tab = pd.crosstab(
     #     daily_patient_load_per_hcw["District"],
@@ -216,6 +204,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # )
     #
     # print(tab)
+
+    def daily_pat_load_per_hcw_per_resolution(_df, resolution=["District", "Facility_Level"], adjust_hcw=True):
+        res_plus_date = resolution + ["Date"]
+        _df = daily_patient_load_per_hcw.groupby(res_plus_date).agg(
+            {"Staff_Count": "sum", "Patient_Volume": "sum"}
+        ).reset_index()
+        if adjust_hcw:
+            # Adjust available HCWs on duty every day by a ratio of 0.5649,
+            # which is the prob. that any HCW is on duty on any day (estimates from CHAI data: 206.3381/365.25),
+            # given TLO assumes the same HCWs in the HS every day in a year.
+            # (TLO also assumes the patients seek care independently of the availability of HCWs and seek care every day;
+            # so no need to adjust patient volumes)
+            _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / (_df["Staff_Count"] * 206.3381 / 365.25)
+        else:
+            _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / _df["Staff_Count"]
+
+        return _df
+
+    daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
 
     # path to TLM data sources
     path_to_tlm_folder = (
@@ -284,9 +291,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # from TLO output
 
-
     # *** patient load per hcw per day comparison ***
-    # merge all three patient load estimates in one dataframe, noting the source and keeping all observations
+    # merge all three patient load estimates at the same resolution in one dataframe,
+    # noting the source and keeping all observations
     hcw_tms_pat_load = hcw_tms_pat_load.rename(columns={
         "fac_level": "Facility_Level",
         "district": "District",
