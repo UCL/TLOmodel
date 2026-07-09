@@ -1,5 +1,6 @@
-import cdsapi
 import os
+
+import cdsapi
 
 years = [str(year) for year in range(2019, 2020)]
 

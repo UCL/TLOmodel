@@ -16,10 +16,11 @@ Where:
 """
 
 import math
+from datetime import datetime
+from pathlib import Path
+
 import numpy as np
 import xarray as xr
-from pathlib import Path
-from datetime import datetime
 
 # ============================================================================
 # Physical constants

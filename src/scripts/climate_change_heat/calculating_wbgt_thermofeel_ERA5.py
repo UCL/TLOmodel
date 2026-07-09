@@ -30,10 +30,11 @@ wbgt_extreme_indices_ERA5_historical.nc     wbgtx_* and wbgt5x_* (day + night)
 """
 
 import warnings
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pathlib import Path
 
 # ============================================================================
 # Physical constants

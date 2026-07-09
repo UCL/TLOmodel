@@ -3,15 +3,12 @@ import argparse
 from pathlib import Path
 from typing import Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, summarize
 
 min_year = 2020
 max_year = 2027

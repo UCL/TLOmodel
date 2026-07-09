@@ -1,9 +1,9 @@
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import Point
-from pathlib import Path
 import os
+from pathlib import Path
 
+import geopandas as gpd
+import pandas as pd
+from shapely.geometry import Point
 
 resourcefilepath = '/Users/rem76/PycharmProjects/TLOmodel/resources'
 

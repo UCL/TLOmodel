@@ -1,12 +1,10 @@
 
 from pathlib import Path
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-
 
 import numpy as np
 import pandas as pd
 
-from tlo import logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
 logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')

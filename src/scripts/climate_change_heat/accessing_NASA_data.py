@@ -11,11 +11,12 @@ Usage:
     python find_and_download_missing_NASA_data.py --dry-run  # scan only, no downloads
 """
 
-import sys
 import re
+import sys
 import time
-import requests
 from pathlib import Path
+
+import requests
 
 # ============================================================================
 # Configuration - must match collate_NASA_nc_files.py / accessing_NASA_data.py

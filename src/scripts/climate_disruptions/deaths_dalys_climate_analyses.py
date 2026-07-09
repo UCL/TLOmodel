@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 from typing import Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date

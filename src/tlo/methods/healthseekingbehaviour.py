@@ -21,6 +21,7 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
 )
+
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 # ---------------------------------------------------------------------------------------------------------

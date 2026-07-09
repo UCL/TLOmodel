@@ -1,5 +1,6 @@
-import xarray as xr
 from pathlib import Path
+
+import xarray as xr
 
 BASE_DIR = Path(
     "/Users/rachelmurray-watson/Documents/Heat_data/NASA_GDDP-CMIP6"

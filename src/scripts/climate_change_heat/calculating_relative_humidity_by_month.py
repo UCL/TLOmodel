@@ -1,8 +1,9 @@
 import os
-import numpy as np
-import xarray as xr
 from glob import glob
 from pathlib import Path
+
+import numpy as np
+import xarray as xr
 
 
 def calculate_vapor_pressure_from_huss(huss, ps=101325):

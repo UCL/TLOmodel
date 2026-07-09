@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional,
 
 import numpy as np
 
-from tlo import Date, logging, DateOffset
+from tlo import Date, DateOffset, logging
 from tlo.events import Event
 from tlo.notify import notifier
 

@@ -1,15 +1,13 @@
 import argparse
 from pathlib import Path
-import pandas as pd
-import numpy as np
-from matplotlib import pyplot as plt
-from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    summarize,
-    parse_log_file
-)
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
+from tlo import Date
+from tlo.analysis.utils import extract_results, parse_log_file, summarize
 
 min_year = 2020
 max_year = 2028
