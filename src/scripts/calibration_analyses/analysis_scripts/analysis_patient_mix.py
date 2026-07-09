@@ -135,6 +135,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df
 
+    def get_patient_mix_total_period(_df, subgroup="Facility_Level"):
+        # get patient volume by facility id
+        _df = get_patient_count_facility_id(_df) \
+            .groupby(["Facility_ID"])["daily_patient_volume"].sum() \
+            .reset_index() \
+            .rename(columns={"daily_patient_volume": "patient_volume_total_period"})
+        _df = merge_info_from_mfl(_df)
+
+        # drop HQ/Facility_Level= 5
+        _df.drop(index=_df[_df["Facility_Level"] == "5"].index, inplace=True)
+
+        # fill NANs
+        _df.loc[
+            _df["Facility_Level"] == "4", ["daily_patient_volume", "District", "Region"]
+        ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
+        _df.loc[
+            _df["Facility_ID"] == 128, "District"
+        ] = "Central Hospitals (Southern)"
+        _df.loc[
+            _df["Facility_ID"] == 129, "District"
+        ] = "Central Hospitals (Northern)"
+        _df.loc[
+            _df["Facility_ID"] == 130, "District"
+        ] = "Central Hospitals (Central)"
+
+        # group up by subgroups and get patient mix
+        _df = _df.groupby(subgroup)["patient_volume_total_period"].sum().reset_index()
+        _df["category"] = subgroup
+        _df["patient_proportion"] = _df["patient_volume_total_period"] / _df["patient_volume_total_period"].sum()
+        _df["source"] = "TLO"
+
+        _df = _df[["source", "category", "patient_proportion"]].set_index(["source", "category"])
+
+        return _df
 
     # log = load_pickled_dataframes(results_folder, 0, 0)
     # h = pd.DataFrame(
@@ -289,7 +323,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     pat_mix = pd.concat([pat_mix, pat_mix_fac_tms], ignore_index=True)
 
-    # from TLO output
+    # todo: from TLO output
+    subgroups_tlo = ["Facility_Level", "age_group_tlo", "wealth_tlo", "sex", "loc_cat"]
+    patient_mix_draw_run = {}
+    for sg in subgroups_tlo:
+        patient_mix_draw_run[sg] = extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem",
+            key="HSI_Event",
+            custom_generate_series=get_patient_mix_total_period,
+            do_scaling=True,
+        )
+        patient_mix_draw_run[sg] = summarize(
+            patient_mix_draw_run[sg],
+        )
+
+     patient_mix_tlo = pd.concat([patient_mix_draw_run[sg] for sg in subgroups_tlo], ignore_index=True)
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
