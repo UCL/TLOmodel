@@ -2,14 +2,34 @@
 Calculate WBGT from ERA5 hourly reanalysis data for Malawi — vectorised.
 WBGT = 0.7 * Twb + 0.2 * Tg + 0.1 * Ta  (Liljegren method)
 
+
+    wbgt_day / wbgt_night     monthly MEAN of daily max / min   (feeds the
+                              monthly-mean facility panel)
+    wbgtx_day / wbgtx_night   monthly MAX  of daily max / min   (WBGTx, mirrors
+                              WBGT_extreme_indices_projections.py)
+    wbgt5x_*                  monthly max of within-month 5-day rolling mean of
+                              daily max / min                   (WBGT5x)
+
+GRID CO-REGISTRATION
+--------------------
+ERA5 and NEX-GDDP-CMIP6 are both 0.25 deg but on grids staggered by ~0.125 deg,
+so a facility can fall in different cells between branches. With REGRID_TO_CMIP6
+set, the ERA5 monthly / index fields are additionally interpolated onto the
+CMIP6 grid (read from an actual CMIP6 file) and written as *_cmip6grid.nc, so
+facility -> cell assignment is identical in both branches. The native-grid
+files are still written unchanged.
+
 Outputs
 -------
-wbgt_hourly_ERA5_malawi_<YEAR_START>_<YEAR_END>.nc   hourly wbgt, tg, twb
-wbgt_daily_max_ERA5_malawi_<YEAR_START>_<YEAR_END>.nc  UTC daily max wbgt
-wbgt_monthly_ERA5_historical.nc                        monthly wbgt_day/night
-wbgt_wbgt5x_ERA5_historical.nc                         monthly WBGT5x day/night
+wbgt_hourly_ERA5_malawi_<Y0>_<Y1>.nc        hourly wbgt, tg, twb
+wbgt_daily_max_ERA5_malawi_<Y0>_<Y1>.nc     local-day max wbgt   (peak-of-day)
+wbgt_daily_min_ERA5_malawi_<Y0>_<Y1>.nc     local-day min wbgt   (trough-of-day)
+wbgt_monthly_ERA5_historical.nc             monthly-mean wbgt_day/night
+wbgt_extreme_indices_ERA5_historical.nc     wbgtx_* and wbgt5x_* (day + night)
+  ...and, if REGRID_TO_CMIP6, *_cmip6grid.nc versions of the last two.
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -33,16 +53,19 @@ DATA_DIR   = Path("/Users/rachelmurray-watson/Documents/Heat_data/ERA5/Combined"
 OUT_DIR    = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5")
 CMIP6_DIR  = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-CMIP6_DIR.mkdir(parents=True, exist_ok=True)
 
 YEAR_START       = 2010
 YEAR_END         = 2024
 TIME_CHUNK       = 2000
 DTYPE            = np.float32
-UTC_OFFSET       = 2          # Malawi UTC+2
-DAY_START        = 6          # local hour, inclusive
-DAY_END          = 17         # local hour, inclusive
+UTC_OFFSET       = 2          # Malawi UTC+2 (used to define the LOCAL calendar day)
 WBGT5X_WINDOW    = 5          # days
+
+# --- Grid co-registration onto the CMIP6 grid ------------------------------
+REGRID_TO_CMIP6  = True       # also write *_cmip6grid.nc versions
+# None -> auto-discover a CMIP6 WBGT file under CMIP6_DIR to read the target grid.
+# Point this at a specific file if auto-discovery grabs the wrong one.
+CMIP6_REF_FILE   = None
 
 VAR_FILES = {
     "t2m": "2m_temperature",           "d2m": "2m_dewpoint_temperature",
@@ -76,7 +99,7 @@ def h_cyl(t, p, spd):
     return 0.281 * Re**0.6 * Pr**0.44 * kth(t) / D_WICK
 
 # ============================================================================
-# WBGT solvers
+# WBGT solvers  (unchanged Liljegren physics — identical to the CMIP6 branch)
 # ============================================================================
 def globe_temp(t, rh, p, sol, fdir, cossza, spd):
     cz  = np.where(cossza > 0.01, cossza, 0.01)
@@ -143,54 +166,34 @@ def load_var(name):
     return da.astype(DTYPE).load()
 
 # ============================================================================
-# Aggregation: hourly -> daily mean per bracket -> monthly mean + WBGT5x
+# Monthly reduction of a daily bracket series
+#   daily : (n_days, ny, nx) either the daily-MAX (day) or daily-MIN (night)
+#   Returns monthly mean, monthly max (WBGTx), monthly WBGT5x, month index.
 # ============================================================================
-def aggregate(wbgt_h, times):
-    """
-    Returns four monthly (n_months, ny, nx) arrays:
-        monthly_day, monthly_night, wbgt5x_day, wbgt5x_night
-    and the corresponding month-start DatetimeIndex.
+def monthly_reduce(daily, u_days):
+    day_periods = u_days.to_period("M")
+    u_months    = day_periods.unique().sort_values()
+    n_mon       = len(u_months)
+    _, ny, nx   = daily.shape
 
-    Day/night split: local Malawi time (UTC+2).
-    Daily series: mean of selected hours per day (not daily max) so that
-    the monthly mean matches the CMIP6 bridge script output exactly.
-    WBGT5x: monthly max of within-month 5-day rolling mean of daily means.
-    """
-    local_h  = (pd.DatetimeIndex(times) + pd.Timedelta(hours=UTC_OFFSET)).hour.to_numpy()
-    day_mask = (local_h >= DAY_START) & (local_h <= DAY_END)
+    mean_o = np.full((n_mon, ny, nx), np.nan, np.float32)  # monthly mean
+    max_o  = np.full((n_mon, ny, nx), np.nan, np.float32)  # WBGTx
+    x5_o   = np.full((n_mon, ny, nx), np.nan, np.float32)  # WBGT5x
 
-    dates    = pd.DatetimeIndex(times).normalize()
-    periods  = dates.to_period("M")
-    u_days   = pd.DatetimeIndex(sorted(set(dates)))
-    u_months = periods.unique().sort_values()
-    n_days   = len(u_days);  n_mon = len(u_months)
-    _, ny, nx = wbgt_h.shape
+    for k, m in enumerate(u_months):
+        idx   = np.where(day_periods == m)[0]
+        chunk = daily[idx].astype(np.float64)              # (n_m, ny, nx)
 
-    day_lbl  = np.array([u_days.get_loc(d) for d in dates], dtype=np.int32)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            mean_o[k] = np.nanmean(chunk, axis=0)
+            max_o[k]  = np.nanmax(chunk, axis=0)
 
-    def daily_mean(mask):
-        s = np.zeros((n_days, ny, nx), dtype=np.float64)
-        c = np.zeros(n_days, dtype=np.int32)
-        np.add.at(s, day_lbl[mask], wbgt_h[mask].astype(np.float64))
-        np.add.at(c, day_lbl[mask], 1)
-        c = np.where(c > 0, c, 1)[:, None, None]
-        return (s / c).astype(np.float32)
-
-    def monthly_mean(daily):
-        out = np.full((n_mon, ny, nx), np.nan, np.float32)
-        day_periods = u_days.to_period("M")
-        for k, m in enumerate(u_months):
-            out[k] = np.nanmean(daily[day_periods == m], axis=0)
-        return out
-
-    def wbgt5x(daily):
-        out = np.full((n_mon, ny, nx), np.nan, np.float32)
-        day_periods = u_days.to_period("M")
-        for k, m in enumerate(u_months):
-            chunk = daily[day_periods == m].astype(np.float64)  # (n_m, ny, nx)
-            n_m   = len(chunk)
-            if n_m < WBGT5X_WINDOW:
-                continue
+        # WBGT5x: monthly max of the within-month 5-day rolling mean. Window
+        # resets at the month boundary (chunk is this month's days only); a
+        # window is only valid when all WBGT5X_WINDOW days are non-NaN.
+        n_m = len(chunk)
+        if n_m >= WBGT5X_WINDOW:
             nan_m  = np.isnan(chunk)
             filled = np.where(nan_m, 0.0, chunk)
             cs     = np.cumsum(filled, axis=0)
@@ -199,17 +202,62 @@ def aggregate(wbgt_h, times):
             rs[WBGT5X_WINDOW:] -= cs[:-WBGT5X_WINDOW]
             rv[WBGT5X_WINDOW:] -= cv[:-WBGT5X_WINDOW]
             rm     = np.where(rv == WBGT5X_WINDOW, rs / WBGT5X_WINDOW, np.nan)
-            mx     = np.nanmax(rm, axis=0).astype(np.float32)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                mx = np.nanmax(rm, axis=0).astype(np.float32)
             mx[np.all(np.isnan(rm), axis=0)] = np.nan
-            out[k] = mx
-        return out
+            x5_o[k] = mx
 
-    d_day   = daily_mean(day_mask)
-    d_night = daily_mean(~day_mask)
-    midx    = u_months.to_timestamp(how="start")
+    midx = u_months.to_timestamp(how="start")
+    return mean_o, max_o, x5_o, midx
 
-    return (monthly_mean(d_day), monthly_mean(d_night),
-            wbgt5x(d_day),       wbgt5x(d_night),       midx)
+# ============================================================================
+# CMIP6 grid helpers (for co-registration)
+# ============================================================================
+def find_cmip6_reference():
+    """Locate a CMIP6 WBGT file to read the target grid from."""
+    if CMIP6_REF_FILE is not None:
+        p = Path(CMIP6_REF_FILE)
+        return p if p.exists() else None
+    for pat in ("wbgt_daynight_*.nc", "wbgt_monthly_*.nc", "*.nc"):
+        cands = sorted(CMIP6_DIR.rglob(pat))
+        if cands:
+            return cands[0]
+    return None
+
+def read_cmip6_grid(ref_path):
+    """Return (lat, lon) 1-D arrays of the CMIP6 grid, ascending."""
+    ds = xr.open_dataset(ref_path, decode_times=False)
+    lat_name = "lat" if "lat" in ds else ("latitude" if "latitude" in ds else None)
+    lon_name = "lon" if "lon" in ds else ("longitude" if "longitude" in ds else None)
+    lat = np.sort(np.asarray(ds[lat_name].values, dtype=np.float64))
+    lon = np.sort(np.asarray(ds[lon_name].values, dtype=np.float64))
+    ds.close()
+    return lat, lon
+
+def regrid_dataset(ds, tgt_lat, tgt_lon):
+    """Bilinear interp of every var onto (tgt_lat, tgt_lon), with a nearest-
+    neighbour fill for any edge cell that linear interp leaves as NaN (CMIP6
+    cell centres just outside the ERA5 span). ERA5 lat/lon sorted ascending
+    first so interp is well-defined."""
+    ds = ds.sortby("lat").sortby("lon")
+    out = {}
+    for v in ds.data_vars:
+        lin  = ds[v].interp(lat=tgt_lat, lon=tgt_lon, method="linear")
+        near = ds[v].interp(lat=tgt_lat, lon=tgt_lon, method="nearest")
+        da   = lin.fillna(near)
+        da.attrs = dict(ds[v].attrs)
+        da.attrs["regrid"] = "bilinear->CMIP6 grid (nearest edge-fill)"
+        out[v] = da
+    return xr.Dataset(out)
+
+# ============================================================================
+# I/O helper
+# ============================================================================
+def save(ds, path, label):
+    enc = {v: {"zlib": True, "complevel": 4, "dtype": "float32"} for v in ds.data_vars}
+    ds.to_netcdf(path, encoding=enc)
+    print(f"Saved {label:22s}: {path.name}")
 
 # ============================================================================
 # Main
@@ -257,10 +305,9 @@ def main():
     n_nan = int(np.isnan(wbgt_h).sum())
     print(f"Converged. NaN cells: {n_nan} ({100*n_nan/wbgt_h.size:.3f}%)")
 
-    # ---- Hourly output
+    # ---- Hourly output (UTC times, unchanged) -----------------------------
     coords = {"time": times, "lat": lats, "lon": lons}
-    enc    = lambda v: {v: {"zlib": True, "complevel": 4, "dtype": "float32"}}
-    ds_h   = xr.Dataset({
+    ds_h = xr.Dataset({
         "wbgt": xr.DataArray(wbgt_h, coords=coords, dims=["time","lat","lon"],
                              attrs={"units":"degC","method":"Liljegren"}),
         "tg":   xr.DataArray(tg_h,   coords=coords, dims=["time","lat","lon"],
@@ -269,58 +316,116 @@ def main():
                              attrs={"units":"degC"}),
     })
     f_h = OUT_DIR / f"wbgt_hourly_ERA5_malawi_{YEAR_START}_{YEAR_END}.nc"
-    ds_h.to_netcdf(f_h, encoding={v: {"zlib":True,"complevel":4,"dtype":"float32"}
-                                   for v in ds_h.data_vars})
-    print(f"Saved hourly       : {f_h.name}")
+    save(ds_h, f_h, "hourly")
 
-    # ---- Daily max
-    dm = ds_h["wbgt"].resample(time="1D").max()
-    dm.name = "wbgt_daily_max";  dm.attrs = {"units":"degC","method":"Liljegren"}
-    f_dm = OUT_DIR / f"wbgt_daily_max_ERA5_malawi_{YEAR_START}_{YEAR_END}.nc"
-    dm.to_netcdf(f_dm, encoding={"wbgt_daily_max":{"zlib":True,"complevel":4,"dtype":"float32"}})
-    print(f"Saved daily max    : {f_dm.name}")
+    # ---- Daily peak / trough on the LOCAL calendar day --------------------
+    # Shift the time coordinate to local time so resample("1D") bins by local
+    # day; the afternoon peak and pre-dawn minimum both fall safely inside a
+    # local-day bin. daily MAX -> "day" bracket (matches CMIP6 tasmax),
+    # daily MIN -> "night" bracket (matches CMIP6 tasmin).
+    print("Building daily peak / trough (local day)...")
+    local_time = pd.DatetimeIndex(times) + pd.Timedelta(hours=UTC_OFFSET)
+    wbgt_local = ds_h["wbgt"].assign_coords(time=local_time)
+    daily_max_da = wbgt_local.resample(time="1D").max()   # skipna=True
+    daily_min_da = wbgt_local.resample(time="1D").min()
 
-    # ---- Monthly mean + WBGT5x
-    print("Aggregating to daily then monthly...")
-    m_day, m_night, x_day, x_night, midx = aggregate(wbgt_h, times)
+    u_days = pd.DatetimeIndex(daily_max_da.time.values)
+    dmax   = daily_max_da.values
+    dmin   = daily_min_da.values
+
+    # The local-time shift spills the last UTC_OFFSET hours of the record into
+    # a partial local day (and can leave the first local day a few hours short).
+    # Drop any local day outside [YEAR_START, YEAR_END] so a 1-2 hour trailing
+    # "day" can't create a bogus partial month with an unreliable mean/NaN WBGT5x.
+    keep = (u_days.year >= YEAR_START) & (u_days.year <= YEAR_END)
+    if not keep.all():
+        print(f"  dropping {int((~keep).sum())} partial boundary day(s) outside "
+              f"{YEAR_START}-{YEAR_END}")
+        u_days = u_days[keep];  dmax = dmax[keep];  dmin = dmin[keep]
+
+    dcoords = {"time": u_days.values, "lat": lats, "lon": lons}
+    ds_dmax = xr.Dataset({"wbgt_daily_max": xr.DataArray(
+        dmax, coords=dcoords, dims=["time","lat","lon"],
+        attrs={"units":"degC","method":"Liljegren","bracket":"day",
+               "note":"local-day max hourly WBGT (peak-of-day, matches CMIP6 tasmax bracket)"})})
+    ds_dmin = xr.Dataset({"wbgt_daily_min": xr.DataArray(
+        dmin, coords=dcoords, dims=["time","lat","lon"],
+        attrs={"units":"degC","method":"Liljegren","bracket":"night",
+               "note":"local-day min hourly WBGT (trough-of-day, matches CMIP6 tasmin bracket)"})})
+    save(ds_dmax, OUT_DIR / f"wbgt_daily_max_ERA5_malawi_{YEAR_START}_{YEAR_END}.nc", "daily max")
+    save(ds_dmin, OUT_DIR / f"wbgt_daily_min_ERA5_malawi_{YEAR_START}_{YEAR_END}.nc", "daily min")
+
+    # ---- Monthly reductions (comparable to CMIP6 brackets) ----------------
+    print("Reducing to monthly mean / WBGTx / WBGT5x...")
+    m_day,  xx_day,  x5_day,  midx = monthly_reduce(dmax, u_days)
+    m_night, xx_night, x5_night, _ = monthly_reduce(dmin, u_days)
 
     mc = {"time": midx.values, "lat": lats, "lon": lons}
-    attrs_day   = {"units": "degC", "bracket": "day",
-                   "note": "monthly mean of daily-mean daytime WBGT"}
-    attrs_night = {"units": "degC", "bracket": "night",
-                   "note": "monthly mean of daily-mean night-time WBGT"}
 
+    # monthly-mean file — feeds associating_grid_squares_weather.py (var names
+    # wbgt_day / wbgt_night preserved so that script needs no change).
     ds_m = xr.Dataset({
-        "wbgt_day":   xr.DataArray(m_day,   coords=mc, dims=["time","lat","lon"], attrs=attrs_day),
-        "wbgt_night": xr.DataArray(m_night, coords=mc, dims=["time","lat","lon"], attrs=attrs_night),
+        "wbgt_day":   xr.DataArray(m_day,   coords=mc, dims=["time","lat","lon"],
+                        attrs={"units":"degC","bracket":"day",
+                               "note":"monthly mean of local-day MAX WBGT (peak-of-day; matches CMIP6 tasmax bracket)"}),
+        "wbgt_night": xr.DataArray(m_night, coords=mc, dims=["time","lat","lon"],
+                        attrs={"units":"degC","bracket":"night",
+                               "note":"monthly mean of local-day MIN WBGT (trough-of-day; matches CMIP6 tasmin bracket)"}),
     })
     f_m = OUT_DIR / "wbgt_monthly_ERA5_historical.nc"
-    ds_m.to_netcdf(f_m, encoding={v:{"zlib":True,"complevel":4,"dtype":"float32"}
-                                   for v in ds_m.data_vars})
-    print(f"Saved monthly      : {f_m.name}")
+    save(ds_m, f_m, "monthly mean")
 
-    ds_5x = xr.Dataset({
-        "wbgt5x_day":   xr.DataArray(x_day,   coords=mc, dims=["time","lat","lon"],
-                                     attrs={"units":"degC","bracket":"day",
-                                            "note":f"monthly max of {WBGT5X_WINDOW}-day rolling mean"}),
-        "wbgt5x_night": xr.DataArray(x_night, coords=mc, dims=["time","lat","lon"],
-                                     attrs={"units":"degC","bracket":"night",
-                                            "note":f"monthly max of {WBGT5X_WINDOW}-day rolling mean"}),
+    # extreme-index file — mirrors WBGT_extreme_indices_projections.py vars
+    ds_ix = xr.Dataset({
+        "wbgtx_day":    xr.DataArray(xx_day,   coords=mc, dims=["time","lat","lon"],
+                          attrs={"units":"degC","bracket":"day",
+                                 "note":"monthly max of local-day MAX WBGT (WBGTx)"}),
+        "wbgtx_night":  xr.DataArray(xx_night, coords=mc, dims=["time","lat","lon"],
+                          attrs={"units":"degC","bracket":"night",
+                                 "note":"monthly max of local-day MIN WBGT (WBGTx)"}),
+        "wbgt5x_day":   xr.DataArray(x5_day,   coords=mc, dims=["time","lat","lon"],
+                          attrs={"units":"degC","bracket":"day",
+                                 "note":f"monthly max of {WBGT5X_WINDOW}-day rolling mean of local-day MAX WBGT"}),
+        "wbgt5x_night": xr.DataArray(x5_night, coords=mc, dims=["time","lat","lon"],
+                          attrs={"units":"degC","bracket":"night",
+                                 "note":f"monthly max of {WBGT5X_WINDOW}-day rolling mean of local-day MIN WBGT"}),
     })
-    f_5x = OUT_DIR / "wbgt_wbgt5x_ERA5_historical.nc"
-    ds_5x.to_netcdf(f_5x, encoding={v:{"zlib":True,"complevel":4,"dtype":"float32"}
-                                     for v in ds_5x.data_vars})
-    print(f"Saved WBGT5x       : {f_5x.name}")
+    f_ix = OUT_DIR / "wbgt_extreme_indices_ERA5_historical.nc"
+    save(ds_ix, f_ix, "extreme indices")
 
-    print(f"\nWBGT  min={np.nanmin(wbgt_h):.1f}  "
-          f"mean={np.nanmean(wbgt_h):.1f}  max={np.nanmax(wbgt_h):.1f} °C")
-    print(f"WBGT5x day   mean={np.nanmean(x_day):.1f} °C")
-    print(f"WBGT5x night mean={np.nanmean(x_night):.1f} °C")
+    # ---- Optional: regrid the comparable fields onto the CMIP6 grid -------
+    if REGRID_TO_CMIP6:
+        ref = find_cmip6_reference()
+        if ref is None:
+            print("REGRID_TO_CMIP6 set but no CMIP6 reference file found under "
+                  f"{CMIP6_DIR} — skipping regrid. (Check the path: the day/night "
+                  "calc writes to 'NASA_GDDP_CMIP6_Splitz'; this expects "
+                  "'NASA_GDDP_CMIP6_Split'.)")
+        else:
+            print(f"Regridding onto CMIP6 grid from: {ref.name}")
+            tgt_lat, tgt_lon = read_cmip6_grid(ref)
+            print(f"  CMIP6 target grid: {len(tgt_lat)} lat x {len(tgt_lon)} lon")
+            save(regrid_dataset(ds_m,  tgt_lat, tgt_lon),
+                 OUT_DIR / "wbgt_monthly_ERA5_historical_cmip6grid.nc", "monthly (CMIP6 grid)")
+            save(regrid_dataset(ds_ix, tgt_lat, tgt_lon),
+                 OUT_DIR / "wbgt_extreme_indices_ERA5_historical_cmip6grid.nc", "indices (CMIP6 grid)")
+            print("  -> point the historical facility panel at the *_cmip6grid.nc "
+                  "files so facility->cell matching is identical to the projection.")
+
+    # ---- Summary ----------------------------------------------------------
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        print(f"\nHourly WBGT   min={np.nanmin(wbgt_h):.1f}  "
+              f"mean={np.nanmean(wbgt_h):.1f}  max={np.nanmax(wbgt_h):.1f} degC")
+        print(f"day  (daily max):  monthly-mean {np.nanmean(m_day):.1f}   "
+              f"WBGTx {np.nanmean(xx_day):.1f}   WBGT5x {np.nanmean(x5_day):.1f} degC")
+        print(f"night(daily min):  monthly-mean {np.nanmean(m_night):.1f}   "
+              f"WBGTx {np.nanmean(xx_night):.1f}   WBGT5x {np.nanmean(x5_night):.1f} degC")
     ds_h.close()
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("ERA5 WBGT — Liljegren vectorised")
+    print("ERA5 WBGT — Liljegren vectorised (day/night = daily max/min)")
     print("=" * 60)
     if not DATA_DIR.exists():
         print(f"Error: {DATA_DIR} not found")
