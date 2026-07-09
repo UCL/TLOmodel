@@ -1,5 +1,6 @@
-import imageio
 from pathlib import Path
+
+import imageio
 
 
 def create_wbgt_gif(output_folder: Path):

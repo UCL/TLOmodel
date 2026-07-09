@@ -1,14 +1,15 @@
 import argparse
 from pathlib import Path
-import pandas as pd
-from matplotlib import pyplot as plt
-from tlo import Date
-from tlo.analysis.utils import extract_results, summarize
+
 import geopandas as gpd
 import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 from netCDF4 import Dataset
 from shapely.geometry import Polygon
 
+from tlo import Date
+from tlo.analysis.utils import extract_results, summarize
 
 min_year = 2025
 max_year = 2027
@@ -56,6 +57,7 @@ lon_data = nc.variables['lon'][:]
 # Get time variable and convert to datetime
 time_var = nc.variables['time']
 from netCDF4 import num2date
+
 times = num2date(time_var[:], units=time_var.units, calendar=getattr(time_var, 'calendar', 'standard'))
 
 # Get month for each timestep

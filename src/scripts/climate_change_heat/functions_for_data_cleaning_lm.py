@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
 def build_model(X, y, poisson=False, log_y=False, feature_selection=False, k_best=None):

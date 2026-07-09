@@ -1,16 +1,18 @@
 import argparse
 from pathlib import Path
-import pandas as pd
+
+import geopandas as gpd
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
+
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_color_cause_of_death_or_daly_label,
+    parse_log_file,
     summarize,
-    parse_log_file
 )
-import geopandas as gpd
 
 min_year = 2025
 max_year = 2029

@@ -2,17 +2,18 @@ import argparse
 from pathlib import Path
 
 import matplotlib
-matplotlib.use("Agg")  # NEW: headless backend - avoids popping up a window per year during batch GIF generation
-from matplotlib import pyplot as plt
 
-import pandas as pd
-from tlo import Date
-from tlo.analysis.utils import extract_results, summarize
+matplotlib.use("Agg")  # NEW: headless backend - avoids popping up a window per year during batch GIF generation
 import geopandas as gpd
 import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 from netCDF4 import Dataset, num2date
-from shapely.geometry import Polygon
 from PIL import Image  # NEW: for assembling frames into an animated GIF
+from shapely.geometry import Polygon
+
+from tlo import Date
+from tlo.analysis.utils import extract_results, summarize
 
 min_year = 2025
 max_year = 2040
