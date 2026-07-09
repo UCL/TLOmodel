@@ -230,9 +230,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fac_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_6_pat_load.dta", convert_categoricals=True)
     pat_exit = pd.read_stata(path_to_tlm_folder / "tool_2_pat_exit.dta", convert_categoricals=True)
 
-    # create age groups for patient exit data
-
-
     # check that districts and facility levels in the two tools are a subset of TLO output;
     # district and facility level consistency in the two tools already checked in Stata
     hcw_tms_pat_load["district"] = hcw_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
@@ -253,7 +250,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     # *** patient mix comparisons ***
-    def pat_prop_per_subgroup_total_period(_df, subgroup="fac_level"):
+    # from patient exit
+    def pat_prop_per_subgroup_total_period_tool_2(_df, subgroup="fac_level"):
         _df = _df[["respondent_id", subgroup]].groupby(subgroup).count().reset_index().rename(
             columns={"respondent_id": "pat_volume", subgroup: "subgroup"})
         _df["category"] = subgroup
@@ -262,9 +260,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     subgroups = ["fac_level", "age_group_tlo", "wealth_tlo", "sex", "loc_cat"]
     pat_mix = pd.concat(
-        [pat_prop_per_subgroup_total_period(pat_exit, subgroup=s) for s in subgroups],
+        [pat_prop_per_subgroup_total_period_tool_2(pat_exit, subgroup=s) for s in subgroups],
         ignore_index=True
     )
+    pat_mix["source"] = "Patient Exit"
+
+    # from facility summary
+    def pat_prop_per_subgroup_total_period_tool_6(_df, subgroup="fac_level"):
+        _df = _df[["num_of_patients", subgroup]].groupby(subgroup).sum().reset_index().rename(
+            columns={"num_of_patients": "pat_volume", subgroup: "subgroup"})
+        _df["category"] = subgroup
+        _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
+        return _df
+
+    subgroups_fac_tms = ["fac_level", "loc_cat"]
+    pat_mix_fac_tms = pd.concat(
+        [pat_prop_per_subgroup_total_period_tool_6(fac_tms_pat_load, subgroup=s) for s in subgroups_fac_tms],
+        ignore_index=True
+    )
+    pat_mix_fac_tms["source"] = "Facility Summary"
+
+    pat_mix = pd.concat([pat_mix, pat_mix_fac_tms], ignore_index=True)
+
+    # from TLO output
+
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates in one dataframe, noting the source and keeping all observations
