@@ -202,7 +202,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="HSI_Event",
         custom_generate_series=get_patient_count_facility_id,
         do_scaling=True
-    )
+    ).loc[:, [(0, 0)]]  # draw=0, run=0
 
     patient_volume_facility_id.columns = patient_volume_facility_id.columns.droplevel('run')
     patient_volume_facility_id = patient_volume_facility_id.reset_index().rename(
@@ -216,7 +216,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="number_of_hcw_staff",
         custom_generate_series=get_hcw_count_facility_id,
         do_scaling=False
-    )
+    ).loc[:, [(0, 0)]]  # draw=0, run=0
+
     hcw_count_facility_id.columns = hcw_count_facility_id.columns.droplevel('run')
     hcw_count_facility_id = hcw_count_facility_id.reset_index().rename(columns={0: 'Staff_Count'})
     hcw_count_facility_id = merge_info_from_mfl(hcw_count_facility_id)
@@ -378,6 +379,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ], ignore_index=True)
 
     assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
+
+    # drop level 0/community service by DCSA, level 5/HQ
+    pat_load_comparison = pat_load_comparison.loc[~pat_load_comparison["Facility_Level"].isin(["0", "5"])]
 
     # *** make comparison plots ***
     from matplotlib.ticker import MultipleLocator
