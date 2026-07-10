@@ -345,6 +345,7 @@ class Consumables:
                         "Item_Available": str(items_available),
                         "Item_NotAvailable": str(items_not_available),
                         "Item_Used": str(items_used),
+                        "person_id": target,
                     },
                     description="Record of requested and used consumable items.",
                 )
