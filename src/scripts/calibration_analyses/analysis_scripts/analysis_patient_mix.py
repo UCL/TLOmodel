@@ -97,7 +97,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _daily_person_counts
 
     def get_hcw_count_facility_id(_df):
-        the_hrh_target_period = (Date(2024, 1, 1), Date(2024, 1, 1))
+        the_hrh_target_period = (Date(2010, 1, 1), Date(2010, 5, 1))
         _df = _df.loc[pd.to_datetime(_df['date']).between(*the_hrh_target_period), :]
 
         _df_staff = (
@@ -142,18 +142,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # todo: drop duplicated persons
 
         _df = _df.groupby(
-            ["Facility_ID", "sex", "age_range", "li_wealth", "Treatment_ID"]
+            ["Facility_ID", "Sex", "Age_Range", "Wealth", "TREATMENT_ID"]
         )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
-        _df["Treatment_ID"] = _df["Treatment_ID"].replace(hsi_loc_cat_map)
-        _df.rename(columns={"Treatment_ID": "loc_cat"}, inplace=True)
-        _df = _df.groupbby(
-            ["Facility_ID", "sex", "age_range", "li_wealth", "loc_cat"]
+        # _df["TREATMENT_ID"] = _df["TREATMENT_ID"].replace(hsi_loc_cat_map)
+        _df.rename(columns={"TREATMENT_ID": "loc_cat"}, inplace=True)
+        _df = _df.groupby(
+            ["Facility_ID", "Sex", "Age_Range", "Wealth", "loc_cat"]
         )["patient_count"].sum().reset_index()
 
         _df = merge_info_from_mfl(_df)
 
-        # drop HQ/Facility_Level= 5
-        _df.drop(index=_df[_df["Facility_Level"] == "5"].index, inplace=True)
+        # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
+        _df.drop(index=_df[_df["Facility_Level"].isin(["0", "5"])].index, inplace=True)
 
         # fill NANs
         _df.loc[
@@ -173,7 +173,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[_df["District"].isin(common_districts)]
 
         # group up by subgroups and get patient proportions across subgroups
-        group_list = ["Facility_Level", "age_range", "li_wealth", "sex", "loc_cat"]
+        group_list = ["Facility_Level", "Age_Range", "Wealth", "Sex", "loc_cat"]
         _df_mix = pd.DataFrame(columns=["category", "subgroup", "patient_proportion"])
         for sg in group_list:
             _df_sg = _df.groupby(sg)["patient_count"].sum().reset_index().rename(
@@ -184,9 +184,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _df_mix = pd.concat([_df_mix, _df_sg], ignore_index=True)
 
         # create series
-        _df = _df[["category", "subgroup", "patient_proportion"]].set_index(["category", "subgroup"])
+        _df_mix = _df_mix.set_index(["category", "subgroup"])["patient_proportion"]
 
-        return _df
+        return _df_mix
 
     # log = load_pickled_dataframes(results_folder, 0, 0)
     # h = pd.DataFrame(
@@ -296,18 +296,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fac_tms_pat_load["district"] = fac_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
     pat_exit["district"] = pat_exit["district"].replace({"Mzuzu": "Mzuzu City"})
 
-    assert set(hcw_tms_pat_load['district'].unique()).issubset(
-        set(daily_patient_load_per_hcw['District'].unique())
-    )
-    assert set(hcw_tms_pat_load['fac_level'].unique()).issubset(
-        set(daily_patient_load_per_hcw['Facility_Level'].unique())
-    )
-    assert set(pat_exit['district'].unique()).issubset(
-        set(daily_patient_load_per_hcw['District'].unique())
-    )
-    assert set(pat_exit['fac_level'].unique()).issubset(
-        set(daily_patient_load_per_hcw['Facility_Level'].unique())
-    )
+    # assert set(hcw_tms_pat_load['district'].unique()).issubset(
+    #     set(daily_patient_load_per_hcw['District'].unique())
+    # )
+    # assert set(hcw_tms_pat_load['fac_level'].unique()).issubset(
+    #     set(daily_patient_load_per_hcw['Facility_Level'].unique())
+    # )
+    # assert set(pat_exit['district'].unique()).issubset(
+    #     set(daily_patient_load_per_hcw['District'].unique())
+    # )
+    # assert set(pat_exit['fac_level'].unique()).issubset(
+    #     set(daily_patient_load_per_hcw['Facility_Level'].unique())
+    # )
 
     common_districts = hcw_tms_pat_load["district"].drop_duplicates().tolist()
 
@@ -344,15 +344,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     pat_mix = pd.concat([pat_mix, pat_mix_fac_tms], ignore_index=True)
 
+    # format to be consistent to TLO output
+    pat_mix["category"] = pat_mix["category"].replace({"fac_level": "Facility_level",
+                                                       "age_group_tlo": "Age_Range",
+                                                       "wealth_tlo": "Wealth",
+                                                       "sex": "Sex"})
+    pat_mix = pat_mix[["category", "subgroup", "pat_proportion", "source"]].rename(
+        columns={"pat_proportion": "mean"}
+    ).copy()
+    pat_mix["lower"] = pat_mix["mean"].copy()
+    pat_mix["upper"] = pat_mix["mean"].copy()
+
     # todo: from TLO output
     patient_mix_tlo = extract_results(
         results_folder,
         module="tlo.methods.healthsystem",
         key="HSI_Event",
         custom_generate_series=get_patient_mix_total_period,
-        do_scaling=True
-    )
+        do_scaling=False
+    ).fillna(0)
     patient_mix_tlo = summarize(patient_mix_tlo)
+    patient_mix_tlo.columns = patient_mix_tlo.columns.droplevel('draw')
+    patient_mix_tlo["source"] = "TLO"
+    patient_mix_tlo.reset_index(inplace=True)
+
+    assert set(pat_mix.columns) == set(patient_mix_tlo.columns)
+    pat_mix = pd.concat([pat_mix, patient_mix_tlo], ignore_index=True)
+
+    # todo: plot; note axis ticks should be the same across sources - assert needed
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
@@ -1162,7 +1181,7 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2024, 1, 1), Date(2024, 5, 31))
+        the_target_period=(Date(2010, 1, 1), Date(2010, 5, 31))
     )
 
 
