@@ -1870,7 +1870,7 @@ class HealthSystem(Module):
             "Facility_ID": facility_id if facility_id is not None else -99,
             "Equipment": sorted(event_details.equipment),
             "Clinic": clinic if clinic is not None else "None",
-            "Age_Years": age_of_person,
+            "Age_Range": age_of_person,
             "Sex": sex_of_person,
             "Wealth": wealth_of_person,
         }
