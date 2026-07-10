@@ -136,7 +136,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _df
 
     def get_patient_mix_total_period(_df):
+        # keep only months in TLM
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
         # todo: drop duplicated persons
+
         _df = _df.groupby(
             ["Facility_ID", "sex", "age_range", "li_wealth", "Treatment_ID"]
         )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
@@ -164,6 +168,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.loc[
             _df["Facility_ID"] == 130, "District"
         ] = "Central Hospitals (Central)"
+
+        # keep only districts in TLM
+        _df = _df.loc[_df["District"].isin(common_districts)]
 
         # group up by subgroups and get patient proportions across subgroups
         group_list = ["Facility_Level", "age_range", "li_wealth", "sex", "loc_cat"]
@@ -300,6 +307,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert set(pat_exit['fac_level'].unique()).issubset(
         set(daily_patient_load_per_hcw['Facility_Level'].unique())
     )
+
+    common_districts = hcw_tms_pat_load["district"].drop_duplicates().tolist()
 
     # *** patient mix comparisons ***
     # from patient exit
