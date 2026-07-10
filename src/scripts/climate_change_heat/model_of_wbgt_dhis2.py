@@ -12,8 +12,8 @@ from scipy.optimize import minimize_scalar
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
-INDICATOR  = "live_births_total"
-service    = "Live_Births"
+INDICATOR  = "skilled_deliveries"
+service    = "skilled_deliveries"
 apply_cap  = False
 
 DATA_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -95,9 +95,6 @@ nb_cols = (["y", "wbgt_day", "wbgt_night", "year", "month", "facility",
            + ["wbgt_day_sq", "wbgt_day_cu",
               "wbgt_night_sq", "wbgt_night_cu",
               "wbgt_day_x_night"])
-nb_cols = (["y", "wbgt_day",  "year", "month", "facility",
-             "A109__Altitude", "minimum_distance",
-             "Zonename", "Dist", "Resid", "A105", "Ftype"])
 
 nb_data = long.dropna(subset=nb_cols).copy()
 nb_data["year_c"] = nb_data["year"] - nb_data["year"].mean() # centre the year
@@ -135,6 +132,8 @@ poly_terms = ("wbgt_day_sq + wbgt_day_cu + wbgt_night_sq + wbgt_night_cu"
 
 f_base = "y_int ~ year_c + C(month) + C(facility)"
 f_wx   = "y_int ~ wbgt_day + wbgt_night + year_c + C(month) + C(facility)"
+f_wx   = "y_int ~ wbgt_day + year_c + C(month) + C(facility)"
+
 f_ext  = (f"y_int ~ wbgt_day + wbgt_night + {poly_terms} + {lag_terms}"
           f" + year_c + C(month) + C(facility)")
 
