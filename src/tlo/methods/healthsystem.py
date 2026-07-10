@@ -2668,6 +2668,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     priority=-1,
                     clinic=str(None),
                     did_run=True,
+                    age_of_person=str(None),
+                    sex_of_person=str(None),
+                    wealth_of_person=None,
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
