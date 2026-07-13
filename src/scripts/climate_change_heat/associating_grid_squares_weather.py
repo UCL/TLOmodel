@@ -55,7 +55,7 @@ FACILITIES_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources
 MALAWI_GRID_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/"
                    "Data/malawi_grid.shp")
 
-OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/All_predictors_processed/")
+OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices")
 
 COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
                   "Ftype", "A109__Latitude", "A109__Longitude"]
