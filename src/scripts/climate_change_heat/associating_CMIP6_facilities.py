@@ -5,8 +5,8 @@ cmip6_wbgt_facility_projection.py
     facilities registry ->  coordinates + covariates
 Outputs
 -------
-  projected_{var}_by_facility_{model}.csv   date x facility   (per model, per WBGT var)
-  facility_info_projection.csv              covariate x facility   (once)
+  wbgt_monthly_mean_facility_{model}_{scenario}.csv   long: facility,date,wbgt_day,wbgt_night
+  facility_info_projection.csv                        covariate x facility   (once)
 """
 
 import os
@@ -21,17 +21,23 @@ from scipy.spatial.distance import cdist
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
-# Directory of per-model CMIP6 WBGT files. Each file = one model's projection.
+# Base directory of per-model CMIP6 WBGT files, nested as {model}/{scenario}/.
 WBGT_DIRECTORY = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split/")
-# Files matched by this prefix; the model id is the filename between the
-# prefix and '.nc' (adjust EXTRACT_MODEL if your naming differs).
-WBGT_FILE_PREFIX = "wbgt_monthly_"
+WBGT_SCENARIO = "ssp245"
+# Files matched by this prefix inside each {model}/{scenario}/ folder; the
+# model id is taken from the folder name.
+WBGT_FILE_PREFIX = "wbgt_daynight_"
 
-# Current CMIP6 variables (day/night bracketed). One panel written per var.
+# CMIP6 variables (day/night bracketed). Both written into one long file.
 WBGT_VARS = ["wbgt_day", "wbgt_night"]
 WBGT_TIME_COORD = "time"        # CMIP6 convention (NoLeap calendar -> cftime)
 WBGT_LAT_COORD = "lat"
 WBGT_LON_COORD = "lon"
+
+# Facilities farther than this from the nearest grid-cell centre are flagged
+# and set to NaN rather than silently snapped to an edge cell (CMIP6 ~0.25 deg
+# ~= 28 km, so an in-domain facility matches within ~half a cell).
+DISTANCE_GUARD_KM = 30.0
 
 FACILITIES_CSV = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_lat_long_region.csv")
 FACILITY_NAME_COL = "Fname"
@@ -58,8 +64,9 @@ COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
 # time coordinate comes back as cftime objects, not numpy.datetime64.
 # ---------------------------------------------------------------------------
 def get_time_index(time_values):
-    """Return a monthly 'YYYY-MM' string index for cftime OR datetime64 time
-    coordinates (monthly WBGT files: one timestep per month)."""
+    """Return a monthly 'YYYY-MM' string key per timestep for cftime OR
+    datetime64 time coordinates. For DAILY files this yields a repeated month
+    key per day, which is exactly the grouping key for the monthly mean."""
     keys = []
     for t in time_values:
         if hasattr(t, "year") and hasattr(t, "month"):   # cftime.Datetime*
@@ -70,12 +77,51 @@ def get_time_index(time_values):
     return pd.Index(keys, name="date")
 
 
-def extract_model_id(filename):
-    """Model identifier = filename between the prefix and '.nc'."""
-    stem = filename[:-3] if filename.endswith(".nc") else filename
-    if stem.startswith(WBGT_FILE_PREFIX):
-        stem = stem[len(WBGT_FILE_PREFIX):]
-    return stem or "model"
+def assert_daily(time_values, nc_path):
+    """GUARD: abort if the file's timesteps are not daily, so a monthly file
+    can never be silently averaged as one-row-per-month."""
+    if len(time_values) < 2:
+        raise ValueError(f"{Path(nc_path).name}: fewer than 2 timesteps")
+    diffs = []
+    for i in range(min(len(time_values) - 1, 366)):
+        d = time_values[i + 1] - time_values[i]
+        diffs.append(d.days if hasattr(d, "days") else d / np.timedelta64(1, "D"))
+    med = float(np.median(diffs))
+    if med > 5:
+        raise ValueError(
+            f"{Path(nc_path).name}: timesteps look MONTHLY (median spacing "
+            f"{med:.0f} days). This script expects DAILY {WBGT_FILE_PREFIX}*.nc "
+            f"— aborting rather than mislabelling monthly data as daily.")
+
+
+def haversine_km(lat1, lon1, lat2, lon2):
+    """Great-circle distance (km) between arrays of points."""
+    R = 6371.0088
+    p1, p2 = np.radians(lat1), np.radians(lat2)
+    dphi = np.radians(np.asarray(lat2) - np.asarray(lat1))
+    dlmb = np.radians(np.asarray(lon2) - np.asarray(lon1))
+    a = np.sin(dphi / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(dlmb / 2) ** 2
+    return 2 * R * np.arcsin(np.sqrt(a))
+
+
+def find_model_files(base_dir, scenario):
+    """Discover (model_id, path) for {model}/{scenario}/{prefix}*.nc. Prints
+    the path it tried on every skip so a mismatch is visible, not inferred."""
+    found = []
+    for model_dir in sorted(Path(base_dir).iterdir()):
+        if not model_dir.is_dir():
+            continue
+        scenario_dir = model_dir / scenario
+        if not scenario_dir.is_dir():
+            print(f"  ⚠ skip {model_dir.name}: no directory {scenario_dir}")
+            continue
+        matches = sorted(scenario_dir.glob(f"{WBGT_FILE_PREFIX}*.nc"))
+        if not matches:
+            print(f"  ⚠ skip {model_dir.name}: no {WBGT_FILE_PREFIX}*.nc in "
+                  f"{scenario_dir}")
+            continue
+        found.append((model_dir.name, matches[0]))
+    return found
 
 
 # ---------------------------------------------------------------------------
@@ -107,12 +153,11 @@ print(f"Projecting for {len(facility_names)} facilities")
 # ---------------------------------------------------------------------------
 # Find CMIP6 model files
 # ---------------------------------------------------------------------------
-model_files = sorted(f for f in os.listdir(WBGT_DIRECTORY)
-                     if f.startswith(WBGT_FILE_PREFIX) and f.endswith(".nc"))
+model_files = find_model_files(WBGT_DIRECTORY, WBGT_SCENARIO)
 if not model_files:
-    raise FileNotFoundError(f"No '{WBGT_FILE_PREFIX}*.nc' in {WBGT_DIRECTORY}")
-print(f"CMIP6 model files: {len(model_files)} "
-      f"({[extract_model_id(f) for f in model_files]})")
+    raise FileNotFoundError(
+        f"No '{WBGT_FILE_PREFIX}*.nc' under {WBGT_DIRECTORY}/*/{WBGT_SCENARIO}/")
+print(f"CMIP6 model files: {len(model_files)} ({[m for m, _ in model_files]})")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -122,9 +167,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Accumulate ensemble-mean average WBGT per var for the covariate table
 avg_wbgt_accum = {var: {fac: [] for fac in facility_names} for var in WBGT_VARS}
 
-for filename in model_files:
-    model_id = extract_model_id(filename)
-    path = os.path.join(WBGT_DIRECTORY, filename)
+for model_id, path in model_files:
     print(f"\n--- {model_id} ---")
 
     # Keep the NoLeap calendar intact rather than erroring. Newer xarray
@@ -137,35 +180,73 @@ for filename in model_files:
         ds = xr.open_dataset(path, use_cftime=True)
     missing = [v for v in WBGT_VARS if v not in ds]
     if missing:
-        print(f"  ⚠ {missing} not in {filename} "
+        print(f"  ⚠ {missing} not in {path.name} "
               f"(has {list(ds.data_vars)}) — skipping this file")
         ds.close()
         continue
 
     lat_data = ds[WBGT_LAT_COORD].values
     long_data = ds[WBGT_LON_COORD].values
-    date_index = get_time_index(ds[WBGT_TIME_COORD].values)
+    times = ds[WBGT_TIME_COORD].values
+
+    assert_daily(times, path)                        # GUARD 1: daily timesteps
+    date_keys = get_time_index(times)                # YYYY-MM per DAILY step
 
     # nearest grid index per facility (once per model — grids can differ)
     ix = np.array([((long_data - lon) ** 2).argmin() for lon in facility_lons])
     iy = np.array([((lat_data - lat) ** 2).argmin() for lat in facility_lats])
 
-    for var in WBGT_VARS:
-        arr = ds[var].values                     # (time, lat, lon)
-        # gather all facilities' series at once: (time, n_facilities)
-        series = arr[:, iy, ix]
-        wbgt_df = pd.DataFrame(series, index=date_index, columns=facility_names)
+    # GUARD 2: distance from each facility to its matched cell centre
+    dist = haversine_km(facility_lats, facility_lons,
+                        np.asarray(lat_data)[iy], np.asarray(long_data)[ix])
+    far = dist > DISTANCE_GUARD_KM
+    if far.any():
+        print(f"  ⚠ distance guard: {int(far.sum())} facilit(y/ies) > "
+              f"{DISTANCE_GUARD_KM:.0f} km from any cell — set to NaN:")
+        for k in np.where(far)[0]:
+            print(f"      {facility_names[k]:<40s} {dist[k]:6.1f} km")
+    print(f"  nearest-cell distance: max {dist.max():.1f} km, "
+          f"median {np.median(dist):.1f} km")
 
-        out = os.path.join(OUTPUT_DIR,
-                           f"projected_{var}_by_facility_{model_id}.csv")
-        wbgt_df.to_csv(out)
-        print(f"  {var}: {wbgt_df.shape[0]} months x "
-              f"{wbgt_df.shape[1]} facilities -> {Path(out).name}")
+    # daily nearest-cell series -> monthly mean, per var
+    monthly = {}
+    for var in WBGT_VARS:
+        arr = ds[var].values                     # (time, lat, lon) — DAILY
+        # gather all facilities' series at once: (time, n_facilities)
+        series = arr[:, iy, ix].astype(float)
+        if far.any():
+            series[:, far] = np.nan
+        daily_df = pd.DataFrame(series, index=date_keys, columns=facility_names)
+        monthly[var] = daily_df.groupby(level=0).mean()   # months x facilities
 
         for j, fac in enumerate(facility_names):
             avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
 
     ds.close()
+
+    # assemble long: facility, date, wbgt_day, wbgt_night (one row / facility-month)
+    dates = (pd.PeriodIndex(monthly[WBGT_VARS[0]].index, freq="M")
+             .to_timestamp(how="end").normalize())
+    parts = []
+    for var in WBGT_VARS:
+        mv = monthly[var].copy()
+        mv.index = dates
+        mv.index.name = "date"
+        parts.append(mv.reset_index().melt(id_vars="date",
+                                           var_name="facility", value_name=var))
+    wbgt_df = parts[0]
+    for p in parts[1:]:
+        wbgt_df = wbgt_df.merge(p, on=["date", "facility"])
+    wbgt_df = (wbgt_df[["facility", "date"] + WBGT_VARS]
+               .sort_values(["facility", "date"]).reset_index(drop=True))
+    if wbgt_df.duplicated(["facility", "date"]).any():
+        raise RuntimeError(f"{path.name}: duplicate facility-month rows")
+
+    out = os.path.join(OUTPUT_DIR,
+                       f"wbgt_monthly_mean_facility_{model_id}_{WBGT_SCENARIO}.csv")
+    wbgt_df.to_csv(out, index=False)
+    print(f"  {wbgt_df['facility'].nunique()} facilities x "
+          f"{wbgt_df['date'].nunique()} months -> {Path(out).name}")
 
 # ---------------------------------------------------------------------------
 # Covariate table (once) — same shape/rows as historical expanded_facility_info
