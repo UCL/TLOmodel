@@ -40,10 +40,14 @@ INDICATORS = None
 
 WBGT_DIRECTORY = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5")
 WBGT_FILE_PREFIX = "wbgt_monthly_"
-WBGT_VARS = ['wbgt_day', 'wbgt_night']    # e.g. ["wbgt_day", "wbgt_night"] for CMIP6 files
-WBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
+WBGT_MONTHLY_VARS = ['wbgt_day', 'wbgt_night']     # from wbgt_monthly_*.nc
+WBGT_EXTREME_VARS = ['wbgt5x_day']                 # from the extreme file
+WBGT_EXTREME_FILE = "wbgt_extreme_indices_ERA5_historical.nc"   # native grid (matches monthly)
+WBGT_VARS = WBGT_MONTHLY_VARS + WBGT_EXTREME_VARS   # everything downstream loops over thisWBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
 WBGT_LAT_COORD = "lat"     # 'lat' in the CMIP6-derived files
 WBGT_LON_COORD = "lon"    # 'lon' in the CMIP6-derived files
+WBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
+
 
 FACILITIES_CSV = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_lat_long_region.csv")
 
@@ -112,15 +116,27 @@ wbgt_file_path = os.path.join(WBGT_DIRECTORY, wbgt_files[0])
 print(f"WBGT data:        {wbgt_file_path}")
 
 ds_wbgt = xr.open_dataset(wbgt_file_path)
-missing_vars = [v for v in WBGT_VARS if v not in ds_wbgt]
+missing_vars = [v for v in WBGT_MONTHLY_VARS if v not in ds_wbgt]
 if missing_vars:
-    raise KeyError(f"{missing_vars} not in file "
-                   f"(available: {list(ds_wbgt.data_vars)}) — update WBGT_VARS")
-wbgt_data = {var: ds_wbgt[var].values for var in WBGT_VARS}  # (time, lat, lon)
+    raise KeyError(f"{missing_vars} not in {os.path.basename(wbgt_file_path)} "
+                   f"(available: {list(ds_wbgt.data_vars)})")
+wbgt_data = {var: ds_wbgt[var].values for var in WBGT_MONTHLY_VARS}  # (time, lat, lon)
 lat_data = ds_wbgt[WBGT_LAT_COORD].values
 long_data = ds_wbgt[WBGT_LON_COORD].values
 time_data = pd.to_datetime(ds_wbgt[WBGT_TIME_COORD].values)
 
+# --- Add the extreme index (wbgt5x_day) from the ERA5 extreme file ----------
+# Same ERA5 dir, same native grid + time axis as the monthly means, so it slots
+# straight into wbgt_data and flows through the rest unchanged.
+ds_ext = xr.open_dataset(os.path.join(WBGT_DIRECTORY, WBGT_EXTREME_FILE))
+assert ds_ext.sizes.get(WBGT_TIME_COORD) == len(time_data), \
+    "extreme file has a different number of months than the monthly-mean file"
+for var in WBGT_EXTREME_VARS:
+    if var not in ds_ext:
+        raise KeyError(f"{var} not in {WBGT_EXTREME_FILE} "
+                       f"(has {list(ds_ext.data_vars)})")
+    wbgt_data[var] = ds_ext[var].values     # (time, lat, lon), same grid
+ds_ext.close()
 # ---------------------------------------------------------------------------
 # Match facilities + extract WBGT — ONCE, for the union of facilities
 # ---------------------------------------------------------------------------
