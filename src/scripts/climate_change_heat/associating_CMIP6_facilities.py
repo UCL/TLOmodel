@@ -50,7 +50,7 @@ FACILITY_LON_COL = "A109__Longitude"
 # leave as None to project for every registry facility with coordinates.
 RESTRICT_TO_FACILITIES_FILE = None
 
-OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/All_predictors_processed/Projection_data")
+OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices")
 
 # Covariates carried through for the fitted model (same as historical
 # expanded_facility_info, so the projection is drop-in for the regression).
