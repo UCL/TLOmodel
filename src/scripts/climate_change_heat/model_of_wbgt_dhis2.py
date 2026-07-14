@@ -1,28 +1,13 @@
 """
-model_of_wbgt_dhis2.py
+loop_all_indicators_forest.py
 
-Historical fit of a monthly DHIS2 count indicator on WBGT (Negative Binomial,
-facility + month fixed effects, clustered SEs, alpha by profile likelihood),
-then forward projection under CMIP6.
-
-Stages
-------
-  1. Fit baseline (no weather) and weather models on the ERA5 historical panel.
-  2. "Difference in expected appointments" = baseline prediction − weather
-     prediction, per facility-month (the two-model difference).
-  3. Project: apply the SAME fitted models to future CMIP6 WBGT, centring with
-     the HISTORICAL means (never re-fitting, never re-indexing by position), and
-     take the same two-model difference per SSP/model.
-
-Weather terms are parameterised (WEATHER_VARS_LEVEL + squares + lags) so the
-identical construction is used for the historical fit and every future frame —
-that is what keeps projection columns aligned by NAME via patsy.
+Loops model_of_wbgt_dhis2.py logic over all COUNT indicators,
+collects weather-term coefficients, and produces a forest plot.
 """
 
 import os
-
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
@@ -33,53 +18,65 @@ from scipy.optimize import minimize_scalar
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
-INDICATOR = "skilled_deliveries"
-service   = "skilled_deliveries"
+# ✅ COUNT indicators only — rates/coverages excluded
+COUNT_INDICATORS = [
+    # From INDICATOR_IDS
+    "fp_total_clients",
+    "opd_attendance",
+    "ipd_total_admissions",
+    "vmmc_first_visits",
+    # From DATA_ELEMENT_IDS
+    "pnc_mother_checked_48h",
+    "anc_new_attendees",
+    "anc_first_trimester_starts",
+    "bcg_under1",
+    "penta3_under1",
+    "measles1_under1",
+    "fully_immunised_under1",
+    "pnc_within_2wks",
+    "pnc_first_visit_2wks",
+    "live_births_total",
+    "skilled_deliveries",
+]
+
+# Human-readable labels for the forest plot
+INDICATOR_LABELS: dict[str, str] = {
+    "fp_total_clients":          "FP Total Clients",
+    "opd_attendance":            "OPD Attendance",
+    "ipd_total_admissions":      "IPD Total Admissions",
+    "vmmc_first_visits":         "VMMC First Visits",
+    "pnc_mother_checked_48h":    "PNC Mother <48h",
+    "anc_new_attendees":         "ANC New Attendees",
+    "anc_first_trimester_starts":"ANC 1st Trimester Starts",
+    "bcg_under1":                "BCG Under-1",
+    "penta3_under1":             "Penta3 Under-1",
+    "measles1_under1":           "Measles 1st Dose Under-1",
+    "fully_immunised_under1":    "Fully Immunised Under-1",
+    "pnc_within_2wks":           "PNC Within 2 Weeks",
+    "pnc_first_visit_2wks":      "PNC First Visit <2 Weeks",
+    "live_births_total":         "Live Births Total",
+    "skilled_deliveries":        "Skilled Deliveries",
+}
+
+# Weather / model settings
+WEATHER_VARS_LEVEL  = ["wbgt5x_day"]
+USE_SQUARE          = True
+LAG_MONTHS          = [1, 2, 3, 9]
+CENTER              = True
+MIN_OBS             = 10
+min_year_historical = 2015
+max_year_historical = 2025
+
 apply_cap = False
 
-# Weather predictor(s). Each LEVEL var optionally gets a square and lags.
-# Default is the 5-day extreme, which exists in BOTH the ERA5 historical panel
-# and the CMIP6 projection files (so it is actually projectable). Add "wbgt_day"
-# only if you also have a CMIP6 monthly-mean file to feed load_future_wbgt().
-WEATHER_VARS_LEVEL = ["wbgt5x_day"]
-USE_SQUARE = True
-LAG_MONTHS = [1, 2, 3, 9]            # [] to disable lags
-
-CENTER = True                        # center continuous predictors (see note)
-                                     # Off = raw values; quick checks only —
-                                     # with facility dummies + squares this is
-                                     # what keeps the fit well-conditioned.
-
-MIN_OBS = 24
-min_year_historical = 2012
-max_year_historical = 2025
-LAST_HIST_YEAR = max_year_historical - 1     # year held here in projection
-
-# Projection
-PROJECT = True
-PROJECT_HOLD_YEAR = True             # hold year fixed -> climate-only difference
-SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
-WBGT_MODELS   = ["lowest", "median", "highest"]   # model ids in the file names
-min_year_projection = 2025
-max_year_projection = 2071
-
-DATA_DIR    = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR     = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
-PANEL_PATH  = (f"{DATA_DIR}/All_predictors_processed/"
-               f"regression_panel_{INDICATOR}.csv")
-INDICES_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices/"     # CMIP6 extreme files
-
+DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Shared column construction (used for the historical fit AND every future frame)
+# Helpers (identical to single-indicator script)
 # ---------------------------------------------------------------------------
 def add_weather_columns(df, shifts, lag_months=LAG_MONTHS):
-    """Add model-ready columns to a long (facility x date) frame:
-    year_c, month, and for each LEVEL var its centred value {v}_c, optional
-    square {v}_c_sq, and centred lags {v}_lag{l}_c. `shifts` holds the constant
-    subtracted from each var (historical mean if CENTER, else 0) so future data
-    is centred on the SAME origin as the fit. Returns (df, rhs_term_list)."""
     df = df.sort_values(["facility", "date"]).reset_index(drop=True)
     df["year"]  = df["date"].dt.year
     df["month"] = df["date"].dt.month
@@ -100,253 +97,236 @@ def add_weather_columns(df, shifts, lag_months=LAG_MONTHS):
 
 
 def fit_negbin(formula, data, groups, bounds=(1e-3, 10.0)):
-    """NB2 by GLM/IRLS; alpha chosen by profile likelihood; clustered SEs."""
     def neg_llf(log_a):
         a = np.exp(log_a)
-        return -smf.glm(formula, data=data,
-                        family=sm.families.NegativeBinomial(alpha=a)).fit().llf
-    opt = minimize_scalar(neg_llf, bounds=np.log(bounds),
-                          method="bounded", options={"xatol": 1e-2})
+        return -smf.glm(
+            formula, data=data,
+            family=sm.families.NegativeBinomial(alpha=a)
+        ).fit().llf
+    opt = minimize_scalar(
+        neg_llf, bounds=np.log(bounds),
+        method="bounded", options={"xatol": 1e-2}
+    )
     alpha_hat = float(np.exp(opt.x))
-    res = smf.glm(formula, data=data,
-                  family=sm.families.NegativeBinomial(alpha=alpha_hat)
-                  ).fit(cov_type="cluster", cov_kwds={"groups": groups})
+    res = smf.glm(
+        formula, data=data,
+        family=sm.families.NegativeBinomial(alpha=alpha_hat)
+    ).fit(cov_type="cluster", cov_kwds={"groups": groups})
     res.alpha_hat = alpha_hat
     return res
 
 
-# ---------------------------------------------------------------------------
-# STEP 0 — Load historical panel + tidy
-# ---------------------------------------------------------------------------
-print("Loading regression panel...")
-long = pd.read_csv(PANEL_PATH, parse_dates=["date"])
-long = long.rename(columns={INDICATOR: "y"})
+def run_indicator(indicator: str) -> pd.DataFrame | None:
+    """
+    Fit baseline + weather NB for one indicator.
+    Returns a DataFrame of weather-term coefficients, or None on failure.
+    """
+    panel_path = (
+        f"{DATA_DIR}/All_predictors_processed/"
+        f"regression_panel_{indicator}.csv"
+    )
+    if not os.path.exists(panel_path):
+        print(f"  [{indicator}] Panel file not found — skipping.")
+        return None
 
-for v in WEATHER_VARS_LEVEL:
-    if v not in long.columns:
-        raise KeyError(f"'{v}' not in panel — rerun the panel builder so the "
-                       f"ERA5 predictor is written into {os.path.basename(PANEL_PATH)}")
+    # --- Load & tidy -------------------------------------------------------
+    long = pd.read_csv(panel_path, parse_dates=["date"])
+    long = long.rename(columns={indicator: "y"})
 
-# Date-based masks
-long.loc[long["date"].between("2020-04-01", "2021-12-01"), "y"] = np.nan
-long.loc[(long["date"].between("2023-04-01", "2024-06-01")) &
-         (long["facility"] == "Phalombe Health Centre"), "y"] = 0
-long.loc[(long["date"].between("2023-03-01", "2024-03-01")) &
-         (long["facility"] == "Thumbwe Health Centre"), "y"] = 0
+    missing_vars = [v for v in WEATHER_VARS_LEVEL if v not in long.columns]
+    if missing_vars:
+        print(f"  [{indicator}] Missing weather vars {missing_vars} — skipping.")
+        return None
 
-long["year"]  = long["date"].dt.year
-long["month"] = long["date"].dt.month
-long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
+    # Masks
+    long.loc[long["date"].between("2020-04-01", "2021-12-01"), "y"] = np.nan
+    long.loc[
+        (long["date"].between("2023-04-01", "2024-06-01")) &
+        (long["facility"] == "Phalombe Health Centre"), "y"
+    ] = 0
+    long.loc[
+        (long["date"].between("2023-03-01", "2024-03-01")) &
+        (long["facility"] == "Thumbwe Health Centre"), "y"
+    ] = 0
 
-# Sparse-facility filter (need the weather level vars present)
-obs_per_fac = long.dropna(subset=["y"] + WEATHER_VARS_LEVEL).groupby("facility").size()
-keep_facs   = obs_per_fac[obs_per_fac >= MIN_OBS].index
-long        = long[long["facility"].isin(keep_facs)].copy()
-print(f"Facilities after sparsity filter: {long['facility'].nunique()}")
+    long["year"]  = long["date"].dt.year
+    long["month"] = long["date"].dt.month
+    long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
 
-if apply_cap:
-    long.loc[long["y"] > 4e3, "y"] = np.nan
+    if apply_cap:
+        long.loc[long["y"] > 4e3, "y"] = np.nan
 
-# --- Centring shifts (historical means; reused for projection) --------------
-SHIFTS = {"year": long["year"].mean() if CENTER else 0.0}
-for v in WEATHER_VARS_LEVEL:
-    SHIFTS[v] = long[v].mean() if CENTER else 0.0
+    # Sparsity filter
+    obs_per_fac = long.dropna(subset=["y"] + WEATHER_VARS_LEVEL).groupby("facility").size()
+    keep_facs   = obs_per_fac[obs_per_fac >= MIN_OBS].index
+    long        = long[long["facility"].isin(keep_facs)].copy()
 
-# Build model columns on the full grid (lags need the complete monthly series)
-long, weather_rhs = add_weather_columns(long, SHIFTS)
+    if long.empty or long["facility"].nunique() < 2:
+        print(f"  [{indicator}] Too few facilities after filter — skipping.")
+        return None
 
-# ---------------------------------------------------------------------------
-# Build the NB estimation sample
-# ---------------------------------------------------------------------------
-nb_cols = ["y", "facility"] + weather_rhs
-nb_data = long.dropna(subset=nb_cols).copy()
-nb_data["y_int"] = nb_data["y"].round().clip(lower=0).astype(int)
+    # Centring shifts
+    shifts = {"year": long["year"].mean() if CENTER else 0.0}
+    for v in WEATHER_VARS_LEVEL:
+        shifts[v] = long[v].mean() if CENTER else 0.0
 
-obs_nb  = nb_data.groupby("facility").size()
-nb_data = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= MIN_OBS].index)].copy()
-FITTED_FACILITIES = set(nb_data["facility"].unique())
-print(f"NB sample: {len(nb_data)} obs, {len(FITTED_FACILITIES)} facilities "
-      f"(CENTER={CENTER})")
+    long, weather_rhs = add_weather_columns(long, shifts)
 
-# ---------------------------------------------------------------------------
-# STEP 1 — Fit baseline + weather; two-model difference
-# ---------------------------------------------------------------------------
-groups = nb_data["facility"]
-FE = "C(month) + C(facility)"
-f_base = f"y_int ~ year_c + {FE}"
-f_wx   = f"y_int ~ {' + '.join(weather_rhs)} + {FE}"
+    # NB sample
+    nb_cols  = ["y", "facility"] + weather_rhs
+    nb_data  = long.dropna(subset=nb_cols).copy()
+    nb_data["y_int"] = nb_data["y"].round().clip(lower=0).astype(int)
+    obs_nb   = nb_data.groupby("facility").size()
+    nb_data  = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= MIN_OBS].index)].copy()
 
-print("\nFitting baseline NB (no weather)...")
-model_base = fit_negbin(f_base, nb_data, groups)
-print(f"  alpha_hat = {model_base.alpha_hat:.4f}")
+    if nb_data.empty or nb_data["facility"].nunique() < 2:
+        print(f"  [{indicator}] NB sample too small — skipping.")
+        return None
 
-print("Fitting weather NB...")
-model_wx = fit_negbin(f_wx, nb_data, groups)
-print(f"  alpha_hat = {model_wx.alpha_hat:.4f}")
-print(model_wx.summary())
+    groups = nb_data["facility"]
+    FE     = "C(month) + C(facility)"
+    f_wx   = f"y_int ~ {' + '.join(weather_rhs)} + {FE}"
 
-assert model_base.nobs == model_wx.nobs, "baseline and weather samples differ!"
+    try:
+        model_wx = fit_negbin(f_wx, nb_data, groups)
+    except Exception as e:
+        print(f"  [{indicator}] Model failed: {e} — skipping.")
+        return None
 
-# LR test (same sample, alpha per model)
-LR = -2 * (model_base.llf - model_wx.llf)
-df = len(model_wx.params) - len(model_base.params)
-print(f"\nBaseline vs weather:  LR={LR:.2f}, df={df}, "
-      f"p={1 - stats.chi2.cdf(LR, df):.4f}")
+    # --- Extract weather-term coefficients ---------------------------------
+    ci   = model_wx.conf_int()
+    rows = []
+    for term in weather_rhs:
+        if term == "year_c" or term not in model_wx.params.index:
+            continue
+        rows.append({
+            "indicator":  indicator,
+            "label":      INDICATOR_LABELS.get(indicator, indicator),
+            "term":       term,
+            "coef":       model_wx.params[term],
+            "ci_lo":      ci.loc[term, 0],
+            "ci_hi":      ci.loc[term, 1],
+            "irr":        np.exp(model_wx.params[term]),
+            "irr_lo":     np.exp(ci.loc[term, 0]),
+            "irr_hi":     np.exp(ci.loc[term, 1]),
+            "pval":       model_wx.pvalues[term],
+            "alpha_hat":  model_wx.alpha_hat,
+            "n_obs":      int(model_wx.nobs),
+            "n_fac":      nb_data["facility"].nunique(),
+        })
 
-# Weather-term effect sizes (per unit AND per SD). NOTE: with squares + lags
-# these individual IRRs are collinear — report the reconstructed marginal
-# curve / cumulative-lag effect, not this table, in the paper.
-print(f"\n{'Variable':<22} {'IRR/unit':>9} {'IRR/SD':>9} {'p':>8}")
-print("-" * 52)
-for term in weather_rhs:
-    if term == "year_c" or term not in model_wx.params.index:
-        continue
-    coef = model_wx.params[term]
-    sd = nb_data[term].std()
-    print(f"{term:<22} {np.exp(coef):>9.4f} {np.exp(coef*sd):>9.4f} "
-          f"{model_wx.pvalues[term]:>8.4f}")
+    print(f"  [{indicator}] ✓  n={int(model_wx.nobs):,}, "
+          f"facilities={nb_data['facility'].nunique()}, "
+          f"alpha={model_wx.alpha_hat:.3f}")
+    return pd.DataFrame(rows)
 
-
-def save_irr(model, path):
-    ci = model.conf_int()
-    pd.DataFrame({
-        "coefficient_name": model.params.index,
-        "IRR":          np.exp(model.params.values),
-        "coefficients": model.params.values,
-        "CI_lower":     ci[0].values, "CI_upper": ci[1].values,
-        "IRR_CI_lower": np.exp(ci[0].values), "IRR_CI_upper": np.exp(ci[1].values),
-        "p_values":     model.pvalues.values,
-    }).to_csv(path, index=False)
-
-save_irr(model_base, f"{OUT_DIR}results_negbin_baseline_{service}.csv")
-save_irr(model_wx,   f"{OUT_DIR}results_negbin_weather_{service}.csv")
-
-# Two-model difference on the historical sample
-nb_data["y_pred_base"] = model_base.fittedvalues
-nb_data["y_pred_wx"]   = model_wx.fittedvalues
-nb_data["residuals"]   = nb_data["y_int"] - nb_data["y_pred_wx"]
-nb_data["difference"]  = nb_data["y_pred_base"] - nb_data["y_pred_wx"]
 
 # ---------------------------------------------------------------------------
-# Historical diagnostic plots
+# MAIN LOOP
 # ---------------------------------------------------------------------------
-def _year_axis(ax):
-    ax.xaxis.set_major_locator(mdates.YearLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-    for lab in ax.get_xticklabels():
-        lab.set_rotation(45); lab.set_ha("right")
+print("=" * 60)
+print("Looping over all count indicators")
+print("=" * 60)
 
-g = (nb_data.groupby("date")[["y_int", "y_pred_base", "y_pred_wx",
-                              "residuals", "difference"]]
-     .mean().reset_index().sort_values("date"))
+all_results: list[pd.DataFrame] = []
 
-fig, axs = plt.subplots(1, 2, figsize=(14, 6))
-axs[0].scatter(g["date"], g["y_int"],       color="#1C6E8C", alpha=0.7, label="Actual (mean)")
-axs[0].scatter(g["date"], g["y_pred_base"], color="grey",    alpha=0.7, label="Baseline NB")
-axs[0].scatter(g["date"], g["y_pred_wx"],   color="#9AC4F8", alpha=0.7, label="Weather NB")
-axs[0].set_xlabel("Date"); axs[0].set_ylabel(f"Mean {service}")
-axs[0].set_title(f"A: Actual vs Predicted {service}"); axs[0].legend(); _year_axis(axs[0])
-axs[1].scatter(g["date"], g["residuals"], color="#823038", alpha=0.7, label="Residuals (mean)")
-axs[1].axhline(0, color="black", linestyle="--")
-axs[1].set_xlabel("Date"); axs[1].set_ylabel("Residuals")
-axs[1].set_title("B: Residuals"); axs[1].legend(); _year_axis(axs[1])
-plt.tight_layout(); plt.savefig(f"{OUT_DIR}{service}_negbin_model_fit.png"); plt.close()
+for ind in COUNT_INDICATORS:
+    print(f"\n→ {ind}")
+    result = run_indicator(ind)
+    if result is not None:
+        all_results.append(result)
 
-fig, ax = plt.subplots(figsize=(9, 6))
-pos = g["difference"] >= 0
-ax.vlines(g.loc[pos,  "date"], 0, g.loc[pos,  "difference"], color="#1C6E8C")
-ax.scatter(g.loc[pos, "date"],    g.loc[pos,  "difference"], color="#1C6E8C",
-           label="More than weather predicts")
-ax.vlines(g.loc[~pos, "date"], 0, g.loc[~pos, "difference"], color="#823038")
-ax.scatter(g.loc[~pos,"date"],    g.loc[~pos, "difference"], color="#823038",
-           label="Fewer than weather predicts")
-ax.axhline(0, color="black", linestyle="--")
-ax.axvspan(pd.Timestamp("2023-02-01"), pd.Timestamp("2023-03-01"),
-           color="#B4E33D", alpha=0.4, label="Cyclone Freddy")
-ax.set_xlabel("Date"); ax.set_ylabel(f"Baseline − weather predicted {service}")
-ax.legend(); _year_axis(ax)
-plt.tight_layout(); plt.savefig(f"{OUT_DIR}{service}_negbin_disruptions.png"); plt.close()
+if not all_results:
+    raise RuntimeError("No indicators fitted successfully — check panel paths.")
 
-# Historical predictions out
-hist_out = (["year", "month", "facility", "date", "y_int",
-             "y_pred_base", "y_pred_wx", "residuals", "difference"]
-            + WEATHER_VARS_LEVEL)
-nb_data[hist_out].to_csv(
-    f"{OUT_DIR}results_negbin_predictions_{service}.csv", index=False)
-print(f"\nHistorical outputs written to {OUT_DIR}")
+coef_df = pd.concat(all_results, ignore_index=True)
+coef_df.to_csv(f"{OUT_DIR}all_indicators_weather_coefficients.csv", index=False)
+print(f"\nCoefficients saved → {OUT_DIR}all_indicators_weather_coefficients.csv")
 
 # ---------------------------------------------------------------------------
-# STEP 3 — Forward projection under CMIP6
+# FOREST PLOT — one panel per weather term
 # ---------------------------------------------------------------------------
-def load_future_wbgt(scenario, model):
-    """Return a long (facility x date) frame with each WEATHER_VARS_LEVEL column
-    for this SSP/model. Default reads the CMIP6 extreme-index facility file from
-    wbgt_extreme_indices.py. Point this at your own file(s) if named differently
-    or if you need a CMIP6 monthly-MEAN column as well."""
-    path = f"{INDICES_DIR}wbgt_extreme_indices_facility_{model}_{scenario}.csv"
-    df = pd.read_csv(path, parse_dates=["date"])
-    if "facility_id" in df.columns:
-        df = df.rename(columns={"facility_id": "facility"})
-    missing = [v for v in WEATHER_VARS_LEVEL if v not in df.columns]
-    if missing:
-        raise KeyError(f"{missing} not in {os.path.basename(path)} "
-                       f"(have {list(df.columns)}). Supply a file that carries "
-                       "these projected predictors.")
-    return df[["facility", "date"] + WEATHER_VARS_LEVEL]
+TERM_TITLES = {
+    f"{WEATHER_VARS_LEVEL[0]}_c":           "WBGT 5-day Extreme (linear)",
+    f"{WEATHER_VARS_LEVEL[0]}_c_sq":        "WBGT 5-day Extreme (quadratic)",
+    **{
+        f"{WEATHER_VARS_LEVEL[0]}_lag{l}_c": f"WBGT 5-day Extreme (lag {l}m)"
+        for l in LAG_MONTHS
+    },
+}
 
+terms_present = [t for t in TERM_TITLES if t in coef_df["term"].unique()]
+n_panels      = len(terms_present)
 
-def project(future_long):
-    """Apply the fitted baseline + weather models to future WBGT and return the
-    per-facility-month two-model difference. Centres with the HISTORICAL SHIFTS;
-    restricted to facilities the models were fitted on."""
-    fut = future_long[future_long["facility"].isin(FITTED_FACILITIES)].copy()
-    if fut.empty:
-        return fut
-    fut = fut[(fut["date"].dt.year >= min_year_projection) &
-              (fut["date"].dt.year < max_year_projection)]
-    fut, _ = add_weather_columns(fut, SHIFTS)          # SAME construction + shifts
-    if PROJECT_HOLD_YEAR:
-        fut["year_c"] = LAST_HIST_YEAR - SHIFTS["year"]   # climate-only difference
-    fut = fut.dropna(subset=weather_rhs).copy()
-    fut["y_pred_base"] = model_base.predict(fut)
-    fut["y_pred_wx"]   = model_wx.predict(fut)
-    fut["difference"]  = fut["y_pred_base"] - fut["y_pred_wx"]
-    return fut
+fig, axes = plt.subplots(
+    1, n_panels,
+    figsize=(5.5 * n_panels, max(5, len(COUNT_INDICATORS) * 0.55 + 2)),
+    sharey=True,
+)
+if n_panels == 1:
+    axes = [axes]
 
+for ax, term in zip(axes, terms_present):
+    sub = (
+        coef_df[coef_df["term"] == term]
+        .sort_values("irr", ascending=True)
+        .reset_index(drop=True)
+    )
 
-if PROJECT:
-    print("\n" + "=" * 60)
-    print("FORWARD PROJECTION")
-    print("=" * 60)
-    for scenario in SSP_SCENARIOS:
-        for model in WBGT_MODELS:
-            try:
-                fut_raw = load_future_wbgt(scenario, model)
-            except FileNotFoundError:
-                print(f"  {scenario}/{model}: file not found — skipping")
-                continue
-            proj = project(fut_raw)
-            if proj.empty:
-                print(f"  {scenario}/{model}: no projectable facilities — skipping")
-                continue
+    y_pos  = np.arange(len(sub))
+    colors = [
+        "#823038" if p < 0.05 else "#888888"   # red = significant
+        for p in sub["pval"]
+    ]
 
-            keep = (["year", "month", "facility", "date",
-                     "y_pred_base", "y_pred_wx", "difference"] + WEATHER_VARS_LEVEL)
-            proj[keep].to_csv(
-                f"{OUT_DIR}projection_{scenario}_{model}_{service}.csv", index=False)
+    # CI lines
+    for i, row in sub.iterrows():
+        ax.plot(
+            [row["irr_lo"], row["irr_hi"]],
+            [i, i],
+            color=colors[i], linewidth=1.4, zorder=1,
+        )
 
-            gp = proj.groupby("date")["difference"].mean().reset_index().sort_values("date")
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(gp["date"], gp["difference"], color="#823038")
-            ax.axhline(0, color="black", linestyle="--")
-            ax.set_title(f"Projected mean disruption — {scenario} / {model}")
-            ax.set_xlabel("Date"); ax.set_ylabel(f"Baseline − weather predicted {service}")
-            _year_axis(ax)
-            plt.tight_layout()
-            plt.savefig(f"{OUT_DIR}projection_{scenario}_{model}_{service}.png")
-            plt.close()
+    # Point estimates
+    ax.scatter(sub["irr"], y_pos, color=colors, s=55, zorder=2)
 
-            print(f"  {scenario}/{model}: {proj['facility'].nunique()} facilities, "
-                  f"mean diff {proj['difference'].mean():.2f}  -> written")
+    # Reference line
+    ax.axvline(1.0, color="black", linestyle="--", linewidth=0.9)
 
+    # Shade significant rows
+    for i, row in sub.iterrows():
+        if row["pval"] < 0.05:
+            ax.axhspan(i - 0.4, i + 0.4, color="#f7e0e2", alpha=0.35, zorder=0)
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(
+        [INDICATOR_LABELS.get(s, s) for s in sub["indicator"]],
+        fontsize=9,
+    )
+    ax.set_xlabel("IRR (95 % CI)", fontsize=10)
+    ax.set_title(TERM_TITLES.get(term, term), fontsize=10, fontweight="bold")
+    ax.grid(axis="x", linestyle=":", alpha=0.5)
+
+# Shared legend
+sig_patch  = mpatches.Patch(color="#823038", label="p < 0.05")
+ns_patch   = mpatches.Patch(color="#888888", label="p ≥ 0.05")
+fig.legend(
+    handles=[sig_patch, ns_patch],
+    loc="lower center", ncol=2,
+    fontsize=9, frameon=False,
+    bbox_to_anchor=(0.5, -0.02),
+)
+
+fig.suptitle(
+    "Weather (WBGT) IRRs across health service indicators\n"
+    "Negative Binomial, facility + month FE, clustered SEs",
+    fontsize=12, fontweight="bold", y=1.01,
+)
+plt.tight_layout()
+plt.savefig(
+    f"{OUT_DIR}forest_plot_all_indicators.png",
+    dpi=180, bbox_inches="tight",
+)
+plt.close()
+print(f"Forest plot saved → {OUT_DIR}forest_plot_all_indicators.png")
 print("\nDone.")
