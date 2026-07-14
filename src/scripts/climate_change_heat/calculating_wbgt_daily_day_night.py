@@ -66,7 +66,7 @@ DATA_DIR = Path(
 )
 
 OUT_DIR = Path(
-    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split"
+    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Splitz"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -79,6 +79,20 @@ YEAR_END = 2040
 # single representative dewpoint (see calculate_bracket_rh below).
 REQUIRED_VARS = ["tas", "tasmax", "tasmin", "hurs", "rsds", "sfcWind"]
 OPTIONAL_VARS = ["huss", "rlds", "ps"]
+
+# --- ERA5-derived forcing climatology --------------------------------------
+# NEX-GDDP-CMIP6 provides no surface pressure and no direct/diffuse split, so
+# the day bracket otherwise falls back to the constants below. If this file
+# exists (written by build_era5_forcing_climatology.py, on the CMIP6 grid), its
+# per-cell mean surface pressure and per-cell MONTHLY daytime direct-beam
+# fraction REPLACE those constants — an ERA5 climatology instead of a guess.
+# Set ERA5_CLIMATOLOGY_FILE = None to keep the constants.
+ERA5_CLIMATOLOGY_FILE = Path(
+    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/"
+    "era5_forcing_climatology_cmip6grid.nc"
+)
+DEFAULT_PRESSURE_HPA = 900.0   # used where climatology absent / NaN
+DEFAULT_FDIR = 0.7             # used where climatology absent / NaN
 
 # WBGT thresholds used in the summary print-out (Gohar et al., matches exposure_map.py)
 WBGT_THRESHOLDS = {
@@ -604,6 +618,23 @@ def load_variable(model_dir, scenario, variable, year_start, year_end):
         return None
 
 
+def load_forcing_climatology(lats, lons):
+    """Return (ps_hpa[ny,nx], fdir_monthly[12,ny,nx]) from the ERA5 forcing
+    climatology interpolated onto this model's grid, or (None, None) if the
+    file is not set / not found. NaN cells are filled with the constants."""
+    if ERA5_CLIMATOLOGY_FILE is None or not Path(ERA5_CLIMATOLOGY_FILE).exists():
+        return None, None
+    ds = xr.open_dataset(ERA5_CLIMATOLOGY_FILE)
+    # Same 0.25-deg CMIP6 grid -> nearest is exact; also robust if minor offset.
+    ds = ds.interp(lat=lats, lon=lons, method="nearest")
+    ps = np.asarray(ds["surface_pressure_hpa"].values, dtype=float)
+    fd = np.asarray(ds["direct_fraction"].values, dtype=float)   # (12, ny, nx)
+    ds.close()
+    ps = np.where(np.isfinite(ps), ps, DEFAULT_PRESSURE_HPA)
+    fd = np.where(np.isfinite(fd), fd, DEFAULT_FDIR)
+    return ps, fd
+
+
 def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
     """
     Calculate day/night-bracketed WBGT for a single model and scenario.
@@ -658,17 +689,34 @@ def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
     rsds = variables["rsds"]
     sfcwind = variables["sfcWind"]
 
-    # Pressure: use ps if available, otherwise assume 900 hPa (typical for Malawi elevation)
-    if "ps" in variables:
-        ps_hpa = variables["ps"] / 100.0  # Convert Pa to hPa
-    else:
-        ps_hpa = xr.ones_like(tas) * 900.0
-        print("    Using default pressure: 900 hPa")
-
     # Get coordinates
     lats = tas.lat.values
     lons = tas.lon.values
     times = tas.time.values
+
+    # ERA5 forcing climatology (per-cell pressure + monthly direct fraction)
+    clim_ps, clim_fdir = load_forcing_climatology(lats, lons)
+    use_clim = clim_ps is not None
+
+    # Pressure priority: real ps (rare for NEX-GDDP) > ERA5 climatology > constant.
+    # ps_field is (ny,nx) and constant in time; ps_hpa is a per-time DataArray.
+    if "ps" in variables:
+        ps_hpa = variables["ps"] / 100.0  # Convert Pa to hPa
+        ps_field = None
+        print("    Using model surface pressure (ps)")
+    elif use_clim:
+        ps_hpa = None
+        ps_field = clim_ps                # (ny,nx), hPa
+        print("    Using ERA5 climatological surface pressure")
+    else:
+        ps_hpa = None
+        ps_field = np.full((len(lats), len(lons)), DEFAULT_PRESSURE_HPA)
+        print(f"    Using default pressure: {DEFAULT_PRESSURE_HPA} hPa")
+
+    if use_clim:
+        print("    Using ERA5 monthly direct-beam fraction (day bracket)")
+    else:
+        print(f"    Using default direct-beam fraction: {DEFAULT_FDIR}")
 
     # Create lat/lon meshgrid
     lon_grid, lat_grid = np.meshgrid(lons, lats)
@@ -699,10 +747,10 @@ def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
         solar = rsds.isel(time=t_idx).values
         speed = sfcwind.isel(time=t_idx).values
 
-        if isinstance(ps_hpa, xr.DataArray):
+        if ps_hpa is not None:                 # real per-time model pressure
             p_hpa = ps_hpa.isel(time=t_idx).values
-        else:
-            p_hpa = ps_hpa.values if hasattr(ps_hpa, 'values') else ps_hpa
+        else:                                  # ERA5-clim or constant (ny,nx)
+            p_hpa = ps_field
 
         # Representative dewpoint from the daily mean - held constant across
         # the day/night brackets (see calculate_bracket_rh docstring)
@@ -724,7 +772,10 @@ def calculate_wbgt_for_model(model_dir, scenario, year_start, year_end):
             lat_grid, lon_grid, year, month, day, hour=12
         )
         cossza_day = np.maximum(cossza_day, 0.05)
-        fdir_day = np.full_like(solar, 0.7)
+        if use_clim:
+            fdir_day = clim_fdir[month - 1]        # (ny,nx) for this month
+        else:
+            fdir_day = np.full_like(solar, DEFAULT_FDIR)
 
         wbgt_day, tg_day, twb_day = calculate_wbgt(
             t_max, rh_day, p_hpa, solar, fdir_day, cossza_day, speed
