@@ -139,17 +139,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # keep only months in TLM
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
-        # todo: drop duplicated persons
+        # map Event_Name with TLM service area
+        _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
-        _df = _df.groupby(
-            ["Facility_ID", "Sex", "Age_Range", "Wealth", "TREATMENT_ID"]
-        )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
-        # _df["TREATMENT_ID"] = _df["TREATMENT_ID"].replace(hsi_loc_cat_map)
-        _df.rename(columns={"TREATMENT_ID": "loc_cat"}, inplace=True)
+        # todo: drop duplicated persons in the target period?
+        # duplicated case 1: same person id received multiple HSIs on a day, including generic fist appt
+        # duplicated case 2: same person id received multiple HSIs due to the same episode of condition
+        # in the target period, such as inpatient postnatal care
+        # rough solution: drop nan loc_cat entries and then
+        # drop duplicated person ids receiving care in the same tlm service area on the same day, consistent with
+        # TLM data collection method that is based on daily collection
+        # one possible issue is that this drop may drop more than necessary,
+        # such as a patient visiting OPD clinic may have multiple diseases to see - need to check this in TLM data
+        _df = _df.dropna(subset=["loc_cat"])
+        _df = _df.drop_duplicates(subset=["date", "Person_ID", "loc_cat"])
+
+        # get patient counts per target subgroups
         _df = _df.groupby(
             ["Facility_ID", "Sex", "Age_Range", "Wealth", "loc_cat"]
-        )["patient_count"].sum().reset_index()
+        )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
 
+        # merge info from mfl
         _df = merge_info_from_mfl(_df)
 
         # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
@@ -284,6 +294,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         / "human_resources"
         / "TLM_2024"
     )
+
+    hsi_loc_cat_map = pd.read_csv(
+        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
+        usecols=["Event_Name", "TLM service area"]
+    ).rename(columns={"TLM service area": "loc_cat"}).set_index("Event_Name")["loc_cat"]
 
     # read in TLM estimates
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
