@@ -392,10 +392,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pat_mix = pd.concat([pat_mix, pat_mix_fac_tms], ignore_index=True)
 
     # format to be consistent to TLO output
-    pat_mix["category"] = pat_mix["category"].replace({"fac_level": "Facility_level",
+    pat_mix["category"] = pat_mix["category"].replace({"fac_level": "Facility_Level",
                                                        "age_group_tlo": "Age_Range",
                                                        "wealth_tlo": "Wealth",
-                                                       "sex": "Sex"})
+                                                       "sex": "Sex",
+                                                       "loc_cat": "Service_Area"})
     pat_mix = pat_mix[["category", "subgroup", "pat_proportion", "source"]].rename(
         columns={"pat_proportion": "mean"}
     ).copy()
@@ -433,7 +434,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 "source": ["Patient Exit"],
                 "access_meds_percent": [access_meds_percent]
             })
-        else:  # subgroup == ["fac_level", "district"]
+        else:  # subgroup == ["fac_level", "district", "loc_cat"]
             access_meds_df = (
                 _df[_df["access_meds"].isin(["Yes", "No"])]
                 .groupby(subgroup)["access_meds"]
@@ -446,7 +447,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return access_meds_df
 
-    subgroups = ["overall", "fac_level", "district"]
+    subgroups = ["overall", "loc_cat", "fac_level", "district"]
 
     access_meds = pd.concat(
         [meds_access_by_subgroup(pat_exit, subgroup=s) for s in subgroups],
@@ -454,10 +455,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     access_meds["category"] = access_meds["category"].replace(
-        {"overall": "Overall", "fac_level": "Facility_level", "district": "District"}
+        {"overall": "Overall", "loc_cat": "Service_Area", "fac_level": "Facility_Level", "district": "District"}
     )
 
     ## todo: from TLO output
+    access_meds_tlo = extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem",
+        key="Consumables",
+        custom_generate_series=get_cons_access_mix_total_period,
+        do_scaling=False
+    )
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
