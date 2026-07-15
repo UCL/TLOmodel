@@ -421,6 +421,44 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # todo: *** prescribed cons. access comparison  ***
 
+    ## from TLM
+    def meds_access_by_subgroup(_df, subgroup=None):
+        if subgroup == "overall":
+            _df_yn = _df[_df["access_meds"].isin(["Yes", "No"])]
+            access_meds_percent = (_df_yn["access_meds"] == "Yes").mean() * 100
+
+            access_meds_df = pd.DataFrame({
+                "category": ["overall"],
+                "subgroup": ["overall"],
+                "source": ["Patient Exit"],
+                "access_meds_percent": [access_meds_percent]
+            })
+        else:  # subgroup == ["fac_level", "district"]
+            access_meds_df = (
+                _df[_df["access_meds"].isin(["Yes", "No"])]
+                .groupby(subgroup)["access_meds"]
+                .apply(lambda x: (x == "Yes").mean() * 100)
+                .reset_index()
+                .rename(columns={subgroup: "subgroup", "access_meds": "access_meds_percent"})
+                .assign(category=subgroup, source="Patient Exit")
+                [["category", "subgroup", "source", "access_meds_percent"]]
+            )
+
+        return access_meds_df
+
+    subgroups = ["overall", "fac_level", "district"]
+
+    access_meds = pd.concat(
+        [meds_access_by_subgroup(pat_exit, subgroup=s) for s in subgroups],
+        ignore_index=True
+    )
+
+    access_meds["category"] = access_meds["category"].replace(
+        {"overall": "Overall", "fac_level": "Facility_level", "district": "District"}
+    )
+
+    ## todo: from TLO output
+
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
     # noting the source and keeping all observations
