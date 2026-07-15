@@ -136,7 +136,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _df
 
     def get_patient_mix_total_period(_df):
-        # keep only months in TLM
+        # keep only months in TLM for comparison consistency
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
         # map Event_Name with TLM service area
@@ -159,7 +159,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ["Facility_ID", "Sex", "Age_Range", "Wealth", "loc_cat"]
         )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
 
-        # merge info from mfl
+        # merge info from mfl and format
         _df = merge_info_from_mfl(_df)
 
         # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
@@ -197,6 +197,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df_mix = _df_mix.set_index(["category", "subgroup"])["patient_proportion"]
 
         return _df_mix
+
+    def get_cons_access_mix_total_period(_df):
+        # keep only months in TLM
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
+        # merge in facility information from mfl and format
+        _df = merge_info_from_mfl(_df)
+
+        # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
+        _df.drop(index=_df[_df["Facility_Level"].isin(["0", "5"])].index, inplace=True)
+
+        # fill NANs
+        _df.loc[
+            _df["Facility_Level"] == "4", ["daily_patient_volume", "District", "Region"]
+        ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
+        _df.loc[
+            _df["Facility_ID"] == 128, "District"
+        ] = "Central Hospitals (Southern)"
+        _df.loc[
+            _df["Facility_ID"] == 129, "District"
+        ] = "Central Hospitals (Northern)"
+        _df.loc[
+            _df["Facility_ID"] == 130, "District"
+        ] = "Central Hospitals (Central)"
+
+        # keep only districts in TLM
+        _df = _df.loc[_df["District"].isin(common_districts)]
+
+        # todo: get the proportions of patients not getting the prescribed cons. by subgroup (overall, facility level)
+        # need to identify the HSIs involves prescribing
+
+        return _df
 
     # log = load_pickled_dataframes(results_folder, 0, 0)
     # h = pd.DataFrame(
@@ -370,7 +402,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pat_mix["lower"] = pat_mix["mean"].copy()
     pat_mix["upper"] = pat_mix["mean"].copy()
 
-    # todo: from TLO output
     patient_mix_tlo = extract_results(
         results_folder,
         module="tlo.methods.healthsystem",
@@ -387,6 +418,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pat_mix = pd.concat([pat_mix, patient_mix_tlo], ignore_index=True)
 
     # todo: plot; note axis ticks should be the same across sources - assert needed
+
+    # todo: *** prescribed cons. access comparison  ***
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
