@@ -32,6 +32,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Return total number of Deaths (total within the TARGET_PERIOD)"""
         _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
         _df['year'] = _df['date'].dt.year
+        # "label" can be used, as "cause" is very fine
         _df = _df.groupby(['year', 'cause']) \
             .agg({'person_id': 'count'}) \
             .rename(columns={'person_id': 'num_deaths'})['num_deaths']
