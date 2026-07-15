@@ -33,7 +33,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
         _df['year'] = _df['date'].dt.year
         # "label" can be used, as "cause" is very fine
-        _df = _df.groupby(['year', 'cause']) \
+        _df = _df.groupby(['year', 'label']) \
             .agg({'person_id': 'count'}) \
             .rename(columns={'person_id': 'num_deaths'})['num_deaths']
 
@@ -324,8 +324,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Check total DALYs
     # %% Define parameter names
-    counterfactual_scenario = 'No growth + Upper bound settings++'
-    actual_scenario = 'Historical growth + Upper bound settings++'
+    counterfactual_scenario = 'Main Counterfactual/No growth + Lower bound settings'
+    actual_scenario = 'Main Actual'
 
     # Absolute Number of Deaths and DALYs
     num_deaths = extract_results(
@@ -500,5 +500,5 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2020, 1, 1), Date(2030, 12, 31))
+        the_target_period=(Date(2019, 1, 1), Date(2030, 12, 31))
     )
