@@ -36,7 +36,6 @@ class LongRun(BaseScenario):
                 '*': logging.WARNING,
                 'tlo.methods.healthsystem': logging.DEBUG,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.consumables': logging.INFO,
             }
         }
 
