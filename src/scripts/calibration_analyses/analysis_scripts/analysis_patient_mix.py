@@ -142,6 +142,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # map Event_Name with TLM service area
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
+        # check that all events are mapped
+        unmapped = _df.loc[_df["loc_cat"].isna(), "Event_Name"].unique()
+        assert set(unmapped).issubset(
+            {"HSI_Alri_Treatment", "_BaseHSIGenericFirstAppt", "HSI_GenericEmergencyFirstAppt",
+             "HSI_GenericNonEmergencyFirstAppt", "HSI_Hiv_SelfTest", "HSI_Malaria_rdt_community", "HSI_Schisto_MDA",
+             "Inpatient_Care"})
+
         # todo: drop duplicated persons in the target period?
         # Duplicated case 1: same person id received multiple HSIs on a day, including generic fist appt
         # Duplicated case 2: same person id received multiple HSIs due to the same episode of condition
@@ -168,7 +175,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # fill NANs
         _df.loc[
-            _df["Facility_Level"] == "4", ["daily_patient_volume", "District", "Region"]
+            _df["Facility_Level"] == "4", ["patient_count", "District", "Region"]
         ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
         _df.loc[
             _df["Facility_ID"] == 128, "District"
@@ -204,6 +211,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
         # merge in facility information from mfl and format
+        _df.rename(columns={
+            "event_name": "Event_Name",
+            "facility_id": "Facility_ID",
+            "person_id": "Person_ID"
+        }, inplace=True)
         _df = merge_info_from_mfl(_df)
 
         # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
@@ -211,8 +223,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # fill NANs
         _df.loc[
-            _df["Facility_Level"] == "4", ["daily_patient_volume", "District", "Region"]
-        ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
+            _df["Facility_Level"] == "4", ["District", "Region"]
+        ] = ["Central Hospitals (Southern)", "Southern"]  # ZMH
         _df.loc[
             _df["Facility_ID"] == 128, "District"
         ] = "Central Hospitals (Southern)"
@@ -232,17 +244,96 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # medicines prescribed for the patients to take home as assumed in TLM data collection
         # 2. indicator of Prescription involvement (assume test, investigation, check HSIs do not involve prescribing)
 
-        # creat column of "access_meds" (Yes, No, Non prescribed)
+        # add in column of prescription involvement
+        _df["Prescription involvement"] = _df["Event_Name"].map(hsi_prescription_map)
+
+        # check that all events are mapped
+        unmapped = _df.loc[_df["Prescription involvement"].isna(), "Event_Name"].unique()
+        assert set(unmapped).issubset({"Inpatient_Care"})
+
+        # add in column of item_requested
+        # change item columns to dicts from string
+        import ast
+        _df["Item_NotAvailable"] = _df["Item_NotAvailable"].apply(ast.literal_eval)
+        _df["Item_Available"] = _df["Item_Available"].apply(ast.literal_eval)
+        _df["Item_Used"] = _df["Item_Used"].apply(ast.literal_eval)
+
+        _df["Item_Requested"] = _df.apply(
+            lambda row: dict(
+                Counter(row["Item_Available"])
+                + Counter(row["Item_NotAvailable"])
+            ),
+            axis=1
+        )
+
+        # add the column of access_meds, consistent with TLM data; (Yes, No, Non prescribed)
         # label event_name with item_requested = {} as "Non prescribed"
-        # label event_name assigned to "no prescription involved" as "Non prescribed"
+        # label event_name assigned to "No" in the "Prescription involvement" column as "Non prescribed"
         # label event_name with item_used = !{} as "Yes" (if not "Non prescribed")
         # label event_name with item_used = {} as "No" (if not "Non prescribed")
+        _df["access_meds"] = np.where(
+            (_df["Item_Requested"].apply(lambda x: not x))
+            | (_df["Prescription involvement"] == "No"),
+            "Non prescribed",
+            np.where(
+                _df["Item_Used"].apply(lambda x: bool(x)),
+                "Yes",
+                "No",
+            ),
+        )
+
+        # add loc_cat column; map Event_Name with TLM service area
+        _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
+
+        # check that all events are mapped
+        unmapped = _df.loc[_df["loc_cat"].isna(), "Event_Name"].unique()
+        assert set(unmapped).issubset(
+            {"HSI_Alri_Treatment", "_BaseHSIGenericFirstAppt", "HSI_GenericEmergencyFirstAppt",
+             "HSI_GenericNonEmergencyFirstAppt", "HSI_Hiv_SelfTest", "HSI_Malaria_rdt_community", "HSI_Schisto_MDA",
+             "Inpatient_Care"})
 
         # may not drop duplicated person_id + loc_cat + day
 
-        # percent meds access (i.e., item_used != {}), by subgroup ["overall", "loc_cat", "fac_level", "district"]
+        # percent meds access, by subgroup ["overall", "loc_cat", "fac_level", "district"]
+        def meds_access_by_subgroup_tlo(__df, subgroup=None):
+            if subgroup == "overall":
+                _df_yn = __df[__df["access_meds"].isin(["Yes", "No"])]
+                access_meds_percent = (_df_yn["access_meds"] == "Yes").mean() * 100
 
-        return _df
+                access_meds_df = pd.DataFrame({
+                    "category": ["overall"],
+                    "subgroup": ["overall"],
+                    "source": ["TLO"],
+                    "access_meds_percent": [access_meds_percent]
+                })
+            else:  # subgroup == ["fac_level", "district", "loc_cat"]
+                access_meds_df = (
+                    __df[__df["access_meds"].isin(["Yes", "No"])]
+                    .groupby(subgroup, dropna=False)["access_meds"]
+                    .apply(lambda x: (x == "Yes").mean() * 100)
+                    .reset_index()
+                    .rename(columns={subgroup: "subgroup", "access_meds": "access_meds_percent"})
+                    .assign(category=subgroup, source="TLO")
+                    [["category", "subgroup", "source", "access_meds_percent"]]
+                )
+
+            return access_meds_df
+
+        subgroups = ["overall", "loc_cat", "Facility_Level", "District"] #
+
+        _access_meds = pd.concat(
+            [meds_access_by_subgroup_tlo(_df, subgroup=s) for s in subgroups],
+            ignore_index=True
+        )
+
+        _access_meds["category"] = _access_meds["category"].replace(
+            {"overall": "Overall", "loc_cat": "Service_Area"}
+        )
+
+        # creat series
+        _access_meds = _access_meds.set_index(["category", "subgroup", "source"])["access_meds_percent"]
+
+        return _access_meds
 
     # log = load_pickled_dataframes(results_folder, 0, 0)
     # h = pd.DataFrame(
@@ -341,10 +432,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         / "TLM_2024"
     )
 
+    # HSI list is from https://www.tlomodel.org/hsi_events.html
     hsi_loc_cat_map = pd.read_csv(
         path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
-        usecols=["Event_Name", "TLM service area"]
-    ).rename(columns={"TLM service area": "loc_cat"}).set_index("Event_Name")["loc_cat"]
+        usecols=["Event", "TLM service area"]
+    ).rename(columns={"Event": "Event_Name", "TLM service area": "loc_cat"}).set_index("Event_Name")["loc_cat"]
+
+    hsi_prescription_map = pd.read_csv(
+        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
+        usecols=["Event", "Prescription involvement"]
+    ).rename(columns={"Event": "Event_Name"}).set_index("Event_Name")["Prescription involvement"]
 
     # read in TLM estimates
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
@@ -451,7 +548,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         else:  # subgroup == ["fac_level", "district", "loc_cat"]
             access_meds_df = (
                 _df[_df["access_meds"].isin(["Yes", "No"])]
-                .groupby(subgroup)["access_meds"]
+                .groupby(subgroup, dropna=False)["access_meds"]
                 .apply(lambda x: (x == "Yes").mean() * 100)
                 .reset_index()
                 .rename(columns={subgroup: "subgroup", "access_meds": "access_meds_percent"})
@@ -472,7 +569,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         {"overall": "Overall", "loc_cat": "Service_Area", "fac_level": "Facility_Level", "district": "District"}
     )
 
-    ## todo: from TLO output
+    access_meds.rename(columns={"access_meds_percent": "mean"}, inplace=True)
+    access_meds["lower"] = access_meds["mean"].copy()
+    access_meds["upper"] = access_meds["mean"].copy()
+
+    ## from TLO
     access_meds_tlo = extract_results(
         results_folder,
         module="tlo.methods.healthsystem",
@@ -480,6 +581,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=get_cons_access_mix_total_period,
         do_scaling=False
     )
+    # ignore NAN entries
+    access_meds_tlo = summarize(access_meds_tlo)
+    access_meds_tlo.columns = access_meds_tlo.columns.droplevel('draw')
+    access_meds_tlo .reset_index(inplace=True)
+
+    assert set(access_meds.columns) == set(access_meds_tlo.columns)
+    access_meds = pd.concat([access_meds, access_meds_tlo], ignore_index=True)
+
+    # todo: plot access_meds comparison
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
