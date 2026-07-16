@@ -143,14 +143,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
         # todo: drop duplicated persons in the target period?
-        # duplicated case 1: same person id received multiple HSIs on a day, including generic fist appt
-        # duplicated case 2: same person id received multiple HSIs due to the same episode of condition
+        # Duplicated case 1: same person id received multiple HSIs on a day, including generic fist appt
+        # Duplicated case 2: same person id received multiple HSIs due to the same episode of condition
         # in the target period, such as inpatient postnatal care
-        # rough solution: drop nan loc_cat entries and then
+        # Rough solution: drop nan loc_cat entries () and then
         # drop duplicated person ids receiving care in the same tlm service area on the same day, consistent with
         # TLM data collection method that is based on daily collection
-        # one possible issue is that this drop may drop more than necessary,
-        # such as a patient visiting OPD clinic may have multiple diseases to see - need to check this in TLM data
+        # One possible issue is that this drop may drop more than necessary,
+        # such as a patient visiting OPD clinic may have multiple diseases to see, whereas TLM patient exit shows
+        # no duplicated patients and that each patient has only visited one clinic on a day
         _df = _df.dropna(subset=["loc_cat"])
         _df = _df.drop_duplicates(subset=["date", "Person_ID", "loc_cat"])
 
@@ -226,7 +227,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[_df["District"].isin(common_districts)]
 
         # todo: get the proportions of patients not getting the prescribed cons. by subgroup (overall, facility level)
-        # need to identify the HSIs involves prescribing
+        # need to identify the HSIs involves prescribing:
+        # 1. approximated by item_requested = item_available + item_not_available != {}, but TLO items may not be
+        # medicines prescribed for the patients to take home as assumed in TLM data collection
+        # 2. indicator of Prescription involvement (assume test, investigation, check HSIs do not involve prescribing)
+
+        # creat column of "access_meds" (Yes, No, Non prescribed)
+        # label event_name with item_requested = {} as "Non prescribed"
+        # label event_name assigned to "no prescription involved" as "Non prescribed"
+        # label event_name with item_used = !{} as "Yes" (if not "Non prescribed")
+        # label event_name with item_used = {} as "No" (if not "Non prescribed")
+
+        # may not drop duplicated person_id + loc_cat + day
+
+        # percent meds access (i.e., item_used != {}), by subgroup ["overall", "loc_cat", "fac_level", "district"]
 
         return _df
 
