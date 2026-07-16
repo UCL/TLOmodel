@@ -15,7 +15,7 @@ from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
 
 
-DALY_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
+DALY_DEATH_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
 
 
 def find_difference_relative_to_comparison_series(
@@ -66,7 +66,6 @@ def set_param_names_as_column_index_level_0(_df, param_names):
 
 
 def extract_annual_dalys(results_folder):
-
     def get_num_dalys_yearly(df: pd.DataFrame) -> pd.Series:
         """Return total DALYs for each year."""
 
@@ -77,7 +76,7 @@ def extract_annual_dalys(results_folder):
         cause_cols = [
             c
             for c in df.columns
-            if c not in DALY_METADATA_COLUMNS
+            if c not in DALY_DEATH_METADATA_COLUMNS
             and pd.api.types.is_numeric_dtype(df[c])
         ]
 
@@ -96,10 +95,14 @@ def extract_annual_dalys(results_folder):
 
 # Extract annual Deaths
 def extract_annual_deaths(results_folder):
-    def get_num_deaths_yearly(df: pd.DataFrame) -> pd.Series:
-        """Return total deaths for each year."""
-        yearly = (df.assign(year=df["date"].dt.year).groupby("year")["person_id"].count())
-        return yearly
+    def get_num_deaths_yearly(df):
+        if "year" not in df.columns:
+            df = df.assign(year=df["date"].dt.year)
+
+        return (
+            df.groupby("year")["person_id"]
+            .count()
+        )
 
     return extract_results(
         results_folder,
@@ -121,10 +124,16 @@ def plot_annual_dalys(summarized_annual_dalys):
         "Baseline Nurses / Default Healthsystem Function": "Baseline",
         "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
         "More Nurses / Default Healthsystem Function": "More nurses",
+        "More CNP staff / Default Healthsystem Function": "More CNP",
+        "More Nurses by District / Default Healthsystem Function": "More nurses by district",
+        "More CNP staff by District / Default Healthsystem Function": "More CNP by district",
 
         "Baseline Nurses / Improved Healthsystem Function": "Baseline",
         "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
         "More Nurses / Improved Healthsystem Function": "More nurses",
+        "More CNP staff / Improved Healthsystem Function": "More CNP",
+        "More Nurses by District / Improved Healthsystem Function": "More nurses by district",
+        "More CNP staff by District / Improved Healthsystem Function": "More CNP by district",
     }
 
     for scenario in scenario_names:
@@ -140,7 +149,7 @@ def plot_annual_dalys(summarized_annual_dalys):
 
     ax.set_xlabel("Year")
     ax.set_ylabel("Annual DALYs")
-    ax.legend()
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.30), ncol=3,)
     ax.grid(alpha=0.3)
     ax.set_xlim(2025, 2034)
     ax.set_ylim(bottom=8e6)
@@ -164,10 +173,16 @@ def plot_annual_deaths(summarized_annual_deaths):
         "Baseline Nurses / Default Healthsystem Function": "Baseline",
         "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
         "More Nurses / Default Healthsystem Function": "More nurses",
+        "More CNP staff / Default Healthsystem Function": "More CNP",
+        "More Nurses by District / Default Healthsystem Function": "More nurses by district",
+        "More CNP staff by District / Default Healthsystem Function": "More CNP by district",
 
         "Baseline Nurses / Improved Healthsystem Function": "Baseline",
         "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
         "More Nurses / Improved Healthsystem Function": "More nurses",
+        "More CNP staff / Improved Healthsystem Function": "More CNP",
+        "More Nurses by District / Improved Healthsystem Function": "More nurses by district",
+        "More CNP staff by District / Improved Healthsystem Function": "More CNP by district",
     }
 
     for scenario in scenario_names:
@@ -188,7 +203,7 @@ def plot_annual_deaths(summarized_annual_deaths):
 
     ax.set_xlabel("Year")
     ax.set_ylabel("Annual deaths")
-    ax.legend()
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.30), ncol=3,)
     ax.grid(alpha=0.3)
     ax.set_xlim(2025, 2034)
     fig.tight_layout()
@@ -222,7 +237,6 @@ def extract_deaths_by_cause(results_folder):
 
 # Extract deaths by age group
 def extract_deaths_by_age_group(results_folder):
-
     def get_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
         """
         Return deaths by age group aggregated across 2027–2034.
@@ -266,7 +280,7 @@ def extract_dalys_by_cause(results_folder):
         # Removing metadata columns
         cause_cols = [
             c for c in df.columns
-            if c not in DALY_METADATA_COLUMNS
+            if c not in DALY_DEATH_METADATA_COLUMNS
                and pd.api.types.is_numeric_dtype(df[c])
         ]
         # Sum DALYs for each cause
@@ -293,7 +307,7 @@ def extract_dalys_by_age_group(results_folder):
 
         cause_cols = [
             c for c in df.columns
-            if c not in DALY_METADATA_COLUMNS
+            if c not in DALY_DEATH_METADATA_COLUMNS
                and pd.api.types.is_numeric_dtype(df[c])
         ]
 
@@ -313,14 +327,13 @@ def extract_dalys_by_age_group(results_folder):
 
 
 def extract_dalys_by_district(results_folder):
-
     def get_dalys_by_district(df):
 
         df = df.assign(year=df["date"].dt.year)
 
         cause_cols = [
             c for c in df.columns
-            if c not in DALY_METADATA_COLUMNS
+            if c not in DALY_DEATH_METADATA_COLUMNS
             and pd.api.types.is_numeric_dtype(df[c])
         ]
 
@@ -340,27 +353,24 @@ def extract_dalys_by_district(results_folder):
 
 
 def extract_deaths_by_district(results_folder):
-
-    # def get_deaths_by_district(df: pd.DataFrame) -> pd.Series:
-    #     """Return annual deaths by district."""
-    #
-    #     df = df.assign(year=df["date"].dt.year)
-    #
-    #     return (df.groupby(["year", "district_of_residence"])["person_id"].count())
-    #
-    # return extract_results(
-    #     results_folder,
-    #     module="tlo.methods.demography",
-    #     key="death",
-    #     custom_generate_series=get_deaths_by_district,
-    #     do_scaling=True,
-    # )
     def get_deaths_by_district(df):
-        print("===Looking for Death Cols")
-        print(df.columns)
-        print(df.head())
+        if "year" not in df.columns:
+            df = df.assign(year=df["date"].dt.year)
 
-        raise SystemExit
+        return (
+            df.groupby(
+                ["year", "district_of_residence"]
+            )["person_id"]
+            .count()
+        )
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=get_deaths_by_district,
+        do_scaling=True,
+    )
 
 
 if __name__ == "__main__":
@@ -405,27 +415,23 @@ if __name__ == "__main__":
 
     # VALIDATION
     # Sum DALYs across districts and compare to national totals
-    district_totals = dalys_by_district.groupby(level="year").sum()
+    district_daly_totals = dalys_by_district.groupby(level="year").sum()
 
-    comparison = pd.DataFrame({
-        "National DALYs": annual_dalys.squeeze(),
-        "District DALYs": district_totals.squeeze(),
-    })
-
-    comparison["Difference"] = (
-        comparison["National DALYs"]
-        - comparison["District DALYs"]
-    ).round(6)
+    daly_comparison = pd.concat(
+        {
+            "National DALYs": annual_dalys,
+            "District DALYs": district_daly_totals,
+        },
+        axis=1,
+    )
 
     print("\nComparison of National vs District DALYs")
-    print(comparison)
+    print(daly_comparison)
+    print(daly_comparison.abs().max().max())
 
-    assert np.allclose(
-        comparison["National DALYs"],
-        comparison["District DALYs"],
-    ), "District DALYs do not sum to national DALYs."
+    assert np.allclose(annual_dalys.values, district_daly_totals.values,)
 
-    print("\n DALY validation passed.")
+    print("\nDALY validation passed.")
 
     # NATIONAL DEATHS
     annual_deaths = extract_annual_deaths(results_folder)
@@ -434,7 +440,6 @@ if __name__ == "__main__":
     print(annual_deaths)
 
     # DISTRICT DEATHS
-
     deaths_by_district = extract_deaths_by_district(results_folder)
 
     print("\nDeaths by district")
@@ -445,23 +450,44 @@ if __name__ == "__main__":
 
     district_death_totals = deaths_by_district.groupby(level="year").sum()
 
-    death_comparison = pd.DataFrame({
-        "National Deaths": annual_deaths.squeeze(),
-        "District Deaths": district_death_totals.squeeze(),
-    })
+    death_comparison = pd.concat(
+        {
+            "National Deaths": annual_deaths,
+            "District Deaths": district_death_totals,
+        },
+        axis=1,
+    )
 
-    death_comparison["Difference"] = (
-        death_comparison["National Deaths"]
-        - death_comparison["District Deaths"]
-    ).round(6)
+    print(death_comparison)
+
+    difference = annual_deaths - district_death_totals
 
     print("\nComparison of National vs District Deaths")
     print(death_comparison)
+    print("\nComparison Death Difference")
+    print(difference)
 
-    assert np.allclose(
-        death_comparison["National Deaths"],
-        death_comparison["District Deaths"],
-    ), "District deaths do not sum to national deaths."
+    assert np.allclose(annual_deaths.values, district_death_totals.values,)
 
-    print("\n✓ Death validation passed.")
+    print("\nDeath validation passed.")
+
+    # EXPORT VALIDATION TABLES TO EXCEL
+    output_file = results_folder / "district_vs_national_validation.xlsx"
+    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+        # DALYs
+        annual_dalys.to_excel(writer,sheet_name="National_DALYs")
+        dalys_by_district.to_excel(writer,sheet_name="District_DALYs")
+        district_daly_totals.to_excel(writer,sheet_name="District_DALY_Totals")
+        (annual_dalys - district_daly_totals).to_excel(writer,sheet_name="DALY_Difference")
+
+        # Deaths
+        annual_deaths.to_excel(writer,sheet_name="National_Deaths")
+        deaths_by_district.to_excel(writer,sheet_name="District_Deaths")
+        district_death_totals.to_excel(writer,sheet_name="District_Death_Totals")
+
+        (annual_deaths - district_death_totals).to_excel(writer,sheet_name="Death_Difference")
+
+    print(f"\nValidation tables exported to:\n{output_file}")
+
+
 
