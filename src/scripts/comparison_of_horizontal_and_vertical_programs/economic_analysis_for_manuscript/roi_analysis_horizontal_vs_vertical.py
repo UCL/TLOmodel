@@ -49,7 +49,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 # Create folders to store results
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-main_figurespath = Path('./outputs/horizontal_v_vertical_firstrevision')
+main_figurespath = Path('./outputs/horizontal_v_vertical_firstrevision_9Jun2026')
 if not os.path.exists(main_figurespath):
     os.makedirs(main_figurespath)
 
@@ -144,7 +144,13 @@ def adjust_color(hex_color, factor=0.5):
 def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations=None,
                                  xticklabels_horizontal_and_wrapped=False,
                                  put_labels_in_legend=True,
-                                 offset=1e6):
+                                 offset=1e6,
+                                 add_dot_plot_overlay=False,
+                                 dot_color='black',
+                                 dot_size=45,
+                                 dot_edgecolor='white',
+                                 dot_linewidth=0.8
+                                 ):
     """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
      extent of the error bar."""
 
@@ -156,6 +162,7 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
     ])
 
     xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
+    x_positions = list(xticks.keys())
 
     if set_colors is not None:
         # dict mapping -> use index keys; list/tuple/Series -> use as-is
@@ -173,7 +180,7 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.bar(
-        xticks.keys(),
+        x_positions,
         _df[chosen_metric].values,
         yerr=yerr,
         ecolor='black',
@@ -181,6 +188,20 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
         capsize=10,
         label=xticks.values()
     )
+
+    # Optional dot overlay showing the same point estimate as the bar height
+
+    if add_dot_plot_overlay:
+        ax.scatter(
+            x_positions,
+            _df[chosen_metric].values,
+            s=dot_size,
+            color=dot_color,
+            edgecolor=dot_edgecolor,
+            linewidth=dot_linewidth,
+            zorder=5,
+            label='_nolegend_'  # prevents extra legend entry
+        )
 
     if annotations:
         for xpos, (ypos, text) in zip(xticks.keys(), zip(_df['upper'].values.flatten(), annotations)):
@@ -1533,7 +1554,10 @@ for rates in alternative_discount_rates:
         xticklabels_horizontal_and_wrapped=True,
         put_labels_in_legend=True,
         offset=0.2,
-        set_colors = draw_colors
+        set_colors = draw_colors,
+        add_dot_plot_overlay=True,
+        dot_color='black',
+        dot_size=55
     )
     ax.set_title(name_of_plot, fontsize = 12)
     for text in ax.texts:  # annotation font size
@@ -1560,7 +1584,10 @@ for rates in alternative_discount_rates:
         xticklabels_horizontal_and_wrapped=False,
         put_labels_in_legend=True,
         offset=0.2,
-        set_colors = draw_colors
+        set_colors = draw_colors,
+        add_dot_plot_overlay=True,
+        dot_color='black',
+        dot_size=55
     )
     ax.set_title(name_of_plot, fontsize = 12)
     for text in ax.texts:  # annotation font size

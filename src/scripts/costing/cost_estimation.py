@@ -1582,7 +1582,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
     plt.savefig(
         _outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.png',
-        dpi=100,
+        dpi=300,
         bbox_inches='tight')
     plt.close()
 
@@ -1778,7 +1778,7 @@ def do_line_plot_of_cost(_df: pd.DataFrame,
 
     draw_suffix = 'all' if _draws is None else str(_draws)
     filename = f'trend_{_cost_category}_{period}{filename_suffix}_draw-{draw_suffix}.png'
-    plt.savefig(_outputfilepath / filename, dpi=100, bbox_inches='tight')
+    plt.savefig(_outputfilepath / filename, dpi=300, bbox_inches='tight')
     plt.close()
 
 
