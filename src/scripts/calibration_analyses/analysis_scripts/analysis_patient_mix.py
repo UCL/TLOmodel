@@ -1259,14 +1259,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     offset = 0.2
 
+    facility_levels_plot_1 = ["1a", "2"]
+
     fig, axes = plt.subplots(
         1,
-        len(facility_levels),
+        len(facility_levels_plot_1),
         figsize=(20, 12),
         sharex="all"
     )
 
-    for ax, fac_level in zip(axes, facility_levels):
+    for ax, fac_level in zip(axes, facility_levels_plot_1):
 
         temp = summary[
             summary["Facility_Level"] == fac_level
@@ -1321,7 +1323,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
 
         ax.tick_params(axis="both")
-        ax.tick_params(axis="x", labelrotation=90)
+        ax.tick_params(axis="x", labelrotation=0)
 
     # axes[0].set_ylabel("District")
     fig.supxlabel(
@@ -1565,12 +1567,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, axes = plt.subplots(
         1,
-        len(facility_levels),
+        len(facility_levels_plot_1),
         figsize=(20, 12),
         sharex="all"
     )
 
-    for ax, fac_level in zip(axes, facility_levels):
+    for ax, fac_level in zip(axes, facility_levels_plot_1):
 
         temp = summary[
             summary["Facility_Level"] == fac_level
@@ -1628,7 +1630,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
 
         ax.tick_params(axis="both")
-        ax.tick_params(axis="x", labelrotation=90)
+        ax.tick_params(axis="x", labelrotation=0)
 
     fig.supxlabel(
         "Mean Daily Patient Load per HCW",
