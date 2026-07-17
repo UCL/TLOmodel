@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -526,13 +527,303 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     patient_mix_tlo["source"] = "TLO"
     patient_mix_tlo.reset_index(inplace=True)
 
+    patient_mix_tlo["category"] = patient_mix_tlo["category"].replace({"loc_cat": "Service_Area"})
+    patient_mix_tlo["subgroup"] = patient_mix_tlo["subgroup"].replace({"F": "Female", "M": "Male"})
+
     assert set(pat_mix.columns) == set(patient_mix_tlo.columns)
     pat_mix = pd.concat([pat_mix, patient_mix_tlo], ignore_index=True)
 
-    # todo: plot; note axis ticks should be the same across sources - assert needed
+    # prepare data and plot
+    source_categories = (
+        pat_mix[["source", "category"]]
+        .drop_duplicates()
+    )
 
-    # todo: *** prescribed cons. access comparison  ***
+    # all possible subgroups within each category
+    category_subgroups = (
+        pat_mix[["category", "subgroup"]]
+        .drop_duplicates()
+    )
+    new_age_group = pd.DataFrame({
+        "category": ["Age_Range"],
+        "subgroup": ["100+"]
+    })
+    category_subgroups = (
+        pd.concat(
+            [category_subgroups, new_age_group],
+            ignore_index=True
+        )
+        .drop_duplicates()
+    )
 
+    # for each existing source-category pair, add every subgroup belonging to that category
+    complete_grid = source_categories.merge(
+        category_subgroups,
+        on="category",
+        how="left"
+    )
+
+    # merge back the existing values
+    pat_mix_complete = (
+        complete_grid
+        .merge(
+            pat_mix,
+            on=["source", "category", "subgroup"],
+            how="left",
+            validate="one_to_one"
+        )
+    )
+
+    # fill newly created rows with zero and transform to percentage
+    pat_mix_complete[["mean", "lower", "upper"]] = (
+        pat_mix_complete[["mean", "lower", "upper"]]
+        .fillna(0)
+    ) * 100
+
+    # sort age group for each source
+    import re
+
+    def age_group_start(value):
+        match = re.search(r"\d+", str(value))
+        return int(match.group()) if match else np.inf
+
+    pat_mix_complete["subgroup_order"] = np.where(
+        pat_mix_complete["category"].eq("Age_Range"),
+        pat_mix_complete["subgroup"].map(age_group_start),
+        -1
+    )
+
+    pat_mix_complete = (
+        pat_mix_complete
+        .sort_values(
+            ["source", "category", "subgroup_order", "subgroup"]
+        )
+        .drop(columns="subgroup_order")
+        .reset_index(drop=True)
+    )
+
+    # make wealth subgroups as int
+    mask = pat_mix_complete["category"].eq("Wealth")
+    pat_mix_complete.loc[mask, "subgroup"] = (
+        pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
+    )
+
+    # plot
+    markers = {
+        "TLO": "d",
+        "Patient Exit": "o",
+        "Facility Summary": "^",
+    }
+
+    source_colors = {
+        "TLO": "green",
+        "Patient Exit": "blue",
+        "Facility Summary": "orange"
+    }
+
+    def plot_pat_mix(
+        df,
+        markers,
+        source_colors,
+        ylabel="Patient proportion",
+        min_width=4.5,
+        figure_height=5.5,
+        capsize=3,
+    ):
+
+        plot_df = df.copy()
+
+        # Ensure estimate columns are numeric
+        plot_df[["mean", "lower", "upper"]] = (
+            plot_df[["mean", "lower", "upper"]]
+            .apply(pd.to_numeric, errors="coerce")
+        )
+
+        # Plot sources in the order specified by markers
+        source_order = [
+            source
+            for source in markers
+            if source in plot_df["source"].unique()
+        ]
+
+        # Horizontal offsets prevent sources from overlapping
+        offsets = np.linspace(
+            -0.25,
+            0.25,
+            len(source_order)
+        )
+
+        # sort=False preserves category order from pat_mix_complete
+        for category, category_df in plot_df.groupby(
+            "category",
+            sort=False
+        ):
+            category_df = category_df.copy()
+
+            # Preserve the subgroup order already defined in pat_mix_complete
+            subgroup_order = (
+                category_df["subgroup"]
+                .drop_duplicates()
+                .tolist()
+            )
+
+            n_subgroups = len(subgroup_order)
+
+            # Adjust width and label rotation by category
+            if category == "Service_Area":
+                width_per_subgroup = 1.1
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Age_Range":
+                width_per_subgroup = 0.65
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Facility_Level":
+                width_per_subgroup = 0.9
+                rotation = 0
+                horizontal_alignment = "center"
+
+            elif category == "Wealth":
+                width_per_subgroup = 0.8
+                rotation = 0
+                horizontal_alignment = "center"
+
+            elif category == "Sex":
+                width_per_subgroup = 1.2
+                rotation = 0
+                horizontal_alignment = "center"
+
+            else:
+                width_per_subgroup = 0.8
+                rotation = 0
+                horizontal_alignment = "center"
+
+            fig_width = max(
+                min_width,
+                n_subgroups * width_per_subgroup
+            )
+
+            x_base = np.arange(n_subgroups)
+
+            subgroup_positions = {
+                subgroup: position
+                for position, subgroup in enumerate(subgroup_order)
+            }
+
+            fig, ax = plt.subplots(
+                figsize=(fig_width, figure_height)
+            )
+
+            for source, offset in zip(source_order, offsets):
+
+                source_df = category_df.loc[
+                    category_df["source"].eq(source)
+                ].copy()
+
+                if source_df.empty:
+                    continue
+
+                source_df["x_position"] = (
+                    source_df["subgroup"]
+                    .map(subgroup_positions)
+                )
+
+                source_df = source_df.sort_values("x_position")
+
+                x = (
+                    source_df["x_position"].to_numpy(dtype=float)
+                    + offset
+                )
+
+                mean = source_df["mean"].to_numpy(dtype=float)
+                lower = source_df["lower"].to_numpy(dtype=float)
+                upper = source_df["upper"].to_numpy(dtype=float)
+
+                # Convert interval limits into distances from the mean
+                lower_error = np.maximum(mean - lower, 0)
+                upper_error = np.maximum(upper - mean, 0)
+
+                yerr = np.vstack([
+                    lower_error,
+                    upper_error
+                ])
+
+                ax.errorbar(
+                    x=x,
+                    y=mean,
+                    yerr=yerr,
+                    fmt=markers[source],
+                    color=source_colors[source],
+                    markerfacecolor=source_colors[source],
+                    markeredgecolor=source_colors[source],
+                    markersize=7,
+                    linestyle="none",
+                    elinewidth=1.4,
+                    capsize=capsize,
+                    capthick=1.4,
+                    label=source
+                )
+
+            ax.set_xticks(x_base)
+
+            ax.set_xticklabels(
+                [str(value) for value in subgroup_order],
+                rotation=rotation,
+                ha=horizontal_alignment
+            )
+
+            ax.set_xlabel("Subgroup")
+            ax.set_ylabel(ylabel)
+            plot_title = f'Patient Mix by {str(category).replace("_", " ")}'
+            ax.set_title(
+                plot_title
+            )
+
+            ax.set_ylim(0, 105)
+            ax.yaxis.set_major_locator(MultipleLocator(5))
+
+            ax.legend(
+                title="Source",
+                frameon=False
+            )
+
+            ax.grid(
+                axis="y",
+                linestyle="--",
+                alpha=0.7
+            )
+
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+            # Small horizontal margin at both ends
+            ax.set_xlim(
+                -0.6,
+                n_subgroups - 0.4
+            )
+
+            fig.tight_layout()
+
+            plt.show()
+            plt.close(fig)
+
+    plot_pat_mix(
+        df=pat_mix_complete,
+        markers=markers,
+        source_colors=source_colors,
+        ylabel="Patient proportion in percentage",
+    )
+
+    # todo: notes
+    # 1. Do not compare by patient mix by district, as TLM data collection method has not used District as a stratum,
+    # thus facilities selected by a district may not well present the patients there,
+    # either individually or relatively to other districts
+    # 2. Compare by wealth level may not be appropriate, as TLM data has divided all sampled patients to 5 quintiles.
+    # Thus, this is not comparable with TLO that assigned wealth quintiles to patients using whole population as base.
+
+    # *** prescribed cons. access comparison ***
     ## from TLM
     def meds_access_by_subgroup(_df, subgroup=None):
         if subgroup == "overall":
@@ -581,15 +872,247 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=get_cons_access_mix_total_period,
         do_scaling=False
     )
-    # ignore NAN entries
+    # ignore NAN entries; some runs may have no HSIs in some subgroups
     access_meds_tlo = summarize(access_meds_tlo)
     access_meds_tlo.columns = access_meds_tlo.columns.droplevel('draw')
-    access_meds_tlo .reset_index(inplace=True)
+    access_meds_tlo.reset_index(inplace=True)
 
     assert set(access_meds.columns) == set(access_meds_tlo.columns)
     access_meds = pd.concat([access_meds, access_meds_tlo], ignore_index=True)
 
-    # todo: plot access_meds comparison
+    # prepare data and plot
+    source_categories = (
+        access_meds[["source", "category"]]
+        .drop_duplicates()
+    )
+
+    # all possible subgroups within each category
+    category_subgroups = (
+        access_meds[["category", "subgroup"]]
+        .drop_duplicates()
+    )
+
+    # for each existing source-category pair, add every subgroup belonging to that category
+    complete_grid = source_categories.merge(
+        category_subgroups,
+        on="category",
+        how="left"
+    )
+
+    # merge back the existing values; ignore NAN entries
+    access_meds_complete = (
+        complete_grid
+        .merge(
+            access_meds,
+            on=["source", "category", "subgroup"],
+            how="left",
+            validate="one_to_one"
+        )
+    )
+
+    # drop District category
+    # access_meds_complete = access_meds_complete[access_meds_complete["category"] != "District"]
+
+    # plot
+    markers = {
+        "TLO": "d",
+        "Patient Exit": "o"
+    }
+
+    source_colors = {
+        "TLO": "green",
+        "Patient Exit": "blue",
+    }
+
+    def plot_access_meds(
+        df,
+        markers,
+        source_colors,
+        ylabel="Medicines accessed in percentage",
+        min_width=4.5,
+        figure_height=5.5,
+        capsize=3,
+    ):
+
+        plot_df = df.copy()
+
+        # Ensure estimate columns are numeric
+        plot_df[["mean", "lower", "upper"]] = (
+            plot_df[["mean", "lower", "upper"]]
+            .apply(pd.to_numeric, errors="coerce")
+        )
+
+        # Plot sources in the order specified by markers
+        source_order = [
+            source
+            for source in markers
+            if source in plot_df["source"].unique()
+        ]
+
+        # Horizontal offsets prevent sources from overlapping
+        offsets = np.linspace(
+            -0.15,
+            0.15,
+            len(source_order)
+        )
+
+        # sort=False preserves category order from pat_mix_complete
+        for category, category_df in plot_df.groupby(
+            "category",
+            sort=False
+        ):
+            category_df = category_df.copy()
+
+            # Preserve the subgroup order already defined in pat_mix_complete
+            subgroup_order = (
+                category_df["subgroup"]
+                .drop_duplicates()
+                .tolist()
+            )
+
+            n_subgroups = len(subgroup_order)
+
+            # Adjust width and label rotation by category
+            if category == "Service_Area":
+                width_per_subgroup = 1.1
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Facility_Level":
+                width_per_subgroup = 0.9
+                rotation = 0
+                horizontal_alignment = "center"
+
+            elif category == "District":
+                width_per_subgroup = 0.65
+                rotation = 45
+                horizontal_alignment = "right"
+
+            else:
+                width_per_subgroup = 0.8
+                rotation = 0
+                horizontal_alignment = "center"
+
+            fig_width = max(
+                min_width,
+                n_subgroups * width_per_subgroup
+            )
+
+            x_base = np.arange(n_subgroups)
+
+            subgroup_positions = {
+                subgroup: position
+                for position, subgroup in enumerate(subgroup_order)
+            }
+
+            fig, ax = plt.subplots(
+                figsize=(fig_width, figure_height)
+            )
+
+            for source, offset in zip(source_order, offsets):
+
+                source_df = category_df.loc[
+                    category_df["source"].eq(source)
+                ].copy()
+
+                if source_df.empty:
+                    continue
+
+                source_df["x_position"] = (
+                    source_df["subgroup"]
+                    .map(subgroup_positions)
+                )
+
+                source_df = source_df.sort_values("x_position")
+
+                x = (
+                    source_df["x_position"].to_numpy(dtype=float)
+                    + offset
+                )
+
+                mean = source_df["mean"].to_numpy(dtype=float)
+                lower = source_df["lower"].to_numpy(dtype=float)
+                upper = source_df["upper"].to_numpy(dtype=float)
+
+                # Convert interval limits into distances from the mean
+                lower_error = np.maximum(mean - lower, 0)
+                upper_error = np.maximum(upper - mean, 0)
+
+                yerr = np.vstack([
+                    lower_error,
+                    upper_error
+                ])
+
+                ax.errorbar(
+                    x=x,
+                    y=mean,
+                    yerr=yerr,
+                    fmt=markers[source],
+                    color=source_colors[source],
+                    markerfacecolor=source_colors[source],
+                    markeredgecolor=source_colors[source],
+                    markersize=7,
+                    linestyle="none",
+                    elinewidth=1.4,
+                    capsize=capsize,
+                    capthick=1.4,
+                    label=source
+                )
+
+            ax.set_xticks(x_base)
+
+            ax.set_xticklabels(
+                [str(value) for value in subgroup_order],
+                rotation=rotation,
+                ha=horizontal_alignment
+            )
+
+            ax.set_xlabel("Subgroup")
+            ax.set_ylabel(ylabel)
+            plot_title = f'Prescribed Medicines Accessibility \nby {str(category).replace("_", " ")}'
+            ax.set_title(
+                plot_title
+            )
+
+            ax.set_ylim(0, 105)
+            ax.yaxis.set_major_locator(MultipleLocator(5))
+
+            ax.legend(
+                title="Source",
+                frameon=False
+            )
+
+            ax.grid(
+                axis="y",
+                linestyle="--",
+                alpha=0.7
+            )
+
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+            # Small horizontal margin at both ends
+            ax.set_xlim(
+                -0.6,
+                n_subgroups - 0.4
+            )
+
+            fig.tight_layout()
+
+            plt.show()
+            plt.close(fig)
+
+    plot_access_meds(
+        df=access_meds_complete,
+        markers=markers,
+        source_colors=source_colors,
+        ylabel="Medicines accessed in percentage",
+    )
+
+    # todo: notes
+    # 1. Has not dropped duplicated persons having multiple HSIs on day
+    # 2. Submit full run with pop_size = 100_000 or more? runs_per_draw = 5 or 10?
+    # 3. Double confirm if the TLO calculation of medicines accessibility method, as well as patient mix method, is sound
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
@@ -621,7 +1144,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pat_load_comparison = pat_load_comparison.loc[~pat_load_comparison["Facility_Level"].isin(["0", "5"])]
 
     # *** make comparison plots ***
-    from matplotlib.ticker import MultipleLocator
 
     # shared settings and helper function
 
