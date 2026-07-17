@@ -239,7 +239,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # keep only districts in TLM
         _df = _df.loc[_df["District"].isin(common_districts)]
 
-        # todo: get the proportions of patients not getting the prescribed cons. by subgroup (overall, facility level)
+        # get the proportions of patients getting the prescribed cons. by subgroup (overall, facility level)
         # need to identify the HSIs involves prescribing:
         # 1. approximated by item_requested = item_available + item_not_available != {}, but TLO items may not be
         # medicines prescribed for the patients to take home as assumed in TLM data collection
@@ -293,7 +293,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
              "HSI_GenericNonEmergencyFirstAppt", "HSI_Hiv_SelfTest", "HSI_Malaria_rdt_community", "HSI_Schisto_MDA",
              "Inpatient_Care"})
 
-        # may not drop duplicated person_id + loc_cat + day
+        # todo: may not drop duplicated person_id + loc_cat + day
 
         # percent meds access, by subgroup ["overall", "loc_cat", "fac_level", "district"]
         def meds_access_by_subgroup_tlo(__df, subgroup=None):
@@ -1112,7 +1112,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # todo: notes
     # 1. Has not dropped duplicated persons having multiple HSIs on day
     # 2. Submit full run with pop_size = 100_000 or more? runs_per_draw = 5 or 10?
-    # 3. Double confirm if the TLO calculation of medicines accessibility method, as well as patient mix method, is sound
+    # 3. Double confirm if the TLO calculation of medicines accessibility methodas  well as patient mix method is sound
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
