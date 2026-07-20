@@ -320,7 +320,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             return access_meds_df
 
-        subgroups = ["overall", "loc_cat", "Facility_Level", "District"] #
+        subgroups = ["overall", "loc_cat", "Facility_Level", "District"]
 
         _access_meds = pd.concat(
             [meds_access_by_subgroup_tlo(_df, subgroup=s) for s in subgroups],
@@ -1112,7 +1112,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # todo: notes
     # 1. Has not dropped duplicated persons having multiple HSIs on day
     # 2. Submit full run with pop_size = 100_000 or more? runs_per_draw = 5 or 10?
-    # 3. Double confirm if the TLO calculation of medicines accessibility methodas  well as patient mix method is sound
+    # 3. Double confirm if the TLO calculation of medicines accessibility method as  well as patient mix method is sound
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
@@ -1139,9 +1139,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ], ignore_index=True)
 
     assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
-
-    # drop level 0/community service by DCSA, level 5/HQ
-    pat_load_comparison = pat_load_comparison.loc[~pat_load_comparison["Facility_Level"].isin(["0", "5"])]
 
     # *** make comparison plots ***
 
@@ -1222,8 +1219,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 color="red"
             )
 
-    # prepare data: keep districts appearing in HCW TMS
+    # prepare data: keep facility levels and districts appearing in HCW TMS
 
+    # drop level 0/community service by DCSA, level 5/HQ
+    pat_load_comparison = pat_load_comparison.loc[~pat_load_comparison["Facility_Level"].isin(["0", "5"])]
+
+    # keep common district
     common_districts = (
         pat_load_comparison
         .loc[pat_load_comparison["Source"] == "HCW TMS", "District"]
