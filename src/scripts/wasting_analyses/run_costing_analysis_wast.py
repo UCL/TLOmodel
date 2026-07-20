@@ -158,7 +158,8 @@ def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, 
     # Figure 3: Estimated costs by cost sub-category
     output_costs_medical = do_stacked_bar_plot_of_cost_by_category(_df = input_costs_new, _cost_category = 'medical consumables', _disaggregate_by_subgroup = False,
                                             _year = list_of_years_for_plot, show_title = False,
-                                            _outputfilepath = figurespath, _scenario_dict = cost_scenarios, _add_figname_suffix=scen_timestamps_suffix)
+                                            _outputfilepath = figurespath, _scenario_dict = cost_scenarios, _add_figname_suffix=scen_timestamps_suffix,
+                                                                   _format_type="eps")
     output_costs_medical_file_path = cost_outcome_folderpath / f"output_costs_medical_outcomes_{SQ_timestamp}.pkl"
     if output_costs_medical_file_path.exists():
         try:
