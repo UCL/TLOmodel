@@ -1220,7 +1220,8 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
                                             _scenario_dict: Optional[dict[int, str]] = None,
                                             show_title: bool = True,
                                             _outputfilepath: Optional[Path] = None,
-                                            _add_figname_suffix: str = ''):
+                                            _add_figname_suffix: str = '',
+                                            _format_type: str = 'png'):
     """
         Create and save a stacked bar chart of costs by category, subcategory or subgroup.
 
@@ -1452,9 +1453,12 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
     if show_title is not False:
         plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
     plt.savefig(
-        _outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.png',
-        dpi=100,
-        bbox_inches='tight')
+        _outputfilepath /
+        f"stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.{_format_type}",
+        dpi=300,
+        bbox_inches="tight",
+        format=_format_type
+    )
     plt.close()
 
     return total_central, pivot_lower.sum(axis=1), pivot_upper.sum(axis=1)
