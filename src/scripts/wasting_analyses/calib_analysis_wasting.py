@@ -24,7 +24,9 @@ total_time_start = time.time()
 # scenario_filename = 'wasting_analysis__minimal_model'
 scenario_filename = 'wasting_analysis__full_model_SQ'
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/SQ")
-legend_fontsize = 12
+legend_fontsize = 16
+axis_label_fontsize = 17
+axis_ticks_fontsize = 15
 title_fontsize = 16
 ########################################################################################################################
 
@@ -736,8 +738,9 @@ class WastingAnalyses:
                             yerr=[calib_data_margin_of_error_sev_wast[i]],
                             capsize=5, fmt='none', color='white')
 
-            ax.set_xlabel('age group')
-            ax.set_ylabel('proportion')
+            ax.set_xlabel("age group", fontsize=axis_label_fontsize)
+            ax.set_ylabel("proportion", fontsize=axis_label_fontsize)
+            ax.tick_params(axis="both", which="major", labelsize=axis_ticks_fontsize)
             # ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}",
             #              fontsize=title_fontsize-1)
             ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
@@ -809,8 +812,9 @@ class WastingAnalyses:
 
         # ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
         #              fontsize=title_fontsize - 1)
-        ax.set_xlabel(calib_period)
-        ax.set_ylabel("number of deaths due to SAM")
+        ax.set_xlabel(calib_period, fontsize=axis_label_fontsize)
+        ax.set_ylabel("number of deaths due to SAM", fontsize=axis_label_fontsize)
+        ax.tick_params(axis="both", which="major", labelsize=axis_ticks_fontsize)
         fig.tight_layout()
         fig_output_name = ('model_gbd_deaths_excl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
