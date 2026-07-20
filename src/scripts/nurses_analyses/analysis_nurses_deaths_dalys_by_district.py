@@ -7,13 +7,13 @@ This script figures for the Nurse Shortages analysis at district level:
 import argparse
 from pathlib import Path
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
-
 
 DALY_DEATH_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
 
@@ -373,6 +373,121 @@ def extract_deaths_by_district(results_folder):
     )
 
 
+# For maps
+def extract_total_dalys_by_district(results_folder):
+    def get_total_dalys(df):
+        df = df.assign(year=df["date"].dt.year)
+        df = df[df["year"].between(2027, 2034)]
+
+        cause_cols = [
+            c
+            for c in df.columns
+            if c not in DALY_DEATH_METADATA_COLUMNS
+            and pd.api.types.is_numeric_dtype(df[c])
+        ]
+
+        df["total_dalys"] = df[cause_cols].sum(axis=1)
+
+        return (
+            df.groupby("district_of_residence")["total_dalys"]
+            .sum()
+        )
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=get_total_dalys,
+        do_scaling=True,
+    )
+
+def extract_total_deaths_by_district(results_folder):
+    def get_total_deaths(df):
+        df = df.assign(year=df["date"].dt.year)
+        df = df[df["year"].between(2027, 2034)]
+
+        return (
+            df.groupby("district_of_residence")["person_id"]
+            .count()
+        )
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=get_total_deaths,
+        do_scaling=True,
+    )
+
+
+def plot_district_maps(gdf, scenario_names, title):
+    vmax = np.nanmax(np.abs(gdf[scenario_names].values))
+
+    fig, axes = plt.subplots(1, len(scenario_names), figsize=(6 * len(scenario_names), 8))
+
+    if len(scenario_names) == 1:
+        axes = [axes]
+
+    for ax, scenario in zip(axes, scenario_names):
+        gdf.plot(column=scenario, cmap="coolwarm", edgecolor="black", linewidth=0.4,
+                legend=False, vmin=-vmax, vmax=vmax, ax=ax)
+
+        # ax.set_title(scenario.replace(" / Default Healthsystem Function", ""), fontsize=11,)
+
+        label_map = {
+            "More Nurses / Default Healthsystem Function":
+                "More nurses",
+
+            "Fewer Nurses / Default Healthsystem Function":
+                "Fewer nurses",
+
+            "More CNP staff / Default Healthsystem Function":
+                "More CNP",
+
+            "More Nurses by District / Default Healthsystem Function":
+                "More nurses by district",
+
+            "More CNP staff by District / Default Healthsystem Function":
+                "More CNP by district",
+
+            "More Nurses / Improved Healthsystem Function":
+                "More nurses",
+
+            "Fewer Nurses / Improved Healthsystem Function":
+                "Fewer nurses",
+
+            "More CNP staff / Improved Healthsystem Function":
+                "More CNP",
+
+            "More Nurses by District / Improved Healthsystem Function":
+                "More nurses by district",
+
+            "More CNP staff by District / Improved Healthsystem Function":
+                "More CNP by district",
+        }
+
+        ax.set_title(label_map[scenario], fontsize=12)
+
+        ax.axis("off")
+
+    sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(-vmax, vmax),)
+    # sm._A = []
+    # fig.subplots_adjust(right=0.86)
+    # fig.colorbar(sm, ax=axes, fraction=0.025, pad=0.07, label="% change in DALYs (vs Baseline)")
+    # plt.suptitle(title)
+    # plt.tight_layout()
+    # fig.tight_layout()
+    # return fig
+    sm.set_array([])
+    # Create an independent axis for the colour bar
+    cax = fig.add_axes([0.87, 0.20, 0.02, 0.60])
+    #                     ^left ^bottom ^width ^height
+    cbar = fig.colorbar(sm, cax=cax)
+    cbar.set_label("% change in DALYs (vs Baseline)")
+    fig.suptitle(title, fontsize=14)
+    return fig
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Analyse DALYs/Deaths across nurse staffing scenarios"
@@ -398,8 +513,21 @@ if __name__ == "__main__":
     # Use command-line folder
     results_folder = args.scenario_outputs_folder
 
+    # Malawi district boundaries
+    district_map = gpd.read_file(
+        Path(
+            "resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
+        )
+    )
+    print("---District Columns---\n")
+    print(district_map.head())
+
+    print("\nDistricts in shapefile:")
+    print(sorted(district_map["ADM2_EN"].tolist()))
+
     # Optional: load logs
     log = load_pickled_dataframes(results_folder)
+    param_names = tuple(StaffingScenario()._scenarios.keys())
 
     # NATIONAL DALYs
     annual_dalys = extract_annual_dalys(results_folder)
@@ -407,31 +535,92 @@ if __name__ == "__main__":
     print("\nNational DALYs")
     print(annual_dalys)
 
-    # DISTRICT DALYs
-    dalys_by_district = extract_dalys_by_district(results_folder)
+    dalys_by_district = extract_total_dalys_by_district(results_folder)
 
-    print("\nDALYs by district")
-    print(dalys_by_district)
+    print("\n---Show scenario names---")
+    print(dalys_by_district.columns.to_list())
 
-    # VALIDATION
-    # Sum DALYs across districts and compare to national totals
-    district_daly_totals = dalys_by_district.groupby(level="year").sum()
-
-    daly_comparison = pd.concat(
-        {
-            "National DALYs": annual_dalys,
-            "District DALYs": district_daly_totals,
-        },
-        axis=1,
+    # DALYs Default Healthsystem
+    dalys_by_district = set_param_names_as_column_index_level_0(
+        dalys_by_district,
+        param_names
     )
 
-    print("\nComparison of National vs District DALYs")
-    print(daly_comparison)
-    print(daly_comparison.abs().max().max())
+    district_mean = (dalys_by_district.groupby(level=0, axis=1).mean())
 
-    assert np.allclose(annual_dalys.values, district_daly_totals.values,)
+    print("\nDistricts in DALY results:")
+    print(sorted(district_mean.index.tolist()))
 
-    print("\nDALY validation passed.")
+    print("\nNumber of Districts:")
+    print(sorted(district_mean.index.tolist()))
+
+    default_baseline = (
+        "Baseline Nurses / Default Healthsystem Function"
+    )
+
+    default_pct = (
+        district_mean
+        .subtract(district_mean[default_baseline], axis=0)
+        .divide(district_mean[default_baseline], axis=0)
+        * 100
+    )
+
+    default_pct = default_pct.drop(columns=default_baseline)
+
+    district_map_default = district_map.merge(
+        default_pct,
+        left_on="ADM2_EN",
+        right_index=True,
+        how="left",
+    )
+
+    fig_dalys_default_maps = plot_district_maps(
+        district_map_default,
+        [
+            "More Nurses / Default Healthsystem Function",
+            "Fewer Nurses / Default Healthsystem Function",
+            "More CNP staff / Default Healthsystem Function",
+            "More Nurses by District / Default Healthsystem Function",
+            "More CNP staff by District / Default Healthsystem Function",
+        ],
+        "% DALYs averted (vs Baseline): Default Healthsystem",
+    )
+
+    # DALYs Improved Healthsystem
+    improved_baseline = (
+        "Baseline Nurses / Improved Healthsystem Function"
+    )
+
+    improved_pct = (
+        district_mean
+        .subtract(district_mean[improved_baseline], axis=0)
+        .divide(district_mean[improved_baseline], axis=0)
+        * 100
+    )
+
+    improved_pct = improved_pct.drop(columns=improved_baseline)
+
+    district_map_improved = district_map.merge(
+        improved_pct,
+        left_on="ADM2_EN",
+        right_index=True,
+        how="left",
+    )
+
+    fig_dalys_improved_maps = plot_district_maps(
+        district_map_improved,
+        [
+            "More Nurses / Improved Healthsystem Function",
+            "Fewer Nurses / Improved Healthsystem Function",
+            "More CNP staff / Improved Healthsystem Function",
+            "More Nurses by District / Improved Healthsystem Function",
+            "More CNP staff by District / Improved Healthsystem Function",
+        ],
+        "% DALYs averted (vs Baseline): Improved Healthsystem",
+    )
+
+
+    # VALIDATION
 
     # NATIONAL DEATHS
     annual_deaths = extract_annual_deaths(results_folder)
@@ -471,23 +660,17 @@ if __name__ == "__main__":
 
     print("\nDeath validation passed.")
 
-    # EXPORT VALIDATION TABLES TO EXCEL
-    output_file = results_folder / "district_vs_national_validation.xlsx"
-    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        # DALYs
-        annual_dalys.to_excel(writer,sheet_name="National_DALYs")
-        dalys_by_district.to_excel(writer,sheet_name="District_DALYs")
-        district_daly_totals.to_excel(writer,sheet_name="District_DALY_Totals")
-        (annual_dalys - district_daly_totals).to_excel(writer,sheet_name="DALY_Difference")
-
-        # Deaths
-        annual_deaths.to_excel(writer,sheet_name="National_Deaths")
-        deaths_by_district.to_excel(writer,sheet_name="District_Deaths")
-        district_death_totals.to_excel(writer,sheet_name="District_Death_Totals")
-
-        (annual_deaths - district_death_totals).to_excel(writer,sheet_name="Death_Difference")
-
-    print(f"\nValidation tables exported to:\n{output_file}")
-
-
+    if args.save_figures:
+        fig_dalys_default_maps.savefig(
+            results_folder /
+            "district_dalys_default.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        fig_dalys_improved_maps.savefig(
+            results_folder /
+            "district_dalys_improved.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
 
