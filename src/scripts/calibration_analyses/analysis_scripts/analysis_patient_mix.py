@@ -993,6 +993,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 rotation = 0
                 horizontal_alignment = "center"
 
+            # legend position
+            if category == "Overall":
+                legend_location = "lower right"
+            else:
+                legend_location = "best"
+
             fig_width = max(
                 min_width,
                 n_subgroups * width_per_subgroup
@@ -1079,6 +1085,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             ax.legend(
                 title="Source",
+                loc=legend_location,
                 frameon=False
             )
 
