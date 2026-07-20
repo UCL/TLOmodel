@@ -11,6 +11,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import math
 
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
@@ -422,69 +423,59 @@ def extract_total_deaths_by_district(results_folder):
 
 def plot_district_maps(gdf, scenario_names, title):
     vmax = np.nanmax(np.abs(gdf[scenario_names].values))
+    ncols = 3
+    nrows = math.ceil(len(scenario_names) / ncols)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(15, 9), constrained_layout=True)
+    axes = np.array(axes).flatten()
 
-    fig, axes = plt.subplots(1, len(scenario_names), figsize=(6 * len(scenario_names), 8))
+    label_map = {
+        "More Nurses / Default Healthsystem Function":
+            "More nurses",
 
-    if len(scenario_names) == 1:
-        axes = [axes]
+        "Fewer Nurses / Default Healthsystem Function":
+            "Fewer nurses",
 
+        "More CNP staff / Default Healthsystem Function":
+            "More CNP",
+
+        "More Nurses by District / Default Healthsystem Function":
+            "More nurses by district",
+
+        "More CNP staff by District / Default Healthsystem Function":
+            "More CNP by district",
+
+        "More Nurses / Improved Healthsystem Function":
+            "More nurses",
+
+        "Fewer Nurses / Improved Healthsystem Function":
+            "Fewer nurses",
+
+        "More CNP staff / Improved Healthsystem Function":
+            "More CNP",
+
+        "More Nurses by District / Improved Healthsystem Function":
+            "More nurses by district",
+
+        "More CNP staff by District / Improved Healthsystem Function":
+            "More CNP by district",
+    }
+
+    # -------- Plot maps --------
     for ax, scenario in zip(axes, scenario_names):
-        gdf.plot(column=scenario, cmap="coolwarm", edgecolor="black", linewidth=0.4,
-                legend=False, vmin=-vmax, vmax=vmax, ax=ax)
-
-        # ax.set_title(scenario.replace(" / Default Healthsystem Function", ""), fontsize=11,)
-
-        label_map = {
-            "More Nurses / Default Healthsystem Function":
-                "More nurses",
-
-            "Fewer Nurses / Default Healthsystem Function":
-                "Fewer nurses",
-
-            "More CNP staff / Default Healthsystem Function":
-                "More CNP",
-
-            "More Nurses by District / Default Healthsystem Function":
-                "More nurses by district",
-
-            "More CNP staff by District / Default Healthsystem Function":
-                "More CNP by district",
-
-            "More Nurses / Improved Healthsystem Function":
-                "More nurses",
-
-            "Fewer Nurses / Improved Healthsystem Function":
-                "Fewer nurses",
-
-            "More CNP staff / Improved Healthsystem Function":
-                "More CNP",
-
-            "More Nurses by District / Improved Healthsystem Function":
-                "More nurses by district",
-
-            "More CNP staff by District / Improved Healthsystem Function":
-                "More CNP by district",
-        }
-
+        gdf.plot(column=scenario, cmap="coolwarm", edgecolor="black", linewidth=0.4, legend=False,
+                            vmin=-vmax, vmax=vmax, ax=ax)
         ax.set_title(label_map[scenario], fontsize=12)
-
         ax.axis("off")
 
-    sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(-vmax, vmax),)
-    # sm._A = []
-    # fig.subplots_adjust(right=0.86)
-    # fig.colorbar(sm, ax=axes, fraction=0.025, pad=0.07, label="% change in DALYs (vs Baseline)")
-    # plt.suptitle(title)
-    # plt.tight_layout()
-    # fig.tight_layout()
-    # return fig
+    # Hide any unused subplot(s)
+    for ax in axes[len(scenario_names):]:
+        ax.axis("off")
+
+    # -------- Shared colour bar --------
+    sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(-vmax, vmax))
     sm.set_array([])
-    # Create an independent axis for the colour bar
-    cax = fig.add_axes([0.87, 0.20, 0.02, 0.60])
-    #                     ^left ^bottom ^width ^height
-    cbar = fig.colorbar(sm, cax=cax)
-    cbar.set_label("% change in DALYs (vs Baseline)")
-    fig.suptitle(title, fontsize=14)
+    fig.colorbar(sm, ax=axes, location="right", shrink=0.85, pad=0.02, label="% change in DALYs (vs Baseline)")
+    fig.suptitle(title, fontsize=15)
     return fig
 
 
@@ -619,46 +610,42 @@ if __name__ == "__main__":
         "% DALYs averted (vs Baseline): Improved Healthsystem",
     )
 
+    # Deaths Default Healthsystem
+    deaths_by_district = extract_total_deaths_by_district(results_folder)
+    deaths_by_district = set_param_names_as_column_index_level_0(deaths_by_district, param_names)
+    district_mean_deaths = (deaths_by_district.groupby(level=0, axis=1).mean())
 
-    # VALIDATION
+    # default_baseline = (
+    #     "Baseline Nurses / Default Healthsystem Function"
+    # )
 
-    # NATIONAL DEATHS
-    annual_deaths = extract_annual_deaths(results_folder)
-
-    print("\nNational Deaths")
-    print(annual_deaths)
-
-    # DISTRICT DEATHS
-    deaths_by_district = extract_deaths_by_district(results_folder)
-
-    print("\nDeaths by district")
-    print(deaths_by_district)
-
-    # VALIDATION
-    # Sum deaths across districts and compare to national totals
-
-    district_death_totals = deaths_by_district.groupby(level="year").sum()
-
-    death_comparison = pd.concat(
-        {
-            "National Deaths": annual_deaths,
-            "District Deaths": district_death_totals,
-        },
-        axis=1,
+    default_pct_deaths = (
+        district_mean_deaths
+        .subtract(district_mean_deaths[default_baseline], axis=0)
+        .divide(district_mean_deaths[default_baseline], axis=0)
+        * 100
     )
 
-    print(death_comparison)
+    default_pct_deaths = default_pct_deaths.drop(columns=default_baseline)
 
-    difference = annual_deaths - district_death_totals
+    district_map_default_deaths = district_map.merge(
+        default_pct,
+        left_on="ADM2_EN",
+        right_index=True,
+        how="left",
+    )
 
-    print("\nComparison of National vs District Deaths")
-    print(death_comparison)
-    print("\nComparison Death Difference")
-    print(difference)
-
-    assert np.allclose(annual_deaths.values, district_death_totals.values,)
-
-    print("\nDeath validation passed.")
+    fig_deaths_default_maps = plot_district_maps(
+        district_map_default_deaths,
+        [
+            "More Nurses / Default Healthsystem Function",
+            "Fewer Nurses / Default Healthsystem Function",
+            "More CNP staff / Default Healthsystem Function",
+            "More Nurses by District / Default Healthsystem Function",
+            "More CNP staff by District / Default Healthsystem Function",
+        ],
+        "% Deaths averted (vs Baseline): Default Healthsystem",
+    )
 
     if args.save_figures:
         fig_dalys_default_maps.savefig(
@@ -673,4 +660,9 @@ if __name__ == "__main__":
             dpi=300,
             bbox_inches="tight",
         )
-
+        fig_deaths_default_maps.savefig(
+            results_folder /
+            "district_deaths_default.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
