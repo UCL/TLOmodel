@@ -4,6 +4,7 @@ It is not to be run by itself. Functions are called from run_interventions_analy
 heatmaps_cons_wast.py.
 """
 
+import fitz
 import logging
 import pickle
 from decimal import ROUND_HALF_UP, Decimal
@@ -36,6 +37,9 @@ scenario_label_map = {
     "CS_FS": "Care-Seeking and\nFood Supplements",
     "GM_CS_FS": "Growth Monitoring and\nCare-Seeking and\nFood Supplements",
 }
+
+axis_label_fontsize = 17
+axis_ticks_fontsize = 15
 
 def round_standard(val, decimals=0):
     # Convert to string first to avoid floating point precision issues
@@ -1002,6 +1006,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
     births_dict: dict = None,
     pop_size_dict: dict = None,
     force_calculation: list = None,
+    format_type: str = "pdf",
 ) -> None:
     """
     Plots sum & averted sum of averted deaths or DALYs over the intervention period for the specified cohort for
@@ -1131,9 +1136,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
             fig.savefig(
                 outputs_path / (
                     f"{cohort}_sum_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
-                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.{format_type}"
                 ),
-                bbox_inches='tight'
+                dpi=300, bbox_inches='tight',format=format_type
             )
             plt.close(fig)
 
@@ -1223,9 +1228,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
             fig2.savefig(
                 outputs_path / (
                     f"{cohort}_sum_averted_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
-                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.{format_type}"
                 ),
-                bbox_inches='tight'
+                dpi=300, bbox_inches='tight', format=format_type
             )
             plt.close(fig2)
 
@@ -1236,7 +1241,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
             def plot_and_table_cost_effectiveness(
                 in_averted_DALYs: dict, in_data_impl_cost_name: str, in_sharing_GM_CS: float, in_FS_multiplier: float,
-                in_medical_calc_done: bool
+                in_medical_calc_done: bool, format_type: str
             ) -> None:
                 ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
                 print("###################")
@@ -1606,8 +1611,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 )
 
                 # Add axis labels
-                ax_ce.set_xlabel("DALYs Averted, millions")
-                ax_ce.set_ylabel("Total Incremental Costs (2023 USD), millions")
+                ax_ce.set_xlabel("DALYs Averted, millions", fontsize=axis_label_fontsize)
+                ax_ce.set_ylabel("Total Incremental Costs (2023 USD), millions", fontsize=axis_label_fontsize)
+                ax.tick_params(axis="both", which="major", labelsize=axis_ticks_fontsize)
                 # Format both axis to millions; x rounded to 1 decimal, but y to 0 decimals
                 apply_millions_formatter_to_ax(ax_ce, y_decimals=0)
                 # #TODO: uncomment only when creating this, otherwise it messes with other figures axis
@@ -1653,9 +1659,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     outputs_path
                     / (
                         f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
-                        f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.png"
+                        f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.{format_type}"
                     ),
-                    bbox_inches="tight",
+                    dpi=300, bbox_inches="tight", format=format_type
                 )
                 plt.close(fig_ce)
 
@@ -1732,107 +1738,117 @@ def plot_sum_outcome_and_CIs_intervention_period(
             if outcome_type == "DALYs":
                 if cause == "any cause":
                     # sensitivity to unit cost
-                    data_impl_cost_name = ['Pearson_etal2018', 'Margolies_etal2021']
+                    data_impl_cost_name = ["Pearson_etal2018", "Margolies_etal2021"]
                     # sensitivity to sharing implementation costs for GM and CS interventions
                     sharing_GM_CS = [0.5, 0]
                     # sensitivity to FS intervention multiplier
                     FS_multiplier = [10, 2, 1, 0.5]
 
                     # Individual CE planes
-                    # medical consumables are given by model, hence do not change within the sensitivity analyses
                     medical_calc_done = False
                     for unit_cost in data_impl_cost_name:
                         for GM_CS__multiplier in sharing_GM_CS:
                             for FS__multiplier in FS_multiplier:
                                 plot_and_table_cost_effectiveness(
-                                    averted_dict, unit_cost, GM_CS__multiplier, FS__multiplier, medical_calc_done
+                                    averted_dict,
+                                    unit_cost,
+                                    GM_CS__multiplier,
+                                    FS__multiplier,
+                                    medical_calc_done,
+                                    format_type,
                                 )
                                 medical_calc_done = True
 
                     ########################################
                     # Sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
-                    # (highlight the grid with the value assumed in main analysis)
                     ########################################
                     print("\nplotting sensitivity CE plot ...")
 
-                    # 1. Define the target for the "Main Analysis" highlight
                     target_unit_cost = "Pearson_etal2018"
                     target_gm_cs = 0.5
                     target_fs_mult = 1.0
 
-                    # 2. Build grid dims
                     n_rows = len(data_impl_cost_name) * len(sharing_GM_CS)
                     n_cols = len(FS_multiplier)
 
-                    # Create figure at higher resolution (DPI) to improve exported image quality
-                    # use gridspec spacing controls to reduce large gaps between columns/rows
-                    fig, axes = plt.subplots(
-                        n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), dpi=200,
-                        constrained_layout=False,
-                        gridspec_kw={'wspace': 0.12, 'hspace': 0.18}
-                    )
-
-                    # Tighten left/right margins and avoid large automatic padding caused by negative text positions
-                    fig.subplots_adjust(left=0.14, right=0.98, top=0.96, bottom=0.06)
-
-                    # Ensure axes is a 2D array for consistent indexing
-                    axes = np.atleast_2d(axes)
-
-                    # 3.  Calculate target indices
                     r1_idx_target = data_impl_cost_name.index(target_unit_cost)
                     r2_idx_target = sharing_GM_CS.index(target_gm_cs)
                     row_idx_target = r1_idx_target * len(sharing_GM_CS) + r2_idx_target
                     col_idx_target = list(FS_multiplier).index(target_fs_mult)
 
-                    # 4. Iterate rows and columns in desired order to create all grids:
-                    # rows: for each unit_cost in data_impl_cost_name -> for each GM_CS in sharing_GM_CS
-                    for r1_idx, unit_cost in enumerate(data_impl_cost_name):
-                        for r2_idx, gm_cs in enumerate(sharing_GM_CS):
-                            row_idx = r1_idx * len(sharing_GM_CS) + r2_idx
-                            for col_idx, fs_mult in enumerate(FS_multiplier):
-                                ax = axes[row_idx, col_idx]
-                                ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
-                                timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
-                                img_path = outputs_path / (
-                                    f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
-                                    f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.png"
-                                )
+                    cohort_prefix = (
+                        "Neo" if cohort == "Neonatal" else "Under5" if cohort == "Under-5" else "unknown_cohort"
+                    )
+                    out_file = outputs_path / (
+                        f"{cohort_prefix}_cost_effectiveness_sensitivity_grid__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.{format_type}"
+                    )
 
-                                if img_path.exists():
-                                    # Open image and display with preserved aspect ratio; turn axes off
-                                    img = Image.open(img_path).convert("RGB")
-                                    ax.imshow(img, aspect='auto', interpolation='bilinear')
-                                else:
-                                    # Clear axes and show placeholder text
-                                    ax.clear()
-                                    ax.text(0.5, 0.5, f"Missing:\\n{img_path.name}", ha="center", va="center",
-                                            fontsize=8)
-                                # Clean up axes for all cells
-                                ax.set_xticks([])
-                                ax.set_yticks([])
-                                ax.set_axis_off()
+                    # Create a unit cost mapping dictionary
+                    unit_cost_mapping = {
+                        "Pearson_etal2018": r"\$0.53 (1st y), \$0.37 (subsequent ys)",
+                        "Margolies_etal2021": r"\$9.17 (each year)",
+                    }
 
-                                # Apply the Green Rectangle Highlight to the target cell
-                                # expansions for the highlight so it does not cover label or legend
-                                padding_x = 0.03  # Extra space on right side
-                                padding_y = 0.04  # Extra space on bottom
-                                if row_idx == row_idx_target and col_idx == col_idx_target:
-                                    # Add thick green border
-                                    rect = Rectangle(
-                                        (-0.6 * padding_x , -0.5 * padding_y),
-                                        1 + padding_x,
-                                        1 + padding_y,
-                                        linewidth=10,  # Very thick to be visible over image edges
-                                        edgecolor="#c6e0b4",
-                                        facecolor="none",
-                                        transform=ax.transAxes,
-                                        zorder=10,
-                                        clip_on=False,
+                    # ============================================================
+                    # BRANCH A: raster formats (PNG / JPEG) - matplotlib imshow grid
+                    # ============================================================
+                    if format_type in ("png", "jpeg"):
+                        fig, axes = plt.subplots(
+                            n_rows,
+                            n_cols,
+                            figsize=(4 * n_cols, 3 * n_rows),
+                            dpi=300,
+                            constrained_layout=False,
+                            gridspec_kw={"wspace": 0.12, "hspace": 0.18},
+                        )
+                        fig.subplots_adjust(left=0.14, right=0.98, top=0.96, bottom=0.06)
+                        axes = np.atleast_2d(axes)
+
+                        for r1_idx, unit_cost in enumerate(data_impl_cost_name):
+                            for r2_idx, gm_cs in enumerate(sharing_GM_CS):
+                                row_idx = r1_idx * len(sharing_GM_CS) + r2_idx
+                                for col_idx, fs_mult in enumerate(FS_multiplier):
+                                    ax = axes[row_idx, col_idx]
+                                    ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                    timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
+                                    img_path = outputs_path / (
+                                        f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
+                                        f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.{format_type}"
                                     )
-                                    ax.add_patch(rect)
 
-                                    # Add identifying label
-                                    (
+                                    if img_path.exists():
+                                        img = Image.open(img_path).convert("RGB")
+                                        ax.imshow(img, aspect="auto", interpolation="bilinear")
+                                    else:
+                                        ax.clear()
+                                        ax.text(
+                                            0.5,
+                                            0.5,
+                                            f"Missing:\n{img_path.name}",
+                                            ha="center",
+                                            va="center",
+                                            fontsize=8,
+                                        )
+                                    ax.set_xticks([])
+                                    ax.set_yticks([])
+                                    ax.set_axis_off()
+
+                                    padding_x = 0.03
+                                    padding_y = 0.04
+                                    if row_idx == row_idx_target and col_idx == col_idx_target:
+                                        rect = Rectangle(
+                                            (-0.6 * padding_x, -0.5 * padding_y),
+                                            1 + padding_x,
+                                            1 + padding_y,
+                                            linewidth=10,
+                                            edgecolor="#c6e0b4",
+                                            facecolor="none",
+                                            transform=ax.transAxes,
+                                            zorder=10,
+                                            clip_on=False,
+                                        )
+                                        ax.add_patch(rect)
                                         ax.text(
                                             0.63,
                                             0.98,
@@ -1844,42 +1860,154 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                             ha="left",
                                             va="top",
                                             bbox=dict(facecolor="#c6e0b4", edgecolor="none", pad=4),
-                                        ),
+                                        )
+
+                        # add row labels on the left (unit_cost + gm_cs) using figure text to avoid expanding axes margins
+                        for r in range(n_rows):
+                            unit_idx = r // len(sharing_GM_CS)
+                            gm_idx = r % len(sharing_GM_CS)
+
+                            if r == 0:
+                                for c in range(n_cols):
+                                    axes[0, c].set_title(
+                                        f"$\\bf{{FS\\ multiplier:}}$ {FS_multiplier[c]}",
+                                        loc="center",
+                                        x=0.43,
+                                        pad=10,
+                                        fontsize=8,
+                                    )
+                            row_label = (
+                                f"$\\bf{{unit\\ cost:}}$ {unit_cost_mapping[data_impl_cost_name[unit_idx]]};\n"
+                                f"$\\bf{{GM\\ &\\ CS\\ shared\\ implem. costs\\ prop.:}}$ {sharing_GM_CS[gm_idx]}"
+                            )
+                            axes[r, 0].text(
+                                -0.02,
+                                0.5,
+                                row_label,
+                                transform=axes[r, 0].transAxes,
+                                rotation=90,
+                                ha="right",
+                                va="center",
+                                fontsize=8,
+                            )
+
+                        plt.tight_layout()
+                        fig.savefig(out_file, bbox_inches="tight", dpi=300, format=format_type)
+                        plt.close(fig)
+
+                    # ============================================================
+                    # BRANCH B: vector formats (PDF / EPS) - PyMuPDF page composition
+                    # ============================================================
+                    elif format_type in ("pdf", "eps"):
+                        import fitz  # pip install pymupdf
+                        import subprocess
+
+                        def get_pdf_source(img_path):
+                            """Return a fitz.Document; converts EPS -> PDF via Ghostscript first if needed."""
+                            if img_path.suffix.lower() == ".eps":
+                                tmp_pdf_path = img_path.with_suffix(".pdf")
+                                subprocess.run(
+                                    [
+                                        "gs",
+                                        "-dBATCH",
+                                        "-dNOPAUSE",
+                                        "-dEPSCrop",
+                                        "-sDEVICE=pdfwrite",
+                                        f"-sOutputFile={tmp_pdf_path}",
+                                        str(img_path),
+                                    ],
+                                    check=True,
+                                )
+                                return fitz.open(str(tmp_pdf_path))
+                            else:
+                                return fitz.open(str(img_path))
+
+                        # reserve extra margin (in points) for row labels (left) and column titles (top)
+                        left_margin_pt = 60
+                        top_margin_pt = 30
+                        cell_w_pt, cell_h_pt = 4 * 72, 3 * 72  # ~4in x 3in per cell, matches Branch A proportions
+
+                        page_width = left_margin_pt + cell_w_pt * n_cols
+                        page_height = top_margin_pt + cell_h_pt * n_rows
+
+                        out_doc = fitz.open()
+                        page = out_doc.new_page(width=page_width, height=page_height)
+
+                        for r1_idx, unit_cost in enumerate(data_impl_cost_name):
+                            for r2_idx, gm_cs in enumerate(sharing_GM_CS):
+                                row_idx = r1_idx * len(sharing_GM_CS) + r2_idx
+                                for col_idx, fs_mult in enumerate(FS_multiplier):
+                                    ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                    timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
+                                    img_path = outputs_path / (
+                                        f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
+                                        f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.{format_type}"
                                     )
 
-                    # Create a unit cost mapping dictionary
-                    unit_cost_mapping = {
-                        "Pearson_etal2018": r'\$0.53 (1st y), \$0.37 (subsequent ys)',
-                        "Margolies_etal2021": r'\$9.17 (each year)',
-                    }
+                                    rect = fitz.Rect(
+                                        left_margin_pt + col_idx * cell_w_pt,
+                                        top_margin_pt + row_idx * cell_h_pt,
+                                        left_margin_pt + (col_idx + 1) * cell_w_pt,
+                                        top_margin_pt + (row_idx + 1) * cell_h_pt,
+                                    )
 
-                    # add row labels on the left (unit_cost + gm_cs) using figure text to avoid expanding axes margins
-                    for r in range(n_rows):
-                        unit_idx = r // len(sharing_GM_CS)
-                        gm_idx = r % len(sharing_GM_CS)
+                                    if img_path.exists():
+                                        src = get_pdf_source(img_path)
+                                        page.show_pdf_page(rect, src, 0)
+                                        src.close()
 
-                        # column titles: only for first row
-                        if r == 0:
-                            for c in range(n_cols):
-                                axes[0, c].set_title(f"$\\bf{{FS\\ multiplier:}}$ {FS_multiplier[c]}",
-                                                     loc="center", x=0.43, pad=10, fontsize=8)
-                        # row labels: place in left margin of the row; use transform to align with axes coordinates
-                        row_label = (
-                            f"$\\bf{{unit\\ cost:}}$ {unit_cost_mapping[data_impl_cost_name[unit_idx]]};\n"
-                            f"$\\bf{{GM\\ &\\ CS\\ shared\\ implem. costs\\ prop.:}}$ {sharing_GM_CS[gm_idx]}"
+                                        if row_idx == row_idx_target and col_idx == col_idx_target:
+                                            page.draw_rect(rect, color=(0.78, 0.88, 0.71), width=6)
+                                            page.draw_rect(
+                                                fitz.Rect(rect.x1 - 100, rect.y0, rect.x1, rect.y0 + 20),
+                                                color=(0.78, 0.88, 0.71),
+                                                fill=(0.78, 0.88, 0.71),
+                                            )
+                                            page.insert_text(
+                                                (rect.x1 - 90, rect.y0 + 5),
+                                                "MAIN ANALYSIS",
+                                                fontsize=10,
+                                                color=(1, 1, 1),
+                                            )
+                                    else:
+                                        page.insert_text(
+                                            (rect.x0 + 10, rect.y0 + rect.height / 2),
+                                            f"Missing:\n{img_path.name}",
+                                            fontsize=8,
+                                        )
+
+                                    # column title: only for first row
+                                    if row_idx == 0:
+                                        page.insert_text(
+                                            (rect.x0 + cell_w_pt * 0.35, top_margin_pt - 10),
+                                            f"FS multiplier: {fs_mult}",
+                                            fontsize=8,
+                                            fontname="hebo",  # bold helvetica
+                                        )
+
+                        # row labels on the left margin
+                        for r in range(n_rows):
+                            unit_idx = r // len(sharing_GM_CS)
+                            gm_idx = r % len(sharing_GM_CS)
+                            row_label = (
+                                f"unit cost: {unit_cost_mapping[data_impl_cost_name[unit_idx]]}; "
+                                f"GM & CS shared implem. costs prop.: {sharing_GM_CS[gm_idx]}"
+                            )
+                            y_center = top_margin_pt + r * cell_h_pt + cell_h_pt / 2
+                            page.insert_text(
+                                (5, y_center),
+                                row_label,
+                                fontsize=6,
+                                rotate=90,
+                            )
+
+                        out_doc.save(str(out_file))
+                        out_doc.close()
+
+                    else:
+                        raise ValueError(
+                            f"Unsupported format_type: {format_type!r}. Expected png, jpeg, pdf, or eps."
                         )
-                        axes[r, 0].text(-0.02, 0.5, row_label, transform=axes[r, 0].transAxes,
-                                        rotation=90, ha="right", va="center", fontsize=8)
-
-                    plt.tight_layout()
-                    cohort_prefix = \
-                        "Neo" if cohort == "Neonatal" else "Under5" if cohort == "Under-5" else "unknown_cohort"
-                    out_file = \
-                        outputs_path / (f"{cohort_prefix}_cost_effectiveness_sensitivity_grid__"
-                                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png")
-                    # Save at higher DPI for better quality
-                    fig.savefig(out_file, bbox_inches="tight", dpi=300)
-                    plt.close(fig)
 
                     ########################################
                     # Total cost mapping table
@@ -1963,7 +2091,7 @@ def calc_calibration_annual_death_CIs(calib_outputs_path: Path) -> None:
         * prevalence of moderate and severe wasting among age groups in 2016,
         * prevalence of moderate and severe wasting among age groups in 2020,
         * average annual direct deaths due to SAM.
-    :param calib_outputs_path:
+    :param calib_outputs_path: Path to the calibration outputs directory
     """
     print("\nannual direct deaths, average over calibration period calculation ...")
     # Get latest SQ timestamp
@@ -2017,7 +2145,7 @@ def plot_calibration_prevalence_outputs(calib_outputs_path: Path) -> None:
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def plot_availability_heatmaps(outputs_path: Path) -> None:
+def plot_availability_heatmaps(outputs_path: Path, format_type: str) -> None:
     """
     Creates the following heatmaps of average availabilities:
     A) HEATMAP OF ESSENTIAL CONSUMABLES AVAILABILITY
@@ -2029,7 +2157,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     B2) average for each month at each facility level
     B3) average for each month at requested facility level
 
-    :param outputs_path: Path to save the plots as PNG files.
+    :param outputs_path: Path to a directiory where to save the plots.
+    :param format_type: String specifying the output format (e.g., 'png', 'pdf', 'eps')
     """
     resourcefilepath = Path("./resources")
 
@@ -2083,7 +2212,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.ylabel('Consumable')
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
-    plt.savefig(outputs_path / 'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.savefig(outputs_path / f"consumable_availability_heatmap.{format_type}",
+                dpi=300, bbox_inches="tight", format=format_type)
 
     # A2) Essential consumables: average for each month at each facility level
     # ###
@@ -2120,7 +2250,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
             ax.set_ylabel("")
             ax.set_yticklabels([])
     plt.tight_layout()
-    plt.savefig(outputs_path / "consumable_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
+    plt.savefig(outputs_path / f"consumable_monthly_availability_heatmaps.{format_type}",
+                dpi=300, bbox_inches="tight", format=format_type)
 
     # A3) Essential consumables: average for each month at requested facility level
     # ###
@@ -2183,7 +2314,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.ylabel("Consumable")
     plt.xticks(rotation=0)
     plt.yticks(rotation=0)
-    plt.savefig(outputs_path / "consumable_availability_heatmap_requested_fac_level.png", dpi=300, bbox_inches="tight")
+    plt.savefig(outputs_path / f"consumable_availability_heatmap_requested_fac_level.{format_type}",
+                dpi=300, bbox_inches="tight", format=format_type)
 
     # B) HEATMAP OF TREATMENTS AVAILABILITY, i.e. probability all essential consumables for the treatments are available
     # B1) Treatments: average over the entire year at each facility level
@@ -2219,7 +2351,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.ylabel('Treatment')
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
-    plt.savefig(outputs_path / 'treatment_availability_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.savefig(outputs_path / f"treatment_availability_heatmap.{format_type}",
+                dpi=300, bbox_inches="tight", format=format_type)
     plt.close(fig)
 
     # B2) Treatments: average for each month at each facility level
@@ -2267,7 +2400,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
             ax.set_ylabel("")
             ax.set_yticklabels([])
     plt.tight_layout()
-    fig.savefig(outputs_path / "treatment_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
+    fig.savefig(outputs_path / f"treatment_monthly_availability_heatmaps.{format_type}",
+                dpi=300, bbox_inches="tight", format=format_type)
 
     # B3) Treatments: average for each month at requested facility level
     # ###
@@ -2307,6 +2441,6 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.ylabel("Treatment")
     plt.xticks(rotation=0)
     plt.yticks(rotation=0)
-    plt.savefig(outputs_path / "treatment_availability_heatmap_requested_fac_level.png",
-                dpi=300, bbox_inches="tight")
+    plt.savefig(outputs_path / f"treatment_availability_heatmap_requested_fac_level.{format_type}",
+                dpi=300, bbox_inches="tight", format=format_type)
     plt.close(fig)

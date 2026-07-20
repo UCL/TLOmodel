@@ -59,7 +59,7 @@ cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
 force_calculation = [False, False, False, False, False, False, False]
 # force_calculation = [False, False, False, False, False, True, False]
 # force_calculation = [True, True, True, True, True, True, True]
-##############################################################  ########################################################
+######################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
 # Ensure Status Quo is always included within the both intervs_of_interest and scenarios_to_compare
@@ -69,7 +69,7 @@ if 'Status Quo' not in scenarios_to_compare:
     scenarios_to_compare = scenarios_to_compare + ['Status Quo']
 
 def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interventionyears:list,
-                                       intervs_ofinterest:list, scenarios_tocompare, intervsall) -> None:
+                                       intervs_ofinterest:list, scenarios_tocompare, intervsall, format_type:str) -> None:
     """
     This function saves outcomes from analyses conducted for the Janoušková et al. (2025) paper on acute malnutrition.
 
@@ -306,7 +306,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
-            birth_outcomes_dict, pop_sizes_outcomes_dict, force_calculation
+            birth_outcomes_dict, pop_sizes_outcomes_dict, force_calculation, format_type=format_type
         )
 
     # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #
@@ -611,13 +611,13 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         plt.close('all')
 
         # Outcome 8: cost-effectiveness sensitivity plot
-        cost_effectiveness_png_path = outputs_path / (
+        cost_effectiveness_output_file_path = outputs_path / (
             f"{cohort_prefix}_cost_effectiveness_sensitivity_grid__"
-            f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.{format_type}"
         )
-        if cost_effectiveness_png_path.exists():
+        if cost_effectiveness_output_file_path.exists():
             # Read image and set figure size to match pixel dimensions so embedding keeps original quality
-            img = plt.imread(cost_effectiveness_png_path)
+            img = plt.imread(cost_effectiveness_output_file_path)
             h, w = img.shape[0], img.shape[1]
             target_dpi = 300
             figsize = (w / target_dpi, h / target_dpi)
@@ -731,7 +731,7 @@ def run_behind_the_scene_analysis_wasting(
 # RUN THE ANALYSIS #
 # ---------------- #
 run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
-                                   scenarios_to_compare, intervs_all)
+                                   scenarios_to_compare, intervs_all, format_type="pdf")
 # run_behind_the_scene_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
 #                                       scenarios_dict)
 
