@@ -1964,7 +1964,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                                 fill=(0.78, 0.88, 0.71),
                                             )
                                             page.insert_text(
-                                                (rect.x1 - 90, rect.y0 + 5),
+                                                (rect.x1 - 90, rect.y0 + 15),
                                                 "MAIN ANALYSIS",
                                                 fontsize=10,
                                                 color=(1, 1, 1),
