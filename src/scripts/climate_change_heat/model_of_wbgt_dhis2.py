@@ -217,7 +217,7 @@ def run_indicator(indicator: str) -> pd.DataFrame | None:
 
     print(f"  [{indicator}] ✓  n={int(model_wx.nobs):,}, "
           f"facilities={nb_data['facility'].nunique()}, "
-          f"alpha={model_wx.alpha_hat:.3f}")
+          f"alpha={model_wx.alpha_hatc:.3f}")
     return pd.DataFrame(rows)
 
 
