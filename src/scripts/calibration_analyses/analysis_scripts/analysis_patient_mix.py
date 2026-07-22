@@ -191,15 +191,47 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # keep only districts in TLM
         _df = _df.loc[_df["District"].isin(common_districts)]
 
+        # combine levels 3 and 4, considering level 4 possibly has no patients as simulated, and
+        # calculate patient volume per level to define the rescaling factors for each level,
+        # for the purpose of rescaling below
+        _df_fac_level = _df.copy()
+        _df_fac_level["Facility_Level"] = _df_fac_level["Facility_Level"].replace({"4": "3"})
+        _df_fac_level = _df_fac_level.groupby(["Facility_Level"])["patient_count"].sum().reindex(
+            ["1a", "2", "3"], fill_value=0)
+        tlm_pat_prop = [0.2466, 0.447, 0.3064]
+        # the rescaling factors
+        _df_fac_level.loc["1a"] = (1 if _df_fac_level.loc["1a"] == 0 else tlm_pat_prop[0] / _df_fac_level.loc["1a"])
+        _df_fac_level.loc["2"] = (1 if _df_fac_level.loc["2"] == 0 else tlm_pat_prop[1] / _df_fac_level.loc["2"])
+        _df_fac_level.loc["3"] = (1 if _df_fac_level.loc["3"] == 0 else tlm_pat_prop[2] / _df_fac_level.loc["3"])
+        _df_fac_level.loc["4"] = _df_fac_level.loc["3"].copy()
+
         # group up by subgroups and get patient proportions across subgroups
+        # rescale TLO patient volume per level by TLM patient mix across levels
         group_list = ["Facility_Level", "Age_Range", "Wealth", "Sex", "loc_cat"]
         _df_mix = pd.DataFrame(columns=["category", "subgroup", "patient_proportion"])
         for sg in group_list:
-            _df_sg = _df.groupby(sg)["patient_count"].sum().reset_index().rename(
-                columns={sg: "subgroup"}
+            if sg == "Facility_Level":
+                _df_sg = _df.groupby(sg)["patient_count"].sum().reset_index().set_index(
+                    "Facility_Level")
+            else:
+                _df_sg = _df.groupby([sg, "Facility_Level"])["patient_count"].sum().reset_index().set_index(
+                    "Facility_Level")
+
+            # rescale by facility level
+            _df_sg["rescaled_patient_count"] = (
+                _df_sg["patient_count"]
+                * _df_fac_level.reindex(_df_sg.index).to_numpy()
             )
+            _df_sg.reset_index(inplace=True)
+            # group up and sum after the adjustment
+            _df_sg.rename(columns={sg: "subgroup"}, inplace=True)
+            _df_sg = _df_sg.groupby("subgroup")["rescaled_patient_count"].sum().reset_index()
+            # calculate patient proportion
+            _df_sg["patient_proportion"] = _df_sg["rescaled_patient_count"] / _df_sg["rescaled_patient_count"].sum()
+            # format
             _df_sg["category"] = sg
-            _df_sg["patient_proportion"] = _df_sg["patient_count"] / _df_sg["patient_count"].sum()
+            _df_sg.drop(columns=["rescaled_patient_count"], inplace=True)
+            # concat df for different categories
             _df_mix = pd.concat([_df_mix, _df_sg], ignore_index=True)
 
         # create series
