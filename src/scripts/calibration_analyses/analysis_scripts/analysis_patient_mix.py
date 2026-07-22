@@ -141,6 +141,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
         # map Event_Name with TLM service area
+        # todo: need to update the HSI list in the map based on long-run simulation output
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
         # check that all events are mapped
@@ -204,6 +205,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df_fac_level.loc["2"] = (1 if _df_fac_level.loc["2"] == 0 else tlm_pat_prop[1] / _df_fac_level.loc["2"])
         _df_fac_level.loc["3"] = (1 if _df_fac_level.loc["3"] == 0 else tlm_pat_prop[2] / _df_fac_level.loc["3"])
         _df_fac_level.loc["4"] = _df_fac_level.loc["3"].copy()
+        # rename
+        _df_fac_level = _df_fac_level.rename("scale_factor")
 
         # group up by subgroups and get patient proportions across subgroups
         # rescale TLO patient volume per level by TLM patient mix across levels
@@ -218,19 +221,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     "Facility_Level")
 
             # rescale by facility level
-            _df_sg["rescaled_patient_count"] = (
+            _df_sg["rescaled_patient_prop"] = (
                 _df_sg["patient_count"]
                 * _df_fac_level.reindex(_df_sg.index).to_numpy()
             )
             _df_sg.reset_index(inplace=True)
             # group up and sum after the adjustment
             _df_sg.rename(columns={sg: "subgroup"}, inplace=True)
-            _df_sg = _df_sg.groupby("subgroup")["rescaled_patient_count"].sum().reset_index()
+            _df_sg = _df_sg.groupby("subgroup")[["patient_count", "rescaled_patient_prop"]].sum().reset_index()
             # calculate patient proportion
-            _df_sg["patient_proportion"] = _df_sg["rescaled_patient_count"] / _df_sg["rescaled_patient_count"].sum()
+            _df_sg["patient_proportion"] = _df_sg["rescaled_patient_prop"] / _df_sg["rescaled_patient_prop"].sum()
             # format
             _df_sg["category"] = sg
-            _df_sg.drop(columns=["rescaled_patient_count"], inplace=True)
+            _df_sg.drop(columns=["rescaled_patient_prop"], inplace=True)
             # concat df for different categories
             _df_mix = pd.concat([_df_mix, _df_sg], ignore_index=True)
 
