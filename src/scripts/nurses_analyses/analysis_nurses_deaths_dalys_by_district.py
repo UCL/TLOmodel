@@ -1,7 +1,5 @@
-"""Plot DALYs and Deaths across nurse staffing scenarios.
-
-This script figures for the Nurse Shortages analysis at district level:
-
+"""
+This script plots maps for the Nurse Shortages analysis at district level:
 """
 
 import argparse
@@ -421,7 +419,7 @@ def extract_total_deaths_by_district(results_folder):
     )
 
 
-def plot_district_maps(gdf, scenario_names, title):
+def plot_district_maps(gdf, scenario_names, title, colorbar_label):
     vmax = np.nanmax(np.abs(gdf[scenario_names].values))
     ncols = 3
     nrows = math.ceil(len(scenario_names) / ncols)
@@ -460,7 +458,7 @@ def plot_district_maps(gdf, scenario_names, title):
             "More CNP by district",
     }
 
-    # -------- Plot maps --------
+    # Plot maps
     for ax, scenario in zip(axes, scenario_names):
         gdf.plot(column=scenario, cmap="coolwarm", edgecolor="black", linewidth=0.4, legend=False,
                             vmin=-vmax, vmax=vmax, ax=ax)
@@ -471,10 +469,10 @@ def plot_district_maps(gdf, scenario_names, title):
     for ax in axes[len(scenario_names):]:
         ax.axis("off")
 
-    # -------- Shared colour bar --------
+    # Shared colour bar
     sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(-vmax, vmax))
     sm.set_array([])
-    fig.colorbar(sm, ax=axes, location="right", shrink=0.85, pad=0.02, label="% change in DALYs (vs Baseline)")
+    fig.colorbar(sm, ax=axes, location="right", shrink=0.85, pad=0.02, label=colorbar_label,)
     fig.suptitle(title, fontsize=15)
     return fig
 
@@ -549,10 +547,17 @@ if __name__ == "__main__":
         "Baseline Nurses / Default Healthsystem Function"
     )
 
+    default_cols = [
+        c for c in district_mean.columns
+        if "Default Healthsystem Function" in c
+    ]
+
+    default_df_dalys = district_mean[default_cols]
+
     default_pct = (
-        district_mean
-        .subtract(district_mean[default_baseline], axis=0)
-        .divide(district_mean[default_baseline], axis=0)
+        default_df_dalys
+        .subtract(default_df_dalys[default_baseline], axis=0)
+        .divide(default_df_dalys[default_baseline], axis=0)
         * 100
     )
 
@@ -565,6 +570,14 @@ if __name__ == "__main__":
         how="left",
     )
 
+    print("\nDEFAULT DALYs")
+    print(default_pct.min().min(), default_pct.max().max())
+    print("\nDEFAULT DALYs distribution")
+    print(default_pct.stack().describe())
+    print("Mean Default:", default_pct.mean())
+    print("\nMean change by district (Default)")
+    print(default_pct.mean(axis=1).sort_values())
+
     fig_dalys_default_maps = plot_district_maps(
         district_map_default,
         [
@@ -575,6 +588,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Default Healthsystem",
+        "% change in DALYs (vs Baseline)",
     )
 
     # DALYs Improved Healthsystem
@@ -582,10 +596,17 @@ if __name__ == "__main__":
         "Baseline Nurses / Improved Healthsystem Function"
     )
 
+    improved_cols = [
+        c for c in district_mean.columns
+        if "Improved Healthsystem Function" in c
+    ]
+
+    improved_df_dalys = district_mean[improved_cols]
+
     improved_pct = (
-        district_mean
-        .subtract(district_mean[improved_baseline], axis=0)
-        .divide(district_mean[improved_baseline], axis=0)
+        improved_df_dalys
+        .subtract(improved_df_dalys[improved_baseline], axis=0)
+        .divide(improved_df_dalys[improved_baseline], axis=0)
         * 100
     )
 
@@ -598,6 +619,12 @@ if __name__ == "__main__":
         how="left",
     )
 
+    # print("\nIMPROVED DALYs")
+    # print(improved_pct.min().min(), improved_pct.max().max())
+    # print("\nIMPROVED DALYs distribution")
+    # print(improved_pct.stack().describe())
+    # print("Mean Improved:", improved_pct.mean())
+
     fig_dalys_improved_maps = plot_district_maps(
         district_map_improved,
         [
@@ -608,6 +635,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Improved Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Improved Healthsystem",
+        "% change in DALYs (vs Baseline)",
     )
 
     # Deaths Default Healthsystem
@@ -619,21 +647,36 @@ if __name__ == "__main__":
     #     "Baseline Nurses / Default Healthsystem Function"
     # )
 
+    default_cols_deaths = [
+        c for c in district_mean.columns
+        if "Default Healthsystem Function" in c
+    ]
+
+    default_df_deaths = district_mean_deaths[default_cols_deaths]
+
     default_pct_deaths = (
-        district_mean_deaths
-        .subtract(district_mean_deaths[default_baseline], axis=0)
-        .divide(district_mean_deaths[default_baseline], axis=0)
+        default_df_deaths
+        .subtract(default_df_deaths[default_baseline], axis=0)
+        .divide(default_df_deaths[default_baseline], axis=0)
         * 100
     )
 
     default_pct_deaths = default_pct_deaths.drop(columns=default_baseline)
 
     district_map_default_deaths = district_map.merge(
-        default_pct,
+        default_pct_deaths,
         left_on="ADM2_EN",
         right_index=True,
         how="left",
     )
+
+    # print("\nDEFAULT Deaths")
+    # print(default_pct_deaths.min().min(), default_pct_deaths.max().max())
+    # print("\nDEFAULT Deaths distribution")
+    # print(default_pct_deaths.stack().describe())
+    # print("Mean Default Deaths:", default_pct_deaths.mean())
+    # print("\nMean change by district (Default deaths)")
+    # print(default_pct_deaths.mean(axis=1).sort_values())
 
     fig_deaths_default_maps = plot_district_maps(
         district_map_default_deaths,
@@ -645,24 +688,78 @@ if __name__ == "__main__":
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% Deaths averted (vs Baseline): Default Healthsystem",
+        "% change in Deaths (vs Baseline)",
+    )
+
+    # Deaths Improved Healthsystem
+    improved_cols_deaths = [
+        c for c in district_mean.columns
+        if "Improved Healthsystem Function" in c
+    ]
+
+    improved_df_deaths = district_mean_deaths[improved_cols_deaths]
+
+    improved_pct_deaths = (
+        improved_df_deaths
+        .subtract(improved_df_deaths[improved_baseline], axis=0)
+        .divide(improved_df_deaths[improved_baseline], axis=0)
+        * 100
+    )
+
+    improved_pct_deaths = improved_pct_deaths.drop(columns=improved_baseline)
+
+    district_map_improved_deaths = district_map.merge(
+        improved_pct_deaths,
+        left_on="ADM2_EN",
+        right_index=True,
+        how="left",
+    )
+
+    # print("\nIMPROVED Deaths")
+    # print(improved_pct_deaths.min().min(), improved_pct_deaths.max().max())
+    # print("\nIMPROVED Deaths distribution")
+    # print(improved_pct_deaths.stack().describe())
+    # print("Mean Improved Deaths:", improved_pct_deaths.mean())
+    # print("\nMean change by district (Improved)")
+    # print(improved_pct.mean(axis=1).sort_values())
+    # print("\nMean change by district (Improved deaths)")
+    # print(improved_pct_deaths.mean(axis=1).sort_values())
+
+    fig_deaths_improved_maps = plot_district_maps(
+        district_map_improved_deaths,
+        [
+            "More Nurses / Improved Healthsystem Function",
+            "Fewer Nurses / Improved Healthsystem Function",
+            "More CNP staff / Improved Healthsystem Function",
+            "More Nurses by District / Improved Healthsystem Function",
+            "More CNP staff by District / Improved Healthsystem Function",
+        ],
+        "% Deaths averted (vs Baseline): Improved Healthsystem",
+        "% change in Deaths (vs Baseline)",
     )
 
     if args.save_figures:
         fig_dalys_default_maps.savefig(
             results_folder /
-            "district_dalys_default.png",
+            "district_dalys_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
         fig_dalys_improved_maps.savefig(
             results_folder /
-            "district_dalys_improved.png",
+            "district_dalys_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
         fig_deaths_default_maps.savefig(
             results_folder /
-            "district_deaths_default.png",
+            "district_deaths_default.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        fig_deaths_improved_maps.savefig(
+            results_folder /
+            "district_deaths_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
