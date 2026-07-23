@@ -638,10 +638,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .reset_index(drop=True)
     )
 
-    # make wealth subgroups as int
+    # make wealth and education subgroups as int
+    # change to string if needed
     mask = pat_mix_complete["category"].eq("Wealth")
     pat_mix_complete.loc[mask, "subgroup"] = (
         pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
+        .replace({1: "1", 2: "2", 3: "3", 4: "4", 5: "5"})
+    )
+
+    mask = pat_mix_complete["category"].eq("Education")
+    pat_mix_complete.loc[mask, "subgroup"] = (
+        pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
+        .replace({1: "None", 2: "Some primary education", 3: "Some secondary education"})
     )
 
     # plot
@@ -733,8 +741,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             elif category == "Education":
                 width_per_subgroup = 0.9
-                rotation = 0
-                horizontal_alignment = "center"
+                rotation = 45
+                horizontal_alignment = "right"
 
             else:
                 width_per_subgroup = 0.8
