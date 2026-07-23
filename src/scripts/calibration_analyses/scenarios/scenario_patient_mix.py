@@ -22,11 +22,11 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2010, 6, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 50  # 100_000
+        self.end_date = Date(2024, 6, 1)  # The simulation will stop before reaching this date.
+        self.pop_size = 100_000  # 50 for local test
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
