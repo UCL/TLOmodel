@@ -166,7 +166,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # get patient counts per target subgroups
         _df = _df.groupby(
-            ["Facility_ID", "Sex", "Age_Range", "Wealth", "loc_cat"]
+            ["Facility_ID", "Sex", "Age_Range", "Wealth", "Education", "loc_cat"]
         )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
 
         # merge info from mfl and format
@@ -210,7 +210,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # group up by subgroups and get patient proportions across subgroups
         # rescale TLO patient volume per level by TLM patient mix across levels
-        group_list = ["Facility_Level", "Age_Range", "Wealth", "Sex", "loc_cat"]
+        group_list = ["Facility_Level", "Age_Range", "Wealth", "Sex", "Education", "loc_cat"]
         _df_mix = pd.DataFrame(columns=["category", "subgroup", "patient_proportion"])
         for sg in group_list:
             if sg == "Facility_Level":
@@ -514,7 +514,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
         return _df
 
-    subgroups = ["fac_level", "age_group_tlo", "wealth_tlo", "sex", "loc_cat"]
+    subgroups = ["fac_level", "age_group_tlo", "wealth_tlo", "sex", "education_tlo", "loc_cat"]
     pat_mix = pd.concat(
         [pat_prop_per_subgroup_total_period_tool_2(pat_exit, subgroup=s) for s in subgroups],
         ignore_index=True
@@ -543,6 +543,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                        "age_group_tlo": "Age_Range",
                                                        "wealth_tlo": "Wealth",
                                                        "sex": "Sex",
+                                                       "education_tlo": "Education",
                                                        "loc_cat": "Service_Area"})
     pat_mix = pat_mix[["category", "subgroup", "pat_proportion", "source"]].rename(
         columns={"pat_proportion": "mean"}
@@ -727,6 +728,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             elif category == "Sex":
                 width_per_subgroup = 1.2
+                rotation = 0
+                horizontal_alignment = "center"
+
+            elif category == "Education":
+                width_per_subgroup = 0.9
                 rotation = 0
                 horizontal_alignment = "center"
 
