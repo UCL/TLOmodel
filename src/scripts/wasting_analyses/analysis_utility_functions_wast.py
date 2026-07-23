@@ -1786,8 +1786,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                     # Create a unit cost mapping dictionary
                     unit_cost_mapping = {
-                        "Pearson_etal2018": r"\$0.53 (1st y), \$0.37 (subsequent ys)",
-                        "Margolies_etal2021": r"\$9.17 (each year)",
+                        "Pearson_etal2018": r"$0.53 (1st y), $0.37 (subsequent ys)",
+                        "Margolies_etal2021": r"$9.17 (each year)",
                     }
 
                     # ============================================================
@@ -1924,11 +1924,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                         # reserve extra margin (in points) for row labels (left) and column titles (top)
                         left_margin_pt = 60
-                        top_margin_pt = 30
-                        cell_w_pt, cell_h_pt = 4 * 72, 3 * 72  # ~4in x 3in per cell, matches Branch A proportions
+                        top_margin_pt = 40
+                        cell_w_pt, cell_h_pt = 5.1 * 72, 4.0 * 72  # set cell width and height
 
                         page_width = left_margin_pt + cell_w_pt * n_cols
-                        page_height = top_margin_pt + cell_h_pt * n_rows
+                        page_height = top_margin_pt + cell_h_pt * n_rows + 10
 
                         out_doc = fitz.open()
                         page = out_doc.new_page(width=page_width, height=page_height)
@@ -1948,7 +1948,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                         left_margin_pt + col_idx * cell_w_pt,
                                         top_margin_pt + row_idx * cell_h_pt,
                                         left_margin_pt + (col_idx + 1) * cell_w_pt,
-                                        top_margin_pt + (row_idx + 1) * cell_h_pt,
+                                        top_margin_pt + (row_idx + 1) * (cell_h_pt - 5),
                                     )
 
                                     if img_path.exists():
@@ -1981,7 +1981,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                         page.insert_text(
                                             (rect.x0 + cell_w_pt * 0.35, top_margin_pt - 10),
                                             f"FS multiplier: {fs_mult}",
-                                            fontsize=8,
+                                            fontsize=12,
                                             fontname="hebo",  # bold helvetica
                                         )
 
@@ -1990,15 +1990,16 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             unit_idx = r // len(sharing_GM_CS)
                             gm_idx = r % len(sharing_GM_CS)
                             row_label = (
-                                f"unit cost: {unit_cost_mapping[data_impl_cost_name[unit_idx]]}; "
+                                f"unit cost: {unit_cost_mapping[data_impl_cost_name[unit_idx]]};\n"
                                 f"GM & CS shared implem. costs prop.: {sharing_GM_CS[gm_idx]}"
                             )
-                            y_center = top_margin_pt + r * cell_h_pt + cell_h_pt / 2
+                            y_center = top_margin_pt + r * cell_h_pt + cell_h_pt / 2 + 120  # Adjusted to lower the labels
                             page.insert_text(
-                                (5, y_center),
+                                (30, y_center),
                                 row_label,
-                                fontsize=6,
+                                fontsize=12,
                                 rotate=90,
+                                fontname='hebo',
                             )
 
                         out_doc.save(str(out_file))
