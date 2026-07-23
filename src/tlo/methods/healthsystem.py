@@ -1825,9 +1825,9 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
         """
-        [the_age, the_wealth, the_sex] = self.sim.population.props.loc[
+        [the_age, the_wealth, the_sex, the_education] = self.sim.population.props.loc[
             hsi_event.target,
-            ["age_range", "li_wealth", "sex"]
+            ["age_range", "li_wealth", "sex", "li_ed_lev"]
         ]
 
         # HSI-Event
@@ -1841,6 +1841,7 @@ class HealthSystem(Module):
             age_of_person=the_age,
             wealth_of_person=the_wealth,
             sex_of_person=the_sex,
+            edu_of_person=the_education,
         )
 
     def write_to_hsi_log(
@@ -1854,6 +1855,7 @@ class HealthSystem(Module):
         age_of_person: str,
         wealth_of_person: int,
         sex_of_person: str,
+        edu_of_person: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
@@ -1873,6 +1875,7 @@ class HealthSystem(Module):
             "Age_Range": age_of_person,
             "Sex": sex_of_person,
             "Wealth": wealth_of_person,
+            "Education": edu_of_person,
         }
 
         logger.debug(key="HSI_Event", data=hsi_record, description="record of each HSI event")
@@ -2671,6 +2674,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     age_of_person=str(None),
                     sex_of_person=str(None),
                     wealth_of_person=None,
+                    education_of_person=None,
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
