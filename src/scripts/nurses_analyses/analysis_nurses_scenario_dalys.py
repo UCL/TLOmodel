@@ -408,9 +408,6 @@ def calculate_percent_dalys_averted(
     annual_dalys = annual_dalys.loc[year_mask]
     annual_dalys_agg = annual_dalys.sum(axis=0)
 
-    print("\nAnnual DALYS agg")
-    print(annual_dalys_agg.index)
-
     pct_diff = pd.DataFrame(
         -100.0
         * find_difference_relative_to_comparison_series(
@@ -1447,8 +1444,6 @@ if __name__ == "__main__":
         comparison_years=range(2027, 2035),
     )
 
-    print("\nPercent dalys averted")
-    print(percent_dalys_averted)
     fig_2, ax_2 = plot_percent_dalys_averted_comparison(
         percent_dalys_averted,
         percent_dalys_averted_improved,
