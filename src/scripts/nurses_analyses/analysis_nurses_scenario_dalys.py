@@ -122,7 +122,7 @@ def extract_annual_deaths(results_folder):
 
 
 # Plot: Annual DALYs over time
-def plot_annual_dalys(summarized_annual_dalys):
+def plot_annual_dalys(summarized_annual_dalys, title=None):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     scenario_names = summarized_annual_dalys.columns.get_level_values(0).unique()
@@ -144,27 +144,31 @@ def plot_annual_dalys(summarized_annual_dalys):
         "More CNP staff by District / Improved Healthsystem Function": "More CNP by district",
     }
 
+    color_map = {
+        "Baseline Nurses / Default Healthsystem Function": "black",
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function": "orange",
+
+        "Baseline Nurses / Improved Healthsystem Function": "black",
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function": "orange",
+    }
+
     for scenario in scenario_names:
         years = summarized_annual_dalys.index.astype(int)
         means = summarized_annual_dalys[(scenario, "mean")].values
         lowers = summarized_annual_dalys[(scenario, "lower")].values
         uppers = summarized_annual_dalys[(scenario, "upper")].values
 
-        print(means.min(), means.max())
-
-        ax.plot(
-            years,
-            means,
-            linewidth=2,
-            label=label_map.get(scenario, scenario),
-        )
-
-        ax.fill_between(
-            years,
-            lowers,
-            uppers,
-            alpha=0.2,
-        )
+        color = color_map.get(scenario, "gray")
+        ax.plot(years, means, linewidth=2, color=color, label=label_map.get(scenario, scenario))
+        ax.fill_between(years, lowers, uppers, color=color, alpha=0.2)
 
     ax.set_xlabel("Year")
     ax.set_ylabel("Annual DALYs")
@@ -173,13 +177,17 @@ def plot_annual_dalys(summarized_annual_dalys):
     ax.set_xlim(2025, 2034)
     ax.set_ylim(bottom=8e6)
     # ax.set_ylim(bottom=0.8)
+    if title is not None:
+        ax.set_title(title)
     fig.tight_layout()
+    # fig.suptitle(title, fontsize=14)
+    # fig.tight_layout(rect=[0, 0, 1, 0.96])
 
     return fig, ax
 
 
 # Plot: Annual Deaths over time
-def plot_annual_deaths(summarized_annual_deaths):
+def plot_annual_deaths(summarized_annual_deaths, title=None):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     scenario_names = (
@@ -204,6 +212,22 @@ def plot_annual_deaths(summarized_annual_deaths):
         "More CNP staff by District / Improved Healthsystem Function": "More CNP by district",
     }
 
+    color_map = {
+        "Baseline Nurses / Default Healthsystem Function": "black",
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function": "orange",
+
+        "Baseline Nurses / Improved Healthsystem Function": "black",
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function": "orange",
+    }
+
     for scenario in scenario_names:
         years = summarized_annual_deaths.index.astype(int)
         means = summarized_annual_deaths[(scenario, "mean")].values
@@ -211,26 +235,20 @@ def plot_annual_deaths(summarized_annual_deaths):
 
         uppers = summarized_annual_deaths[(scenario, "upper")].values
 
-        ax.plot(
-            years,
-            means,
-            linewidth=2,
-            label=label_map.get(scenario, scenario),
-        )
-
-        ax.fill_between(
-            years,
-            lowers,
-            uppers,
-            alpha=0.2,
-        )
+        color = color_map.get(scenario, "gray")
+        ax.plot(years, means, linewidth=2, color=color, label=label_map.get(scenario, scenario))
+        ax.fill_between(years, lowers, uppers, color=color, alpha=0.2)
 
     ax.set_xlabel("Year")
     ax.set_ylabel("Annual deaths")
     ax.legend()
     ax.grid(alpha=0.3)
     ax.set_xlim(2025, 2034)
+    if title is not None:
+        ax.set_title(title)
     fig.tight_layout()
+    # fig.suptitle(title, fontsize=14)
+    # fig.tight_layout(rect=[0, 0, 1, 0.96])
     return fig, ax
 
 
@@ -389,6 +407,9 @@ def calculate_percent_dalys_averted(
 
     annual_dalys = annual_dalys.loc[year_mask]
     annual_dalys_agg = annual_dalys.sum(axis=0)
+
+    print("\nAnnual DALYS agg")
+    print(annual_dalys_agg.index)
 
     pct_diff = pd.DataFrame(
         -100.0
@@ -588,32 +609,38 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df,):
     ]
 
     for ax, df, title in panel_data:
-        ordered_scenarios = [
-            "More Nurses",
-            "More CNP staff",
-            "More Nurses by District",
-            "More CNP staff by District",
-            "Fewer Nurses",
-        ]
-
-        ordered_scenarios = [
-            next(s for s in df.index if name in s)
-            for name in ordered_scenarios
-        ]
+        if "Default" in title:
+            ordered_scenarios = [
+                "More Nurses / Default Healthsystem Function",
+                "More CNP staff / Default Healthsystem Function",
+                "More Nurses by District / Default Healthsystem Function",
+                "More CNP staff by District / Default Healthsystem Function",
+                "Fewer Nurses / Default Healthsystem Function",
+            ]
+        else:
+            ordered_scenarios = [
+                "More Nurses / Improved Healthsystem Function",
+                "More CNP staff / Improved Healthsystem Function",
+                "More Nurses by District / Improved Healthsystem Function",
+                "More CNP staff by District / Improved Healthsystem Function",
+                "Fewer Nurses / Improved Healthsystem Function",
+            ]
 
         label_map = {
-            "More Nurses": "More nurses",
-            "More CNP staff": "More CNP",
-            "More Nurses by District": "More nurses by district",
-            "More CNP staff by District": "More CNP by district",
-            "Fewer Nurses": "Fewer nurses",
+            "More Nurses / Default Healthsystem Function": "More\nnurses",
+            "More CNP staff / Default Healthsystem Function": "More\nCNP",
+            "More Nurses by District / Default Healthsystem Function": "More nurses\nby district",
+            "More CNP staff by District / Default Healthsystem Function": "More CNP\nby district",
+            "Fewer Nurses / Default Healthsystem Function": "Fewer\nnurses",
+
+            "More Nurses / Improved Healthsystem Function": "More\nnurses",
+            "More CNP staff / Improved Healthsystem Function": "More\nCNP",
+            "More Nurses by District / Improved Healthsystem Function": "More nurses\nby district",
+            "More CNP staff by District / Improved Healthsystem Function": "More CNP\nby district",
+            "Fewer Nurses / Improved Healthsystem Function": "Fewer\nnurses",
         }
 
-        labels = [
-            next(label for key, label in label_map.items() if key in s)
-            for s in ordered_scenarios
-        ]
-
+        labels = [label_map[s] for s in ordered_scenarios]
         means = df.loc[ordered_scenarios, "mean"].values
         lowers = df.loc[ordered_scenarios, "lower"].values
         uppers = df.loc[ordered_scenarios, "upper"].values
@@ -624,18 +651,20 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df,):
         ])
 
         color_map = {
-            "More Nurses": "steelblue",
-            "More CNP staff": "darkgreen",
-            "More Nurses by District": "mediumpurple",
-            "More CNP staff by District": "orange",
-            "Fewer Nurses": "indianred",
+            "More Nurses / Default Healthsystem Function": "steelblue",
+            "More CNP staff / Default Healthsystem Function": "darkgreen",
+            "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+            "More CNP staff by District / Default Healthsystem Function": "orange",
+            "Fewer Nurses / Default Healthsystem Function": "indianred",
+
+            "More Nurses / Improved Healthsystem Function": "steelblue",
+            "More CNP staff / Improved Healthsystem Function": "darkgreen",
+            "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+            "More CNP staff by District / Improved Healthsystem Function": "orange",
+            "Fewer Nurses / Improved Healthsystem Function": "indianred",
         }
 
-        colors = [
-            next(col for key, col in color_map.items() if key in s)
-            for s in ordered_scenarios
-        ]
-
+        colors = [color_map[s] for s in ordered_scenarios]
         ax.bar(labels, means, yerr=yerr, capsize=6, color=colors, width=0.55,)
         ax.axhline(0, color="black", linewidth=1,)
         ax.set_title(title)
@@ -663,31 +692,38 @@ def plot_percent_deaths_averted_comparison(default_df,improved_df,):
     ]
 
     for ax, df, title in panel_data:
-        ordered_scenarios = [
-            "More Nurses",
-            "More CNP staff",
-            "More Nurses by District",
-            "More CNP staff by District",
-            "Fewer Nurses",
-        ]
-
-        ordered_scenarios = [
-            next(s for s in df.index if name in s)
-            for name in ordered_scenarios
-        ]
+        if "Default" in title:
+            ordered_scenarios = [
+                "More Nurses / Default Healthsystem Function",
+                "More CNP staff / Default Healthsystem Function",
+                "More Nurses by District / Default Healthsystem Function",
+                "More CNP staff by District / Default Healthsystem Function",
+                "Fewer Nurses / Default Healthsystem Function",
+            ]
+        else:
+            ordered_scenarios = [
+                "More Nurses / Improved Healthsystem Function",
+                "More CNP staff / Improved Healthsystem Function",
+                "More Nurses by District / Improved Healthsystem Function",
+                "More CNP staff by District / Improved Healthsystem Function",
+                "Fewer Nurses / Improved Healthsystem Function",
+            ]
 
         label_map = {
-            "More Nurses": "More nurses",
-            "More CNP staff": "More CNP",
-            "More Nurses by District": "More nurses by district",
-            "More CNP staff by District": "More CNP by district",
-            "Fewer Nurses": "Fewer nurses",
+            "More Nurses / Default Healthsystem Function": "More\nnurses",
+            "More CNP staff / Default Healthsystem Function": "More\nCNP",
+            "More Nurses by District / Default Healthsystem Function": "More nurses\nby district",
+            "More CNP staff by District / Default Healthsystem Function": "More CNP\nby district",
+            "Fewer Nurses / Default Healthsystem Function": "Fewer\nnurses",
+
+            "More Nurses / Improved Healthsystem Function": "More\nnurses",
+            "More CNP staff / Improved Healthsystem Function": "More\nCNP",
+            "More Nurses by District / Improved Healthsystem Function": "More nurses\nby district",
+            "More CNP staff by District / Improved Healthsystem Function": "More CNP\nby district",
+            "Fewer Nurses / Improved Healthsystem Function": "Fewer\nnurses",
         }
 
-        labels = [
-            next(label for key, label in label_map.items() if key in s)
-            for s in ordered_scenarios
-        ]
+        labels = [label_map[s] for s in ordered_scenarios]
 
         means = df.loc[ordered_scenarios, "mean"].values
         lowers = df.loc[ordered_scenarios, "lower"].values
@@ -699,17 +735,20 @@ def plot_percent_deaths_averted_comparison(default_df,improved_df,):
         ])
 
         color_map = {
-            "More Nurses": "steelblue",
-            "More CNP staff": "darkgreen",
-            "More Nurses by District": "mediumpurple",
-            "More CNP staff by District": "orange",
-            "Fewer Nurses": "indianred",
+            "More Nurses / Default Healthsystem Function": "steelblue",
+            "More CNP staff / Default Healthsystem Function": "darkgreen",
+            "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+            "More CNP staff by District / Default Healthsystem Function": "orange",
+            "Fewer Nurses / Default Healthsystem Function": "indianred",
+
+            "More Nurses / Improved Healthsystem Function": "steelblue",
+            "More CNP staff / Improved Healthsystem Function": "darkgreen",
+            "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+            "More CNP staff by District / Improved Healthsystem Function": "orange",
+            "Fewer Nurses / Improved Healthsystem Function": "indianred",
         }
 
-        colors = [
-            next(col for key, col in color_map.items() if key in s)
-            for s in ordered_scenarios
-        ]
+        colors = [color_map[s] for s in ordered_scenarios]
 
         ax.bar(labels, means, yerr=yerr, capsize=6, color=colors, width=0.55,)
         ax.axhline(0, color="black", linewidth=1,)
@@ -1384,7 +1423,10 @@ if __name__ == "__main__":
                                        ]
 
     # Plot 1: Annual DALYs over time
-    fig_1, ax_1 = plot_annual_dalys(summarized_annual_dalys_default)
+    fig_1, ax_1 = plot_annual_dalys(
+        summarized_annual_dalys_default,
+        title="DALYs at national level: Default Healthsystem",
+    )
 
     # Plot 2: Percent DALYs averted relative to baseline (2027–2034)
     percent_dalys_averted = calculate_percent_dalys_averted(
@@ -1405,6 +1447,8 @@ if __name__ == "__main__":
         comparison_years=range(2027, 2035),
     )
 
+    print("\nPercent dalys averted")
+    print(percent_dalys_averted)
     fig_2, ax_2 = plot_percent_dalys_averted_comparison(
         percent_dalys_averted,
         percent_dalys_averted_improved,
@@ -1412,7 +1456,8 @@ if __name__ == "__main__":
 
     # Sensitivity analysis: DALYs under Improved Healthsystem Function
     fig_5, ax_5 = plot_annual_dalys(
-        summarized_annual_dalys_improved
+        summarized_annual_dalys_improved,
+        title="DALYs at national level: Improved Healthsystem",
     )
 
     # Extract annual deaths
@@ -1441,7 +1486,8 @@ if __name__ == "__main__":
 
     # Plot annual deaths
     fig_3, ax_3 = plot_annual_deaths(
-        summarized_annual_deaths_default
+        summarized_annual_deaths_default,
+        title="Deaths at national level: Default Healthsystem",
     )
 
     # Plot % deaths averted
@@ -1470,7 +1516,8 @@ if __name__ == "__main__":
 
     # Sensitivity analysis: deaths under Improved Healthsystem Function
     fig_7, ax_7 = plot_annual_deaths(
-        summarized_annual_deaths_improved
+        summarized_annual_deaths_improved,
+        title="Deaths at national level: Improved Healthsystem",
     )
 
     # Extract deaths by cause
@@ -1700,7 +1747,7 @@ if __name__ == "__main__":
     # Saving figures
     if args.save_figures:
         fig_1.savefig(
-            results_folder / "annual_dalys_across_scenarios.pdf",
+            results_folder / "annual_dalys_across_scenarios_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
@@ -1710,7 +1757,7 @@ if __name__ == "__main__":
         )
 
         fig_3.savefig(
-            results_folder / "annual_deaths_across_scenarios.pdf",
+            results_folder / "annual_deaths_across_scenarios_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
