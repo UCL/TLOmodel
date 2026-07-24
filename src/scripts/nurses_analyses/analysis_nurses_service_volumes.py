@@ -30,11 +30,6 @@ def find_difference_relative_to_comparison_series(
     scaled: bool = False,
     drop_comparison: bool = True,
 ):
-    print("\nInside find_difference_relative_to_comparison_series")
-    print(type(_ser))
-    print(_ser.index)
-    print(_ser.head())
-    print(_ser.index.names)
 
     return (
         _ser
@@ -122,12 +117,30 @@ def plot_annual_service_volumes(
             "More CNP by district",
     }
 
+    color_map = {
+        "Baseline Nurses / Default Healthsystem Function": "black",
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function": "orange",
+
+        "Baseline Nurses / Improved Healthsystem Function": "black",
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function": "orange",
+    }
+
     for scenario in scenarios:
         mean = summarized_annual_service_volumes[scenario]["mean"]
         lower = summarized_annual_service_volumes[scenario]["lower"]
         upper = summarized_annual_service_volumes[scenario]["upper"]
-        ax.plot(mean.index, mean.values, linewidth=2, label=label_map.get(scenario, scenario))
-        ax.fill_between(mean.index, lower.values, upper.values, alpha=0.2)
+        color = color_map.get(scenario, "gray")
+
+        ax.plot(mean.index, mean.values, linewidth=2, color=color, label=label_map.get(scenario, scenario))
+        ax.fill_between(mean.index, lower.values, upper.values, color=color, alpha=0.2)
 
     ax.set_xlabel("Year")
     ax.set_ylabel("Annual Service Volume")
@@ -240,6 +253,22 @@ def plot_percent_service_volume_change(
             "More CNP by district",
     }
 
+    color_map = {
+        "Baseline Nurses / Default Healthsystem Function": "black",
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function": "orange",
+
+        "Baseline Nurses / Improved Healthsystem Function": "black",
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function": "orange",
+    }
+
     # Get the scenario names (top level of the MultiIndex)
     scenarios = (
         summarized_percent_change.columns
@@ -265,7 +294,8 @@ def plot_percent_service_volume_change(
 
         xpos = x + offsets[i]
 
-        ax.bar(xpos, mean.values, width=width, label=label_map.get(scenario, scenario))
+        ax.bar(xpos, mean.values, width=width, color=color_map.get(scenario, "gray"),
+               label=label_map.get(scenario, scenario))
 
         ax.errorbar(xpos, mean.values,
                     yerr=[
@@ -403,25 +433,25 @@ if __name__ == "__main__":
         output_folder.mkdir(exist_ok=True)
 
         fig_default.savefig(
-            output_folder / "annual_service_volumes_default.png",
+            output_folder / "annual_service_volumes_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_improved.savefig(
-            output_folder / "annual_service_volumes_improved.png",
+            output_folder / "annual_service_volumes_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_default_percent.savefig(
-            output_folder / "percent_change_service_volumes_default.png",
+            output_folder / "percent_change_service_volumes_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_improved_percent.savefig(
-            output_folder / "percent_change_service_volumes_improved.png",
+            output_folder / "percent_change_service_volumes_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
