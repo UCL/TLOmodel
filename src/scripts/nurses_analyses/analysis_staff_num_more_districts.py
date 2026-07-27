@@ -467,28 +467,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         param_names=param_names
     )
 
-    # for local check
-    staff_counts = staff_counts
-    staff_counts = staff_counts.xs(0, level="run", axis=1)
-    staff_counts = staff_counts.reset_index()
-
-    staff_counts = staff_counts.sort_values(["District", "Cadre", "year"])
-
-    staff_counts["previous_year_staff_count"] = (
-        staff_counts
-        .groupby(["District", "Cadre"])["More CNP staff by District / Default Healthsystem Function"]
-        .shift(1)
-    )
-
-    staff_counts["scale_up_factor"] = np.where(
-        staff_counts["previous_year_staff_count"].eq(0),
-        np.nan,
-        (staff_counts["More CNP staff by District / Default Healthsystem Function"] /
-         staff_counts["previous_year_staff_count"])
-    )
-
-    staff_counts.to_csv(output_folder / "staff_counts_check.csv")
-
     # STEP 3: summarize runs
     print(type(staff_counts))
     print(staff_counts.head())
