@@ -1,875 +1,779 @@
 """
-loop_all_indicators_two_model_NB.py
+loop_all_indicators_complete.py  (pyfixest / Poisson-FE version)
 
-Two-model approach for WBGT–health-service disruption:
-  Model A (exposure):      y ~ cr(WBGT, df) + WBGT_lags + covid + year | facility + month
-  Model B (counterfactual): y ~                            covid + year | facility + month
-
-Negative Binomial FE (fixest::fenegbin via rpy2) with district-clustered SEs.
-
-NB2 is used instead of Poisson FE because the Poisson pseudo-MLE score
-equations force sum(mu) = sum(y) within each FE stratum, making the
-A-minus-B deficit identically zero on a shared sample. The NB2 score
-weights residuals by 1/(1 + theta*mu), relaxing that identity and
-permitting a meaningful two-model comparison.
-
-Computes % deficit = 100 * (sum(pred_A) - sum(pred_B)) / sum(pred_B)
-for each indicator, with a district-level block bootstrap, produces a
-forest plot, and saves exposure-response curves for the contemporaneous
-WBGT spline component.
+ONE script, ONE model per indicator, ALL outputs:
+  1. Primary cumulative IRR + Wald block test + BH correction
+  2. df selection (AIC/BIC)
+  3. Robustness checks (harmonic season, different df, contrasts, lags)
+  4. Forest plot + robustness panel plot
+  5. Exposure-response curves (per indicator, overlaying df=3/4/5)
+  6. Historical burden (observed vs counterfactual at reference WBGT)
+  7. Forward projection (CMIP6: historical vs projected WBGT)
+  8. Time-series gap plot (observed vs counterfactual)
+  9. District-level aggregation + choropleth maps
+  10. TLO model lookup table (WBGT -> disruption probability)
 """
 
-import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-import warnings
-from collections import Counter
-from contextvars import ContextVar
-
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
+import os, warnings
 import numpy as np
 import pandas as pd
 import patsy
-from joblib import Parallel, delayed
+import scipy.stats as stats
+import pyfixest as pf
+from statsmodels.stats.multitest import multipletests
+import matplotlib.pyplot as plt
 
-# ---------------------------------------------------------------------------
-# rpy2 wiring — R + fixest
-# ---------------------------------------------------------------------------
-# Adjust R_HOME if your R installation lives elsewhere
-os.environ.setdefault("R_HOME", "/Library/Frameworks/R.framework/Resources")
+warnings.filterwarnings("ignore", category=UserWarning)
 
-import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.packages import importr
-from rpy2.robjects.conversion import localconverter
 
-base = importr("base")
-stats_r = importr("stats")
-try:
-    fixest = importr("fixest")
-except Exception as e:
-    raise RuntimeError(
-        "R package 'fixest' not installed. In R run: install.packages('fixest')"
-    ) from e
+# ===========================================================================
+# 1. SETTINGS
+# ===========================================================================
 
-# Ensure conversion rules are available inside joblib threading workers.
-# rpy2 stores converter state in a ContextVar, so thread-local workers may
-# otherwise see the converter context as missing even when localconverter(...)
-# is used. We seed each thread with the default converter up front.
-ro.conversion.converter_ctx = ContextVar("converter", default=ro.default_converter)
-
-# Suppress the pyfixest multicollinearity warnings (not used, but in case
-# any pyfixest code is imported transitively)
-warnings.filterwarnings(
-    "once",
-    message=r".*variables dropped due to multicollinearity.*",
-    category=UserWarning,
-)
-
-# ---------------------------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    "fp_total_clients",
-    "opd_attendance",
-    "ipd_total_admissions",
+    "fp_total_clients", "opd_attendance",
+    #"ipd_total_admissions",
     "vmmc_first_visits",
     "pnc_mother_checked_48h",
-    "anc_new_attendees",
+    #"anc_new_attendees",
     "anc_first_trimester_starts",
-    "bcg_under1",
-    "penta3_under1",
-    "measles1_under1",
-    "fully_immunised_under1",
-    "pnc_within_2wks",
-    "pnc_first_visit_2wks",
-    "live_births_total",
+    "bcg_under1", "penta3_under1", "measles1_under1",
+    "fully_immunised_under1", "pnc_within_2wks", "pnc_first_visit_2wks",
+    #"live_births_total",
     "skilled_deliveries",
 ]
 
-INDICATOR_LABELS: dict[str, str] = {
-    "fp_total_clients": "FP Total Clients",
-    "opd_attendance": "OPD Attendance",
-    "ipd_total_admissions": "IPD Total Admissions",
-    "vmmc_first_visits": "VMMC First Visits",
-    "pnc_mother_checked_48h": "PNC Mother <48h",
-    "anc_new_attendees": "ANC New Attendees",
+INDICATOR_LABELS = {
+    "fp_total_clients":           "FP Total Clients",
+    "opd_attendance":             "OPD Attendance",
+    "vmmc_first_visits":          "VMMC First Visits",
+    "pnc_mother_checked_48h":     "PNC Mother <48h",
     "anc_first_trimester_starts": "ANC 1st Trimester Starts",
-    "bcg_under1": "BCG Under-1",
-    "penta3_under1": "Penta3 Under-1",
-    "measles1_under1": "Measles 1st Dose Under-1",
-    "fully_immunised_under1": "Fully Immunised Under-1",
-    "pnc_within_2wks": "PNC Within 2 Weeks",
-    "pnc_first_visit_2wks": "PNC First Visit <2 Weeks",
-    "live_births_total": "Live Births Total",
-    "skilled_deliveries": "Skilled Deliveries",
+    "bcg_under1":                 "BCG Under-1",
+    "penta3_under1":              "Penta3 Under-1",
+    "measles1_under1":            "Measles 1st Dose Under-1",
+    "fully_immunised_under1":     "Fully Immunised Under-1",
+    "pnc_within_2wks":            "PNC Within 2 Weeks",
+    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
+    "skilled_deliveries":         "Skilled Deliveries",
 }
 
-# Weather / model settings
-WBGT_VAR = "wbgt5x_day"
-SPLINE_DF = 3
+WBGT_VAR   = "wbgt5x_day"
+SPLINE_DF  = 3
 LAG_MONTHS = [1, 2, 3, 9]
-CENTER = True
-MIN_OBS = 10
-min_year_historical = 2015
-max_year_historical = 2025
-apply_cap = False
 
-# Exposure-response curve settings
-N_CURVE_POINTS = 200
-CURVE_REF = "mean"  # "mean", "median", or "min"
+SEASON_CONTROL = "month_fe"
+N_HARMONICS    = 2
+CONTRAST_MODE  = "fixed"
+CONTRAST_PCTL  = (50, 90)
+CONTRAST_FIXED = (25.0, 32.0)
+INCLUDE_LAGS   = False
 
-# COVID window — controlled via a dummy, NOT masked to NaN
-COVID_START = "2020-04-01"
-COVID_END = "2021-12-01"
+RUN_DF_SELECTION = True
+DF_CANDIDATES    = (3, 4, 5, 6)
 
-# Known structural closures — masked to NaN (missing), NOT set to 0
-CLOSURES = [
-    ("Phalombe Health Centre", "2023-04-01", "2024-06-01"),
-    ("Thumbwe Health Centre", "2023-03-01", "2024-03-01"),
-]
-
-# Clustering / bootstrap unit
-CLUSTER_COL = "Dist"
-
-# Bootstrap
-N_BOOTSTRAP = 50
-BOOT_SEED = 42
-BOOT_CI_LEVEL = 0.95
-BOOT_MIN_SUCCESS = 0.80
-N_JOBS = 1  # threading workers (rpy2 objects are not picklable — must use threading)
-
-# Multiplicity
-FDR_ALPHA = 0.05
+MIN_YEAR, MAX_YEAR, MIN_OBS = 2015, 2025, 10
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 os.makedirs(OUT_DIR, exist_ok=True)
-PANEL_DIST_COL_IN_PANEL = "Dist"
+
+# Historical burden.
+REFERENCE_WBGT = 25.0
+
+# CMIP6 projections.
+PROJECTION_DIR = f"{DATA_DIR}/CMIP6_facility_projections"
+SSP_SCENARIOS  = ["ssp126", "ssp245", "ssp585"]
+MODEL_TIERS    = ["lowest", "median", "highest"]
+
+# District maps.
+SHAPEFILE_PATH    = None   # set to your Malawi districts shapefile path
+DISTRICT_NAME_COL = "ADM2_EN"
+
+# TLO lookup.
+WBGT_GRID = np.arange(20.0, 37.0, 0.5)
 
 
-# ---------------------------------------------------------------------------
-# R helpers
-# ---------------------------------------------------------------------------
-def fit_nb_fixest(
-    df: pd.DataFrame,
-    rhs_terms: list[str],
-    fe_terms: list[str],
-    cluster_col: str,
-    y_col: str = "y_int",
-):
-    rhs = " + ".join(rhs_terms) if rhs_terms else "1"
-    fe = " + ".join(fe_terms)
-    fml = ro.Formula(f"{y_col} ~ {rhs} | {fe}")
+# ===========================================================================
+# 2. HELPERS
+# ===========================================================================
 
-    with localconverter(ro.default_converter + pandas2ri.converter):
-        r_df = ro.conversion.py2rpy(df)
-    r_df = base.as_data_frame(r_df)
-
-    for col in set(fe_terms + [cluster_col]):
-        r_df.rx2[col] = base.as_factor(r_df.rx2(col))
-
-    suppressWarnings = ro.r("suppressWarnings")
-    r_model = suppressWarnings(
-        fixest.fenegbin(
-            fml=fml,
-            data=r_df,
-            cluster=ro.StrVector([cluster_col]),
-        )
-    )
-
-    mu_r = stats_r.fitted(r_model)
-    with localconverter(ro.default_converter + pandas2ri.converter):
-        mu = np.asarray(ro.conversion.rpy2py(mu_r), dtype=float)
-
-    if len(mu) != len(df):
-        raise ValueError(
-            f"fenegbin returned {len(mu)} fitted values for {len(df)} rows."
-        )
-    return r_model, mu
+def spline_design_info(data, df_spline):
+    return patsy.dmatrix(
+        f"cr({WBGT_VAR}, df={df_spline})", data, return_type="dataframe"
+    ).design_info
 
 
-def nb_coef_table(r_model) -> pd.DataFrame:
-    """Extract coefficient table from a fenegbin model with term names preserved."""
-    coeftab = fixest.coeftable(r_model)
+def add_harmonic_columns(data, n_harmonics):
+    names = []
+    for k in range(1, n_harmonics + 1):
+        s, c = f"sin{k}", f"cos{k}"
+        data[s] = np.sin(2 * np.pi * k * data["month"] / 12)
+        data[c] = np.cos(2 * np.pi * k * data["month"] / 12)
+        names += [s, c]
+    return names
 
-    with localconverter(ro.default_converter + pandas2ri.converter):
-        tab = ro.conversion.rpy2py(coeftab)
 
-    # If rpy2 returns a numpy array / dataframe-like object without rownames,
-    # fetch rownames directly from R.
-    rownames = list(base.rownames(coeftab))
-    tab = pd.DataFrame(np.asarray(tab))
-    tab.index = rownames
-    tab.index.name = "term"
-    tab = tab.reset_index()
-
-    # fixest coeftable columns are typically:
-    # Estimate, Std. Error, z value, Pr(>|z|)
-    if tab.shape[1] >= 5:
-        tab = tab.iloc[:, :5].copy()
-        tab.columns = ["term", "estimate", "se", "z", "p"]
+def build_formula(df_spline, lag_columns, season="month_fe", harm_cols=None):
+    spline_term = f"cr({WBGT_VAR}, df={df_spline})"
+    rhs = [spline_term] + lag_columns + ["year_c"]
+    if season == "harmonic" and harm_cols:
+        rhs += harm_cols
+        fe = "facility"
     else:
-        raise ValueError(
-            f"Unexpected coeftable shape: {tab.shape}. Could not parse coefficients."
-        )
-
-    return tab
+        fe = "facility + month"
+    return f"y_int ~ {' + '.join(rhs)} | {fe}"
 
 
-def nb_theta(r_model) -> float:
-    """Extract θ (NB dispersion) from a fenegbin model."""
-    for attr in ["theta", "family.theta"]:
+def get_contrast_bounds(data, mode, pctl, fixed):
+    if mode == "fixed":
+        return fixed
+    return (float(np.nanpercentile(data[WBGT_VAR], pctl[0])),
+            float(np.nanpercentile(data[WBGT_VAR], pctl[1])))
+
+
+def cumulative_irr(model, di, wbgt_mean, cool, hot, include_lags):
+    names = list(model.coef().index)
+    beta  = model.coef().values
+    vcov  = model._vcov
+    basis = patsy.build_design_matrices(
+        [di], pd.DataFrame({WBGT_VAR: [cool, hot]}), return_type="dataframe")[0]
+    contrast = np.zeros(len(names))
+    for j, name in enumerate(names):
+        if name in basis.columns:
+            contrast[j] = basis[name].iloc[1] - basis[name].iloc[0]
+        elif "_lag" in name:
+            contrast[j] = (hot - cool) if include_lags else 0.0
+    log_irr = float(contrast @ beta)
+    se = float(np.sqrt(contrast @ vcov @ contrast))
+    z = log_irr / se
+    return {"irr": np.exp(log_irr), "irr_lo": np.exp(log_irr - 1.96*se),
+            "irr_hi": np.exp(log_irr + 1.96*se),
+            "pval": float(2 * stats.norm.sf(abs(z)))}
+
+
+def weather_block_pvalue(model):
+    names = list(model.coef().index)
+    beta, vcov = model.coef().values, model._vcov
+    w = [i for i, n in enumerate(names) if WBGT_VAR in n]
+    if not w: return np.nan
+    R = np.zeros((len(w), len(names)))
+    for r, i in enumerate(w): R[r, i] = 1.0
+    Rb, RVR = R @ beta, R @ vcov @ R.T
+    return float(stats.chi2.sf(float(Rb @ np.linalg.solve(RVR, Rb)), len(w)))
+
+
+def compare_spline_df(data, lag_columns, wbgt_mean, cool, hot,
+                      season, harm_cols, include_lags):
+    rows = []
+    for df_s in DF_CANDIDATES:
+        formula = build_formula(df_s, lag_columns, season, harm_cols)
         try:
-            val = r_model.rx2(attr)
-            return float(val[0])
-        except Exception:
+            m = pf.fepois(formula, data=data, vcov={"CRV1": "facility"})
+        except Exception as e:
+            rows.append({"df": df_s, "loglik": np.nan, "k": np.nan,
+                         "AIC": np.nan, "BIC": np.nan, "irr": np.nan, "note": str(e)[:30]})
             continue
-    try:
-        summ = fixest.summary_fixest(r_model)
-        return float(summ.rx2("theta")[0])
-    except Exception:
-        return np.nan
+        ll, k, n = m._loglik, len(m.coef()), m._N
+        di = spline_design_info(data, df_s)
+        irr = cumulative_irr(m, di, wbgt_mean, cool, hot, include_lags)["irr"]
+        rows.append({"df": df_s, "loglik": ll, "k": k,
+                     "AIC": -2*ll+2*k, "BIC": -2*ll+k*np.log(n), "irr": irr, "note": ""})
+    return pd.DataFrame(rows)
 
 
-def nb_coefficient_lookup(r_model) -> dict[str, float]:
-    """Map coefficient names to estimates from a fenegbin model."""
-    tab = nb_coef_table(r_model)
-    return dict(zip(tab["term"].astype(str), tab["estimate"].astype(float)))
+def compute_row_irrs(model, di, wbgt_from, wbgt_to):
+    names = list(model.coef().index)
+    beta = model.coef().values
+    irrs = np.ones(len(wbgt_from))
+    for i in range(len(wbgt_from)):
+        if np.isnan(wbgt_from[i]) or np.isnan(wbgt_to[i]): continue
+        basis = patsy.build_design_matrices(
+            [di], pd.DataFrame({WBGT_VAR: [wbgt_from[i], wbgt_to[i]]}),
+            return_type="dataframe")[0]
+        c = np.zeros(len(names))
+        for j, nm in enumerate(names):
+            if nm in basis.columns: c[j] = basis[nm].iloc[1] - basis[nm].iloc[0]
+        irrs[i] = np.exp(float(c @ beta))
+    return irrs
 
 
-# ---------------------------------------------------------------------------
-# Data helpers (unchanged from original)
-# ---------------------------------------------------------------------------
-def prepare_data(indicator: str) -> pd.DataFrame | None:
-    """Load, clean, and return the panel for one indicator."""
-    panel_path = (
-        f"{DATA_DIR}/All_predictors_processed/"
-        f"regression_panel_{indicator}.csv"
-    )
-    if not os.path.exists(panel_path):
-        print(f"  [{indicator}] Panel file not found — skipping.")
-        return None
-
-    long = pd.read_csv(panel_path, parse_dates=["date"])
-    long = long.rename(columns={indicator: "y"})
-
-    if WBGT_VAR not in long.columns:
-        print(f"  [{indicator}] Missing {WBGT_VAR} — skipping.")
-        return None
-
-    if CLUSTER_COL not in long.columns:
-        raise KeyError(
-            f"[{indicator}] Cluster column '{CLUSTER_COL}' not present in "
-            f"{panel_path}. Available: {sorted(long.columns)}"
-        )
-
-    long["covid"] = long["date"].between(COVID_START, COVID_END).astype(int)
-
-    for fac, start, end in CLOSURES:
-        mask = (long["date"].between(start, end)) & (long["facility"] == fac)
-        n_masked = int(mask.sum())
-        long.loc[mask, "y"] = np.nan
-        if n_masked:
-            print(f"  [{indicator}] Masked {n_masked} closure months for {fac}.")
-
-    long["year"] = long["date"].dt.year
-    long["month"] = long["date"].dt.month
-    long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
-
-    if apply_cap:
-        long.loc[long["y"] > 4e3, "y"] = np.nan
-
-    obs_per_fac = long.dropna(subset=["y", WBGT_VAR]).groupby("facility").size()
-    keep_facs = obs_per_fac[obs_per_fac >= MIN_OBS].index
-    long = long[long["facility"].isin(keep_facs)].copy()
-
-    if long.empty or long["facility"].nunique() < 2:
-        print(f"  [{indicator}] Too few facilities after filter — skipping.")
-        return None
-
-    dist_per_fac = long.groupby("facility")[CLUSTER_COL].nunique()
-    bad = dist_per_fac[dist_per_fac != 1]
-    if len(bad):
-        raise ValueError(
-            f"[{indicator}] {len(bad)} facilities map to multiple districts: "
-            f"{list(bad.index[:10])}"
-        )
-    if long[CLUSTER_COL].isna().any():
-        n_bad = int(long[CLUSTER_COL].isna().sum())
-        raise ValueError(f"[{indicator}] {n_bad} rows have missing '{CLUSTER_COL}'.")
-
-    return long
+def exposure_response_curve(model, di, data, n_points=80):
+    wbgt_lo = float(np.nanpercentile(data[WBGT_VAR], 2))
+    wbgt_hi = float(np.nanpercentile(data[WBGT_VAR], 98))
+    wgrid = np.linspace(wbgt_lo, wbgt_hi, n_points)
+    wref = float(np.nanmedian(data[WBGT_VAR]))
+    names, beta, vcov = list(model.coef().index), model.coef().values, model._vcov
+    all_pts = np.append(wgrid, wref)
+    basis = patsy.build_design_matrices(
+        [di], pd.DataFrame({WBGT_VAR: all_pts}), return_type="dataframe")[0]
+    ref_row = basis.iloc[-1]
+    irrs, los, his = [], [], []
+    for i in range(len(wgrid)):
+        c = np.zeros(len(names))
+        for j, nm in enumerate(names):
+            if nm in basis.columns: c[j] = basis.iloc[i][nm] - ref_row[nm]
+        li = float(c @ beta); se = float(np.sqrt(c @ vcov @ c))
+        irrs.append(np.exp(li)); los.append(np.exp(li-1.96*se)); his.append(np.exp(li+1.96*se))
+    return wgrid, np.array(irrs), np.array(los), np.array(his), wref
 
 
-def enforce_complete_monthly_grid(df: pd.DataFrame, indicator: str) -> pd.DataFrame:
-    """
-    Reindex each facility onto a gap-free monthly sequence so that .shift(k)
-    is a true k-month lag.
-    """
-    df = df.sort_values(["facility", "date"]).reset_index(drop=True)
-    n_before = len(df)
-    frames = []
-    for fac, g in df.groupby("facility", sort=False):
-        full = pd.date_range(g["date"].min(), g["date"].max(), freq="MS")
-        g = g.set_index("date").reindex(full)
-        g.index.name = "date"
-        g["facility"] = fac
-        frames.append(g.reset_index())
-    out = pd.concat(frames, ignore_index=True)
+# ===========================================================================
+# 3. PREPARE DATA
+# ===========================================================================
 
-    n_inserted = len(out) - n_before
-    if n_inserted:
-        print(
-            f"  [{indicator}] Inserted {n_inserted:,} placeholder rows to close "
-            f"calendar gaps ({100 * n_inserted / len(out):.2f}% of grid)."
-        )
+def prepare_data(indicator):
+    path = f"{DATA_DIR}/All_predictors_processed/regression_panel_{indicator}.csv"
+    if not os.path.exists(path): return None, None, None, None
+    data = pd.read_csv(path, parse_dates=["date"]).rename(columns={indicator: "y"})
+    if WBGT_VAR not in data.columns: return None, None, None, None
 
-    out["year"] = out["date"].dt.year
-    out["month"] = out["date"].dt.month
-    out["covid"] = out["date"].between(COVID_START, COVID_END).astype(int)
-    out[CLUSTER_COL] = out.groupby("facility")[CLUSTER_COL].transform(
-        lambda s: s.ffill().bfill()
-    )
+    data.loc[data["date"].between("2020-04-01", "2021-12-01"), "y"] = np.nan
+    data.loc[data["date"].between("2023-04-01", "2024-06-01")
+             & (data["facility"] == "Phalombe Health Centre"), "y"] = 0
+    data.loc[data["date"].between("2023-03-01", "2024-03-01")
+             & (data["facility"] == "Thumbwe Health Centre"), "y"] = 0
 
-    diffs = out.groupby("facility")["date"].diff().dropna()
-    bad_spacing = diffs[~((diffs.dt.days >= 28) & (diffs.dt.days <= 31))]
-    if len(bad_spacing):
-        raise ValueError(
-            f"[{indicator}] Non-monthly spacing remains after reindexing "
-            f"({len(bad_spacing)} rows)."
-        )
-    return out
+    data["year"]  = data["date"].dt.year
+    data["month"] = data["date"].dt.month
+    data = data[data["year"].between(MIN_YEAR, MAX_YEAR - 1)]
+    wbgt_mean = data[WBGT_VAR].mean()
+    data["year_c"] = data["year"] - data["year"].mean()
 
-
-def add_columns(
-    df: pd.DataFrame, indicator: str
-) -> tuple[pd.DataFrame, list[str], float, float]:
-    """Add centred year, centred WBGT, and lag columns."""
-    df = enforce_complete_monthly_grid(df, indicator)
-
-    year_shift = df["year"].mean() if CENTER else 0.0
-    wbgt_shift = df[WBGT_VAR].mean() if CENTER else 0.0
-
-    df["year_c"] = df["year"] - year_shift
-    df["wbgt_c"] = df[WBGT_VAR] - wbgt_shift
-
-    lag_terms = []
+    data = data.sort_values(["facility", "date"])
+    lag_columns = []
     for lag in LAG_MONTHS:
-        col = f"wbgt_lag{lag}_c"
-        df[col] = df.groupby("facility")[WBGT_VAR].shift(lag) - wbgt_shift
-        lag_terms.append(col)
+        lc = f"{WBGT_VAR}_lag{lag}_c"
+        data[lc] = data.groupby("facility")[WBGT_VAR].shift(lag) - wbgt_mean
+        lag_columns.append(lc)
 
-    return df, lag_terms, year_shift, wbgt_shift
+    harm_cols = add_harmonic_columns(data, N_HARMONICS)
+    needed = ["y", "facility", "month", "year_c", WBGT_VAR] + lag_columns
+    data = data.dropna(subset=needed).copy()
+    data["y_int"] = data["y"].round().clip(lower=0).astype(int)
+    data["facility"] = data["facility"].astype(str)
+    data["month"] = data["month"].astype(int)
 
-
-def add_spline_basis(
-    df: pd.DataFrame, df_spline: int
-) -> tuple[pd.DataFrame, list[str], object]:
-    """
-    Materialise the natural cubic spline basis as explicit columns.
-
-    Returns (df, spline_col_names, design_info).
-    design_info is retained so that the exposure-response curve can
-    reconstruct the same basis on a prediction grid.
-    """
-    basis = patsy.dmatrix(
-        f"cr(x, df={df_spline}) - 1",
-        {"x": df["wbgt_c"].values},
-        return_type="dataframe",
-    )
-    design_info = basis.design_info
-    cols = [f"wbgt_s{i+1}" for i in range(basis.shape[1])]
-    for c, b in zip(cols, basis.columns):
-        df[c] = basis[b].values
-    return df, cols, design_info
+    good = data.groupby("facility").size()
+    data = data[data["facility"].isin(good[good >= MIN_OBS].index)].copy()
+    if data["facility"].nunique() < 2: return None, None, None, None
+    return data, lag_columns, harm_cols, wbgt_mean
 
 
-def drop_separated_facilities(df: pd.DataFrame, indicator: str) -> pd.DataFrame:
-    """
-    Drop facilities whose outcome is zero in every retained month (perfect
-    separation under log-link).
-    """
-    all_zero = df.groupby("facility")["y_int"].max() == 0
-    sep_facs = all_zero[all_zero].index
-    if len(sep_facs):
-        n_rows = int(df["facility"].isin(sep_facs).sum())
-        print(
-            f"  [{indicator}] SEPARATION: {len(sep_facs)} facilities are all-zero "
-            f"({n_rows:,} rows) — dropped."
-        )
-        df = df[~df["facility"].isin(sep_facs)].copy()
-    return df
+# ===========================================================================
+# 4. FIT + EVALUATE
+# ===========================================================================
 
-
-# ---------------------------------------------------------------------------
-# Exposure-response curve
-# ---------------------------------------------------------------------------
-def make_exposure_response_curve(
-    r_model,
-    spline_cols: list[str],
-    wbgt_shift: float,
-    observed_wbgt: pd.Series,
-    indicator: str,
-    design_info,
-) -> pd.DataFrame:
-    """
-    Build the contemporaneous WBGT exposure-response curve on the RR scale.
-
-    Uses the saved design_info from fitting so that knots are identical.
-    """
-    coefs = nb_coefficient_lookup(r_model)
-
-    x_min = float(observed_wbgt.min())
-    x_max = float(observed_wbgt.max())
-    x_grid = np.linspace(x_min, x_max, N_CURVE_POINTS)
-    x_grid_c = x_grid - wbgt_shift
-
-    # Reconstruct basis with SAME knots as fitting
-    basis_grid = np.asarray(
-        patsy.build_design_matrices([design_info], {"x": x_grid_c})[0],
-        dtype=float,
-    )
-
-    if CURVE_REF == "mean":
-        x_ref = float(observed_wbgt.mean())
-    elif CURVE_REF == "median":
-        x_ref = float(observed_wbgt.median())
-    elif CURVE_REF == "min":
-        x_ref = float(observed_wbgt.min())
-    else:
-        raise ValueError(f"Unknown CURVE_REF='{CURVE_REF}'.")
-
-    x_ref_c = x_ref - wbgt_shift
-    basis_ref = np.asarray(
-        patsy.build_design_matrices([design_info], {"x": np.array([x_ref_c])})[0],
-        dtype=float,
-    )
-    ref_row = basis_ref[0]
-
-    beta = np.array([coefs.get(col, 0.0) for col in spline_cols], dtype=float)
-    eta_grid = basis_grid @ beta
-    eta_ref = float(ref_row @ beta)
-
-    rr = np.exp(eta_grid - eta_ref)
-    pct_change = 100.0 * (rr - 1.0)
-
-    return pd.DataFrame(
-        {
-            "indicator": indicator,
-            "label": INDICATOR_LABELS.get(indicator, indicator),
-            "wbgt": x_grid,
-            "wbgt_c": x_grid_c,
-            "rr_vs_ref": rr,
-            "pct_change_vs_ref": pct_change,
-            "wbgt_ref": x_ref,
-            "curve_ref": CURVE_REF,
-            "note": "Contemporaneous spline component only; lagged WBGT held fixed.",
-        }
-    )
-
-
-def save_exposure_response_plot(curve_df: pd.DataFrame, indicator: str):
-    """Save a simple exposure-response plot for one indicator."""
-    label = INDICATOR_LABELS.get(indicator, indicator)
-    x_ref = float(curve_df["wbgt_ref"].iloc[0])
-
-    fig, ax = plt.subplots(figsize=(6.5, 4.2))
-    ax.plot(curve_df["wbgt"], curve_df["rr_vs_ref"], color="#2f5d80", linewidth=2)
-    ax.axhline(1.0, color="black", linestyle="--", linewidth=0.9)
-    ax.axvline(x_ref, color="#888888", linestyle=":", linewidth=1.0)
-
-    ax.set_xlabel("WBGT")
-    ax.set_ylabel("Relative rate vs reference WBGT")
-    ax.set_title(
-        f"Exposure-response curve: {label}\n"
-        f"Contemporaneous WBGT spline (reference = {x_ref:.2f})",
-        fontsize=11,
-        fontweight="bold",
-    )
-    ax.grid(axis="both", linestyle=":", alpha=0.4)
-    plt.tight_layout()
-    plt.savefig(
-        f"{OUT_DIR}exposure_response_curve_{indicator}.png",
-        dpi=180,
-        bbox_inches="tight",
-    )
-    plt.close()
-
-
-# ---------------------------------------------------------------------------
-# BH-FDR
-# ---------------------------------------------------------------------------
-def bh_fdr(pvals: np.ndarray, alpha: float = 0.05) -> tuple[np.ndarray, np.ndarray]:
-    """Benjamini-Hochberg. Returns (adjusted p-values, reject flags)."""
-    p = np.asarray(pvals, dtype=float)
-    ok = ~np.isnan(p)
-    q = np.full_like(p, np.nan)
-    rej = np.zeros(p.shape, dtype=bool)
-    if ok.sum() == 0:
-        return q, rej
-
-    p_ok = p[ok]
-    n = len(p_ok)
-    order = np.argsort(p_ok)
-    adj = p_ok[order] * n / np.arange(1, n + 1)
-    adj = np.clip(np.minimum.accumulate(adj[::-1])[::-1], 0, 1)
-
-    q_ok = np.empty(n)
-    q_ok[order] = adj
-    q[ok] = q_ok
-    rej[ok] = q_ok <= alpha
-    return q, rej
-
-
-# ---------------------------------------------------------------------------
-# Bootstrap replicate (module level so joblib can find it)
-# ---------------------------------------------------------------------------
-def _boot_replicate(
-    seed_seq,
-    nb_data,
-    dist_index,
-    dist_ids,
-    rhs_a,
-    rhs_b,
-    fe_terms,
-    cluster_col,
-):
-    # Re-seed rpy2 conversion context inside each thread.
-    ro.conversion.converter_ctx.set(ro.default_converter)
-
-    rng = np.random.default_rng(seed_seq)
-    picks = rng.choice(len(dist_ids), size=len(dist_ids), replace=True)
-
-    idx_parts = [dist_index[dist_ids[p]] for p in picks]
-    idx = np.concatenate(idx_parts)
-    tags = np.repeat(
-        np.arange(len(picks)), [len(part) for part in idx_parts]
-    ).astype(str)
-
-    boot_df = nb_data.take(idx).reset_index(drop=True)
-    tags_s = pd.Series(tags, index=boot_df.index).astype(str)
-    boot_df["facility"] = boot_df["facility"].astype(str) + "__b" + tags_s
-    boot_df[cluster_col] = boot_df[cluster_col].astype(str) + "__b" + tags_s
-
-    # Drop any facility that is all-zero in this resample (separation)
-    fac_max = boot_df.groupby("facility")["y_int"].max()
-    sep_facs = fac_max[fac_max == 0].index
-    if len(sep_facs):
-        boot_df = boot_df[~boot_df["facility"].isin(sep_facs)].copy()
-
-    if boot_df["facility"].nunique() < 2 or boot_df[cluster_col].nunique() < 2:
-        return None, "too_few_groups"
-
+def fit_and_evaluate(data, lag_columns, harm_cols, wbgt_mean,
+                     df_spline, season, contrast_mode, contrast_pctl,
+                     contrast_fixed, include_lags):
+    formula = build_formula(df_spline, lag_columns, season, harm_cols)
     try:
-        _, mu_a = fit_nb_fixest(boot_df, rhs_a, fe_terms, cluster_col)
-        _, mu_b = fit_nb_fixest(boot_df, rhs_b, fe_terms, cluster_col)
-        total_a, total_b = float(mu_a.sum()), float(mu_b.sum())
-        if total_b == 0:
-            return None, "zero_counterfactual"
-        pct = 100.0 * (total_a - total_b) / total_b
-        if not np.isfinite(pct):
-            return None, "non-finite"
-        return pct, None
-    except Exception as e:
-        return None, f"{type(e).__name__}: {str(e)[:80]}"
-
-
-# ---------------------------------------------------------------------------
-# Per-indicator runner
-# ---------------------------------------------------------------------------
-def run_indicator(indicator: str) -> dict | None:
-    """Fit Model A and Model B (NB FE), return deficit summary."""
-
-    long = prepare_data(indicator)
-    if long is None:
+        model = pf.fepois(formula, data=data, vcov={"CRV1": "facility"})
+    except Exception:
         return None
+    cool, hot = get_contrast_bounds(data, contrast_mode, contrast_pctl, contrast_fixed)
+    di = spline_design_info(data, df_spline)
+    effect = cumulative_irr(model, di, wbgt_mean, cool, hot, include_lags)
+    block_p = weather_block_pvalue(model)
 
-    long, lag_terms, year_shift, wbgt_shift = add_columns(long, indicator)
+    # Goodness of fit.
+    ll      = model._loglik
+    ll_null = model._loglik_null if hasattr(model, '_loglik_null') else np.nan
+    k       = len(model.coef())
+    n       = int(model._N)
+    aic     = -2*ll + 2*k
+    bic     = -2*ll + k*np.log(n)
+    pseudo_r2 = model._pseudo_r2 if hasattr(model, '_pseudo_r2') else np.nan
+    deviance  = model.deviance if hasattr(model, 'deviance') else np.nan
 
-    nb_cols = ["y", "facility", "year_c", "wbgt_c", "covid", CLUSTER_COL] + lag_terms
-    nb_data = long.dropna(subset=nb_cols).copy()
-    nb_data["y_int"] = nb_data["y"].round().clip(lower=0).astype(int)
+    return {"irr": effect["irr"], "irr_lo": effect["irr_lo"],
+            "irr_hi": effect["irr_hi"], "pval_contrast": effect["pval"],
+            "pval_block": block_p, "n_obs": n,
+            "cool": cool, "hot": hot, "model": model,
+            "loglik": ll, "loglik_null": ll_null,
+            "aic": aic, "bic": bic,
+            "pseudo_r2": pseudo_r2, "deviance": deviance, "k": k}
 
-    obs_nb = nb_data.groupby("facility").size()
-    nb_data = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= MIN_OBS].index)].copy()
 
-    nb_data = drop_separated_facilities(nb_data, indicator)
+# ===========================================================================
+# 5. MAIN LOOP — PRIMARY + ROBUSTNESS + STORE FOR DOWNSTREAM
+# ===========================================================================
 
-    if nb_data.empty or nb_data["facility"].nunique() < 2:
-        print(f"  [{indicator}] Sample too small — skipping.")
-        return None
-    if nb_data[CLUSTER_COL].nunique() < 2:
-        raise ValueError(
-            f"[{indicator}] Only {nb_data[CLUSTER_COL].nunique()} cluster(s) — "
-            f"cluster-robust SEs are not defined."
-        )
+print("=" * 60)
+print(f"Primary: season={SEASON_CONTROL}, df={SPLINE_DF}, "
+      f"contrast={CONTRAST_MODE}, lags={'on' if INCLUDE_LAGS else 'off'}")
+print("=" * 60)
 
-    # Spline basis materialised once on the analysis sample
-    nb_data, spline_cols, design_info = add_spline_basis(nb_data, SPLINE_DF)
-    nb_data = nb_data.reset_index(drop=True)
+primary_results = []
+robustness_rows = []
+df_tables = []
+indicator_state = {}
 
-    fe_terms = ["facility", "month"]
+for indicator in COUNT_INDICATORS:
+    print(f"\n-> {indicator}")
+    data, lag_columns, harm_cols, wbgt_mean = prepare_data(indicator)
+    if data is None:
+        print(f"  [{indicator}] data not available — skipping.")
+        continue
 
-    # --- Model A: with WBGT spline + lags ----------------------------------
-    rhs_a = spline_cols + lag_terms + ["covid", "year_c"]
+    cool, hot = get_contrast_bounds(data, CONTRAST_MODE, CONTRAST_PCTL, CONTRAST_FIXED)
 
-    # --- Model B: counterfactual (no WBGT at all) --------------------------
-    rhs_b = ["covid", "year_c"]
+    # df selection.
+    if RUN_DF_SELECTION:
+        df_table = compare_spline_df(data, lag_columns, wbgt_mean, cool, hot,
+                                     SEASON_CONTROL, harm_cols, INCLUDE_LAGS)
+        df_table.insert(0, "indicator", indicator)
+        df_tables.append(df_table)
+        best_aic = df_table.loc[df_table["AIC"].idxmin(), "df"] if df_table["AIC"].notna().any() else "?"
+        best_bic = df_table.loc[df_table["BIC"].idxmin(), "df"] if df_table["BIC"].notna().any() else "?"
+        print(f"  df selection (AIC->{best_aic}, BIC->{best_bic}):")
+        for _, r in df_table.iterrows():
+            if pd.isna(r["AIC"]):
+                print(f"       df={int(r['df'])}  {r['note']}")
+            else:
+                print(f"       df={int(r['df'])}  AIC={r['AIC']:.1f}  BIC={r['BIC']:.1f}  IRR={r['irr']:.3f}")
 
-    try:
-        model_a, mu_a = fit_nb_fixest(nb_data, rhs_a, fe_terms, CLUSTER_COL)
-        model_b, mu_b = fit_nb_fixest(nb_data, rhs_b, fe_terms, CLUSTER_COL)
-    except Exception as e:
-        print(f"  [{indicator}] fenegbin failed: {type(e).__name__}: {e} — skipping.")
-        return None
+    # Primary model.
+    primary = fit_and_evaluate(data, lag_columns, harm_cols, wbgt_mean,
+        df_spline=SPLINE_DF, season=SEASON_CONTROL, contrast_mode=CONTRAST_MODE,
+        contrast_pctl=CONTRAST_PCTL, contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS)
 
-    # --- Deficit -----------------------------------------------------------
-    total_a = float(mu_a.sum())
-    total_b = float(mu_b.sum())
-    total_y = float(nb_data["y_int"].sum())
+    if primary is None:
+        print(f"  [{indicator}] PRIMARY FAILED — skipping.")
+        continue
 
-    # Diagnostic: confirm NB breaks the Poisson identity
-    print(
-        f"  [{indicator}] sum(y)={total_y:,.0f}, "
-        f"sum(mu_A)={total_a:,.0f}, sum(mu_B)={total_b:,.0f}"
-    )
+    print(f"  PRIMARY  IRR({primary['cool']:.0f}->{primary['hot']:.0f})="
+          f"{primary['irr']:.3f}  block p={primary['pval_block']:.3g}  "
+          f"AIC={primary['aic']:.0f}  BIC={primary['bic']:.0f}  "
+          f"pseudo-R2={primary['pseudo_r2']:.4f}  loglik={primary['loglik']:.0f}")
 
-    deficit = {
-        "total_pred_exposure": total_a,
-        "total_pred_counterfactual": total_b,
-        "deficit_abs": total_a - total_b,
-        "deficit_pct": 100.0 * (total_a - total_b) / total_b,
+    di = spline_design_info(data, SPLINE_DF)
+    indicator_state[indicator] = {
+        "model": primary["model"], "data": data, "di": di,
+        "lag_columns": lag_columns, "harm_cols": harm_cols, "wbgt_mean": wbgt_mean}
+
+    primary_results.append({
+        "indicator": indicator, "label": INDICATOR_LABELS.get(indicator, indicator),
+        "irr": primary["irr"], "irr_lo": primary["irr_lo"], "irr_hi": primary["irr_hi"],
+        "pval_contrast": primary["pval_contrast"], "pval_block": primary["pval_block"],
+        "n_obs": primary["n_obs"], "n_facilities": data["facility"].nunique(),
+        "loglik": primary["loglik"], "loglik_null": primary["loglik_null"],
+        "aic": primary["aic"], "bic": primary["bic"],
+        "pseudo_r2": primary["pseudo_r2"], "deviance": primary["deviance"],
+        "n_params": primary["k"]})
+
+    # Robustness.
+    robustness_specs = {
+        "percentile (10-90)": dict(refit=False, contrast_mode="percentile",
+            contrast_pctl=(10,90), contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS),
+        "percentile (5-95)": dict(refit=False, contrast_mode="percentile",
+            contrast_pctl=(5,95), contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS),
+        "sustained lags": dict(refit=False, contrast_mode=CONTRAST_MODE,
+            contrast_pctl=CONTRAST_PCTL, contrast_fixed=CONTRAST_FIXED, include_lags=True),
+        "harmonic season": dict(refit=True, season="harmonic", df_spline=SPLINE_DF),
+        "df = 4": dict(refit=True, season=SEASON_CONTROL, df_spline=4),
+        "df = 5": dict(refit=True, season=SEASON_CONTROL, df_spline=5),
     }
+    if SEASON_CONTROL == "harmonic":
+        robustness_specs["month FE"] = robustness_specs.pop("harmonic season")
+        robustness_specs["month FE"]["season"] = "month_fe"
+    robustness_specs = {k: v for k, v in robustness_specs.items()
+                        if not (k.startswith("df =") and v.get("df_spline") == SPLINE_DF)}
 
-    # θ diagnostic
-    deficit["theta_a"] = nb_theta(model_a)
-    deficit["theta_b"] = nb_theta(model_b)
-
-    # --- Exposure-response curve -------------------------------------------
-    try:
-        curve_df = make_exposure_response_curve(
-            r_model=model_a,
-            spline_cols=spline_cols,
-            wbgt_shift=wbgt_shift,
-            observed_wbgt=nb_data[WBGT_VAR],
-            indicator=indicator,
-            design_info=design_info,
-        )
-        curve_df.to_csv(
-            f"{OUT_DIR}exposure_response_curve_{indicator}.csv", index=False
-        )
-        save_exposure_response_plot(curve_df, indicator)
-    except Exception as e:
-        print(f"  [{indicator}] Curve export failed: {type(e).__name__}: {e}")
-
-    # --- Per-facility-month predictions (for mapping) ----------------------
-    preds = nb_data[["facility", "date"]].copy()
-    preds["y_obs"] = nb_data["y_int"].values
-    preds["y_pred_wx"] = mu_a
-    preds["y_pred_base"] = mu_b
-    preds["difference"] = preds["y_pred_base"] - preds["y_pred_wx"]
-
-    if PANEL_DIST_COL_IN_PANEL in nb_data.columns:
-        preds["Dist"] = nb_data[PANEL_DIST_COL_IN_PANEL].values
-
-    preds.to_csv(f"{OUT_DIR}two_model_predictions_{indicator}.csv", index=False)
-
-    # --- Coefficient table export ------------------------------------------
-    try:
-        coef_tab = nb_coef_table(model_a)
-        coef_tab["indicator"] = indicator
-        coef_tab.to_csv(
-            f"{OUT_DIR}coef_table_model_a_{indicator}.csv", index=False
-        )
-    except Exception as e:
-        print(f"  [{indicator}] Coef table export failed: {e}")
-
-    # --- Bootstrap CIs (district-level block, threading backend) -----------
-    failures: Counter = Counter()
-
-    if N_BOOTSTRAP > 0:
-        dist_ids = nb_data[CLUSTER_COL].unique()
-        dist_index = {
-            d: np.asarray(g, dtype=np.int64)
-            for d, g in nb_data.groupby(CLUSTER_COL, sort=False).indices.items()
-        }
-
-        seeds = np.random.SeedSequence(BOOT_SEED).spawn(N_BOOTSTRAP)
-
-        # IMPORTANT: backend="threading" because rpy2 objects cannot be
-        # pickled across loky/multiprocessing workers.
-        out = [_boot_replicate(s, nb_data, dist_index, dist_ids, rhs_a, rhs_b, fe_terms, CLUSTER_COL) for s in seeds]
-
-        boot_pcts = [v for v, err in out if err is None]
-        for _, err in out:
-            if err is not None:
-                failures[err] += 1
-
-        n_ok = len(boot_pcts)
-        success_rate = n_ok / N_BOOTSTRAP
-        if failures:
-            print(f"  [{indicator}] Bootstrap failures: {dict(failures)}")
-        if success_rate < BOOT_MIN_SUCCESS:
-            raise RuntimeError(
-                f"[{indicator}] Only {n_ok}/{N_BOOTSTRAP} bootstrap replicates "
-                f"converged ({success_rate:.0%} < {BOOT_MIN_SUCCESS:.0%}). "
-                f"Failure modes: {dict(failures)}."
-            )
-
-        alpha = 1 - BOOT_CI_LEVEL
-        boot_arr = np.asarray(boot_pcts)
-        deficit["ci_lo"] = float(np.percentile(boot_arr, 100 * alpha / 2))
-        deficit["ci_hi"] = float(np.percentile(boot_arr, 100 * (1 - alpha / 2)))
-        deficit["n_boot_ok"] = n_ok
-        # Two-sided bootstrap p-value against H0: deficit = 0
-        frac_le = float(np.mean(boot_arr <= 0))
-        frac_ge = float(np.mean(boot_arr >= 0))
-        deficit["p_boot"] = float(
-            min(1.0, max(2 * min(frac_le, frac_ge), 1.0 / (n_ok + 1)))
-        )
-
-        # Save bootstrap distribution for diagnostics
-        pd.DataFrame({"deficit_pct": boot_pcts}).to_csv(
-            f"{OUT_DIR}bootstrap_distribution_{indicator}.csv", index=False
-        )
-    else:
-        deficit["ci_lo"] = np.nan
-        deficit["ci_hi"] = np.nan
-        deficit["n_boot_ok"] = 0
-        deficit["p_boot"] = np.nan
-
-    deficit["indicator"] = indicator
-    deficit["label"] = INDICATOR_LABELS.get(indicator, indicator)
-    deficit["n_obs"] = int(len(nb_data))
-    deficit["n_fac"] = nb_data["facility"].nunique()
-    deficit["n_clust"] = nb_data[CLUSTER_COL].nunique()
-    deficit["spline_df"] = SPLINE_DF
-    deficit["curve_ref"] = CURVE_REF
-
-    print(
-        f"  [{indicator}] OK  n={len(nb_data):,}, "
-        f"fac={nb_data['facility'].nunique()}, "
-        f"clust={nb_data[CLUSTER_COL].nunique()}, "
-        f"θ_a={deficit['theta_a']:.2f}, θ_b={deficit['theta_b']:.2f}, "
-        f"deficit={deficit['deficit_pct']:+.2f}%"
-    )
-    return deficit
-
-
-# ---------------------------------------------------------------------------
-# MAIN LOOP
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    print("=" * 60)
-    print("Two-model NB analysis: exposure vs counterfactual")
-    print(f"Estimator = NB FE (fixest::fenegbin via rpy2), CRV1 on {CLUSTER_COL}")
-    print(f"Spline df = {SPLINE_DF}, lags = {LAG_MONTHS}")
-    print(f"Exposure = {WBGT_VAR}")
-    print(f"Bootstrap replicates = {N_BOOTSTRAP} (n_jobs={N_JOBS}, threading)")
-    print(f"Curve reference = {CURVE_REF}")
-    print("=" * 60)
-
-    all_results: list[dict] = []
-
-    for ind in COUNT_INDICATORS:
-        print(f"\n-> {ind}")
-        result = run_indicator(ind)
-        if result is not None:
-            all_results.append(result)
-
-    if not all_results:
-        raise RuntimeError("No indicators fitted successfully — check panel paths.")
-
-    results_df = pd.DataFrame(all_results)
-
-    # --- Benjamini-Hochberg across indicators ------------------------------
-    q, rej = bh_fdr(results_df["p_boot"].values, alpha=FDR_ALPHA)
-    results_df["q_bh"] = q
-    results_df["sig_bh"] = rej
-
-    results_df.to_csv(f"{OUT_DIR}two_model_deficit_results_NB.csv", index=False)
-    print(f"\nResults saved -> {OUT_DIR}two_model_deficit_results_NB.csv")
-    print(
-        f"BH-FDR at alpha={FDR_ALPHA}: "
-        f"{int(results_df['sig_bh'].sum())}/{len(results_df)} indicators significant."
-    )
-
-    # -----------------------------------------------------------------------
-    # FOREST PLOT — % deficit per indicator
-    # -----------------------------------------------------------------------
-    plot_df = results_df.sort_values("deficit_pct", ascending=True).reset_index(
-        drop=True
-    )
-    y_pos = np.arange(len(plot_df))
-
-    fig, ax = plt.subplots(figsize=(7, max(4, len(plot_df) * 0.55 + 1.5)))
-
-    has_ci = plot_df["ci_lo"].notna().all()
-
-    colors = []
-    for _, row in plot_df.iterrows():
-        if not has_ci:
-            colors.append("#4a7298")
-        elif bool(row["sig_bh"]):
-            colors.append("#823038")
+    for cn, spec in robustness_specs.items():
+        if spec.get("refit"):
+            r = fit_and_evaluate(data, lag_columns, harm_cols, wbgt_mean,
+                df_spline=spec["df_spline"], season=spec["season"],
+                contrast_mode=CONTRAST_MODE, contrast_pctl=CONTRAST_PCTL,
+                contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS)
+            if r is None:
+                robustness_rows.append({"indicator": indicator, "check": cn,
+                    "irr": np.nan, "irr_lo": np.nan, "irr_hi": np.nan, "note": "failed"})
+                continue
+            irr_row = r
         else:
-            colors.append("#888888")
+            c2, h2 = get_contrast_bounds(data, spec["contrast_mode"],
+                                          spec["contrast_pctl"], spec["contrast_fixed"])
+            eff = cumulative_irr(primary["model"], di, wbgt_mean, c2, h2, spec["include_lags"])
+            irr_row = {"irr": eff["irr"], "irr_lo": eff["irr_lo"], "irr_hi": eff["irr_hi"]}
+        robustness_rows.append({"indicator": indicator, "check": cn,
+            "irr": irr_row["irr"], "irr_lo": irr_row["irr_lo"],
+            "irr_hi": irr_row["irr_hi"], "note": ""})
 
-    if has_ci:
-        for i, row in plot_df.iterrows():
-            ax.plot(
-                [row["ci_lo"], row["ci_hi"]],
-                [i, i],
-                color=colors[i],
-                linewidth=1.4,
-                zorder=1,
-            )
+    ind_rob = [r for r in robustness_rows if r["indicator"] == indicator]
+    print("  robustness:")
+    for r in ind_rob:
+        val = f"IRR={r['irr']:.3f}" if not r["note"] else r["note"]
+        print(f"       {r['check']:25s}  {val}")
 
-    ax.scatter(plot_df["deficit_pct"], y_pos, color=colors, s=55, zorder=2)
-    ax.axvline(0, color="black", linestyle="--", linewidth=0.9)
 
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(plot_df["label"], fontsize=9)
-    ax.set_xlabel("% change in appointments associated with WBGT", fontsize=10)
-    ax.grid(axis="x", linestyle=":", alpha=0.5)
+# ===========================================================================
+# 6. SAVE
+# ===========================================================================
 
-    ci_note = f", {int(BOOT_CI_LEVEL * 100)}% bootstrap CI" if has_ci else ""
-    ax.set_title(
-        f"WBGT-associated deficit (NB FE: Model A vs counterfactual)\n"
-        f"fenegbin, cr({WBGT_VAR}, df={SPLINE_DF}) + lags, "
-        f"facility + month FE{ci_note}",
-        fontsize=11,
-        fontweight="bold",
-    )
+fitted = list(indicator_state.keys())
+skipped = [i for i in COUNT_INDICATORS if i not in fitted]
+print("\n" + "=" * 60)
+print(f"Fitted {len(fitted)} of {len(COUNT_INDICATORS)}")
+if skipped: print(f"SKIPPED: {', '.join(skipped)}")
+print("=" * 60)
 
-    if has_ci:
-        sig_patch = mpatches.Patch(color="#823038", label=f"BH-FDR q <= {FDR_ALPHA}")
-        ns_patch = mpatches.Patch(color="#888888", label="not significant")
-        ax.legend(
-            handles=[sig_patch, ns_patch],
-            loc="lower right",
-            fontsize=9,
-            frameon=False,
-        )
+if df_tables:
+    pd.concat(df_tables, ignore_index=True).to_csv(f"{OUT_DIR}spline_df_selection.csv", index=False)
 
-    # Add θ annotations on the right margin
-    ax2 = ax.twinx()
-    ax2.set_ylim(ax.get_ylim())
-    ax2.set_yticks(y_pos)
-    ax2.set_yticklabels(
-        [f"θ={row['theta_a']:.1f}" for _, row in plot_df.iterrows()],
-        fontsize=7,
-        color="#666666",
-    )
-    ax2.tick_params(axis="y", length=0)
+if not primary_results:
+    raise RuntimeError("No indicators fitted.")
 
+results = pd.DataFrame(primary_results)
+results["pval_block_bh"] = multipletests(results["pval_block"], method="fdr_bh")[1]
+results["significant"] = results["pval_block_bh"] < 0.05
+results = results.sort_values("irr").reset_index(drop=True)
+results.to_csv(f"{OUT_DIR}all_indicators_cumulative_irr.csv", index=False)
+
+robustness = pd.DataFrame(robustness_rows)
+robustness.to_csv(f"{OUT_DIR}robustness_checks.csv", index=False)
+print("Primary + robustness saved.")
+
+
+# ===========================================================================
+# 7. FOREST PLOT
+# ===========================================================================
+
+RED, GREY = "#823038", "#888888"
+y = np.arange(len(results))
+colors = [RED if s else GREY for s in results["significant"]]
+fig, ax = plt.subplots(figsize=(7.5, max(4, len(results)*0.5+1.5)))
+for i in range(len(results)):
+    row = results.iloc[i]
+    ax.plot([row.irr_lo, row.irr_hi], [i, i], color=colors[i], lw=1.6, zorder=1)
+    if row.significant: ax.axhspan(i-0.4, i+0.4, color="#f7e0e2", alpha=0.35, zorder=0)
+ax.scatter(results.irr, y, color=colors, s=60, zorder=2)
+ax.axvline(1.0, color="black", ls="--", lw=0.9)
+ax.set_yticks(y); ax.set_yticklabels(results.label, fontsize=9)
+ctext = (f"{CONTRAST_FIXED[0]:.0f}-{CONTRAST_FIXED[1]:.0f}C" if CONTRAST_MODE == "fixed"
+         else f"{CONTRAST_PCTL[0]}th-{CONTRAST_PCTL[1]}th pctl")
+sd = "month FE" if SEASON_CONTROL == "month_fe" else f"harmonic({N_HARMONICS})"
+ax.set_xlabel(f"Cumulative IRR for {ctext} WBGT (95% CI)", fontsize=10)
+ax.set_title(f"Poisson FE + {sd}, df={SPLINE_DF}; red=significant after BH",
+             fontsize=10, fontweight="bold")
+ax.grid(axis="x", ls=":", alpha=0.5); plt.tight_layout()
+plt.savefig(f"{OUT_DIR}forest_plot_primary.png", dpi=180, bbox_inches="tight"); plt.close()
+
+
+# ===========================================================================
+# 8. ROBUSTNESS PANEL
+# ===========================================================================
+
+if not robustness.empty:
+    check_names = robustness["check"].unique().tolist()
+    ind_order = results["indicator"].tolist()
+    gap = 0.6; y_map = {}; yc = 0
+    for ind in reversed(ind_order):
+        for cn in reversed(check_names): y_map[(ind, cn)] = yc; yc += 1
+        y_map[(ind, "primary")] = yc; yc += 1 + gap
+
+    fig, ax = plt.subplots(figsize=(9, max(5, yc*0.28+1.5)))
+    for ind in ind_order:
+        lbl = INDICATOR_LABELS.get(ind, ind)
+        prow = results[results["indicator"] == ind].iloc[0]
+        yp = y_map[(ind, "primary")]
+        ax.plot([prow.irr_lo, prow.irr_hi], [yp, yp], color="#2a78d6", lw=2.0, zorder=2)
+        ax.scatter([prow.irr], [yp], color="#2a78d6", s=55, zorder=3)
+        ax.text(-0.02, yp, lbl, transform=ax.get_yaxis_transform(),
+                ha="right", va="center", fontsize=9, fontweight="bold")
+        ir = robustness[robustness["indicator"] == ind]
+        for cn in check_names:
+            ypos = y_map[(ind, cn)]
+            row = ir[ir["check"] == cn]
+            if row.empty or pd.isna(row.iloc[0]["irr"]):
+                ax.text(-0.02, ypos, f"  {cn}", fontsize=7, color="#999",
+                        transform=ax.get_yaxis_transform(), ha="right", va="center")
+                continue
+            r = row.iloc[0]
+            ax.plot([r.irr_lo, r.irr_hi], [ypos, ypos], color="#888", lw=1.0, zorder=1)
+            ax.scatter([r.irr], [ypos], color="#888", s=25, zorder=2)
+            ax.text(-0.02, ypos, f"  {cn}", fontsize=7, color="#555",
+                    transform=ax.get_yaxis_transform(), ha="right", va="center")
+        gb = y_map[(ind, check_names[-1])] - 0.4
+        ax.axhline(gb - gap/2, color="#e0e0e0", lw=0.5, zorder=0)
+    ax.axvline(1.0, color="black", ls="--", lw=0.9)
+    ax.set_yticks([]); ax.set_xlabel("Cumulative IRR (95% CI)")
+    ax.set_title("Primary (blue) vs robustness (grey)", fontsize=11, fontweight="bold")
+    ax.grid(axis="x", ls=":", alpha=0.4); plt.subplots_adjust(left=0.35)
     plt.tight_layout()
-    plt.savefig(
-        f"{OUT_DIR}forest_plot_two_model_deficit_NB.png",
-        dpi=180,
-        bbox_inches="tight",
-    )
-    plt.close()
-    print(f"Forest plot saved -> {OUT_DIR}forest_plot_two_model_deficit_NB.png")
-    print("\nDone.")
+    plt.savefig(f"{OUT_DIR}robustness_panel.png", dpi=180, bbox_inches="tight"); plt.close()
+
+
+# ===========================================================================
+# 9. EXPOSURE-RESPONSE CURVES
+# ===========================================================================
+
+print("\nExposure-response curves...")
+DF_PLOT = [3, 4, 5]; CCOL = {3: "#2a78d6", 4: "#eb6834", 5: "#7cb342"}
+NC = 4; NR = int(np.ceil(len(fitted)/NC))
+fig, axes = plt.subplots(NR, NC, figsize=(NC*4.5, NR*3.8), constrained_layout=True)
+af = axes.flatten() if len(fitted) > 1 else [axes]
+for ax in af[len(fitted):]: ax.set_visible(False)
+
+for pi, ind in enumerate(fitted):
+    ax = af[pi]; st = indicator_state[ind]
+    cool, hot = get_contrast_bounds(st["data"], CONTRAST_MODE, CONTRAST_PCTL, CONTRAST_FIXED)
+    for df_s in DF_PLOT:
+        fm = build_formula(df_s, st["lag_columns"], SEASON_CONTROL, st["harm_cols"])
+        try: m = pf.fepois(fm, data=st["data"], vcov={"CRV1": "facility"})
+        except: continue
+        di2 = spline_design_info(st["data"], df_s)
+        wg, ir, lo, hi, ref = exposure_response_curve(m, di2, st["data"])
+        c = CCOL.get(df_s, "#999")
+        if df_s == SPLINE_DF:
+            ax.fill_between(wg, lo, hi, alpha=0.15, color=c)
+            ax.plot(wg, ir, color=c, lw=2.0, label=f"df={df_s} (primary)")
+        else:
+            ax.plot(wg, ir, color=c, lw=1.1, ls="--", alpha=0.8, label=f"df={df_s}")
+    ax.axhline(1.0, color="black", ls="--", lw=0.8)
+    ax.axvspan(cool, hot, alpha=0.07, color="#823038", zorder=0)
+    ax.set_title(INDICATOR_LABELS.get(ind, ind), fontsize=9, fontweight="bold")
+    ax.tick_params(labelsize=7); ax.grid(ls=":", alpha=0.3); ax.legend(fontsize=6)
+    if pi % NC == 0: ax.set_ylabel("IRR", fontsize=8)
+    if pi >= len(fitted)-NC: ax.set_xlabel("WBGT (°C)", fontsize=8)
+fig.savefig(f"{OUT_DIR}exposure_response_panel.png", dpi=180, bbox_inches="tight"); plt.close()
+print(f"  -> {OUT_DIR}exposure_response_panel.png")
+
+
+# ===========================================================================
+# 10. HISTORICAL BURDEN
+# ===========================================================================
+
+print("\nHistorical burden...")
+burden_summaries = []
+for ind in fitted:
+    st = indicator_state[ind]
+    model, data, di = st["model"], st["data"], st["di"]
+    actual = data[WBGT_VAR].values
+    ref = np.full_like(actual, REFERENCE_WBGT)
+    obs = data["y_int"].values.astype(float)
+    irr_h = compute_row_irrs(model, di, ref, actual)
+    hmask = actual > REFERENCE_WBGT
+    cf = np.where(hmask, obs / irr_h, obs)
+    imp = np.where(hmask, cf - obs, 0.0)
+
+    # Unconditional: across ALL facility-months (what the old plot showed).
+    tot_imp = imp.sum(); tot_cf = cf.sum()
+    pct_all = tot_imp / tot_cf * 100 if tot_cf > 0 else 0
+
+    # Conditional: only facility-months where WBGT > reference (the meaningful number).
+    n_hot = hmask.sum(); n_total = len(hmask)
+    cf_hot = cf[hmask].sum(); imp_hot = imp[hmask].sum()
+    pct_hot = imp_hot / cf_hot * 100 if cf_hot > 0 else 0
+
+    burden_summaries.append({
+        "indicator": ind,
+        "total_impact": tot_imp,
+        "pct_all_months": pct_all,
+        "pct_hot_months_only": pct_hot,
+        "n_hot_months": int(n_hot),
+        "n_total_months": int(n_total),
+        "pct_months_above_ref": n_hot / n_total * 100 if n_total > 0 else 0,
+    })
+    print(f"  {ind}:")
+    print(f"    all months:  {tot_imp:>12,.0f} appointments  ({pct_all:.2f}%)")
+    print(f"    hot months:  {imp_hot:>12,.0f} appointments  ({pct_hot:.2f}%)  "
+          f"[{n_hot:,} of {n_total:,} months above {REFERENCE_WBGT}°C]")
+
+    # Save facility-month detail.
+    bdf = data[["facility","date","year","month",WBGT_VAR,"y_int"]].copy()
+    bdf["irr"] = irr_h; bdf["counterfactual"] = cf; bdf["impact_count"] = imp
+    bdf["above_reference"] = hmask
+    bdf.to_csv(f"{OUT_DIR}historical_burden_{ind}.csv", index=False)
+
+burden_df = pd.DataFrame(burden_summaries)
+burden_df.to_csv(f"{OUT_DIR}historical_burden_summary.csv", index=False)
+
+# --- Per-month deficit bar chart ------------------------------------------
+# Shows the deficit by calendar month, so the seasonal concentration is visible.
+print("\nPer-month deficit charts...")
+n_ind = len(fitted); n_cols = 3; n_rows = int(np.ceil(n_ind / n_cols))
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(4.5*n_cols, 3*n_rows), sharex=True)
+af = axes.flatten() if n_ind > 1 else [axes]
+month_names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+for idx, ind in enumerate(fitted):
+    ax = af[idx]
+    bp = f"{OUT_DIR}historical_burden_{ind}.csv"
+    if not os.path.exists(bp): continue
+    df = pd.read_csv(bp)
+    monthly = df.groupby("month").agg(
+        impact=("impact_count", "sum"),
+        counterfactual=("counterfactual", "sum"),
+    ).reindex(range(1, 13))
+    monthly["pct"] = monthly["impact"] / monthly["counterfactual"] * 100
+    monthly["pct"] = monthly["pct"].fillna(0)
+
+    colors = ["#823038" if p > 0 else "#2a78d6" for p in monthly["pct"]]
+    ax.bar(range(12), monthly["pct"], color=colors, alpha=0.8)
+    ax.set_xticks(range(12)); ax.set_xticklabels(month_names, fontsize=6, rotation=45)
+    ax.axhline(0, color="black", lw=0.5)
+    ax.set_title(INDICATOR_LABELS.get(ind, ind), fontsize=9, fontweight="bold")
+    ax.set_ylabel("% deficit", fontsize=7) if idx % n_cols == 0 else None
+    ax.tick_params(labelsize=6)
+
+for idx in range(n_ind, len(af)): af[idx].set_visible(False)
+fig.suptitle(f"Heat deficit by calendar month (vs {REFERENCE_WBGT}°C)\n"
+             "Red = services lost to heat; concentrated in hot months",
+             fontsize=10, fontweight="bold", y=1.03)
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}deficit_by_month.png", dpi=180, bbox_inches="tight"); plt.close()
+print(f"  -> {OUT_DIR}deficit_by_month.png")
+
+
+# ===========================================================================
+# 11. FORWARD PROJECTION (CMIP6)
+# ===========================================================================
+
+print("\nForward projections...")
+all_proj = []
+for ind in fitted:
+    st = indicator_state[ind]
+    model, data, di = st["model"], st["data"], st["di"]
+    v = WBGT_VAR
+    hc = data.groupby(["facility","month"])[v].mean().reset_index().rename(columns={v:"wbgt_hist"})
+    hcounts = data.groupby(["facility","month"])["y_int"].mean().reset_index().rename(columns={"y_int":"baseline"})
+
+    for ssp in SSP_SCENARIOS:
+        for tier in MODEL_TIERS:
+            pf_path = f"{PROJECTION_DIR}/{ssp}/{tier}.csv"
+            if not os.path.exists(pf_path):
+                print(f"  {ind} {ssp}/{tier}: not found — skipping")
+                continue
+            proj = pd.read_csv(pf_path)
+            proj["facility"] = proj["facility"].astype(str)
+            if v not in proj.columns: continue
+            proj = proj.rename(columns={v: "wbgt_proj"})
+            proj = proj.merge(hc, on=["facility","month"], how="inner")
+            proj = proj.merge(hcounts, on=["facility","month"], how="inner")
+            if proj.empty: continue
+
+            irr_p = compute_row_irrs(model, di, proj["wbgt_hist"].values, proj["wbgt_proj"].values)
+            proj["irr"] = irr_p
+            proj["proj_count"] = proj["baseline"] * irr_p
+            proj["change"] = proj["proj_count"] - proj["baseline"]
+            proj["pct_change"] = proj["change"] / proj["baseline"] * 100
+
+            tc = proj["change"].sum(); tb = proj["baseline"].sum()
+            pct = tc/tb*100 if tb > 0 else 0
+            wd = (proj["wbgt_proj"]-proj["wbgt_hist"]).mean()
+            print(f"  {ind} {ssp}/{tier}: dWBGT={wd:+.2f}, change={tc:+,.0f} ({pct:+.1f}%)")
+
+            proj["indicator"]=ind; proj["ssp"]=ssp; proj["tier"]=tier
+            proj.to_csv(f"{OUT_DIR}projection_{ind}_{ssp}_{tier}.csv", index=False)
+            all_proj.append({"indicator":ind,"ssp":ssp,"tier":tier,
+                "n_fac":len(proj),"mean_wbgt_diff":wd,"total_change":tc,"pct_change":pct})
+
+if all_proj:
+    pd.DataFrame(all_proj).to_csv(f"{OUT_DIR}projection_summary.csv", index=False)
+
+
+# ===========================================================================
+# 12. TIME-SERIES: OBSERVED vs COUNTERFACTUAL
+# ===========================================================================
+
+print("\nTime-series plots...")
+nc = 3; ni = len(fitted); nr = int(np.ceil(ni/nc))
+fig, axes = plt.subplots(nr, nc, figsize=(5.5*nc, 3.5*nr), sharex=True)
+af = axes.flatten() if ni > 1 else [axes]
+for idx, ind in enumerate(fitted):
+    ax = af[idx]
+    p = f"{OUT_DIR}historical_burden_{ind}.csv"
+    if not os.path.exists(p): continue
+    df = pd.read_csv(p, parse_dates=["date"])
+    m = df.groupby("date").agg(obs=("y_int","sum"), cf=("counterfactual","sum")).sort_index()
+    ax.plot(m.index, m.cf, color="#2a78d6", lw=1.0, ls="--", alpha=0.8, label="Without heat")
+    ax.plot(m.index, m.obs, color="#333", lw=1.0, label="Observed")
+    ax.fill_between(m.index, m.obs, m.cf, where=m.obs<m.cf, color="#823038", alpha=0.25, label="Lost")
+    ax.fill_between(m.index, m.obs, m.cf, where=m.obs>m.cf, color="#2a78d6", alpha=0.25, label="Added")
+    ax.set_title(INDICATOR_LABELS.get(ind,ind), fontsize=9, fontweight="bold"); ax.tick_params(labelsize=7)
+    if idx == 0: ax.legend(fontsize=6)
+for idx in range(ni, len(af)): af[idx].set_visible(False)
+fig.suptitle(f"Observed vs counterfactual (ref={REFERENCE_WBGT}°C)", fontsize=11, fontweight="bold", y=1.02)
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}observed_vs_counterfactual.png", dpi=180, bbox_inches="tight"); plt.close()
+
+
+# ===========================================================================
+# 13. DISTRICT AGGREGATION + MAP
+# ===========================================================================
+
+print("\nDistrict aggregation...")
+all_dist = []
+for ind in fitted:
+    bp = f"{OUT_DIR}historical_burden_{ind}.csv"
+    pp = f"{DATA_DIR}/All_predictors_processed/regression_panel_{ind}.csv"
+    if not os.path.exists(bp) or not os.path.exists(pp): continue
+    burden = pd.read_csv(bp); panel = pd.read_csv(pp)
+    if "Dist" not in panel.columns:
+        print(f"  {ind}: no Dist column — skipping map."); continue
+    fd = panel[["facility","Dist"]].drop_duplicates()
+    burden = burden.merge(fd, on="facility", how="left")
+    d = burden.groupby("Dist").agg(obs=("y_int","sum"),cf=("counterfactual","sum"),
+                                   imp=("impact_count","sum")).reset_index()
+    d["pct_disruption"] = d["imp"]/d["cf"]*100; d["indicator"] = ind
+    all_dist.append(d); d.to_csv(f"{OUT_DIR}district_burden_{ind}.csv", index=False)
+    print(f"  {ind}: {len(d)} districts, mean {d['pct_disruption'].mean():.2f}%")
+
+    if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
+        import geopandas as gpd
+        gdf = gpd.read_file(SHAPEFILE_PATH).merge(d, left_on=DISTRICT_NAME_COL, right_on="Dist", how="left")
+        fig, ax = plt.subplots(1, 1, figsize=(6, 8))
+        gdf.plot(column="pct_disruption", cmap="RdBu_r", linewidth=0.5, edgecolor="black",
+                 legend=True, ax=ax, missing_kwds={"color":"lightgrey","hatch":"///"})
+        ax.set_title(f"{INDICATOR_LABELS.get(ind,ind)}\n% disrupted (vs {REFERENCE_WBGT}°C)",
+                     fontsize=11, fontweight="bold"); ax.axis("off"); plt.tight_layout()
+        plt.savefig(f"{OUT_DIR}map_burden_{ind}.png", dpi=180, bbox_inches="tight"); plt.close()
+
+if all_dist:
+    pd.concat(all_dist, ignore_index=True).to_csv(f"{OUT_DIR}district_burden_all.csv", index=False)
+
+
+# ===========================================================================
+# 14. TLO LOOKUP TABLE
+# ===========================================================================
+
+print("\nTLO lookup tables...")
+tlo_rows = []
+for ind in fitted:
+    st = indicator_state[ind]
+    model, di = st["model"], st["di"]
+    names, beta, vcov = list(model.coef().index), model.coef().values, model._vcov
+    all_pts = np.append(WBGT_GRID, REFERENCE_WBGT)
+    basis = patsy.build_design_matrices(
+        [di], pd.DataFrame({WBGT_VAR: all_pts}), return_type="dataframe")[0]
+    ref_row = basis.iloc[-1]
+    for i, w in enumerate(WBGT_GRID):
+        c = np.zeros(len(names))
+        for j, nm in enumerate(names):
+            if nm in basis.columns: c[j] = basis.iloc[i][nm] - ref_row[nm]
+        li = float(c @ beta); se = float(np.sqrt(c @ vcov @ c))
+        irr = np.exp(li)
+        tlo_rows.append({"indicator":ind, "label":INDICATOR_LABELS.get(ind,ind),
+            "wbgt":w, "irr":irr, "irr_lo":np.exp(li-1.96*se), "irr_hi":np.exp(li+1.96*se),
+            "disruption_probability":max(0.0,1.0-irr), "demand_multiplier":max(1.0,irr)})
+    print(f"  {ind}: {len(WBGT_GRID)} values")
+
+tlo = pd.DataFrame(tlo_rows)
+tlo.to_csv(f"{OUT_DIR}tlo_wbgt_lookup.csv", index=False)
+for col, nm in [("disruption_probability","disruption"),("demand_multiplier","demand")]:
+    tlo.pivot(index="wbgt", columns="indicator", values=col).to_csv(f"{OUT_DIR}tlo_{nm}_wide.csv")
+
+fig, ax = plt.subplots(figsize=(8, 5))
+for ind in tlo["indicator"].unique():
+    sub = tlo[tlo["indicator"]==ind]
+    ax.plot(sub.wbgt, sub.disruption_probability, lw=1.3, label=INDICATOR_LABELS.get(ind,ind))
+ax.set_xlabel("WBGT (°C)"); ax.set_ylabel(f"Disruption prob (vs {REFERENCE_WBGT}°C)")
+ax.set_title("Heat disruption for TLO model", fontsize=11, fontweight="bold")
+ax.legend(fontsize=7); ax.grid(ls=":", alpha=0.4); ax.set_ylim(bottom=-0.01)
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}tlo_disruption_curves.png", dpi=180, bbox_inches="tight"); plt.close()
+
+print(f"\nAll outputs in {OUT_DIR}")
+print("Done.")
