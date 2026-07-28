@@ -59,8 +59,13 @@ INDICATOR_LABELS = {
 }
 
 WBGT_VAR   = "wbgt5x_day"
-SPLINE_DF  = 3
+SPLINE_DF  = 3              # used when DF_MODE = "fixed"
 LAG_MONTHS = [1, 2, 3, 9]
+
+# How to choose spline df.
+# "fixed"         : use SPLINE_DF for every indicator
+# "per_indicator" : use AIC-best df from DF_CANDIDATES for each indicator
+DF_MODE = "per_indicator"
 
 SEASON_CONTROL = "month_fe"
 N_HARMONICS    = 2
@@ -70,7 +75,7 @@ CONTRAST_FIXED = (25.0, 32.0)
 INCLUDE_LAGS   = False
 
 RUN_DF_SELECTION = True
-DF_CANDIDATES    = (3, 4, 5, 6)
+DF_CANDIDATES    = (3, 4, 5)
 
 MIN_YEAR, MAX_YEAR, MIN_OBS = 2015, 2025, 10
 
@@ -202,7 +207,7 @@ def exposure_response_curve(model, di, data, n_points=80):
     wbgt_lo = float(np.nanpercentile(data[WBGT_VAR], 2))
     wbgt_hi = float(np.nanpercentile(data[WBGT_VAR], 98))
     wgrid = np.linspace(wbgt_lo, wbgt_hi, n_points)
-    wref = float(np.nanmedian(data[WBGT_VAR]))
+    wref = REFERENCE_WBGT #float(np.nanmedian(data[WBGT_VAR]))
     names, beta, vcov = list(model.coef().index), model.coef().values, model._vcov
     all_pts = np.append(wgrid, wref)
     basis = patsy.build_design_matrices(
@@ -301,7 +306,8 @@ def fit_and_evaluate(data, lag_columns, harm_cols, wbgt_mean,
 # ===========================================================================
 
 print("=" * 60)
-print(f"Primary: season={SEASON_CONTROL}, df={SPLINE_DF}, "
+print(f"Primary: season={SEASON_CONTROL}, df={DF_MODE} "
+      f"{'('+str(SPLINE_DF)+')' if DF_MODE=='fixed' else '(AIC-selected)'}, "
       f"contrast={CONTRAST_MODE}, lags={'on' if INCLUDE_LAGS else 'off'}")
 print("=" * 60)
 
@@ -319,42 +325,59 @@ for indicator in COUNT_INDICATORS:
 
     cool, hot = get_contrast_bounds(data, CONTRAST_MODE, CONTRAST_PCTL, CONTRAST_FIXED)
 
-    # df selection.
-    if RUN_DF_SELECTION:
-        df_table = compare_spline_df(data, lag_columns, wbgt_mean, cool, hot,
-                                     SEASON_CONTROL, harm_cols, INCLUDE_LAGS)
-        df_table.insert(0, "indicator", indicator)
-        df_tables.append(df_table)
-        best_aic = df_table.loc[df_table["AIC"].idxmin(), "df"] if df_table["AIC"].notna().any() else "?"
-        best_bic = df_table.loc[df_table["BIC"].idxmin(), "df"] if df_table["BIC"].notna().any() else "?"
-        print(f"  df selection (AIC->{best_aic}, BIC->{best_bic}):")
-        for _, r in df_table.iterrows():
-            if pd.isna(r["AIC"]):
-                print(f"       df={int(r['df'])}  {r['note']}")
-            else:
-                print(f"       df={int(r['df'])}  AIC={r['AIC']:.1f}  BIC={r['BIC']:.1f}  IRR={r['irr']:.3f}")
+    # --- df selection: always run so we have the table -----------------------
+    df_table = compare_spline_df(data, lag_columns, wbgt_mean, cool, hot,
+                                 SEASON_CONTROL, harm_cols, INCLUDE_LAGS)
+    df_table.insert(0, "indicator", indicator)
+    df_tables.append(df_table)
 
-    # Primary model.
+    valid_df = df_table.dropna(subset=["AIC"])
+    if valid_df.empty:
+        print(f"  [{indicator}] all df candidates failed — skipping.")
+        continue
+
+    best_aic_df = int(valid_df.loc[valid_df["AIC"].idxmin(), "df"])
+    best_bic_df = int(valid_df.loc[valid_df["BIC"].idxmin(), "df"])
+
+    # Choose the df for this indicator's primary model.
+    if DF_MODE == "per_indicator":
+        chosen_df = best_aic_df
+    else:
+        chosen_df = SPLINE_DF
+
+    print(f"  df selection (AIC->{best_aic_df}, BIC->{best_bic_df})  "
+          f"-> using df={chosen_df}:")
+    for _, r in df_table.iterrows():
+        if pd.isna(r["AIC"]):
+            print(f"       df={int(r['df'])}  {r['note']}")
+        else:
+            marker = " <-- PRIMARY" if int(r["df"]) == chosen_df else ""
+            print(f"       df={int(r['df'])}  AIC={r['AIC']:.1f}  "
+                  f"BIC={r['BIC']:.1f}  IRR={r['irr']:.3f}{marker}")
+
+    # --- Primary model at the chosen df ------------------------------------
     primary = fit_and_evaluate(data, lag_columns, harm_cols, wbgt_mean,
-        df_spline=SPLINE_DF, season=SEASON_CONTROL, contrast_mode=CONTRAST_MODE,
+        df_spline=chosen_df, season=SEASON_CONTROL, contrast_mode=CONTRAST_MODE,
         contrast_pctl=CONTRAST_PCTL, contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS)
 
     if primary is None:
         print(f"  [{indicator}] PRIMARY FAILED — skipping.")
         continue
 
-    print(f"  PRIMARY  IRR({primary['cool']:.0f}->{primary['hot']:.0f})="
+    print(f"  PRIMARY (df={chosen_df})  IRR({primary['cool']:.0f}->{primary['hot']:.0f})="
           f"{primary['irr']:.3f}  block p={primary['pval_block']:.3g}  "
           f"AIC={primary['aic']:.0f}  BIC={primary['bic']:.0f}  "
           f"pseudo-R2={primary['pseudo_r2']:.4f}  loglik={primary['loglik']:.0f}")
 
-    di = spline_design_info(data, SPLINE_DF)
+    di = spline_design_info(data, chosen_df)
     indicator_state[indicator] = {
         "model": primary["model"], "data": data, "di": di,
-        "lag_columns": lag_columns, "harm_cols": harm_cols, "wbgt_mean": wbgt_mean}
+        "lag_columns": lag_columns, "harm_cols": harm_cols,
+        "wbgt_mean": wbgt_mean, "chosen_df": chosen_df}
 
     primary_results.append({
         "indicator": indicator, "label": INDICATOR_LABELS.get(indicator, indicator),
+        "spline_df": chosen_df,
         "irr": primary["irr"], "irr_lo": primary["irr_lo"], "irr_hi": primary["irr_hi"],
         "pval_contrast": primary["pval_contrast"], "pval_block": primary["pval_block"],
         "n_obs": primary["n_obs"], "n_facilities": data["facility"].nunique(),
@@ -363,7 +386,11 @@ for indicator in COUNT_INDICATORS:
         "pseudo_r2": primary["pseudo_r2"], "deviance": primary["deviance"],
         "n_params": primary["k"]})
 
-    # Robustness.
+    # --- Robustness checks ------------------------------------------------
+    # df checks: test df±1 from the chosen df (if they're in range).
+    df_minus = chosen_df - 1 if chosen_df - 1 >= 3 else None
+    df_plus  = chosen_df + 1 if chosen_df + 1 <= max(DF_CANDIDATES) else None
+
     robustness_specs = {
         "percentile (10-90)": dict(refit=False, contrast_mode="percentile",
             contrast_pctl=(10,90), contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS),
@@ -371,15 +398,18 @@ for indicator in COUNT_INDICATORS:
             contrast_pctl=(5,95), contrast_fixed=CONTRAST_FIXED, include_lags=INCLUDE_LAGS),
         "sustained lags": dict(refit=False, contrast_mode=CONTRAST_MODE,
             contrast_pctl=CONTRAST_PCTL, contrast_fixed=CONTRAST_FIXED, include_lags=True),
-        "harmonic season": dict(refit=True, season="harmonic", df_spline=SPLINE_DF),
-        "df = 4": dict(refit=True, season=SEASON_CONTROL, df_spline=4),
-        "df = 5": dict(refit=True, season=SEASON_CONTROL, df_spline=5),
+        "harmonic season": dict(refit=True, season="harmonic", df_spline=chosen_df),
     }
+    if df_minus is not None:
+        robustness_specs[f"df = {df_minus}"] = dict(
+            refit=True, season=SEASON_CONTROL, df_spline=df_minus)
+    if df_plus is not None:
+        robustness_specs[f"df = {df_plus}"] = dict(
+            refit=True, season=SEASON_CONTROL, df_spline=df_plus)
+
     if SEASON_CONTROL == "harmonic":
         robustness_specs["month FE"] = robustness_specs.pop("harmonic season")
         robustness_specs["month FE"]["season"] = "month_fe"
-    robustness_specs = {k: v for k, v in robustness_specs.items()
-                        if not (k.startswith("df =") and v.get("df_spline") == SPLINE_DF)}
 
     for cn, spec in robustness_specs.items():
         if spec.get("refit"):
@@ -450,12 +480,18 @@ for i in range(len(results)):
     if row.significant: ax.axhspan(i-0.4, i+0.4, color="#f7e0e2", alpha=0.35, zorder=0)
 ax.scatter(results.irr, y, color=colors, s=60, zorder=2)
 ax.axvline(1.0, color="black", ls="--", lw=0.9)
-ax.set_yticks(y); ax.set_yticklabels(results.label, fontsize=9)
+ax.set_yticks(y)
+if DF_MODE == "per_indicator":
+    ylabels = [f"{row.label} (df={int(row.spline_df)})" for _, row in results.iterrows()]
+else:
+    ylabels = [row.label for _, row in results.iterrows()]
+ax.set_yticklabels(ylabels, fontsize=9)
 ctext = (f"{CONTRAST_FIXED[0]:.0f}-{CONTRAST_FIXED[1]:.0f}C" if CONTRAST_MODE == "fixed"
          else f"{CONTRAST_PCTL[0]}th-{CONTRAST_PCTL[1]}th pctl")
 sd = "month FE" if SEASON_CONTROL == "month_fe" else f"harmonic({N_HARMONICS})"
+df_desc = "AIC-selected df" if DF_MODE == "per_indicator" else f"df={SPLINE_DF}"
 ax.set_xlabel(f"Cumulative IRR for {ctext} WBGT (95% CI)", fontsize=10)
-ax.set_title(f"Poisson FE + {sd}, df={SPLINE_DF}; red=significant after BH",
+ax.set_title(f"Poisson FE + {sd}, {df_desc}; red=significant after BH",
              fontsize=10, fontweight="bold")
 ax.grid(axis="x", ls=":", alpha=0.5); plt.tight_layout()
 plt.savefig(f"{OUT_DIR}forest_plot_primary.png", dpi=180, bbox_inches="tight"); plt.close()
@@ -510,7 +546,7 @@ if not robustness.empty:
 # ===========================================================================
 
 print("\nExposure-response curves...")
-DF_PLOT = [3, 4, 5]; CCOL = {3: "#2a78d6", 4: "#eb6834", 5: "#7cb342"}
+CCOL = {3: "#2a78d6", 4: "#eb6834", 5: "#7cb342", 6: "#9c27b0"}
 NC = 4; NR = int(np.ceil(len(fitted)/NC))
 fig, axes = plt.subplots(NR, NC, figsize=(NC*4.5, NR*3.8), constrained_layout=True)
 af = axes.flatten() if len(fitted) > 1 else [axes]
@@ -518,22 +554,31 @@ for ax in af[len(fitted):]: ax.set_visible(False)
 
 for pi, ind in enumerate(fitted):
     ax = af[pi]; st = indicator_state[ind]
+    chosen_df = st["chosen_df"]
     cool, hot = get_contrast_bounds(st["data"], CONTRAST_MODE, CONTRAST_PCTL, CONTRAST_FIXED)
-    for df_s in DF_PLOT:
+
+    # Plot df-1, chosen, df+1 to show sensitivity around the selected df.
+    dfs_to_plot = sorted(set([
+        d for d in [chosen_df - 1, chosen_df, chosen_df + 1]
+        if 3 <= d <= max(DF_CANDIDATES)
+    ]))
+
+    for df_s in dfs_to_plot:
         fm = build_formula(df_s, st["lag_columns"], SEASON_CONTROL, st["harm_cols"])
         try: m = pf.fepois(fm, data=st["data"], vcov={"CRV1": "facility"})
         except: continue
         di2 = spline_design_info(st["data"], df_s)
         wg, ir, lo, hi, ref = exposure_response_curve(m, di2, st["data"])
         c = CCOL.get(df_s, "#999")
-        if df_s == SPLINE_DF:
+        if df_s == chosen_df:
             ax.fill_between(wg, lo, hi, alpha=0.15, color=c)
             ax.plot(wg, ir, color=c, lw=2.0, label=f"df={df_s} (primary)")
         else:
             ax.plot(wg, ir, color=c, lw=1.1, ls="--", alpha=0.8, label=f"df={df_s}")
     ax.axhline(1.0, color="black", ls="--", lw=0.8)
     ax.axvspan(cool, hot, alpha=0.07, color="#823038", zorder=0)
-    ax.set_title(INDICATOR_LABELS.get(ind, ind), fontsize=9, fontweight="bold")
+    ax.set_title(f"{INDICATOR_LABELS.get(ind, ind)} (df={chosen_df})",
+                 fontsize=9, fontweight="bold")
     ax.tick_params(labelsize=7); ax.grid(ls=":", alpha=0.3); ax.legend(fontsize=6)
     if pi % NC == 0: ax.set_ylabel("IRR", fontsize=8)
     if pi >= len(fitted)-NC: ax.set_xlabel("WBGT (°C)", fontsize=8)
@@ -672,6 +717,157 @@ for ind in fitted:
 
 if all_proj:
     pd.DataFrame(all_proj).to_csv(f"{OUT_DIR}projection_summary.csv", index=False)
+
+
+# ===========================================================================
+# 11b. CMIP6 PROJECTION MAPS (SSP × tier grid per indicator)
+# ===========================================================================
+# For each indicator, aggregate facility-level projections to district and
+# plot a 3×3 grid of maps: rows = SSP scenarios, columns = model tiers.
+# This produces the figure from your reference image.
+
+print("\nProjection maps...")
+
+# We need the facility-to-district mapping from the original panel.
+for ind in fitted:
+    panel_path = f"{DATA_DIR}/All_predictors_processed/regression_panel_{ind}.csv"
+    if not os.path.exists(panel_path):
+        continue
+    panel = pd.read_csv(panel_path)
+    if "Dist" not in panel.columns:
+        print(f"  {ind}: no Dist column — skipping projection maps.")
+        continue
+
+    fac_dist = panel[["facility", "Dist"]].drop_duplicates()
+    fac_dist["facility"] = fac_dist["facility"].astype(str)
+
+    # Collect district-level results for each SSP × tier.
+    grid_data = {}
+    for ssp in SSP_SCENARIOS:
+        for tier in MODEL_TIERS:
+            proj_path = f"{OUT_DIR}projection_{ind}_{ssp}_{tier}.csv"
+            if not os.path.exists(proj_path):
+                continue
+            proj = pd.read_csv(proj_path)
+            proj["facility"] = proj["facility"].astype(str)
+            proj = proj.merge(fac_dist, on="facility", how="left")
+
+            dist = proj.groupby("Dist").agg(
+                baseline=("baseline", "sum"),
+                proj_count=("proj_count", "sum"),
+                change=("change", "sum"),
+            ).reset_index()
+            dist["pct_change"] = dist["change"] / dist["baseline"] * 100
+            grid_data[(ssp, tier)] = dist
+
+    if not grid_data:
+        print(f"  {ind}: no projection data available for maps.")
+        continue
+
+    # Save a combined district projection table.
+    dist_rows = []
+    for (ssp, tier), dist in grid_data.items():
+        d = dist.copy()
+        d["ssp"] = ssp; d["tier"] = tier; d["indicator"] = ind
+        dist_rows.append(d)
+    if dist_rows:
+        pd.concat(dist_rows, ignore_index=True).to_csv(
+            f"{OUT_DIR}projection_district_{ind}.csv", index=False)
+
+    # --- Plot the grid (without shapefile: bar chart; with shapefile: choropleth) ---
+
+    if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
+        import geopandas as gpd
+        gdf = gpd.read_file(SHAPEFILE_PATH)
+
+        n_ssp = len(SSP_SCENARIOS); n_tier = len(MODEL_TIERS)
+        fig, axes = plt.subplots(n_ssp, n_tier, figsize=(5*n_tier, 6*n_ssp))
+        if n_ssp == 1 and n_tier == 1:
+            axes = np.array([[axes]])
+        elif n_ssp == 1:
+            axes = axes[np.newaxis, :]
+        elif n_tier == 1:
+            axes = axes[:, np.newaxis]
+
+        # Find a common colour range across all panels.
+        all_pct = [d["pct_change"].values for d in grid_data.values()]
+        if all_pct:
+            all_pct = np.concatenate(all_pct)
+            vmin = np.nanpercentile(all_pct, 2)
+            vmax = np.nanpercentile(all_pct, 98)
+            vabs = max(abs(vmin), abs(vmax))
+        else:
+            vabs = 5
+
+        for row_i, ssp in enumerate(SSP_SCENARIOS):
+            for col_i, tier in enumerate(MODEL_TIERS):
+                ax = axes[row_i, col_i]
+                key = (ssp, tier)
+                if key not in grid_data:
+                    ax.set_title(f"{ssp}: {tier}\n(no data)", fontsize=9)
+                    ax.axis("off")
+                    continue
+
+                dist = grid_data[key]
+                merged = gdf.merge(dist, left_on=DISTRICT_NAME_COL,
+                                   right_on="Dist", how="left")
+                merged.plot(column="pct_change", cmap="RdBu_r",
+                            linewidth=0.5, edgecolor="black",
+                            legend=False, ax=ax, vmin=-vabs, vmax=vabs,
+                            missing_kwds={"color": "lightgrey", "hatch": "///"})
+
+                mean_pct = dist["pct_change"].mean()
+                sd_pct = dist["pct_change"].std()
+                ax.set_title(f"{ssp}: {tier}", fontsize=10)
+                ax.text(0.02, 0.02, f"Mean: {mean_pct:.2f}%\nSD: {sd_pct:.2f}%",
+                        transform=ax.transAxes, fontsize=7, verticalalignment="bottom",
+                        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+                ax.axis("off")
+
+        # Add a shared colorbar.
+        sm = plt.cm.ScalarMappable(cmap="RdBu_r",
+                                    norm=plt.Normalize(vmin=-vabs, vmax=vabs))
+        sm.set_array([])
+        cbar = fig.colorbar(sm, ax=axes, shrink=0.6, aspect=30, pad=0.02)
+        cbar.set_label("Projected % change in services", fontsize=10)
+
+        label = INDICATOR_LABELS.get(ind, ind)
+        fig.suptitle(f"{label}\nProjected change under CMIP6 scenarios",
+                     fontsize=12, fontweight="bold", y=1.02)
+        plt.savefig(f"{OUT_DIR}projection_map_grid_{ind}.png",
+                    dpi=180, bbox_inches="tight")
+        plt.close()
+        print(f"  {ind}: map grid saved -> projection_map_grid_{ind}.png")
+
+    else:
+        # No shapefile: produce a summary table plot instead.
+        n_ssp = len(SSP_SCENARIOS); n_tier = len(MODEL_TIERS)
+        summary_grid = pd.DataFrame(index=SSP_SCENARIOS, columns=MODEL_TIERS, dtype=float)
+        for (ssp, tier), dist in grid_data.items():
+            summary_grid.loc[ssp, tier] = dist["pct_change"].mean()
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        im = ax.imshow(summary_grid.values.astype(float), cmap="RdBu_r", aspect="auto")
+        ax.set_xticks(range(n_tier)); ax.set_xticklabels(MODEL_TIERS, fontsize=9)
+        ax.set_yticks(range(n_ssp)); ax.set_yticklabels(SSP_SCENARIOS, fontsize=9)
+
+        # Annotate cells.
+        for i in range(n_ssp):
+            for j in range(n_tier):
+                val = summary_grid.iloc[i, j]
+                if pd.notna(val):
+                    ax.text(j, i, f"{val:.2f}%", ha="center", va="center", fontsize=10)
+
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label("Mean % change", fontsize=9)
+        label = INDICATOR_LABELS.get(ind, ind)
+        ax.set_title(f"{label}\nMean projected % change by scenario",
+                     fontsize=11, fontweight="bold")
+        plt.tight_layout()
+        plt.savefig(f"{OUT_DIR}projection_heatmap_{ind}.png", dpi=180, bbox_inches="tight")
+        plt.close()
+        print(f"  {ind}: heatmap saved -> projection_heatmap_{ind}.png")
+        print(f"    (set SHAPEFILE_PATH for choropleth maps)")
 
 
 # ===========================================================================
