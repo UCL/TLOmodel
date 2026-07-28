@@ -340,15 +340,25 @@ def extract_dalys_by_cause(results_folder):
         Return DALYs by cause aggregated across 2027–2034.
         """
         df = df.assign(year=df["date"].dt.year)
-        df = df[df["year"].between(2027, 2034)]
+        df = df[df["year"].between(2010, 2034)]
         # Removing metadata columns
         cause_cols = [
             c for c in df.columns
             if c not in DALY_METADATA_COLUMNS
                and pd.api.types.is_numeric_dtype(df[c])
         ]
-        # Sum DALYs for each cause
-        return df[cause_cols].sum()
+        cols = ["year"] + cause_cols
+        # Sum yearly DALYs for each cause
+        df_year_cause = (
+            df.groupby("year", as_index=False)[cause_cols]
+            .sum()
+            .melt(
+                id_vars="year",
+                var_name="cause",
+                value_name="dalys"
+            )
+        ).set_index(["year", "cause"])["dalys"]
+        return df_year_cause
 
     return extract_results(
         results_folder,
@@ -1393,242 +1403,243 @@ if __name__ == "__main__":
 
     baseline_improved_scenario = ("Baseline Nurses / Improved Healthsystem Function")
 
-    # Extract annual DALYs
-    annual_dalys = extract_annual_dalys(results_folder).pipe(
-        set_param_names_as_column_index_level_0,
-        param_names=param_names,
-    )
-
-    # Summarize across runs
-    # Filter to Default Healthsystem Function scenarios only
-    summarized_annual_dalys = summarize(annual_dalys)
-
-    # Filter to Default Healthsystem Function scenarios only
-    summarized_annual_dalys_default = summarized_annual_dalys.loc[
-                                      :,
-                                      summarized_annual_dalys.columns.get_level_values(0).isin(
-                                          default_hs_scenarios
-                                      ),
-                                      ]
-
-    # Filter to Improved Healthsystem Function scenarios only
-    summarized_annual_dalys_improved = summarized_annual_dalys.loc[
-                                       :,
-                                       summarized_annual_dalys.columns.get_level_values(0).isin(
-                                           improved_hs_scenarios
-                                       ),
-                                       ]
-
-    # Plot 1: Annual DALYs over time
-    fig_1, ax_1 = plot_annual_dalys(
-        summarized_annual_dalys_default,
-        title="DALYs at national level: Default Healthsystem",
-    )
-
-    # Plot 2: Percent DALYs averted relative to baseline (2027–2034)
-    percent_dalys_averted = calculate_percent_dalys_averted(
-        annual_dalys.loc[
-            :,
-            annual_dalys.columns.get_level_values(0).isin(default_hs_scenarios)
-        ],
-        baseline_scenario=baseline_scenario,
-        comparison_years=range(2027, 2035),
-    )
-
-    percent_dalys_averted_improved = calculate_percent_dalys_averted(
-        annual_dalys.loc[
-            :,
-            annual_dalys.columns.get_level_values(0).isin(improved_hs_scenarios)
-        ],
-        baseline_scenario=baseline_improved_scenario,
-        comparison_years=range(2027, 2035),
-    )
-
-    fig_2, ax_2 = plot_percent_dalys_averted_comparison(
-        percent_dalys_averted,
-        percent_dalys_averted_improved,
-    )
-
-    # Sensitivity analysis: DALYs under Improved Healthsystem Function
-    fig_5, ax_5 = plot_annual_dalys(
-        summarized_annual_dalys_improved,
-        title="DALYs at national level: Improved Healthsystem",
-    )
-
-    # Extract annual deaths
-    annual_deaths = extract_annual_deaths(results_folder).pipe(
-        set_param_names_as_column_index_level_0,
-        param_names=param_names,
-    )
-
-    summarized_annual_deaths = summarize(annual_deaths)
-
-    # Default Healthsystem Function deaths
-    summarized_annual_deaths_default = summarized_annual_deaths.loc[
-                                       :,
-                                       summarized_annual_deaths.columns.get_level_values(0).isin(
-                                           default_hs_scenarios
-                                       ),
-                                       ]
-
-    # Improved Healthsystem Function deaths
-    summarized_annual_deaths_improved = summarized_annual_deaths.loc[
-                                        :,
-                                        summarized_annual_deaths.columns.get_level_values(0).isin(
-                                            improved_hs_scenarios
-                                        ),
-                                        ]
-
-    # Plot annual deaths
-    fig_3, ax_3 = plot_annual_deaths(
-        summarized_annual_deaths_default,
-        title="Deaths at national level: Default Healthsystem",
-    )
-
-    # Plot % deaths averted
-    percent_deaths_averted = calculate_percent_deaths_averted(
-        annual_deaths.loc[
-            :,
-            annual_deaths.columns.get_level_values(0).isin(default_hs_scenarios)
-        ],
-        baseline_scenario=baseline_scenario,
-        comparison_years=range(2027, 2035),
-    )
-
-    percent_deaths_averted_improved = calculate_percent_deaths_averted(
-        annual_deaths.loc[
-            :,
-            annual_deaths.columns.get_level_values(0).isin(improved_hs_scenarios)
-        ],
-        baseline_scenario=baseline_improved_scenario,
-        comparison_years=range(2027, 2035),
-    )
-
-    fig_4, ax_4 = plot_percent_deaths_averted_comparison(
-        percent_deaths_averted,
-        percent_deaths_averted_improved,
-    )
-
-    # Sensitivity analysis: deaths under Improved Healthsystem Function
-    fig_7, ax_7 = plot_annual_deaths(
-        summarized_annual_deaths_improved,
-        title="Deaths at national level: Improved Healthsystem",
-    )
-
-    # Extract deaths by cause
-    deaths_by_cause = extract_deaths_by_cause(results_folder).pipe(
-        set_param_names_as_column_index_level_0,
-        param_names=param_names,
-    )
-
-    # check that total deaths equal to sum of deaths by cause
-    total_deaths = annual_deaths.loc[
-        (annual_deaths.index >= 2027) & (annual_deaths.index <= 2034)
-        ].sum(axis=0)
-    total_deaths_cause = deaths_by_cause.sum(axis=0)
-    assert (total_deaths.index == total_deaths_cause.index).all()
-    assert (abs(total_deaths.values - total_deaths_cause.values) < 1e-7).all()
-
-    # find the descending order of causes in terms of total deaths in baseline scenario
-    mean_deaths_by_cause = deaths_by_cause.groupby(axis=1, level="draw").mean().sort_values(
-        by="Baseline Nurses / Default Healthsystem Function",
-        ascending=True,
-    )
-    death_order = mean_deaths_by_cause.index.tolist()
-
-    deaths_by_cause_default = (
-        deaths_by_cause.loc[
-            :,
-            deaths_by_cause.columns
-            .get_level_values(0)
-            .isin(default_hs_scenarios)
-        ]
-    )
-
-    percent_deaths_by_cause_default = (
-        calculate_percent_deaths_averted_by_cause(
-            deaths_by_cause_default,
-            baseline_scenario=baseline_scenario,
-        )
-    )
-
-    deaths_by_cause_improved = (
-        deaths_by_cause.loc[
-            :,
-            deaths_by_cause.columns
-            .get_level_values(0)
-            .isin(improved_hs_scenarios)
-        ]
-    )
-
-    percent_deaths_by_cause_improved = (
-        calculate_percent_deaths_averted_by_cause(
-            deaths_by_cause_improved,
-            baseline_scenario=baseline_improved_scenario,
-        )
-    )
-
-    fig_10, ax_10 = plot_percent_deaths_averted_by_cause(
-        percent_deaths_by_cause_default,
-        percent_deaths_by_cause_improved,
-        top_n=30,
-    )
-
-    # Extract deaths by age group
-    deaths_by_age_group = extract_deaths_by_age_group(
-        results_folder
-    ).pipe(
-        set_param_names_as_column_index_level_0,
-        param_names=param_names,
-    )
-
-    # check that total deaths equal to sum of deaths by age group
-    total_deaths_age = deaths_by_age_group.sum(axis=0)
-    assert (total_deaths.index == total_deaths_age.index).all()
-    assert (abs(total_deaths.values - total_deaths_age.values) < 1e-7).all()
-
-    deaths_by_age_group_default = (
-        deaths_by_age_group.loc[
-            :,
-            deaths_by_age_group.columns
-            .get_level_values(0)
-            .isin(default_hs_scenarios)
-        ]
-    )
-
-    percent_deaths_by_age_default = (
-        calculate_percent_deaths_averted_by_age_group(
-            deaths_by_age_group_default,
-            baseline_scenario=baseline_scenario,
-        )
-    )
-
-    deaths_by_age_group_improved = (
-        deaths_by_age_group.loc[
-            :,
-            deaths_by_age_group.columns
-            .get_level_values(0)
-            .isin(improved_hs_scenarios)
-        ]
-    )
-
-    percent_deaths_by_age_improved = (
-        calculate_percent_deaths_averted_by_age_group(
-            deaths_by_age_group_improved,
-            baseline_scenario=baseline_improved_scenario,
-        )
-    )
-
-    fig_12, ax_12 = plot_percent_deaths_averted_by_age_group(
-        percent_deaths_by_age_default,
-        percent_deaths_by_age_improved,
-    )
+    # # Extract annual DALYs
+    # annual_dalys = extract_annual_dalys(results_folder).pipe(
+    #     set_param_names_as_column_index_level_0,
+    #     param_names=param_names,
+    # )
+    #
+    # # Summarize across runs
+    # # Filter to Default Healthsystem Function scenarios only
+    # summarized_annual_dalys = summarize(annual_dalys)
+    #
+    # # Filter to Default Healthsystem Function scenarios only
+    # summarized_annual_dalys_default = summarized_annual_dalys.loc[
+    #                                   :,
+    #                                   summarized_annual_dalys.columns.get_level_values(0).isin(
+    #                                       default_hs_scenarios
+    #                                   ),
+    #                                   ]
+    #
+    # # Filter to Improved Healthsystem Function scenarios only
+    # summarized_annual_dalys_improved = summarized_annual_dalys.loc[
+    #                                    :,
+    #                                    summarized_annual_dalys.columns.get_level_values(0).isin(
+    #                                        improved_hs_scenarios
+    #                                    ),
+    #                                    ]
+    #
+    # # Plot 1: Annual DALYs over time
+    # fig_1, ax_1 = plot_annual_dalys(
+    #     summarized_annual_dalys_default,
+    #     title="DALYs at national level: Default Healthsystem",
+    # )
+    #
+    # # Plot 2: Percent DALYs averted relative to baseline (2027–2034)
+    # percent_dalys_averted = calculate_percent_dalys_averted(
+    #     annual_dalys.loc[
+    #         :,
+    #         annual_dalys.columns.get_level_values(0).isin(default_hs_scenarios)
+    #     ],
+    #     baseline_scenario=baseline_scenario,
+    #     comparison_years=range(2027, 2035),
+    # )
+    #
+    # percent_dalys_averted_improved = calculate_percent_dalys_averted(
+    #     annual_dalys.loc[
+    #         :,
+    #         annual_dalys.columns.get_level_values(0).isin(improved_hs_scenarios)
+    #     ],
+    #     baseline_scenario=baseline_improved_scenario,
+    #     comparison_years=range(2027, 2035),
+    # )
+    #
+    # fig_2, ax_2 = plot_percent_dalys_averted_comparison(
+    #     percent_dalys_averted,
+    #     percent_dalys_averted_improved,
+    # )
+    #
+    # # Sensitivity analysis: DALYs under Improved Healthsystem Function
+    # fig_5, ax_5 = plot_annual_dalys(
+    #     summarized_annual_dalys_improved,
+    #     title="DALYs at national level: Improved Healthsystem",
+    # )
+    #
+    # # Extract annual deaths
+    # annual_deaths = extract_annual_deaths(results_folder).pipe(
+    #     set_param_names_as_column_index_level_0,
+    #     param_names=param_names,
+    # )
+    #
+    # summarized_annual_deaths = summarize(annual_deaths)
+    #
+    # # Default Healthsystem Function deaths
+    # summarized_annual_deaths_default = summarized_annual_deaths.loc[
+    #                                    :,
+    #                                    summarized_annual_deaths.columns.get_level_values(0).isin(
+    #                                        default_hs_scenarios
+    #                                    ),
+    #                                    ]
+    #
+    # # Improved Healthsystem Function deaths
+    # summarized_annual_deaths_improved = summarized_annual_deaths.loc[
+    #                                     :,
+    #                                     summarized_annual_deaths.columns.get_level_values(0).isin(
+    #                                         improved_hs_scenarios
+    #                                     ),
+    #                                     ]
+    #
+    # # Plot annual deaths
+    # fig_3, ax_3 = plot_annual_deaths(
+    #     summarized_annual_deaths_default,
+    #     title="Deaths at national level: Default Healthsystem",
+    # )
+    #
+    # # Plot % deaths averted
+    # percent_deaths_averted = calculate_percent_deaths_averted(
+    #     annual_deaths.loc[
+    #         :,
+    #         annual_deaths.columns.get_level_values(0).isin(default_hs_scenarios)
+    #     ],
+    #     baseline_scenario=baseline_scenario,
+    #     comparison_years=range(2027, 2035),
+    # )
+    #
+    # percent_deaths_averted_improved = calculate_percent_deaths_averted(
+    #     annual_deaths.loc[
+    #         :,
+    #         annual_deaths.columns.get_level_values(0).isin(improved_hs_scenarios)
+    #     ],
+    #     baseline_scenario=baseline_improved_scenario,
+    #     comparison_years=range(2027, 2035),
+    # )
+    #
+    # fig_4, ax_4 = plot_percent_deaths_averted_comparison(
+    #     percent_deaths_averted,
+    #     percent_deaths_averted_improved,
+    # )
+    #
+    # # Sensitivity analysis: deaths under Improved Healthsystem Function
+    # fig_7, ax_7 = plot_annual_deaths(
+    #     summarized_annual_deaths_improved,
+    #     title="Deaths at national level: Improved Healthsystem",
+    # )
+    #
+    # # Extract deaths by cause
+    # deaths_by_cause = extract_deaths_by_cause(results_folder).pipe(
+    #     set_param_names_as_column_index_level_0,
+    #     param_names=param_names,
+    # )
+    #
+    # # check that total deaths equal to sum of deaths by cause
+    # total_deaths = annual_deaths.loc[
+    #     (annual_deaths.index >= 2027) & (annual_deaths.index <= 2034)
+    #     ].sum(axis=0)
+    # total_deaths_cause = deaths_by_cause.sum(axis=0)
+    # assert (total_deaths.index == total_deaths_cause.index).all()
+    # assert (abs(total_deaths.values - total_deaths_cause.values) < 1e-7).all()
+    #
+    # # find the descending order of causes in terms of total deaths in baseline scenario
+    # mean_deaths_by_cause = deaths_by_cause.groupby(axis=1, level="draw").mean().sort_values(
+    #     by="Baseline Nurses / Default Healthsystem Function",
+    #     ascending=True,
+    # )
+    # death_order = mean_deaths_by_cause.index.tolist()
+    #
+    # deaths_by_cause_default = (
+    #     deaths_by_cause.loc[
+    #         :,
+    #         deaths_by_cause.columns
+    #         .get_level_values(0)
+    #         .isin(default_hs_scenarios)
+    #     ]
+    # )
+    #
+    # percent_deaths_by_cause_default = (
+    #     calculate_percent_deaths_averted_by_cause(
+    #         deaths_by_cause_default,
+    #         baseline_scenario=baseline_scenario,
+    #     )
+    # )
+    #
+    # deaths_by_cause_improved = (
+    #     deaths_by_cause.loc[
+    #         :,
+    #         deaths_by_cause.columns
+    #         .get_level_values(0)
+    #         .isin(improved_hs_scenarios)
+    #     ]
+    # )
+    #
+    # percent_deaths_by_cause_improved = (
+    #     calculate_percent_deaths_averted_by_cause(
+    #         deaths_by_cause_improved,
+    #         baseline_scenario=baseline_improved_scenario,
+    #     )
+    # )
+    #
+    # fig_10, ax_10 = plot_percent_deaths_averted_by_cause(
+    #     percent_deaths_by_cause_default,
+    #     percent_deaths_by_cause_improved,
+    #     top_n=30,
+    # )
+    #
+    # # Extract deaths by age group
+    # deaths_by_age_group = extract_deaths_by_age_group(
+    #     results_folder
+    # ).pipe(
+    #     set_param_names_as_column_index_level_0,
+    #     param_names=param_names,
+    # )
+    #
+    # # check that total deaths equal to sum of deaths by age group
+    # total_deaths_age = deaths_by_age_group.sum(axis=0)
+    # assert (total_deaths.index == total_deaths_age.index).all()
+    # assert (abs(total_deaths.values - total_deaths_age.values) < 1e-7).all()
+    #
+    # deaths_by_age_group_default = (
+    #     deaths_by_age_group.loc[
+    #         :,
+    #         deaths_by_age_group.columns
+    #         .get_level_values(0)
+    #         .isin(default_hs_scenarios)
+    #     ]
+    # )
+    #
+    # percent_deaths_by_age_default = (
+    #     calculate_percent_deaths_averted_by_age_group(
+    #         deaths_by_age_group_default,
+    #         baseline_scenario=baseline_scenario,
+    #     )
+    # )
+    #
+    # deaths_by_age_group_improved = (
+    #     deaths_by_age_group.loc[
+    #         :,
+    #         deaths_by_age_group.columns
+    #         .get_level_values(0)
+    #         .isin(improved_hs_scenarios)
+    #     ]
+    # )
+    #
+    # percent_deaths_by_age_improved = (
+    #     calculate_percent_deaths_averted_by_age_group(
+    #         deaths_by_age_group_improved,
+    #         baseline_scenario=baseline_improved_scenario,
+    #     )
+    # )
+    #
+    # fig_12, ax_12 = plot_percent_deaths_averted_by_age_group(
+    #     percent_deaths_by_age_default,
+    #     percent_deaths_by_age_improved,
+    # )
 
     # Extract DALYs by cause
     dalys_by_cause = extract_dalys_by_cause(results_folder).pipe(
         set_param_names_as_column_index_level_0,
         param_names=param_names,
     )
+    dalys_by_year_cause = summarize(dalys_by_cause)
 
     # check that total dalys equal to sum of dalys by cause
     total_dalys = annual_dalys.loc[
