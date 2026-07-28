@@ -379,7 +379,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     mfl = pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
     ## patient volume
-    # todo: get patient volume to use all runs instead of only 1 run - concat all runs or get daily mean across runs?
+    # todo: get patient volume to use all runs instead of only 1 run
+    #  concate daily results of all runs,
+    #  or get daily mean across runs,
+    #  or get total period patient volume/total number of days as estimate of daily volume?
     patient_volume_facility_id = extract_results(
         results_folder,
         module="tlo.methods.healthsystem",
