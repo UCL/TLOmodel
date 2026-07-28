@@ -1980,7 +1980,7 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2010, 1, 1), Date(2010, 5, 31))
+        the_target_period=(Date(2024, 1, 1), Date(2024, 5, 31))
     )
 
 
