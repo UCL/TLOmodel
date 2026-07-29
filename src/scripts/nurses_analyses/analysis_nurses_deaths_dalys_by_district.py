@@ -208,8 +208,6 @@ def plot_annual_dalys(summarized_annual_dalys):
         lowers = summarized_annual_dalys[(scenario, "lower")].values
         uppers = summarized_annual_dalys[(scenario, "upper")].values
 
-        print(means.min(), means.max())
-
         ax.plot(years, means, linewidth=2, label=label_map.get(scenario, scenario),)
         ax.fill_between(years, lowers, uppers, alpha=0.2,)
 
@@ -598,16 +596,8 @@ if __name__ == "__main__":
             [2019, 2024, 2027]
         )
     ]
-    print("\n---Inspecting for Staff Counts---")
-    print(nurses.head())
-    print(nurses.index.names)
-    print(nurses.columns.levels)
 
     nurses_mean = nurses.xs("mean", axis=1, level=1)
-
-    print("\n---Inspecting for Staff Count Mean---")
-    print(nurses_mean.head())
-    print(nurses_mean.columns.tolist())
 
     nurses_mean = nurses_mean[
         [
@@ -615,20 +605,14 @@ if __name__ == "__main__":
             "More Nurses by District / Default Healthsystem Function",
         ]
     ]
-    print("\n---Inspecting for Staff Count Mean for 2 scenarios---")
-    print(nurses_mean.head())
 
     more_nurses = nurses_mean[
         ["More Nurses / Default Healthsystem Function"]
     ].unstack(level="year")
-    print("\n---Inspecting for Staff Count Mean for More Nurses---")
-    print(more_nurses.head())
 
     more_nurses_district = nurses_mean[
         ["More Nurses by District / Default Healthsystem Function"]
     ].unstack(level="year")
-    print("\n---Inspecting for Staff Count Mean for More Nurses by District---")
-    print(more_nurses_district.head())
 
     more_nurses.columns = [
         "Staff2019",
@@ -676,8 +660,6 @@ if __name__ == "__main__":
             more_nurses_district,
         ]
     )
-    print("\n---Staff Summary Table---")
-    print(staff_summary)
 
     staff_summary.to_excel(
         results_folder / "district_staff_scaling.xlsx",
@@ -687,13 +669,7 @@ if __name__ == "__main__":
     # NATIONAL DALYs
     annual_dalys = extract_annual_dalys(results_folder)
 
-    print("\nNational DALYs")
-    print(annual_dalys)
-
     dalys_by_district = extract_total_dalys_by_district(results_folder)
-
-    print("\n---Show scenario names---")
-    print(dalys_by_district.columns.to_list())
 
     # DALYs Default Healthsystem
     dalys_by_district = set_param_names_as_column_index_level_0(
@@ -702,12 +678,6 @@ if __name__ == "__main__":
     )
 
     district_mean = (dalys_by_district.groupby(level=0, axis=1).mean())
-
-    print("\nDistricts in DALY results:")
-    print(sorted(district_mean.index.tolist()))
-
-    print("\nNumber of Districts:")
-    print(sorted(district_mean.index.tolist()))
 
     default_baseline = (
         "Baseline Nurses / Default Healthsystem Function"
@@ -729,20 +699,45 @@ if __name__ == "__main__":
 
     default_pct = default_pct.drop(columns=default_baseline)
 
+    # DALYs table for the two nurse expansion scenarios
+    dalys_summary = default_pct[
+        [
+            "More Nurses / Default Healthsystem Function",
+            "More Nurses by District / Default Healthsystem Function",
+        ]
+    ].copy()
+    # Renaming the columns
+    dalys_summary.columns = [
+        "More Nurses",
+        "More Nurses by District",
+    ]
+
+    dalys_summary = (
+        dalys_summary
+        .stack()
+        .reset_index()
+    )
+
+    dalys_summary.columns = [
+        "District",
+        "Scenario",
+        "Percent_DALYs_Averted",
+    ]
+    print("\n---DALYs Summary after formatting and renaming---")
+    print(dalys_summary.head())
+
+    staff_summary = staff_summary.merge(
+        dalys_summary,
+        on=["District", "Scenario"],
+        how="left",
+    )
+
     district_map_default = district_map.merge(
         default_pct,
         left_on="ADM2_EN",
         right_index=True,
         how="left",
     )
-
-    print("\nDEFAULT DALYs")
-    print(default_pct.min().min(), default_pct.max().max())
-    print("\nDEFAULT DALYs distribution")
-    print(default_pct.stack().describe())
-    print("Mean Default:", default_pct.mean())
-    print("\nMean change by district (Default)")
-    print(default_pct.mean(axis=1).sort_values())
 
     fig_dalys_default_maps = plot_district_maps(
         district_map_default,
@@ -785,12 +780,6 @@ if __name__ == "__main__":
         how="left",
     )
 
-    # print("\nIMPROVED DALYs")
-    # print(improved_pct.min().min(), improved_pct.max().max())
-    # print("\nIMPROVED DALYs distribution")
-    # print(improved_pct.stack().describe())
-    # print("Mean Improved:", improved_pct.mean())
-
     fig_dalys_improved_maps = plot_district_maps(
         district_map_improved,
         [
@@ -829,20 +818,49 @@ if __name__ == "__main__":
 
     default_pct_deaths = default_pct_deaths.drop(columns=default_baseline)
 
+    deaths_summary = default_pct_deaths[
+        [
+            "More Nurses / Default Healthsystem Function",
+            "More Nurses by District / Default Healthsystem Function",
+        ]
+    ].copy()
+
+    deaths_summary.columns = [
+        "More Nurses",
+        "More Nurses by District",
+    ]
+
+    deaths_summary = (
+        deaths_summary
+        .stack()
+        .reset_index()
+    )
+
+    deaths_summary.columns = [
+        "District",
+        "Scenario",
+        "Percent_Deaths_Averted",
+    ]
+
+    staff_summary = staff_summary.merge(
+        deaths_summary,
+        on=["District", "Scenario"],
+        how="left",
+    )
+    print("\n---Table with DALYs and Deaths---")
+    print(staff_summary.head())
+
+    staff_summary.to_excel(
+        results_folder / "district_staff_scaling_health_outcomes.xlsx",
+        index=False,
+    )
+
     district_map_default_deaths = district_map.merge(
         default_pct_deaths,
         left_on="ADM2_EN",
         right_index=True,
         how="left",
     )
-
-    # print("\nDEFAULT Deaths")
-    # print(default_pct_deaths.min().min(), default_pct_deaths.max().max())
-    # print("\nDEFAULT Deaths distribution")
-    # print(default_pct_deaths.stack().describe())
-    # print("Mean Default Deaths:", default_pct_deaths.mean())
-    # print("\nMean change by district (Default deaths)")
-    # print(default_pct_deaths.mean(axis=1).sort_values())
 
     fig_deaths_default_maps = plot_district_maps(
         district_map_default_deaths,
@@ -880,16 +898,6 @@ if __name__ == "__main__":
         right_index=True,
         how="left",
     )
-
-    # print("\nIMPROVED Deaths")
-    # print(improved_pct_deaths.min().min(), improved_pct_deaths.max().max())
-    # print("\nIMPROVED Deaths distribution")
-    # print(improved_pct_deaths.stack().describe())
-    # print("Mean Improved Deaths:", improved_pct_deaths.mean())
-    # print("\nMean change by district (Improved)")
-    # print(improved_pct.mean(axis=1).sort_values())
-    # print("\nMean change by district (Improved deaths)")
-    # print(improved_pct_deaths.mean(axis=1).sort_values())
 
     fig_deaths_improved_maps = plot_district_maps(
         district_map_improved_deaths,
