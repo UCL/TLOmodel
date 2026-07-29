@@ -380,21 +380,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     ## patient volume
     # todo: get patient volume to use all runs instead of only 1 run
-    #  concate daily results of all runs,
+    #  concat daily results of all runs,
     #  or get daily mean across runs,
     #  or get total period patient volume/total number of days as estimate of daily volume?
-    patient_volume_facility_id = extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem",
-        key="HSI_Event",
-        custom_generate_series=get_patient_count_facility_id,
-        do_scaling=True
-    ).loc[:, [(0, 0)]]  # draw=0, run=0
+    def get_patient_volume_facility_id_per_run(run=0):
+        _patient_volume_facility_id = extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem",
+            key="HSI_Event",
+            custom_generate_series=get_patient_count_facility_id,
+            do_scaling=True
+        ).loc[:, [(0, run)]]  # draw=0, run=0
 
-    patient_volume_facility_id.columns = patient_volume_facility_id.columns.droplevel('run')
-    patient_volume_facility_id = patient_volume_facility_id.reset_index().rename(
-        columns={0: "Patient_Volume", "date": "Date"})
-    patient_volume_facility_id = merge_info_from_mfl(patient_volume_facility_id)
+        _patient_volume_facility_id.columns = _patient_volume_facility_id.columns.droplevel('run')
+        _patient_volume_facility_id = _patient_volume_facility_id.reset_index().rename(
+            columns={0: "Patient_Volume", "date": "Date"})
+        _patient_volume_facility_id = merge_info_from_mfl(_patient_volume_facility_id)
+
+        return _patient_volume_facility_id
+
+    patient_volume_facility_id = pd.concat(
+        [
+            get_patient_volume_facility_id_per_run(run=run).assign(run=run)
+            for run in range(5)
+        ],
+        ignore_index=True
+    )
+
+    patient_volume_facility_id.drop(columns=["run"], inplace=True)
 
     ## hcw count
     hcw_count_facility_id = extract_results(
