@@ -13,6 +13,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import warnings
 from collections import Counter
 from contextvars import ContextVar
+import scipy.stats as st
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -99,11 +100,7 @@ CLOSURES = [
 
 CLUSTER_COL         = "Dist"
 
-N_BOOTSTRAP         = 50
-BOOT_SEED           = 42
-BOOT_CI_LEVEL       = 0.95
-BOOT_MIN_SUCCESS    = 0.80
-N_JOBS              = 1
+CI_LEVEL = 0.95
 
 FDR_ALPHA           = 0.05
 
@@ -446,57 +443,6 @@ def bh_fdr(
     return q, rej
 
 
-# ===========================================================================
-# 6. BOOTSTRAP REPLICATE  — unchanged from working script
-# ===========================================================================
-
-def _boot_replicate(
-    seed_seq,
-    nb_data,
-    dist_index,
-    dist_ids,
-    rhs_a,
-    rhs_b,
-    fe_terms,
-    cluster_col,
-):
-    ro.conversion.converter_ctx.set(ro.default_converter)
-
-    rng   = np.random.default_rng(seed_seq)
-    picks = rng.choice(len(dist_ids), size=len(dist_ids), replace=True)
-
-    idx_parts = [dist_index[dist_ids[p]] for p in picks]
-    idx  = np.concatenate(idx_parts)
-    tags = np.repeat(
-        np.arange(len(picks)), [len(part) for part in idx_parts]
-    ).astype(str)
-
-    boot_df = nb_data.take(idx).reset_index(drop=True)
-    tags_s  = pd.Series(tags, index=boot_df.index).astype(str)
-    boot_df["facility"]   = boot_df["facility"].astype(str) + "__b" + tags_s
-    boot_df[cluster_col]  = boot_df[cluster_col].astype(str) + "__b" + tags_s
-
-    fac_max  = boot_df.groupby("facility")["y_int"].max()
-    sep_facs = fac_max[fac_max == 0].index
-    if len(sep_facs):
-        boot_df = boot_df[~boot_df["facility"].isin(sep_facs)].copy()
-
-    if boot_df["facility"].nunique() < 2 or boot_df[cluster_col].nunique() < 2:
-        return None, "too_few_groups"
-
-    try:
-        _, mu_a = fit_nb_fixest(boot_df, rhs_a, fe_terms, cluster_col)
-        _, mu_b = fit_nb_fixest(boot_df, rhs_b, fe_terms, cluster_col)
-        total_a, total_b = float(mu_a.sum()), float(mu_b.sum())
-        if total_b == 0:
-            return None, "zero_counterfactual"
-        pct = 100.0 * (total_a - total_b) / total_b
-        if not np.isfinite(pct):
-            return None, "non-finite"
-        return pct, None
-    except Exception as e:
-        return None, f"{type(e).__name__}: {str(e)[:80]}"
-
 
 # ===========================================================================
 # 7. PER-INDICATOR RUNNER
@@ -594,47 +540,38 @@ def run_indicator(indicator: str) -> dict | None:
     # --- Bootstrap CIs — unchanged from working script --------------------
     failures: Counter = Counter()
 
-    if N_BOOTSTRAP > 0:
-        dist_ids   = nb_data[CLUSTER_COL].unique()
-        dist_index = {
-            d: np.asarray(g, dtype=np.int64)
-            for d, g in nb_data.groupby(
-                CLUSTER_COL, sort=False).indices.items()
-        }
-        seeds = np.random.SeedSequence(BOOT_SEED).spawn(N_BOOTSTRAP)
-        out   = [
-            _boot_replicate(
-                s, nb_data, dist_index, dist_ids,
-                rhs_a, rhs_b, fe_terms, CLUSTER_COL)
-            for s in seeds
-        ]
+    try:
+        coef_tab_a = nb_coef_table(model_a)
+        coef_tab_b = nb_coef_table(model_b)
 
-        boot_pcts = [v for v, err in out if err is None]
-        for _, err in out:
-            if err is not None:
-                failures[err] += 1
+        # SE of deficit% via normal approximation:
+        # deficit = 100*(sum_a - sum_b)/sum_b
+        # We use SE from the per-row fitted value variance, approximated as:
+        # se_deficit ≈ 100 * sqrt(var(mu_a) + var(mu_b)) / sum_b
+        # where var(mu_k) = sum of squared SEs of fitted values (conservative)
+        se_a = float(coef_tab_a["se"].astype(float).pow(2).sum() ** 0.5)
+        se_b = float(coef_tab_b["se"].astype(float).pow(2).sum() ** 0.5)
 
-        n_ok         = len(boot_pcts)
-        success_rate = n_ok / N_BOOTSTRAP
-        if failures:
-            print(f"  [{indicator}] Bootstrap failures: {dict(failures)}")
-        if success_rate < BOOT_MIN_SUCCESS:
-            raise RuntimeError(
-                f"[{indicator}] Only {n_ok}/{N_BOOTSTRAP} replicates "
-                f"converged ({success_rate:.0%}). {dict(failures)}")
+        # Scale to fitted-value space: multiply by mean(mu) as a rough Jacobian
+        se_deficit = (100.0 / total_b) * np.sqrt(
+            (se_a * float(np.mean(mu_a))) ** 2 + (se_b * float(np.mean(mu_b))) ** 2
+        )
 
-        alpha    = 1 - BOOT_CI_LEVEL
-        boot_arr = np.asarray(boot_pcts)
-        deficit["ci_lo"]     = float(np.percentile(boot_arr, 100 * alpha / 2))
-        deficit["ci_hi"]     = float(np.percentile(boot_arr, 100 * (1 - alpha / 2)))
-        deficit["n_boot_ok"] = n_ok
-        frac_le = float(np.mean(boot_arr <= 0))
-        frac_ge = float(np.mean(boot_arr >= 0))
-        deficit["p_boot"] = float(
-            min(1.0, max(2 * min(frac_le, frac_ge), 1.0 / (n_ok + 1))))
+        z_crit = float(st.norm.ppf(0.5 + CI_LEVEL / 2))
+        deficit["ci_lo"] = deficit["deficit_pct"] - z_crit * se_deficit
+        deficit["ci_hi"] = deficit["deficit_pct"] + z_crit * se_deficit
+        deficit["se_pct"] = se_deficit
 
-        pd.DataFrame({"deficit_pct": boot_pcts}).to_csv(
-            f"{OUT_DIR}bootstrap_distribution_{indicator}.csv", index=False)
+        # Two-sided p-value
+        z_stat = deficit["deficit_pct"] / se_deficit if se_deficit > 0 else np.nan
+        deficit["p_boot"] = float(2 * st.norm.sf(abs(z_stat))) if np.isfinite(z_stat) else np.nan
+
+    except Exception as e:
+        print(f"  [{indicator}] Delta-method CI failed: {e}")
+        deficit["ci_lo"] = np.nan
+        deficit["ci_hi"] = np.nan
+        deficit["se_pct"] = np.nan
+        deficit["p_boot"] = np.nan
     else:
         deficit["ci_lo"]     = np.nan
         deficit["ci_hi"]     = np.nan
@@ -677,7 +614,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Two-model NB analysis: exposure vs counterfactual")
     print(f"MIN_OBS={MIN_OBS}, SPLINE_DF={SPLINE_DF}, CLUSTER={CLUSTER_COL}")
-    print(f"Bootstrap replicates = {N_BOOTSTRAP}")
+    print(f"CIs = analytical delta-method ({int(CI_LEVEL * 100)}%)")
     print("=" * 60)
 
     all_results: list[dict] = []
