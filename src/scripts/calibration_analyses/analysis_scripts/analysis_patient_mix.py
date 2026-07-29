@@ -486,6 +486,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     # HSI list is from https://www.tlomodel.org/hsi_events.html
+    # todo: collect full hsi (re. event name, appointment, facility level)
     hsi_loc_cat_map = pd.read_csv(
         path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
         usecols=["Event", "TLM service area"]
