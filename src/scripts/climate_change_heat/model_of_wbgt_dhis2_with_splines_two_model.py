@@ -13,6 +13,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import warnings
 from collections import Counter
 from contextvars import ContextVar
+import math
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -44,7 +45,8 @@ warnings.filterwarnings(
     message=r".*variables dropped due to multicollinearity.*",
     category=UserWarning,
 )
-
+SHAPEFILE_PATH    =  "/Users/rachelmurray-watson/Documents/Malawi_shapefiles/mwi_admbnda_adm2.shp"
+DISTRICT_NAME_COL = "ADM2_EN"
 
 # ---------------------------------------------------------------------------
 # CONFIG
@@ -89,7 +91,7 @@ WBGT_VAR = "wbgt5x_day"
 SPLINE_DF = 3
 LAG_MONTHS = [1, 2, 3, 9]
 CENTER = True
-MIN_OBS = int(0.5 * 12 * 12)   # 72  ← only change from working script
+MIN_OBS = int(0.5 * 12 * 12)   # 72
 
 min_year_historical = 2015
 max_year_historical = 2025
@@ -106,9 +108,9 @@ CLOSURES = [
     ("Thumbwe Health Centre", "2023-03-01", "2024-03-01"),
 ]
 
-CLUSTER_COL = "Dist"
+CLUSTER_COL = "facility"
 
-N_BOOTSTRAP = 50
+N_BOOTSTRAP = 0
 BOOT_SEED = 42
 BOOT_CI_LEVEL = 0.95
 BOOT_MIN_SUCCESS = 0.80
@@ -133,6 +135,9 @@ os.makedirs(OUT_DIR, exist_ok=True)
 PANEL_DIST_COL_IN_PANEL = "Dist"
 
 
+def _norm_sf(x):
+    """P(Z > x); avoids scipy so we don't clash with R's BLAS on macOS."""
+    return 0.5 * math.erfc(x / math.sqrt(2))
 # ---------------------------------------------------------------------------
 # R helpers  — identical to working script
 # ---------------------------------------------------------------------------
@@ -143,6 +148,8 @@ def fit_nb_fixest(
     cluster_col: str,
     y_col: str = "y_int",
 ):
+    print(f"    [fit_nb] entering, n={len(df)}, rhs={len(rhs_terms)}", flush=True)
+
     rhs = " + ".join(rhs_terms) if rhs_terms else "1"
     fe = " + ".join(fe_terms)
     fml = ro.Formula(f"{y_col} ~ {rhs} | {fe}")
@@ -159,10 +166,10 @@ def fit_nb_fixest(
         fixest.fenegbin(
             fml=fml,
             data=r_df,
-            cluster=ro.StrVector([cluster_col]),
+            cluster=ro.StrVector(['facility']),
         )
     )
-
+    print(f"    [fit_nb] fenegbin done, rhs={len(rhs_terms)}", flush=True)
     mu_r = stats_r.fitted(r_model)
     with localconverter(ro.default_converter + pandas2ri.converter):
         mu = np.asarray(ro.conversion.rpy2py(mu_r), dtype=float)
@@ -205,7 +212,63 @@ def nb_theta(r_model) -> float:
         return float(summ.rx2("theta")[0])
     except Exception:
         return np.nan
+def get_beta_vcov(r_model):
+    coef_r = ro.r("coef")(r_model)
+    with localconverter(ro.default_converter + pandas2ri.converter):
+        beta_full = np.asarray(ro.conversion.rpy2py(coef_r), dtype=float)
+    coef_names = list(coef_r.names)
 
+    vcov_r = ro.r("vcov")(r_model)
+    with localconverter(ro.default_converter + pandas2ri.converter):
+        vcov_full = np.asarray(ro.conversion.rpy2py(vcov_r), dtype=float)
+
+    rn = ro.r("rownames")(vcov_r)
+    if rn == ro.NULL or vcov_full.shape[0] == len(coef_names):
+        return coef_names, beta_full, vcov_full
+    vcov_names = list(rn)
+    common = [n for n in coef_names if n in vcov_names]
+    ci = [coef_names.index(n) for n in common]
+    vi = [vcov_names.index(n) for n in common]
+    return common, beta_full[ci], vcov_full[np.ix_(vi, vi)]
+
+def two_model_deficit_analytical(mu_a, mu_b, names_a, vcov_a,
+                                  names_b, vcov_b, X_data):
+    """
+    δ = 100 × (Σμ_A − Σμ_B) / Σμ_B.
+    Delta-method SE. Treats A and B as independent (approximation:
+    they share y and rows, so this understates uncertainty a bit).
+    For NB2 with log-link: ∂μ_i/∂β_j = μ_i · X_ij, so
+    ∂S/∂β_j = Σᵢ μ_i · X_ij over non-absorbed coefficients only.
+    """
+    mu_a = np.where(np.isnan(mu_a), 0.0, mu_a)
+    mu_b = np.where(np.isnan(mu_b), 0.0, mu_b)
+    sum_a, sum_b = float(mu_a.sum()), float(mu_b.sum())
+    if sum_b <= 0:
+        return dict(deficit_pct=np.nan, ci_lo=np.nan, ci_hi=np.nan,
+                    se_pct=np.nan, p_analytical=np.nan)
+    deficit_pct = 100.0 * (sum_a - sum_b) / sum_b
+
+    def _grad(mu_vec, names, scale):
+        g = np.zeros(len(names))
+        for j, name in enumerate(names):
+            if name in X_data.columns:
+                g[j] = scale * float((mu_vec * X_data[name].values).sum())
+        return g
+
+    g_a = _grad(mu_a, names_a,  100.0 / sum_b)
+    g_b = _grad(mu_b, names_b, -100.0 * sum_a / sum_b**2)
+    vcov_a_clean = np.where(np.isnan(vcov_a), 0.0, vcov_a)
+    vcov_b_clean = np.where(np.isnan(vcov_b), 0.0, vcov_b)
+    var_a = float(g_a @ vcov_a_clean @ g_a)
+    var_b = float(g_b @ vcov_b_clean @ g_b)
+    var = var_a + var_b
+    se_pct = float(np.sqrt(max(var, 0.0)))
+    z = deficit_pct / se_pct if se_pct > 0 else np.nan
+    p = float(2 * _norm_sf(abs(z))) if np.isfinite(z) else np.nan
+    return dict(deficit_pct=deficit_pct,
+                ci_lo=deficit_pct - 1.96 * se_pct,
+                ci_hi=deficit_pct + 1.96 * se_pct,
+                se_pct=se_pct, p_analytical=p)
 
 def nb_coefficient_lookup(r_model) -> dict[str, float]:
     tab = nb_coef_table(r_model)
@@ -583,6 +646,47 @@ def run_indicator(indicator: str) -> dict | None:
     }
 
     try:
+        names_a, _, vcov_a = get_beta_vcov(model_a)
+        names_b, _, vcov_b = get_beta_vcov(model_b)
+        delta = two_model_deficit_analytical(mu_a, mu_b, names_a, vcov_a, names_b, vcov_b, nb_data)
+        deficit["ci_lo"] = delta["ci_lo"]
+        deficit["ci_hi"] = delta["ci_hi"]
+        deficit["deficit_se"] = delta["se_pct"]
+        deficit["p_analytical"] = delta["p_analytical"]
+        deficit["p_boot"] = delta["p_analytical"]
+        deficit["n_boot_ok"] = 0
+
+        hot = nb_data[WBGT_VAR].values > REFERENCE_WBGT
+        if hot.any():
+            dh = two_model_deficit_analytical(
+                mu_a[hot], mu_b[hot], names_a, vcov_a, names_b, vcov_b, nb_data.loc[hot].reset_index(drop=True)
+            )
+            deficit["hot_deficit_pct"] = dh["deficit_pct"]
+            deficit["hot_deficit_ci_lo"] = dh["ci_lo"]
+            deficit["hot_deficit_ci_hi"] = dh["ci_hi"]
+            deficit["p_hot_analytical"] = dh["p_analytical"]
+        else:
+            for k in ("hot_deficit_pct", "hot_deficit_ci_lo", "hot_deficit_ci_hi", "p_hot_analytical"):
+                deficit[k] = np.nan
+
+        deficit["_names_a"], deficit["_vcov_a"] = names_a, vcov_a
+        deficit["_names_b"], deficit["_vcov_b"] = names_b, vcov_b
+    except Exception as e:
+        print(f"  [{indicator}] Analytical CI failed: {type(e).__name__}: {e}")
+        for k in (
+            "ci_lo",
+            "ci_hi",
+            "deficit_se",
+            "p_analytical",
+            "hot_deficit_pct",
+            "hot_deficit_ci_lo",
+            "hot_deficit_ci_hi",
+            "p_hot_analytical",
+        ):
+            deficit[k] = np.nan
+        deficit["p_boot"] = np.nan
+        deficit["n_boot_ok"] = 0
+    try:
         curve_df = make_exposure_response_curve(
             r_model=model_a,
             spline_cols=spline_cols,
@@ -661,11 +765,6 @@ def run_indicator(indicator: str) -> dict | None:
         pd.DataFrame({"deficit_pct": boot_pcts}).to_csv(
             f"{OUT_DIR}bootstrap_distribution_{indicator}.csv", index=False
         )
-    else:
-        deficit["ci_lo"] = np.nan
-        deficit["ci_hi"] = np.nan
-        deficit["n_boot_ok"] = 0
-        deficit["p_boot"] = np.nan
 
     deficit["indicator"] = indicator
     deficit["label"] = INDICATOR_LABELS.get(indicator, indicator)
@@ -739,8 +838,7 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     plot_df = results_df.sort_values("deficit_pct", ascending=True).reset_index(drop=True)
     y_pos   = np.arange(len(plot_df))
-    has_ci  = plot_df["ci_lo"].notna().all()
-
+    has_ci = plot_df["ci_lo"].notna().any()
     colors = []
     for _, row in plot_df.iterrows():
         if not has_ci:
@@ -752,12 +850,9 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(figsize=(7, max(4, len(plot_df) * 0.55 + 1.5)))
 
-    if has_ci:
-        for i, row in plot_df.iterrows():
-            ax.plot(
-                [row["ci_lo"], row["ci_hi"]], [i, i],
-                color=colors[i], linewidth=1.4, zorder=1,
-            )
+    for i, row in plot_df.iterrows():
+        if pd.notna(row["ci_lo"]):
+            ax.plot([row["ci_lo"], row["ci_hi"]], [i, i], color=colors[i], linewidth=1.4, zorder=1)
 
     ax.scatter(plot_df["deficit_pct"], y_pos, color=colors, s=55, zorder=2)
     ax.axvline(0, color="black", linestyle="--", linewidth=0.9)
@@ -801,6 +896,71 @@ if __name__ == "__main__":
     print(f"Forest plot saved -> {OUT_DIR}forest_plot_two_model_deficit_NB.png")
 
     # -----------------------------------------------------------------------
+    # HOT-MONTH FOREST PLOT — with diagnostic and visible whiskers
+    # -----------------------------------------------------------------------
+    q_hot, rej_hot = bh_fdr(results_df["p_hot_analytical"].values, alpha=FDR_ALPHA)
+    results_df["q_hot_bh"] = q_hot
+    results_df["sig_hot_bh"] = rej_hot
+
+    print("\n=== HOT-MONTH CI DIAGNOSTIC ===")
+    diag = results_df[
+        ["indicator", "hot_deficit_pct", "hot_deficit_ci_lo", "hot_deficit_ci_hi", "p_hot_analytical", "sig_hot_bh"]
+    ].copy()
+    diag["ci_width"] = diag["hot_deficit_ci_hi"] - diag["hot_deficit_ci_lo"]
+    print(diag.to_string())
+    print(f"CIs present: {diag['hot_deficit_ci_lo'].notna().sum()} / {len(diag)}")
+    print(f"BH-significant: {int(diag['sig_hot_bh'].sum())} / {len(diag)}")
+    print("================================\n")
+
+    ph = results_df.dropna(subset=["hot_deficit_pct"]).copy()
+    ph = ph.sort_values("hot_deficit_pct").reset_index(drop=True)
+    y_ph = np.arange(len(ph))
+    hot_colors = ["#823038" if s else "#888888" for s in ph["sig_hot_bh"]]
+
+    fig, ax = plt.subplots(figsize=(7, max(4, len(ph) * 0.55 + 1.5)))
+    for i, row in ph.iterrows():
+        lo, hi, pt = row["hot_deficit_ci_lo"], row["hot_deficit_ci_hi"], row["hot_deficit_pct"]
+        if pd.notna(lo) and pd.notna(hi):
+            ax.errorbar(
+                pt,
+                i,
+                xerr=[[pt - lo], [hi - pt]],
+                fmt="o",
+                markersize=7,
+                capsize=4,
+                capthick=1.4,
+                elinewidth=1.4,
+                color=hot_colors[i],
+                zorder=2,
+            )
+        else:
+            ax.scatter(pt, i, color=hot_colors[i], s=55, zorder=2)
+
+    ax.axvline(0, color="black", linestyle="--", linewidth=0.9)
+    ax.set_yticks(y_ph)
+    ax.set_yticklabels(ph["label"], fontsize=9)
+    ax.set_xlabel(f"% change in appointments in months with WBGT > {REFERENCE_WBGT}°C", fontsize=10)
+    ax.set_title(
+        f"Hot-month deficit (WBGT > {REFERENCE_WBGT}°C only)\n"
+        f"NB FE two-model, 95% analytical CI, red = BH-FDR q ≤ {FDR_ALPHA}",
+        fontsize=11,
+        fontweight="bold",
+    )
+    ax.grid(axis="x", linestyle=":", alpha=0.5)
+    ax.legend(
+        handles=[
+            mpatches.Patch(color="#823038", label=f"BH-FDR q ≤ {FDR_ALPHA}"),
+            mpatches.Patch(color="#888888", label="not significant"),
+        ],
+        loc="lower right",
+        fontsize=9,
+        frameon=False,
+    )
+    plt.tight_layout()
+    plt.savefig(f"{OUT_DIR}forest_plot_hot_deficit_NB.png", dpi=180, bbox_inches="tight")
+    plt.close()
+    print(f"Hot-month forest plot -> {OUT_DIR}forest_plot_hot_deficit_NB.png")
+    # -----------------------------------------------------------------------
     # HISTORICAL BURDEN
     # -----------------------------------------------------------------------
     print("\nHistorical burden...")
@@ -836,29 +996,58 @@ if __name__ == "__main__":
     pd.DataFrame(burden_rows).to_csv(
         f"{OUT_DIR}historical_burden_summary.csv", index=False)
 
-    n_ind  = len(fitted)
+    n_ind = len(fitted)
     n_cols = 3
     n_rows = int(np.ceil(n_ind / n_cols))
-    fig, axes = plt.subplots(
-        n_rows, n_cols, figsize=(4.5 * n_cols, 3 * n_rows), sharex=True)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4.5 * n_cols, 3 * n_rows), sharex=True)
     af = axes.flatten() if n_ind > 1 else [axes]
-    month_names = ["Jan","Feb","Mar","Apr","May","Jun",
-                   "Jul","Aug","Sep","Oct","Nov","Dec"]
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    for idx, ind in enumerate(fitted):
-        ax  = af[idx]
-        csv = f"{OUT_DIR}historical_burden_{ind}.csv"
-        if not os.path.exists(csv):
-            continue
-        df = pd.read_csv(csv)
-        monthly = (df.groupby("month")
-                   .agg(mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum"))
-                   .reindex(range(1, 13)))
-        monthly["pct"] = (
-            (monthly["mu_a"] - monthly["mu_b"])
-            / monthly["mu_b"] * 100).fillna(0)
-        bar_c = ["#823038" if p < 0 else "#2a78d6" for p in monthly["pct"]]
-        ax.bar(range(12), monthly["pct"], color=bar_c, alpha=0.8)
+    for idx, res in enumerate(all_results):
+        ax = af[idx]
+        ind = res["indicator"]
+        nb = res["_nb_data"]
+        mu_a, mu_b = res["_mu_a"], res["_mu_b"]
+        na, va = res.get("_names_a"), res.get("_vcov_a")
+        nb_names, vb = res.get("_names_b"), res.get("_vcov_b")
+        have_ci = va is not None and vb is not None
+
+        months = nb["month"].values
+        pcts, los, his = [], [], []
+        for m in range(1, 13):
+            mask = months == m
+            if not mask.any():
+                pcts.append(0)
+                los.append(np.nan)
+                his.append(np.nan)
+                continue
+            if have_ci:
+                d = two_model_deficit_analytical(
+                    mu_a[mask], mu_b[mask], na, va, nb_names, vb, nb.loc[mask].reset_index(drop=True)
+                )
+                pcts.append(d["deficit_pct"])
+                los.append(d["ci_lo"])
+                his.append(d["ci_hi"])
+            else:
+                sa, sb = float(mu_a[mask].sum()), float(mu_b[mask].sum())
+                pcts.append(100 * (sa - sb) / sb if sb > 0 else 0)
+                los.append(np.nan)
+                his.append(np.nan)
+
+        pcts_a = np.asarray(pcts, dtype=float)
+        los_a = np.asarray(los, dtype=float)
+        his_a = np.asarray(his, dtype=float)
+        bar_c = ["#823038" if p < 0 else "#2a78d6" for p in pcts_a]
+
+        yerr = np.array(
+            [
+                np.nan_to_num(pcts_a - los_a, nan=0.0),
+                np.nan_to_num(his_a - pcts_a, nan=0.0),
+            ]
+        )
+        ax.bar(
+            range(12), pcts_a, color=bar_c, alpha=0.8, yerr=yerr, error_kw={"lw": 0.7, "capsize": 1.5, "ecolor": "#333"}
+        )
         ax.set_xticks(range(12))
         ax.set_xticklabels(month_names, fontsize=6, rotation=45)
         ax.axhline(0, color="black", lw=0.5)
@@ -870,9 +1059,12 @@ if __name__ == "__main__":
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
     fig.suptitle(
-        "Two-model deficit by calendar month\n"
+        "Two-model deficit by calendar month (95% analytical CI)\n"
         "(mu_A − mu_B) / mu_B × 100;  red = heat reduced services",
-        fontsize=10, fontweight="bold", y=1.03)
+        fontsize=10,
+        fontweight="bold",
+        y=1.03,
+    )
     plt.tight_layout()
     plt.savefig(f"{OUT_DIR}deficit_by_month.png", dpi=180, bbox_inches="tight")
     plt.close()
