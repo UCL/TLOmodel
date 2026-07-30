@@ -87,28 +87,32 @@ INDICATOR_LABELS: dict[str, str] = {
     "skilled_deliveries": "Skilled Deliveries",
 }
 
-WBGT_VAR = "wbgt5x_day"
-SPLINE_DF = 3
-LAG_MONTHS = [1, 2, 3, 9]
+WBGT_VAR = "wbgt5x_day"#"wbgt_day"
+SPLINE_DF = 4
+LAG_MONTHS = [1, 2, 3,]
 CENTER = True
-MIN_OBS = int(0.5 * 12 * 12)   # 72
+MIN_OBS = int(0.5* 12 * 10)   # 72
 
 min_year_historical = 2015
 max_year_historical = 2025
-apply_cap = False
+apply_cap = True
 
 N_CURVE_POINTS = 200
 CURVE_REF = "mean"
 
 COVID_START = "2020-04-01"
-COVID_END = "2021-12-01"
+COVID_END = "2021-04-01"
+
+DF_MODE       = "per_indicator"       # "fixed" | "per_indicator"
+DF_CANDIDATES = (3, 4, 5)             # candidates to compare via AIC on Model A
+
 
 CLOSURES = [
     ("Phalombe Health Centre", "2023-04-01", "2024-06-01"),
     ("Thumbwe Health Centre", "2023-03-01", "2024-03-01"),
 ]
 
-CLUSTER_COL = "facility"
+CLUSTER_COL = "Dist"
 
 N_BOOTSTRAP = 0
 BOOT_SEED = 42
@@ -119,13 +123,14 @@ N_JOBS = 1
 FDR_ALPHA = 0.05
 
 # New constants for added sections
-REFERENCE_WBGT = 25.0
+REFERENCE_WBGT =  28.0
 WBGT_GRID      = np.arange(20.0, 37.0, 0.5)
 
 PROJECTION_DIR = (
     "/Users/rachelmurray-watson/Documents/Heat_data"
     "/CMIP6_facility_projections"
 )
+
 SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 
@@ -141,6 +146,42 @@ def _norm_sf(x):
 # ---------------------------------------------------------------------------
 # R helpers  — identical to working script
 # ---------------------------------------------------------------------------
+def nb_aic(r_model):
+    """AIC from an rpy2 fenegbin model: -2 * loglik + 2 * (k + 1) for theta."""
+    try:
+        ll = float(ro.r("logLik")(r_model)[0])
+        # attr(logLik, "df") gives npar including theta
+        npar = int(ro.r('attr(logLik(x), "df")')(r_model)[0])
+        return -2 * ll + 2 * npar
+    except Exception:
+        try:
+            return float(ro.r("AIC")(r_model)[0])
+        except Exception:
+            return np.nan
+
+
+def select_df_for_indicator(nb_data, lag_terms, wbgt_var, cluster_col,
+                             fe_terms, candidates):
+    """Fit Model A at each candidate df and return AIC table + best df."""
+    rows = []
+    for df_try in candidates:
+        try:
+            nb_try, splines_try, di_try = add_spline_basis(
+                nb_data.copy(), spline_df=df_try)
+            rhs_try = splines_try + lag_terms + ["covid", "year_c"]
+            m_try, mu_try = fit_nb_fixest(nb_try, rhs_terms=rhs_try,
+                                           fe_terms=fe_terms,
+                                           cluster_col=cluster_col)
+            rows.append({"df": df_try, "aic": nb_aic(m_try),
+                         "theta": nb_theta(m_try), "note": ""})
+        except Exception as e:
+            rows.append({"df": df_try, "aic": np.nan, "theta": np.nan,
+                         "note": str(e)[:40]})
+    tab = pd.DataFrame(rows)
+    valid = tab.dropna(subset=["aic"])
+    best_df = int(valid.loc[valid["aic"].idxmin(), "df"]) if not valid.empty else candidates[0]
+    return tab, best_df
+
 def fit_nb_fixest(
     df: pd.DataFrame,
     rhs_terms: list[str],
@@ -166,7 +207,7 @@ def fit_nb_fixest(
         fixest.fenegbin(
             fml=fml,
             data=r_df,
-            cluster=ro.StrVector(['facility']),
+            cluster=ro.StrVector([cluster_col]),
         )
     )
     print(f"    [fit_nb] fenegbin done, rhs={len(rhs_terms)}", flush=True)
@@ -199,6 +240,43 @@ def nb_coef_table(r_model) -> pd.DataFrame:
         )
     return tab
 
+def winsorise_by_facility(
+    df: pd.DataFrame,
+    y_col: str = "y",
+    k: float = 5,
+    indicator: str = "",
+) -> pd.DataFrame:
+    """
+    Replace facility-level far outliers (> Q3 + k*IQR) with NaN.
+    Uses k=3 (Tukey far outlier) rather than k=1.5 (mild outlier) to
+    avoid removing genuine high-utilisation months from large facilities.
+    Lower fence is not applied — zero/near-zero months are real
+    (closures, low demand) and should not be removed.
+    """
+    df = df.copy()
+    n_replaced = 0
+
+    for fac, grp in df.groupby("facility"):
+        vals = grp[y_col].dropna()
+        if len(vals) < 8:          # too few obs to estimate distribution
+            continue
+        q1, q3 = float(vals.quantile(0.25)), float(vals.quantile(0.75))
+        iqr = q3 - q1
+        if iqr == 0:               # all values identical — no outliers possible
+            continue
+        upper = q3 + k * iqr
+        mask  = (df["facility"] == fac) & (df[y_col] > upper)
+        n     = int(mask.sum())
+        if n:
+            df.loc[mask, y_col] = np.nan
+            n_replaced += n
+            print(
+                f"  [{indicator}] {fac}: {n} value(s) > {upper:.0f} "
+                f"(Q3={q3:.0f}, IQR={iqr:.0f}) set to NaN"
+            )
+
+    print(f"  [{indicator}] Winsorisation total: {n_replaced} values replaced")
+    return df
 
 def nb_theta(r_model) -> float:
     for attr in ["theta", "family.theta"]:
@@ -305,7 +383,7 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
     for fac, start, end in CLOSURES:
         mask = (long["date"].between(start, end)) & (long["facility"] == fac)
         n_masked = int(mask.sum())
-        long.loc[mask, "y"] = np.nan
+        long.loc[mask, "y"] = 0
         if n_masked:
             print(f"  [{indicator}] Masked {n_masked} closure months for {fac}.")
 
@@ -314,7 +392,7 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
     long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
 
     if apply_cap:
-        long.loc[long["y"] > 4e3, "y"] = np.nan
+        long = winsorise_by_facility(long, y_col="y", k=3.0, indicator=indicator)
 
     obs_per_fac = long.dropna(subset=["y", WBGT_VAR]).groupby("facility").size()
     keep_facs = obs_per_fac[obs_per_fac >= MIN_OBS].index
@@ -337,7 +415,49 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
 
     return long
 
+def monthly_deficit_with_jackknife_ci(
+    mu_a: np.ndarray,
+    mu_b: np.ndarray,
+    facility_ids: np.ndarray,
+) -> dict:
+    """
+    Point estimate + 95% jackknife CI for (sum_A - sum_B)/sum_B * 100.
+    Leave-one-facility-out jackknife — appropriate for the monthly
+    descriptive panel where delta-method CIs are too wide because
+    only 1/12 of the data is used per month.
+    """
+    sum_a = float(mu_a.sum())
+    sum_b = float(mu_b.sum())
+    if sum_b <= 0:
+        return dict(deficit_pct=np.nan, ci_lo=np.nan, ci_hi=np.nan)
 
+    deficit_pct = 100.0 * (sum_a - sum_b) / sum_b
+    facs = np.unique(facility_ids)
+    n    = len(facs)
+    if n < 3:
+        return dict(deficit_pct=deficit_pct, ci_lo=np.nan, ci_hi=np.nan)
+
+    jack_vals = []
+    for fac in facs:
+        keep  = facility_ids != fac
+        sa_j  = float(mu_a[keep].sum())
+        sb_j  = float(mu_b[keep].sum())
+        if sb_j <= 0:
+            continue
+        jack_vals.append(100.0 * (sa_j - sb_j) / sb_j)
+
+    if len(jack_vals) < 3:
+        return dict(deficit_pct=deficit_pct, ci_lo=np.nan, ci_hi=np.nan)
+
+    jack = np.asarray(jack_vals)
+    # jackknife SE
+    jack_mean = jack.mean()
+    jack_se   = np.sqrt((n - 1) / n * np.sum((jack - jack_mean) ** 2))
+    return dict(
+        deficit_pct=deficit_pct,
+        ci_lo=deficit_pct - 1.96 * jack_se,
+        ci_hi=deficit_pct + 1.96 * jack_se,
+    )
 def enforce_complete_monthly_grid(df: pd.DataFrame, indicator: str) -> pd.DataFrame:
     df = df.sort_values(["facility", "date"]).reset_index(drop=True)
     n_before = len(df)
@@ -613,79 +733,103 @@ def run_indicator(indicator: str) -> dict | None:
             f"cluster-robust SEs are not defined."
         )
 
-    nb_data, spline_cols, design_info = add_spline_basis(nb_data, SPLINE_DF)
-    nb_data = nb_data.reset_index(drop=True)
+        # Initialize deficit early so downstream stashes land in the right place.
+    deficit: dict = {}
 
-    fe_terms = ["facility", "month"]
+        # ---- per-indicator df selection ---------------------------------------
+    if DF_MODE == "per_indicator":
+            print(f"  [{indicator}] selecting df via AIC over {list(DF_CANDIDATES)}...")
+            df_table, chosen_df = select_df_for_indicator(
+                nb_data, lag_terms, WBGT_VAR, CLUSTER_COL,
+                fe_terms=["facility"], candidates=DF_CANDIDATES,
+            )
+            df_table.insert(0, "indicator", indicator)
+            for _, r in df_table.iterrows():
+                note = f"  {r['note']}" if r["note"] else ""
+                if pd.isna(r["aic"]):
+                    print(f"    df={int(r['df'])}: FAILED{note}")
+                else:
+                    marker = " <-- PRIMARY" if int(r["df"]) == chosen_df else ""
+                    print(f"    df={int(r['df'])}: AIC={r['aic']:.1f}, "
+                          f"theta={r['theta']:.2f}{marker}{note}")
+            deficit["_df_table"] = df_table
+    else:
+            chosen_df = SPLINE_DF
+            deficit["_df_table"] = pd.DataFrame([{"df": chosen_df, "aic": np.nan}])
+
+    deficit["chosen_df"] = chosen_df
+
+        # ---- fit Model A + Model B at the chosen df ---------------------------
+    nb_data, spline_cols, design_info = add_spline_basis(nb_data, chosen_df)
     rhs_a = spline_cols + lag_terms + ["covid", "year_c"]
-    rhs_b = ["covid", "year_c"]
+    print(
+            f"  [{indicator}] fitting Model A (df={chosen_df}, "
+            f"n={len(nb_data):,}, fac={nb_data['facility'].nunique()}, "
+            f"clust={nb_data[CLUSTER_COL].nunique()})..."
+        )
+    model_a, mu_a = fit_nb_fixest(
+            nb_data, rhs_terms=rhs_a,
+            fe_terms=["facility"], cluster_col=CLUSTER_COL,
+        )
 
-    try:
-        model_a, mu_a = fit_nb_fixest(nb_data, rhs_a, fe_terms, CLUSTER_COL)
-        model_b, mu_b = fit_nb_fixest(nb_data, rhs_b, fe_terms, CLUSTER_COL)
-    except Exception as e:
-        print(f"  [{indicator}] fenegbin failed: {type(e).__name__}: {e} — skipping.")
-        return None
+    rhs_b = lag_terms + ["covid", "year_c"]
+    print(f"  [{indicator}] fitting Model B (no WBGT spline)...")
+    model_b, mu_b = fit_nb_fixest(
+            nb_data, rhs_terms=rhs_b,
+            fe_terms=["facility"], cluster_col=CLUSTER_COL,
+        )
 
     total_a = float(mu_a.sum())
     total_b = float(mu_b.sum())
     total_y = float(nb_data["y_int"].sum())
-
     print(
-        f"  [{indicator}] sum(y)={total_y:,.0f}, "
-        f"sum(mu_A)={total_a:,.0f}, sum(mu_B)={total_b:,.0f}"
-    )
+            f"  [{indicator}] sum(y)={total_y:,.0f}, "
+            f"sum(mu_A)={total_a:,.0f}, sum(mu_B)={total_b:,.0f}"
+        )
 
-    deficit = {
-        "total_pred_exposure": total_a,
-        "total_pred_counterfactual": total_b,
-        "deficit_abs": total_a - total_b,
-        "deficit_pct": 100.0 * (total_a - total_b) / total_b,
-        "theta_a": nb_theta(model_a),
-        "theta_b": nb_theta(model_b),
-    }
+    deficit.update({
+            "total_pred_exposure": total_a,
+            "total_pred_counterfactual": total_b,
+            "deficit_abs": total_a - total_b,
+            "deficit_pct": 100.0 * (total_a - total_b) / total_b,
+            "theta_a": nb_theta(model_a),
+            "theta_b": nb_theta(model_b),
+        })
 
+    # ---- Jackknife CIs (aggregate + hot-months) ---------------------------
     try:
-        names_a, _, vcov_a = get_beta_vcov(model_a)
-        names_b, _, vcov_b = get_beta_vcov(model_b)
-        delta = two_model_deficit_analytical(mu_a, mu_b, names_a, vcov_a, names_b, vcov_b, nb_data)
-        deficit["ci_lo"] = delta["ci_lo"]
-        deficit["ci_hi"] = delta["ci_hi"]
-        deficit["deficit_se"] = delta["se_pct"]
-        deficit["p_analytical"] = delta["p_analytical"]
-        deficit["p_boot"] = delta["p_analytical"]
-        deficit["n_boot_ok"] = 0
+            fac_ids = nb_data["facility"].values
+            agg = monthly_deficit_with_jackknife_ci(mu_a, mu_b, fac_ids)
+            deficit["ci_lo"] = agg["ci_lo"]
+            deficit["ci_hi"] = agg["ci_hi"]
 
-        hot = nb_data[WBGT_VAR].values > REFERENCE_WBGT
-        if hot.any():
-            dh = two_model_deficit_analytical(
-                mu_a[hot], mu_b[hot], names_a, vcov_a, names_b, vcov_b, nb_data.loc[hot].reset_index(drop=True)
-            )
-            deficit["hot_deficit_pct"] = dh["deficit_pct"]
-            deficit["hot_deficit_ci_lo"] = dh["ci_lo"]
-            deficit["hot_deficit_ci_hi"] = dh["ci_hi"]
-            deficit["p_hot_analytical"] = dh["p_analytical"]
-        else:
-            for k in ("hot_deficit_pct", "hot_deficit_ci_lo", "hot_deficit_ci_hi", "p_hot_analytical"):
-                deficit[k] = np.nan
+            hot_mask = nb_data[WBGT_VAR].values > REFERENCE_WBGT
+            if hot_mask.any():
+                dh = monthly_deficit_with_jackknife_ci(
+                    mu_a[hot_mask], mu_b[hot_mask], fac_ids[hot_mask],
+                )
+                deficit["hot_deficit_pct"]   = dh["deficit_pct"]
+                deficit["hot_deficit_ci_lo"] = dh["ci_lo"]
+                deficit["hot_deficit_ci_hi"] = dh["ci_hi"]
+            else:
+                for k in ("hot_deficit_pct", "hot_deficit_ci_lo", "hot_deficit_ci_hi"):
+                    deficit[k] = np.nan
 
-        deficit["_names_a"], deficit["_vcov_a"] = names_a, vcov_a
-        deficit["_names_b"], deficit["_vcov_b"] = names_b, vcov_b
+            names_a, beta_a, vcov_a = get_beta_vcov(model_a)
+            names_b, beta_b, vcov_b = get_beta_vcov(model_b)
+            deficit["_names_a"], deficit["_beta_a"], deficit["_vcov_a"] = names_a, beta_a, vcov_a
+            deficit["_names_b"], deficit["_vcov_b"] = names_b, vcov_b
     except Exception as e:
-        print(f"  [{indicator}] Analytical CI failed: {type(e).__name__}: {e}")
-        for k in (
-            "ci_lo",
-            "ci_hi",
-            "deficit_se",
-            "p_analytical",
-            "hot_deficit_pct",
-            "hot_deficit_ci_lo",
-            "hot_deficit_ci_hi",
-            "p_hot_analytical",
-        ):
-            deficit[k] = np.nan
-        deficit["p_boot"] = np.nan
-        deficit["n_boot_ok"] = 0
+            print(f"  [{indicator}] CI extraction failed: {type(e).__name__}: {e}")
+            import traceback; traceback.print_exc()
+            for k in ("ci_lo", "ci_hi", "hot_deficit_pct",
+                      "hot_deficit_ci_lo", "hot_deficit_ci_hi"):
+                deficit[k] = np.nan
+    deficit["_names_a"], deficit["_vcov_a"] = names_a, vcov_a
+    deficit["_names_b"], deficit["_vcov_b"] = names_b, vcov_b
+
+    deficit["p_boot"] = np.nan
+    deficit["n_boot_ok"] = 0
     try:
         curve_df = make_exposure_response_curve(
             r_model=model_a,
@@ -771,7 +915,7 @@ def run_indicator(indicator: str) -> dict | None:
     deficit["n_obs"] = int(len(nb_data))
     deficit["n_fac"] = nb_data["facility"].nunique()
     deficit["n_clust"] = nb_data[CLUSTER_COL].nunique()
-    deficit["spline_df"] = SPLINE_DF
+    deficit["spline_df"] = chosen_df
     deficit["curve_ref"] = CURVE_REF
 
     # Store for post-processing — only addition to run_indicator
@@ -996,62 +1140,55 @@ if __name__ == "__main__":
     pd.DataFrame(burden_rows).to_csv(
         f"{OUT_DIR}historical_burden_summary.csv", index=False)
 
-    n_ind = len(fitted)
+    # monthly deficit panel — jackknife CI across facilities
+    n_ind  = len(fitted)
     n_cols = 3
     n_rows = int(np.ceil(n_ind / n_cols))
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4.5 * n_cols, 3 * n_rows), sharex=True)
+    fig, axes = plt.subplots(n_rows, n_cols,
+                              figsize=(4.5 * n_cols, 3 * n_rows),
+                              sharex=True)
     af = axes.flatten() if n_ind > 1 else [axes]
-    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    month_names = ["Jan","Feb","Mar","Apr","May","Jun",
+                   "Jul","Aug","Sep","Oct","Nov","Dec"]
 
     for idx, res in enumerate(all_results):
-        ax = af[idx]
-        ind = res["indicator"]
-        nb = res["_nb_data"]
-        mu_a, mu_b = res["_mu_a"], res["_mu_b"]
-        na, va = res.get("_names_a"), res.get("_vcov_a")
-        nb_names, vb = res.get("_names_b"), res.get("_vcov_b")
-        have_ci = va is not None and vb is not None
+        ax      = af[idx]
+        ind     = res["indicator"]
+        nb      = res["_nb_data"]
+        mu_a_m  = res["_mu_a"]
+        mu_b_m  = res["_mu_b"]
+        fac_ids = nb["facility"].values   # needed for jackknife
+        months  = nb["month"].values
 
-        months = nb["month"].values
         pcts, los, his = [], [], []
         for m in range(1, 13):
             mask = months == m
             if not mask.any():
-                pcts.append(0)
-                los.append(np.nan)
-                his.append(np.nan)
+                pcts.append(0); los.append(np.nan); his.append(np.nan)
                 continue
-            if have_ci:
-                d = two_model_deficit_analytical(
-                    mu_a[mask], mu_b[mask], na, va, nb_names, vb, nb.loc[mask].reset_index(drop=True)
-                )
-                pcts.append(d["deficit_pct"])
-                los.append(d["ci_lo"])
-                his.append(d["ci_hi"])
-            else:
-                sa, sb = float(mu_a[mask].sum()), float(mu_b[mask].sum())
-                pcts.append(100 * (sa - sb) / sb if sb > 0 else 0)
-                los.append(np.nan)
-                his.append(np.nan)
+
+            d = monthly_deficit_with_jackknife_ci(
+                mu_a_m[mask], mu_b_m[mask], fac_ids[mask]
+            )
+            pcts.append(d["deficit_pct"])
+            los.append(d["ci_lo"])
+            his.append(d["ci_hi"])
 
         pcts_a = np.asarray(pcts, dtype=float)
-        los_a = np.asarray(los, dtype=float)
-        his_a = np.asarray(his, dtype=float)
-        bar_c = ["#823038" if p < 0 else "#2a78d6" for p in pcts_a]
-
-        yerr = np.array(
-            [
-                np.nan_to_num(pcts_a - los_a, nan=0.0),
-                np.nan_to_num(his_a - pcts_a, nan=0.0),
-            ]
-        )
-        ax.bar(
-            range(12), pcts_a, color=bar_c, alpha=0.8, yerr=yerr, error_kw={"lw": 0.7, "capsize": 1.5, "ecolor": "#333"}
-        )
+        los_a  = np.asarray(los,  dtype=float)
+        his_a  = np.asarray(his,  dtype=float)
+        bar_c  = ["#823038" if p < 0 else "#2a78d6" for p in pcts_a]
+        yerr   = np.array([
+            np.nan_to_num(pcts_a - los_a, nan=0.0),
+            np.nan_to_num(his_a  - pcts_a, nan=0.0),
+        ])
+        ax.bar(range(12), pcts_a, color=bar_c, alpha=0.8, yerr=yerr,
+               error_kw={"lw": 0.7, "capsize": 1.5, "ecolor": "#333"})
         ax.set_xticks(range(12))
         ax.set_xticklabels(month_names, fontsize=6, rotation=45)
         ax.axhline(0, color="black", lw=0.5)
-        ax.set_title(INDICATOR_LABELS.get(ind, ind), fontsize=9, fontweight="bold")
+        ax.set_title(INDICATOR_LABELS.get(ind, ind),
+                     fontsize=9, fontweight="bold")
         if idx % n_cols == 0:
             ax.set_ylabel("% deficit", fontsize=7)
         ax.tick_params(labelsize=6)
@@ -1059,12 +1196,10 @@ if __name__ == "__main__":
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
     fig.suptitle(
-        "Two-model deficit by calendar month (95% analytical CI)\n"
-        "(mu_A − mu_B) / mu_B × 100;  red = heat reduced services",
-        fontsize=10,
-        fontweight="bold",
-        y=1.03,
-    )
+        "Two-model deficit by calendar month "
+        "(95% jackknife CI across facilities)\n"
+        "(mu_A − mu_B)/mu_B × 100;  red = heat reduced services",
+        fontsize=10, fontweight="bold", y=1.03)
     plt.tight_layout()
     plt.savefig(f"{OUT_DIR}deficit_by_month.png", dpi=180, bbox_inches="tight")
     plt.close()
@@ -1103,13 +1238,89 @@ if __name__ == "__main__":
     plt.savefig(f"{OUT_DIR}timeseries_burden.png", dpi=180, bbox_inches="tight")
     plt.close()
     print(f"  -> {OUT_DIR}historical_burden_summary.csv")
+    # -----------------------------------------------------------------------
+    # HISTORICAL BURDEN MAPS (per indicator)
+    # -----------------------------------------------------------------------
+    if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
+        import geopandas as gpd
 
+        gdf = gpd.read_file(SHAPEFILE_PATH)
+        print(f"\nHistorical burden maps (shapefile: {SHAPEFILE_PATH})...")
+
+        # Sanity check district name alignment.
+        district_col_data = CLUSTER_COL  # "Dist" in this script
+        if district_col_data in nb_data.columns:
+            data_dists = set(nb_data[district_col_data].dropna().unique())
+            shape_dists = set(gdf[DISTRICT_NAME_COL].dropna().unique())
+            missing_in_shape = data_dists - shape_dists
+            if missing_in_shape:
+                print(
+                    f"  WARNING: {len(missing_in_shape)} districts in data "
+                    f"not in shapefile: {sorted(missing_in_shape)[:5]}..."
+                )
+
+        for res in all_results:
+            ind = res["indicator"]
+            csv = f"{OUT_DIR}district_burden_{ind}.csv"
+            if not os.path.exists(csv):
+                print(f"  [{ind}] no district CSV — skipping map.")
+                continue
+            d = pd.read_csv(csv)
+            merged = gdf.merge(d, left_on=DISTRICT_NAME_COL, right_on=CLUSTER_COL, how="left")
+            vabs = float(np.nanpercentile(np.abs(d["deficit_pct"]), 98))
+
+            fig, ax = plt.subplots(figsize=(6, 8))
+            merged.plot(
+                column="deficit_pct",
+                cmap="RdBu_r",
+                vmin=-vabs,
+                vmax=vabs,
+                linewidth=0.5,
+                edgecolor="black",
+                legend=True,
+                ax=ax,
+                missing_kwds={"color": "lightgrey", "hatch": "///"},
+            )
+            ax.set_title(
+                f"{INDICATOR_LABELS.get(ind, ind)}\nHistorical two-model deficit by district (%)",
+                fontsize=11,
+                fontweight="bold",
+            )
+            ax.axis("off")
+            plt.tight_layout()
+            plt.savefig(f"{OUT_DIR}map_burden_{ind}.png", dpi=180, bbox_inches="tight")
+            plt.close()
+            print(f"  [{ind}] -> map_burden_{ind}.png")
+    else:
+        print(
+            f"\nSkipping historical burden maps: "
+            f"SHAPEFILE_PATH={SHAPEFILE_PATH}, "
+            f"exists={os.path.exists(SHAPEFILE_PATH) if SHAPEFILE_PATH else 'N/A'}"
+        )
     # -----------------------------------------------------------------------
     # FORWARD PROJECTIONS
     # -----------------------------------------------------------------------
     print("\nForward projections...")
     all_proj = []
-
+    print("\n=== PROJECTION STEP DIAGNOSTIC ===")
+    print(f"PROJECTION_DIR      = {PROJECTION_DIR}")
+    print(f"exists?             = {os.path.exists(PROJECTION_DIR)}")
+    if os.path.exists(PROJECTION_DIR):
+        subdirs = os.listdir(PROJECTION_DIR)
+        print(f"subdirs             = {subdirs[:10]}")
+        for ssp in SSP_SCENARIOS:
+            ssp_dir = f"{PROJECTION_DIR}/{ssp}"
+            print(f"  {ssp}: exists={os.path.exists(ssp_dir)}", end="")
+            if os.path.exists(ssp_dir):
+                files = os.listdir(ssp_dir)
+                print(f", contents={files[:5]}")
+            else:
+                print()
+    print(f"SSP_SCENARIOS       = {SSP_SCENARIOS}")
+    print(f"MODEL_TIERS         = {MODEL_TIERS}")
+    print(f"all_results present = {len(all_results)}")
+    print(f"Keys on first res   = {list(all_results[0].keys()) if all_results else 'EMPTY'}")
+    print("==================================\n")
     for res in all_results:
         ind         = res["indicator"]
         nb_data     = res["_nb_data"]
