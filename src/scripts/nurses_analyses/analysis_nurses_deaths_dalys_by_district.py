@@ -483,6 +483,141 @@ def extract_total_deaths_by_district(results_folder):
         do_scaling=True,
     )
 
+def calculate_percent_dalys_averted_by_district(
+    dalys_by_district,
+    baseline_scenario,
+):
+    pct_diff = (
+        -100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            dalys_by_district,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    summarized = summarize(pct_diff)
+    results = {}
+    scenario_names = (summarized.columns.get_level_values(0).unique())
+
+    for scenario in scenario_names:
+        results[scenario] = pd.DataFrame(
+            {
+                "mean": summarized[(scenario, "mean")],
+                "lower": summarized[(scenario, "lower")],
+                "upper": summarized[(scenario, "upper")],
+            }
+        )
+
+    return results
+
+def calculate_percent_deaths_averted_by_district(
+    deaths_by_district,
+    baseline_scenario,
+):
+
+    pct_diff = (
+        -100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            deaths_by_district,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    summarized = summarize(pct_diff)
+
+    results = {}
+
+    scenario_names = (
+        summarized.columns.get_level_values(0).unique()
+    )
+
+    for scenario in scenario_names:
+        results[scenario] = pd.DataFrame({
+            "mean": summarized[(scenario, "mean")],
+            "lower": summarized[(scenario, "lower")],
+            "upper": summarized[(scenario, "upper")],
+        })
+
+    return results
+
+
+def validate_dalys_by_district(
+    annual_dalys,
+    dalys_by_district,
+):
+    """
+    Check that total DALYs summed across districts equal the
+    national DALYs for every scenario, draw and run.
+    """
+
+    district_totals = (
+        dalys_by_district
+        .groupby(level="year")
+        .sum()
+    )
+
+    print("\n-- DALY VALIDATION --\n")
+
+    comparison = pd.concat(
+        {
+            "National": annual_dalys,
+            "District Total": district_totals,
+            "Difference": annual_dalys - district_totals,
+        },
+        axis=1,
+    )
+
+    print(comparison)
+
+    assert np.allclose(
+        annual_dalys.values,
+        district_totals.values,
+    )
+
+    print("\nDALY validation passed.\n")
+
+    return comparison
+
+
+def validate_deaths_by_district(
+    annual_deaths,
+    deaths_by_district,
+):
+    """
+    Check that total deaths summed across districts equal the
+    national deaths for every scenario, draw and run.
+    """
+
+    district_totals = (
+        deaths_by_district
+        .groupby(level="year")
+        .sum()
+    )
+
+    print("\n-- DEATH VALIDATION --\n")
+
+    comparison = pd.concat(
+        {
+            "National": annual_deaths,
+            "District Total": district_totals,
+            "Difference": annual_deaths - district_totals,
+        },
+        axis=1,
+    )
+
+    print(comparison)
+
+    assert np.allclose(
+        annual_deaths.values,
+        district_totals.values,
+    )
+
+    print("\nDeath validation passed.\n")
+
+    return comparison
+
 
 def plot_district_maps(gdf, scenario_names, title, colorbar_label):
     vmax = np.nanmax(np.abs(gdf[scenario_names].values))
@@ -578,6 +713,28 @@ if __name__ == "__main__":
     log = load_pickled_dataframes(results_folder)
     param_names = tuple(StaffingScenario()._scenarios.keys())
 
+    default_hs_scenarios = [
+        "Baseline Nurses / Default Healthsystem Function",
+        "Fewer Nurses / Default Healthsystem Function",
+        "More Nurses / Default Healthsystem Function",
+        "More CNP staff / Default Healthsystem Function",
+        "More Nurses by District / Default Healthsystem Function",
+        "More CNP staff by District / Default Healthsystem Function",
+    ]
+
+    baseline_scenario = "Baseline Nurses / Default Healthsystem Function"
+
+    improved_hs_scenarios = [
+        "Baseline Nurses / Improved Healthsystem Function",
+        "Fewer Nurses / Improved Healthsystem Function",
+        "More Nurses / Improved Healthsystem Function",
+        "More CNP staff / Improved Healthsystem Function",
+        "More Nurses by District / Improved Healthsystem Function",
+        "More CNP staff by District / Improved Healthsystem Function",
+    ]
+
+    baseline_improved_scenario = ("Baseline Nurses / Improved Healthsystem Function")
+
     # For staff counts
     staff_counts = extract_staff_counts(results_folder)
     staff_counts = set_param_names_as_column_index_level_0(
@@ -670,6 +827,19 @@ if __name__ == "__main__":
     annual_dalys = extract_annual_dalys(results_folder)
 
     dalys_by_district = extract_total_dalys_by_district(results_folder)
+    dalys_by_district_for_validation = extract_dalys_by_district(results_folder)
+
+    dalys_validation = validate_dalys_by_district(
+        annual_dalys,
+        dalys_by_district_for_validation,
+    )
+
+    # Sum district DALYs for each year
+    district_daly_totals = (
+        dalys_by_district_for_validation
+        .groupby(level="year")
+        .sum()
+    )
 
     # DALYs Default Healthsystem
     dalys_by_district = set_param_names_as_column_index_level_0(
@@ -677,27 +847,25 @@ if __name__ == "__main__":
         param_names
     )
 
-    district_mean = (dalys_by_district.groupby(level=0, axis=1).mean())
+    # Keep only Default Healthsystem scenarios
+    dalys_by_district_default = dalys_by_district.loc[
+                                :,
+                                dalys_by_district.columns.get_level_values(0).isin(default_hs_scenarios)
+                                ]
 
-    default_baseline = (
-        "Baseline Nurses / Default Healthsystem Function"
+    # Calculate % DALYs averted using run-to-run comparisons
+    percent_dalys_default = calculate_percent_dalys_averted_by_district(
+        dalys_by_district_default,
+        baseline_scenario=baseline_scenario,
     )
 
-    default_cols = [
-        c for c in district_mean.columns
-        if "Default Healthsystem Function" in c
-    ]
-
-    default_df_dalys = district_mean[default_cols]
-
-    default_pct = (
-        default_df_dalys
-        .subtract(default_df_dalys[default_baseline], axis=0)
-        .divide(default_df_dalys[default_baseline], axis=0)
-        * 100
+    # Convert dictionary of dataframes into one dataframe containing the means
+    default_pct = pd.DataFrame(
+        {
+            scenario: df["mean"]
+            for scenario, df in percent_dalys_default.items()
+        }
     )
-
-    default_pct = default_pct.drop(columns=default_baseline)
 
     # DALYs table for the two nurse expansion scenarios
     dalys_summary = default_pct[
@@ -752,26 +920,25 @@ if __name__ == "__main__":
         "% change in DALYs (vs Baseline)",
     )
 
-    # DALYs Improved Healthsystem
-    improved_baseline = (
-        "Baseline Nurses / Improved Healthsystem Function"
+    # Keep only Improved Healthsystem scenarios
+    dalys_by_district_improved = dalys_by_district.loc[
+                                 :,
+                                 dalys_by_district.columns.get_level_values(0).isin(improved_hs_scenarios)
+                                 ]
+
+    # Calculate % DALYs averted using run-to-run comparisons
+    percent_dalys_improved = calculate_percent_dalys_averted_by_district(
+        dalys_by_district_improved,
+        baseline_scenario=baseline_improved_scenario,
     )
 
-    improved_cols = [
-        c for c in district_mean.columns
-        if "Improved Healthsystem Function" in c
-    ]
-
-    improved_df_dalys = district_mean[improved_cols]
-
-    improved_pct = (
-        improved_df_dalys
-        .subtract(improved_df_dalys[improved_baseline], axis=0)
-        .divide(improved_df_dalys[improved_baseline], axis=0)
-        * 100
+    # Convert dictionary of dataframes into one dataframe containing the means
+    improved_pct = pd.DataFrame(
+        {
+            scenario: df["mean"]
+            for scenario, df in percent_dalys_improved.items()
+        }
     )
-
-    improved_pct = improved_pct.drop(columns=improved_baseline)
 
     district_map_improved = district_map.merge(
         improved_pct,
@@ -793,31 +960,52 @@ if __name__ == "__main__":
         "% change in DALYs (vs Baseline)",
     )
 
+    annual_deaths = extract_annual_deaths(results_folder)
+
     # Deaths Default Healthsystem
     deaths_by_district = extract_total_deaths_by_district(results_folder)
-    deaths_by_district = set_param_names_as_column_index_level_0(deaths_by_district, param_names)
-    district_mean_deaths = (deaths_by_district.groupby(level=0, axis=1).mean())
+    deaths_by_district_for_validation = extract_deaths_by_district(results_folder)
 
-    # default_baseline = (
-    #     "Baseline Nurses / Default Healthsystem Function"
-    # )
-
-    default_cols_deaths = [
-        c for c in district_mean.columns
-        if "Default Healthsystem Function" in c
-    ]
-
-    default_df_deaths = district_mean_deaths[default_cols_deaths]
-
-    default_pct_deaths = (
-        default_df_deaths
-        .subtract(default_df_deaths[default_baseline], axis=0)
-        .divide(default_df_deaths[default_baseline], axis=0)
-        * 100
+    deaths_validation = validate_deaths_by_district(
+        annual_deaths,
+        deaths_by_district_for_validation,
     )
 
-    default_pct_deaths = default_pct_deaths.drop(columns=default_baseline)
+    # Sum district deaths for each year
+    district_death_totals = (
+        deaths_by_district_for_validation
+        .groupby(level="year")
+        .sum()
+    )
 
+    deaths_by_district = set_param_names_as_column_index_level_0(
+        deaths_by_district,
+        param_names
+    )
+
+    # Keep only Default Healthsystem scenarios
+    deaths_by_district_default = deaths_by_district.loc[
+                                 :,
+                                 deaths_by_district.columns.get_level_values(0).isin(
+                                     default_hs_scenarios
+                                 )
+                                 ]
+
+    # Calculate % deaths averted using run-to-run comparisons
+    percent_deaths_default = calculate_percent_deaths_averted_by_district(
+        deaths_by_district_default,
+        baseline_scenario=baseline_scenario,
+    )
+
+    # Convert dictionary of dataframes into one dataframe containing the means
+    default_pct_deaths = pd.DataFrame(
+        {
+            scenario: df["mean"]
+            for scenario, df in percent_deaths_default.items()
+        }
+    )
+
+    # Table for Excel
     deaths_summary = default_pct_deaths[
         [
             "More Nurses / Default Healthsystem Function",
@@ -847,6 +1035,7 @@ if __name__ == "__main__":
         on=["District", "Scenario"],
         how="left",
     )
+
     print("\n---Table with DALYs and Deaths---")
     print(staff_summary.head())
 
@@ -875,22 +1064,27 @@ if __name__ == "__main__":
         "% change in Deaths (vs Baseline)",
     )
 
-    # Deaths Improved Healthsystem
-    improved_cols_deaths = [
-        c for c in district_mean.columns
-        if "Improved Healthsystem Function" in c
-    ]
+    # Keep only Improved Healthsystem scenarios
+    deaths_by_district_improved = deaths_by_district.loc[
+                                  :,
+                                  deaths_by_district.columns.get_level_values(0).isin(
+                                      improved_hs_scenarios
+                                  )
+                                  ]
 
-    improved_df_deaths = district_mean_deaths[improved_cols_deaths]
-
-    improved_pct_deaths = (
-        improved_df_deaths
-        .subtract(improved_df_deaths[improved_baseline], axis=0)
-        .divide(improved_df_deaths[improved_baseline], axis=0)
-        * 100
+    # Calculate % deaths averted using run-to-run comparisons
+    percent_deaths_improved = calculate_percent_deaths_averted_by_district(
+        deaths_by_district_improved,
+        baseline_scenario=baseline_improved_scenario,
     )
 
-    improved_pct_deaths = improved_pct_deaths.drop(columns=improved_baseline)
+    # Convert dictionary of dataframes into one dataframe containing the means
+    improved_pct_deaths = pd.DataFrame(
+        {
+            scenario: df["mean"]
+            for scenario, df in percent_deaths_improved.items()
+        }
+    )
 
     district_map_improved_deaths = district_map.merge(
         improved_pct_deaths,
@@ -937,3 +1131,54 @@ if __name__ == "__main__":
             dpi=300,
             bbox_inches="tight",
         )
+        validation_file = (
+            results_folder /
+            "district_vs_national_validation.xlsx"
+        )
+
+        with pd.ExcelWriter(
+            validation_file,
+            engine="openpyxl",
+        ) as writer:
+            # DALYs
+            annual_dalys.to_excel(
+                writer,
+                sheet_name="National_DALYs",
+            )
+
+            dalys_by_district_for_validation.to_excel(
+                writer,
+                sheet_name="District_DALYs",
+            )
+
+            district_daly_totals.to_excel(
+                writer,
+                sheet_name="District_DALY_Totals",
+            )
+
+            dalys_validation.to_excel(
+                writer,
+                sheet_name="DALY_Comparison",
+            )
+
+            # Deaths
+
+            annual_deaths.to_excel(
+                writer,
+                sheet_name="National_Deaths",
+            )
+
+            deaths_by_district_for_validation.to_excel(
+                writer,
+                sheet_name="District_Deaths",
+            )
+
+            district_death_totals.to_excel(
+                writer,
+                sheet_name="District_Death_Totals",
+            )
+
+            deaths_validation.to_excel(
+                writer,
+                sheet_name="Death_Comparison",
+            )
