@@ -1,227 +1,114 @@
 """
-map_results.py
+plot_district_indicator_heatmap.py
 
-District-level choropleth maps of WBGT-attributable service disruption for the
-DHIS2 / WBGT negative-binomial pipeline (companion to model_of_wbgt_dhis2.py).
-
-Reads the per-facility-month prediction files that that script writes, aggregates
-the two-model difference up to district level as a PERCENTAGE of baseline
-(no-weather) expected appointments, and draws:
-
-    (a) a single historical map          -> results_negbin_predictions_{service}.csv
-    (b) a 3 x 3 SSP x model-tier grid     -> projection_{scenario}_{model}_{service}.csv
-
-Population weighting is deliberately OUT of scope here.
-
---------------------------------------------------------------------------------
-FACILITY -> DISTRICT
---------------------------------------------------------------------------------
-No matching is done here. wbgt_facility_panels_all_indicators.py already resolved
-each reporting facility to a district (its `Dist` covariate) and wrote it into
-regression_panel_{indicator}.csv. The `facility` column in the prediction files
-comes straight through from that panel, so facility -> Dist is an exact join on
-the panel itself -- 100% coverage, no fuzzy matching, no wrong districts.
-
-SIGN CONVENTION: difference = y_pred_base - y_pred_wx, so a deficit (heat
-suppressing appointments) is difference > 0. We take that positive part below.
+Reads district_burden_{indicator}.csv files and plots a district × indicator
+heatmap of the two-model deficit (%). Diverging colormap centered on 0.
 """
 
-import warnings
-from pathlib import Path
-
-import geopandas as gpd
-import matplotlib.pyplot as plt
-from matplotlib import colors as mcolors
+import os
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-# ---------------------------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------------------------
-SERVICE = "vmmc_first_visits"          # must match `indicator`/`service` upstream
+OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 
-MODEL_OUT_DIR = Path("/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs")
-MAP_DIR       = Path("/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/Maps")
-MAP_DIR.mkdir(parents=True, exist_ok=True)
+INDICATOR_ORDER = [
+    "vmmc_first_visits",
+    "opd_attendance",
+    "ipd_total_admissions",
+    "measles1_under1",
+    "fully_immunised_under1",
+    "fp_total_clients",
+    "pnc_mother_checked_48h",
+    "penta3_under1",
+    "live_births_total",
+    "bcg_under1",
+    "pnc_within_2wks",
+]
 
-# Regression panels written by wbgt_facility_panels_all_indicators.py (carry Dist)
-PANEL_DIR      = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices")
-PANEL_FAC_COL  = "facility"
-PANEL_DIST_COL = "Dist"
+INDICATOR_LABELS = {
+    "fp_total_clients":         "FP Total Clients",
+    "opd_attendance":           "OPD Attendance",
+    "ipd_total_admissions":     "IPD Total Admissions",
+    "vmmc_first_visits":        "VMMC First Visits",
+    "pnc_mother_checked_48h":   "PNC Mother <48h",
+    "bcg_under1":               "BCG Under-1",
+    "penta3_under1":            "Penta3 Under-1",
+    "measles1_under1":          "Measles 1st Dose Under-1",
+    "fully_immunised_under1":   "Fully Immunised Under-1",
+    "pnc_within_2wks":          "PNC Within 2 Weeks",
+    "live_births_total":        "Live Births Total",
+}
 
-# Shapefiles (admin2 ships inside the repo; rivers is cosmetic)
-ADMIN2_SHP = Path("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/mapping/"
-                  "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
-WATER_SHP  = Path("/Users/rachelmurray-watson/Documents/Heat_data/"
-                  "Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
+# Build long-format table.
+rows = []
+for ind in INDICATOR_ORDER:
+    path = f"{OUT_DIR}district_burden_{ind}.csv"
+    if not os.path.exists(path):
+        print(f"  [{ind}] no district CSV — skipping")
+        continue
+    df = pd.read_csv(path)
+    for _, r in df.iterrows():
+        rows.append({
+            "district":  r["Dist"],
+            "indicator": ind,
+            # Flip sign so positive = services lost to heat.
+            "services_lost_pct": -r["deficit_pct"],
+        })
 
-ON_UNMATCHED = "raise"                 # "raise" or "warn" for facilities absent from the panel
+wide = (pd.DataFrame(rows)
+        .pivot(index="district", columns="indicator", values="services_lost_pct")
+        .reindex(columns=INDICATOR_ORDER))
 
-# Projection dimensions (match the model script)
-SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
-WBGT_MODELS   = ["lowest", "median", "highest"]
+# Order districts north → south (rough Malawi latitude order).
+DISTRICT_ORDER = [
+    "Chitipa", "Karonga", "Likoma", "Rumphi", "Mzimba", "Nkhata Bay",
+    "Kasungu", "Nkhotakota", "Ntchisi", "Dowa", "Salima", "Lilongwe",
+    "Mchinji", "Dedza", "Ntcheu", "Mangochi", "Balaka", "Machinga",
+    "Zomba", "Chiradzulu", "Blantyre", "Mwanza", "Neno", "Phalombe",
+    "Mulanje", "Thyolo", "Chikwawa", "Nsanje",
+    "Mzuzu City", "Lilongwe City", "Blantyre City", "Zomba City",
+]
+wide = wide.reindex([d for d in DISTRICT_ORDER if d in wide.index])
 
-# Shared colour scale for the 9-panel grid (set both to None to autoscale)
-GRID_VMIN = 0.0
-GRID_VMAX = 5.0
+# Symmetric limits so 0 is white.
+vabs = float(np.nanpercentile(np.abs(wide.values), 95))
 
-# % denominator:  "all" = share of all baseline expected appts (interpretable);
-#                 "deficit" = baseline over deficit months only (old precip script).
-PCT_DENOMINATOR = "all"
+fig, ax = plt.subplots(figsize=(11, max(6, 0.4 * len(wide) + 2)))
+im = ax.imshow(wide.values, cmap="RdBu_r", vmin=-vabs, vmax=vabs, aspect="auto")
 
-CMAP = "Blues"
+ax.set_xticks(range(len(wide.columns)))
+ax.set_xticklabels(
+    [INDICATOR_LABELS.get(c, c) for c in wide.columns],
+    rotation=40, ha="right", fontsize=9,
+)
+ax.set_yticks(range(len(wide.index)))
+ax.set_yticklabels(wide.index, fontsize=8)
 
-# ---------------------------------------------------------------------------
-# Geometry
-# ---------------------------------------------------------------------------
-def _harmonise_district_names(s: pd.Series) -> pd.Series:
-    return (s.replace({"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"})
-             .replace({"Blantyre City": "Blantyre", "Mzuzu City": "Mzuzu",
-                       "Lilongwe City": "Lilongwe", "Zomba City": "Zomba"}))
+# Annotate cells.
+for i in range(len(wide.index)):
+    for j in range(len(wide.columns)):
+        v = wide.values[i, j]
+        if pd.notna(v) and abs(v) >= 0.05:   # skip near-zero to reduce clutter
+            ax.text(j, i, f"{v:+.1f}",
+                    ha="center", va="center",
+                    fontsize=6.5, color="black" if abs(v) < vabs*0.7 else "white")
 
+ax.set_title(
+    "District × indicator heat-attributable service loss (%)\n"
+    "Positive = services lost, negative = services gained under heat",
+    fontsize=11, fontweight="bold",
+)
 
-print("Loading shapefiles...")
-malawi_admin2 = gpd.read_file(ADMIN2_SHP)
-malawi_admin2["ADM2_EN"] = _harmonise_district_names(malawi_admin2["ADM2_EN"])
-if malawi_admin2.crs is None:
-    warnings.warn("admin2 shapefile had no CRS; assuming EPSG:4326.")
-    malawi_admin2 = malawi_admin2.set_crs("EPSG:4326")
+cbar = fig.colorbar(im, ax=ax, shrink=0.8, aspect=25, pad=0.02)
+cbar.set_label("% services lost to heat", fontsize=9)
 
-if WATER_SHP.exists():
-    water_bodies = gpd.read_file(WATER_SHP)
-    if water_bodies.crs is None:
-        water_bodies = water_bodies.set_crs("EPSG:4326")
-else:
-    warnings.warn(f"water shapefile not found at {WATER_SHP}; maps drawn without it.")
-    water_bodies = None
+# Separator between rural districts and cities.
+n_rural = sum(1 for d in wide.index if "City" not in d)
+if n_rural < len(wide.index):
+    ax.axhline(n_rural - 0.5, color="black", lw=1.2, linestyle="--")
 
-# ---------------------------------------------------------------------------
-# Facility -> district: read Dist straight from the regression panel
-# ---------------------------------------------------------------------------
-print("Reading facility -> district from regression panel...")
-_panel_path = PANEL_DIR / f"regression_panel_{SERVICE}.csv"
-if not _panel_path.exists():
-    raise FileNotFoundError(
-        f"{_panel_path} not found -- point PANEL_DIR/SERVICE at the panel that "
-        "wbgt_facility_panels_all_indicators.py wrote.")
-
-_panel = pd.read_csv(_panel_path, usecols=[PANEL_FAC_COL, PANEL_DIST_COL])
-crosswalk = (_panel.dropna(subset=[PANEL_DIST_COL])
-             .drop_duplicates(PANEL_FAC_COL)
-             .rename(columns={PANEL_FAC_COL: "facility", PANEL_DIST_COL: "district"}))
-crosswalk["district"] = _harmonise_district_names(crosswalk["district"])
-
-stray = set(crosswalk["district"]) - set(malawi_admin2["ADM2_EN"])
-if stray:
-    warnings.warn(f"Dist values not in admin2 shapefile (won't colour): {stray}")
-print(f"  crosswalk: {len(crosswalk)} facilities, "
-      f"{crosswalk['district'].nunique()} districts")
-
-
-# ---------------------------------------------------------------------------
-# prediction file -> per-district % disruption
-# ---------------------------------------------------------------------------
-def district_percentage_disruption(pred_path: Path) -> pd.Series:
-    df = pd.read_csv(pred_path, parse_dates=["date"])
-    for c in ("difference", "y_pred_base", "facility"):
-        if c not in df.columns:
-            raise KeyError(f"'{c}' missing from {pred_path.name} "
-                           f"(have {list(df.columns)})")
-
-    df = df.merge(crosswalk, on="facility", how="left")
-    unmatched = sorted(df.loc[df["district"].isna(), "facility"].unique())
-    if unmatched:
-        msg = (f"{len(unmatched)} facilities in {pred_path.name} absent from the "
-               f"panel crosswalk: {unmatched[:5]}")
-        if ON_UNMATCHED == "raise":
-            raise ValueError(msg + "  -- the predictions and panel disagree on "
-                             "facilities; check SERVICE. Or set ON_UNMATCHED='warn'.")
-        warnings.warn(msg)
-        df = df.dropna(subset=["district"])
-
-    deficit = df.assign(deficit=df["difference"].clip(lower=0))
-    num = deficit.groupby("district")["deficit"].sum()
-    if PCT_DENOMINATOR == "all":
-        den = df.groupby("district")["y_pred_base"].sum()
-    elif PCT_DENOMINATOR == "deficit":
-        den = deficit.loc[deficit["deficit"] > 0].groupby("district")["y_pred_base"].sum()
-    else:
-        raise ValueError("PCT_DENOMINATOR must be 'all' or 'deficit'")
-
-    return ((num / den) * 100.0).reindex(num.index)
-
-
-# ---------------------------------------------------------------------------
-# Plot helpers
-# ---------------------------------------------------------------------------
-def _draw_choropleth(ax, pct_by_district: pd.Series, vmin, vmax, annotate=True):
-    gdf = malawi_admin2.copy()
-    gdf["pct"] = gdf["ADM2_EN"].map(pct_by_district)
-    if water_bodies is not None:
-        water_bodies.plot(ax=ax, facecolor="none", edgecolor="#999999",
-                          linewidth=0.5, hatch="xxx")
-        water_bodies.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=1)
-    gdf.dropna(subset=["pct"]).plot(
-        ax=ax, column="pct", cmap=CMAP, edgecolor="black", alpha=1,
-        legend=False, vmin=vmin, vmax=vmax)
-    if annotate:
-        m, sd = gdf["pct"].mean(), gdf["pct"].std()
-        ax.text(0.01, 0.10, f"Mean: {m:.2f}%\nSD: {sd:.2f}%",
-                transform=ax.transAxes, fontsize=10, verticalalignment="top")
-    return gdf
-
-
-def plot_historical():
-    path = MODEL_OUT_DIR / f"results_negbin_predictions_{SERVICE}.csv"
-    print(f"\nHistorical map <- {path.name}")
-    pct = district_percentage_disruption(path)
-    fig, ax = plt.subplots(figsize=(10, 10))
-    vmin = 0.0 if GRID_VMIN is None else GRID_VMIN
-    vmax = float(np.nanmax(pct.values)) if GRID_VMAX is None else GRID_VMAX
-    _draw_choropleth(ax, pct, vmin, vmax)
-    ax.set_xlabel("Longitude", fontsize=10); ax.set_ylabel("Latitude", fontsize=10)
-    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=mcolors.Normalize(vmin=vmin, vmax=vmax))
-    sm.set_array([])
-    fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8,
-                 label="Potential disruption (%)")
-    out = MAP_DIR / f"wbgt_disruption_map_historical_{SERVICE}.png"
-    plt.tight_layout(); plt.savefig(out, dpi=600); plt.close()
-    print(f"  saved {out}")
-
-
-def plot_projection_grid():
-    print("\nProjection grid (SSP x model tier)")
-    fig, axes = plt.subplots(len(SSP_SCENARIOS), len(WBGT_MODELS), figsize=(18, 18))
-    for i, scenario in enumerate(SSP_SCENARIOS):
-        for j, model in enumerate(WBGT_MODELS):
-            ax = axes[i, j]
-            path = MODEL_OUT_DIR / f"projection_{scenario}_{model}_{SERVICE}.csv"
-            if not path.exists():
-                ax.set_axis_off()
-                ax.text(0.5, 0.5, f"{scenario}/{model}\n(missing)", ha="center",
-                        va="center", transform=ax.transAxes, fontsize=11, color="grey")
-                print(f"  {scenario}/{model}: file not found -- blank panel")
-                continue
-            pct = district_percentage_disruption(path)
-            _draw_choropleth(ax, pct, GRID_VMIN, GRID_VMAX)
-            ax.set_title(f"{scenario}: {model}", fontsize=14)
-            if i == len(SSP_SCENARIOS) - 1:
-                ax.set_xlabel("Longitude", fontsize=10)
-            if j == 0:
-                ax.set_ylabel("Latitude", fontsize=10)
-            print(f"  {scenario}/{model}: {pct.notna().sum()} districts")
-
-    sm = plt.cm.ScalarMappable(cmap=CMAP,
-                               norm=mcolors.Normalize(vmin=GRID_VMIN, vmax=GRID_VMAX))
-    sm.set_array([])
-    fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8,
-                 label="Potential disruption (%)")
-    out = MAP_DIR / f"wbgt_disruption_maps_projection_grid_{SERVICE}.png"
-    plt.savefig(out, dpi=600); plt.close()
-    print(f"  saved {out}")
-
-
-if __name__ == "__main__":
-    plot_historical()
-    plot_projection_grid()
-    print("\nDone.")
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}district_indicator_heatmap.png", dpi=180, bbox_inches="tight")
+plt.close()
+print(f"Saved -> {OUT_DIR}district_indicator_heatmap.png")
