@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import patsy
-from joblib import Parallel, delayed
+from pathlib import Path
 
 os.environ.setdefault("R_HOME", "/Library/Frameworks/R.framework/Resources")
 
@@ -295,7 +295,7 @@ def two_model_deficit_analytical(mu_a, mu_b, names_a, vcov_a,
     if sum_b <= 0:
         return dict(deficit_pct=np.nan, ci_lo=np.nan, ci_hi=np.nan,
                     se_pct=np.nan, p_analytical=np.nan)
-    deficit_pct = 100.0 * (sum_a - sum_b) / sum_b
+    deficit_pct = 100.0 * (sum_b - sum_a) / sum_b
 
     def _grad(mu_vec, names, scale):
         g = np.zeros(len(names))
@@ -325,7 +325,7 @@ def monthly_deficit_with_jackknife_ci(
     facility_ids: np.ndarray,
 ) -> dict:
     """
-    Point estimate + 95% jackknife CI for (sum_A - sum_B)/sum_B * 100.
+    Point estimate + 95% jackknife CI for (sum_B - sum_A)/sum_B * 100.
     Leave-one-facility-out. Used for the monthly descriptive panel only.
     """
     sum_a = float(mu_a.sum())
@@ -333,7 +333,7 @@ def monthly_deficit_with_jackknife_ci(
     if sum_b <= 0:
         return dict(deficit_pct=np.nan, ci_lo=np.nan, ci_hi=np.nan)
 
-    deficit_pct = 100.0 * (sum_a - sum_b) / sum_b
+    deficit_pct = 100.0 * (sum_b - sum_a) / sum_b
     facs = np.unique(facility_ids)
     n    = len(facs)
     if n < 3:
@@ -650,6 +650,14 @@ def save_exposure_response_plot(curve_df: pd.DataFrame, indicator: str):
     label = INDICATOR_LABELS.get(indicator, indicator)
     x_ref = float(curve_df["wbgt_ref"].iloc[0])
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
+
+    # Shaded band if CIs are present.
+    if curve_df["rr_lo"].notna().any():
+        ax.fill_between(
+            curve_df["wbgt"], curve_df["rr_lo"], curve_df["rr_hi"],
+            color="#2f5d80", alpha=0.2, linewidth=0,
+        )
+
     ax.plot(curve_df["wbgt"], curve_df["rr_vs_ref"], color="#2f5d80", lw=2)
     ax.axhline(1.0, color="black", ls="--", lw=0.9)
     ax.axvline(x_ref, color="#888888", ls=":", lw=1.0)
@@ -665,8 +673,6 @@ def save_exposure_response_plot(curve_df: pd.DataFrame, indicator: str):
         f"{OUT_DIR}exposure_response_curve_{indicator}.png",
         dpi=180, bbox_inches="tight")
     plt.close()
-
-
 # ---------------------------------------------------------------------------
 # BH-FDR
 # ---------------------------------------------------------------------------
@@ -717,7 +723,7 @@ def _boot_replicate(seed_seq, nb_data, dist_index, dist_ids,
         total_a, total_b = float(mu_a.sum()), float(mu_b.sum())
         if total_b == 0:
             return None, "zero_counterfactual"
-        pct = 100.0 * (total_a - total_b) / total_b
+        pct = 100.0 * (total_b - total_a) / total_b
         if not np.isfinite(pct):
             return None, "non-finite"
         return pct, None
@@ -819,8 +825,8 @@ def run_indicator(indicator: str) -> dict | None:
     deficit.update({
         "total_pred_exposure":       total_a,
         "total_pred_counterfactual": total_b,
-        "deficit_abs":               total_a - total_b,
-        "deficit_pct":               100.0 * (total_a - total_b) / total_b,
+        "deficit_abs":               total_b - total_a,
+        "deficit_pct":               100.0 * (total_b - total_a) / total_b,
         "theta_a":                   nb_theta(model_a),
         "theta_b":                   nb_theta(model_b),
     })
@@ -1386,7 +1392,7 @@ if __name__ == "__main__":
     fig.suptitle(
         "Two-model deficit by calendar month "
         "(95% jackknife CI across facilities)\n"
-        "(mu_A − mu_B)/mu_B × 100;  red = heat reduced services",
+        "(mu_B − mu_A)/mu_B × 100;  red = heat reduced services",
         fontsize=10, fontweight="bold", y=1.03)
     plt.tight_layout()
     plt.savefig(f"{OUT_DIR}deficit_by_month.png", dpi=180, bbox_inches="tight")
