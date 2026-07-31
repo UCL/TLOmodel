@@ -506,6 +506,9 @@ class NewbornOutcomes(Module):
             'early_onset_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
+            'late_onset_sepsis_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
+
             # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
             'respiratory_distress_syndrome_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_respiratory_distress_death, parameters=params)}

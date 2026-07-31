@@ -346,7 +346,7 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
 
     # --- 2) Labour / PS analysis override for specific HSIs ---
     if l_params["la_analysis_in_progress"] or (
-        p_params["ps_analysis_in_progress"] and not p_params["interventions_under_analysis"]
+        p_params["ps_analysis_in_progress"] and not p_params["interventions_analysis"]
     ):
         params = current_module_params()
 
@@ -710,7 +710,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
             causes.append('other_anomaly')
 
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
-    # complication they experiencing and store in a dictionary, using each cause as the key
+    # complication they are experiencing and store in a dictionary, using each cause as the key
     if causes:
         risks = dict()
         for cause in causes:

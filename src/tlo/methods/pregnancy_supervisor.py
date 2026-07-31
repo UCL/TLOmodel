@@ -1431,6 +1431,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
                 self.mnh_outcome_counter['direct_mat_death'] += 1
 
+                if df.at[person, 'ps_gestational_age_in_weeks'] >= 28:
+                    self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+
                 self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
 
@@ -1620,31 +1623,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
             id_or_index=women.index)
 
-    def update_variables_post_still_birth_for_individual(self, individual_id):
-        """
-        This function is called to reset all the relevant pregnancy and treatment variables for a woman who undergoes
-        stillbirth outside of the PregnancySupervisor polling event.
-        :param individual_id: individual_id
-        """
-        df = self.sim.population.props
-        mni = self.mother_and_newborn_info
-
-        df.at[individual_id, 'ps_prev_stillbirth'] = True
-        mni[individual_id]['delete_mni'] = True
-
-        self.mnh_outcome_counter['antenatal_stillbirth'] += 1
-
-        # Reset pregnancy and schedule possible update of contraception
-        self.sim.modules['Contraception'].end_pregnancy(individual_id)
-
-        self.sim.modules['Labour'].reset_due_date(
-            id_or_index=individual_id, new_due_date=pd.NaT)
-
-        self.pregnancy_supervisor_property_reset(id_or_index=individual_id)
-
-        self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
-            id_or_index=individual_id)
-
     def apply_risk_of_still_birth(self, gestation_of_interest):
         """
         This function applies risk of still birth to a slice of the data frame. It is called by PregnancySupervisorEvent
@@ -1768,6 +1746,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
             self.mnh_outcome_counter['direct_mat_death'] += 1
+
+            if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 28:
+                self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+
             del mni[individual_id]
 
         # If not we reset variables and the woman survives
@@ -2566,7 +2548,10 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             return (treatments / cases) * 100
 
         pph_ua_need_blood = c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])
-        pph_mrp_need_blood = c['pph_retained_placenta'] * (1 - la_params['prob_successful_manual_removal_placenta'])
+
+        pph_mrp_need_blood = ((c['pph_retained_placenta'] * (1 - la_params['prob_successful_manual_removal_placenta']))
+                              +  (c['secondary_postpartum_haemorrhage'] *
+                                  (1 - la_params['prob_successful_manual_removal_placenta'])))
 
         logger.info(key="met_need",
                     data={'pac_ep': met_need((c['post_abortion_care_core_deliv'] +
@@ -2581,7 +2566,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                  c['pph_uterine_atony']),
 
                           'haem_cm_mrp': met_need(c['pph_treatment_mrrp_deliv'],
-                                                  c['pph_retained_placenta']),
+                                                  c['pph_retained_placenta'] + c['secondary_postpartum_haemorrhage']),
 
                           'haem_cm_blood_pph': met_need(c['blood_transfusion_pph_deliv'],
                                                         pph_ua_need_blood + pph_mrp_need_blood),
