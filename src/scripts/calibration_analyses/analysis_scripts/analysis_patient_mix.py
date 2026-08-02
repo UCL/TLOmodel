@@ -141,7 +141,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
         # map Event_Name with TLM service area
-        # todo: need to update the HSI list in the map based on long-run simulation output
+        # update the HSI list in the map based on long-run simulation output
+        # X = _df[["Event_Name", "Facility_Level", "Number_By_Appt_Type_Code"]].copy()
+        # X["Number_By_Appt_Type_Code_Tuple"] = (
+        #     X["Number_By_Appt_Type_Code"]
+        #     .apply(lambda x: tuple(sorted(x.items())))
+        # )
+        # X["Appt_Type_Code"] = (
+        #     X["Number_By_Appt_Type_Code"]
+        #     .apply(lambda x: ",".join(sorted(map(str, x.keys()))))
+        # )
+        # X_unique = (
+        #     X.drop_duplicates(
+        #         subset=[
+        #             "Event_Name",
+        #             "Facility_Level",
+        #             "Appt_Type_Code",
+        #         ]
+        #     )
+        #     .reset_index(drop=True)
+        #     .rename(columns={
+        #         "Event_Name": "Event",
+        #         "Facility_Level": "Facility level",
+        #         "Appt_Type_Code": "Appointment footprint",
+        #     })
+        # )
+        #
+        # hsi_list_0 = pd.read_csv(path_to_tlm_folder / 'hsi_tlm_service_area_map.csv')
+        # hsi_list_full = (
+        #     pd.merge(
+        #         X_unique,
+        #         hsi_list_0,
+        #         on=["Event", "Appointment footprint", "Facility level"],
+        #         how="outer",
+        #     )
+        #     .reset_index(drop=True)
+        # )
+
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
         # check that all events are mapped
