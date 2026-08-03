@@ -660,7 +660,7 @@ def plot_district_maps(gdf, scenario_names, title, colorbar_label):
 
     # Plot maps
     for ax, scenario in zip(axes, scenario_names):
-        gdf.plot(column=scenario, cmap="coolwarm", edgecolor="black", linewidth=0.4, legend=False,
+        gdf.plot(column=scenario, cmap="coolwarm_r", edgecolor="black", linewidth=0.4, legend=False,
                             vmin=-vmax, vmax=vmax, ax=ax)
         ax.set_title(label_map[scenario], fontsize=12)
         ax.axis("off")
@@ -670,7 +670,7 @@ def plot_district_maps(gdf, scenario_names, title, colorbar_label):
         ax.axis("off")
 
     # Shared colour bar
-    sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(-vmax, vmax))
+    sm = plt.cm.ScalarMappable(cmap="coolwarm_r", norm=plt.Normalize(-vmax, vmax))
     sm.set_array([])
     fig.colorbar(sm, ax=axes, location="right", shrink=0.85, pad=0.02, label=colorbar_label,)
     fig.suptitle(title, fontsize=15)
