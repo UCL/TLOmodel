@@ -174,9 +174,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         #         hsi_list_0,
         #         on=["Event", "Appointment footprint", "Facility level"],
         #         how="outer",
+        #         indicator="Source",
         #     )
         #     .reset_index(drop=True)
         # )
+        #
+        # hsi_list_full["Source"] = hsi_list_full["Source"].map({
+        #     "left_only": "sim_output",
+        #     "right_only": "hsi_list",
+        #     "both": "Both",
+        # })
 
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
@@ -187,7 +194,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
              "HSI_GenericNonEmergencyFirstAppt", "HSI_Hiv_SelfTest", "HSI_Malaria_rdt_community", "HSI_Schisto_MDA",
              "Inpatient_Care"})
 
-        # todo: drop duplicated persons in the target period?
+        # drop duplicated persons in the target period
         # Duplicated case 1: same person id received multiple HSIs on a day, including generic fist appt
         # Duplicated case 2: same person id received multiple HSIs due to the same episode of condition
         # in the target period, such as inpatient postnatal care
