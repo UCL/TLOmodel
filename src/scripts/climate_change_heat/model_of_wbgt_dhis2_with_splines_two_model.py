@@ -89,15 +89,15 @@ INDICATOR_LABELS: dict[str, str] = {
     "skilled_deliveries":         "Skilled Deliveries",
 }
 
-WBGT_VAR      = "wbgt5x_day"
-SPLINE_DF     = 4
+WBGT_VAR      = "wbgt_day"
+SPLINE_DF     = 3
 LAG_MONTHS    = [1, 2, 3, 4]
 CENTER        = True
 MIN_OBS       = int(0.3 * 12 * 12)
-
-min_year_historical = 2016
+REFERENCE_WBGT_PERCENTILE = 95
+min_year_historical = 2015
 max_year_historical = 2025
-apply_cap           = True
+apply_cap           = False
 WINSOR_K            = 5.0
 
 N_CURVE_POINTS = 200
@@ -118,7 +118,9 @@ SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
-N_BOOTSTRAP     = 0
+N_BOOTSTRAP     = 500      # >0 turns on the district block bootstrap for the
+                           # DEFICIT CIs only (aggregate + hot-month). IRR and
+                           # exposure-response curve stay on the delta method.
 BOOT_SEED       = 42
 BOOT_CI_LEVEL   = 0.95
 BOOT_MIN_SUCCESS = 0.80
@@ -126,7 +128,6 @@ N_JOBS          = 1
 
 FDR_ALPHA = 0.05
 
-REFERENCE_WBGT = 28.0
 WBGT_GRID      = np.arange(20.0, 37.0, 0.5)
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -439,7 +440,7 @@ def winsorise_by_facility(
                     "upper_fence": upper,
                     "q3": q3, "iqr": iqr,
                 })
-            df.loc[mask, y_col] = np.nan
+            df.loc[mask, y_col] = upper
             n_replaced += n
             print(
                 f"  [{indicator}] {fac}: {n} value(s) > {upper:.0f} "
@@ -490,6 +491,8 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
     long["year"]  = long["date"].dt.year
     long["month"] = long["date"].dt.month
     long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
+    precip = pd.read_csv("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/precip_long.csv", parse_dates=["date"])
+    long = long.merge(precip, on=["facility", "date"], how="left")
 
     if apply_cap:
         long = winsorise_by_facility(
@@ -744,7 +747,8 @@ def bh_fdr(pvals, alpha=0.05):
 # Bootstrap replicate
 # ---------------------------------------------------------------------------
 def _boot_replicate(seed_seq, nb_data, dist_index, dist_ids,
-                    rhs_a, rhs_b, fe_spec, fe_cols, cluster_col):
+                    rhs_a, rhs_b, fe_spec, fe_cols, cluster_col,
+                    hot_threshold):
     ro.conversion.converter_ctx.set(ro.default_converter)
     rng   = np.random.default_rng(seed_seq)
     picks = rng.choice(len(dist_ids), size=len(dist_ids), replace=True)
@@ -771,7 +775,15 @@ def _boot_replicate(seed_seq, nb_data, dist_index, dist_ids,
         pct = 100.0 * (total_b - total_a) / total_b
         if not np.isfinite(pct):
             return None, "non-finite"
-        return pct, None
+        # hot-month deficit on the SAME resample (this is what the forest plot
+        # shows, so it needs a bootstrap CI too, not the analytical one).
+        hot = boot_df[WBGT_VAR].values > hot_threshold
+        pct_hot = np.nan
+        if hot.any():
+            ta_h, tb_h = float(mu_a[hot].sum()), float(mu_b[hot].sum())
+            if tb_h > 0:
+                pct_hot = 100.0 * (tb_h - ta_h) / tb_h
+        return (pct, pct_hot), None
     except Exception as e:
         return None, f"{type(e).__name__}: {str(e)[:80]}"
 
@@ -840,6 +852,7 @@ def run_indicator(indicator: str) -> dict | None:
         deficit["_df_table"] = pd.DataFrame([{"df": chosen_df, "aic": np.nan}])
 
     deficit["chosen_df"] = chosen_df
+    deficit["reference_wbgt"] = np.nanpercentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
 
     # ------------------------------------------------------------------
     # Fit Model A and Model B at chosen df
@@ -859,7 +872,7 @@ def run_indicator(indicator: str) -> dict | None:
             fe_spec=fe_spec, fe_cols = fe_cols, cluster_col=CLUSTER_COL)
     except Exception as e:
         print(f"  [{indicator}] fenegbin failed: {e} — skipping.")
-        return None
+        return None, None
 
     total_a = float(mu_a.sum())
     total_b = float(mu_b.sum())
@@ -902,7 +915,7 @@ def run_indicator(indicator: str) -> dict | None:
         deficit["p_analytical"] = delta["p_analytical"]
         deficit["p_boot"]       = delta["p_analytical"]
 
-        hot = nb_data[WBGT_VAR].values > REFERENCE_WBGT
+        hot = nb_data[WBGT_VAR].values > deficit["reference_wbgt"]
         if hot.any():
             dh = two_model_deficit_analytical(
                 mu_a[hot], mu_b[hot],
@@ -969,12 +982,16 @@ def run_indicator(indicator: str) -> dict | None:
                 CLUSTER_COL, sort=False).indices.items()
         }
         seeds = np.random.SeedSequence(BOOT_SEED).spawn(N_BOOTSTRAP)
+        hot_thr = deficit["reference_wbgt"]
         out   = [
             _boot_replicate(s, nb_data, dist_index, dist_ids,
-                            rhs_a, rhs_b, fe_spec, fe_cols, CLUSTER_COL)
+                            rhs_a, rhs_b, fe_spec, fe_cols, CLUSTER_COL,
+                            hot_thr)
             for s in seeds
         ]
-        boot_pcts = [v for v, err in out if err is None]
+        boot_pcts     = [v[0] for v, err in out if err is None]
+        boot_pcts_hot = [v[1] for v, err in out
+                         if err is None and np.isfinite(v[1])]
         for _, err in out:
             if err is not None:
                 failures[err] += 1
@@ -986,6 +1003,7 @@ def run_indicator(indicator: str) -> dict | None:
                 f"[{indicator}] Only {n_ok}/{N_BOOTSTRAP} replicates converged.")
         alpha     = 1 - BOOT_CI_LEVEL
         boot_arr  = np.asarray(boot_pcts)
+        # --- aggregate deficit CI (bootstrap) ---
         deficit["ci_lo"]     = float(np.percentile(boot_arr, 100 * alpha / 2))
         deficit["ci_hi"]     = float(np.percentile(boot_arr, 100 * (1 - alpha / 2)))
         deficit["n_boot_ok"] = n_ok
@@ -993,6 +1011,20 @@ def run_indicator(indicator: str) -> dict | None:
         frac_ge = float(np.mean(boot_arr >= 0))
         deficit["p_boot"] = float(
             min(1.0, max(2 * min(frac_le, frac_ge), 1.0 / (n_ok + 1))))
+        # --- hot-month deficit CI (bootstrap) — THIS is what the forest plot
+        #     shows, so overwrite the analytical hot CI with the bootstrap one ---
+        if len(boot_pcts_hot) >= BOOT_MIN_SUCCESS * N_BOOTSTRAP:
+            hot_arr = np.asarray(boot_pcts_hot)
+            deficit["hot_deficit_ci_lo"] = float(
+                np.percentile(hot_arr, 100 * alpha / 2))
+            deficit["hot_deficit_ci_hi"] = float(
+                np.percentile(hot_arr, 100 * (1 - alpha / 2)))
+            hle = float(np.mean(hot_arr <= 0)); hge = float(np.mean(hot_arr >= 0))
+            deficit["p_hot_boot"] = float(
+                min(1.0, max(2 * min(hle, hge), 1.0 / (len(hot_arr) + 1))))
+        else:
+            print(f"  [{indicator}] hot-month bootstrap: only "
+                  f"{len(boot_pcts_hot)} usable replicates — hot CI left as NaN.")
         pd.DataFrame({"deficit_pct": boot_pcts}).to_csv(
             f"{OUT_DIR}bootstrap_distribution_{indicator}_{WBGT_VAR}.csv", index=False)
 
@@ -1160,9 +1192,9 @@ if __name__ == "__main__":
     ax.set_yticks(y_ph)
     ax.set_yticklabels(ph["label"], fontsize=9)
     ax.set_xlabel(
-        f"% change in appointments (WBGT > {REFERENCE_WBGT}°C)", fontsize=10)
+        f"% change in appointments (WBGT > {results_df['reference_wbgt']}°C)", fontsize=10)
     ax.set_title(
-        f"Hot-month deficit (WBGT > {REFERENCE_WBGT}°C)\n"
+        f"Hot-month deficit (WBGT > {results_df['reference_wbgt']}°C)\n"
         f"NB FE, 95% delta-method CI, red = BH-FDR q≤{FDR_ALPHA}",
         fontsize=11, fontweight="bold")
     ax.grid(axis="x", ls=":", alpha=0.5)
@@ -1179,7 +1211,7 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     # SPLINE IRR FOREST PLOT
     # -----------------------------------------------------------------------
-    IRR_LOW  = REFERENCE_WBGT
+    IRR_LOW  = results_df["reference_wbgt"].iloc[0]
     IRR_HIGH = 32.0
     irr_rows = []
     for res in all_results:
@@ -1214,8 +1246,9 @@ if __name__ == "__main__":
     else:
         irr_df = pd.DataFrame(columns=["indicator", "label", "irr", "irr_lo", "irr_hi"])
     irr_df.to_csv(
-        f"{OUT_DIR}irr_contrast_{IRR_LOW:.0f}_{IRR_HIGH:.0f}_{WBGT_VAR}.csv", index=False)
-
+        f"{OUT_DIR}irr_contrast_{WBGT_VAR}.csv",
+        index=False,
+    )
     if not irr_df.empty:
         irr_colors = [
             "#823038" if (r["irr_hi"] < 1 or r["irr_lo"] > 1) else "#888888"
@@ -1346,10 +1379,10 @@ if __name__ == "__main__":
         bdf["mu_a"]       = mu_a
         bdf["mu_b"]       = mu_b
         bdf["difference"] = mu_b - mu_a
-        bdf["hot_month"]  = nb_data[WBGT_VAR].values > REFERENCE_WBGT
+        bdf["hot_month"]  = nb_data[WBGT_VAR].values > results_df["reference_wbgt"].iloc[0]
         bdf.to_csv(f"{OUT_DIR}historical_burden_{ind}_{WBGT_VAR}.csv", index=False)
 
-        hot_mask = nb_data[WBGT_VAR].values > REFERENCE_WBGT
+        hot_mask = nb_data[WBGT_VAR].values > results_df["reference_wbgt"].iloc[0]
         burden_rows.append({
             "indicator":       ind,
             "label":           INDICATOR_LABELS.get(ind, ind),
@@ -1357,7 +1390,10 @@ if __name__ == "__main__":
             "total_mu_b":      float(np.nansum(mu_b)),
             "deficit_pct":     res["deficit_pct"],
             "hot_deficit_pct": float(
-                100.0 * (mu_a[hot_mask].sum() - mu_b[hot_mask].sum())
+                # SIGN FIX: positive = loss (mu_b - mu_a), matching the
+                # aggregate deficit and the bootstrap. Previously (mu_a - mu_b),
+                # which was the OPPOSITE sign and mismatched every other figure.
+                100.0 * (mu_b[hot_mask].sum() - mu_a[hot_mask].sum())
                 / mu_b[hot_mask].sum()
             ) if hot_mask.any() else np.nan,
         })
@@ -1368,7 +1404,9 @@ if __name__ == "__main__":
             mu_a=("mu_a", "sum"),
             mu_b=("mu_b", "sum"),
         ).reset_index()
-        d["deficit_pct"] = (d["mu_a"] - d["mu_b"]) / d["mu_b"] * 100
+        # SIGN FIX: positive = loss (mu_b - mu_a), consistent with the aggregate
+        # deficit, the bootstrap, and the burden hot-deficit. Was (mu_a - mu_b).
+        d["deficit_pct"] = (d["mu_b"] - d["mu_a"]) / d["mu_b"] * 100
         d["indicator"]   = ind
         all_dist.append(d)
 
@@ -1397,7 +1435,7 @@ if __name__ == "__main__":
         print(f"  {ind}: {len(d)} districts, "
               f"mean deficit {d['deficit_pct'].mean():.2f}%")
 
-        hot_mask = res["_nb_data"][WBGT_VAR].values > REFERENCE_WBGT
+        hot_mask = res["_nb_data"][WBGT_VAR].values > results_df["reference_wbgt"].iloc[0]
         if hot_mask.any():
             district_ci_hot = district_deficit_analytical(
                 mu_a=res["_mu_a"][hot_mask],
@@ -1650,7 +1688,8 @@ if __name__ == "__main__":
         # historical two-model deficit (for reference / delta)
         sum_a_hist = float(res["_mu_a"].sum())
         sum_b_hist = float(mu_b.sum())
-        deficit_hist = (sum_a_hist - sum_b_hist) / sum_b_hist * 100 if sum_b_hist > 0 else np.nan
+        # SIGN FIX: positive = loss (sum_b - sum_a), consistent everywhere else.
+        deficit_hist = (sum_b_hist - sum_a_hist) / sum_b_hist * 100 if sum_b_hist > 0 else np.nan
 
         for ssp in SSP_SCENARIOS:
             for tier in MODEL_TIERS:
@@ -1664,6 +1703,16 @@ if __name__ == "__main__":
                     continue
                 proj = proj.rename(columns={WBGT_VAR: "wbgt_proj"})
                 if proj.empty:
+                    continue
+
+                # GUARD: these projection files must carry the historical WBGT
+                # and fitted mu_a to scale forward. If they don't, fail loud for
+                # this file rather than KeyError-ing mid-loop or silently skipping.
+                missing_cols = [c for c in ("wbgt_hist", "mu_a_hist")
+                                if c not in proj.columns]
+                if missing_cols:
+                    print(f"  SKIP {ind} {ssp}/{tier}: projection file missing "
+                          f"{missing_cols} — cannot scale forward.")
                     continue
 
                 # --- Model A projection: scale mu_a_hist by IRR from WBGT change ---
@@ -1766,7 +1815,7 @@ if __name__ == "__main__":
         spline_beta = np.array(
             [coefs_a.get(c, 0.0) for c in spline_cols], dtype=float)
 
-        ref_c     = REFERENCE_WBGT - wbgt_shift
+        ref_c     = results_df["reference_wbgt"].iloc[0] - wbgt_shift
         all_pts_c = np.append(WBGT_GRID - wbgt_shift, ref_c)
         basis     = np.asarray(
             patsy.build_design_matrices(
@@ -1800,7 +1849,7 @@ if __name__ == "__main__":
             ax.plot(sub.wbgt, sub.disruption_probability, lw=1.3,
                     label=INDICATOR_LABELS.get(ind, ind))
         ax.set_xlabel("WBGT (°C)")
-        ax.set_ylabel(f"Disruption probability (vs {REFERENCE_WBGT}°C)")
+        ax.set_ylabel(f"Disruption probability (vs {results_df['reference_wbgt']}°C)")
         ax.set_title("Heat disruption for TLO model (NB FE)",
                      fontsize=11, fontweight="bold")
         ax.legend(fontsize=7)
