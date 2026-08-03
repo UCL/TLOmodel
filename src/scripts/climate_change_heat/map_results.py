@@ -9,6 +9,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+WBGT_VAR      = "wbgt5x_day"
 
 OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 
@@ -43,22 +44,27 @@ INDICATOR_LABELS = {
 # Build long-format table.
 rows = []
 for ind in INDICATOR_ORDER:
-    path = f"{OUT_DIR}district_burden_{ind}.csv"
+    path = f"{OUT_DIR}district_burden_ci_{ind}.csv"
     if not os.path.exists(path):
         print(f"  [{ind}] no district CSV — skipping")
         continue
     df = pd.read_csv(path)
     for _, r in df.iterrows():
-        rows.append({
-            "district":  r["Dist"],
-            "indicator": ind,
-            # Flip sign so positive = services lost to heat.
-            "services_lost_pct": -r["deficit_pct"],
-        })
+        rows.append(
+            {
+                "district": r["district"],
+                "indicator": ind,
+                "services_lost_pct": -r["deficit_pct"],
+                "sig": bool(r["sig"]),
+            }
+        )
 
 wide = (pd.DataFrame(rows)
         .pivot(index="district", columns="indicator", values="services_lost_pct")
         .reindex(columns=INDICATOR_ORDER))
+sig_wide = (pd.DataFrame(rows)
+    .pivot(index="district", columns="indicator", values="sig")
+    .reindex(index=wide.index, columns=wide.columns))
 
 # Order districts north → south (rough Malawi latitude order).
 DISTRICT_ORDER = [
@@ -72,7 +78,7 @@ DISTRICT_ORDER = [
 wide = wide.reindex([d for d in DISTRICT_ORDER if d in wide.index])
 
 # Symmetric limits so 0 is white.
-vabs = float(np.nanpercentile(np.abs(wide.values), 95))
+vabs = 2
 
 fig, ax = plt.subplots(figsize=(11, max(6, 0.4 * len(wide) + 2)))
 im = ax.imshow(wide.values, cmap="RdBu_r", vmin=-vabs, vmax=vabs, aspect="auto")
@@ -93,7 +99,13 @@ for i in range(len(wide.index)):
             ax.text(j, i, f"{v:+.1f}",
                     ha="center", va="center",
                     fontsize=6.5, color="black" if abs(v) < vabs*0.7 else "white")
-
+for i in range(len(wide.index)):
+    for j in range(len(wide.columns)):
+        if sig_wide.values[i, j]:
+            # Bold outline on significant cells.
+            ax.add_patch(plt.Rectangle(
+                (j - 0.5, i - 0.5), 1, 1,
+                fill=False, edgecolor="black", lw=1.5, zorder=3))
 ax.set_title(
     "District × indicator heat-attributable service loss (%)\n"
     "Positive = services lost, negative = services gained under heat",
@@ -109,6 +121,6 @@ if n_rural < len(wide.index):
     ax.axhline(n_rural - 0.5, color="black", lw=1.2, linestyle="--")
 
 plt.tight_layout()
-plt.savefig(f"{OUT_DIR}district_indicator_heatmap.png", dpi=180, bbox_inches="tight")
+plt.savefig(f"{OUT_DIR}district_indicator_heatmap_{WBGT_VAR}.png", dpi=180, bbox_inches="tight")
 plt.close()
-print(f"Saved -> {OUT_DIR}district_indicator_heatmap.png")
+print(f"Saved -> {OUT_DIR}district_indicator_heatmap_{WBGT_VAR}.png")
