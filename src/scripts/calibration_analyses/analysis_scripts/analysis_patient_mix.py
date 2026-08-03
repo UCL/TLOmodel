@@ -136,55 +136,49 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df
 
+    def get_all_hsi_events(_df):
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
+        # update the HSI list in the map based on long-run simulation output
+        X = _df[["Event_Name", "Facility_Level", "Number_By_Appt_Type_Code"]].copy()
+        X["Number_By_Appt_Type_Code_Tuple"] = (
+            X["Number_By_Appt_Type_Code"]
+            .apply(lambda x: tuple(sorted(x.items())))
+        )
+        X["Appt_Type_Code"] = (
+            X["Number_By_Appt_Type_Code"]
+            .apply(lambda x: ",".join(sorted(map(str, x.keys()))))
+        )
+        X_unique = (
+            X.drop_duplicates(
+                subset=[
+                    "Event_Name",
+                    "Facility_Level",
+                    "Appt_Type_Code",
+                ]
+            )
+            .reset_index(drop=True)
+            .rename(columns={
+                "Event_Name": "Event",
+                "Facility_Level": "Facility level",
+                "Appt_Type_Code": "Appointment footprint",
+            })
+        )
+
+        X_unique = (
+            X_unique[["Event", "Facility level", "Appointment footprint"]]
+            .drop_duplicates()
+            .set_index(["Event", "Facility level", "Appointment footprint"])
+            .assign(Value=1)["Value"]
+        )
+
+        return X_unique
+
     def get_patient_mix_total_period(_df):
         # keep only months in TLM for comparison consistency
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
-        # map Event_Name with TLM service area
-        # update the HSI list in the map based on long-run simulation output
-        # X = _df[["Event_Name", "Facility_Level", "Number_By_Appt_Type_Code"]].copy()
-        # X["Number_By_Appt_Type_Code_Tuple"] = (
-        #     X["Number_By_Appt_Type_Code"]
-        #     .apply(lambda x: tuple(sorted(x.items())))
-        # )
-        # X["Appt_Type_Code"] = (
-        #     X["Number_By_Appt_Type_Code"]
-        #     .apply(lambda x: ",".join(sorted(map(str, x.keys()))))
-        # )
-        # X_unique = (
-        #     X.drop_duplicates(
-        #         subset=[
-        #             "Event_Name",
-        #             "Facility_Level",
-        #             "Appt_Type_Code",
-        #         ]
-        #     )
-        #     .reset_index(drop=True)
-        #     .rename(columns={
-        #         "Event_Name": "Event",
-        #         "Facility_Level": "Facility level",
-        #         "Appt_Type_Code": "Appointment footprint",
-        #     })
-        # )
-        #
-        # hsi_list_0 = pd.read_csv(path_to_tlm_folder / 'hsi_tlm_service_area_map.csv')
-        # hsi_list_full = (
-        #     pd.merge(
-        #         X_unique,
-        #         hsi_list_0,
-        #         on=["Event", "Appointment footprint", "Facility level"],
-        #         how="outer",
-        #         indicator="Source",
-        #     )
-        #     .reset_index(drop=True)
-        # )
-        #
-        # hsi_list_full["Source"] = hsi_list_full["Source"].map({
-        #     "left_only": "sim_output",
-        #     "right_only": "hsi_list",
-        #     "both": "Both",
-        # })
-
+        # todo: map Event_Name + Facility_Level + Appointment_Footprint with TLM service area
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
         # check that all events are mapped
@@ -419,7 +413,60 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     log['tlo.methods.healthsystem.']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
     # ).T
 
+    # get facility list from resource file
     mfl = pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+
+    # full HSI list from the simulation
+    sim_hsi = extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=get_all_hsi_events,
+        do_scaling=False
+    ).reset_index()
+
+    sim_hsi = sim_hsi[["Event", "Facility level", "Appointment footprint"]].copy()
+    sim_hsi.columns = sim_hsi.columns.droplevel(1)
+
+    # path to TLM data sources
+    path_to_tlm_folder = (
+        resourcefilepath
+        / "healthsystem"
+        / "human_resources"
+        / "TLM_2024"
+    )
+
+    # original HSI list is from https://www.tlomodel.org/hsi_events.html
+    # combine with simulation output HSIs
+    web_hsi = pd.read_csv(path_to_tlm_folder / 'hsi_tlm_service_area_map.csv')
+    web_hsi["Appointment footprint"] = web_hsi["Appointment footprint"].str.replace(", ", ",", regex=False)
+    hsi_list_full = (
+        pd.merge(
+            sim_hsi,
+            web_hsi,
+            on=["Event", "Appointment footprint", "Facility level"],
+            how="outer",
+            indicator="Source",
+        )
+        .reset_index(drop=True)
+    )
+
+    hsi_list_full["Source"] = hsi_list_full["Source"].map({
+        "left_only": "sim_output",
+        "right_only": "hsi_list",
+        "both": "Both",
+    })
+
+    # todo: prepare hsi mapping using hsi_list_full
+    hsi_loc_cat_map = pd.read_csv(
+        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
+        usecols=["Event", "TLM service area"]
+    ).rename(columns={"Event": "Event_Name", "TLM service area": "loc_cat"}).set_index("Event_Name")["loc_cat"]
+
+    hsi_prescription_map = pd.read_csv(
+        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
+        usecols=["Event", "Prescription involvement"]
+    ).rename(columns={"Event": "Event_Name"}).set_index("Event_Name")["Prescription involvement"]
 
     ## patient volume
     # todo: get patient volume to use all runs instead of only 1 run
@@ -519,26 +566,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _df
 
     daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
-
-    # path to TLM data sources
-    path_to_tlm_folder = (
-        resourcefilepath
-        / "healthsystem"
-        / "human_resources"
-        / "TLM_2024"
-    )
-
-    # HSI list is from https://www.tlomodel.org/hsi_events.html
-    # todo: collect full hsi (re. event name, appointment, facility level)
-    hsi_loc_cat_map = pd.read_csv(
-        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
-        usecols=["Event", "TLM service area"]
-    ).rename(columns={"Event": "Event_Name", "TLM service area": "loc_cat"}).set_index("Event_Name")["loc_cat"]
-
-    hsi_prescription_map = pd.read_csv(
-        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
-        usecols=["Event", "Prescription involvement"]
-    ).rename(columns={"Event": "Event_Name"}).set_index("Event_Name")["Prescription involvement"]
 
     # read in TLM estimates
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
