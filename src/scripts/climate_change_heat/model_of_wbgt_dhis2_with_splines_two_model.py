@@ -93,9 +93,9 @@ WBGT_VAR      = "wbgt5x_day"
 SPLINE_DF     = 4
 LAG_MONTHS    = [1, 2, 3, 4]
 CENTER        = True
-MIN_OBS       = int(0.6 * 12 * 10)   # 60
+MIN_OBS       = int(0.3 * 12 * 12)
 
-min_year_historical = 2015
+min_year_historical = 2016
 max_year_historical = 2025
 apply_cap           = True
 WINSOR_K            = 5.0
@@ -448,7 +448,7 @@ def winsorise_by_facility(
 
     if flagged:
         pd.DataFrame(flagged).to_csv(
-            f"{out_dir}outliers_removed_{indicator}.csv", index=False)
+            f"{out_dir}outliers_removed_{indicator}_{WBGT_VAR}.csv", index=False)
     print(f"  [{indicator}] Winsorisation total: {n_replaced} values replaced")
     return df
 
@@ -713,7 +713,7 @@ def save_exposure_response_plot(curve_df: pd.DataFrame, indicator: str):
     ax.grid(axis="both", ls=":", alpha=0.4)
     plt.tight_layout()
     plt.savefig(
-        f"{OUT_DIR}exposure_response_curve_{indicator}.png",
+        f"{OUT_DIR}exposure_response_curve_{indicator}_{WBGT_VAR}.png",
         dpi=180, bbox_inches="tight")
     plt.close()
 
@@ -932,7 +932,7 @@ def run_indicator(indicator: str) -> dict | None:
             names_a=names_a, vcov_a=vcov_a,
         )
         curve_df.to_csv(
-            f"{OUT_DIR}exposure_response_curve_{indicator}.csv", index=False)
+            f"{OUT_DIR}exposure_response_curve_{indicator}_{WBGT_VAR}.csv", index=False)
         save_exposure_response_plot(curve_df, indicator)
     except Exception as e:
         print(f"  [{indicator}] Curve export failed: {e}")
@@ -947,13 +947,13 @@ def run_indicator(indicator: str) -> dict | None:
     preds["difference"]  = preds["y_pred_base"] - preds["y_pred_wx"]
     if PANEL_DIST_COL_IN_PANEL in nb_data.columns:
         preds["Dist"] = nb_data[PANEL_DIST_COL_IN_PANEL].values
-    preds.to_csv(f"{OUT_DIR}two_model_predictions_{indicator}.csv", index=False)
+    preds.to_csv(f"{OUT_DIR}two_model_predictions_{indicator}_{WBGT_VAR}.csv", index=False)
 
     try:
         coef_tab = nb_coef_table(model_a)
         coef_tab["indicator"] = indicator
         coef_tab.to_csv(
-            f"{OUT_DIR}coef_table_model_a_{indicator}.csv", index=False)
+            f"{OUT_DIR}coef_table_model_a_{indicator}_{WBGT_VAR}.csv", index=False)
     except Exception as e:
         print(f"  [{indicator}] Coef table export failed: {e}")
 
@@ -994,7 +994,7 @@ def run_indicator(indicator: str) -> dict | None:
         deficit["p_boot"] = float(
             min(1.0, max(2 * min(frac_le, frac_ge), 1.0 / (n_ok + 1))))
         pd.DataFrame({"deficit_pct": boot_pcts}).to_csv(
-            f"{OUT_DIR}bootstrap_distribution_{indicator}.csv", index=False)
+            f"{OUT_DIR}bootstrap_distribution_{indicator}_{WBGT_VAR}.csv", index=False)
 
     # ------------------------------------------------------------------
     # Metadata
@@ -1057,8 +1057,8 @@ if __name__ == "__main__":
 
     save_cols = [c for c in results_df.columns if not c.startswith("_")]
     results_df[save_cols].to_csv(
-        f"{OUT_DIR}two_model_deficit_results_NB.csv", index=False)
-    print(f"\nResults -> {OUT_DIR}two_model_deficit_results_NB.csv")
+        f"{OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}.csv", index=False)
+    print(f"\nResults -> {OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}.csv")
     print(
         f"BH-FDR alpha={FDR_ALPHA}: "
         f"{int(results_df['sig_bh'].sum())}/{len(results_df)} significant.")
@@ -1115,10 +1115,10 @@ if __name__ == "__main__":
         fontsize=7, color="#666666")
     ax2.tick_params(axis="y", length=0)
     plt.tight_layout()
-    plt.savefig(f"{OUT_DIR}forest_plot_two_model_deficit_NB.png",
+    plt.savefig(f"{OUT_DIR}forest_plot_two_model_deficit_NB_{WBGT_VAR}.png",
                 dpi=180, bbox_inches="tight")
     plt.close()
-    print(f"Forest plot -> {OUT_DIR}forest_plot_two_model_deficit_NB.png")
+    print(f"Forest plot -> {OUT_DIR}forest_plot_two_model_deficit_NB_{WBGT_VAR}.png")
 
     # -----------------------------------------------------------------------
     # HOT-MONTH FOREST PLOT (delta-method CI)
@@ -1171,10 +1171,10 @@ if __name__ == "__main__":
         mpatches.Patch(color="#888888", label="not significant"),
     ], loc="lower right", fontsize=9, frameon=False)
     plt.tight_layout()
-    plt.savefig(f"{OUT_DIR}forest_plot_hot_deficit_NB.png",
+    plt.savefig(f"{OUT_DIR}forest_plot_hot_deficit_NB_{WBGT_VAR}.png",
                 dpi=180, bbox_inches="tight")
     plt.close()
-    print(f"Hot-month forest plot -> {OUT_DIR}forest_plot_hot_deficit_NB.png")
+    print(f"Hot-month forest plot -> {OUT_DIR}forest_plot_hot_deficit_NB_{WBGT_VAR}.png")
 
     # -----------------------------------------------------------------------
     # SPLINE IRR FOREST PLOT
@@ -1214,7 +1214,7 @@ if __name__ == "__main__":
     else:
         irr_df = pd.DataFrame(columns=["indicator", "label", "irr", "irr_lo", "irr_hi"])
     irr_df.to_csv(
-        f"{OUT_DIR}irr_contrast_{IRR_LOW:.0f}_{IRR_HIGH:.0f}.csv", index=False)
+        f"{OUT_DIR}irr_contrast_{IRR_LOW:.0f}_{IRR_HIGH:.0f}_{WBGT_VAR}.csv", index=False)
 
     if not irr_df.empty:
         irr_colors = [
@@ -1241,11 +1241,11 @@ if __name__ == "__main__":
         ax.grid(axis="x", ls=":", alpha=0.5)
         plt.tight_layout()
         plt.savefig(
-            f"{OUT_DIR}forest_plot_IRR_{IRR_LOW:.0f}_{IRR_HIGH:.0f}_NB.png",
+            f"{OUT_DIR}forest_plot_IRR_{IRR_LOW:.0f}_{IRR_HIGH:.0f}_NB_{WBGT_VAR}.png",
             dpi=180, bbox_inches="tight")
         plt.close()
         print(f"IRR forest plot -> "
-              f"{OUT_DIR}forest_plot_IRR_{IRR_LOW:.0f}_{IRR_HIGH:.0f}_NB.png")
+              f"{OUT_DIR}forest_plot_IRR_{IRR_LOW:.0f}_{IRR_HIGH:.0f}_NB_{WBGT_VAR}.png")
     else:
         print("  WARNING: irr_df empty — check KEY STASH DIAGNOSTIC above.")
 
@@ -1284,7 +1284,7 @@ if __name__ == "__main__":
     if curve_rows:
         curves_df = pd.DataFrame(curve_rows)
         curves_df.to_csv(
-            f"{OUT_DIR}exposure_response_curves.csv", index=False)
+            f"{OUT_DIR}exposure_response_curves_{WBGT_VAR}.csv", index=False)
 
         inds   = [r["indicator"] for r in all_results
                   if r["indicator"] in curves_df["indicator"].unique()]
@@ -1321,7 +1321,7 @@ if __name__ == "__main__":
             "Shaded: 95% delta-method CI;  dotted: reference WBGT",
             fontsize=10, fontweight="bold", y=1.02)
         plt.tight_layout()
-        plt.savefig(f"{OUT_DIR}exposure_response_panel.png",
+        plt.savefig(f"{OUT_DIR}exposure_response_panel_{WBGT_VAR}.png",
                     dpi=180, bbox_inches="tight")
         plt.close()
         print(f"Exposure-response panel -> {OUT_DIR}exposure_response_panel.png")
@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
         bdf["mu_b"]       = mu_b
         bdf["difference"] = mu_b - mu_a
         bdf["hot_month"]  = nb_data[WBGT_VAR].values > REFERENCE_WBGT
-        bdf.to_csv(f"{OUT_DIR}historical_burden_{ind}.csv", index=False)
+        bdf.to_csv(f"{OUT_DIR}historical_burden_{ind}_{WBGT_VAR}.csv", index=False)
 
         hot_mask = nb_data[WBGT_VAR].values > REFERENCE_WBGT
         burden_rows.append({
@@ -1373,7 +1373,7 @@ if __name__ == "__main__":
         all_dist.append(d)
 
         # ---- FIX 3: Save point-estimate and CI to SEPARATE files ----
-        d.to_csv(f"{OUT_DIR}district_burden_{ind}.csv", index=False)
+        d.to_csv(f"{OUT_DIR}district_burden_{ind}_{WBGT_VAR}.csv", index=False)
 
         group_ids = res["_nb_data"][CLUSTER_COL].values
         district_ci = district_deficit_analytical(
@@ -1392,7 +1392,7 @@ if __name__ == "__main__":
         ) & district_ci["deficit_pct"].notna()
         # Save CIs to a separate file so they don't get overwritten
         district_ci.to_csv(
-            f"{OUT_DIR}district_burden_ci_{ind}.csv", index=False)
+            f"{OUT_DIR}district_burden_ci_{ind}_{WBGT_VAR}.csv", index=False)
 
         print(f"  {ind}: {len(d)} districts, "
               f"mean deficit {d['deficit_pct'].mean():.2f}%")
@@ -1414,14 +1414,14 @@ if __name__ == "__main__":
                 (district_ci_hot["ci_lo"] > 0) | (district_ci_hot["ci_hi"] < 0)
             ) & district_ci_hot["deficit_pct"].notna()
             district_ci_hot.to_csv(
-                f"{OUT_DIR}district_burden_hot_{ind}.csv", index=False)
+                f"{OUT_DIR}district_burden_hot_{ind}_{WBGT_VAR}.csv", index=False)
 
     pd.DataFrame(burden_rows).to_csv(
-        f"{OUT_DIR}historical_burden_summary.csv", index=False)
+        f"{OUT_DIR}historical_burden_summary_{WBGT_VAR}.csv", index=False)
 
     if all_dist:
         pd.concat(all_dist, ignore_index=True).to_csv(
-            f"{OUT_DIR}district_burden_all.csv", index=False)
+            f"{OUT_DIR}district_burden_all_{WBGT_VAR}.csv", index=False)
 
     # Monthly deficit panel — jackknife CI across facilities
     n_ind  = len(fitted)
@@ -1482,7 +1482,7 @@ if __name__ == "__main__":
         "(mu_B − mu_A)/mu_B × 100;  red = heat reduced services",
         fontsize=10, fontweight="bold", y=1.03)
     plt.tight_layout()
-    plt.savefig(f"{OUT_DIR}deficit_by_month.png", dpi=180, bbox_inches="tight")
+    plt.savefig(f"{OUT_DIR}deficit_by_month_{WBGT_VAR}.png", dpi=180, bbox_inches="tight")
     plt.close()
 
     # Time-series panel
@@ -1518,7 +1518,7 @@ if __name__ == "__main__":
         "Observed vs Model B counterfactual\nShaded = two-model heat deficit",
         fontsize=11, fontweight="bold", y=1.02)
     plt.tight_layout()
-    plt.savefig(f"{OUT_DIR}timeseries_burden.png", dpi=180, bbox_inches="tight")
+    plt.savefig(f"{OUT_DIR}timeseries_burden_{WBGT_VAR}.png", dpi=180, bbox_inches="tight")
     plt.close()
     print(f"  -> {OUT_DIR}historical_burden_summary.csv")
 
@@ -1575,10 +1575,10 @@ if __name__ == "__main__":
                     "District-level heat deficit (%)",
                     fontsize=11, fontweight="bold")
                 plt.tight_layout()
-                plt.savefig(f"{OUT_DIR}map_district_deficit_{ind}.png",
+                plt.savefig(f"{OUT_DIR}map_district_deficit_{ind}_{WBGT_VAR}.png",
                             dpi=180, bbox_inches="tight")
                 plt.close()
-                print(f"  -> {OUT_DIR}map_district_deficit_{ind}.png")
+                print(f"  -> {OUT_DIR}map_district_deficit_{ind}_{WBGT_VAR}.png")
 
             # Summary panel
             global_vmax = max(
@@ -1621,10 +1621,10 @@ if __name__ == "__main__":
                 "District-level heat deficit — all indicators\n"
                 "Red = heat reduced, Blue = heat increased",
                 fontsize=11, fontweight="bold", y=1.01)
-            plt.savefig(f"{OUT_DIR}map_district_deficit_panel.png",
+            plt.savefig(f"{OUT_DIR}map_district_deficit_panel_{WBGT_VAR}.png",
                         dpi=180, bbox_inches="tight")
             plt.close()
-            print(f"  -> {OUT_DIR}map_district_deficit_panel.png")
+            print(f"  -> {OUT_DIR}map_district_deficit_panel_{WBGT_VAR}.png")
 
     elif not os.path.exists(SHAPEFILE_PATH):
         print(f"\nShapefile not found at {SHAPEFILE_PATH} — skipping maps.")
@@ -1702,7 +1702,7 @@ if __name__ == "__main__":
                 proj["deficit_hist"] = deficit_hist
                 proj["deficit_proj"] = deficit_proj
                 proj["delta_deficit"] = delta_deficit
-                proj.to_csv(f"{OUT_DIR}projection_{ind}_{ssp}_{tier}.csv", index=False)
+                proj.to_csv(f"{OUT_DIR}projection_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv", index=False)
                 all_proj.append(
                     {
                         "indicator": ind,
@@ -1717,7 +1717,7 @@ if __name__ == "__main__":
 
     if all_proj:
         pd.DataFrame(all_proj).to_csv(
-            f"{OUT_DIR}projection_summary.csv", index=False)
+            f"{OUT_DIR}projection_summary_{WBGT_VAR}.csv", index=False)
         for ind in fitted:
             ind_proj = [p for p in all_proj if p["indicator"] == ind]
             if not ind_proj:
@@ -1746,7 +1746,7 @@ if __name__ == "__main__":
                 "Change in two-model deficit under CMIP6",
                 fontsize=11, fontweight="bold")
             plt.tight_layout()
-            plt.savefig(f"{OUT_DIR}projection_heatmap_{ind}.png",
+            plt.savefig(f"{OUT_DIR}projection_heatmap_{ind}_{WBGT_VAR}.png",
                         dpi=180, bbox_inches="tight")
             plt.close()
         print(f"  -> {OUT_DIR}projection_summary.csv")
@@ -1792,7 +1792,7 @@ if __name__ == "__main__":
         for col, nm in [("disruption_probability", "disruption"),
                         ("demand_multiplier",       "demand")]:
             tlo.pivot(index="wbgt", columns="indicator",
-                      values=col).to_csv(f"{OUT_DIR}tlo_{nm}_wide.csv")
+                      values=col).to_csv(f"{OUT_DIR}tlo_{nm}_wide_{WBGT_VAR}.csv")
 
         fig, ax = plt.subplots(figsize=(8, 5))
         for ind in tlo["indicator"].unique():
@@ -1807,10 +1807,10 @@ if __name__ == "__main__":
         ax.grid(ls=":", alpha=0.4)
         ax.set_ylim(bottom=-0.01)
         plt.tight_layout()
-        plt.savefig(f"{OUT_DIR}tlo_disruption_curves.png",
+        plt.savefig(f"{OUT_DIR}tlo_disruption_curves_{WBGT_VAR}.png",
                     dpi=180, bbox_inches="tight")
         plt.close()
-        print(f"  -> {OUT_DIR}tlo_wbgt_lookup.csv")
+        print(f"  -> {OUT_DIR}tlo_wbgt_lookup_{WBGT_VAR}.csv")
 
     print(f"\nAll outputs in {OUT_DIR}")
     print("Done.")
