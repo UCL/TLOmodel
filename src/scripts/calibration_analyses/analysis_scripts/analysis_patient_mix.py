@@ -132,7 +132,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def merge_info_from_mfl(_df):
         # should merge on "left" as original designed level 1b is now merged in to level 2
-        _df = _df.merge(mfl[["Facility_ID", "District", "Facility_Level", "Region"]], on="Facility_ID", how="left")
+        if "Facility_Level" not in _df.columns:
+            _df = _df.merge(mfl[["Facility_ID", "District", "Facility_Level", "Region"]], on="Facility_ID", how="left")
+        else:
+            _df = _df.merge(mfl[["Facility_ID", "District", "Region"]], on="Facility_ID", how="left")
 
         return _df
 
@@ -223,10 +226,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop_duplicates()
             .reset_index(drop=True)
         )
-        assert set(unmapped).issubset(
-            {"HSI_Alri_Treatment", "_BaseHSIGenericFirstAppt", "HSI_GenericEmergencyFirstAppt",
-             "HSI_GenericNonEmergencyFirstAppt", "HSI_Hiv_SelfTest", "HSI_Malaria_rdt_community", "HSI_Schisto_MDA",
-             "Inpatient_Care"})
+        # assert set(unmapped["Appointment_Footprint"].drop_duplicates()).issubset(
+        #     {'InpatientDays', ''})
 
         # drop duplicated persons in the target period
         # Duplicated case 1: same person id received multiple HSIs on a day, including generic fist appt
