@@ -413,14 +413,14 @@ def reconstruct_individual_histories(df):
     # Collapse into 'entity', 'date', 'event_name', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
-            df.groupby(['entity', 'date', 'event_name'], sort=False)
+            df.groupby(['entity', 'date', 'event_name', 'event_tag'], sort=False)
               .apply(lambda g: dict(zip(g['attribute'], g['value'])))
               .reset_index(name='Info')
         )
 
     df_final = (
         df_collapsed
-            .sort_values(by=['entity', 'date'])
+            .sort_values(by=['entity', 'date', 'event_tag'])
             .reset_index(drop=True)
     )
 
@@ -430,8 +430,6 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-        
-    
 
     return df_final
 
@@ -484,8 +482,6 @@ def extract_individual_histories(results_folder: Path,
 
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-
-        res[0].to_csv('individual_histories.csv')
 
     return res
 
