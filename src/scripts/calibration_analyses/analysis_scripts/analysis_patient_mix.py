@@ -178,11 +178,51 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # keep only months in TLM for comparison consistency
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
-        # todo: map Event_Name + Facility_Level + Appointment_Footprint with TLM service area
-        _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
+        # create columns for mapping: Appointment_Footprint, Facility_Level
+        _df["Appointment_Footprint"] = (
+            _df["Number_By_Appt_Type_Code"]
+            .apply(lambda x: ",".join(sorted(map(str, x.keys()))))
+        )
+        # merge info from mfl and format
+        _df = merge_info_from_mfl(_df)
+        # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
+        _df.drop(index=_df[_df["Facility_Level"].isin(["0", "5"])].index, inplace=True)
+        # fill NANs
+        _df.loc[
+            _df["Facility_Level"] == "4", ["patient_count", "District", "Region"]
+        ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
+        _df.loc[
+            _df["Facility_ID"] == 128, "District"
+        ] = "Central Hospitals (Southern)"
+        _df.loc[
+            _df["Facility_ID"] == 129, "District"
+        ] = "Central Hospitals (Northern)"
+        _df.loc[
+            _df["Facility_ID"] == 130, "District"
+        ] = "Central Hospitals (Central)"
+        # keep only districts in TLM
+        _df = _df.loc[_df["District"].isin(common_districts)]
+
+        # map to TLM service area
+        _df["loc_cat"] = pd.MultiIndex.from_frame(
+            _df[
+                [
+                    "Event_Name",
+                    "Facility_Level",
+                    "Appointment_Footprint",
+                ]
+            ]
+        ).map(hsi_loc_cat_map)
 
         # check that all events are mapped
-        unmapped = _df.loc[_df["loc_cat"].isna(), "Event_Name"].unique()
+        unmapped = (
+            _df.loc[
+                _df["loc_cat"].isna(),
+                ["Event_Name", "Facility_Level", "Appointment_Footprint"],
+            ]
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
         assert set(unmapped).issubset(
             {"HSI_Alri_Treatment", "_BaseHSIGenericFirstAppt", "HSI_GenericEmergencyFirstAppt",
              "HSI_GenericNonEmergencyFirstAppt", "HSI_Hiv_SelfTest", "HSI_Malaria_rdt_community", "HSI_Schisto_MDA",
@@ -201,33 +241,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.dropna(subset=["loc_cat"])
         _df = _df.drop_duplicates(subset=["date", "Person_ID", "loc_cat"])
 
-        # get patient counts per target subgroups
+        # get patient counts per target subgroups initially
         _df = _df.groupby(
-            ["Facility_ID", "Sex", "Age_Range", "Wealth", "Education", "loc_cat"]
+            ["Facility_Level", "Sex", "Age_Range", "Wealth", "Education", "loc_cat"]
         )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
-
-        # merge info from mfl and format
-        _df = merge_info_from_mfl(_df)
-
-        # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
-        _df.drop(index=_df[_df["Facility_Level"].isin(["0", "5"])].index, inplace=True)
-
-        # fill NANs
-        _df.loc[
-            _df["Facility_Level"] == "4", ["patient_count", "District", "Region"]
-        ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
-        _df.loc[
-            _df["Facility_ID"] == 128, "District"
-        ] = "Central Hospitals (Southern)"
-        _df.loc[
-            _df["Facility_ID"] == 129, "District"
-        ] = "Central Hospitals (Northern)"
-        _df.loc[
-            _df["Facility_ID"] == 130, "District"
-        ] = "Central Hospitals (Central)"
-
-        # keep only districts in TLM
-        _df = _df.loc[_df["District"].isin(common_districts)]
 
         # combine levels 3 and 4, considering level 4 possibly has no patients as simulated, and
         # calculate patient volume per level to define the rescaling factors for each level,
@@ -436,37 +453,52 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         / "TLM_2024"
     )
 
+    # mannually mapping full HSIs to TLM service area and prescription involvement
     # original HSI list is from https://www.tlomodel.org/hsi_events.html
     # combine with simulation output HSIs
-    web_hsi = pd.read_csv(path_to_tlm_folder / 'hsi_tlm_service_area_map.csv')
-    web_hsi["Appointment footprint"] = web_hsi["Appointment footprint"].str.replace(", ", ",", regex=False)
-    hsi_list_full = (
-        pd.merge(
-            sim_hsi,
-            web_hsi,
-            on=["Event", "Appointment footprint", "Facility level"],
-            how="outer",
-            indicator="Source",
-        )
-        .reset_index(drop=True)
-    )
+    # web_hsi = pd.read_csv(path_to_tlm_folder / 'hsi_tlm_service_area_map.csv')
+    # web_hsi["Appointment footprint"] = web_hsi["Appointment footprint"].str.replace(", ", ",", regex=False)
+    # hsi_list_full = (
+    #     pd.merge(
+    #         sim_hsi,
+    #         web_hsi,
+    #         on=["Event", "Appointment footprint", "Facility level"],
+    #         how="outer",
+    #         indicator="Source",
+    #     )
+    #     .reset_index(drop=True)
+    # )
+    #
+    # hsi_list_full["Source"] = hsi_list_full["Source"].map({
+    #     "left_only": "sim_output",
+    #     "right_only": "hsi_list",
+    #     "both": "Both",
+    # })
 
-    hsi_list_full["Source"] = hsi_list_full["Source"].map({
-        "left_only": "sim_output",
-        "right_only": "hsi_list",
-        "both": "Both",
-    })
-
-    # todo: prepare hsi mapping using hsi_list_full
+    # prepare hsi mapping dataframes
     hsi_loc_cat_map = pd.read_csv(
-        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
-        usecols=["Event", "TLM service area"]
-    ).rename(columns={"Event": "Event_Name", "TLM service area": "loc_cat"}).set_index("Event_Name")["loc_cat"]
+        path_to_tlm_folder / 'hsi_tlm_service_area_map_full.csv',
+        usecols=["Event", "Facility level", "Appointment footprint", "TLM service area", "Source"]
+    )
+    hsi_loc_cat_map = hsi_loc_cat_map[hsi_loc_cat_map["Source"] != "hsi_list"]
+    hsi_loc_cat_map = hsi_loc_cat_map.rename(
+        columns={"Event": "Event_Name",
+                 "Facility level": "Facility_Level",
+                 "Appointment footprint": "Appointment_Footprint",
+                 "TLM service area": "loc_cat"}
+    ).set_index(["Event_Name", "Facility_Level", "Appointment_Footprint"])["loc_cat"]
 
     hsi_prescription_map = pd.read_csv(
-        path_to_tlm_folder / 'hsi_tlm_service_area_map.csv',
-        usecols=["Event", "Prescription involvement"]
-    ).rename(columns={"Event": "Event_Name"}).set_index("Event_Name")["Prescription involvement"]
+        path_to_tlm_folder / 'hsi_tlm_service_area_map_full.csv',
+        usecols=["Event", "Facility level", "Appointment footprint", "Prescription involvement", "Source"]
+    )
+    hsi_prescription_map = hsi_prescription_map[hsi_prescription_map["Source"] != "hsi_list"]
+    hsi_prescription_map = hsi_prescription_map.rename(
+        columns={"Event": "Event_Name",
+                 "Facility level": "Facility_Level",
+                 "Appointment footprint": "Appointment_Footprint",
+                 "TLM service area": "loc_cat"}
+    ).set_index(["Event_Name", "Facility_Level", "Appointment_Footprint"])["Prescription involvement"]
 
     ## patient volume
     # todo: get patient volume to use all runs instead of only 1 run
