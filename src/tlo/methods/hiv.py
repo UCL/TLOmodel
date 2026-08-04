@@ -2030,7 +2030,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         key = (sub_group, year)
         try:
             lengths, probs = self._art_dispensation_lookup[key]
-            return np.random.choice(lengths, p=probs)
+            return self.rng.choice(lengths, p=probs)
         except KeyError:
             raise ValueError(f"No ART dispensation data for sub_group={sub_group} and year={year}")
 
