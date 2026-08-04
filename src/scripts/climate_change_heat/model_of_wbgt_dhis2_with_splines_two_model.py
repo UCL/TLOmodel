@@ -94,7 +94,7 @@ SPLINE_DF     = 3
 LAG_MONTHS    = [1, 2, 3, 4]
 CENTER        = True
 MIN_OBS       = int(0.3 * 12 * 12)
-REFERENCE_WBGT_PERCENTILE = 95
+REFERENCE_WBGT_PERCENTILE = 80
 min_year_historical = 2015
 max_year_historical = 2025
 apply_cap           = False
@@ -118,7 +118,7 @@ SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
-N_BOOTSTRAP     = 500      # >0 turns on the district block bootstrap for the
+N_BOOTSTRAP     = 250      # >0 turns on the district block bootstrap for the
                            # DEFICIT CIs only (aggregate + hot-month). IRR and
                            # exposure-response curve stay on the delta method.
 BOOT_SEED       = 42
