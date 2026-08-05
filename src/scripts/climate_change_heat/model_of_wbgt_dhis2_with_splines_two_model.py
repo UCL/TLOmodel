@@ -96,11 +96,11 @@ WBGT_VAR      = "wbgt_day"
 SPLINE_DF     = 3
 LAG_MONTHS    = [1, 2, 3, 4]
 CENTER        = True
-MIN_OBS       = int(0.3 * 12 * 12)
-REFERENCE_WBGT_PERCENTILE = 80
+MIN_OBS       = int(0.7 * 12 * 12)
+REFERENCE_WBGT_PERCENTILE = 95
 min_year_historical = 2015
 max_year_historical = 2025
-apply_cap           = False
+apply_cap           = True
 WINSOR_K            = 5.0
 
 N_CURVE_POINTS = 200
@@ -121,7 +121,7 @@ SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
-N_BOOTSTRAP     = 250      # >0 turns on the district block bootstrap for the
+N_BOOTSTRAP     = 50      # >0 turns on the district block bootstrap for the
                            # DEFICIT CIs only (aggregate + hot-month). IRR and
                            # exposure-response curve stay on the delta method.
 BOOT_SEED       = 42
@@ -137,7 +137,6 @@ DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
 OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# ---- FIX 1: Define PROJECTION_DIR (was missing → NameError) ----
 THERMOFEEL_DIR = Path(
     "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices")
 PROJECTION_DIR = str(THERMOFEEL_DIR)
@@ -152,7 +151,7 @@ PANEL_DIST_COL_IN_PANEL = "Dist"
 # identified off anomalous (within-month, across-year) variation.
 PRECIP_LONG_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
                     "Thermofeel_WBGT/Indices/precip_long.csv")
-PRECIP_TERMS = ["precip_month", "precip_5day"]
+PRECIP_TERMS = ["precip_5day"]#["precip_month", "precip_5day"]
 
 # ---- Projection file layout ------------------------------------------------
 # Long: rows are (facility, date), cols include wbgt_day, wbgt_night
@@ -541,21 +540,10 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
     precip = pd.read_csv(PRECIP_LONG_PATH, parse_dates=["date"])
     precip["facility"] = precip["facility"].astype(str).str.strip()
     precip["date"]     = precip["date"].dt.to_period("M").dt.to_timestamp()
+    precip = precip[precip["date"] <= "2024-12-01"]
+    precip = precip[precip["date"] >= "2015-02-01"]
     long = long.merge(precip, on=["facility", "date"], how="left")
 
-    n_rows = len(long)
-    miss_m = int(long["precip_month"].isna().sum())
-    miss_5 = int(long["precip_5day"].isna().sum())
-    print(f"  [{indicator}] precip merge: "
-          f"month {n_rows - miss_m}/{n_rows} matched ({miss_m} NA), "
-          f"5day {n_rows - miss_5}/{n_rows} matched ({miss_5} NA)")
-    if miss_m:
-        bad = sorted(long.loc[long["precip_month"].isna(),
-                              "facility"].dropna().unique())
-        preview = bad[:15]
-        tail    = " ..." if len(bad) > 15 else ""
-        print(f"    {len(bad)} facility(ies) with no precip match: "
-              f"{preview}{tail}")
     # -------------------------------------------------------------------
 
     if apply_cap:
@@ -914,7 +902,7 @@ def run_indicator(indicator: str) -> dict | None:
             fe_spec=fe_spec, fe_cols = fe_cols, cluster_col=CLUSTER_COL)
     except Exception as e:
         print(f"  [{indicator}] fenegbin failed: {e} — skipping.")
-        return None, None
+        return None
 
     total_a = float(mu_a.sum())
     total_b = float(mu_b.sum())
@@ -975,11 +963,6 @@ def run_indicator(indicator: str) -> dict | None:
     except Exception as e:
         print(f"  [{indicator}] CI extraction failed: {type(e).__name__}: {e}")
         import traceback; traceback.print_exc()
-
-    # ------------------------------------------------------------------
-    # Exposure-response curve
-    # ---- FIX 4: pass names_a and vcov_a so CIs render ----
-    # ------------------------------------------------------------------
     try:
         curve_df = make_exposure_response_curve(
             model_a, spline_cols, wbgt_shift,
@@ -1265,9 +1248,6 @@ if __name__ == "__main__":
             "total_mu_b":      float(np.nansum(mu_b)),
             "deficit_pct":     res["deficit_pct"],
             "hot_deficit_pct": float(
-                # SIGN FIX: positive = loss (mu_b - mu_a), matching the
-                # aggregate deficit and the bootstrap. Previously (mu_a - mu_b),
-                # which was the OPPOSITE sign and mismatched every other figure.
                 100.0 * (mu_b[hot_mask].sum() - mu_a[hot_mask].sum())
                 / mu_b[hot_mask].sum()
             ) if hot_mask.any() else np.nan,
@@ -1279,13 +1259,11 @@ if __name__ == "__main__":
             mu_a=("mu_a", "sum"),
             mu_b=("mu_b", "sum"),
         ).reset_index()
-        # SIGN FIX: positive = loss (mu_b - mu_a), consistent with the aggregate
-        # deficit, the bootstrap, and the burden hot-deficit. Was (mu_a - mu_b).
+
         d["deficit_pct"] = (d["mu_b"] - d["mu_a"]) / d["mu_b"] * 100
         d["indicator"]   = ind
         all_dist.append(d)
 
-        # ---- FIX 3: Save point-estimate and CI to SEPARATE files ----
         d.to_csv(f"{OUT_DIR}district_burden_{ind}_{WBGT_VAR}.csv", index=False)
 
         group_ids = res["_nb_data"][CLUSTER_COL].values
@@ -1355,7 +1333,11 @@ if __name__ == "__main__":
         if not os.path.exists(path):
             return None
         wide = pd.read_csv(path, index_col=0)
-        wide.index = pd.PeriodIndex(wide.index, freq="M").to_timestamp()
+        wide.index = pd.to_datetime(wide.index.astype(str).str.strip(),
+                                    format="%Y-%m", errors="coerce").to_period("M").to_timestamp()
+        n_bad = wide.index.isna().sum()
+        if n_bad:
+            raise ValueError(f"{path}: {n_bad} unparseable date rows in index")
         wide.index.name = "date"
         wide.columns = wide.columns.astype(str).str.strip()
         return (wide.stack(future_stack=True)
@@ -1397,15 +1379,15 @@ if __name__ == "__main__":
         clim = (wbgt_df
                 .merge(p5_df, on=["facility", "date"], how="outer")
                 .merge(pm_df, on=["facility", "date"], how="outer"))
-        clim = clim[(clim["date"].dt.year >= PROJ_PERIOD_START) &
-                    (clim["date"].dt.year <= PROJ_PERIOD_END)].copy()
-        clim["year"]  = clim["date"].dt.year
-        clim["month"] = clim["date"].dt.month
         clim = clim.sort_values(["facility", "date"]).reset_index(drop=True)
 
         # Future WBGT lags — first max(LAG_MONTHS) rows per facility are NaN
         for k in LAG_MONTHS:
             clim[f"wbgt_lag{k}"] = clim.groupby("facility")[WBGT_VAR].shift(k)
+        clim = clim[(clim["date"].dt.year >= PROJ_PERIOD_START) &
+                    (clim["date"].dt.year <= PROJ_PERIOD_END)].copy()
+        clim["year"]  = clim["date"].dt.year
+        clim["month"] = clim["date"].dt.month
         return clim, None
 
     all_proj_summary = []
@@ -1435,7 +1417,7 @@ if __name__ == "__main__":
                 # exactly: RHS = spline_cols + lag_terms + PRECIP_TERMS
                 #                + ["covid", "year_c"]  (facility, month absorbed)
                 df["covid"]  = 0                          # no covid in future
-                df["year_c"] = df["year"] - year_shift    # same centering as fit
+                df["year_c"] = (max_year_historical - 1) - year_shift     # anchor to the last fitted year
                 df["wbgt_c"] = df[WBGT_VAR] - wbgt_shift
                 for k in LAG_MONTHS:
                     df[f"wbgt_lag{k}_c"] = df[f"wbgt_lag{k}"] - wbgt_shift

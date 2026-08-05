@@ -1001,7 +1001,37 @@ for ind in fitted:
     if dist_rows:
         pd.concat(dist_rows, ignore_index=True).to_csv(
             f"{OUT_DIR}projection_district_{ind}.csv", index=False)
+    if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
+        import geopandas as gpd
 
+        gdf = gpd.read_file(SHAPEFILE_PATH)
+        for res in all_results:
+            ind = res["indicator"]
+            csv = f"{OUT_DIR}district_burden_{ind}.csv"
+            if not os.path.exists(csv):
+                continue
+            d = pd.read_csv(csv)
+            merged = gdf.merge(d, left_on=DISTRICT_NAME_COL, right_on=CLUSTER_COL, how="left")
+            fig, ax = plt.subplots(figsize=(6, 8))
+            merged.plot(
+                column="deficit_pct",
+                cmap="RdBu_r",
+                linewidth=0.5,
+                edgecolor="black",
+                legend=True,
+                ax=ax,
+                missing_kwds={"color": "lightgrey", "hatch": "///"},
+            )
+            ax.set_title(
+                f"{INDICATOR_LABELS.get(ind, ind)}\nHistorical two-model deficit by district",
+                fontsize=11,
+                fontweight="bold",
+            )
+            ax.axis("off")
+            plt.tight_layout()
+            plt.savefig(f"{OUT_DIR}map_burden_{ind}.png", dpi=180, bbox_inches="tight")
+            plt.close()
+            print(f"  {ind}: -> map_burden_{ind}.png")
     # --- Plot the grid (without shapefile: bar chart; with shapefile: choropleth) ---
 
     if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
@@ -1155,10 +1185,110 @@ for ind in fitted:
                      fontsize=11, fontweight="bold"); ax.axis("off"); plt.tight_layout()
         plt.savefig(f"{OUT_DIR}map_burden_{ind}.png", dpi=180, bbox_inches="tight"); plt.close()
 
-if all_dist:
-    pd.concat(all_dist, ignore_index=True).to_csv(f"{OUT_DIR}district_burden_all.csv", index=False)
+# -----------------------------------------------------------------------
+    # HISTORICAL BURDEN MAPS (per indicator)
+    # -----------------------------------------------------------------------
+    if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
+        import geopandas as gpd
+        gdf = gpd.read_file(SHAPEFILE_PATH)
 
+        for ind in fitted:
+            csv = f"{OUT_DIR}district_burden_{ind}.csv"
+            if not os.path.exists(csv):
+                continue
+            d = pd.read_csv(csv)
+            merged = gdf.merge(
+                d, left_on=DISTRICT_NAME_COL, right_on=CLUSTER_COL, how="left")
 
+            vabs = float(np.nanpercentile(np.abs(d["deficit_pct"]), 98))
+
+            fig, ax = plt.subplots(figsize=(6, 8))
+            merged.plot(column="deficit_pct", cmap="RdBu_r",
+                        vmin=-vabs, vmax=vabs,
+                        linewidth=0.5, edgecolor="black", legend=True, ax=ax,
+                        missing_kwds={"color": "lightgrey", "hatch": "///"})
+            ax.set_title(
+                f"{INDICATOR_LABELS.get(ind, ind)}\n"
+                "Historical two-model deficit by district (%)",
+                fontsize=11, fontweight="bold")
+            ax.axis("off")
+            plt.tight_layout()
+            plt.savefig(f"{OUT_DIR}map_burden_{ind}.png",
+                        dpi=180, bbox_inches="tight")
+            plt.close()
+            print(f"  {ind}: -> map_burden_{ind}.png")
+
+    # -----------------------------------------------------------------------
+    # PROJECTION MAPS (SSP × tier grid per indicator)
+    # -----------------------------------------------------------------------
+    if SHAPEFILE_PATH and os.path.exists(SHAPEFILE_PATH):
+        print("\nProjection maps...")
+        for res in all_results:
+            ind = res["indicator"]
+            fac_dist = res["_nb_data"][["facility", CLUSTER_COL]].drop_duplicates()
+            fac_dist["facility"] = fac_dist["facility"].astype(str)
+
+            grid_data = {}
+            for ssp in SSP_SCENARIOS:
+                for tier in MODEL_TIERS:
+                    proj_path = f"{OUT_DIR}projection_{ind}_{ssp}_{tier}.csv"
+                    if not os.path.exists(proj_path):
+                        continue
+                    proj = pd.read_csv(proj_path)
+                    proj["facility"] = proj["facility"].astype(str)
+                    proj = proj.merge(fac_dist, on="facility", how="left")
+                    if CLUSTER_COL not in proj.columns:
+                        continue
+                    dist = (proj.groupby(CLUSTER_COL)
+                            .agg(mu_a_proj=("mu_a_proj", "sum"),
+                                 mu_b_proj=("mu_b_proj", "sum"))
+                            .reset_index())
+                    dist["delta_deficit"] = 100 * (dist["mu_a_proj"] - dist["mu_b_proj"]) / dist["mu_b_proj"]
+                    grid_data[(ssp, tier)] = dist
+
+            if not grid_data:
+                continue
+
+            n_ssp, n_tier = len(SSP_SCENARIOS), len(MODEL_TIERS)
+            fig, axes = plt.subplots(n_ssp, n_tier, figsize=(5*n_tier, 6*n_ssp))
+            axes = np.atleast_2d(axes)
+
+            all_pct = np.concatenate([d["delta_deficit"].values for d in grid_data.values()])
+            vabs = float(np.nanpercentile(np.abs(all_pct), 98))
+
+            for row_i, ssp in enumerate(SSP_SCENARIOS):
+                for col_i, tier in enumerate(MODEL_TIERS):
+                    ax = axes[row_i, col_i]
+                    key = (ssp, tier)
+                    if key not in grid_data:
+                        ax.set_title(f"{ssp}: {tier}\n(no data)", fontsize=9)
+                        ax.axis("off")
+                        continue
+                    dist = grid_data[key]
+                    merged = gdf.merge(dist, left_on=DISTRICT_NAME_COL,
+                                       right_on=CLUSTER_COL, how="left")
+                    merged.plot(column="delta_deficit", cmap="RdBu_r",
+                                vmin=-vabs, vmax=vabs,
+                                linewidth=0.5, edgecolor="black",
+                                legend=False, ax=ax,
+                                missing_kwds={"color": "lightgrey", "hatch": "///"})
+                    ax.set_title(f"{ssp}: {tier}\nmean {dist['delta_deficit'].mean():+.2f}%",
+                                 fontsize=10)
+                    ax.axis("off")
+
+            sm = plt.cm.ScalarMappable(cmap="RdBu_r",
+                                        norm=plt.Normalize(vmin=-vabs, vmax=vabs))
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=axes, shrink=0.6, aspect=30, pad=0.02)
+            cbar.set_label("Projected two-model deficit (%)", fontsize=10)
+
+            fig.suptitle(f"{INDICATOR_LABELS.get(ind, ind)}\n"
+                          "District-level projected deficit under CMIP6",
+                          fontsize=12, fontweight="bold", y=1.02)
+            plt.savefig(f"{OUT_DIR}projection_map_grid_{ind}.png",
+                        dpi=180, bbox_inches="tight")
+            plt.close()
+            print(f"  {ind}: -> projection_map_grid_{ind}.png")
 # ===========================================================================
 # 14. TLO LOOKUP TABLE
 # ===========================================================================
