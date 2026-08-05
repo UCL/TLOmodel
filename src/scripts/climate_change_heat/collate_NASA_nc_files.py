@@ -12,7 +12,7 @@ OUT_DIR = Path(
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 SCENARIOS = ["ssp245"]
-VARIABLES = ["hurs", "huss", "rlds", "rsds", "sfcWind", "tas", "tasmax", "tasmin"]
+VARIABLES = ["pr", "hurs", "huss", "rlds", "rsds", "sfcWind", "tas", "tasmax", "tasmin"]
 
 YEAR_START = 2025
 YEAR_END = 2040
