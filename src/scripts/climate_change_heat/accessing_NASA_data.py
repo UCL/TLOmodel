@@ -27,7 +27,7 @@ BASE_DIR = Path(
 )
 
 SCENARIOS = ["ssp245"]
-VARIABLES = ["hurs", "huss", "rlds", "rsds", "sfcWind", "tas", "tasmax", "tasmin"]
+VARIABLES = ["pr", "hurs", "huss", "rlds", "rsds", "sfcWind", "tas", "tasmax", "tasmin"]
 YEARS = list(range(2025, 2041))
 
 # Only the models that actually have data on THREDDS for this scenario/period
