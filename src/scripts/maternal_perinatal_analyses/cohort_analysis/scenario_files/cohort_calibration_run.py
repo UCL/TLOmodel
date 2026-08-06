@@ -4,20 +4,20 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class BaselineScenario(BaseScenario):
+class EmoncScenario(BaseScenario):
     """Scenario for cohort model"""
     def __init__(self):
         super().__init__()
-        self.seed = 790213
+        self.seed = 7969672
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
-        self.pop_size = 15_000
+        self.pop_size = 150_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'block_intervention_big_run', 'directory': './outputs',
+            'filename': 'emonc_interventions', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -35,31 +35,12 @@ class BaselineScenario(BaseScenario):
         }
 
     def modules(self):
-        return [*fullmodel(module_kwargs={'Schisto': {'mda_execute': False}}),
+        return [*fullmodel(module_kwargs={'SymptomManager':{'always_refer_to_properties':True}}),
                  mnh_cohort_module.MaternalNewbornHealthCohort()]
 
     def draw_parameters(self, draw_number, rng):
-        return {}
+             return {}
 
-        # if draw_number == 0:
-        #     return {'PregnancySupervisor': {
-        #             'analysis_year': 2024}}
-        #
-        # else:
-        # interventions_for_analysis = ['blood_transfusion', 'blood_transfusion',
-        #                               'anti_htn_mgso4', 'anti_htn_mgso4',
-        #                               'post_abortion_care_core', 'post_abortion_care_core']
-        #
-        # avail_for_draw = [0.0, 1.0,
-        #                   0.0, 1.0,
-        #                   0.0, 1.0,
-        #                   ]
-        #
-        # return {'PregnancySupervisor': {
-        #         'analysis_year': 2024,
-        #         'interventions_analysis': True,
-        #         'interventions_under_analysis': [interventions_for_analysis[draw_number]],
-        #         'intervention_analysis_availability': avail_for_draw[draw_number]}}
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
