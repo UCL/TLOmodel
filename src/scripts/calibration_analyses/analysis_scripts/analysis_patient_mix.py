@@ -464,7 +464,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         / "TLM_2024"
     )
 
-    # mannually mapping full HSIs to TLM service area and prescription involvement
+    # manually mapping full HSIs to TLM service area and prescription involvement
     # original HSI list is from https://www.tlomodel.org/hsi_events.html
     # combine with simulation output HSIs
     # web_hsi = pd.read_csv(path_to_tlm_folder / 'hsi_tlm_service_area_map.csv')
@@ -511,104 +511,104 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                  "TLM service area": "loc_cat"}
     ).set_index(["Event_Name", "Facility_Level", "Appointment_Footprint"])["Prescription involvement"]
 
-    ## patient volume
-    # todo: get patient volume to use all runs instead of only 1 run
-    #  concat daily results of all runs,
-    #  or get daily mean across runs,
-    #  or get total period patient volume/total number of days as estimate of daily volume?
-    def get_patient_volume_facility_id_per_run(run=0):
-        _patient_volume_facility_id = extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem",
-            key="HSI_Event",
-            custom_generate_series=get_patient_count_facility_id,
-            do_scaling=True
-        ).loc[:, [(0, run)]]  # draw=0, run=0
-
-        _patient_volume_facility_id.columns = _patient_volume_facility_id.columns.droplevel('run')
-        _patient_volume_facility_id = _patient_volume_facility_id.reset_index().rename(
-            columns={0: "Patient_Volume", "date": "Date"})
-        _patient_volume_facility_id = merge_info_from_mfl(_patient_volume_facility_id)
-
-        return _patient_volume_facility_id
-
-    patient_volume_facility_id = pd.concat(
-        [
-            get_patient_volume_facility_id_per_run(run=run).assign(run=run)
-            for run in range(5)
-        ],
-        ignore_index=True
-    )
-
-    patient_volume_facility_id.drop(columns=["run"], inplace=True)
-
-    ## hcw count
-    hcw_count_facility_id = extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem.summary",
-        key="number_of_hcw_staff",
-        custom_generate_series=get_hcw_count_facility_id,
-        do_scaling=False
-    ).loc[:, [(0, 0)]]  # draw=0, run=0
-
-    hcw_count_facility_id.columns = hcw_count_facility_id.columns.droplevel('run')
-    hcw_count_facility_id = hcw_count_facility_id.reset_index().rename(columns={0: 'Staff_Count'})
-    hcw_count_facility_id = merge_info_from_mfl(hcw_count_facility_id)
-
-    # fix levels in hcw_count: 1b has no staff now as merged to 2; ZMH at 4 to be merged to 3; drop HQ at 5
-    hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "5"].index,
-                               inplace=True)
-    assert (hcw_count_facility_id.loc[hcw_count_facility_id["Facility_Level"] == "1b", "Staff_Count"] == 0).all()
-    hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "1b"].index,
-                               inplace=True)
-    ## patient load
-    assert set(patient_volume_facility_id.Facility_ID.drop_duplicates()).issubset(
-        set(hcw_count_facility_id.Facility_ID.drop_duplicates())
-    )
-    daily_patient_load_per_hcw = patient_volume_facility_id[["Date", "Facility_ID", "Patient_Volume"]].merge(
-        hcw_count_facility_id[["Facility_ID", "District", "Facility_Level", "Region", "Staff_Count"]],
-        on=["Facility_ID"], how="right")
-    # fill NAN entries
-    daily_patient_load_per_hcw.loc[
-        daily_patient_load_per_hcw["Facility_Level"] == "4", ["Patient_Volume", "District", "Region", "Date"]
-    ] = [0, "Central Hospitals (Southern)", "Southern", patient_volume_facility_id.loc[0, "Date"]]  # ZMH
-    daily_patient_load_per_hcw.loc[
-        daily_patient_load_per_hcw["Facility_ID"] == 128, "District"
-    ] = "Central Hospitals (Southern)"
-    daily_patient_load_per_hcw.loc[
-        daily_patient_load_per_hcw["Facility_ID"] == 129, "District"
-    ] = "Central Hospitals (Northern)"
-    daily_patient_load_per_hcw.loc[
-        daily_patient_load_per_hcw["Facility_ID"] == 130, "District"
-    ] = "Central Hospitals (Central)"
-
-    # # check the TLO outputs sample size
-    # tab = pd.crosstab(
-    #     daily_patient_load_per_hcw["District"],
-    #     daily_patient_load_per_hcw["Facility_Level"],
-    #     dropna=False
+    # ## patient volume
+    # # todo: get patient volume to use all runs instead of only 1 run
+    # #  concat daily results of all runs,
+    # #  or get daily mean across runs,
+    # #  or get total period patient volume/total number of days as estimate of daily volume?
+    # def get_patient_volume_facility_id_per_run(run=0):
+    #     _patient_volume_facility_id = extract_results(
+    #         results_folder,
+    #         module="tlo.methods.healthsystem",
+    #         key="HSI_Event",
+    #         custom_generate_series=get_patient_count_facility_id,
+    #         do_scaling=True
+    #     ).loc[:, [(0, run)]]  # draw=0, run=0
+    #
+    #     _patient_volume_facility_id.columns = _patient_volume_facility_id.columns.droplevel('run')
+    #     _patient_volume_facility_id = _patient_volume_facility_id.reset_index().rename(
+    #         columns={0: "Patient_Volume", "date": "Date"})
+    #     _patient_volume_facility_id = merge_info_from_mfl(_patient_volume_facility_id)
+    #
+    #     return _patient_volume_facility_id
+    #
+    # patient_volume_facility_id = pd.concat(
+    #     [
+    #         get_patient_volume_facility_id_per_run(run=run).assign(run=run)
+    #         for run in range(5)
+    #     ],
+    #     ignore_index=True
     # )
     #
-    # print(tab)
-
-    def daily_pat_load_per_hcw_per_resolution(_df, resolution=["District", "Facility_Level"], adjust_hcw=True):
-        res_plus_date = resolution + ["Date"]
-        _df = daily_patient_load_per_hcw.groupby(res_plus_date).agg(
-            {"Staff_Count": "sum", "Patient_Volume": "sum"}
-        ).reset_index()
-        if adjust_hcw:
-            # Adjust available HCWs on duty every day by a ratio of 0.5649,
-            # which is the prob. that any HCW is on duty on any day (estimates from CHAI data: 206.3381/365.25),
-            # given TLO assumes the same HCWs in the HS every day in a year.
-            # (TLO also assumes the patients seek care independently of the availability of HCWs and seek care every day;
-            # so no need to adjust patient volumes)
-            _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / (_df["Staff_Count"] * 206.3381 / 365.25)
-        else:
-            _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / _df["Staff_Count"]
-
-        return _df
-
-    daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
+    # patient_volume_facility_id.drop(columns=["run"], inplace=True)
+    #
+    # ## hcw count
+    # hcw_count_facility_id = extract_results(
+    #     results_folder,
+    #     module="tlo.methods.healthsystem.summary",
+    #     key="number_of_hcw_staff",
+    #     custom_generate_series=get_hcw_count_facility_id,
+    #     do_scaling=False
+    # ).loc[:, [(0, 0)]]  # draw=0, run=0
+    #
+    # hcw_count_facility_id.columns = hcw_count_facility_id.columns.droplevel('run')
+    # hcw_count_facility_id = hcw_count_facility_id.reset_index().rename(columns={0: 'Staff_Count'})
+    # hcw_count_facility_id = merge_info_from_mfl(hcw_count_facility_id)
+    #
+    # # fix levels in hcw_count: 1b has no staff now as merged to 2; ZMH at 4 to be merged to 3; drop HQ at 5
+    # hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "5"].index,
+    #                            inplace=True)
+    # assert (hcw_count_facility_id.loc[hcw_count_facility_id["Facility_Level"] == "1b", "Staff_Count"] == 0).all()
+    # hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "1b"].index,
+    #                            inplace=True)
+    # ## patient load
+    # assert set(patient_volume_facility_id.Facility_ID.drop_duplicates()).issubset(
+    #     set(hcw_count_facility_id.Facility_ID.drop_duplicates())
+    # )
+    # daily_patient_load_per_hcw = patient_volume_facility_id[["Date", "Facility_ID", "Patient_Volume"]].merge(
+    #     hcw_count_facility_id[["Facility_ID", "District", "Facility_Level", "Region", "Staff_Count"]],
+    #     on=["Facility_ID"], how="right")
+    # # fill NAN entries
+    # daily_patient_load_per_hcw.loc[
+    #     daily_patient_load_per_hcw["Facility_Level"] == "4", ["Patient_Volume", "District", "Region", "Date"]
+    # ] = [0, "Central Hospitals (Southern)", "Southern", patient_volume_facility_id.loc[0, "Date"]]  # ZMH
+    # daily_patient_load_per_hcw.loc[
+    #     daily_patient_load_per_hcw["Facility_ID"] == 128, "District"
+    # ] = "Central Hospitals (Southern)"
+    # daily_patient_load_per_hcw.loc[
+    #     daily_patient_load_per_hcw["Facility_ID"] == 129, "District"
+    # ] = "Central Hospitals (Northern)"
+    # daily_patient_load_per_hcw.loc[
+    #     daily_patient_load_per_hcw["Facility_ID"] == 130, "District"
+    # ] = "Central Hospitals (Central)"
+    #
+    # # # check the TLO outputs sample size
+    # # tab = pd.crosstab(
+    # #     daily_patient_load_per_hcw["District"],
+    # #     daily_patient_load_per_hcw["Facility_Level"],
+    # #     dropna=False
+    # # )
+    # #
+    # # print(tab)
+    #
+    # def daily_pat_load_per_hcw_per_resolution(_df, resolution=["District", "Facility_Level"], adjust_hcw=True):
+    #     res_plus_date = resolution + ["Date"]
+    #     _df = daily_patient_load_per_hcw.groupby(res_plus_date).agg(
+    #         {"Staff_Count": "sum", "Patient_Volume": "sum"}
+    #     ).reset_index()
+    #     if adjust_hcw:
+    #         # Adjust available HCWs on duty every day by a ratio of 0.5649,
+    #         # which is the prob. that any HCW is on duty on any day (estimates from CHAI data: 206.3381/365.25),
+    #         # given TLO assumes the same HCWs in the HS every day in a year.
+    #         # (TLO also assumes the patients seek care independently of the availability of HCWs and seek care every day;
+    #         # so no need to adjust patient volumes)
+    #         _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / (_df["Staff_Count"] * 206.3381 / 365.25)
+    #     else:
+    #         _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / _df["Staff_Count"]
+    #
+    #     return _df
+    #
+    # daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
 
     # read in TLM estimates
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
@@ -789,7 +789,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     # make level 3 as level 3+ as it combines levels 3 and 4
-    pat_mix_complete["Facility_level"] = pat_mix_complete["Facility_Level"].replace({"3": "3+"})
+    mask = pat_mix_complete["category"].eq("Facility_Level")
+    pat_mix_complete.loc[mask, "subgroup"] = (
+        pat_mix_complete.loc[mask, "subgroup"]
+        .replace({"3": "3+"})
+    )
 
     # plot
     markers = {
