@@ -102,144 +102,6 @@ def get_list_of_items(self, item_list):
 
     return codes
 
-# def check_int_deliverable(self, int_name, hsi_event,
-#                           q_param=None, cons=None, alt_con=None, opt_cons=None, equipment=None, dx_test=None):
-#     """
-#     This function is called to determine if an intervention within the MNH modules can be delivered to an individual
-#     during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
-#     of intervention delivery should be set explicitly, this is achieved during this function. Otherwise, probability of
-#      intervention delivery is determined by any module-level quality parameters, consumable availability, and
-#      (if applicable) the results of any dx_tests. Equipment is also declared.
-#
-#    :param self: module
-#     param int_name: items for code look up
-#     param hsi_event: module
-#     param q_param: items for code look up
-#     param cons: module
-#     param opt_cons: items for code look up
-#     param equipment: module
-#     param dx_test: items for code look up
-#     """
-#
-#     df = self.sim.population.props
-#     individual_id = hsi_event.target
-#     p_params = self.sim.modules['PregnancySupervisor'].current_parameters
-#     l_params = self.sim.modules['Labour'].current_parameters
-#     c = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
-#
-#     print(int_name)
-#     assert int_name in p_params['all_interventions']
-#
-#     int_will_run = None
-#     c[f'{int_name}_req'] += 1
-#
-#     # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
-#     # delivery is being overridden
-#     # To do: replace this parameter
-#     if (p_params['interventions_analysis'] and p_params['ps_analysis_in_progress'] and
-#         (int_name in p_params['interventions_under_analysis'])):
-#
-#         # If so, we determine if this intervention will be delivered given the set probability of delivery.
-#         can_int_run_analysis = self.rng.random_sample() < p_params['intervention_analysis_availability']
-#
-#         # todo - we need to log consumables used here
-#
-#         # The intervention has no effect
-#         if not can_int_run_analysis:
-#             int_will_run = False
-#
-#         else:
-#             # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
-#             # correct identification of a condition through a dx_test we account for that here.
-#             if dx_test is not None:
-#                 test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
-#
-#                 if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
-#                     int_will_run = True
-#
-#                 elif ((test[0].target_categories is not None) and
-#                       (df.at[individual_id, test[0].property] in test[0].target_categories)):
-#                     int_will_run = True
-#
-#                 else:
-#                     int_will_run = False
-#
-#             else:
-#                 int_will_run = True
-#
-#     elif (l_params['la_analysis_in_progress'] or
-#           (p_params['ps_analysis_in_progress'] and not p_params['interventions_under_analysis'])):
-#
-#         if 'AntenatalCare' in hsi_event.TREATMENT_ID:
-#             params = self.sim.modules['PregnancySupervisor'].current_parameters
-#         else:
-#             params = self.sim.modules['Labour'].current_parameters
-#
-#         # Define HSIs and analysis parameters of interest
-#         analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
-#                          'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
-#                          'AntenatalCare_FollowUp': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
-#                          'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
-#                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
-#                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
-#                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
-#                          'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
-#                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
-#
-#         for k in analysis_dict:
-#             # If analysis is running, the analysis date has passed and an appropriate HSI has called this function then
-#             # probability of intervention delivery is determined by an analysis parameter
-#             if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
-#                 if self.rng.random_sample() < params[analysis_dict[k][1]]:
-#                     int_will_run = True
-#
-#                 else:
-#                     int_will_run = False
-#
-#     else:
-#
-#         # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
-#         # availability and dx_test results
-#         quality = False
-#         consumables = False
-#         test = False
-#
-#         if ((q_param is None) or
-#             all([self.rng.random_sample() < value for value in q_param])):
-#             quality = True
-#
-#             # todo: should this only be if qual and cons are also true?
-#             if equipment is not None:
-#                 hsi_event.add_equipment(equipment)
-#
-#         if (cons is None) or hsi_event.get_consumables(item_codes=cons if not None else {},
-#                                      to_log=True if cons is not None else False):
-#             consumables = True
-#
-#         elif (alt_con is not None) and (hsi_event.get_consumables(item_codes=alt_con)):
-#             consumables = True
-#
-#         hsi_event.get_consumables(optional_item_codes=opt_cons if not None else {},
-#                                   to_log=True if opt_cons is not None else False)
-#
-#         if ((dx_test is None) or
-#             (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
-#             test = True
-#
-#         if quality and consumables and test:
-#             int_will_run = True
-#
-#         else:
-#             int_will_run = False
-#
-#     assert int_will_run is not None
-#
-#     if int_will_run:
-#         c[f'{int_name}_deliv'] += 1
-#
-#     return int_will_run
-
-
 def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
                           alt_con=None, opt_cons=None,
                           equipment=None, dx_test=None,
@@ -263,46 +125,67 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     """
     df = self.sim.population.props
     individual_id = hsi_event.target
-    p_params = self.sim.modules["PregnancySupervisor"].current_parameters
-    l_params = self.sim.modules["Labour"].current_parameters
-    c = self.sim.modules["PregnancySupervisor"].mnh_outcome_counter
+
+    pregnancy_supervisor = self.sim.modules["PregnancySupervisor"]
+    labour = self.sim.modules["Labour"]
+    health_system = self.sim.modules["HealthSystem"]
+
+    p_params = pregnancy_supervisor.current_parameters
+    l_params = labour.current_parameters
+    counter = pregnancy_supervisor.mnh_outcome_counter
 
     assert int_name in p_params["all_interventions"]
 
     if to_log:
-        c[f"{int_name}_req"] += 1
+        counter[f"{int_name}_req"] += 1
 
-    # --- helpers ---
-    rng = self.rng.random_sample
+    # ------------------------------------------------------------------
+    # Helper functions
+    # ------------------------------------------------------------------
+    def current_module_params():
+        """
+        Return the parameter set corresponding to the HSI being evaluated.
+        """
+        if "AntenatalCare" in hsi_event.TREATMENT_ID:
+            return pregnancy_supervisor.current_parameters
 
-    def passes_dx_gate() -> bool:
-        """If dx_test is specified, intervention only 'works' if target meets dx criteria."""
+        return labour.current_parameters
+
+    def passes_forced_dx_gate():
+        """
+        Apply the diagnostic gate during a forced-delivery analysis.
+
+        This checks the underlying property directly rather than running the
+        normal diagnostic-test process.
+        """
         if dx_test is None:
             return True
 
-        test = self.sim.modules["HealthSystem"].dx_manager.dx_tests[dx_test]
-        prop = test[0].property
-        cats = test[0].target_categories
-        value = df.at[individual_id, prop]
+        test = health_system.dx_manager.dx_tests[dx_test]
+        test_definition = test[0]
 
-        if cats is None:
+        property_name = test_definition.property
+        target_categories = test_definition.target_categories
+        value = df.at[individual_id, property_name]
+
+        if target_categories is None:
             return bool(value)
-        return value in cats
 
-    def current_module_params():
-        return (
-            self.sim.modules["PregnancySupervisor"].current_parameters
-            if "AntenatalCare" in hsi_event.TREATMENT_ID
-            else self.sim.modules["Labour"].current_parameters
-        )
+        return value in target_categories
 
-    def log_cons_when_forcing_intervention_delivery():
-        # add consumable use to HS logger...
+    def log_forced_consumable_use():
+        """
+        Record consumables as available and used when delivery is forced.
 
-        if cons is None and opt_cons is None:
-            final_cons = {}
-        else:
-            final_cons = {**(cons or {}), **(opt_cons or {})}
+        Alternative consumables are not included because they are only used
+        when the primary consumables are unavailable. In a forced-delivery
+        scenario the primary consumables are treated as available.
+        """
+
+        final_cons = {
+            **(cons or {}),
+            **(opt_cons or {}),
+        }
 
         items_not_available = {}
 
@@ -317,90 +200,203 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
             description="Record of requested and used consumable items.",
         )
 
-        self.sim.modules["HealthSystem"].consumables._summary_counter.record_availability(
+        health_system.consumables._summary_counter.record_availability(
             items_available=final_cons,
             items_not_available=items_not_available,
             items_used=final_cons,
         )
 
+    def record_delivery():
+        if to_log:
+            counter[f"{int_name}_deliv"] += 1
 
-    # --- 1) PregnancySupervisor intervention analysis override ---
-    if (p_params["interventions_analysis"]
+    # ------------------------------------------------------------------
+    # Generate explicit random draws before choosing a branch
+    # ------------------------------------------------------------------
+    # These draws are consumed on every call, regardless of whether the
+    # corresponding analysis pathway is active. This helps paired scenarios
+    # remain aligned at the level of random draws made directly in this
+    # function.
+    #
+    # It changes the RNG sequence relative to the previous implementation,
+    # so baseline and intervention scenarios should both be rerun.
+
+    intervention_analysis_draw = self.rng.random_sample()
+    broader_analysis_draw = self.rng.random_sample()
+
+    # Generate all quality draws before evaluating them. This avoids the
+    # variable RNG consumption caused by all(rng() < p for p in q_param),
+    # which stops drawing as soon as one condition fails.
+
+    if q_param is None:
+        quality_ok = True
+    else:
+        quality_probabilities = list(q_param)
+        quality_draws = [
+            self.rng.random_sample()
+            for _ in quality_probabilities
+        ]
+
+        quality_ok = all(
+            draw < probability
+            for draw, probability in zip(
+                quality_draws,
+                quality_probabilities,
+            )
+        )
+
+    # ------------------------------------------------------------------
+    # Identify analysis modes
+    # ------------------------------------------------------------------
+
+    intervention_under_analysis = (
+        p_params["interventions_analysis"]
         and p_params["ps_analysis_in_progress"]
-        and (int_name in p_params["interventions_under_analysis"])):
+        and int_name in p_params["interventions_under_analysis"]
+    )
 
-        can_run = rng() < p_params["intervention_analysis_availability"]
+    broader_analysis_in_progress = (
+        l_params["la_analysis_in_progress"]
+        or (
+            p_params["ps_analysis_in_progress"]
+            and not p_params["interventions_analysis"]
+        )
+    )
+
+    # ------------------------------------------------------------------
+    # 1. Intervention-specific analysis
+    # ------------------------------------------------------------------
+
+    if intervention_under_analysis:
+        can_run = (
+            intervention_analysis_draw
+            < p_params["intervention_analysis_availability"]
+        )
 
         if not can_run:
             return False
 
-        elif to_log:
-            c[f"{int_name}_deliv"] += 1
-            if cons is not None and opt_cons is not None:
-                log_cons_when_forcing_intervention_delivery()
+        record_delivery()
+
+        if to_log and (cons is not None or opt_cons is not None):
+            log_forced_consumable_use()
 
         if dx_test is not None:
-            return passes_dx_gate()
+            return passes_forced_dx_gate()
 
-        return can_run
+        return True
 
-    # --- 2) Labour / PS analysis override for specific HSIs ---
-    if l_params["la_analysis_in_progress"] or (
-        p_params["ps_analysis_in_progress"] and not p_params["interventions_analysis"]
-    ):
+    # ------------------------------------------------------------------
+    # 2. Service wide analysis
+    # ------------------------------------------------------------------
+
+    if broader_analysis_in_progress:
         params = current_module_params()
 
         analysis_dict = {
-            "AntenatalCare_Outpatient": ("alternative_anc_quality", "anc_availability_probability"),
-            "AntenatalCare_Inpatient": ("alternative_ip_anc_quality", "ip_anc_availability_probability"),
-            "AntenatalCare_FollowUp": ("alternative_ip_anc_quality", "ip_anc_availability_probability"),
-            "DeliveryCare_Basic": ("alternative_bemonc_availability", "bemonc_cons_availability"),
-            "DeliveryCare_Neonatal": ("alternative_bemonc_availability", "bemonc_cons_availability"),
-            "DeliveryCare_Comprehensive": ("alternative_cemonc_availability", "cemonc_cons_availability"),
-            "PostnatalCare_Maternal": ("alternative_pnc_quality", "pnc_availability_probability"),
-            "PostnatalCare_Comprehensive": ("alternative_pnc_quality", "pnc_availability_probability"),
-            "PostnatalCare_Neonatal": ("alternative_pnc_quality", "pnc_availability_probability"),
+            "AntenatalCare_Outpatient": (
+                "alternative_anc_quality",
+                "anc_availability_probability",
+            ),
+            "AntenatalCare_Inpatient": (
+                "alternative_ip_anc_quality",
+                "ip_anc_availability_probability",
+            ),
+            "AntenatalCare_FollowUp": (
+                "alternative_ip_anc_quality",
+                "ip_anc_availability_probability",
+            ),
+            "DeliveryCare_Basic": (
+                "alternative_bemonc_availability",
+                "bemonc_cons_availability",
+            ),
+            "DeliveryCare_Neonatal": (
+                "alternative_bemonc_availability",
+                "bemonc_cons_availability",
+            ),
+            "DeliveryCare_Comprehensive": (
+                "alternative_cemonc_availability",
+                "cemonc_cons_availability",
+            ),
+            "PostnatalCare_Maternal": (
+                "alternative_pnc_quality",
+                "pnc_availability_probability",
+            ),
+            "PostnatalCare_Comprehensive": (
+                "alternative_pnc_quality",
+                "pnc_availability_probability",
+            ),
+            "PostnatalCare_Neonatal": (
+                "alternative_pnc_quality",
+                "pnc_availability_probability",
+            ),
         }
 
-        key = hsi_event.TREATMENT_ID
-        if key in analysis_dict:
-            flag_param, prob_param = analysis_dict[key]
-            if params[flag_param]:
-                will_run = rng() < params[prob_param]
-                if will_run:
-                    c[f"{int_name}_deliv"] += 1
-                return will_run
+        treatment_id = hsi_event.TREATMENT_ID
 
-    # --- 3) Normal logic: quality + consumables + dx-test ---
-    quality_ok = (q_param is None) or all(rng() < v for v in q_param)
+        if treatment_id in analysis_dict:
+            flag_param, probability_param = analysis_dict[treatment_id]
+
+            if params[flag_param]:
+                can_run = (
+                    broader_analysis_draw
+                    < params[probability_param]
+                )
+
+                if can_run:
+                    record_delivery()
+
+                return can_run
+
+    # ------------------------------------------------------------------
+    # 3. Normal logic: quality, equipment, consumables and diagnosis
+    # ------------------------------------------------------------------
+
     if quality_ok and equipment is not None:
         hsi_event.add_equipment(equipment)
 
-    # consumables: primary cons, else try alt_con
+    # Required consumables
     if cons is None:
         consumables_ok = True
     else:
-        consumables_ok = hsi_event.get_consumables(item_codes=cons, to_log=to_log)
-        if (not consumables_ok) and (alt_con is not None):
-            consumables_ok = hsi_event.get_consumables(item_codes=alt_con, to_log=to_log)
+        consumables_ok = hsi_event.get_consumables(
+            item_codes=cons,
+            to_log=to_log,
+        )
 
-    # optional consumables (don’t gate success)
+        if not consumables_ok and alt_con is not None:
+            consumables_ok = hsi_event.get_consumables(
+                item_codes=alt_con,
+                to_log=to_log,
+            )
+
+    # Optional consumables do not determine whether delivery succeeds.
     if opt_cons is not None:
-        hsi_event.get_consumables(optional_item_codes=opt_cons, to_log=to_log)
+        hsi_event.get_consumables(
+            optional_item_codes=opt_cons,
+            to_log=to_log,
+        )
 
-    # diagnostic gate: either none required or test passes
-    test_ok = (dx_test is None) or  self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-            dx_tests_to_run=dx_test, hsi_event=hsi_event)
+    # Normal diagnostic-test pathway.
+    if dx_test is None:
+        test_ok = True
+    else:
+        test_ok = health_system.dx_manager.run_dx_test(
+            dx_tests_to_run=dx_test,
+            hsi_event=hsi_event,
+        )
 
-    # We log if the intervention is delivered at all (e.g. cons and staff available). Result of any test shouldnt
-    # impact logging
-    if bool(quality_ok and consumables_ok) and to_log:
-        c[f"{int_name}_deliv"] += 1
+    # Delivery is logged when the intervention itself is available.
+    # A negative diagnostic result does not mean that the intervention or
+    # diagnostic process was unavailable.
+    delivered = bool(quality_ok and consumables_ok)
 
-    # We only want to return "True" if intervention is delivered AND, if its a test, it detects what its testing for
-    run_or_run_with_pos_result = bool(quality_ok and consumables_ok and test_ok)
+    if delivered:
+        record_delivery()
 
-    return run_or_run_with_pos_result
+    # Return True only when delivery occurs and any diagnostic gate passes.
+    return bool(delivered and test_ok)
+
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
