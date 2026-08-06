@@ -2653,6 +2653,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive']:
             return
 
+        pre_24_weeks = df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24
+
         # Check the correct amount of time has passed between labour onset and this event event
         if not (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D'):
             logger.info(key='error', data=f'Mother {individual_id} arrived at LabourDeathAndStillBirthEvent at the '
@@ -2680,31 +2682,31 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         # We also assume that if a womans labour has started prior to 24 weeks the baby would not survive and we class
         # this as a stillbirth
-        if (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24) or outcome_of_still_birth_equation:
+        if pre_24_weeks or outcome_of_still_birth_equation:
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
+            df.at[individual_id, 'ps_prev_stillbirth'] = True
+
             random_draw = self.module.rng.random_sample()
-            self.module.intrapartum_stillbirth_since_last_reset += 1
-            # If this woman will experience a stillbirth and she was not pregnant with twins OR she was pregnant with
-            # twins but both twins have died during labour we reset/set the appropriate variables
-            if not df.at[individual_id, 'ps_multiple_pregnancy'] or \
-                (df.at[individual_id, 'ps_multiple_pregnancy'] and (random_draw < params['prob_both_twins_ip_still_'
-                                                                                         'birth'])):
 
+            twin_mother = df.at[individual_id, 'ps_multiple_pregnancy']
+            both_twins_stillborn = True if pre_24_weeks else random_draw < params['prob_both_twins_ip_still_birth']
+
+            if not twin_mother or (twin_mother and both_twins_stillborn):
                 df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                # This variable is therefore only ever true when the pregnancy has ended in stillbirth
-                df.at[individual_id, 'ps_prev_stillbirth'] = True
-
-                # Next reset pregnancy and update contraception
                 self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
-            # If one twin survives we store this as a property of the MNI which is reference on_birth of the newborn
-            # outcomes to ensure this twin pregnancy only leads to one birth
-            elif (df.at[individual_id, 'ps_multiple_pregnancy'] and (random_draw > params['prob_both_twins_ip_still_'
-                                                                                          'birth'])):
-                df.at[individual_id, 'ps_prev_stillbirth'] = True
+                if not twin_mother:
+                    self.module.intrapartum_stillbirth_since_last_reset += 1
+                elif twin_mother and both_twins_stillborn:
+                    self.module.intrapartum_stillbirth_since_last_reset += 2
+
+            elif twin_mother and not both_twins_stillborn:
                 mni[individual_id]['single_twin_still_birth'] = True
                 logger.debug(key='message', data=f'single twin stillbirth for {individual_id}')
+                self.module.intrapartum_stillbirth_since_last_reset += 1
+
+            pregnancy_helper_functions.log_pregnancy_loss(self.module, individual_id, 'intrapartum_stillbirth')
 
         if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
             # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
@@ -2713,6 +2715,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_intrapartum_still_birth'] or mni[individual_id]['single_twin_still_birth']:
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['intrapartum_stillbirth'] += 1
+            pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, 'intrapartum_stillbirth')
 
         # Reset property
         if individual_id in mni:

@@ -1167,6 +1167,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # Log the pregnancy loss
         self.mnh_outcome_counter[type_abortion] += 1
 
+        pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, type_abortion)
+
         # This function officially ends a pregnancy through the contraception module (updates 'is_pregnant' and
         # determines post pregnancy contraception)
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
@@ -1611,6 +1613,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted, and reset
         # pregnancy status and update contraceptive status
         for person in women.index:
+            pregnancy_helper_functions.log_pregnancy_loss(self, person, "antenatal_stillbirth")
             self.sim.modules['Contraception'].end_pregnancy(person)
             mni[person]['delete_mni'] = True
             self.mnh_outcome_counter['antenatal_stillbirth'] += 1
@@ -2133,6 +2136,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             return
 
         # Reset pregnancy variables and store onset for daly calculation
+        pregnancy_helper_functions.log_pregnancy_loss(self.module, individual_id, "ectopic_pregnancy")
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
         pregnancy_helper_functions.store_dalys_in_mni(individual_id, self.module.mother_and_newborn_info,
                                                       'ectopic_onset', self.sim.date)

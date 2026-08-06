@@ -12,6 +12,7 @@ from tlo.methods.consumables import (
     ConsumablesSummaryCounter,
 )
 logger_hs = logging.getLogger("tlo.methods.healthsystem")
+logger_ps = logging.getLogger("tlo.methods.pregnancy_supervisor")
 
 def generate_mnh_outcome_counter():
     """
@@ -397,7 +398,28 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     # Return True only when delivery occurs and any diagnostic gate passes.
     return bool(delivered and test_ok)
 
+def log_pregnancy_loss(self, individual_id, cause):
+    df = self.sim.population.props
 
+    if cause == "intrapartum_stillbirth":
+        number_of_losses = 2 if (df.at[individual_id, "ps_multiple_pregnancy"] and
+                                 df.at[individual_id, "la_intrapartum_stillbirth"]) else 1
+    else:
+        number_of_losses = 2 if df.at[individual_id, "ps_multiple_pregnancy"] else 1
+
+    for _ in range(number_of_losses):
+
+        logger_ps.info(
+            key="pregnancy_loss",
+            data={
+                "mother_id": individual_id,
+                "cause": cause,
+                "gest_age": df.at[
+                    individual_id,
+                    "ps_gestational_age_in_weeks"
+                ],
+            },
+        )
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
     """
