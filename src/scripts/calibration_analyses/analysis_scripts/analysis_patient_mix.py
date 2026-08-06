@@ -491,6 +491,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         path_to_tlm_folder / 'hsi_tlm_service_area_map_full.csv',
         usecols=["Event", "Facility level", "Appointment footprint", "TLM service area", "Source"]
     )
+
+    # try replace NCD/Other clinic with Outpatient - General, as TLM data has no clear division of these
+    hsi_loc_cat_map["TLM service area"] = hsi_loc_cat_map["TLM service area"].replace(
+        {"NCD/Other clinic": "Outpatient - General"})
+
     hsi_loc_cat_map = hsi_loc_cat_map[hsi_loc_cat_map["Source"] != "hsi_list"]
     hsi_loc_cat_map = hsi_loc_cat_map.rename(
         columns={"Event": "Event_Name",
@@ -507,8 +512,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hsi_prescription_map = hsi_prescription_map.rename(
         columns={"Event": "Event_Name",
                  "Facility level": "Facility_Level",
-                 "Appointment footprint": "Appointment_Footprint",
-                 "TLM service area": "loc_cat"}
+                 "Appointment footprint": "Appointment_Footprint"}
     ).set_index(["Event_Name", "Facility_Level", "Appointment_Footprint"])["Prescription involvement"]
 
     # ## patient volume
@@ -640,6 +644,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # from patient exit
     def pat_prop_per_subgroup_total_period_tool_2(_df, subgroup="fac_level"):
         _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
+        _df["loc_cat"] = _df["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
+
         _df = _df[["respondent_id", subgroup]].groupby(subgroup).count().reset_index().rename(
             columns={"respondent_id": "pat_volume", subgroup: "subgroup"})
         _df["category"] = subgroup
@@ -656,6 +662,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # from facility summary
     def pat_prop_per_subgroup_total_period_tool_6(_df, subgroup="fac_level"):
         _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
+        _df["loc_cat"] = _df["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
+
         _df = _df[["num_of_patients", subgroup]].groupby(subgroup).sum().reset_index().rename(
             columns={"num_of_patients": "pat_volume", subgroup: "subgroup"})
         _df["category"] = subgroup
