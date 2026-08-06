@@ -917,7 +917,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Default Healthsystem",
-        "% change in DALYs (vs Baseline)",
+        "% DALYs averted (vs Baseline)",
     )
 
     # Keep only Improved Healthsystem scenarios
@@ -957,7 +957,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Improved Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Improved Healthsystem",
-        "% change in DALYs (vs Baseline)",
+        "% DALYs averted (vs Baseline)",
     )
 
     annual_deaths = extract_annual_deaths(results_folder)
@@ -1061,7 +1061,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% Deaths averted (vs Baseline): Default Healthsystem",
-        "% change in Deaths (vs Baseline)",
+        "% Deaths averted (vs Baseline)",
     )
 
     # Keep only Improved Healthsystem scenarios
@@ -1103,7 +1103,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Improved Healthsystem Function",
         ],
         "% Deaths averted (vs Baseline): Improved Healthsystem",
-        "% change in Deaths (vs Baseline)",
+        "% Deaths averted (vs Baseline)",
     )
 
     if args.save_figures:
