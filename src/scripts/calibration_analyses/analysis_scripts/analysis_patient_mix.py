@@ -247,11 +247,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ["Facility_Level", "Sex", "Age_Range", "Wealth", "Education", "loc_cat"]
         )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
 
-        # combine levels 3 and 4, considering level 4 possibly has no patients as simulated, and
+        # combine levels 3 and 4, considering level 4 has no patients as simulated
+        _df["Facility_Level"] = _df["Facility_Level"].replace({"4": "3"})
+
         # calculate patient volume per level to define the rescaling factors for each level,
         # for the purpose of rescaling below
         _df_fac_level = _df.copy()
-        _df_fac_level["Facility_Level"] = _df_fac_level["Facility_Level"].replace({"4": "3"})
         _df_fac_level = _df_fac_level.groupby(["Facility_Level"])["patient_count"].sum().reindex(
             ["1a", "2", "3"], fill_value=0)
         tlm_pat_prop = [0.2466, 0.447, 0.3064]
@@ -259,7 +260,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df_fac_level.loc["1a"] = (1 if _df_fac_level.loc["1a"] == 0 else tlm_pat_prop[0] / _df_fac_level.loc["1a"])
         _df_fac_level.loc["2"] = (1 if _df_fac_level.loc["2"] == 0 else tlm_pat_prop[1] / _df_fac_level.loc["2"])
         _df_fac_level.loc["3"] = (1 if _df_fac_level.loc["3"] == 0 else tlm_pat_prop[2] / _df_fac_level.loc["3"])
-        _df_fac_level.loc["4"] = _df_fac_level.loc["3"].copy()
         # rename
         _df_fac_level = _df_fac_level.rename("scale_factor")
 
@@ -639,6 +639,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # *** patient mix comparisons ***
     # from patient exit
     def pat_prop_per_subgroup_total_period_tool_2(_df, subgroup="fac_level"):
+        _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
         _df = _df[["respondent_id", subgroup]].groupby(subgroup).count().reset_index().rename(
             columns={"respondent_id": "pat_volume", subgroup: "subgroup"})
         _df["category"] = subgroup
@@ -654,6 +655,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # from facility summary
     def pat_prop_per_subgroup_total_period_tool_6(_df, subgroup="fac_level"):
+        _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
         _df = _df[["num_of_patients", subgroup]].groupby(subgroup).sum().reset_index().rename(
             columns={"num_of_patients": "pat_volume", subgroup: "subgroup"})
         _df["category"] = subgroup
@@ -688,7 +690,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="HSI_Event",
         custom_generate_series=lambda df: get_patient_mix_total_period(
             df,
-            rescale_by_fac_level=False,
+            rescale_by_fac_level=True,
         ),
         do_scaling=False
     ).fillna(0)
@@ -785,6 +787,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
         .replace({1: "None", 2: "Some primary education", 3: "Some secondary education"})
     )
+
+    # make level 3 as level 3+ as it combines levels 3 and 4
+    pat_mix_complete["Facility_level"] = pat_mix_complete["Facility_Level"].replace({"3": "3+"})
 
     # plot
     markers = {
