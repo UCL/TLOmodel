@@ -4,7 +4,7 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class EmoncScenario(BaseScenario):
+class CohortCalibration(BaseScenario):
     """Scenario for cohort model"""
     def __init__(self):
         super().__init__()
@@ -17,7 +17,7 @@ class EmoncScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'emonc_interventions', 'directory': './outputs',
+            'filename': 'cohort_calibration', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
