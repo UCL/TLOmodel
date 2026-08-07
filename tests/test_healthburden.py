@@ -77,17 +77,54 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     dalys = output['tlo.methods.healthburden']['dalys']
     dalys = dalys.drop(columns=['date'])
 
+    # Columns that are not DALY causes
+    index_cols = ['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year']
+
+    # All remaining columns are DALY values
+    daly_cols = [c for c in dalys.columns if c not in index_cols]
+
+    # Total national DALYs
+    national_totals = dalys[daly_cols].sum()
+
+    # Total district DALYs
+    district_totals = (dalys.groupby('district_of_residence')[daly_cols].sum().sum())
+
+    pd.testing.assert_series_equal(national_totals.sort_index(), district_totals.sort_index(), check_dtype=False)
+
     age_index = sim.modules['Demography'].AGE_RANGE_CATEGORIES
     sex_index = ['M', 'F']
+    wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
+    district_index = sim.modules['Demography'].PROPERTIES['district_of_residence'].categories
     year_index = list(range(start_date.year, end_date.year + 1))
-    correct_multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index],
-                                                     names=['sex', 'age_range', 'year'])
-    output_multi_index = dalys.set_index(['sex', 'age_range', 'year']).index
+
+    correct_multi_index = pd.MultiIndex.from_product(
+        [sex_index, age_index, wealth_index, district_index, year_index],
+        names=['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year']
+    )
+
+    output_multi_index = dalys.set_index(
+        ['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year']).index
     pd.testing.assert_index_equal(output_multi_index, correct_multi_index, check_order=False)
 
+    # Check total deaths in district are equal to total deaths at national level
+    yll = output['tlo.methods.healthburden']['yll_by_causes_of_death']
+    yll = yll.drop(columns=['date'])
+
+    index_cols = ['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year']
+    death_cols = [c for c in yll.columns if c not in index_cols]
+
+    # Total national deaths
+    national_deaths = yll[death_cols].sum()
+
+    # Total district deaths
+    district_deaths = (yll.groupby('district_of_residence')[death_cols].sum().sum())
+
+    pd.testing.assert_series_equal(national_deaths.sort_index(), district_deaths.sort_index(), check_dtype=False)
+
     # check that there is a column for each 'label' that is registered
-    assert set(dalys.set_index(['sex', 'age_range', 'year']).columns) == \
-           {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'}
+    assert (set(
+        dalys.set_index(['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year']).columns) ==
+            {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'})
 
 
 @pytest.mark.slow
@@ -386,9 +423,12 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
-    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
-    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / DAYS_IN_YEAR)
+    assert (yll.loc[('F', '0-4', slice(None), slice(None), 2010)].sum().sum()
+            == approx(0.5, abs=2.0 / DAYS_IN_YEAR))
+    assert (yll.loc[('F', '5-9', slice(None), slice(None), 2010)].sum().sum()
+            == approx(0.5, abs=2.0 / DAYS_IN_YEAR))
+    assert (yll.loc[('F', ['0-4', '5-9'], slice(None), slice(None), 2010)].sum().sum()
+            == approx(1.0, abs=0.5 / DAYS_IN_YEAR))
 
 
 @pytest.mark.slow
@@ -486,8 +526,8 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         & (yld.age_range == age_range_at_disability_onset)
         & (yld.sex == sex)
     )
-    assert (yld.loc[marker_for_disability, 'cause_of_disability_A'] == daly_wt * 1.0).all()
-    assert (yld.loc[~marker_for_disability, 'cause_of_disability_A'] == 0.0).all()
+    assert (yld.loc[marker_for_disability, 'cause_of_disability_A'].sum() == approx(daly_wt * 1.0))
+    assert (yld.loc[~marker_for_disability, 'cause_of_disability_A'].sum() == approx(0.0))
 
     # For the Non-Stacked Results
     # -- YLL

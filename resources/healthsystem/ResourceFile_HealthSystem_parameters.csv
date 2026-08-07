@@ -26,3 +26,5 @@ year_use_funded_or_actual_staffing_switch,2100
 cons_override_treatment_ids,[]
 cons_override_treatment_ids_prob_avail,1.0
 clinic_configuration_name,Default
+year_HR_scaling_by_district_and_officer_type,2100
+HR_scaling_by_district_and_officer_type_mode,default

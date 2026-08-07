@@ -155,6 +155,73 @@ def test_cause_of_death_being_registered(tmpdir, seed):
                                                     / sim.modules['Demography'].initial_model_to_data_popsize_ratio
                                                     )
 
+@pytest.mark.slow
+def test_death_log_by_district_equals_national(tmpdir, seed):
+    """
+    Check that deaths grouped by district sum to the national total.
+    """
+
+    rfp = Path(os.path.dirname(__file__)) / "../resources"
+
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        seed=seed,
+        resourcefilepath=rfp,
+        log_config={
+            "filename": "temp",
+            "directory": tmpdir,
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+            },
+        },
+    )
+
+    sim.register(
+        *fullmodel(
+            module_kwargs={
+                "HealthSystem": {"disable": True},
+            }
+        )
+    )
+
+    # Increase mortality so that there are plenty of deaths
+    increase_risk_of_death(sim.modules["Diarrhoea"])
+    make_treatment_perfect(sim.modules["Diarrhoea"])
+
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=Date(2010, 12, 31))
+
+    output = parse_log_file(sim.log_filepath)
+
+    deaths = output["tlo.methods.demography"]["death"]
+
+    assert "district_of_residence" in deaths.columns
+    assert deaths["district_of_residence"].notna().all()
+
+    # National deaths by cause
+    national_deaths = (
+        deaths["label"]
+        .value_counts()
+        .sort_index()
+    )
+
+    # District deaths by cause
+    district_deaths = (
+        deaths.groupby(["district_of_residence", "label"])
+        .size()
+        .groupby("label")
+        .sum()
+        .sort_index()
+    )
+
+    pd.testing.assert_series_equal(
+        national_deaths,
+        district_deaths,
+        check_dtype=False,
+        check_names=False,
+    )
+
 
 @pytest.mark.slow
 def test_calc_of_scaling_factor(tmpdir, seed):

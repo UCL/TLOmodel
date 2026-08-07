@@ -1,0 +1,10 @@
+Officer_Category,L0_factor,L1a_factor,L1b_factor,L2_factor,L3_factor,L4_factor,L5_factor
+Clinical,1,1,1,1,1,1,1
+DCSA,1,1,1,1,1,1,1
+Dental,1,1,1,1,1,1,1
+Laboratory,1,1,1,1,1,1,1
+Mental,1,1,1,1,1,1,1
+Nursing_and_Midwifery,0.85,0.85,0.85,0.85,0.85,0.85,0.85
+Nutrition,1,1,1,1,1,1,1
+Pharmacy,1,1,1,1,1,1,1
+Radiography,1,1,1,1,1,1,1

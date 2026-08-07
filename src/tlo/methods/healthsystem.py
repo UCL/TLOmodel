@@ -308,6 +308,26 @@ class HealthSystem(Module):
             "(factors informed by survey data); and, `custom` (user can freely set these factors as "
             "parameters in the analysis).",
         ),
+        "HR_scaling_by_district_and_officer_type_table": Parameter(
+            Types.DICT,
+            "Factors by which daily capabilities of difference cadres in different districts will be"
+            "scaled at the start of the year specified by year_HR_scaling_by_district_officer_type to simulate"
+            "(e.g., through catastrophic event disrupting delivery of services in particular district(s))."
+            "This is the import of a folder of csv resource files: keys are the file names and values are in the "
+            "csv files in the format of pd.DataFrames. Additional scenarios can be added by adding "
+            "csv files to this folder: the value of `HR_scaling_by_district_officer_type_mode` indicates which"
+            "csv file is used.",
+        ),
+        "year_HR_scaling_by_district_and_officer_type": Parameter(
+            Types.INT,
+            "Year in which scaling of daily capabilities by district and cadre will take place. "
+            "(The change happens on 1st January of that year.)",
+        ),
+        "HR_scaling_by_district_and_officer_type_mode": Parameter(
+            Types.STRING,
+            "Mode of scaling of daily capabilities by district and cadre. This corresponds to the name of the "
+            "worksheet in the file `ResourceFile_HR_scaling_by_district.xlsx`.",
+        ),
         "HR_scaling_by_district_table": Parameter(
             Types.DICT,
             "Factors by which daily capabilities in different districts will be"
@@ -694,6 +714,22 @@ class HealthSystem(Module):
             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}"
         )
 
+        self.parameters["HR_scaling_by_district_and_officer_type_table"]: Dict = read_csv_files(
+            path_to_resourcefiles_for_healthsystem
+            / "human_resources"
+            / "scaling_capabilities"
+            / "ResourceFile_HR_scaling_by_district_and_officer_type",
+            files=None,  # all sheets read in
+        )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert (
+            self.parameters["HR_scaling_by_district_and_officer_type_mode"]
+            in self.parameters["HR_scaling_by_district_and_officer_type_table"]
+        ), (
+            f"Value of `HR_scaling_by_district_and_officer_type_mode` not recognised: "
+            f"{self.parameters['HR_scaling_by_district_and_officer_type_mode']}"
+        )
+
         self.parameters["HR_scaling_by_district_table"]: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
@@ -902,6 +938,13 @@ class HealthSystem(Module):
         sim.schedule_event(
             ConstantRescalingHRCapabilities(self),
             Date(self.parameters["year_HR_scaling_by_level_and_officer_type"], 1, 1),
+        )
+
+        # Schedule a one-off rescaling of _daily_capabilities broken down by district and officer type.
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(
+            RescaleHRCapabilities_ByDistrictAndOfficerType(self),
+            Date(self.parameters["year_HR_scaling_by_district_and_officer_type"], 1, 1),
         )
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by district
@@ -2982,6 +3025,44 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
                 self.module._daily_capabilities[clinic][officer] *= HR_scaling_by_level_and_officer_type_factor.at[
                     officer_type, f"L{level}_factor"
                 ]
+
+class RescaleHRCapabilities_ByDistrictAndOfficerType(Event, PopulationScopeEventMixin):
+    """This event exists to scale the daily capabilities, with a factor for each pair district and cadre."""
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        # Get the set of scaling_factors that are specified by 'HR_scaling_by_district_and_officer_type_mode'
+        HR_scaling_factor_by_district_and_officer_type = (
+            self.module.parameters["HR_scaling_by_district_and_officer_type_table"][
+                self.module.parameters["HR_scaling_by_district_and_officer_type_mode"]
+            ]
+            .set_index("District")
+        )
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                officer_type = matches.group(2)
+                # Extract district
+                if facility_id in range(128):
+                    district = self.module._facility_by_facility_id[facility_id].name.split('_')[-1]
+                elif facility_id in {128, 129, 130, 131, 132}:
+                    district = self.module._facility_by_facility_id[facility_id].name
+                else:
+                    district = "N/A"
+                # Scaling
+                if (
+                    (district in HR_scaling_factor_by_district_and_officer_type.index) and
+                    (officer_type in HR_scaling_factor_by_district_and_officer_type.columns)
+                ):
+                    self.module._daily_capabilities[clinic][officer] *= (
+                        HR_scaling_factor_by_district_and_officer_type.loc[district, officer_type]
+                    )
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
