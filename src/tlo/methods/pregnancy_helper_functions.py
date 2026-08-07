@@ -403,7 +403,7 @@ def log_pregnancy_loss(self, individual_id, cause):
 
     if cause == "intrapartum_stillbirth":
         number_of_losses = 2 if (df.at[individual_id, "ps_multiple_pregnancy"] and
-                                 df.at[individual_id, "la_intrapartum_stillbirth"]) else 1
+                                 df.at[individual_id, "la_intrapartum_still_birth"]) else 1
     else:
         number_of_losses = 2 if df.at[individual_id, "ps_multiple_pregnancy"] else 1
 
