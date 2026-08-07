@@ -52,8 +52,8 @@ class HTMWithAndWithoutHSS(BaseScenario):
 
     def modules(self):
         return (
-            fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+            fullmodel()
+            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
         )
 
     def draw_parameters(self, draw_number, rng):
