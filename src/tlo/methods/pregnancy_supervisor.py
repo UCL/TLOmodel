@@ -2526,7 +2526,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'spe_ec_mmr': rate(c['severe_pre_eclampsia_m_death'] +
                                               c['eclampsia_m_death'],
                                              live_births, 100_000),
-                          'pph_mmr':rate(c['postpartum_heamorrhage_m_death'] +
+                          'pph_mmr':rate(c['postpartum_haemorrhage_m_death'] +
                                               c['secondary_postpartum_haemorrhage_m_death']
                                               , live_births, 100_000),
                           'sepsis_mmr': rate(c['antenatal_sepsis_m_death'] +
