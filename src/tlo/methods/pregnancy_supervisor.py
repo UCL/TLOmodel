@@ -2520,6 +2520,29 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         cause_specific_nmrs = {k: rate(c[k], total_births, 1000) for k in c if 'n_death' in k}
         general_death_data.update({**cause_specific_mmrs, **cause_specific_nmrs})
 
+        combined_rates = {'abortion_mmr':rate(c['induced_abortion_m_death'] +
+                                              c['spontaneous_abortion_m_death'],
+                                              live_births, 100_000),
+                          'spe_ec_mmr': rate(c['severe_pre_eclampsia_m_death'] +
+                                              c['eclampsia_m_death'],
+                                             live_births, 100_000),
+                          'pph_mmr':rate(c['postpartum_heamorrhage_m_death'] +
+                                              c['secondary_postpartum_haemorrhage_m_death']
+                                              , live_births, 100_000),
+                          'sepsis_mmr': rate(c['antenatal_sepsis_m_death'] +
+                                              c['intrapartum_sepsis_m_death'] +
+                                              c['postpartum_sepsis_m_death']
+                                              , live_births, 100_000),
+                          'ptb_nmr': rate(c['respiratory_distress_syndrome_n_death'] +
+                                             c['preterm_other_n_death'],
+                                          live_births, 1000),
+                          'n_sepsis_nmr': rate(c['early_onset_sepsis_n_death'] +
+                                             c['late_onset_sepsis_n_death'],
+                                               live_births, 1000),
+                          }
+
+        general_death_data.update(combined_rates)
+
         logger.info(key='deaths_and_stillbirths', data=general_death_data)
 
         # Finally log coverage of key health services
