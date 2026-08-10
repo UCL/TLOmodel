@@ -394,3 +394,13 @@ print(f"WBGT extracted once for {len(matched_facilities)} facilities; "
       f"{len(indicator_cols)} indicator file sets written to {OUTPUT_DIR}")
 
 ds_wbgt.close()
+
+print("\n=== INDICATOR SUMMARY ===")
+for ind in indicator_cols:
+    sub = dhis2[["facility", DHIS2_PERIOD_COL, ind]].dropna(subset=[ind])
+    n_facilities = sub["facility"].nunique()
+    years = sorted(sub[DHIS2_PERIOD_COL].dt.year.unique())
+    total_obs = len(sub)
+    possible_obs = dhis2[["facility", DHIS2_PERIOD_COL]].drop_duplicates().shape[0]
+    completeness = round(100 * total_obs / possible_obs, 1)
+    print(f"{ind} | facilities={n_facilities} | completeness={completeness}% | years={years[0]}-{years[-1]}")

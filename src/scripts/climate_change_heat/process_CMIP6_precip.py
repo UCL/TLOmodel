@@ -259,10 +259,7 @@ for model_id, path in pr_files:
     print(f"  Saved: {out_rx5day.name}")
 
 
-# ---------------------------------------------------------------------------
-# Optional: copy the low / median / high tier files to the projection block's
-# expected filenames. Runs only if MODEL_RANKING_CSV is set and exists.
-# ---------------------------------------------------------------------------
+
 if MODEL_RANKING_CSV and Path(MODEL_RANKING_CSV).exists():
     print(f"\nRenaming tier files from {Path(MODEL_RANKING_CSV).name} ...")
     rank = pd.read_csv(MODEL_RANKING_CSV)
