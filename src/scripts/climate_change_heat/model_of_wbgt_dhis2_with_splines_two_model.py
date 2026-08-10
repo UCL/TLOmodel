@@ -94,9 +94,9 @@ INDICATOR_LABELS: dict[str, str] = {
 
 WBGT_VAR      = "wbgt_day"
 SPLINE_DF     = 3
-LAG_MONTHS    = [1, 2, 3, 4]
+LAG_MONTHS    = []#[1, 2, 3]
 CENTER        = True
-MIN_OBS       = int(0.7 * 12 * 12)
+MIN_OBS       = int(0.8 * 12 * 11)
 REFERENCE_WBGT_PERCENTILE = 95
 min_year_historical = 2015
 max_year_historical = 2025
@@ -121,7 +121,7 @@ SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
-N_BOOTSTRAP     = 50      # >0 turns on the district block bootstrap for the
+N_BOOTSTRAP     = 500      # >0 turns on the district block bootstrap for the
                            # DEFICIT CIs only (aggregate + hot-month). IRR and
                            # exposure-response curve stay on the delta method.
 BOOT_SEED       = 42
@@ -151,7 +151,7 @@ PANEL_DIST_COL_IN_PANEL = "Dist"
 # identified off anomalous (within-month, across-year) variation.
 PRECIP_LONG_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
                     "Thermofeel_WBGT/Indices/precip_long.csv")
-PRECIP_TERMS = ["precip_5day"]#["precip_month", "precip_5day"]
+PRECIP_TERMS = []#["precip_month", "precip_5day"]
 
 # ---- Projection file layout ------------------------------------------------
 # Long: rows are (facility, date), cols include wbgt_day, wbgt_night
@@ -481,10 +481,10 @@ def winsorise_by_facility(
                 })
             df.loc[mask, y_col] = upper
             n_replaced += n
-            print(
-                f"  [{indicator}] {fac}: {n} value(s) > {upper:.0f} "
-                f"(Q3={q3:.0f}, IQR={iqr:.0f}) set to NaN"
-            )
+            # print(
+            #     f"  [{indicator}] {fac}: {n} value(s) > {upper:.0f} "
+            #     f"(Q3={q3:.0f}, IQR={iqr:.0f}) set to NaN"
+            # )
 
     if flagged:
         pd.DataFrame(flagged).to_csv(
@@ -890,6 +890,8 @@ def run_indicator(indicator: str) -> dict | None:
     nb_data, spline_cols, design_info = add_spline_basis(nb_data, chosen_df)
     nb_data = nb_data.reset_index(drop=True)
 
+    print(nb_data[spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]].corr().round(2))
+
     rhs_a = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]
     rhs_b = PRECIP_TERMS + ["covid", "year_c"]
 
@@ -1176,7 +1178,7 @@ if __name__ == "__main__":
     # SPLINE IRR FOREST PLOT
     # -----------------------------------------------------------------------
     IRR_LOW  = results_df["reference_wbgt"].iloc[0]
-    IRR_HIGH = 32.0
+    IRR_HIGH = 33.0
     irr_rows = []
     for res in all_results:
         if not all(k in res for k in ("_design_info", "_spline_cols",
@@ -1360,10 +1362,17 @@ if __name__ == "__main__":
         facility. Returns (df, None) or (None, missing_paths)."""
         wbgt_path = os.path.join(PROJECTION_DIR,
             WBGT_PROJ_FILE_TPL.format(tier=tier, ssp=ssp))
-        p5_path   = os.path.join(PROJECTION_DIR,
-            PRECIP_5DAY_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
-        pm_path   = os.path.join(PROJECTION_DIR,
-            PRECIP_MONTH_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
+        if tier == "lowest":
+                p5_path   = os.path.join(PROJECTION_DIR,f"precip_monthly_total_facility_MPI-ESM1-2-HR_{tier}")
+                pm_path   = os.path.join(PROJECTION_DIR,
+                    f"precip_5day_max_facility_MPI-ESM1-2-HR_{tier}")
+        elif tier == "median":
+                p5_path   = os.path.join(PROJECTION_DIR,f"precip_monthly_total_facility_MIROC6_{tier}")
+                pm_path   = os.path.join(PROJECTION_DIR,
+                    f"precip_5day_max_facility_MIROC6_{tier}")
+        else:
+            p5_path = os.path.join(PROJECTION_DIR, f"precip_monthly_total_facility_CanESM5_{tier}")
+            pm_path = os.path.join(PROJECTION_DIR, f"precip_5day_max_facility_CanESM5_{tier}")
 
         wbgt_df = _load_wbgt_proj(wbgt_path)
         p5_df   = _load_precip_wide(p5_path, "precip_5day")
