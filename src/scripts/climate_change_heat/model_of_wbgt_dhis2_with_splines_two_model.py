@@ -59,49 +59,49 @@ DISTRICT_NAME_COL = "ADM2_EN"
 COUNT_INDICATORS = [
     "fp_total_clients",
     "opd_attendance",
-     "ipd_total_admissions",
-    "vmmc_first_visits",
-    "pnc_mother_checked_48h",
-     "anc_new_attendees",
-    "anc_first_trimester_starts",
-    "bcg_under1",
-    "penta3_under1",
-    "measles1_under1",
-    "fully_immunised_under1",
-    "pnc_within_2wks",
-    "pnc_first_visit_2wks",
-    "live_births_total",
-    "skilled_deliveries",
+    #  "ipd_total_admissions",
+    # "vmmc_first_visits",
+    # "pnc_mother_checked_48h",
+    #  "anc_new_attendees",
+    # "anc_first_trimester_starts",
+    # "bcg_under1",
+    # "penta3_under1",
+    # "measles1_under1",
+    # "fully_immunised_under1",
+    # "pnc_within_2wks",
+    # "pnc_first_visit_2wks",
+    # "live_births_total",
+    # "skilled_deliveries",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
     "fp_total_clients":           "FP Total Clients",
     "opd_attendance":             "OPD Attendance",
-    "ipd_total_admissions":       "IPD Total Admissions",
-    "vmmc_first_visits":          "VMMC First Visits",
-    "pnc_mother_checked_48h":     "PNC Mother <48h",
-    "anc_new_attendees":          "ANC New Attendees",
-    "anc_first_trimester_starts": "ANC 1st Trimester Starts",
-    "bcg_under1":                 "BCG Under-1",
-    "penta3_under1":              "Penta3 Under-1",
-    "measles1_under1":            "Measles 1st Dose Under-1",
-    "fully_immunised_under1":     "Fully Immunised Under-1",
-    "pnc_within_2wks":            "PNC Within 2 Weeks",
-    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
-    "live_births_total":          "Live Births Total",
-    "skilled_deliveries":         "Skilled Deliveries",
+    # "ipd_total_admissions":       "IPD Total Admissions",
+    # "vmmc_first_visits":          "VMMC First Visits",
+    # "pnc_mother_checked_48h":     "PNC Mother <48h",
+    # "anc_new_attendees":          "ANC New Attendees",
+    # "anc_first_trimester_starts": "ANC 1st Trimester Starts",
+    # "bcg_under1":                 "BCG Under-1",
+    # "penta3_under1":              "Penta3 Under-1",
+    # "measles1_under1":            "Measles 1st Dose Under-1",
+    # "fully_immunised_under1":     "Fully Immunised Under-1",
+    # "pnc_within_2wks":            "PNC Within 2 Weeks",
+    # "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
+    # "live_births_total":          "Live Births Total",
+    # "skilled_deliveries":         "Skilled Deliveries",
 }
 
 WBGT_VAR      = "wbgt_day"
 SPLINE_DF     = 3
-LAG_MONTHS    = []#[1, 2, 3]
+LAG_MONTHS    = []#[1,2,3,4,9]
 CENTER        = True
-MIN_OBS       = int(0.8 * 12 * 11)
+MIN_OBS       = 72
 REFERENCE_WBGT_PERCENTILE = 95
 min_year_historical = 2015
 max_year_historical = 2025
 apply_cap           = True
-WINSOR_K            = 5.0
+WINSOR_K            = 5
 
 N_CURVE_POINTS = 200
 CURVE_REF      = "mean"
@@ -109,7 +109,7 @@ CURVE_REF      = "mean"
 COVID_START = "2020-04-01"
 COVID_END   = "2021-04-01"
 
-DF_MODE       = "per_indicator"   # "fixed" | "per_indicator"
+DF_MODE       = "fixed"   # "fixed" | "per_indicator"
 DF_CANDIDATES = (3, 4, 5)
 
 CLOSURES = [
@@ -121,7 +121,7 @@ SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
-N_BOOTSTRAP     = 500      # >0 turns on the district block bootstrap for the
+N_BOOTSTRAP     = 500    # >0 turns on the district block bootstrap for the
                            # DEFICIT CIs only (aggregate + hot-month). IRR and
                            # exposure-response curve stay on the delta method.
 BOOT_SEED       = 42
@@ -151,7 +151,7 @@ PANEL_DIST_COL_IN_PANEL = "Dist"
 # identified off anomalous (within-month, across-year) variation.
 PRECIP_LONG_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
                     "Thermofeel_WBGT/Indices/precip_long.csv")
-PRECIP_TERMS = []#["precip_month", "precip_5day"]
+PRECIP_TERMS = ["precip_month"]#, "precip_5day"]
 
 # ---- Projection file layout ------------------------------------------------
 # Long: rows are (facility, date), cols include wbgt_day, wbgt_night
@@ -615,13 +615,16 @@ def add_columns(
     year_shift = df["year"].mean()    if CENTER else 0.0
     wbgt_shift = df[WBGT_VAR].mean() if CENTER else 0.0
 
-    df["year_c"] = df["year"]    - year_shift
+    df["year_c"] = df["year"]  - year_shift
     df["wbgt_c"] = df[WBGT_VAR] - wbgt_shift
 
     lag_terms = []
     for lag in LAG_MONTHS:
         col = f"wbgt_lag{lag}_c"
-        df[col] = df.groupby("facility")[WBGT_VAR].shift(lag) - wbgt_shift
+        if CENTER:
+            df[col] = df.groupby("facility")[WBGT_VAR].shift(lag) - wbgt_shift
+        else:
+            df[col] = df.groupby("facility")[WBGT_VAR].shift(lag)
         lag_terms.append(col)
 
     return df, lag_terms, year_shift, wbgt_shift
