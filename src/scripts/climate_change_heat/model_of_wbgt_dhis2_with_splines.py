@@ -95,7 +95,7 @@ CLUSTER_COL = "Dist"
 FE_SPEC     = ["facility", "month"]     # real FE terms in the formula
 FE_COLS     = ["facility", "month", "Dist"]   # columns to factor-convert
 
-N_BOOTSTRAP      = 5
+N_BOOTSTRAP      = 500
 BOOT_SEED        = 42
 BOOT_CI_LEVEL    = 0.95
 BOOT_MIN_SUCCESS = 0.80
