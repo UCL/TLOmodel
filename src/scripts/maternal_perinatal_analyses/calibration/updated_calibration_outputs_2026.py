@@ -4,18 +4,18 @@ import os
 import pandas as pd
 import numpy as np
 
-from tlo.analysis.utils import get_scenario_outputs, extract_results
+from tlo.analysis.utils import get_scenario_outputs, extract_results, create_pickles_locally
 from scipy.stats import t
 import matplotlib.pyplot as plt
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-# create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
 #  ======================================= DEFINE SCENARIO INFORMATION  ===============================================
-scenario = 'testing_scenario_747943'
+scenario = 'calibration_scenario_105591'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
+# create_pickles_locally(results_folder)
 
 g_path = f'{outputspath}calibration_{scenario}'
 
@@ -661,6 +661,7 @@ def plot_calibration(
     )
 
     plt.show()
+    plt.savefig(f'{g_path}/calibration.png', bbox_inches='tight')
 
     return fig, axes, plot_df
 

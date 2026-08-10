@@ -2706,8 +2706,6 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                 logger.debug(key='message', data=f'single twin stillbirth for {individual_id}')
                 self.module.intrapartum_stillbirth_since_last_reset += 1
 
-            pregnancy_helper_functions.log_pregnancy_loss(self.module, individual_id, 'intrapartum_stillbirth')
-
         if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
             # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
             # the baby has survived we delete the dictionary following the on_birth function of NewbornOutcomes
