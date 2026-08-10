@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import squarify
 
-from scripts.consumables_analyses.manuscript.analysis_improved_consumable_availability import suspended_results_folder
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
