@@ -13,7 +13,17 @@ match the *writer* paths in the model script (WBGT_VAR-suffixed), which
 means the timeseries panel here reads the correct file — unlike the reader
 in the model script's own plotting block, which is missing the suffix.
 """
+import pandas as pd
+from pathlib import Path
 
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+WBGT_VAR = "wbgt_day"
+
+paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
+assert paths, "no per-indicator curve files found"
+pd.concat([pd.read_csv(p) for p in paths], ignore_index=True).to_csv(
+    Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv", index=False)
+print(f"wrote {len(paths)} indicators")
 import os
 import numpy as np
 import pandas as pd
@@ -168,7 +178,7 @@ def plot_exposure_response_curve(indicator: str, out_dir: str = OUT_DIR) -> str:
         ax.fill_between(
             curve_df["wbgt"], curve_df["rr_lo"], curve_df["rr_hi"],
             color="#2f5d80", alpha=0.2, linewidth=0)
-    ax.plot(curve_df["wbgt"], curve_df["rr_vs_ref"], color="#2f5d80", lw=2)
+    ax.plot(curve_df["wbgt"], 1/curve_df["rr_vs_ref"], color="#2f5d80", lw=2)
     ax.axhline(1.0, color="black", ls="--", lw=0.9)
     ax.axvline(x_ref, color="#888888", ls=":", lw=1.0)
     ax.set_xlabel("WBGT (°C)")
@@ -344,10 +354,10 @@ def plot_exposure_response_panel(fitted: list[str],
     for idx, ind in enumerate(inds):
         ax  = af[idx]
         sub = curves_df[curves_df["indicator"] == ind].sort_values("wbgt")
-        ref_w = float(sub["ref_wbgt"].iloc[0])
-        ax.fill_between(sub["wbgt"], sub["irr_lo"], sub["irr_hi"],
+        ref_w = float(sub["wbgt_ref"].iloc[0])
+        ax.fill_between(sub["wbgt"], sub["rr_lo"], sub["rr_hi"],
                         color="#4a7298", alpha=0.25, linewidth=0)
-        ax.plot(sub["wbgt"], sub["irr"], color="#2a4d70", lw=1.5)
+        ax.plot(sub["wbgt"], 1/sub["rr_vs_ref"], color="#2a4d70", lw=1.5)
         ax.axhline(1.0, color="black", lw=0.5, ls="--")
         ax.axvline(ref_w, color="grey", lw=0.5, ls=":")
         ax.set_title(_label(ind), fontsize=9, fontweight="bold")
