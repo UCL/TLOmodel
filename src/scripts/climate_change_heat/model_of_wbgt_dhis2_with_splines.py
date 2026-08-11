@@ -68,17 +68,17 @@ COUNT_INDICATORS = [
 ]
 
 WBGT_VAR   = "wbgt_day"
-SPLINE_DF  = 3                 # fixed a priori
+SPLINE_DF  = 4                # fixed a priori
 LAG_MONTHS = [1, 2, 3]
 CENTER     = True
 MIN_OBS    = 72 #int(0.8 * 12 * 10)
 WINSOR_K   = 3.0
 apply_cap  = True
 
-REFERENCE_WBGT_PERCENTILE = 90     # hot-month threshold (for the hot deficit)
+REFERENCE_WBGT_PERCENTILE = 95     # hot-month threshold (for the hot deficit)
 
 # --- counterfactual reference ---
-REF_MODE       = "facility_mean"   # "facility_mean" | "fixed"
+REF_MODE       = "fixed"   # "facility_mean" | "fixed"
 REF_WBGT_FIXED = 25.0
 
 min_year_historical = 2015
@@ -108,6 +108,9 @@ PANEL_TMPL = (f"{DATA_DIR}/All_predictors_processed/"
 PANEL_DIST_COL = "Dist"
 os.makedirs(OUT_DIR, exist_ok=True)
 
+PRECIP_LONG_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
+                    "Thermofeel_WBGT/Indices/precip_long.csv")
+PRECIP_TERMS = ["precip_month"]
 
 # ===========================================================================
 # Fit + predict-twice core
@@ -217,6 +220,20 @@ def prepare_indicator(indicator):
     long["month"] = long["date"].dt.month
     long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
 
+    long["date"] = long["date"].dt.to_period("M").dt.to_timestamp()
+    precip = pd.read_csv(PRECIP_LONG_PATH, parse_dates=["date"])
+    precip["facility"] = precip["facility"].astype(str).str.strip()
+    precip["date"] = precip["date"].dt.to_period("M").dt.to_timestamp()
+    precip = precip[(precip["date"] >= "2015-02-01") & (precip["date"] <= "2024-12-01")]
+    n_before = len(long)
+    long = long.merge(precip, on=["facility", "date"], how="left")
+    n_precip_missing = long[PRECIP_TERMS].isna().any(axis=1).sum()
+    if n_precip_missing:
+        print(
+            f"  [{indicator}] {n_precip_missing:,} rows with missing precip "
+            f"({100 * n_precip_missing / len(long):.1f}%) — will be dropped."
+        )
+
     obs = long.dropna(subset=["y", WBGT_VAR]).groupby("facility").size()
     long = long[long["facility"].isin(obs[obs >= MIN_OBS].index)].copy()
     if long.empty:
@@ -234,8 +251,7 @@ def prepare_indicator(indicator):
             long.groupby("facility")[WBGT_VAR].shift(lag) - wbgt_shift)
 
     lag_terms = [f"wbgt_c_lag{l}" for l in LAG_MONTHS]
-    keep = ["y", "facility", "month", "year_c", "wbgt_c", "covid",
-            CLUSTER_COL, WBGT_VAR] + lag_terms
+    keep = ["y", "facility", "month", "year_c", "wbgt_c", "covid", CLUSTER_COL, WBGT_VAR] + lag_terms + PRECIP_TERMS
     nb = long.dropna(subset=keep).copy()
     nb["y_int"] = nb["y"].round().clip(lower=0).astype(int)
 
@@ -261,7 +277,7 @@ def deficit_from_fit(nb, wbgt_shift, lag_terms):
     for c, b in zip(spline_cols, basis.columns):
         nb[c] = basis[b].values
 
-    rhs = spline_cols + lag_terms + ["covid", "year_c"]
+    rhs = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]
     r_model, coef = fit_fepois(nb, rhs, FE_SPEC, FE_COLS, CLUSTER_COL)
     _CURRENT_MODEL[0] = r_model
 
@@ -272,9 +288,9 @@ def deficit_from_fit(nb, wbgt_shift, lag_terms):
     B_obs  = spline_basis_at(nb[WBGT_VAR].values, wbgt_shift, design_info)
     B_ref  = spline_basis_at(ref, wbgt_shift, design_info)
     d_eta  = (B_ref - B_obs) @ beta_s
-    for lag in lag_terms:
-        if lag in coef:
-            d_eta += coef[lag] * ((ref - wbgt_shift) - nb[lag].values)
+    for lag_col in lag_terms:  # was: `for lag in lag_terms`
+        if lag_col in coef:
+            d_eta += coef[lag_col] * ((ref - wbgt_shift) - nb[lag_col].values)
     mu_ref = mu_obs * np.exp(d_eta)
     return mu_obs, mu_ref, coef, spline_cols, design_info
 
