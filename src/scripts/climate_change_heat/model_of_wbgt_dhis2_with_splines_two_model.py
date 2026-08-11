@@ -77,24 +77,24 @@ COUNT_INDICATORS = [
 INDICATOR_LABELS: dict[str, str] = {
     "fp_total_clients":           "FP Total Clients",
     "opd_attendance":             "OPD Attendance",
-    # "ipd_total_admissions":       "IPD Total Admissions",
-    # "vmmc_first_visits":          "VMMC First Visits",
-    # "pnc_mother_checked_48h":     "PNC Mother <48h",
-    # "anc_new_attendees":          "ANC New Attendees",
-    # "anc_first_trimester_starts": "ANC 1st Trimester Starts",
-    # "bcg_under1":                 "BCG Under-1",
-    # "penta3_under1":              "Penta3 Under-1",
-    # "measles1_under1":            "Measles 1st Dose Under-1",
-    # "fully_immunised_under1":     "Fully Immunised Under-1",
-    # "pnc_within_2wks":            "PNC Within 2 Weeks",
-    # "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
-    # "live_births_total":          "Live Births Total",
-    # "skilled_deliveries":         "Skilled Deliveries",
+    "ipd_total_admissions":       "IPD Total Admissions",
+    "vmmc_first_visits":          "VMMC First Visits",
+    "pnc_mother_checked_48h":     "PNC Mother <48h",
+    "anc_new_attendees":          "ANC New Attendees",
+    "anc_first_trimester_starts": "ANC 1st Trimester Starts",
+    "bcg_under1":                 "BCG Under-1",
+    "penta3_under1":              "Penta3 Under-1",
+    "measles1_under1":            "Measles 1st Dose Under-1",
+    "fully_immunised_under1":     "Fully Immunised Under-1",
+    "pnc_within_2wks":            "PNC Within 2 Weeks",
+    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
+    "live_births_total":          "Live Births Total",
+    "skilled_deliveries":         "Skilled Deliveries",
 }
 
 WBGT_VAR      = "wbgt_day"
 SPLINE_DF     = 3
-LAG_MONTHS    = []#[1,2,3,4,9]
+LAG_MONTHS    = [1,2,3]
 CENTER        = True
 MIN_OBS       = 72
 REFERENCE_WBGT_PERCENTILE = 95
@@ -109,7 +109,7 @@ CURVE_REF      = "mean"
 COVID_START = "2020-04-01"
 COVID_END   = "2021-04-01"
 
-DF_MODE       = "fixed"   # "fixed" | "per_indicator"
+DF_MODE       = "per_indicator"   # "fixed" | "per_indicator"
 DF_CANDIDATES = (3, 4, 5)
 
 CLOSURES = [
@@ -124,7 +124,7 @@ CLUSTER_COL = "Dist"
 N_BOOTSTRAP     = 500    # >0 turns on the district block bootstrap for the
                            # DEFICIT CIs only (aggregate + hot-month). IRR and
                            # exposure-response curve stay on the delta method.
-BOOT_SEED       = 42
+BOOT_SEED       = 40
 BOOT_CI_LEVEL   = 0.95
 BOOT_MIN_SUCCESS = 0.80
 N_JOBS          = 1
