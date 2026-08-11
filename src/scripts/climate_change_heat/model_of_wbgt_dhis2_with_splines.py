@@ -68,18 +68,18 @@ COUNT_INDICATORS = [
 ]
 
 WBGT_VAR   = "wbgt_day"
-SPLINE_DF  = 4                # fixed a priori
-LAG_MONTHS = [1, 2, 3]
+SPLINE_DF  = 3                # fixed a priori
+LAG_MONTHS = []#[1, 2, 3]
 CENTER     = True
 MIN_OBS    = 72 #int(0.8 * 12 * 10)
-WINSOR_K   = 3.0
+WINSOR_K   = 5.0
 apply_cap  = True
 
 REFERENCE_WBGT_PERCENTILE = 95     # hot-month threshold (for the hot deficit)
 
 # --- counterfactual reference ---
 REF_MODE       = "fixed"   # "facility_mean" | "fixed"
-REF_WBGT_FIXED = 25.0
+REF_WBGT_FIXED = 23.0
 
 min_year_historical = 2015
 max_year_historical = 2025
@@ -95,7 +95,7 @@ CLUSTER_COL = "Dist"
 FE_SPEC     = ["facility", "month"]     # real FE terms in the formula
 FE_COLS     = ["facility", "month", "Dist"]   # columns to factor-convert
 
-N_BOOTSTRAP      = 500
+N_BOOTSTRAP      = 1000
 BOOT_SEED        = 42
 BOOT_CI_LEVEL    = 0.95
 BOOT_MIN_SUCCESS = 0.80
