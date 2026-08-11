@@ -90,6 +90,106 @@ def extract_annual_service_volumes(results_folder):
     )
 
 
+def extract_annual_treatment_volumes(results_folder):
+    """
+    Extract annual treatment volumes by TREATMENT_ID.
+
+    Returns a DataFrame where:
+        index   = year
+        columns = TREATMENT_ID
+        values  = number of treatments delivered
+    """
+
+    def get_treatment_volumes_yearly(df: pd.DataFrame):
+        df = df.copy()
+
+        if "year" not in df.columns:
+            df["year"] = pd.to_datetime(df["date"]).dt.year
+
+        rows = []
+
+        for _, row in df.iterrows():
+            treatment_dict = row["TREATMENT_ID"]
+
+            if not isinstance(treatment_dict, dict):
+                continue
+
+            year = row["year"]
+
+            for treatment_id, count in treatment_dict.items():
+                rows.append({"year": year, "treatment_id": treatment_id, "count": count, })
+
+        treatment_df = pd.DataFrame(rows)
+
+        if treatment_df.empty:
+            return pd.Series(dtype=float)
+
+        yearly = (
+            treatment_df
+            .groupby(["year", "treatment_id"])["count"]
+            .sum()
+        )
+
+        return yearly
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem.summary",
+        key="HSI_Event_non_blank_appt_footprint",
+        custom_generate_series=get_treatment_volumes_yearly,
+        do_scaling=True,
+    )
+
+
+def aggregate_treatment_volumes_by_service_area(
+    annual_treatment_volumes,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Aggregate treatment volumes into broad service areas.
+    The service area is defined as everything before the first
+    underscore in the treatment_id.
+    """
+
+    # Select the comparison years
+    years = annual_treatment_volumes.index.get_level_values("year").astype(int)
+
+    year_mask = np.isin(
+        years,
+        list(comparison_years),
+    )
+
+    selected = annual_treatment_volumes.loc[year_mask].copy()
+
+    # Get treatment IDs
+    treatment_ids = selected.index.get_level_values(
+        "treatment_id"
+    )
+
+    # Create service-area names
+    service_areas = treatment_ids.to_series().str.split(
+        "_",
+        n=1,
+        expand=True,
+    )[0].values
+
+    # Add service area as another index level
+    selected.index = pd.MultiIndex.from_arrays(
+        [
+            selected.index.get_level_values("year"),
+            service_areas,
+        ],
+        names=["year", "service_area"],
+    )
+
+    # Sum across years and treatment types within each service area
+    service_area_volumes = selected.groupby(
+        level="service_area"
+    ).sum()
+
+    return service_area_volumes
+
+
 def plot_annual_service_volumes(
     summarized_annual_service_volumes,
     scenarios,
@@ -187,47 +287,189 @@ def calculate_percent_service_volume_change(
     return summarize(pct_change)
 
 
-# def plot_percent_service_volume_change(
-#     percent_change_df,
+def make_treatment_volume_table(
+    annual_treatment_volumes,
+    comparison_years=range(2027, 2035),
+):
+    # Creates a table of total treatment volumes by treatment ID
+    # for the specified comparison years.
+    years = annual_treatment_volumes.index.get_level_values(0).astype(int)
+    year_mask = np.isin(years, list(comparison_years))
+    selected = annual_treatment_volumes.loc[year_mask]
+    table = (selected.groupby(level=1).sum())
+    return table
+
+
+def calculate_treatment_volume_percent_change(
+    treatment_volumes,
+    baseline_scenario,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Calculate percentage change in treatment volumes relative to baseline
+    using run-to-run comparisons.
+    """
+
+    years = treatment_volumes.index.get_level_values("year").astype(int)
+
+    year_mask = np.isin(
+        years,
+        list(comparison_years),
+    )
+
+    treatment_volumes = treatment_volumes.loc[year_mask]
+
+    # Sum treatment volumes over 2027-2034
+    treatment_volumes_agg = treatment_volumes.groupby(
+        level="treatment_id"
+    ).sum()
+
+    # Run-to-run comparison
+
+    pct_diff = (
+        100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            treatment_volumes_agg,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    # Summarize across runs
+    summarized = summarize(pct_diff)
+
+    return summarized
+
+
+# def add_service_area_to_treatment_results(treatment_results):
+#     # Adds service area based on the text before the first underscore in the treatment ID.
+#     results = treatment_results.copy()
+#
+#     results["service_area"] = (
+#         results.index.to_series()
+#         .str.split("_")
+#         .str[0]
+#     )
+#
+#     return results
+#
+#
+# def plot_treatment_volumes(
+#     treatment_volume_table,
+#     scenario,
+#     title,
+#     top_n=15,
+# ):
+#     """
+#     Plot total treatment volumes for a scenario.
+#     Only the top_n treatments by volume are shown.
+#     """
+#
+#     data = treatment_volume_table[scenario].sort_values(
+#         ascending=False
+#     ).head(top_n)
+#     fig, ax = plt.subplots(figsize=(12, 7))
+#     data.sort_values().plot(kind="barh", ax=ax)
+#     ax.set_xlabel("Number of treatments")
+#     ax.set_ylabel("Treatment")
+#     ax.set_title(title)
+#     fig.tight_layout()
+#     return fig
+#
+#
+# def plot_annual_treatment_volumes_by_service_area(
+#     annual_treatment_volumes,
+#     scenarios,
+#     service_area,
 #     title,
 # ):
-#     fig, ax = plt.subplots(figsize=(9, 6))
+#     """
+#     Plot annual treatment volumes for one disease/service area
+#     across nurse staffing scenarios.
+#     """
+#
+#     # Select the requested service area
+#     data = annual_treatment_volumes[
+#         annual_treatment_volumes.index.get_level_values(
+#             "service_area"
+#         ) == service_area
+#     ]
+#
+#     # Remove service_area from index so that year is the index
+#     data = data.droplevel("service_area")
+#
+#     fig, ax = plt.subplots(figsize=(10, 6))
 #
 #     label_map = {
-#         "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
-#         "More Nurses / Default Healthsystem Function": "More nurses",
-#         "More CNP staff / Default Healthsystem Function": "More CNP",
+#         "Baseline Nurses / Default Healthsystem Function":
+#             "Baseline",
+#         "Fewer Nurses / Default Healthsystem Function":
+#             "Fewer nurses",
+#         "More Nurses / Default Healthsystem Function":
+#             "More nurses",
+#         "More CNP staff / Default Healthsystem Function":
+#             "More CNP",
 #         "More Nurses by District / Default Healthsystem Function":
 #             "More nurses by district",
 #         "More CNP staff by District / Default Healthsystem Function":
 #             "More CNP by district",
 #
-#         "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
-#         "More Nurses / Improved Healthsystem Function": "More nurses",
-#         "More CNP staff / Improved Healthsystem Function": "More CNP",
+#         "Baseline Nurses / Improved Healthsystem Function":
+#             "Baseline",
+#         "Fewer Nurses / Improved Healthsystem Function":
+#             "Fewer nurses",
+#         "More Nurses / Improved Healthsystem Function":
+#             "More nurses",
+#         "More CNP staff / Improved Healthsystem Function":
+#             "More CNP",
 #         "More Nurses by District / Improved Healthsystem Function":
 #             "More nurses by district",
 #         "More CNP staff by District / Improved Healthsystem Function":
 #             "More CNP by district",
 #     }
 #
-#     for scenario in percent_change_df.columns:
+#     color_map = {
+#         "Baseline Nurses / Default Healthsystem Function": "black",
+#         "Fewer Nurses / Default Healthsystem Function": "indianred",
+#         "More Nurses / Default Healthsystem Function": "steelblue",
+#         "More CNP staff / Default Healthsystem Function": "darkgreen",
+#         "More Nurses by District / Default Healthsystem Function":
+#             "mediumpurple",
+#         "More CNP staff by District / Default Healthsystem Function":
+#             "orange",
+#
+#         "Baseline Nurses / Improved Healthsystem Function": "black",
+#         "Fewer Nurses / Improved Healthsystem Function": "indianred",
+#         "More Nurses / Improved Healthsystem Function": "steelblue",
+#         "More CNP staff / Improved Healthsystem Function": "darkgreen",
+#         "More Nurses by District / Improved Healthsystem Function":
+#             "mediumpurple",
+#         "More CNP staff by District / Improved Healthsystem Function":
+#             "orange",
+#     }
+#
+#     for scenario in scenarios:
+#         mean = data[scenario]["mean"]
+#         color = color_map.get(scenario, "gray")
 #         ax.plot(
-#             percent_change_df.index,
-#             percent_change_df[scenario],
+#             mean.index,
+#             mean.values,
 #             linewidth=2,
-#             label=label_map.get(scenario, scenario),
+#             color=color,
+#             label=label_map.get(
+#                 scenario,
+#                 scenario,
+#             ),
 #         )
 #
-#     ax.axhline(0, color="black", linestyle="--", linewidth=1)
-#
 #     ax.set_xlabel("Year")
-#     ax.set_ylabel("% change in service volume")
+#     ax.set_ylabel("Number of treatments")
 #     ax.set_title(title)
-#     ax.legend()
+#     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3)
 #     ax.grid(True, alpha=0.3)
 #     fig.tight_layout()
 #     return fig
+
 
 def plot_percent_service_volume_change(
     summarized_percent_change,
@@ -320,6 +562,120 @@ def plot_percent_service_volume_change(
     return fig
 
 
+def plot_service_area_treatment_volumes(
+    service_area_volumes,
+    scenarios,
+    title,
+):
+    """
+    Plot total treatment volumes by service area for 2027-2034.
+    """
+
+    # Get the mean across runs for the requested scenarios
+    mean_data = pd.DataFrame(
+        {
+            scenario: service_area_volumes[scenario]["mean"]
+            for scenario in scenarios
+        }
+    )
+
+    # Service areas
+    service_areas = mean_data.index
+
+    x = np.arange(len(service_areas))
+
+    n_scenarios = len(scenarios)
+
+    width = 0.8 / n_scenarios
+
+    offsets = (
+        np.arange(n_scenarios)
+        - (n_scenarios - 1) / 2
+    ) * width
+
+    # Scenario labels
+    label_map = {
+        "Baseline Nurses / Default Healthsystem Function":
+            "Baseline",
+        "Fewer Nurses / Default Healthsystem Function":
+            "Fewer nurses",
+        "More Nurses / Default Healthsystem Function":
+            "More nurses",
+        "More CNP staff / Default Healthsystem Function":
+            "More CNP",
+        "More Nurses by District / Default Healthsystem Function":
+            "More nurses by district",
+        "More CNP staff by District / Default Healthsystem Function":
+            "More CNP by district",
+
+        "Baseline Nurses / Improved Healthsystem Function":
+            "Baseline",
+        "Fewer Nurses / Improved Healthsystem Function":
+            "Fewer nurses",
+        "More Nurses / Improved Healthsystem Function":
+            "More nurses",
+        "More CNP staff / Improved Healthsystem Function":
+            "More CNP",
+        "More Nurses by District / Improved Healthsystem Function":
+            "More nurses by district",
+        "More CNP staff by District / Improved Healthsystem Function":
+            "More CNP by district",
+    }
+
+    # Scenario colours
+    color_map = {
+        "Baseline Nurses / Default Healthsystem Function": "black",
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function":
+            "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function":
+            "orange",
+
+        "Baseline Nurses / Improved Healthsystem Function": "black",
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function":
+            "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function":
+            "orange",
+    }
+
+    fig, ax = plt.subplots(
+        figsize=(18, 8)
+    )
+
+    for i, scenario in enumerate(scenarios):
+
+        xpos = x + offsets[i]
+
+        ax.bar(
+            xpos,
+            mean_data[scenario].values,
+            width=width,
+            color=color_map.get(
+                scenario,
+                "gray",
+            ),
+            label=label_map.get(
+                scenario,
+                scenario,
+            ),
+        )
+
+    ax.set_xlabel("Service area")
+    ax.set_ylabel("Number of treatments\n(2027–2034)")
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(service_areas, rotation=45, ha="right")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    return fig
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Analyse service volume across nurse staffing scenarios"
@@ -382,6 +738,68 @@ if __name__ == "__main__":
         annual_service_volumes
     )
 
+    # TREATMENT-SPECIFIC SERVICE VOLUMES
+
+    annual_treatment_volumes = extract_annual_treatment_volumes(
+        results_folder
+    )
+
+    annual_treatment_volumes = set_param_names_as_column_index_level_0(
+        annual_treatment_volumes,
+        param_names,
+    )
+
+    # Service-area treatment volumes 2027-2034
+    service_area_treatment_volumes = (
+        aggregate_treatment_volumes_by_service_area(
+            annual_treatment_volumes,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+    summarized_service_area_treatment_volumes = summarize(
+        service_area_treatment_volumes
+    )
+
+    # Aggregate treatment volumes into broader disease/service areas
+    annual_treatment_volumes_by_service_area = (
+        aggregate_treatment_volumes_by_service_area(
+            annual_treatment_volumes
+        )
+    )
+
+    treatment_volume_table = make_treatment_volume_table(
+        annual_treatment_volumes,
+        comparison_years=range(2027, 2035),
+    )
+
+    print("\nTreatment volume table 2027-2034")
+    print(
+        treatment_volume_table.head(30)
+    )
+
+    # Treatment-specific % change VS baseline
+    percent_treatment_volume_change_default = (
+        calculate_treatment_volume_percent_change(
+            annual_treatment_volumes[
+                default_hs_scenarios
+            ],
+            baseline_scenario=baseline_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+    percent_treatment_volume_change_improved = (
+        calculate_treatment_volume_percent_change(
+            annual_treatment_volumes[
+                improved_hs_scenarios
+            ],
+            baseline_scenario=baseline_improved_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+
     # percent_change_default = calculate_percent_service_volume_change(
     #     summarized_annual_service_volumes,
     #     default_hs_scenarios,
@@ -427,6 +845,24 @@ if __name__ == "__main__":
         "% Change in Service Volume vs Baseline\n(Improved Healthsystem Function)",
     )
 
+    fig_service_area_default = (
+        plot_service_area_treatment_volumes(
+            summarized_service_area_treatment_volumes,
+            default_hs_scenarios,
+            "Treatment Volumes by Service Area (2027–2034)\n"
+            "Default Healthsystem Function",
+        )
+    )
+
+    fig_service_area_improved = (
+        plot_service_area_treatment_volumes(
+            summarized_service_area_treatment_volumes,
+            improved_hs_scenarios,
+            "Treatment Volumes by Service Area (2027–2034)\n"
+            "Improved Healthsystem Function",
+        )
+    )
+
     if args.save_figures:
         output_folder = results_folder / "service_volume_plots"
 
@@ -452,6 +888,18 @@ if __name__ == "__main__":
 
         fig_improved_percent.savefig(
             output_folder / "percent_change_service_volumes_improved.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        fig_service_area_default.savefig(
+            output_folder / "treatment_volumes_by_service_area_default.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        fig_service_area_improved.savefig(
+            output_folder / "treatment_volumes_by_service_area_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
