@@ -62,16 +62,15 @@ ro.conversion.converter_ctx = ContextVar("converter", default=ro.default_convert
 # CONFIG  (mirror your NB script; only the estimator + counterfactual differ)
 # ===========================================================================
 COUNT_INDICATORS = [
-    "fp_total_clients", "opd_attendance", "anc4_coverage", "bcg_under1",
+    "fp_total_clients", "opd_attendance", "bcg_under1",
     "fully_immunised_under1", "ipd_total_admissions", "measles_under1",
     "opd_attendance", "penta3_under1", "pnc_mother_checked_48h",
 ]
 
 WBGT_VAR   = "wbgt_day"
 SPLINE_DF  = 3                # fixed a priori
-LAG_MONTHS = []#[1, 2, 3]
+LAG_MONTHS = [1, 2, 3]
 CENTER     = True
-MIN_OBS    = 72 #int(0.8 * 12 * 10)
 WINSOR_K   = 5.0
 apply_cap  = True
 
@@ -81,8 +80,10 @@ REFERENCE_WBGT_PERCENTILE = 95     # hot-month threshold (for the hot deficit)
 REF_MODE       = "fixed"   # "facility_mean" | "fixed"
 REF_WBGT_FIXED = 23.0
 
-min_year_historical = 2015
+min_year_historical = 2019
 max_year_historical = 2025
+MIN_OBS    =  (max_year_historical - min_year_historical)*12 * 0.5
+
 COVID_START = "2020-04-01"
 COVID_END   = "2021-06-01"
 
@@ -95,21 +96,20 @@ CLUSTER_COL = "Dist"
 FE_SPEC     = ["facility", "month"]     # real FE terms in the formula
 FE_COLS     = ["facility", "month", "Dist"]   # columns to factor-convert
 
-N_BOOTSTRAP      = 1000
+N_BOOTSTRAP      = 5
 BOOT_SEED        = 42
 BOOT_CI_LEVEL    = 0.95
 BOOT_MIN_SUCCESS = 0.80
 FDR_ALPHA        = 0.05
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs_poisson/"
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs_poisson/2019/"
 PANEL_TMPL = (f"{DATA_DIR}/All_predictors_processed/"
               "regression_panel_{indicator}.csv")
 PANEL_DIST_COL = "Dist"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-PRECIP_LONG_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
-                    "Thermofeel_WBGT/Indices/precip_long.csv")
+
 PRECIP_TERMS = ["precip_month"]
 
 # ===========================================================================
@@ -221,12 +221,13 @@ def prepare_indicator(indicator):
     long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
 
     long["date"] = long["date"].dt.to_period("M").dt.to_timestamp()
-    precip = pd.read_csv(PRECIP_LONG_PATH, parse_dates=["date"])
-    precip["facility"] = precip["facility"].astype(str).str.strip()
-    precip["date"] = precip["date"].dt.to_period("M").dt.to_timestamp()
-    precip = precip[(precip["date"] >= "2015-02-01") & (precip["date"] <= "2024-12-01")]
-    n_before = len(long)
-    long = long.merge(precip, on=["facility", "date"], how="left")
+
+    # Precip is a column in the panel now
+    missing_precip = [c for c in PRECIP_TERMS if c not in long.columns]
+    if missing_precip:
+        print(f"  [{indicator}] panel missing precip columns {missing_precip} — "
+              f"regenerate regression_panel with the updated extraction script; "
+              f"skip"); return None
     n_precip_missing = long[PRECIP_TERMS].isna().any(axis=1).sum()
     if n_precip_missing:
         print(
@@ -274,8 +275,24 @@ def deficit_from_fit(nb, wbgt_shift, lag_terms):
                           {"x": nb["wbgt_c"].values}, return_type="dataframe")
     design_info = basis.design_info
     spline_cols = [f"wbgt_s{i+1}" for i in range(basis.shape[1])]
+
     for c, b in zip(spline_cols, basis.columns):
         nb[c] = basis[b].values
+
+    for c in spline_cols:
+        within = nb[c] - nb.groupby("facility")[c].transform("mean")
+        print(
+            f"{c}: within-facility SD = {within.std():.4f}, "
+            f"raw SD = {nb[c].std():.4f}, "
+            f"ratio = {within.std() / nb[c].std():.3f}"
+        )
+    # and the raw exposure:
+    w = nb[WBGT_VAR]
+    within_w = w - nb.groupby("facility")[WBGT_VAR].transform("mean")
+    print(
+        f"WBGT within SD={within_w.std():.2f}, range p1-p99="
+        f"{np.percentile(within_w, 99) - np.percentile(within_w, 1):.2f}"
+    )
 
     rhs = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]
     r_model, coef = fit_fepois(nb, rhs, FE_SPEC, FE_COLS, CLUSTER_COL)
