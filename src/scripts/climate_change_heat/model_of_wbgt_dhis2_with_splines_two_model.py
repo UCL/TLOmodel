@@ -59,49 +59,49 @@ DISTRICT_NAME_COL = "ADM2_EN"
 COUNT_INDICATORS = [
     "fp_total_clients",
     "opd_attendance",
-    #  "ipd_total_admissions",
-    # "vmmc_first_visits",
-    # "pnc_mother_checked_48h",
-    #  "anc_new_attendees",
-    # "anc_first_trimester_starts",
-    # "bcg_under1",
-    # "penta3_under1",
-    # "measles1_under1",
-    # "fully_immunised_under1",
-    # "pnc_within_2wks",
-    # "pnc_first_visit_2wks",
-    # "live_births_total",
-    # "skilled_deliveries",
+     "ipd_total_admissions",
+    "vmmc_first_visits",
+    "pnc_mother_checked_48h",
+     "anc_new_attendees",
+    "anc_first_trimester_starts",
+    "bcg_under1",
+    "penta3_under1",
+    "measles1_under1",
+    "fully_immunised_under1",
+    "pnc_within_2wks",
+    "pnc_first_visit_2wks",
+    "live_births_total",
+    "skilled_deliveries",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
     "fp_total_clients":           "FP Total Clients",
-    "opd_attendance":             "OPD Attendance",
-    "ipd_total_admissions":       "IPD Total Admissions",
-    "vmmc_first_visits":          "VMMC First Visits",
-    "pnc_mother_checked_48h":     "PNC Mother <48h",
-    "anc_new_attendees":          "ANC New Attendees",
-    "anc_first_trimester_starts": "ANC 1st Trimester Starts",
-    "bcg_under1":                 "BCG Under-1",
-    "penta3_under1":              "Penta3 Under-1",
-    "measles1_under1":            "Measles 1st Dose Under-1",
-    "fully_immunised_under1":     "Fully Immunised Under-1",
-    "pnc_within_2wks":            "PNC Within 2 Weeks",
-    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
-    "live_births_total":          "Live Births Total",
-    "skilled_deliveries":         "Skilled Deliveries",
+    # "opd_attendance":             "OPD Attendance",
+    # "ipd_total_admissions":       "IPD Total Admissions",
+    # "vmmc_first_visits":          "VMMC First Visits",
+    # "pnc_mother_checked_48h":     "PNC Mother <48h",
+    # "anc_new_attendees":          "ANC New Attendees",
+    # "anc_first_trimester_starts": "ANC 1st Trimester Starts",
+    # "bcg_under1":                 "BCG Under-1",
+    # "penta3_under1":              "Penta3 Under-1",
+    # "measles1_under1":            "Measles 1st Dose Under-1",
+    # "fully_immunised_under1":     "Fully Immunised Under-1",
+    # "pnc_within_2wks":            "PNC Within 2 Weeks",
+    # "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
+    # "live_births_total":          "Live Births Total",
+    # "skilled_deliveries":         "Skilled Deliveries",
 }
 
-WBGT_VAR      = "wbgt_day"
-SPLINE_DF     = 3
-LAG_MONTHS    = [1,2,3]
+WBGT_VAR      = "wbgt5x_day"
+SPLINE_DF     = 4
+LAG_MONTHS    =  [1,2,3]
 CENTER        = True
-MIN_OBS       = 72
-REFERENCE_WBGT_PERCENTILE = 95
-min_year_historical = 2015
+MIN_OBS       = (2024 - 2016)*12 * 0.8
+REFERENCE_WBGT_PERCENTILE = 90
+min_year_historical = 2016
 max_year_historical = 2025
 apply_cap           = True
-WINSOR_K            = 5
+WINSOR_K            = 3
 
 N_CURVE_POINTS = 200
 CURVE_REF      = "mean"
@@ -110,14 +110,14 @@ COVID_START = "2020-04-01"
 COVID_END   = "2021-04-01"
 
 DF_MODE       = "per_indicator"   # "fixed" | "per_indicator"
-DF_CANDIDATES = (3, 4, 5)
+DF_CANDIDATES = (3, 4)
 
 CLOSURES = [
     ("Phalombe Health Centre", "2023-04-01", "2024-06-01"),
     ("Thumbwe Health Centre",  "2023-03-01", "2024-03-01"),
 ]
 
-SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
+SSP_SCENARIOS =  ["ssp245"] #["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
@@ -144,13 +144,13 @@ PROJECTION_DIR = str(THERMOFEEL_DIR)
 PANEL_DIST_COL_IN_PANEL = "Dist"
 
 # ---- Precip confounder config ----
-# precip_long.csv is produced by preprocess_precip.py — (facility, date,
-# precip_month, precip_5day). Enters Model A AND Model B as a linear
-# confounder so the WBGT deficit is estimated net of precip. Note that
-# `month` in fe_spec already absorbs seasonal precip, so precip is
-# identified off anomalous (within-month, across-year) variation.
-PRECIP_LONG_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
-                    "Thermofeel_WBGT/Indices/precip_long.csv")
+# Precip now arrives IN the regression panel (extracted at facility grid cells
+# in wbgt_facility_panels_all_indicators.py, keyed on the same facility name as
+# WBGT). It enters Model A AND Model B as a linear confounder so the WBGT
+# deficit is estimated net of precip. `month` in fe_spec already absorbs
+# seasonal precip, so precip is identified off anomalous (within-month,
+# across-year) variation. Must match PRECIP_TERMS in the single-model
+# predict-twice script for the two to be a like-for-like sensitivity pair.
 PRECIP_TERMS = ["precip_month"]#, "precip_5day"]
 
 # ---- Projection file layout ------------------------------------------------
@@ -160,7 +160,7 @@ WBGT_PROJ_FILE_TPL         = "wbgt_monthly_mean_facility_{tier}_{ssp}.csv"
 PRECIP_5DAY_PROJ_FILE_TPL  = ("ResourceFile_Precipitation_Disruptions_{ssp}_{tier}_"
                               "window_prediction_weather_by_facility.csv")
 PRECIP_MONTH_PROJ_FILE_TPL = ("ResourceFile_Precipitation_Disruptions_{ssp}_{tier}_"
-                              "monthly_total_weather_by_facility.csv")
+                              "monthly_prediction_weather_by_facility.csv")
 PROJ_PERIOD_START = 2025
 PROJ_PERIOD_END   = 2040
 
@@ -169,7 +169,27 @@ def _norm_sf(x):
     """P(Z > x); avoids scipy so we don't clash with R's BLAS on macOS."""
     return 0.5 * math.erfc(x / math.sqrt(2))
 
+# ---- Year trend config ----
+YEAR_SPLINE_DF = 3  # Degrees of freedom for year
+INCLUDE_YEAR_SPLINE = False  #
 
+def add_year_spline_basis(
+    df: pd.DataFrame, df_year: int = 3
+) -> tuple[pd.DataFrame, list[str], object]:
+    """
+    Add natural cubic spline basis for year to capture non-linear trends.
+    df_year: degrees of freedom for the year spline (typically 3-5)
+    """
+    basis = patsy.dmatrix(
+        f"cr(year, df={df_year}) - 1",
+        {"year": df["year"].values},
+        return_type="dataframe",
+    )
+    design_info = basis.design_info
+    cols = [f"year_s{i+1}" for i in range(basis.shape[1])]
+    for c, b in zip(cols, basis.columns):
+        df[c] = basis[b].values
+    return df, cols, design_info
 # ---------------------------------------------------------------------------
 # R helpers
 # ---------------------------------------------------------------------------
@@ -198,7 +218,7 @@ def district_deficit_analytical(mu_a, mu_b, X_data_a, X_data_b,
             })
             continue
 
-        delta = 100.0 * (sum_a - sum_b) / sum_b
+        delta = 100.0 * (sum_b - sum_a) / sum_b
 
         g_a = np.zeros(len(names_a))
         for j, nm in enumerate(names_a):
@@ -271,20 +291,18 @@ def predict_fixest(r_model, py_df, factor_cols=("facility", "month")):
 
 
 def nb_coef_table(r_model) -> pd.DataFrame:
-    coeftab = fixest.coeftable(r_model)
-    with localconverter(ro.default_converter + pandas2ri.converter):
-        tab = ro.conversion.rpy2py(coeftab)
-    rownames = list(base.rownames(coeftab))
-    tab = pd.DataFrame(np.asarray(tab))
-    tab.index = rownames
-    tab.index.name = "term"
-    tab = tab.reset_index()
-    if tab.shape[1] >= 5:
-        tab = tab.iloc[:, :5].copy()
-        tab.columns = ["term", "estimate", "se", "z", "p"]
-    else:
-        raise ValueError(f"Unexpected coeftable shape: {tab.shape}.")
-    return tab
+    """Coefficient table from the (clustered) vcov diagonal.
+    Uses get_beta_vcov so names/estimates/SEs are guaranteed aligned even
+    when fixest drops collinear terms — avoids the coef()/se() length
+    mismatch that recycles and breaks the DataFrame."""
+    names, beta, vcov = get_beta_vcov(r_model)
+    ses = np.sqrt(np.clip(np.diag(np.where(np.isnan(vcov), 0.0, vcov)), 0.0, None))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        zs = np.where(ses > 0, beta / ses, np.nan)
+    ps = np.array([2 * _norm_sf(abs(z)) if np.isfinite(z) else np.nan
+                   for z in zs])
+    return pd.DataFrame(
+        {"term": names, "estimate": beta, "se": ses, "z": zs, "p": ps})
 
 
 def nb_aic(r_model) -> float:
@@ -498,7 +516,7 @@ def winsorise_by_facility(
 # ---------------------------------------------------------------------------
 def prepare_data(indicator: str) -> pd.DataFrame | None:
     panel_path = (
-        f"{DATA_DIR}/All_predictors_processed/"
+        f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
         f"regression_panel_{indicator}.csv"
     )
     if not os.path.exists(panel_path):
@@ -531,18 +549,25 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
     long["month"] = long["date"].dt.month
     long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
 
-    # ---- Precip merge (confounder) ------------------------------------
-    # Normalise the join key on both sides so a day-of-month or whitespace
-    # mismatch can't silently drop rows. Then audit coverage: NAs here mean
-    # facility-name mismatch or an out-of-precip-window date, and either
-    # needs to be understood before the fit.
+    # ---- Precip confounder (from panel) -------------------------------
+    # Precip is a column in the panel now — extracted at the facility grid cell,
+    # keyed on the same facility name as WBGT. No merge, so no name-mismatch
+    # drop. Fail loudly if the panel predates the extraction change rather than
+    # silently fitting Model A/B with no precip confounder.
     long["date"] = long["date"].dt.to_period("M").dt.to_timestamp()
-    precip = pd.read_csv(PRECIP_LONG_PATH, parse_dates=["date"])
-    precip["facility"] = precip["facility"].astype(str).str.strip()
-    precip["date"]     = precip["date"].dt.to_period("M").dt.to_timestamp()
-    precip = precip[precip["date"] <= "2024-12-01"]
-    precip = precip[precip["date"] >= "2015-02-01"]
-    long = long.merge(precip, on=["facility", "date"], how="left")
+    missing_precip = [c for c in PRECIP_TERMS if c not in long.columns]
+    if missing_precip:
+        print(f"  [{indicator}] panel missing precip columns {missing_precip} — "
+              f"regenerate regression_panel with the updated extraction script; "
+              f"skip"); return None
+    # Account for differences in reporting by precip
+    fac_medians = long.groupby("facility")["y"].transform("median")
+    long["reporting_threshold"] = 0.05 * fac_medians
+    long["is_reporting"] = long["y"] > long["reporting_threshold"]
+    first_reporting = long[long["is_reporting"]].groupby("facility")["date"].min()
+    long = long.merge(first_reporting.rename("start_date"), left_on="facility", right_index=True, how="left")
+    n_before = len(long)
+    long = long[long["date"] >= long["start_date"]].drop(columns=["reporting_threshold", "is_reporting", "start_date"])
 
     # -------------------------------------------------------------------
 
@@ -724,7 +749,7 @@ def make_exposure_response_curve(
         idx = [names_a.index(c) for c in spline_cols if c in names_a]
         if len(idx) == len(spline_cols):
             V = vcov_a[np.ix_(idx, idx)]
-            V = np.where(np.isnan(V), 0.0, V)
+            assert np.isfinite(V).all(), "spline vcov non-finite — clustered cov failed"
             var_grid = np.einsum("ij,jk,ik->i", contrast, V, contrast)
             se_grid  = np.sqrt(np.maximum(var_grid, 0.0))
             rr_lo = np.exp(eta_grid - 1.96 * se_grid)
@@ -891,12 +916,20 @@ def run_indicator(indicator: str) -> dict | None:
     # WBGT-attributable disruption holding precip fixed.
     # ------------------------------------------------------------------
     nb_data, spline_cols, design_info = add_spline_basis(nb_data, chosen_df)
+    if INCLUDE_YEAR_SPLINE:
+        nb_data, year_cols, year_design_info = add_year_spline_basis(
+            nb_data, df_year=YEAR_SPLINE_DF
+        )
+        print(f"  [{indicator}] Added year spline with {len(year_cols)} terms")
+    else:
+        year_cols = []
+        year_design_info = None
     nb_data = nb_data.reset_index(drop=True)
 
     print(nb_data[spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]].corr().round(2))
 
-    rhs_a = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]
-    rhs_b = PRECIP_TERMS + ["covid", "year_c"]
+    rhs_a = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"] + year_cols
+    rhs_b = PRECIP_TERMS + ["covid", "year_c"] + year_cols
 
     try:
         model_a, mu_a = fit_nb_fixest(
@@ -935,6 +968,9 @@ def run_indicator(indicator: str) -> dict | None:
         deficit[k] = np.nan
     deficit["p_boot"]    = np.nan
     deficit["n_boot_ok"] = 0
+    deficit["_year_cols"] = year_cols
+    deficit["_year_design_info"] = year_design_info
+    deficit["_year_spline_df"] = YEAR_SPLINE_DF if INCLUDE_YEAR_SPLINE else None
 
     names_a = names_b = beta_a = beta_b = vcov_a = vcov_b = None
 
@@ -1363,42 +1399,36 @@ if __name__ == "__main__":
         """Load WBGT + both precip files, merge to a per-(facility, date)
         frame, restrict to the projection window, add lag columns per
         facility. Returns (df, None) or (None, missing_paths)."""
-        wbgt_path = os.path.join(PROJECTION_DIR,
-            WBGT_PROJ_FILE_TPL.format(tier=tier, ssp=ssp))
-        if tier == "lowest":
-                p5_path   = os.path.join(PROJECTION_DIR,f"precip_monthly_total_facility_MPI-ESM1-2-HR_{tier}")
-                pm_path   = os.path.join(PROJECTION_DIR,
-                    f"precip_5day_max_facility_MPI-ESM1-2-HR_{tier}")
-        elif tier == "median":
-                p5_path   = os.path.join(PROJECTION_DIR,f"precip_monthly_total_facility_MIROC6_{tier}")
-                pm_path   = os.path.join(PROJECTION_DIR,
-                    f"precip_5day_max_facility_MIROC6_{tier}")
-        else:
-            p5_path = os.path.join(PROJECTION_DIR, f"precip_monthly_total_facility_CanESM5_{tier}")
-            pm_path = os.path.join(PROJECTION_DIR, f"precip_5day_max_facility_CanESM5_{tier}")
+        wbgt_path = os.path.join(PROJECTION_DIR, WBGT_PROJ_FILE_TPL.format(tier=tier, ssp=ssp))
+        pm_path = os.path.join(PROJECTION_DIR, PRECIP_MONTH_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
+        p5_path = os.path.join(PROJECTION_DIR, PRECIP_5DAY_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
+        print(wbgt_path)
+        print(pm_path)
+        print(p5_path)
 
         wbgt_df = _load_wbgt_proj(wbgt_path)
-        p5_df   = _load_precip_wide(p5_path, "precip_5day")
-        pm_df   = _load_precip_wide(pm_path, "precip_month")
+        pm_df = _load_precip_wide(pm_path, "precip_month")  # monthly total
+        p5_df = _load_precip_wide(p5_path, "precip_5day")  # 5-day window
 
         missing = []
-        if wbgt_df is None: missing.append(wbgt_path)
-        if p5_df   is None: missing.append(p5_path)
-        if pm_df   is None: missing.append(pm_path)
+        if wbgt_df is None:
+            missing.append(wbgt_path)
+        if pm_df is None:
+            missing.append(pm_path)
+        if p5_df is None:
+            missing.append(p5_path)
         if missing:
             return None, missing
 
-        clim = (wbgt_df
-                .merge(p5_df, on=["facility", "date"], how="outer")
-                .merge(pm_df, on=["facility", "date"], how="outer"))
+        clim = wbgt_df.merge(p5_df, on=["facility", "date"], how="outer").merge(
+            pm_df, on=["facility", "date"], how="outer"
+        )
         clim = clim.sort_values(["facility", "date"]).reset_index(drop=True)
 
-        # Future WBGT lags — first max(LAG_MONTHS) rows per facility are NaN
         for k in LAG_MONTHS:
             clim[f"wbgt_lag{k}"] = clim.groupby("facility")[WBGT_VAR].shift(k)
-        clim = clim[(clim["date"].dt.year >= PROJ_PERIOD_START) &
-                    (clim["date"].dt.year <= PROJ_PERIOD_END)].copy()
-        clim["year"]  = clim["date"].dt.year
+        clim = clim[(clim["date"].dt.year >= PROJ_PERIOD_START) & (clim["date"].dt.year <= PROJ_PERIOD_END)].copy()
+        clim["year"] = clim["date"].dt.year
         clim["month"] = clim["date"].dt.month
         return clim, None
 
