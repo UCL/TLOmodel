@@ -30,6 +30,7 @@ Reference WBGT (config REF_MODE):
                       matches the anomaly identification of the rest of the model.
     "fixed"         : all facilities vs REF_WBGT_FIXED (e.g. 25 C) — comparable
                       across facilities, matches the IRR-contrast framing.
+
 """
 
 import os
@@ -64,8 +65,27 @@ ro.conversion.converter_ctx = ContextVar("converter", default=ro.default_convert
 COUNT_INDICATORS = [
     "fp_total_clients", "opd_attendance", "bcg_under1",
     "fully_immunised_under1", "ipd_total_admissions", "measles_under1",
-    "opd_attendance", "penta3_under1", "pnc_mother_checked_48h",
+    "penta3_under1", "pnc_mother_checked_48h",
 ]
+
+INDICATOR_LABELS: dict[str, str] = {
+    "fp_total_clients":           "FP Total Clients",
+    "opd_attendance":             "OPD Attendance",
+    "ipd_total_admissions":       "IPD Total Admissions",
+    "vmmc_first_visits":          "VMMC First Visits",
+    "pnc_mother_checked_48h":     "PNC Mother <48h",
+    "anc_new_attendees":          "ANC New Attendees",
+    "anc_first_trimester_starts": "ANC 1st Trimester Starts",
+    "bcg_under1":                 "BCG Under-1",
+    "penta3_under1":              "Penta3 Under-1",
+    "measles1_under1":            "Measles 1st Dose Under-1",
+    "measles_under1":             "Measles Under-1",
+    "fully_immunised_under1":     "Fully Immunised Under-1",
+    "pnc_within_2wks":            "PNC Within 2 Weeks",
+    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
+    "live_births_total":          "Live Births Total",
+    "skilled_deliveries":         "Skilled Deliveries",
+}
 
 WBGT_VAR   = "wbgt_day"
 SPLINE_DF  = 3                # fixed a priori
@@ -79,6 +99,10 @@ REFERENCE_WBGT_PERCENTILE = 95     # hot-month threshold (for the hot deficit)
 # --- counterfactual reference ---
 REF_MODE       = "fixed"   # "facility_mean" | "fixed"
 REF_WBGT_FIXED = 23.0
+
+# --- exposure-response curve ---
+N_CURVE_POINTS = 200
+CURVE_REF      = "mean"    # "mean" | "median" | "min" — reference point the curve is drawn against
 
 min_year_historical = 2019
 max_year_historical = 2025
@@ -96,7 +120,7 @@ CLUSTER_COL = "Dist"
 FE_SPEC     = ["facility", "month"]     # real FE terms in the formula
 FE_COLS     = ["facility", "month", "Dist"]   # columns to factor-convert
 
-N_BOOTSTRAP      = 5
+N_BOOTSTRAP      = 500
 BOOT_SEED        = 42
 BOOT_CI_LEVEL    = 0.95
 BOOT_MIN_SUCCESS = 0.80
@@ -109,11 +133,32 @@ PANEL_TMPL = (f"{DATA_DIR}/All_predictors_processed/"
 PANEL_DIST_COL = "Dist"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-
 PRECIP_TERMS = ["precip_month"]
 
+# ---- Projection config (ported from the NB script) ------------------------
+# Because this is a ONE-model predict-twice design, projection also uses
+# predict-twice: future WBGT vs the SAME reference WBGT. There is no Model B.
+PROJECT = True
+SSP_SCENARIOS = ["ssp245"]                 # ["ssp126", "ssp245", "ssp585"]
+MODEL_TIERS   = ["lowest", "median", "highest"]
+PROJ_PERIOD_START = 2025
+PROJ_PERIOD_END   = 2040
+
+THERMOFEEL_DIR = Path(
+    "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices")
+PROJECTION_DIR = str(THERMOFEEL_DIR)
+
+# Long: rows are (facility, date), cols include wbgt_day, wbgt_night
+WBGT_PROJ_FILE_TPL         = "wbgt_monthly_mean_facility_{tier}_{ssp}.csv"
+# Wide: rows are 'YYYY-M' strings, columns are facility names, values = precip
+PRECIP_5DAY_PROJ_FILE_TPL  = ("ResourceFile_Precipitation_Disruptions_{ssp}_{tier}_"
+                              "window_prediction_weather_by_facility.csv")
+PRECIP_MONTH_PROJ_FILE_TPL = ("ResourceFile_Precipitation_Disruptions_{ssp}_{tier}_"
+                              "monthly_prediction_weather_by_facility.csv")
+
+
 # ===========================================================================
-# Fit + predict-twice core
+# Fit + vcov
 # ===========================================================================
 def fit_fepois(df, rhs_terms, fe_spec, fe_cols, cluster_col, y_col="y_int"):
     """Fit one Poisson FE model; return (r_model, coef_dict)."""
@@ -134,6 +179,29 @@ def fit_fepois(df, rhs_terms, fe_spec, fe_cols, cluster_col, y_col="y_int"):
     return r_model, dict(zip(names, vals))
 
 
+def get_beta_vcov(r_model):
+    """Name-aligned (beta, vcov) from the fepois clustered covariance.
+    Same contract as the NB script's helper. Names come from coef(); the
+    vcov is matched by name so a dropped-collinear term can't misalign."""
+    coef_r = ro.r("coef")(r_model)
+    with localconverter(ro.default_converter + pandas2ri.converter):
+        beta_full = np.asarray(ro.conversion.rpy2py(coef_r), dtype=float)
+    coef_names = list(coef_r.names)
+
+    vcov_r = ro.r("vcov")(r_model)
+    with localconverter(ro.default_converter + pandas2ri.converter):
+        vcov_full = np.asarray(ro.conversion.rpy2py(vcov_r), dtype=float)
+
+    rn = ro.r("rownames")(vcov_r)
+    if rn == ro.NULL or vcov_full.shape[0] == len(coef_names):
+        return coef_names, beta_full, vcov_full
+    vcov_names = list(rn)
+    common = [n for n in coef_names if n in vcov_names]
+    ci = [coef_names.index(n) for n in common]
+    vi = [vcov_names.index(n) for n in common]
+    return common, beta_full[ci], vcov_full[np.ix_(vi, vi)]
+
+
 def spline_basis_at(wbgt_values, wbgt_shift, design_info):
     """Build the SAME spline basis (from the fitted design_info) at arbitrary
     WBGT values, centred with the training shift. Returns an (n, df) array."""
@@ -142,43 +210,78 @@ def spline_basis_at(wbgt_values, wbgt_shift, design_info):
         patsy.build_design_matrices([design_info], {"x": xc})[0], dtype=float)
 
 
-def predict_twice_deficit(df, coef, spline_cols, design_info, wbgt_shift,
-                          lag_terms, ref_wbgt):
-    """Heat-attributable deficit via one-model predict-twice.
+# ===========================================================================
+# Exposure-response curve (ported from NB script; delta-method band, fail-loud)
+# ===========================================================================
+def make_exposure_response_curve(
+    coef, spline_cols, wbgt_shift, observed_wbgt, indicator,
+    design_info, names_a=None, vcov_a=None,
+) -> pd.DataFrame:
+    """Curve of exp((basis(w) - basis(ref)) @ beta_spline) over the observed
+    WBGT range. The LINE is rr_vs_ref (NOT its inverse). The band is the
+    delta method on the spline block of the clustered vcov, indexed by name;
+    if that block is non-finite (e.g. collinearity made it singular) this
+    RAISES rather than silently emitting a zero-width band."""
+    x_min  = float(observed_wbgt.min())
+    x_max  = float(observed_wbgt.max())
+    x_grid   = np.linspace(x_min, x_max, N_CURVE_POINTS)
+    x_grid_c = x_grid - wbgt_shift
 
-    The linear predictor is eta = FE + delta*year + covid + f(WBGT) + Σ lags.
-    Everything except the WBGT spline + lag terms is IDENTICAL between the
-    observed and reference predictions, so it cancels in the ratio. We therefore
-    only need the spline/lag part to form the deficit RATIO per row:
+    basis_grid = np.asarray(
+        patsy.build_design_matrices([design_info], {"x": x_grid_c})[0],
+        dtype=float)
 
-        mu_obs / mu_ref = exp( [basis(obs) - basis(ref)] · beta_spline
-                               + Σ_l [WBGTlag_obs - WBGTlag_ref] · beta_lag )
+    if CURVE_REF == "mean":
+        x_ref = float(observed_wbgt.mean())
+    elif CURVE_REF == "median":
+        x_ref = float(observed_wbgt.median())
+    elif CURVE_REF == "min":
+        x_ref = float(observed_wbgt.min())
+    else:
+        raise ValueError(f"Unknown CURVE_REF='{CURVE_REF}'.")
 
-    and deficit_row = mu_obs * (mu_ref/mu_obs - 1) applied to the fitted mu.
-    We use the model's fitted mu as mu_obs (exact), then scale to mu_ref.
-    """
-    mu_obs = np.asarray(stats_r.fitted(_CURRENT_MODEL[0]), dtype=float)
+    x_ref_c   = x_ref - wbgt_shift
+    ref_row = np.asarray(
+        patsy.build_design_matrices([design_info], {"x": np.array([x_ref_c])})[0],
+        dtype=float)[0]
 
-    # spline contrast
-    beta_s = np.array([coef.get(c, 0.0) for c in spline_cols], dtype=float)
-    B_obs  = spline_basis_at(df[WBGT_VAR].values, wbgt_shift, design_info)
-    B_ref  = spline_basis_at(np.full(len(df), ref_wbgt), wbgt_shift, design_info)
-    d_eta  = (B_ref - B_obs) @ beta_s
+    beta     = np.array([coef.get(c, 0.0) for c in spline_cols], dtype=float)
+    contrast = basis_grid - ref_row[None, :]
+    eta_grid = contrast @ beta
+    rr       = np.exp(eta_grid)
 
-    # distributed-lag contrast: at reference, the lagged exposures are also ref
-    for lag in lag_terms:
-        # lag columns are named wbgt_c_lag{lag}; coef keyed the same
-        lname = f"wbgt_c_lag{lag}"
-        if lname in coef:
-            obs_lag = df[lname].values                    # already centred
-            ref_lag = (ref_wbgt - wbgt_shift)             # ref, centred
-            d_eta  += coef[lname] * (ref_lag - obs_lag)
+    rr_lo = np.full_like(rr, np.nan)
+    rr_hi = np.full_like(rr, np.nan)
+    if vcov_a is not None and names_a is not None:
+        idx = [names_a.index(c) for c in spline_cols if c in names_a]
+        if len(idx) == len(spline_cols):
+            V = vcov_a[np.ix_(idx, idx)]
+            # Fail loud: a non-finite spline vcov means the clustered cov
+            # couldn't be recovered (collinearity/singularity). Do NOT scrub
+            # to zero — that produces a fake zero-width band.
+            assert np.isfinite(V).all(), (
+                f"[{indicator}] spline vcov non-finite — clustered cov "
+                f"singular (check WBGT-spline/lag collinearity).")
+            var_grid = np.einsum("ij,jk,ik->i", contrast, V, contrast)
+            se_grid  = np.sqrt(np.maximum(var_grid, 0.0))
+            rr_lo = np.exp(eta_grid - 1.96 * se_grid)
+            rr_hi = np.exp(eta_grid + 1.96 * se_grid)
+        else:
+            print(f"  [{indicator}] curve: spline names not all found in vcov "
+                  f"— band left as NaN")
 
-    mu_ref = mu_obs * np.exp(d_eta)
-    return mu_obs, mu_ref
-
-
-_CURRENT_MODEL = [None]   # tiny holder so predict_twice can see the fitted model
+    return pd.DataFrame({
+        "indicator":         indicator,
+        "label":             INDICATOR_LABELS.get(indicator, indicator),
+        "wbgt":              x_grid,
+        "wbgt_c":            x_grid_c,
+        "rr_vs_ref":         rr,
+        "rr_lo":             rr_lo,
+        "rr_hi":             rr_hi,
+        "pct_change_vs_ref": 100.0 * (rr - 1.0),
+        "wbgt_ref":          x_ref,
+        "curve_ref":         CURVE_REF,
+    })
 
 
 # ===========================================================================
@@ -244,8 +347,9 @@ def prepare_indicator(indicator):
     long = winsorise_by_facility(long, "y")
 
     wbgt_shift = long[WBGT_VAR].mean() if CENTER else 0.0
+    year_shift = long["year"].mean() if CENTER else 0.0
     long["wbgt_c"] = long[WBGT_VAR] - wbgt_shift
-    long["year_c"] = long["year"] - (long["year"].mean() if CENTER else 0.0)
+    long["year_c"] = long["year"] - year_shift
     long["covid"]  = long["date"].between(COVID_START, COVID_END).astype(int)
     for lag in LAG_MONTHS:
         long[f"wbgt_c_lag{lag}"] = (
@@ -262,15 +366,18 @@ def prepare_indicator(indicator):
     if nb["facility"].nunique() < 2 or nb[CLUSTER_COL].nunique() < 2:
         print(f"  [{indicator}] too few groups — skip"); return None
 
-    return nb.reset_index(drop=True), wbgt_shift, lag_terms
+    return nb.reset_index(drop=True), wbgt_shift, year_shift, lag_terms
 
 
 # ===========================================================================
 # Per-indicator run
 # ===========================================================================
-def deficit_from_fit(nb, wbgt_shift, lag_terms):
-    """Fit one fepois model and return (mu_obs, mu_ref, coef, spline_cols,
-    design_info)."""
+def deficit_from_fit(nb, wbgt_shift, lag_terms, want_model=False):
+    """Fit one fepois model and return the predict-twice deficit pieces.
+
+    Returns (mu_obs, mu_ref, coef, spline_cols, design_info) or, if
+    want_model=True, additionally (r_model). want_model=False in the bootstrap
+    (no vcov/curve needed) keeps replicates lean."""
     basis = patsy.dmatrix(f"cr(x, df={SPLINE_DF}) - 1",
                           {"x": nb["wbgt_c"].values}, return_type="dataframe")
     design_info = basis.design_info
@@ -279,24 +386,8 @@ def deficit_from_fit(nb, wbgt_shift, lag_terms):
     for c, b in zip(spline_cols, basis.columns):
         nb[c] = basis[b].values
 
-    for c in spline_cols:
-        within = nb[c] - nb.groupby("facility")[c].transform("mean")
-        print(
-            f"{c}: within-facility SD = {within.std():.4f}, "
-            f"raw SD = {nb[c].std():.4f}, "
-            f"ratio = {within.std() / nb[c].std():.3f}"
-        )
-    # and the raw exposure:
-    w = nb[WBGT_VAR]
-    within_w = w - nb.groupby("facility")[WBGT_VAR].transform("mean")
-    print(
-        f"WBGT within SD={within_w.std():.2f}, range p1-p99="
-        f"{np.percentile(within_w, 99) - np.percentile(within_w, 1):.2f}"
-    )
-
     rhs = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]
     r_model, coef = fit_fepois(nb, rhs, FE_SPEC, FE_COLS, CLUSTER_COL)
-    _CURRENT_MODEL[0] = r_model
 
     ref = _resolve_ref(nb).values
     # predict-twice using the row-wise reference
@@ -305,10 +396,12 @@ def deficit_from_fit(nb, wbgt_shift, lag_terms):
     B_obs  = spline_basis_at(nb[WBGT_VAR].values, wbgt_shift, design_info)
     B_ref  = spline_basis_at(ref, wbgt_shift, design_info)
     d_eta  = (B_ref - B_obs) @ beta_s
-    for lag_col in lag_terms:  # was: `for lag in lag_terms`
+    for lag_col in lag_terms:
         if lag_col in coef:
             d_eta += coef[lag_col] * ((ref - wbgt_shift) - nb[lag_col].values)
     mu_ref = mu_obs * np.exp(d_eta)
+    if want_model:
+        return mu_obs, mu_ref, coef, spline_cols, design_info, r_model
     return mu_obs, mu_ref, coef, spline_cols, design_info
 
 
@@ -353,13 +446,13 @@ def run_indicator(indicator):
     prep = prepare_indicator(indicator)
     if prep is None:
         return None
-    nb, wbgt_shift, lag_terms = prep
+    nb, wbgt_shift, year_shift, lag_terms = prep
     print(f"  [{indicator}] n={len(nb)}, fac={nb['facility'].nunique()}, "
           f"clust={nb[CLUSTER_COL].nunique()}")
 
     try:
-        mu_obs, mu_ref, coef, spline_cols, design_info = deficit_from_fit(
-            nb, wbgt_shift, lag_terms)
+        mu_obs, mu_ref, coef, spline_cols, design_info, r_model = deficit_from_fit(
+            nb, wbgt_shift, lag_terms, want_model=True)
         print(f"  [{indicator}] POINT FIT OK")
     except Exception as e:
         print(f"  [{indicator}] POINT FIT FAILED: {type(e).__name__}: {e}")
@@ -370,11 +463,39 @@ def run_indicator(indicator):
 
     res = {
         "indicator": indicator,
+        "label": INDICATOR_LABELS.get(indicator, indicator),
         "n_obs": len(nb), "n_fac": nb["facility"].nunique(),
         "deficit_pct":     _pct(mu_obs, mu_ref),
         "hot_deficit_pct": _pct(mu_obs, mu_ref, hot),
         "ref_mode": REF_MODE,
+        "reference_wbgt": hot_thr,
     }
+
+    # ---- (a) Exposure-response curve + delta-method band -----------------
+    names_a = vcov_a = None
+    try:
+        names_a, _beta_a, vcov_a = get_beta_vcov(r_model)
+    except Exception as e:
+        print(f"  [{indicator}] vcov extraction failed: {type(e).__name__}: {e}")
+    try:
+        curve_df = make_exposure_response_curve(
+            coef, spline_cols, wbgt_shift, nb[WBGT_VAR], indicator,
+            design_info, names_a=names_a, vcov_a=vcov_a)
+        curve_df.to_csv(
+            f"{OUT_DIR}exposure_response_curve_{indicator}_{WBGT_VAR}.csv",
+            index=False)
+    except AssertionError as e:
+        # Non-finite spline vcov: emit the line with a NaN band rather than
+        # dropping the curve entirely, but SAY SO loudly.
+        print(f"  [{indicator}] curve band unavailable: {e}")
+        curve_df = make_exposure_response_curve(
+            coef, spline_cols, wbgt_shift, nb[WBGT_VAR], indicator,
+            design_info, names_a=None, vcov_a=None)
+        curve_df.to_csv(
+            f"{OUT_DIR}exposure_response_curve_{indicator}_{WBGT_VAR}.csv",
+            index=False)
+    except Exception as e:
+        print(f"  [{indicator}] curve export failed: {type(e).__name__}: {e}")
 
     # bootstrap CIs (deficit only)
     ci_lo = ci_hi = hot_lo = hot_hi = p_boot = np.nan
@@ -415,7 +536,201 @@ def run_indicator(indicator):
                  index=False)
     print(f"  [{indicator}] deficit={res['deficit_pct']:+.2f}%  "
           f"hot={res['hot_deficit_pct']:+.2f}%")
+
+    # stash the pieces the projection block needs (private keys, not saved)
+    res["_nb"]          = nb
+    res["_coef"]        = coef
+    res["_spline_cols"] = spline_cols
+    res["_design_info"] = design_info
+    res["_wbgt_shift"]  = wbgt_shift
+    res["_year_shift"]  = year_shift
+    res["_lag_terms"]   = lag_terms
     return res
+
+
+# ===========================================================================
+# (b) Forward projections — PREDICT-TWICE on future CMIP6 WBGT
+# ===========================================================================
+def _load_precip_wide(path, value_name):
+    """Wide file (index='YYYY-M', cols=facility names) -> long
+    [facility, date, value_name]. None if the file is missing."""
+    if not os.path.exists(path):
+        return None
+    wide = pd.read_csv(path, index_col=0)
+    wide.index = pd.to_datetime(
+        wide.index.astype(str).str.strip(),
+        format="%Y-%m", errors="coerce").to_period("M").to_timestamp()
+    n_bad = wide.index.isna().sum()
+    if n_bad:
+        raise ValueError(f"{path}: {n_bad} unparseable date rows in index")
+    wide.index.name = "date"
+    wide.columns = wide.columns.astype(str).str.strip()
+    return (wide.stack(future_stack=True)
+                .rename(value_name)
+                .rename_axis(index=["date", "facility"])
+                .reset_index())
+
+
+def _load_wbgt_proj(path):
+    """Long file: facility, date, wbgt_day, wbgt_night. None if missing."""
+    if not os.path.exists(path):
+        return None
+    df = pd.read_csv(path, parse_dates=["date"])
+    df["facility"] = df["facility"].astype(str).str.strip()
+    df["date"]     = df["date"].dt.to_period("M").dt.to_timestamp()
+    return df
+
+
+def _load_future_climate(ssp, tier):
+    """Load future WBGT (+ precip if present) for one SSP/tier, restrict to the
+    projection window, add WBGT lag columns per facility. Returns (df, None) or
+    (None, missing_paths). Precip is loaded when available but NOT required —
+    the predict-twice deficit only needs WBGT + its lags (precip cancels in the
+    obs-vs-ref contrast since it's held fixed)."""
+    wbgt_path = os.path.join(PROJECTION_DIR,
+                             WBGT_PROJ_FILE_TPL.format(tier=tier, ssp=ssp))
+    pm_path = os.path.join(PROJECTION_DIR,
+                           PRECIP_MONTH_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
+    p5_path = os.path.join(PROJECTION_DIR,
+                           PRECIP_5DAY_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
+
+    wbgt_df = _load_wbgt_proj(wbgt_path)
+    if wbgt_df is None:
+        return None, [wbgt_path]
+
+    pm_df = _load_precip_wide(pm_path, "precip_month")
+    p5_df = _load_precip_wide(p5_path, "precip_5day")
+
+    clim = wbgt_df
+    if p5_df is not None:
+        clim = clim.merge(p5_df, on=["facility", "date"], how="left")
+    if pm_df is not None:
+        clim = clim.merge(pm_df, on=["facility", "date"], how="left")
+    clim = clim.sort_values(["facility", "date"]).reset_index(drop=True)
+
+    for k in LAG_MONTHS:
+        clim[f"wbgt_c_lag{k}_raw"] = clim.groupby("facility")[WBGT_VAR].shift(k)
+    clim = clim[(clim["date"].dt.year >= PROJ_PERIOD_START) &
+                (clim["date"].dt.year <= PROJ_PERIOD_END)].copy()
+    clim["year"]  = clim["date"].dt.year
+    clim["month"] = clim["date"].dt.month
+    return clim, None
+
+
+def project_indicator(res, clim, ssp, tier):
+    """Predict-twice deficit on future WBGT for one indicator/SSP/tier.
+
+    mu_obs_future is NOT observed (no future counts), so we anchor on a
+    facility+month+year BASELINE intensity implied by the fitted model at the
+    reference WBGT, then scale by the spline/lag contrast. Concretely:
+        mu_ref_future = baseline(facility, month, year_anchor)          [ref WBGT]
+        mu_obs_future = mu_ref_future * exp( (B(obs) - B(ref)) @ beta
+                                             + Σ_lag beta_lag (obs_lag - ref) )
+    Only the CONTRAST is used downstream (deficit = mu_ref - mu_obs), so the
+    facility/month/year baseline cancels exactly and the projected deficit
+    depends only on the future WBGT distribution vs the reference — the same
+    invariance that makes the historical predict-twice valid. We therefore set
+    the baseline to 1.0 per row and report the deficit as a PERCENTAGE, which is
+    baseline-free."""
+    ind         = res["indicator"]
+    wbgt_shift  = res["_wbgt_shift"]
+    design_info = res["_design_info"]
+    spline_cols = res["_spline_cols"]
+    coef        = res["_coef"]
+    lag_terms   = res["_lag_terms"]
+    nb          = res["_nb"]
+
+    train_facs = set(nb["facility"].unique())
+    df = clim[clim["facility"].isin(train_facs)].copy()
+
+    # centred future WBGT + lags
+    df["wbgt_c"] = df[WBGT_VAR] - wbgt_shift
+    for k in LAG_MONTHS:
+        df[f"wbgt_c_lag{k}"] = df[f"wbgt_c_lag{k}_raw"] - wbgt_shift
+
+    need = [WBGT_VAR] + [f"wbgt_c_lag{k}" for k in LAG_MONTHS]
+    n_before = len(df)
+    df = df.dropna(subset=need).reset_index(drop=True)
+    n_dropped = n_before - len(df)
+    if df.empty:
+        print(f"    {ind}/{ssp}/{tier}: no rows after covariate build — skip")
+        return None
+
+    ref = _resolve_ref(df).values          # same REF_MODE as the historical fit
+    beta_s = np.array([coef.get(c, 0.0) for c in spline_cols], dtype=float)
+    B_obs  = spline_basis_at(df[WBGT_VAR].values, wbgt_shift, design_info)
+    B_ref  = spline_basis_at(ref, wbgt_shift, design_info)
+    d_eta  = (B_ref - B_obs) @ beta_s
+    for lag_col in lag_terms:
+        if lag_col in coef:
+            d_eta += coef[lag_col] * ((ref - wbgt_shift) - df[lag_col].values)
+
+    # baseline-free: set mu_ref = 1 per row; deficit % is invariant to it.
+    mu_ref = np.ones(len(df), dtype=float)
+    mu_obs = mu_ref * np.exp(d_eta)
+
+    df["mu_obs"]      = mu_obs
+    df["mu_ref"]      = mu_ref
+    df["Disruption"]  = mu_ref - mu_obs                       # +ve = loss
+    df["Deficit_Pct"] = np.where(mu_ref > 0,
+                                 100.0 * (mu_ref - mu_obs) / mu_ref, np.nan)
+
+    fac_dist = nb[["facility", CLUSTER_COL]].drop_duplicates("facility")
+    df = df.merge(fac_dist, on="facility", how="left")
+    df["indicator"], df["ssp"], df["tier"] = ind, ssp, tier
+
+    # ---- Per-facility per-month CSV ----
+    keep_cols = ["indicator", "ssp", "tier", "facility", CLUSTER_COL,
+                 "year", "month", "date", WBGT_VAR,
+                 "mu_obs", "mu_ref", "Disruption", "Deficit_Pct"]
+    df[keep_cols].to_csv(
+        f"{OUT_DIR}projection_facility_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv",
+        index=False)
+
+    # ---- District × year × month roll-up ----
+    dist_agg = df.groupby([CLUSTER_COL, "year", "month"]).agg(
+        Total_mu_obs =("mu_obs", "sum"),
+        Total_mu_ref =("mu_ref", "sum"),
+        Mean_WBGT    =(WBGT_VAR, "mean"),
+        N_Facilities =("facility", "nunique"),
+    ).reset_index()
+    dist_agg["Total_Disruption"] = dist_agg["Total_mu_ref"] - dist_agg["Total_mu_obs"]
+    dist_agg["Deficit_Pct"] = np.where(
+        dist_agg["Total_mu_ref"] > 0,
+        100.0 * dist_agg["Total_Disruption"] / dist_agg["Total_mu_ref"], np.nan)
+    dist_agg["indicator"], dist_agg["ssp"], dist_agg["tier"] = ind, ssp, tier
+    dist_agg.to_csv(
+        f"{OUT_DIR}projection_district_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv",
+        index=False)
+
+    # ---- Monthly time series pooled across facilities ----
+    mon_agg = df.groupby(["year", "month"]).agg(
+        Total_mu_obs =("mu_obs", "sum"),
+        Total_mu_ref =("mu_ref", "sum"),
+        Mean_WBGT    =(WBGT_VAR, "mean"),
+        N_Facilities =("facility", "nunique"),
+    ).reset_index()
+    mon_agg["Total_Disruption"] = mon_agg["Total_mu_ref"] - mon_agg["Total_mu_obs"]
+    mon_agg["Deficit_Pct"] = np.where(
+        mon_agg["Total_mu_ref"] > 0,
+        100.0 * mon_agg["Total_Disruption"] / mon_agg["Total_mu_ref"], np.nan)
+    mon_agg["Year_Month"] = (mon_agg["year"].astype(str)
+                             + "-" + mon_agg["month"].astype(str))
+    mon_agg["indicator"], mon_agg["ssp"], mon_agg["tier"] = ind, ssp, tier
+    mon_agg.to_csv(
+        f"{OUT_DIR}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv",
+        index=False)
+
+    deficit_proj = _pct(mu_obs, mu_ref)
+    print(f"    {ind}/{ssp}/{tier}: deficit_proj={deficit_proj:+.2f}% "
+          f"(n={len(df):,}, dropped {n_dropped:,})")
+    return {
+        "indicator": ind, "ssp": ssp, "tier": tier,
+        "period_start": PROJ_PERIOD_START, "period_end": PROJ_PERIOD_END,
+        "n_facility_months": len(df), "n_input_dropped": n_dropped,
+        "mean_wbgt": float(df[WBGT_VAR].mean()),
+        "deficit_pct": deficit_proj,
+    }
 
 
 def bh_fdr(pvals, alpha=0.05):
@@ -434,20 +749,51 @@ def bh_fdr(pvals, alpha=0.05):
 if __name__ == "__main__":
     print(f"Poisson predict-twice | REF_MODE={REF_MODE} | "
           f"bootstrap={N_BOOTSTRAP}\n" + "=" * 60)
-    rows = []
+    all_results = []
     for ind in COUNT_INDICATORS:
         print(f"-> {ind}")
         r = run_indicator(ind)
         if r:
-            rows.append(r)
-    if not rows:
+            all_results.append(r)
+    if not all_results:
         raise SystemExit("No indicators fitted.")
-    df = pd.DataFrame(rows)
+
+    # -- summary table (public columns only) --
+    save_cols = [c for c in all_results[0] if not c.startswith("_")]
+    df = pd.DataFrame([{k: r.get(k) for k in save_cols} for r in all_results])
     df["q_boot"] = bh_fdr(df["p_boot"].values, FDR_ALPHA)
-    df["sig_bh"] = df["q_boot"] < FDR_ALPHA
+    df["sig_bh"] = df["q_boot"] <= FDR_ALPHA
     df = df.sort_values("deficit_pct", ascending=False)
     df.to_csv(f"{OUT_DIR}deficit_summary_predicttwice_{WBGT_VAR}.csv", index=False)
     print("\n" + "=" * 60)
     print(df[["indicator", "n_obs", "n_fac", "deficit_pct", "hot_deficit_pct",
               "ci_lo", "ci_hi", "p_boot", "q_boot", "sig_bh"]].to_string(index=False))
     print(f"\nSummary -> {OUT_DIR}deficit_summary_predicttwice_{WBGT_VAR}.csv")
+
+    # -- (b) forward projections (predict-twice on future WBGT) --
+    if PROJECT:
+        print("\n" + "=" * 60)
+        print(f"FORWARD PROJECTIONS ({PROJ_PERIOD_START}-{PROJ_PERIOD_END}, "
+              "predict-twice)")
+        print("=" * 60)
+        proj_summary = []
+        for ssp in SSP_SCENARIOS:
+            for tier in MODEL_TIERS:
+                clim, missing = _load_future_climate(ssp, tier)
+                if clim is None:
+                    print(f"  SKIP {ssp}/{tier}: missing {missing}")
+                    continue
+                print(f"  {ssp}/{tier}: {len(clim):,} facility-months "
+                      f"({clim['facility'].nunique()} facilities)")
+                for res in all_results:
+                    row = project_indicator(res, clim, ssp, tier)
+                    if row:
+                        proj_summary.append(row)
+        if proj_summary:
+            pd.DataFrame(proj_summary).to_csv(
+                f"{OUT_DIR}projection_summary_{WBGT_VAR}.csv", index=False)
+            print(f"\nProjection summary -> "
+                  f"{OUT_DIR}projection_summary_{WBGT_VAR}.csv")
+        else:
+            print("\nNo projections produced — check WBGT_PROJ_FILE_TPL "
+                  "against your actual filenames.")
