@@ -1,5 +1,5 @@
 import xarray as xr
-base_dir = "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5_reanalysis"
+base_dir = "/Users/rachelmurray-watson/Documents/Heat_data/ERA5/"
 WBGT_DIRECTORY = "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT"
 
 ds = xr.open_mfdataset(f"{base_dir}/total_precipitation/*/*.nc")
