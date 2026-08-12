@@ -43,6 +43,7 @@ WBGT_FILE_PREFIX = "wbgt_monthly_"
 WBGT_MONTHLY_VARS = ['wbgt_day', 'wbgt_night']     # from wbgt_monthly_*.nc
 WBGT_EXTREME_VARS = ['wbgt5x_day']                 # from the extreme file
 WBGT_EXTREME_FILE = "wbgt_extreme_indices_ERA5_historical.nc"   # native grid (matches monthly)
+
 WBGT_VARS = WBGT_MONTHLY_VARS + WBGT_EXTREME_VARS   # everything downstream loops over thisWBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
 WBGT_LAT_COORD = "lat"     # 'lat' in the CMIP6-derived files
 WBGT_LON_COORD = "lon"    # 'lon' in the CMIP6-derived files
@@ -137,6 +138,21 @@ for var in WBGT_EXTREME_VARS:
                        f"(has {list(ds_ext.data_vars)})")
     wbgt_data[var] = ds_ext[var].values     # (time, lat, lon), same grid
 ds_ext.close()
+
+PRECIP_FILE = "precip_monthly_ERA5_historical.nc"
+PRECIP_VARS = ["precip_month", "precip_5day"]
+
+ds_precip = xr.open_dataset(os.path.join(WBGT_DIRECTORY, PRECIP_FILE))
+assert ds_precip.sizes.get(WBGT_TIME_COORD) == len(time_data), \
+    "precip file has a different number of months than the monthly-mean file"
+for var in PRECIP_VARS:
+    if var not in ds_precip:
+        raise KeyError(f"{var} not in {PRECIP_FILE} (has {list(ds_precip.data_vars)})")
+    wbgt_data[var] = ds_precip[var].values      # (time, lat, lon), same grid
+ds_precip.close()
+
+WBGT_VARS = WBGT_VARS + PRECIP_VARS
+
 # ---------------------------------------------------------------------------
 # Match facilities + extract WBGT — ONCE, for the union of facilities
 # ---------------------------------------------------------------------------
