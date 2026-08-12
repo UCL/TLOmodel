@@ -12,6 +12,7 @@ variables = [
     "surface_solar_radiation_downwards",
     "total_sky_direct_solar_radiation_at_surface",
     "surface_pressure",
+    "total_precipitation"
 ]
 
 base_dir = "/Users/rachelmurray-watson/Documents/Heat_data/ERA5"
