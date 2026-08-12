@@ -245,7 +245,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # get patient counts per target subgroups initially
         _df = _df.groupby(
             ["Facility_Level", "Sex", "Age_Range", "Wealth", "Education", "loc_cat"]
-        )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count"})
+        )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count", "Wealth": "Wealth_Quintile"})
 
         # combine levels 3 and 4, considering level 4 has no patients as simulated
         _df["Facility_Level"] = _df["Facility_Level"].replace({"4": "3"})
@@ -265,7 +265,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # group up by subgroups and get patient proportions across subgroups
         # rescale TLO patient volume per level by TLM patient mix across levels
-        group_list = ["Facility_Level", "Age_Range", "Wealth", "Sex", "Education", "loc_cat"]
+        group_list = ["Facility_Level", "Age_Range", "Wealth_Quintile", "Sex", "Education", "loc_cat"]
         _df_mix = pd.DataFrame(columns=["category", "subgroup", "patient_proportion"])
         for sg in group_list:
             if sg == "Facility_Level":
@@ -682,7 +682,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # format to be consistent to TLO output
     pat_mix["category"] = pat_mix["category"].replace({"fac_level": "Facility_Level",
                                                        "age_group_tlo": "Age_Range",
-                                                       "wealth_tlo": "Wealth",
+                                                       "wealth_tlo": "Wealth_Quintile",
                                                        "sex": "Sex",
                                                        "education_tlo": "Education",
                                                        "loc_cat": "Service_Area"})
@@ -784,23 +784,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # make wealth and education subgroups as int
     # change to string if needed
-    mask = pat_mix_complete["category"].eq("Wealth")
+    mask = pat_mix_complete["category"].eq("Wealth_Quintile")
     pat_mix_complete.loc[mask, "subgroup"] = (
         pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
-        .replace({1: "1", 2: "2", 3: "3", 4: "4", 5: "5"})
+        .replace({1: "1 (richest)", 2: "2", 3: "3", 4: "4", 5: "5 (poorest)"})
     )
 
     mask = pat_mix_complete["category"].eq("Education")
     pat_mix_complete.loc[mask, "subgroup"] = (
         pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
-        .replace({1: "None", 2: "Some primary education", 3: "Some secondary education"})
+        .replace({1: "None", 2: "Some/Completed primary education", 3: "Some/Completed secondary education"})
     )
 
     # make level 3 as level 3+ as it combines levels 3 and 4
     mask = pat_mix_complete["category"].eq("Facility_Level")
     pat_mix_complete.loc[mask, "subgroup"] = (
         pat_mix_complete.loc[mask, "subgroup"]
-        .replace({"3": "3+"})
+        .replace({"1a": "Health centers", "2": "Community/District hospitals", "3": "Central/National hospitals"})
     )
 
     # plot
@@ -877,18 +877,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             elif category == "Facility_Level":
                 width_per_subgroup = 0.9
-                rotation = 0
-                horizontal_alignment = "center"
+                rotation = 45
+                horizontal_alignment = "right"
 
-            elif category == "Wealth":
+            elif category == "Wealth_Quintile":
                 width_per_subgroup = 0.8
-                rotation = 0
-                horizontal_alignment = "center"
+                rotation = 45
+                horizontal_alignment = "right"
 
             elif category == "Sex":
                 width_per_subgroup = 1.2
-                rotation = 0
-                horizontal_alignment = "center"
+                rotation = 45
+                horizontal_alignment = "right"
 
             elif category == "Education":
                 width_per_subgroup = 0.9
