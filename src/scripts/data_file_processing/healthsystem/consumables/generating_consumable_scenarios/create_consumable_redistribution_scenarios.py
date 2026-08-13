@@ -1,7 +1,7 @@
 """
-Generate the four consumable-redistribution scenarios (district pooling, neighbourhood pooling,
-and pairwise exchange at 60- and 30-minute radii) and compile the resulting availability
-probabilities into the format required by the TLO model.
+Generate the five consumable-redistribution scenarios (national pooling, district pooling,
+neighbourhood pooling, and pairwise exchange at 60- and 30-minute radii) and compile the
+resulting availability probabilities into the format required by the TLO model.
 
 The optimisation models, travel-time utilities, clustering heuristic, validation checks, and
 plotting helpers live in `redistribution_utils.py`; this script handles data preparation,
@@ -25,6 +25,8 @@ import textwrap
 
 from scripts.costing.cost_estimation import clean_consumable_name
 
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.assess_amc_heterogeneity import (
+        compare_pool_scarcity_across_levels)
 from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.redistribution_utils import (
         build_capacity_clusters_all,
         build_edges_within_radius_flat,
@@ -265,7 +267,45 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     # Build clusters (size = 3) from per-district travel-time matrices for neighbourhood pooling
     cluster_size = 3
     cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
-    # cluster_series is a pd.Series: index=facility_id, value like "District A#C00", ...
+    # cluster_series is a pd.Series with a (district, fac_name) MultiIndex, value like "District A#C00", ...
+
+    # How often is there actually enough donor surplus to cover eligible facilities' deficits,
+    # and how does that change with the size of the pool being coordinated (national vs. district
+    # vs. neighbourhood)? Prints a sufficiency summary per level and saves a single comparison
+    # figure (analogous to the coverage-ratio panel of assess_pool_scarcity's figure).
+    compare_pool_scarcity_across_levels(lmis, cluster_map=cluster_series, figures_path=outputfilepath)
+
+    # a0) National-level pooling
+    '''
+    # Commented out for quicker runs
+    print("Now running Pooled Redistribution at National level")
+    start = time.time()
+    pooled_national_df, pool_national_moves = redistribute_pooling_lp(
+        df=lmis,
+        tau_max=3.0,
+        tau_donor_keep=1.5,
+        pooling_level="national",
+        cluster_map=None,
+        return_move_log=True,
+        floor_to_baseline=True,
+    )
+    print(pooled_national_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+    pooled_national_df[['district', 'item_code', 'fac_name', 'month', 'amc', 'available_prop', 'Facility_Level',
+                        'OB', 'OB_prime', 'available_prop_redis', 'received_from_pool']].to_csv(
+                        outputfilepath / 'clustering_national_df.csv', index=False)
+    end = time.time()
+    print(f"National redistribution completed in {end - start:.3f} seconds")
+    # 234.276 seconds
+    '''
+    pooled_national_df = pd.read_csv(outputfilepath / 'clustering_national_df.csv')
+    validate_redistribution_output(pooled_national_df, "National pooling",
+                                   group_cols=("month", "item_code"), conservation="leq", strict=False)
+    tlo_pooled_national = (
+        pooled_national_df
+        .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
+        .agg(available_prop_scenario20=("available_prop_redis", "mean"))
+        .sort_values(["item_code", "district", "Facility_Level", "month"])
+    )
 
     # a) District-level pooling
     '''
@@ -287,7 +327,7 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
                         outputfilepath / 'clustering_district_df.csv', index=False)
     end = time.time()
     print(f"District redistribution completed in {end - start:.3f} seconds")
-    # 4276 seconds
+    # 4972.169 seconds
     '''
     pooled_district_df = pd.read_csv(outputfilepath / 'clustering_district_df.csv')
     validate_redistribution_output(pooled_district_df, "District pooling",
@@ -319,7 +359,7 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
                        outputfilepath / 'clustering_n3_df.csv', index=False)
     end = time.time()
     print(f"Cluster redistribution completed in {end - start:.3f} seconds")
-    # 22414.642 seconds
+    #22414.642 seconds
     '''
     pooled_cluster_df = pd.read_csv(outputfilepath / 'clustering_n3_df.csv')
     validate_redistribution_output(pooled_cluster_df, "Neighbourhood pooling",
@@ -396,6 +436,7 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     # 5. Summarise the outcomes of redistribution
     # ----------------------------------------------------------------------------------------------------------------------
     scenario_dfs = {
+        "National pooling": pooled_national_df,
         "District pooling": pooled_district_df,
         "Neighbourhood pooling": pooled_cluster_df,
         "Pairwise exchange (60-min radius)": large_radius_df,
@@ -408,18 +449,30 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     plot_stockout_prevention_by_month(scenario_dfs, figures_path=outputfilepath)
 
     # Violin plots of the distribution of changes in availability
+    violin_scenario_order = ["National pooling", "District pooling", "Cluster pooling",
+                             "Pairwise (large radius)", "Pairwise (small radius)"]
+
     violin_df_all_facs = pd.concat([
+        prep_violin_df(pooled_national_df, "National pooling", keep_facs_with_no_change=True),
         prep_violin_df(pooled_district_df, "District pooling", keep_facs_with_no_change=True),
         prep_violin_df(pooled_cluster_df, "Cluster pooling", keep_facs_with_no_change=True),
         prep_violin_df(large_radius_df, "Pairwise (large radius)", keep_facs_with_no_change=True),
         prep_violin_df(small_radius_df, "Pairwise (small radius)", keep_facs_with_no_change=True),
     ], ignore_index=True)
     violin_df_only_facs_with_change = pd.concat([
+        prep_violin_df(pooled_national_df, "National pooling", keep_facs_with_no_change=False),
         prep_violin_df(pooled_district_df, "District pooling", keep_facs_with_no_change=False),
         prep_violin_df(pooled_cluster_df, "Cluster pooling", keep_facs_with_no_change=False),
         prep_violin_df(large_radius_df, "Pairwise (large radius)", keep_facs_with_no_change=False),
         prep_violin_df(small_radius_df, "Pairwise (small radius)", keep_facs_with_no_change=False),
     ], ignore_index=True)
+
+    # Fix the display order (national, district, cluster, 60-min, 30-min) regardless of
+    # concatenation order, since seaborn otherwise sorts string categories alphabetically.
+    violin_df_all_facs["scenario"] = pd.Categorical(violin_df_all_facs["scenario"],
+                                                     categories=violin_scenario_order, ordered=True)
+    violin_df_only_facs_with_change["scenario"] = pd.Categorical(
+        violin_df_only_facs_with_change["scenario"], categories=violin_scenario_order, ordered=True)
 
     do_violin_plot_change_in_p(violin_df=violin_df_all_facs,
                                figname="violin_redistribution_national_all_facs.png",
@@ -443,14 +496,19 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
             on=["item_code", "district", "Facility_Level", "month"],
             how="outer"
         ),
-        [tlo_pooled_district, tlo_pooled_cluster, tlo_large_radius, tlo_small_radius]
+        [tlo_pooled_national, tlo_pooled_district, tlo_pooled_cluster, tlo_large_radius, tlo_small_radius]
     )
 
     tlo_redis.to_csv(outputfilepath / 'tlo_redis.csv', index=False)
 
     # Edit new dataframe to match mfl formatting
-    list_of_new_scenario_variables = ['available_prop_scenario16', 'available_prop_scenario17',
-                                      'available_prop_scenario18', 'available_prop_scenario19']
+    # NOTE: scenario16-19 are the pre-existing district/cluster/60-min/30-min redistribution
+    # scenario numbers already referenced elsewhere (e.g. consumables_availability_estimation.py)
+    # and are kept unchanged; national pooling is appended as scenario20 rather than
+    # renumbering the existing four, so that resource file is not broken by this addition.
+    list_of_new_scenario_variables = ['available_prop_scenario16',
+                                      'available_prop_scenario17', 'available_prop_scenario18',
+                                      'available_prop_scenario19', 'available_prop_scenario20']
     tlo_redis = tlo_redis[['item_code', 'month', 'district', 'Facility_Level'] + list_of_new_scenario_variables].dropna()
     tlo_redis["item_code"] = tlo_redis["item_code"].astype(float).astype(int)
 
@@ -834,7 +892,8 @@ df_for_plots['item_category_clean'] = df_for_plots['item_category'].map(clean_ca
 
 scenario_cols = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2', 'available_prop_scenario3',
                  'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
-                 'available_prop_scenario16', 'available_prop_scenario17', 'available_prop_scenario18', 'available_prop_scenario19']
+                 'available_prop_scenario20', 'available_prop_scenario16', 'available_prop_scenario17',
+                 'available_prop_scenario18', 'available_prop_scenario19']
 rename_dict = {'available_prop': 'Actual',
                'available_prop_scenario1': 'Non-therapeutic consumables',
                'available_prop_scenario2': 'Vital medicines',
@@ -842,6 +901,7 @@ rename_dict = {'available_prop': 'Actual',
                'available_prop_scenario6': '75th percentile facility',
                'available_prop_scenario7': '90th percentile facility',
                'available_prop_scenario8': 'Best facility',
+               'available_prop_scenario20': 'National Pooling',
                'available_prop_scenario16': 'District Pooling',
                'available_prop_scenario17': 'Cluster Pooling',
                'available_prop_scenario18': 'Pairwise exchange (60-min radius)',

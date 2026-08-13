@@ -68,6 +68,7 @@ class Consumables:
             "scenario17",
             "scenario18",
             "scenario19",
+            "scenario20",
         }
 
         # Create internal items:
@@ -174,6 +175,7 @@ class Consumables:
             "scenario17",
             "scenario18",
             "scenario19",
+            "scenario20",
         ):
             pass  # change already picked up in `self._process_consumables_data()`
         elif availability == "all":
@@ -240,6 +242,7 @@ class Consumables:
             "scenario17",
             "scenario18",
             "scenario19",
+            "scenario20",
         ):
             return availability_data.set_index(["month", "Facility_ID", "item_code"])[f"available_prop_{availability}"]
 

@@ -279,7 +279,15 @@ def capacity_clusters_for_district(T_d: pd.DataFrame, cluster_size: int = 3, big
 def build_capacity_clusters_all(T_by_dist: Dict[str, pd.DataFrame], cluster_size: int = 3) -> pd.Series:
     """
     Apply capacity clustering to all districts.
-    Returns a pd.Series mapping facility_id -> district-scoped cluster_id, e.g. 'Nkhotakota#C03'.
+
+    Returns a pd.Series mapping (district, facility_id) -> district-scoped cluster_id
+    (e.g. 'Nkhotakota#C03'), with a 2-level MultiIndex ["district", "fac_name"].
+
+    The index is deliberately keyed on (district, facility) rather than facility alone:
+    facility names are not guaranteed to be globally unique across districts, and a
+    facility-only index previously caused a many-to-many merge (row-count blow-up, and
+    with it stock-conservation/ceiling violations) in `redistribute_pooling_lp` whenever a
+    facility name happened to recur in more than one district.
     """
     mappings = []
     for d, T_d in T_by_dist.items():
@@ -289,6 +297,7 @@ def build_capacity_clusters_all(T_by_dist: Dict[str, pd.DataFrame], cluster_size
         if not local_map:
             continue
         s = pd.Series(local_map, name="cluster_id").map(lambda cid: f"{d}#{cid}")
+        s.index = pd.MultiIndex.from_product([[d], s.index], names=["district", "fac_name"])
         mappings.append(s)
     if not mappings:
         return pd.Series(dtype=object)
@@ -309,13 +318,13 @@ def redistribute_pooling_lp(
     eligible_levels: Iterable[str] = ELIGIBLE_LEVELS,
     amc_eps: float = 1e-6,
     return_move_log: bool = True,
-    pooling_level: str = "district",       # "district" or "cluster"
+    pooling_level: str = "district",       # "district", "cluster", or "national"
     cluster_map: pd.Series | None = None,  # required if pooling_level == "cluster"
     floor_to_baseline: bool = True,
 ):
     """
-    Proactive pooled redistribution (district- or cluster-level), solved as a pure LP
-    per (pool, month, item):
+    Proactive pooled redistribution (national-, district-, or cluster-level), solved as a
+    pure LP per (pool, month, item):
 
         max  sum_f p_f
         s.t. sum_f x_f + excess = TotalStock
@@ -330,11 +339,22 @@ def redistribute_pooling_lp(
     Because tau_donor_keep < tau_max, LB <= UB holds by construction for every facility, and
     because each LB_f <= OB_f, sum(LB) <= TotalStock always holds; both invariants are asserted.
 
+    `pooling_level` controls the pool boundary only; the LP formulation is identical:
+      - "district"  : pool per (district, month, item)                 [default]
+      - "cluster"   : pool per (cluster_id, month, item); requires `cluster_map`
+      - "national"  : pool per (month, item) across the whole country
+
+    If a facility appears more than once within a single pool (e.g. duplicate raw records
+    for the same district/item/month/facility), its solved balance x_sol is split across
+    those rows in proportion to each row's original opening balance (equal split if the
+    facility's total original balance was zero) -- this keeps stock conservation exact
+    regardless of how many raw rows a facility contributes to a pool.
+
     Returns (out, move_log) if return_move_log else out, where `out` carries columns
     OB, OB_prime, available_prop_redis and received_from_pool.
     """
-    if pooling_level not in ("district", "cluster"):
-        raise ValueError("pooling_level must be 'district' or 'cluster'.")
+    if pooling_level not in ("district", "cluster", "national"):
+        raise ValueError("pooling_level must be 'district', 'cluster', or 'national'.")
     if tau_donor_keep > tau_max:
         raise ValueError("tau_donor_keep must not exceed tau_max (LB <= UB requires it).")
 
@@ -345,18 +365,54 @@ def redistribute_pooling_lp(
     if pooling_level == "cluster":
         if cluster_map is None:
             raise ValueError("cluster_map is required when pooling_level='cluster'.")
-        out = out.merge(cluster_map.rename("cluster_id"), how="left",
-                        left_on=facility_col, right_index=True)
+        cmap = cluster_map.rename("cluster_id")
+        if isinstance(cmap.index, pd.MultiIndex):
+            # Preferred: (district, fac_name) -> cluster_id, as returned by
+            # build_capacity_clusters_all(). Merging on both keys avoids a many-to-many
+            # fan-out when a facility name recurs in more than one district.
+            out = out.merge(cmap, how="left", left_on=["district", facility_col], right_index=True)
+        else:
+            # Backward-compatible fallback for a plain fac_name-indexed Series. Only safe if
+            # facility names are unique across the whole dataset (not just within a district).
+            out = out.merge(cmap, how="left", left_on=facility_col, right_index=True)
         if out["cluster_id"].isna().any():
             # facilities missing a cluster - assign singleton clusters to keep them
             out["cluster_id"] = out["cluster_id"].fillna(
                 out["district"].astype(str) + "#CXX_" + out[facility_col].astype(str))
 
-    group_cols = list(id_cols)
-    node_label = "district"
-    if pooling_level == "cluster":
-        group_cols = ["cluster_id", "month", "item_code"]
-        node_label = "cluster_id"
+    if pooling_level == "district":
+        group_cols, node_label = list(id_cols), "district"
+    elif pooling_level == "cluster":
+        group_cols, node_label = ["cluster_id", "month", "item_code"], "cluster_id"
+    else:  # national
+        group_cols, node_label = ["month", "item_code"], "national"
+
+    # Internal node key used to identify a facility WITHIN a pool. For district/cluster pooling,
+    # `district` (or the district-prefixed cluster_id) is already part of group_cols, so facility
+    # names only need to be unique within a district to correctly identify a node -- true even if
+    # the same name recurs in a different district. National pooling drops district from the pool
+    # boundary entirely, so facility_col alone is no longer a safe identity key: two different real
+    # facilities that happen to share a name would otherwise be silently treated as one LP node
+    # (their stock summed, and only one of their AMC/Facility_Level values used). Disambiguate with
+    # a district-qualified key in that case; `facility_col` itself is left untouched for output.
+    if pooling_level == "national":
+        out["_node_key"] = out["district"].astype(str) + "||" + out[facility_col].astype(str)
+    else:
+        out["_node_key"] = out[facility_col]
+
+    # Diagnostic: how often does a facility contribute more than one raw row to a single pool
+    # (same node, same pool)? This is handled correctly below (solved balance split
+    # proportionally across the duplicate rows), but a large count usually indicates an
+    # upstream data-deduplication issue worth investigating (e.g. in the LMIS
+    # collapse-duplicates step) -- for national pooling, genuine duplicates are counted after
+    # disambiguating by district, so a facility-name collision across two districts does NOT
+    # show up here (it's handled as two distinct nodes, not flagged as a duplicate row).
+    dup_counts = out.groupby(group_cols + ["_node_key"], dropna=False).size()
+    n_dup = int((dup_counts > 1).sum())
+    if n_dup:
+        print(f"Pooling ({pooling_level}): {n_dup:,} (pool, facility) combinations have more "
+              f"than one row in the input data; each facility's solved allocation will be "
+              f"split across its rows in proportion to their original opening balance.")
 
     move_rows = []
     skipped_nodes = []
@@ -366,16 +422,20 @@ def redistribute_pooling_lp(
         # Resolve node ID for logging and selection masks
         if pooling_level == "district":
             node_val, m, i = g["district"].iloc[0], keys[1], keys[2]
+        elif pooling_level == "national":
+            node_val, m, i = "National", keys[0], keys[1]
         else:
             node_val, m, i = keys
 
-        AMC = (g.set_index(facility_col)[amc_col]
+        AMC = (g.set_index("_node_key")[amc_col]
                .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
-        OB0 = (g.set_index(facility_col)["OB"]
+        OB0 = (g.set_index("_node_key")["OB"]
                .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
-        LVL = g.set_index(facility_col)[level_col].astype(str)
+        LVL = g.set_index("_node_key")[level_col].astype(str)
+        # node -> (district, facility) lookup, for human-readable move-log output only
+        NODE_INFO = g.drop_duplicates("_node_key").set_index("_node_key")[["district", facility_col]]
 
-        # collapse duplicates if any
+        # collapse duplicates if any (true same-node duplicate raw rows only -- see _node_key)
         if AMC.index.duplicated().any():
             AMC = AMC[~AMC.index.duplicated(keep="first")]
         if LVL.index.duplicated().any():
@@ -441,26 +501,40 @@ def redistribute_pooling_lp(
 
         if pooling_level == "district":
             sel = (out["district"].eq(node_val) & out["month"].eq(m) & out["item_code"].eq(i))
+        elif pooling_level == "national":
+            sel = (out["month"].eq(m) & out["item_code"].eq(i))
         else:
             sel = (out["cluster_id"].eq(node_val) & out["month"].eq(m) & out["item_code"].eq(i))
 
-        # Facilities with AMC >= eps get x_f
-        mask_rows_pos = sel & out[facility_col].isin(facs_pos)
-        out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values
+        # Nodes with AMC >= eps get x_f, split across any duplicate raw rows for that node in
+        # proportion to each row's original opening balance (equal split if the node's total
+        # original OB in this pool was zero) -- this keeps the written-out total exactly equal
+        # to x_sol[f] regardless of how many rows the node occupies.
+        pos_rows = out.loc[sel & out["_node_key"].isin(facs_pos), ["_node_key", "OB"]]
+        if not pos_rows.empty:
+            node_total_ob = pos_rows.groupby("_node_key")["OB"].transform("sum")
+            node_row_count = pos_rows.groupby("_node_key")["OB"].transform("count")
+            safe_total_ob = node_total_ob.where(node_total_ob > 1e-9, other=1.0)  # avoid 0/0
+            share = np.where(node_total_ob > 1e-9, pos_rows["OB"] / safe_total_ob, 1.0 / node_row_count)
+            x_target = pos_rows["_node_key"].map(x_sol).to_numpy(dtype=float)
+            out.loc[pos_rows.index, "OB_prime"] = share * x_target
 
-        # Facilities with AMC < eps donate entirely (their stock went into total_stock)
-        mask_rows_zero = sel & ~out[facility_col].isin(facs_pos)
+        # Nodes with AMC < eps donate entirely (their stock went into total_stock)
+        mask_rows_zero = sel & ~out["_node_key"].isin(facs_pos)
         out.loc[mask_rows_zero, "OB_prime"] = 0.0
 
         if return_move_log:
-            for f in AMC.index:
-                x_f = x_sol.get(f, 0.0) if f in facs_pos else 0.0
+            for nk in AMC.index:
+                x_f = x_sol.get(nk, 0.0) if nk in facs_pos else 0.0
+                info = NODE_INFO.loc[nk] if nk in NODE_INFO.index else None
                 move_rows.append({
-                    node_label: node_val, "month": m, "item_code": i, "facility": f,
-                    "received_from_pool": x_f - float(OB0.get(f, 0.0)),
+                    node_label: node_val, "month": m, "item_code": i,
+                    "district": info["district"] if info is not None else node_val,
+                    "facility": info[facility_col] if info is not None else nk,
+                    "received_from_pool": x_f - float(OB0.get(nk, 0.0)),
                     "x_allocated": x_f,
-                    "OB0_agg": float(OB0.get(f, 0.0)),
-                    "eligible_receiver": bool(LVL.get(f, "") in eligible_levels),
+                    "OB0_agg": float(OB0.get(nk, 0.0)),
+                    "eligible_receiver": bool(LVL.get(nk, "") in eligible_levels),
                 })
 
     print(f"Pooling: skipped {len(skipped_nodes)} {node_label}-month-item combinations (no optimal solution)")
@@ -849,6 +923,92 @@ def _make_synthetic_lmis(seed: int = 0) -> pd.DataFrame:
     return df.drop(columns="ob_mult")
 
 
+def _make_synthetic_lmis_two_districts() -> pd.DataFrame:
+    """
+    Two districts for regression-testing national-level pooling:
+      - District1: a single eligible receiver (F1_recv, 1a, OB = 0.1x AMC) with no local donor,
+        so district-level pooling cannot change it (the pool's only member is itself).
+      - District2: an eligible donor (F2_don, 1a, OB = 4x AMC) with ample surplus.
+    National pooling should top up F1_recv using District2's surplus; district pooling should not.
+    """
+    rows = [
+        ("F1_recv", "District1", "1a", 50.0, 0.1),
+        ("F2_don", "District2", "1a", 50.0, 4.0),
+    ]
+    df = pd.DataFrame(rows, columns=["fac_name", "district", "Facility_Level", "amc", "ob_mult"])
+    df["month"] = 1
+    df["item_code"] = "42"
+    df["opening_bal"] = df["amc"] * df["ob_mult"]
+    df["available_prop"] = np.clip(df["ob_mult"], 0.0, 1.0) * 0.9
+    return df.drop(columns="ob_mult")
+
+
+def _make_synthetic_lmis_national_name_collision() -> pd.DataFrame:
+    """
+    Two districts sharing a facility name 'F_shared', but with DIFFERENT facility levels --
+    used to regression-test that national pooling (the one pooling level whose pool boundary
+    excludes district) still treats them as two distinct facilities rather than silently
+    merging them into one LP node keyed on fac_name alone (which would "keep first" whichever
+    district's AMC/Facility_Level happened to sort first, letting a non-eligible facility in
+    one district piggy-back on an eligible facility's eligibility in another):
+      - DistrictA/F_shared (1a, AMC=50): eligible receiver, OB = 0.1x AMC.
+      - DistrictB/F_shared (2,  AMC=50): NON-eligible (level 2), OB = 0.1x AMC -> must never gain.
+      - DistrictA/F_donA   (1a, AMC=50): donor, OB = 4x AMC.
+    """
+    rows = [
+        ("F_shared", "DistrictA", "1a", 50.0, 0.1),
+        ("F_shared", "DistrictB", "2", 50.0, 0.1),
+        ("F_donA", "DistrictA", "1a", 50.0, 4.0),
+    ]
+    df = pd.DataFrame(rows, columns=["fac_name", "district", "Facility_Level", "amc", "ob_mult"])
+    df["month"] = 1
+    df["item_code"] = "42"
+    df["opening_bal"] = df["amc"] * df["ob_mult"]
+    df["available_prop"] = np.clip(df["ob_mult"], 0.0, 1.0) * 0.9
+    return df.drop(columns="ob_mult")
+
+
+def _make_synthetic_lmis_cluster_name_collision() -> pd.DataFrame:
+    """
+    Two districts that both contain a facility literally named 'F_shared' -- a name collision --
+    used to regression-test that cluster pooling never merges facilities across districts just
+    because they share a name (see build_capacity_clusters_all / redistribute_pooling_lp).
+    """
+    rows = [
+        ("F_shared", "DistrictA", "1a", 50.0, 0.1),   # receiver
+        ("F_donA", "DistrictA", "1a", 50.0, 4.0),     # donor
+        ("F_shared", "DistrictB", "1a", 50.0, 0.1),   # receiver, same name, different district
+        ("F_donB", "DistrictB", "1a", 50.0, 4.0),     # donor
+    ]
+    df = pd.DataFrame(rows, columns=["fac_name", "district", "Facility_Level", "amc", "ob_mult"])
+    df["month"] = 1
+    df["item_code"] = "42"
+    df["opening_bal"] = df["amc"] * df["ob_mult"]
+    df["available_prop"] = np.clip(df["ob_mult"], 0.0, 1.0) * 0.9
+    return df.drop(columns="ob_mult")
+
+
+def _make_synthetic_lmis_duplicate_rows() -> pd.DataFrame:
+    """
+    One district where a single facility (F_dup) is represented by two raw rows for the same
+    (district, item, month) -- simulating an upstream data-deduplication gap -- used to
+    regression-test that redistribute_pooling_lp splits the solved allocation across duplicate
+    rows (in proportion to their original opening balance) rather than writing the full solved
+    amount to each row.
+    """
+    rows = [
+        ("F_dup", "1a", 50.0, 5.0),     # half of F_dup's true opening balance
+        ("F_dup", "1a", 50.0, 5.0),     # other half (duplicate row, same facility/item/month)
+        ("F_don", "1a", 50.0, 200.0),   # ample donor
+    ]
+    df = pd.DataFrame(rows, columns=["fac_name", "Facility_Level", "amc", "opening_bal"])
+    df["district"] = "TestDistrict"
+    df["month"] = 1
+    df["item_code"] = "42"
+    df["available_prop"] = 0.1
+    return df
+
+
 def _make_synthetic_time_matrix() -> dict:
     """All six synthetic facilities within 20 minutes of each other, except F_zero at 90 min."""
     facs = ["F_hosp", "F_don1", "F_don2", "F_short1", "F_short2", "F_zero"]
@@ -922,6 +1082,65 @@ def run_smoke_tests(verbose: bool = True) -> bool:
         assert edges_capped.groupby("receiver_fac")["donor_fac"].nunique().max() <= 1, \
             "Pairwise smoke test: explicit K_in=1 not respected"
 
+    # ---- National pooling: cross-district mixing that district pooling cannot do ----
+    nat_df = _make_synthetic_lmis_two_districts()
+    dist_only, _ = redistribute_pooling_lp(nat_df, tau_max=3.0, tau_donor_keep=1.5,
+                                           pooling_level="district")
+    f1_district = dist_only.set_index("fac_name").loc["F1_recv", "OB_prime"]
+    assert abs(f1_district - 5.0) < 1e-6, \
+        "National smoke test setup invalid: district pooling unexpectedly changed the isolated receiver"
+
+    national, _ = redistribute_pooling_lp(nat_df, tau_max=3.0, tau_donor_keep=1.5,
+                                          pooling_level="national")
+    validate_redistribution_output(national, "smoke:national_pooling",
+                                   group_cols=("month", "item_code"),
+                                   conservation="leq", strict=True)
+    f1_national = national.set_index("fac_name").loc["F1_recv", "OB_prime"]
+    assert f1_national > f1_district + 1e-6, \
+        "National pooling smoke test: cross-district surplus did not reach the isolated receiver"
+
+    # ---- National pooling: regression test for facility-name collisions across districts ----
+    nat_coll_df = _make_synthetic_lmis_national_name_collision()
+    nat_coll, _ = redistribute_pooling_lp(nat_coll_df, tau_max=3.0, tau_donor_keep=1.5,
+                                          pooling_level="national")
+    validate_redistribution_output(nat_coll, "smoke:national_name_collision",
+                                   group_cols=("month", "item_code"), conservation="leq", strict=True)
+    b_recv = nat_coll.loc[(nat_coll["fac_name"] == "F_shared") & (nat_coll["district"] == "DistrictB"),
+                          "OB_prime"].iloc[0]
+    assert abs(b_recv - 5.0) < 1e-6, \
+        ("National pooling smoke test: a non-eligible (level 2) facility in DistrictB "
+         "incorrectly gained stock via a same-named eligible facility in DistrictA")
+
+    # ---- Cluster pooling: regression test for facility-name collisions across districts ----
+    coll_df = _make_synthetic_lmis_cluster_name_collision()
+    cluster_map = pd.Series({
+        ("DistrictA", "F_shared"): "DistrictA#C00", ("DistrictA", "F_donA"): "DistrictA#C00",
+        ("DistrictB", "F_shared"): "DistrictB#C00", ("DistrictB", "F_donB"): "DistrictB#C00",
+    })
+    cluster_map.index.set_names(["district", "fac_name"], inplace=True)
+    clustered, _ = redistribute_pooling_lp(coll_df, tau_max=3.0, tau_donor_keep=1.5,
+                                           pooling_level="cluster", cluster_map=cluster_map)
+    assert len(clustered) == len(coll_df), \
+        "Cluster smoke test: facility-name collision across districts caused row duplication"
+    validate_redistribution_output(clustered, "smoke:cluster_name_collision",
+                                   conservation="leq", strict=True)
+    a_recv = clustered.loc[(clustered["fac_name"] == "F_shared") & (clustered["district"] == "DistrictA"),
+                           "OB_prime"].iloc[0]
+    b_recv = clustered.loc[(clustered["fac_name"] == "F_shared") & (clustered["district"] == "DistrictB"),
+                           "OB_prime"].iloc[0]
+    assert a_recv > 5.0 + 1e-6 and b_recv > 5.0 + 1e-6, \
+        "Cluster smoke test: same-named receiver in one or both districts was not topped up"
+
+    # ---- Duplicate raw rows: regression test for split-not-copied write-back ----
+    dup_df = _make_synthetic_lmis_duplicate_rows()
+    dup_pooled, dup_moves = redistribute_pooling_lp(dup_df, tau_max=3.0, tau_donor_keep=1.5,
+                                                     pooling_level="district")
+    validate_redistribution_output(dup_pooled, "smoke:duplicate_rows", conservation="leq", strict=True)
+    fdup_total_after = dup_pooled.loc[dup_pooled["fac_name"] == "F_dup", "OB_prime"].sum()
+    fdup_solved = dup_moves.loc[dup_moves["facility"] == "F_dup", "x_allocated"].iloc[0]
+    assert abs(fdup_total_after - fdup_solved) < 1e-6, \
+        "Duplicate-row smoke test: solved allocation was not split correctly across duplicate rows"
+
     if verbose:
         print("All smoke tests passed.")
     return True
@@ -931,6 +1150,7 @@ def run_smoke_tests(verbose: bool = True) -> bool:
 # 6) Visualisations
 # ======================================================================================
 SCENARIO_COLORS = {
+    "National pooling": "#08306b",
     "District pooling": "#1f78b4",
     "Neighbourhood pooling": "#a6cee3",
     "Pairwise exchange (60-min radius)": "#33a02c",

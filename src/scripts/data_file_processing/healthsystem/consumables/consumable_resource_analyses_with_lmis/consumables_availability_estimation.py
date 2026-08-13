@@ -1536,6 +1536,7 @@ scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': '
                 'available_prop_scenario15': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 0.75)',
                 'available_prop_scenario16': 'Redistribution: District pooling', 'available_prop_scenario17':  'Redistribution: Cluster pooling',
                 'available_prop_scenario18':  'Redistribution: Pairwise (large radius)', 'available_prop_scenario19':  'Redistribution: Pairwise (small radius)',
+                'available_prop_scenario20':  'Redistribution: National pooling'
 }
 
 # Generate descriptive plots of consumable availability
