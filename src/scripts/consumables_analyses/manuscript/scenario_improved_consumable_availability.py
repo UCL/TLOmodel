@@ -36,7 +36,7 @@ class ConsumablesImpact(BaseScenario):
         'default',
         'scenario1', 'scenario2', 'scenario3',  # Predictive factors
         'scenario6', 'scenario7', 'scenario8',  # Benchmark facilities
-        'scenario16', 'scenario17', 'scenario18', 'scenario19',  # Redistribution
+        'scenario16', 'scenario17', 'scenario18', 'scenario19', 'scenario20'  # Redistribution
         'all'  # Perfect
     ]
 
@@ -104,7 +104,7 @@ class ConsumablesImpact(BaseScenario):
                 'mode_appt_constraints':1,
                 'mode_appt_constraints_postSwitch':sys["mode_appt_constraints"], # once without HR constraints and once with HR constraints
                 'year_mode_switch':2026,
-                'policy_name': 'EHP_III',
+                'policy_name': 'Naive',
                 'use_funded_or_actual_staffing': 'actual',
                 'scale_to_effective_capabilities':True,  # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
                 'yearly_HR_scaling_mode': 'historical_scaling', # allow historical HRH scaling to occur 2018-2024
