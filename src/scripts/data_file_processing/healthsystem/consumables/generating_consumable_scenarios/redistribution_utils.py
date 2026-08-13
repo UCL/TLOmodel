@@ -29,6 +29,7 @@ radius already bounds the candidate neighbour set and Qmin already screens out s
 small to be worth dispatching, so no separate degree cap is needed to keep solutions sensible.
 K_in/K_out remain available as parameters for a stricter delivery-capacity sensitivity check.
 """
+import textwrap
 from math import ceil
 from pathlib import Path
 from typing import Dict, Iterable, Literal, Optional, Tuple
@@ -1327,6 +1328,21 @@ def _add_custom_legend(fig=None, legend_location="upper right"):
         fig.legend(handles=handles, loc=legend_location, ncol=3, fontsize=8, frameon=True)
 
 
+# Default figure convention: x-axis category labels are wrapped to a fixed character width and
+# rotated 90 degrees, rather than angled -- keeps long scenario/category names fully legible
+# without overlapping regardless of how many categories are on the axis.
+DEFAULT_XTICK_WRAP_WIDTH = 20
+
+
+def wrap_and_rotate_xticklabels(ax, width: int = DEFAULT_XTICK_WRAP_WIDTH, fontsize: int = 9):
+    """Wrap each x-tick label to `width` characters and rotate 90 degrees. Call this on a
+    matplotlib Axes AFTER the axis's category order is finalised (e.g. after the last plotting
+    call on `ax`)."""
+    labels = [textwrap.fill(t.get_text(), width) for t in ax.get_xticklabels()]
+    ax.set_xticks(ax.get_xticks())  # fix tick positions before relabelling (avoids a matplotlib warning)
+    ax.set_xticklabels(labels, rotation=90, ha='center', va='top', fontsize=fontsize)
+
+
 def do_violin_plot_change_in_p(
     violin_df: pd.DataFrame,
     figname: str,
@@ -1343,24 +1359,25 @@ def do_violin_plot_change_in_p(
         mean_df = violin_df.groupby("scenario", as_index=False)["delta_p"].mean()
         median_df = violin_df.groupby("scenario", as_index=False)["delta_p"].median()
 
-        plt.figure(figsize=(10, 5))
+        fig, ax = plt.subplots(figsize=(10, 5))
         sns.violinplot(data=violin_df, x="scenario", y="delta_p", cut=0, density_norm="width",
-                       inner=None, linewidth=0.8, color="#4C72B0", alpha=0.6)
+                       inner=None, linewidth=0.8, color="#4C72B0", alpha=0.6, ax=ax)
         sns.boxplot(data=violin_df, x="scenario", y="delta_p", width=0.03, showcaps=True,
                     showfliers=False,
                     boxprops={"facecolor": "grey", "edgecolor": "black", "linewidth": 1},
-                    whiskerprops={"linewidth": 1}, medianprops={"linewidth": 0})
+                    whiskerprops={"linewidth": 1}, medianprops={"linewidth": 0}, ax=ax)
         sns.scatterplot(data=mean_df, x="scenario", y="delta_p", color="#b2182b", marker="D",
-                        s=60, zorder=10)
+                        s=60, zorder=10, ax=ax)
         sns.scatterplot(data=median_df, x="scenario", y="delta_p", color="#b2182b", marker="o",
-                        s=45, zorder=11)
-        plt.axhline(0, color="black", linewidth=0.8, linestyle="--")
-        plt.ylabel("Change in probability of availability (Δp)")
-        plt.xlabel("")
+                        s=45, zorder=11, ax=ax)
+        ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
+        ax.set_ylabel("Change in probability of availability (Δp)")
+        ax.set_xlabel("")
         _add_custom_legend(legend_location=legend_location)
-        plt.tight_layout()
-        plt.savefig(figures_path / figname, dpi=600)
-        plt.close()
+        wrap_and_rotate_xticklabels(ax)
+        fig.tight_layout()
+        fig.savefig(figures_path / figname, dpi=600)
+        plt.close(fig)
         return
 
     g = sns.catplot(data=violin_df, x="scenario", y="delta_p", col=district_col, col_wrap=ncol,
@@ -1380,7 +1397,7 @@ def do_violin_plot_change_in_p(
         ax.axhline(0, color="black", linewidth=0.6, linestyle="--")
         ax.set_xlabel("")
         ax.set_ylabel("Δp")
-        ax.tick_params(axis="x", labelrotation=45, labelsize=8)
+        wrap_and_rotate_xticklabels(ax, width=12, fontsize=8)
         ax.tick_params(axis="y", labelsize=8)
         ax.set_title(district, fontsize=9)
     _add_custom_legend(fig=g.fig, legend_location=legend_location)

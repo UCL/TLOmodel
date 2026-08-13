@@ -13,6 +13,7 @@ tests for both models before regenerating scenarios.
 import calendar
 import datetime
 import pickle
+import re
 from collections import defaultdict
 from functools import reduce
 from pathlib import Path
@@ -187,7 +188,18 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     # Load pre-generated dictionary
     with open(outputfilepath / "T_car.pkl", "rb") as f:
         T_car = pickle.load(f)
-    # T_car2 was created after cleaning fac names and getting rid of spaces in the text
+    # T_car was created after cleaning fac names and getting rid of spaces in the text
+
+    # T_car's district keys were generated from raw district names (with spaces, e.g.
+    # 'Mzimba North', 'Nkhata bay', 'Nkhota Kota'), but `lmis["district"]` above has already
+    # had whitespace collapsed to underscores (e.g. 'Mzimba_North'). Without reconciling the
+    # two, every lookup of T_car by district (in redistribute_radius_lp's per-district travel
+    # matrix selection, and in build_capacity_clusters_all's cluster ids) silently misses for
+    # any multi-word district, so those districts get zero pairwise redistribution and
+    # degenerate singleton clusters -- not because their facilities are actually far apart.
+    T_car = {
+        re.sub(r"\s+", "_", str(d).strip()): T for d, T in T_car.items()
+    }
 
     # ----------------------------------------------------------------------------------------------------------------------
     # 3. Exploration: stock adequacy and connectivity
@@ -436,11 +448,11 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     # 5. Summarise the outcomes of redistribution
     # ----------------------------------------------------------------------------------------------------------------------
     scenario_dfs = {
-        "National pooling": pooled_national_df,
-        "District pooling": pooled_district_df,
         "Neighbourhood pooling": pooled_cluster_df,
-        "Pairwise exchange (60-min radius)": large_radius_df,
-        "Pairwise exchange (30-min radius)": small_radius_df,
+        "District pooling": pooled_district_df,
+        "National pooling": pooled_national_df,
+        "Pairwise exchange (Small radius)": small_radius_df,
+        "Pairwise exchange (Large radius)": large_radius_df,
     }
 
     # How much of the anticipated stock-out risk was averted? (headline appendix figures)
@@ -449,22 +461,22 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     plot_stockout_prevention_by_month(scenario_dfs, figures_path=outputfilepath)
 
     # Violin plots of the distribution of changes in availability
-    violin_scenario_order = ["National pooling", "District pooling", "Cluster pooling",
-                             "Pairwise (large radius)", "Pairwise (small radius)"]
+    violin_scenario_order = ["Neighbourhood pooling", "District pooling", "National pooling",
+                             "Pairwise exchange (Small radius)", "Pairwise exchange (Large radius)"]
 
     violin_df_all_facs = pd.concat([
         prep_violin_df(pooled_national_df, "National pooling", keep_facs_with_no_change=True),
         prep_violin_df(pooled_district_df, "District pooling", keep_facs_with_no_change=True),
-        prep_violin_df(pooled_cluster_df, "Cluster pooling", keep_facs_with_no_change=True),
-        prep_violin_df(large_radius_df, "Pairwise (large radius)", keep_facs_with_no_change=True),
-        prep_violin_df(small_radius_df, "Pairwise (small radius)", keep_facs_with_no_change=True),
+        prep_violin_df(pooled_cluster_df, "Neighbourhood pooling", keep_facs_with_no_change=True),
+        prep_violin_df(large_radius_df, "Pairwise exchange (Large radius)", keep_facs_with_no_change=True),
+        prep_violin_df(small_radius_df, "Pairwise exchange (Small radius)", keep_facs_with_no_change=True),
     ], ignore_index=True)
     violin_df_only_facs_with_change = pd.concat([
         prep_violin_df(pooled_national_df, "National pooling", keep_facs_with_no_change=False),
         prep_violin_df(pooled_district_df, "District pooling", keep_facs_with_no_change=False),
-        prep_violin_df(pooled_cluster_df, "Cluster pooling", keep_facs_with_no_change=False),
-        prep_violin_df(large_radius_df, "Pairwise (large radius)", keep_facs_with_no_change=False),
-        prep_violin_df(small_radius_df, "Pairwise (small radius)", keep_facs_with_no_change=False),
+        prep_violin_df(pooled_cluster_df, "Neighbourhood pooling", keep_facs_with_no_change=False),
+        prep_violin_df(large_radius_df, "Pairwise exchange (Large radius)", keep_facs_with_no_change=False),
+        prep_violin_df(small_radius_df, "Pairwise exchange (Small radius)", keep_facs_with_no_change=False),
     ], ignore_index=True)
 
     # Fix the display order (national, district, cluster, 60-min, 30-min) regardless of
