@@ -63,7 +63,7 @@ ro.conversion.converter_ctx = ContextVar("converter", default=ro.default_convert
 # CONFIG  (mirror your NB script; only the estimator + counterfactual differ)
 # ===========================================================================
 COUNT_INDICATORS = [
-    "fp_total_clients", "opd_attendance", "bcg_under1",
+    "fp_total_clients", "opd_attendance", "bcg_under1", "vmmc_first_visits",
     "fully_immunised_under1", "ipd_total_admissions", "measles_under1",
     "penta3_under1", "pnc_mother_checked_48h",
 ]
@@ -88,7 +88,7 @@ INDICATOR_LABELS: dict[str, str] = {
 }
 
 WBGT_VAR   = "wbgt_day"
-SPLINE_DF  = 3                # fixed a priori
+SPLINE_DF  = 2                # fixed a priori
 LAG_MONTHS = [1, 2, 3]
 CENTER     = True
 WINSOR_K   = 5.0
@@ -104,7 +104,7 @@ REF_WBGT_FIXED = 23.0
 N_CURVE_POINTS = 200
 CURVE_REF      = "mean"    # "mean" | "median" | "min" — reference point the curve is drawn against
 
-min_year_historical = 2019
+min_year_historical = 2016
 max_year_historical = 2025
 MIN_OBS    =  (max_year_historical - min_year_historical)*12 * 0.5
 
@@ -127,8 +127,8 @@ BOOT_MIN_SUCCESS = 0.80
 FDR_ALPHA        = 0.05
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs_poisson/2019/"
-PANEL_TMPL = (f"{DATA_DIR}/All_predictors_processed/"
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs_poisson/2016/"
+PANEL_TMPL = (f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
               "regression_panel_{indicator}.csv")
 PANEL_DIST_COL = "Dist"
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -253,19 +253,24 @@ def make_exposure_response_curve(
     rr_lo = np.full_like(rr, np.nan)
     rr_hi = np.full_like(rr, np.nan)
     if vcov_a is not None and names_a is not None:
-        idx = [names_a.index(c) for c in spline_cols if c in names_a]
-        if len(idx) == len(spline_cols):
-            V = vcov_a[np.ix_(idx, idx)]
-            # Fail loud: a non-finite spline vcov means the clustered cov
-            # couldn't be recovered (collinearity/singularity). Do NOT scrub
-            # to zero — that produces a fake zero-width band.
-            assert np.isfinite(V).all(), (
-                f"[{indicator}] spline vcov non-finite — clustered cov "
-                f"singular (check WBGT-spline/lag collinearity).")
+        present = [c for c in spline_cols if c in names_a]
+        if present:
+            idx = [names_a.index(c) for c in present]
+            Vp = vcov_a[np.ix_(idx, idx)]
+            assert np.isfinite(Vp).all(), f"[{indicator}] spline vcov non-finite — clustered cov singular."
+            # embed survivors into full df×df; dropped basis cols -> 0 var (coef is 0 too)
+            keep = [spline_cols.index(c) for c in present]
+            V = np.zeros((len(spline_cols), len(spline_cols)))
+            V[np.ix_(keep, keep)] = Vp
             var_grid = np.einsum("ij,jk,ik->i", contrast, V, contrast)
-            se_grid  = np.sqrt(np.maximum(var_grid, 0.0))
+            se_grid = np.sqrt(np.maximum(var_grid, 0.0))
             rr_lo = np.exp(eta_grid - 1.96 * se_grid)
             rr_hi = np.exp(eta_grid + 1.96 * se_grid)
+            if len(present) < len(spline_cols):
+                print(
+                    f"  [{indicator}] curve band built on {len(present)}/"
+                    f"{len(spline_cols)} spline dims (one dropped for collinearity)"
+                )
         else:
             print(f"  [{indicator}] curve: spline names not all found in vcov "
                   f"— band left as NaN")
@@ -378,8 +383,11 @@ def deficit_from_fit(nb, wbgt_shift, lag_terms, want_model=False):
     Returns (mu_obs, mu_ref, coef, spline_cols, design_info) or, if
     want_model=True, additionally (r_model). want_model=False in the bootstrap
     (no vcov/curve needed) keeps replicates lean."""
-    basis = patsy.dmatrix(f"cr(x, df={SPLINE_DF}) - 1",
-                          {"x": nb["wbgt_c"].values}, return_type="dataframe")
+    resid = nb[WBGT_VAR] - nb.groupby(["facility", "month"])[WBGT_VAR].transform("mean")
+    print(f"  WBGT within facility×month: SD={resid.std():.3f}, "
+          f"p1-p99 range={np.percentile(resid, 99) - np.percentile(resid, 1):.2f}")
+
+    basis = patsy.dmatrix(f"cr(x, df={SPLINE_DF}) - 1", {"x": nb["wbgt_c"].values}, return_type="dataframe")
     design_info = basis.design_info
     spline_cols = [f"wbgt_s{i+1}" for i in range(basis.shape[1])]
 
