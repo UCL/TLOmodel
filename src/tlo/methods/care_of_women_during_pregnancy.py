@@ -2183,7 +2183,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'AntenatalCare_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
@@ -2221,7 +2221,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'AntenatalCare_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+
+        beddays = self.module.calculate_beddays(person_id)
+
+        #  TODO: I THINK THIS WILL GENERATE FAR TOO MANY INPATIENT DAYS AND NEEDS TO BE REVIEWED
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': beddays})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': beddays})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
@@ -2230,9 +2235,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # Define beddays, must be accessed outside of init because of parameter access
-        beddays = self.module.calculate_beddays(person_id)
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': beddays})
 
         if not mother.is_alive:
             return

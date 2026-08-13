@@ -3028,17 +3028,21 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=2))
 
-        # If a this woman has experienced a complication the appointment footprint is changed from normal to
-        # complicated
-        if (
-            df.at[person_id, 'la_sepsis']
-            or df.at[person_id, 'la_antepartum_haem'] != 'none'
-            or df.at[person_id, 'la_obstructed_labour']
-            or df.at[person_id, 'la_uterine_rupture']
-            or df.at[person_id, 'ps_htn_disorders'] == 'eclampsia'
-            or df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp'
+        # If this woman has experienced a complication and received treatment the appointment footprint is changed
+        # from normal to complicated
+
+        if ((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')
+            or df.at[person_id, 'la_sepsis_treatment']
+            or df.at[person_id, 'la_maternal_hypertension_treatment']
+            or df.at[person_id, 'la_eclampsia_treatment']
+            or df.at[person_id, 'la_severe_pre_eclampsia_treatment']
+            or mni[person_id]['referred_for_cs']
+            or mni[person_id]['referred_for_surgery']
+            or mni[person_id]['referred_for_blood']
+            or (mni[person_id]['mode_of_delivery'] == 'instrumental')
         ):
             return self.make_appt_footprint({'CompDelivery': 1})
+
 
     def never_ran(self):
         self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
@@ -3329,7 +3333,7 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'PostnatalCare_Maternal_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 3})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         params = module.current_parameters
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': params['beddays_extended_delivery']})

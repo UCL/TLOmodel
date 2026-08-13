@@ -210,13 +210,13 @@ results.update({
 TARGET_PERIOD = (Date(sim_start_year, 1, 1), Date(sim_start_year, 12, 31))
 # list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
 # #
-# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
-#                                      resourcefilepath=resourcefilepath,
-#                                      suspended_results_folder=results_folder,
-#                                      _draws=draws,
-#                                      _years=list_of_relevant_years_for_costing,
-#                                      cost_only_used_staff= True,
-#                                      _discount_rate=0.03)
+input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+                                     resourcefilepath=resourcefilepath,
+                                     suspended_results_folder=results_folder,
+                                     _draws=draws,
+                                     _years=list_of_relevant_years_for_costing,
+                                     cost_only_used_staff= True,
+                                     _discount_rate=0.03)
 #
 # input_costs_df.to_csv(f'{g_path}/input_costs.csv')
 #

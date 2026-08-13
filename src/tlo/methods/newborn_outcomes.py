@@ -1492,7 +1492,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 3})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = (
             self.make_beddays_footprint({'general_bed': self.module.parameters['neonatal_ward_beddays']}))

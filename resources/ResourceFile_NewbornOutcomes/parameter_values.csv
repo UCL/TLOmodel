@@ -85,7 +85,7 @@ prob_dist_mild_impairment_post_sepsis,"[[0.5,0.5],[0.5,0.5]]",local,"[[0,1],[0,1
 prob_dist_mod_severe_impairment_post_sepsis,"[[0.5,0.5],[0.5,0.5]]",local,"[[0,1],[0,1]]","[[1,0],[1,0]]",vague prior,
 prob_breastfeeding_status_change_6m_nonexclusive,"[[0.5,0.5],[0.5,0.5]]",local,"[[0,1],[0,1]]","[[1,0],[1,0]]",vague prior,
 prob_breastfeeding_status_change_6m_exclusive,"[[0.5,0.5],[0.5,0.5]]",local,"[[0,1],[0,1]]","[[1,0],[1,0]]",vague prior,
-neonatal_ward_beddays,5,local,0,12,vague prior,
+neonatal_ward_beddays,3,local,0,12,vague prior,
 breastfeeding_update_interval_neonates,6,local,0,12,vague prior,
 breastfeeding_update_interval_after_6mo,18,local,0,24,vague prior,
 postnatal_check_early_event_min_days,1,local,0,12,vague prior,
