@@ -57,7 +57,7 @@ DISTRICT_NAME_COL = "ADM2_EN"
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    "fp_total_clients",
+     "fp_total_clients",
     "opd_attendance",
      "ipd_total_admissions",
     "vmmc_first_visits",
@@ -92,12 +92,12 @@ INDICATOR_LABELS: dict[str, str] = {
     # "skilled_deliveries":         "Skilled Deliveries",
 }
 
-WBGT_VAR      = "wbgt5x_day"
-SPLINE_DF     = 4
-LAG_MONTHS    =  [1,2,3]
+WBGT_VAR      = "wbgt_day"
+SPLINE_DF     = 3
+LAG_MONTHS    =  []#[1,2,3]
 CENTER        = True
-MIN_OBS       = (2024 - 2016)*12 * 0.8
-REFERENCE_WBGT_PERCENTILE = 90
+MIN_OBS       = (2024 - 2019)*12 * 0.8
+REFERENCE_WBGT_PERCENTILE = 95
 min_year_historical = 2016
 max_year_historical = 2025
 apply_cap           = True
@@ -109,7 +109,7 @@ CURVE_REF      = "mean"
 COVID_START = "2020-04-01"
 COVID_END   = "2021-04-01"
 
-DF_MODE       = "per_indicator"   # "fixed" | "per_indicator"
+DF_MODE       = "fixed"   # "fixed" | "per_indicator"
 DF_CANDIDATES = (3, 4)
 
 CLOSURES = [
@@ -121,7 +121,7 @@ SSP_SCENARIOS =  ["ssp245"] #["ssp126", "ssp245", "ssp585"]
 MODEL_TIERS   = ["lowest", "median", "highest"]
 CLUSTER_COL = "Dist"
 
-N_BOOTSTRAP     = 500    # >0 turns on the district block bootstrap for the
+N_BOOTSTRAP     = 50    # >0 turns on the district block bootstrap for the
                            # DEFICIT CIs only (aggregate + hot-month). IRR and
                            # exposure-response curve stay on the delta method.
 BOOT_SEED       = 40
@@ -134,7 +134,7 @@ FDR_ALPHA = 0.05
 WBGT_GRID      = np.arange(20.0, 37.0, 0.5)
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/Test/"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 THERMOFEEL_DIR = Path(
@@ -151,7 +151,7 @@ PANEL_DIST_COL_IN_PANEL = "Dist"
 # seasonal precip, so precip is identified off anomalous (within-month,
 # across-year) variation. Must match PRECIP_TERMS in the single-model
 # predict-twice script for the two to be a like-for-like sensitivity pair.
-PRECIP_TERMS = ["precip_month"]#, "precip_5day"]
+PRECIP_TERMS = []#["precip_month"]#, "precip_5day"]
 
 # ---- Projection file layout ------------------------------------------------
 # Long: rows are (facility, date), cols include wbgt_day, wbgt_night
@@ -544,7 +544,32 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
         long.loc[mask, "y"] = 0
         if n_masked:
             print(f"  [{indicator}] Masked {n_masked} closure months for {fac}.")
+    # Indicator-specific data corrections.
+    INDICATOR_DATE_FILTERS: dict[str, tuple[str, str]] = {
+        # (min_date_inclusive, max_date_inclusive) — restricts to a window
+        "fp_total_clients": ("2019-01-01", "2024-12-31"),  # pre-2019 series is definitionally different
+        "vmmc_first_visits": ("2020-01-01", "2024-12-31"),  # campaign structure stable post-COVID only
+    }
 
+    INDICATOR_MONTH_MASKS: dict[str, list[str]] = {
+        # Zero out or drop specific facility-months known to be reporting artefacts.
+        # Dropped, not zeroed, because "0 live births" is a valid observation.
+        "live_births_total": ["2017-04-01"],
+    }
+
+    # Indicator-specific window
+    if indicator in INDICATOR_DATE_FILTERS:
+        lo, hi = INDICATOR_DATE_FILTERS[indicator]
+        n_before = len(long)
+        long = long[long["date"].between(lo, hi)].copy()
+        print(f"  [{indicator}] Date-restricted to [{lo}, {hi}]: {n_before:,} -> {len(long):,} rows.")
+
+    # Indicator-specific single-month drops (data artefacts)
+    if indicator in INDICATOR_MONTH_MASKS:
+        bad_months = pd.to_datetime(INDICATOR_MONTH_MASKS[indicator])
+        n_before = len(long)
+        long = long[~long["date"].isin(bad_months)].copy()
+        print(f"  [{indicator}] Dropped {n_before - len(long):,} artefact months.")
     long["year"]  = long["date"].dt.year
     long["month"] = long["date"].dt.month
     long = long[long["year"].between(min_year_historical, max_year_historical - 1)]
@@ -566,7 +591,6 @@ def prepare_data(indicator: str) -> pd.DataFrame | None:
     long["is_reporting"] = long["y"] > long["reporting_threshold"]
     first_reporting = long[long["is_reporting"]].groupby("facility")["date"].min()
     long = long.merge(first_reporting.rename("start_date"), left_on="facility", right_index=True, how="left")
-    n_before = len(long)
     long = long[long["date"] >= long["start_date"]].drop(columns=["reporting_threshold", "is_reporting", "start_date"])
 
     # -------------------------------------------------------------------
@@ -681,13 +705,17 @@ def select_df_for_indicator(nb_data, lag_terms, wbgt_var, cluster_col,
             nb_try, splines_try, _ = add_spline_basis(nb_data.copy(), df_spline=df_try)
             rhs_try = splines_try + lag_terms + PRECIP_TERMS + ["covid", "year_c"]
             m_try, _ = fit_nb_fixest(
-                nb_try, rhs_terms=rhs_try,
-                fe_spec=fe_spec, fe_cols = fe_cols, cluster_col=cluster_col)
-            rows.append({"df": df_try, "aic": nb_aic(m_try),
-                         "theta": nb_theta(m_try), "note": ""})
+                nb_try, rhs_terms=rhs_try, fe_spec=fe_spec, fe_cols=fe_cols, cluster_col=cluster_col
+            )
+            # Reject fits with non-finite vcov diagonal — fenegbin still returns
+            # an AIC for singular fits and it will win the comparison.
+            _, _, vcov_try = get_beta_vcov(m_try)
+            if not np.isfinite(np.diag(vcov_try)).all():
+                rows.append({"df": df_try, "aic": np.nan, "theta": np.nan, "note": "singular vcov"})
+                continue
+            rows.append({"df": df_try, "aic": nb_aic(m_try), "theta": nb_theta(m_try), "note": ""})
         except Exception as e:
-            rows.append({"df": df_try, "aic": np.nan, "theta": np.nan,
-                         "note": str(e)[:60]})
+            rows.append({"df": df_try, "aic": np.nan, "theta": np.nan, "note": str(e)[:60]})
     tab   = pd.DataFrame(rows)
     valid = tab.dropna(subset=["aic"])
     best_df = (int(valid.loc[valid["aic"].idxmin(), "df"])
@@ -928,7 +956,7 @@ def run_indicator(indicator: str) -> dict | None:
 
     print(nb_data[spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"]].corr().round(2))
 
-    rhs_a = spline_cols + lag_terms + PRECIP_TERMS + ["covid", "year_c"] + year_cols
+    rhs_a = ["wbgt_c"] + PRECIP_TERMS + ["covid", "year_c"]
     rhs_b = PRECIP_TERMS + ["covid", "year_c"] + year_cols
 
     try:
@@ -941,6 +969,13 @@ def run_indicator(indicator: str) -> dict | None:
     except Exception as e:
         print(f"  [{indicator}] fenegbin failed: {e} — skipping.")
         return None
+
+    # Direct R-side check of what fixest thinks the vcov is
+    coeftab = ro.r("function(m) as.data.frame(summary(m)$coeftable)")(model_a)
+    with localconverter(ro.default_converter + pandas2ri.converter):
+        coeftab_py = ro.conversion.rpy2py(coeftab)
+    print(f"[{indicator}] fixest coeftable:")
+    print(coeftab_py)
 
     total_a = float(mu_a.sum())
     total_b = float(mu_b.sum())
@@ -1005,6 +1040,12 @@ def run_indicator(indicator: str) -> dict | None:
         print(f"  [{indicator}] CI extraction failed: {type(e).__name__}: {e}")
         import traceback; traceback.print_exc()
     try:
+        print(f"[{indicator}] vcov_a shape: {vcov_a.shape}, coef len: {len(names_a)}")
+        print(f"[{indicator}] diag range: [{np.diag(vcov_a).min():.2e}, {np.diag(vcov_a).max():.2e}]")
+        print(f"[{indicator}] spline cols in names_a: {[c in names_a for c in spline_cols]}")
+        idx_dbg = [names_a.index(c) for c in spline_cols if c in names_a]
+        print(f"[{indicator}] spline diag entries: {np.diag(vcov_a)[idx_dbg]}")
+        print(f"[{indicator}] spline block:\n{vcov_a[np.ix_(idx_dbg, idx_dbg)]}")
         curve_df = make_exposure_response_curve(
             model_a, spline_cols, wbgt_shift,
             nb_data[WBGT_VAR], indicator, design_info,
