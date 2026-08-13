@@ -30,10 +30,13 @@ WBGT_FILE_PREFIX = "wbgt_daynight_"
 
 # CMIP6 variables (day/night bracketed). Both written into one long file.
 WBGT_VARS = ["wbgt_day", "wbgt_night"]
+WBGT_VARS = ["wbgt_day", "wbgt_night"]
+PRECIP_VARS = ["precip_month", "precip_5day"]
+PRECIP_FILE_PREFIX = "precip_monthly_"
 WBGT_TIME_COORD = "time"        # CMIP6 convention (NoLeap calendar -> cftime)
 WBGT_LAT_COORD = "lat"
 WBGT_LON_COORD = "lon"
-
+EXCLUDE_MODELS = {"GISS-E2-1-G"}
 # Facilities farther than this from the nearest grid-cell centre are flagged
 # and set to NaN rather than silently snapped to an edge cell (CMIP6 ~0.25 deg
 # ~= 28 km, so an in-domain facility matches within ~half a cell).
@@ -110,6 +113,9 @@ def find_model_files(base_dir, scenario):
     for model_dir in sorted(Path(base_dir).iterdir()):
         if not model_dir.is_dir():
             continue
+        if model_dir.name in EXCLUDE_MODELS:
+            print(f"  ⚠ skip {model_dir.name}: in EXCLUDE_MODELS")
+            continue
         scenario_dir = model_dir / scenario
         if not scenario_dir.is_dir():
             print(f"  ⚠ skip {model_dir.name}: no directory {scenario_dir}")
@@ -164,8 +170,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Per model: extract projected WBGT at each facility's nearest grid cell
 # ---------------------------------------------------------------------------
 # Accumulate ensemble-mean average WBGT per var for the covariate table
-avg_wbgt_accum = {var: {fac: [] for fac in facility_names} for var in WBGT_VARS}
-
+ALL_VARS = WBGT_VARS + PRECIP_VARS
+avg_wbgt_accum = {var: {fac: [] for fac in facility_names} for var in ALL_VARS}
 for model_id, path in model_files:
     print(f"\n--- {model_id} ---")
 
@@ -191,6 +197,7 @@ for model_id, path in model_files:
     assert_daily(times, path)                        # GUARD 1: daily timesteps
     date_keys = get_time_index(times)                # YYYY-MM per DAILY step
 
+
     # nearest grid index per facility (once per model — grids can differ)
     ix = np.array([((long_data - lon) ** 2).argmin() for lon in facility_lons])
     iy = np.array([((lat_data - lat) ** 2).argmin() for lat in facility_lats])
@@ -208,10 +215,28 @@ for model_id, path in model_files:
           f"median {np.median(dist):.1f} km")
 
     # daily nearest-cell series -> monthly mean, per var
+    precip_path = path.parent / f"{PRECIP_FILE_PREFIX}{model_id}_{WBGT_SCENARIO}.nc"
+    if not precip_path.exists():
+        raise FileNotFoundError(f"missing precip file for {model_id}: {precip_path}")
+    try:
+        time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
+        ds_pr = xr.open_dataset(precip_path, decode_times=time_coder)
+    except AttributeError:
+        ds_pr = xr.open_dataset(precip_path, use_cftime=True)
+
+    assert np.array_equal(ds_pr[WBGT_LAT_COORD].values, lat_data), \
+        f"{model_id}: precip lat grid differs from WBGT lat grid"
+    assert np.array_equal(ds_pr[WBGT_LON_COORD].values, long_data), \
+        f"{model_id}: precip lon grid differs from WBGT lon grid"
+    missing_pr = [v for v in PRECIP_VARS if v not in ds_pr]
+    if missing_pr:
+        raise KeyError(f"{precip_path.name}: {missing_pr} not in "
+                       f"{list(ds_pr.data_vars)}")
+
+    # daily nearest-cell series -> monthly mean, per WBGT var
     monthly = {}
     for var in WBGT_VARS:
         arr = ds[var].values                     # (time, lat, lon) — DAILY
-        # gather all facilities' series at once: (time, n_facilities)
         series = arr[:, iy, ix].astype(float)
         if far.any():
             series[:, far] = np.nan
@@ -221,7 +246,25 @@ for model_id, path in model_files:
         for j, fac in enumerate(facility_names):
             avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
 
+    # monthly precip series — already monthly, no groupby
+    wbgt_month_index = monthly[WBGT_VARS[0]].index
+    if ds_pr.sizes[WBGT_TIME_COORD] != len(wbgt_month_index):
+        raise AssertionError(
+            f"{model_id}: precip has {ds_pr.sizes[WBGT_TIME_COORD]} months, "
+            f"WBGT has {len(wbgt_month_index)}")
+
+    for var in PRECIP_VARS:
+        arr = ds_pr[var].values                  # (time, lat, lon) — MONTHLY
+        series = arr[:, iy, ix].astype(float)
+        if far.any():
+            series[:, far] = np.nan
+        monthly[var] = pd.DataFrame(series, index=wbgt_month_index,
+                                    columns=facility_names)
+        for j, fac in enumerate(facility_names):
+            avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
+
     ds.close()
+    ds_pr.close()
 
     # assemble long: facility, date, wbgt_day, wbgt_night (one row / facility-month)
     dates = (pd.PeriodIndex(monthly[WBGT_VARS[0]].index, freq="M")
