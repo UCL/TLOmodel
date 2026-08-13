@@ -259,21 +259,21 @@ def add_weather_columns_optimized(df, shifts, spline_design=None,
 # ===========================================================================
 # OPTIMIZED: Exposure-response curve (faster)
 # ===========================================================================
-def exposure_response_curve_fast(model, spline_cols, design_info, wbgt_shift,
-                                  ref_mode, nb_data, n=CURVE_N):
+def exposure_response_curve_fast(model, spline_cols, design_info, wbgt_var_name,
+                                  wbgt_shift, ref_mode, wbgt_values, n=CURVE_N):
     """
     Faster curve computation using vectorized operations.
+    wbgt_values: array-like of observed WBGT values
     """
-    v = WEATHER_VARS_LEVEL[0]
-    wobs = nb_data[v].values
+    wobs = np.asarray(wbgt_values).flatten()
     grid = np.linspace(np.percentile(wobs, 1), np.percentile(wobs, 99), n)
     ref = wobs.mean() if ref_mode == "mean" else float(ref_mode)
 
     # Vectorized basis construction
     Bg = np.asarray(patsy.build_design_matrices(
-        [design_info[v]], {"x": grid - wbgt_shift})[0])
+        [design_info[wbgt_var_name]], {"x": grid - wbgt_shift})[0])
     Br = np.asarray(patsy.build_design_matrices(
-        [design_info[v]], {"x": np.array([ref]) - wbgt_shift})[0])
+        [design_info[wbgt_var_name]], {"x": np.array([ref]) - wbgt_shift})[0])
     contrast = Bg - Br
 
     beta = model.params.reindex(spline_cols).values
@@ -406,8 +406,13 @@ def fit_indicator(indicator, panel_path):
     # -----------------------------------------------------------------------
     try:
         curve = exposure_response_curve_fast(
-            model_wx, spline_cols, DESIGN, SHIFTS[WEATHER_VARS_LEVEL[0]], nb_data,
-            CURVE_REF_MODE
+            model_wx,
+            spline_cols,
+            DESIGN,
+            WEATHER_VARS_LEVEL[0],  # Pass the variable name
+            SHIFTS[WEATHER_VARS_LEVEL[0]],
+            CURVE_REF_MODE,
+            nb_data[WEATHER_VARS_LEVEL[0]].values,  # Pass numpy array
         )
         curve.to_csv(f"{OUT_DIR}exposure_response_curve_{indicator}.csv", index=False)
     except Exception as e:
