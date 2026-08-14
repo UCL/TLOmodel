@@ -1,3 +1,5 @@
+
+
 """
 plot_all_figures.py
 
@@ -16,8 +18,8 @@ in the model script's own plotting block, which is missing the suffix.
 import pandas as pd
 from pathlib import Path
 
-OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
-WBGT_VAR = "wbgt_day"
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/TwoModelSplines_Optimized/"
+WBGT_VAR = "wbgt5x_day"
 
 paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
 assert paths, "no per-indicator curve files found"
@@ -33,7 +35,7 @@ import matplotlib.patches as mpatches
 # =====================================================================
 # CONFIG — keep in sync with loop_all_indicators_two_model_NB.py
 # =====================================================================
-WBGT_VAR          = "wbgt_day"
+WBGT_VAR          = "wbgt5x_day"
 OUT_DIR           = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 SHAPEFILE_PATH    = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
                      "resources/mapping/"
@@ -176,17 +178,13 @@ def plot_exposure_response_curve(indicator: str, out_dir: str = OUT_DIR) -> str:
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
     if curve_df["rr_lo"].notna().any():
         ax.fill_between(
-            curve_df["wbgt"], curve_df["rr_lo"], curve_df["rr_hi"],
+            curve_df["wbgt"], 1/curve_df["rr_lo"], 1/curve_df["rr_hi"],
             color="#2f5d80", alpha=0.2, linewidth=0)
     ax.plot(curve_df["wbgt"], 1/curve_df["rr_vs_ref"], color="#2f5d80", lw=2)
     ax.axhline(1.0, color="black", ls="--", lw=0.9)
     ax.axvline(x_ref, color="#888888", ls=":", lw=1.0)
     ax.set_xlabel("WBGT (°C)")
     ax.set_ylabel("Relative rate vs reference WBGT")
-    ax.set_title(
-        f"Exposure-response curve: {_label(indicator)}\n"
-        f"Contemporaneous WBGT spline (reference = {x_ref:.2f}°C)",
-        fontsize=11, fontweight="bold")
     ax.grid(axis="both", ls=":", alpha=0.4)
     plt.tight_layout()
     out_path = f"{out_dir}exposure_response_curve_{indicator}_{WBGT_VAR}.png"
@@ -219,10 +217,6 @@ def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     ax.set_yticklabels(plot_df["label"], fontsize=9)
     ax.set_xlabel("% change in appointments associated with WBGT", fontsize=10)
     ax.grid(axis="x", ls=":", alpha=0.5)
-    ax.set_title(
-        f"WBGT-associated deficit (NB FE: Model A vs B)\n"
-        f"cr({WBGT_VAR}) + lags, facility+month FE, 95% delta-method CI",
-        fontsize=11, fontweight="bold")
     if has_ci:
         ax.legend(handles=[
             mpatches.Patch(color="#823038", label=f"BH-FDR q≤{FDR_ALPHA}"),
@@ -261,9 +255,9 @@ def plot_hot_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
 
     fig, ax = plt.subplots(figsize=(7, max(4, len(ph) * 0.55 + 1.5)))
     for i, row in ph.iterrows():
-        lo, hi, pt = (row["hot_deficit_ci_lo"],
-                      row["hot_deficit_ci_hi"],
-                      row["hot_deficit_pct"])
+        lo, hi, pt = (row["hot_ci_lo"],
+                      row["hot_ci_hi"],
+                      row["hot_pct"])
         if pd.notna(lo) and pd.notna(hi):
             ax.errorbar(pt, i, xerr=[[pt - lo], [hi - pt]],
                         fmt="o", markersize=7, capsize=4, capthick=1.4,
@@ -275,10 +269,6 @@ def plot_hot_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     ax.set_yticklabels(ph["label"], fontsize=9)
     ax.set_xlabel(
         f"% change in appointments (WBGT > {ref_wbgt:.1f}°C)", fontsize=10)
-    ax.set_title(
-        f"Hot-month deficit (WBGT > {ref_wbgt:.1f}°C)\n"
-        f"NB FE, 95% delta-method CI, red = BH-FDR q≤{FDR_ALPHA}",
-        fontsize=11, fontweight="bold")
     ax.grid(axis="x", ls=":", alpha=0.5)
     ax.legend(handles=[
         mpatches.Patch(color="#823038", label=f"BH-FDR q≤{FDR_ALPHA}"),
@@ -319,10 +309,6 @@ def plot_irr_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     ax.set_yticklabels(irr_df["label"], fontsize=9)
     ax.set_xlabel(
         f"IRR: WBGT {IRR_HIGH:.0f}°C vs {irr_low:.0f}°C", fontsize=10)
-    ax.set_title(
-        f"WBGT contrast IRR ({irr_low:.0f}→{IRR_HIGH:.0f}°C)\n"
-        "NB FE, 95% delta-method CI, red = CI excludes 1",
-        fontsize=11, fontweight="bold")
     ax.grid(axis="x", ls=":", alpha=0.5)
     plt.tight_layout()
     out_path = (f"{out_dir}forest_plot_IRR_{irr_low:.0f}_{IRR_HIGH:.0f}_NB_"
@@ -370,10 +356,6 @@ def plot_exposure_response_panel(fitted: list[str],
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
 
-    fig.suptitle(
-        "Exposure-response curves (spline Model A, IRR vs facility-mean WBGT)\n"
-        "Shaded: 95% delta-method CI;  dotted: reference WBGT",
-        fontsize=10, fontweight="bold", y=1.02)
     plt.tight_layout()
     out_path = f"{out_dir}exposure_response_panel_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -436,11 +418,6 @@ def plot_monthly_deficit_panel(fitted: list[str],
 
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
-    fig.suptitle(
-        "Two-model deficit by calendar month "
-        "(95% jackknife CI across facilities)\n"
-        "(mu_B − mu_A)/mu_B × 100;  red = heat reduced services",
-        fontsize=10, fontweight="bold", y=1.03)
     plt.tight_layout()
     out_path = f"{out_dir}deficit_by_month_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -485,9 +462,6 @@ def plot_timeseries_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
 
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
-    fig.suptitle(
-        "Observed vs Model B counterfactual\nShaded = two-model heat deficit",
-        fontsize=11, fontweight="bold", y=1.02)
     plt.tight_layout()
     out_path = f"{out_dir}timeseries_burden_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -554,9 +528,6 @@ def plot_district_maps(fitted: list[str], out_dir: str = OUT_DIR) -> list[str]:
                           "orientation": "horizontal",
                           "shrink": 0.7, "pad": 0.02})
         ax.set_axis_off()
-        ax.set_title(
-            f"{_label(ind)}\nDistrict-level heat deficit (%)",
-            fontsize=11, fontweight="bold")
         plt.tight_layout()
         out_path = f"{out_dir}map_district_deficit_{ind}_{WBGT_VAR}.png"
         plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -600,10 +571,6 @@ def plot_district_maps(fitted: list[str], out_dir: str = OUT_DIR) -> list[str]:
     cbar = fig.colorbar(sm, ax=af, orientation="horizontal",
                         fraction=0.02, pad=0.02, shrink=0.6)
     cbar.set_label("% deficit (Model A vs B)", fontsize=9)
-    fig.suptitle(
-        "District-level heat deficit — all indicators\n"
-        "Red = heat reduced, Blue = heat increased",
-        fontsize=11, fontweight="bold", y=1.01)
     panel_path = f"{out_dir}map_district_deficit_panel_{WBGT_VAR}.png"
     plt.savefig(panel_path, dpi=180, bbox_inches="tight")
     plt.close()
@@ -647,9 +614,6 @@ def plot_projection_heatmaps(fitted: list[str],
                             ha="center", va="center", fontsize=10)
         plt.colorbar(im, ax=ax).set_label(
             "Δ deficit (proj−hist, %)", fontsize=9)
-        ax.set_title(
-            f"{_label(ind)}\nChange in two-model deficit under CMIP6",
-            fontsize=11, fontweight="bold")
         plt.tight_layout()
         out_path = f"{out_dir}projection_heatmap_{ind}_{WBGT_VAR}.png"
         plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -681,8 +645,6 @@ def plot_tlo_curves(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
                 label=_label(ind))
     ax.set_xlabel("WBGT (°C)")
     ax.set_ylabel(f"Disruption probability (vs {ref_wbgt:.1f}°C)")
-    ax.set_title("Heat disruption for TLO model (NB FE)",
-                 fontsize=11, fontweight="bold")
     ax.legend(fontsize=7)
     ax.grid(ls=":", alpha=0.4)
     ax.set_ylim(bottom=-0.01)
@@ -781,11 +743,6 @@ def plot_district_indicator_heatmap(
                     (j - 0.5, i - 0.5), 1, 1,
                     fill=False, edgecolor="black", lw=1.5, zorder=3))
 
-    ax.set_title(
-        "District × indicator heat-attributable service loss (%)\n"
-        "Positive = services lost, negative = services gained under heat",
-        fontsize=11, fontweight="bold")
-
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, aspect=25, pad=0.02)
     cbar.set_label("% services lost to heat", fontsize=9)
 
@@ -805,7 +762,7 @@ def plot_district_indicator_heatmap(
 # MAIN — run everything
 # =====================================================================
 def load_results_df(out_dir: str = OUT_DIR) -> pd.DataFrame:
-    p = _require(f"{out_dir}two_model_deficit_results_NB_{WBGT_VAR}.csv")
+    p = _require(f"{out_dir}summary_all_indicators_{WBGT_VAR}.csv")
     return pd.read_csv(p)
 
 
