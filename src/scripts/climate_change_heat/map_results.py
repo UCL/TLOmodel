@@ -17,12 +17,10 @@ in the model script's own plotting block, which is missing the suffix.
 """
 import pandas as pd
 from pathlib import Path
-
-OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/TwoModelSplines_Optimized/"
-WBGT_VAR = "wbgt5x_day"
-
+OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/OLD_ANALYSIS/"
+WBGT_VAR = "wbgt_day"
 paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
-assert paths, "no per-indicator curve files found"
+#assert paths, "no per-indicator curve files found"
 pd.concat([pd.read_csv(p) for p in paths], ignore_index=True).to_csv(
     Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv", index=False)
 print(f"wrote {len(paths)} indicators")
@@ -32,11 +30,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-# =====================================================================
-# CONFIG — keep in sync with loop_all_indicators_two_model_NB.py
-# =====================================================================
-WBGT_VAR          = "wbgt5x_day"
-OUT_DIR           = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 SHAPEFILE_PATH    = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
                      "resources/mapping/"
                      "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
@@ -226,7 +219,7 @@ def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     ax2.set_ylim(ax.get_ylim())
     ax2.set_yticks(y_pos)
     ax2.set_yticklabels(
-        [f"θ={r['theta_a']:.1f}" for _, r in plot_df.iterrows()],
+        [f"θ={r['alpha']:.1f}" for _, r in plot_df.iterrows()],
         fontsize=7, color="#666666")
     ax2.tick_params(axis="y", length=0)
     plt.tight_layout()
@@ -242,7 +235,7 @@ def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
 def plot_hot_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     # Re-compute the FDR flag locally so the CSV doesn't have to carry it
     if "sig_hot_bh" not in results_df.columns:
-        _, rej_hot = bh_fdr(results_df["p_hot_analytical"].values,
+        _, rej_hot = bh_fdr(results_df["pval"].values,
                             alpha=FDR_ALPHA)
         results_df = results_df.copy()
         results_df["sig_hot_bh"] = rej_hot
@@ -257,7 +250,7 @@ def plot_hot_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     for i, row in ph.iterrows():
         lo, hi, pt = (row["hot_ci_lo"],
                       row["hot_ci_hi"],
-                      row["hot_pct"])
+                      row["hot_deficit_pct"])
         if pd.notna(lo) and pd.notna(hi):
             ax.errorbar(pt, i, xerr=[[pt - lo], [hi - pt]],
                         fmt="o", markersize=7, capsize=4, capthick=1.4,
