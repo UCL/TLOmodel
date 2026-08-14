@@ -1,20 +1,32 @@
 parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
-init_prev_hpv_hr1,0.048,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
-init_prev_hpv_hr2,0.048,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
-init_prev_hpv_hr3,0.081,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
-init_prev_hpv_hr4,0.047,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
-b_hpv,0.8,undetermined,0,1,calibration,N/A
+hiv_pos_init_prev_hpv_hr1,0.05,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
+hiv_pos_init_prev_hpv_hr2,0.044,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
+hiv_pos_init_prev_hpv_hr3,0.01,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
+hiv_pos_init_prev_hpv_hr4,0.075,undetermined,0,1,calibration,"Cubie HA, Morton D, Kawonga E, Mautanga M, Mwenitete I, Teakle N, Ngwira B, Walker H, Walker G, Kafwafwa S, Kabota B, Ter Haar R, Campbell C. HPV prevalence in women attending cervical screening in rural Malawi using the cartridge-based Xpert® HPV assay. J Clin Virol. 2017 Feb;87:1-4. doi: 10.1016/j.jcv.2016.11.014. "
+hiv_pos_init_prev_hpv_hr5,0.085,undetermined,0,1,calibration,
+hiv_pos_init_prev_hpv_hr6,0.055,undetermined,0,1,calibration,
+hiv_neg_init_prev_hpv_hr1,0.022,undetermined,0,1,calibration,
+hiv_neg_init_prev_hpv_hr2,0.018,undetermined,0,1,calibration,
+hiv_neg_init_prev_hpv_hr3,0.006,undetermined,0,1,calibration,
+hiv_neg_init_prev_hpv_hr4,0.03,undetermined,0,1,calibration,
+hiv_neg_init_prev_hpv_hr5,0.036,undetermined,0,1,calibration,
+hiv_neg_init_prev_hpv_hr6,0.03,undetermined,0,1,calibration,
+b_hpv,0.75,undetermined,0,1,calibration,N/A
 rr_hpv_hiv_no_art,2.6,undetermined,0,1,calibration,"Liu G, Sharma M, Tan N, Barnabas RV. HIV-positive women have higher risk of human papilloma virus infection, precancerous lesions, and cervical cancer. AIDS. 2018 Mar 27;32(6):795-808. doi: 10.1097/QAD.0000000000001765. PMID: 29369827; PMCID: PMC5854529."
 rr_hr1_vaccinated,0.1,undetermined,0,1,calibration,"Basu P, et al. Vaccine efficacy against persistent human papillomavirus (HPV) 16/18 infection at 10 years after one, two, and three doses of quadrivalent HPV vaccine in girls in India: a multicentre, prospective, cohort study. Lancet Oncol. 2021 Nov;22(11):1518-1529. doi: 10.1016/S1470-2045(21)00453-8. Epub 2021 Oct 8. Erratum in: Lancet Oncol. 2022 Jan;23(1):e16. doi: 10.1016/S1470-2045(21)00700-2. "
 rr_hr2_vaccinated,0.1,undetermined,0,1,calibration,N/A
-rr_hr3_vaccinated,0.3,undetermined,0,1,calibration,N/A
-rr_hr4_vaccinated,0.8,undetermined,0,1,calibration,N/A
-rr_hpv_age50plus,0.5,undetermined,0,1,calibration,N/A
-median_clear_hr1,16,undetermined,0,1,calibration,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
-median_clear_hr2,14,undetermined,0,1,calibration,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
+rr_hr3_vaccinated,0.9,undetermined,0,1,calibration,N/A
+rr_hr4_vaccinated,0.9,undetermined,0,1,calibration,N/A
+rr_hr5_vaccinated,0.9,undetermined,0,1,calibration,
+rr_hr6_vaccinated,0.9,undetermined,0,1,calibration,
+rr_hpv_age50plus,0.5,undetermined,0,1,calibration,"Mchome B, Linde DS, Manongi R, Waldstroem M, Lftner T, Wu C, Mwaisalage J, Rasch V, Kjaer SK. Incident detection of human papillomavirus - a prospective follow-up study among Tanzanian women with a focus on HIV status. Int J Infect Dis. 2021 Sep;110:165-170. doi: 10.1016/j.ijid.2021.07.011. "
+median_clear_hr1,14,undetermined,0,1,calibration,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
+median_clear_hr2,12,undetermined,0,1,calibration,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
 median_clear_hr3,12,undetermined,0,1,calibration,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
 median_clear_hr4,12,undetermined,0,1,calibration,"Muñoz N, Méndez F, Posso H, Molano M, van den Brule AJ, Ronderos M, Meijer C, Muñoz A; Instituto Nacional de Cancerologia HPV Study Group. Incidence, duration, and determinants of cervical human papillomavirus infection in a cohort of Colombian women with normal cytological results. J Infect Dis. 2004 Dec 15;190(12):2077-87. doi: 10.1086/425907. Epub 2004 Nov 22. PMID: 15551205."
-clear_shape,0.8,undetermined,0,1,calibration,N/A
+median_clear_hr5,12,undetermined,0,1,calibration,
+median_clear_hr6,12,undetermined,0,1,calibration,
+clear_shape,0.7,undetermined,0,1,calibration,N/A
 rr_clear_hiv_no_art,0.72,undetermined,0,1,calibration,"Liu G, Sharma M, Tan N, Barnabas RV. HIV-positive women have higher risk of human papilloma virus infection, precancerous lesions, and cervical cancer. AIDS. 2018 Mar 27;32(6):795-808. doi: 10.1097/QAD.0000000000001765.
 "
 age_mixing_within,0.7,undetermined,0,1,calibration,"Reed DM. Age-disparate and intergenerational sex partnerships and HIV: the role of gender norms among adolescent girls and young women in Malawi. BMC Public Health. 2024 Feb 22;24(1):575. doi: 10.1186/s12889-024-17868-5. 

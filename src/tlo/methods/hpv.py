@@ -31,9 +31,11 @@ class HPV(Module, GenericFirstAppointmentsMixin):
     """This is an HPV infection Process.
     Groups:
         hr1 = HPV16
-        hr2 = HPV18/45
-        hr3 = HPV31/33/35/52/58
-        hr4 = other high-risk HPV
+        hr2 = HPV18
+        hr3 = HPV45
+        hr4 = HPV35
+        hr5 = HPV31/33/52/58
+        hr6 = other high-risk HPV
 
     It demonstrates the following behaviours in respect of the healthsystem module:
 
@@ -64,27 +66,74 @@ class HPV(Module, GenericFirstAppointmentsMixin):
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {}
 
-    HPV_GROUPS = ['hr1', 'hr2', 'hr3','hr4']
+    HPV_GROUPS = ['hr1', 'hr2', 'hr3', 'hr4', 'hr5', 'hr6']
     AGE_BINS = [15, 20, 25, 35, 45, 55, 200]
     AGE_LABELS = ['15_19', '20_24', '25_34', '35_44', '45_54', '55plus']
+    Xpert_GROUPS = {'P1': ['hr1'], 'P2': ['hr2', 'hr3'], 'P3': ['hr4', 'hr5'], 'P4': ['hr6']}
+    HIV_LOG_GROUPS = ['HIVneg', 'HIVpos_unknown', 'HIVpos_noART', 'HIVpos_unsupp', 'HIVpos_supp']
+    CALIBRATION_AGE_RANGES = {
+        "25_50": (25, 51),
+        '25_59': (25, 60),
+    }
+
+    HIV_CALIBRATION_GROUPS = {
+        'HIVneg': ['HIVneg'],
+        'HIVpos': ['HIVpos_noART', 'HIVpos_unsupp', 'HIVpos_supp'],
+        'HIVpos_unsupp': ['HIVpos_noART', 'HIVpos_unsupp'],
+        'HIVpos_supp': ['HIVpos_supp'],
+        'HIVpos_unknown': ['HIVpos_unknown']
+    }
 
     PARAMETERS = {
         # ------------------ Initial prevalence ------------------ #
-        "init_prev_hpv_hr1": Parameter(
+        "hiv_pos_init_prev_hpv_hr1": Parameter(
             Types.REAL,
-            "Initial prevalence of hpv 16 infection",
+            "Initial prevalence of hpv 16 infection among PLWH",
         ),
-        "init_prev_hpv_hr2": Parameter(
+        "hiv_pos_init_prev_hpv_hr2": Parameter(
             Types.REAL,
-            "Initial prevalence of HPV 18/45 infection",
+            "Initial prevalence of HPV 18 infection among PLWH",
         ),
-        "init_prev_hpv_hr3": Parameter(
+        "hiv_pos_init_prev_hpv_hr3": Parameter(
             Types.REAL,
-            "Initial prevalence of HPV 31/33/52/58/35 infection"
+            "Initial prevalence of HPV 45 infection among PLWH"
         ),
-        "init_prev_hpv_hr4": Parameter(
+        "hiv_pos_init_prev_hpv_hr4": Parameter(
             Types.REAL,
-            "Initial prevalence of other hr-HPV infection",
+            "Initial prevalence of 35 infection among PLWH",
+        ),
+        "hiv_pos_init_prev_hpv_hr5": Parameter(
+            Types.REAL,
+            "Initial prevalence of 31/33/52/58 infection among PLWH",
+        ),
+        "hiv_pos_init_prev_hpv_hr6": Parameter(
+            Types.REAL,
+            "Initial prevalence of other hr-HPV infection among PLWH",
+        ),
+
+        "hiv_neg_init_prev_hpv_hr1": Parameter(
+            Types.REAL,
+            "Initial prevalence of hpv 16 infection among non-PLWH",
+        ),
+        "hiv_neg_init_prev_hpv_hr2": Parameter(
+            Types.REAL,
+            "Initial prevalence of HPV 18 infection among non-PLWH",
+        ),
+        "hiv_neg_init_prev_hpv_hr3": Parameter(
+            Types.REAL,
+            "Initial prevalence of HPV 45 infection among non-PLWH"
+        ),
+        "hiv_neg_init_prev_hpv_hr4": Parameter(
+            Types.REAL,
+            "Initial prevalence of 35 infection among non-PLWH",
+        ),
+        "hiv_neg_init_prev_hpv_hr5": Parameter(
+            Types.REAL,
+            "Initial prevalence of 31/33/52/58 infection among non-PLWH",
+        ),
+        "hiv_neg_init_prev_hpv_hr6": Parameter(
+            Types.REAL,
+            "Initial prevalence of other hr-HPV infection among non-PLWH",
         ),
 
         # ------------------  HPV Transmission  ------------------ #
@@ -115,6 +164,14 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Relative risk for hr4 infection if vaccinated",
         ),
+        "rr_hr5_vaccinated": Parameter(
+            Types.REAL,
+            "Relative risk for hr5 infection if vaccinated",
+        ),
+        "rr_hr6_vaccinated": Parameter(
+            Types.REAL,
+            "Relative risk for hr6 infection if vaccinated",
+        ),
         "rr_hpv_age50plus": Parameter(
             Types.REAL,
             "Relative risk multiplier for age >=50",
@@ -137,6 +194,14 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         "median_clear_hr4": Parameter(
             Types.REAL,
             "Median months to self-clear for hr4 infection",
+        ),
+        "median_clear_hr5": Parameter(
+            Types.REAL,
+            "Median months to self-clear for hr5 infection",
+        ),
+        "median_clear_hr6": Parameter(
+            Types.REAL,
+            "Median months to self-clear for hr6 infection",
         ),
         "clear_shape": Parameter(
             Types.REAL,
@@ -185,6 +250,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.DATE, 'Date of infection of hr3'),
         'hp_date_infected_hr4': Property(
             Types.DATE, 'Date of infection of hr4'),
+        'hp_date_infected_hr5': Property(
+            Types.DATE, 'Date of infection of hr5'),
+        'hp_date_infected_hr6': Property(
+            Types.DATE, 'Date of infection of hr6'),
         'hp_duration_hr1': Property(
             Types.REAL, 'Duration for current hr1 infection'),
         'hp_duration_hr2': Property(
@@ -193,6 +262,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'Duration for current hr3 infection'),
         'hp_duration_hr4': Property(
             Types.REAL, 'Duration for current hr4 infection'),
+        'hp_duration_hr5': Property(
+            Types.REAL, 'Duration for current hr5 infection'),
+        'hp_duration_hr6': Property(
+            Types.REAL, 'Duration for current hr6 infection'),
         'hp_duration_all_clear': Property(
             Types.REAL, 'Duration for current all HPV infection'),
         'hp_persistent_hr1': Property(
@@ -203,6 +276,10 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             Types.BOOL, 'Persistent hr3 infection, duration >= 12 months'),
         'hp_persistent_hr4': Property(
             Types.BOOL, 'Persistent hr4 infection, duration >= 12 months'),
+        'hp_persistent_hr5': Property(
+            Types.BOOL, 'Persistent hr5 infection, duration >= 12 months'),
+        'hp_persistent_hr6': Property(
+            Types.BOOL, 'Persistent hr6 infection, duration >= 12 months'),
     }
 
     def __init__(self, name=None):
@@ -267,6 +344,16 @@ class HPV(Module, GenericFirstAppointmentsMixin):
 
         return current_groups
 
+    def _get_hiv_positive_series_for_initialisation(self, df, index):
+        hiv_positive = pd.Series(False, index=index, dtype=bool)
+
+        if 'hv_inf' not in df.columns:
+            return hiv_positive
+
+        hiv_positive = df.loc[index, 'hv_inf'].fillna(False).astype(bool)
+
+        return hiv_positive
+
     def initialise_population(self, population):
         df = population.props  # a shortcut to the dataframe storing data for individuals
 
@@ -278,11 +365,32 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             df.loc[df.is_alive, f'hp_persistent_{group}'] = False
 
         eligible = df.index[df.is_alive & (df.age_years >= 15)]
+        if len(eligible) == 0:
+            return
+
+        hiv_positive = self._get_hiv_positive_series_for_initialisation(df, eligible)
 
         for group in self.HPV_GROUPS:
-            p_init = self.parameters[f'init_prev_hpv_{group}']
-            u = self.rng.random(size=len(eligible))
-            infected_this_group = eligible[u < p_init]
+            p_init_series = pd.Series(0.0, index=eligible, dtype=float)
+
+            p_init_hiv_neg = float(self.parameters[f'hiv_neg_init_prev_hpv_{group}'])
+            p_init_hiv_pos = float(self.parameters[f'hiv_pos_init_prev_hpv_{group}'])
+
+            p_init_series.loc[~hiv_positive] = p_init_hiv_neg
+            p_init_series.loc[hiv_positive] = p_init_hiv_pos
+
+            for param_name, p_init in [
+                (f'hiv_neg_init_prev_hpv_{group}', p_init_hiv_neg),
+                (f'hiv_pos_init_prev_hpv_{group}', p_init_hiv_pos),
+            ]:
+                if not 0.0 <= p_init <= 1.0:
+                    raise ValueError(
+                        f"{param_name} must be between 0 and 1, but received {p_init}. "
+                        "Use proportions, not percentages."
+                    )
+
+            u = pd.Series(self.rng.random(size=len(eligible)), index=eligible)
+            infected_this_group = p_init_series.index[u < p_init_series]
 
             if len(infected_this_group) == 0:
                 continue
@@ -853,18 +961,173 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 index=sub.index
             )
 
+        for xpert_group, hpv_groups in module.Xpert_GROUPS.items():
+            xpert_col = f'hp_xpert_{xpert_group}_positive'
+            group_cols = [f'hp_infected_{hpv_group}' for hpv_group in hpv_groups]
+
+            sub[xpert_col] = sub[group_cols].any(axis=1)
+
         sub['age_group'] = module._get_age_group_series(sub['age_years'])
+
         sub['hiv_group'] = 'HIVneg'
 
         if 'hv_inf' in sub.columns:
             sub.loc[sub['hv_inf'].fillna(False), 'hiv_group'] = 'HIVpos_unknown'
 
             if 'hv_art' in sub.columns:
-                sub.loc[sub['hv_inf'].fillna(False) & (sub['hv_art'] == 'not'), 'hiv_group'] = 'HIVpos_noART'
-                sub.loc[sub['hv_inf'].fillna(False) & (
-                        sub['hv_art'] == 'on_not_VL_suppressed'), 'hiv_group'] = 'HIVpos_unsupp'
                 sub.loc[
-                    sub['hv_inf'].fillna(False) & (sub['hv_art'] == 'on_VL_suppressed'), 'hiv_group'] = 'HIVpos_supp'
+                    sub['hv_inf'].fillna(False) & (sub['hv_art'] == 'not'),
+                    'hiv_group'
+                ] = 'HIVpos_noART'
+
+                sub.loc[
+                    sub['hv_inf'].fillna(False) & (sub['hv_art'] == 'on_not_VL_suppressed'),
+                    'hiv_group'
+                ] = 'HIVpos_unsupp'
+
+                sub.loc[
+                    sub['hv_inf'].fillna(False) & (sub['hv_art'] == 'on_VL_suppressed'),
+                    'hiv_group'
+                ] = 'HIVpos_supp'
+
+        def _log_prevalence(prefix, data_df, positive_col):
+            n = len(data_df)
+            log_data[f'{prefix}_N'] = int(n)
+
+            if n > 0:
+                log_data[f'{prefix}_Inf'] = int(data_df[positive_col].sum())
+                log_data[f'{prefix}_Prev'] = float(data_df[positive_col].mean())
+            else:
+                log_data[f'{prefix}_Inf'] = 0
+                log_data[f'{prefix}_Prev'] = math.nan
+
+        for xpert_group in module.Xpert_GROUPS:
+            xpert_col = f'hp_xpert_{xpert_group}_positive'
+
+            _log_prevalence(
+                prefix=f'Xpert_{xpert_group}',
+                data_df=sub,
+                positive_col=xpert_col
+            )
+
+            for sex_name, sex_df in [
+                ('M', sub.loc[sub.sex == 'M']),
+                ('F', sub.loc[sub.sex == 'F'])
+            ]:
+                _log_prevalence(
+                    prefix=f'Xpert_{xpert_group}_{sex_name}',
+                    data_df=sex_df,
+                    positive_col=xpert_col
+                )
+
+            for age_group in module.AGE_LABELS:
+                age_df = sub.loc[sub['age_group'] == age_group]
+
+                _log_prevalence(
+                    prefix=f'Xpert_{xpert_group}_{age_group}',
+                    data_df=age_df,
+                    positive_col=xpert_col
+                )
+
+        for age_range_name, (age_min, age_max) in module.CALIBRATION_AGE_RANGES.items():
+
+            age_range_df = sub.loc[
+                (sub.age_years >= age_min) &
+                (sub.age_years < age_max)
+                ]
+
+            # Any high-risk HPV in this age range
+            _log_prevalence(
+                prefix=f'Calib_Any_{age_range_name}',
+                data_df=age_range_df,
+                positive_col='hp_is_infected'
+            )
+
+            # Sex-specific any high-risk HPV in this age range
+            for sex_name, sex_age_range_df in [
+                ('M', age_range_df.loc[age_range_df.sex == 'M']),
+                ('F', age_range_df.loc[age_range_df.sex == 'F'])
+            ]:
+                _log_prevalence(
+                    prefix=f'Calib_Any_{sex_name}_{age_range_name}',
+                    data_df=sex_age_range_df,
+                    positive_col='hp_is_infected'
+                )
+
+            # Individual HR-group prevalence in this age range
+            for hpv_group in module.HPV_GROUPS:
+                hpv_col = f'hp_infected_{hpv_group}'
+
+                _log_prevalence(
+                    prefix=f'Calib_{hpv_group}_{age_range_name}',
+                    data_df=age_range_df,
+                    positive_col=hpv_col
+                )
+
+                for sex_name, sex_age_range_df in [
+                    ('M', age_range_df.loc[age_range_df.sex == 'M']),
+                    ('F', age_range_df.loc[age_range_df.sex == 'F'])
+                ]:
+                    _log_prevalence(
+                        prefix=f'Calib_{hpv_group}_{sex_name}_{age_range_name}',
+                        data_df=sex_age_range_df,
+                        positive_col=hpv_col
+                    )
+
+            # Xpert-group prevalence in this age range
+            for xpert_group in module.Xpert_GROUPS:
+                xpert_col = f'hp_xpert_{xpert_group}_positive'
+
+                _log_prevalence(
+                    prefix=f'Calib_Xpert_{xpert_group}_{age_range_name}',
+                    data_df=age_range_df,
+                    positive_col=xpert_col
+                )
+
+                for sex_name, sex_age_range_df in [
+                    ('M', age_range_df.loc[age_range_df.sex == 'M']),
+                    ('F', age_range_df.loc[age_range_df.sex == 'F'])
+                ]:
+                    _log_prevalence(
+                        prefix=f'Calib_Xpert_{xpert_group}_{sex_name}_{age_range_name}',
+                        data_df=sex_age_range_df,
+                        positive_col=xpert_col
+                    )
+
+            female_age_range_df = age_range_df.loc[age_range_df.sex == 'F']
+
+            for calib_hiv_group, detailed_hiv_groups in module.HIV_CALIBRATION_GROUPS.items():
+
+                female_hiv_df = female_age_range_df.loc[
+                    female_age_range_df['hiv_group'].isin(detailed_hiv_groups)
+                ]
+
+                # Any high-risk HPV among women in this age range and calibration HIV group
+                _log_prevalence(
+                    prefix=f'Calib_Any_F_{age_range_name}_{calib_hiv_group}',
+                    data_df=female_hiv_df,
+                    positive_col='hp_is_infected'
+                )
+
+                # Individual HR-group prevalence among women in this age range and calibration HIV group
+                for hpv_group in module.HPV_GROUPS:
+                    hpv_col = f'hp_infected_{hpv_group}'
+
+                    _log_prevalence(
+                        prefix=f'Calib_{hpv_group}_F_{age_range_name}_{calib_hiv_group}',
+                        data_df=female_hiv_df,
+                        positive_col=hpv_col
+                    )
+
+                # Xpert-group prevalence among women in this age range and calibration HIV group
+                for xpert_group in module.Xpert_GROUPS:
+                    xpert_col = f'hp_xpert_{xpert_group}_positive'
+
+                    _log_prevalence(
+                        prefix=f'Calib_Xpert_{xpert_group}_F_{age_range_name}_{calib_hiv_group}',
+                        data_df=female_hiv_df,
+                        positive_col=xpert_col
+                    )
 
         # 1. Overall summary
         total_inf = int(sub['hp_is_infected'].sum())
@@ -921,13 +1184,7 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     prev_snapshot[f'{hpv_group}_{sex_name}_{age_group}_Prev'] = prev
 
         # 3. HIV
-        hiv_log_groups = [
-            'HIVneg',
-            'HIVpos_unknown',
-            'HIVpos_noART',
-            'HIVpos_unsupp',
-            'HIVpos_supp',
-        ]
+        hiv_log_groups = module.HIV_LOG_GROUPS
 
         for hiv_group in hiv_log_groups:
             log_data[f'Any_{hiv_group}_N'] = 0
@@ -971,69 +1228,26 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 5. multiplicity of infection
         infection_people = sub.index[sub['hp_is_infected']]
-        n_group_1 = 0
-        n_group_2 = 0
-        n_group_3 = 0
-        n_group_4 = 0
+        max_n_groups = len(module.HPV_GROUPS)
 
-        male_n_group_1 = 0
-        male_n_group_2 = 0
-        male_n_group_3 = 0
-        male_n_group_4 = 0
-
-        female_n_group_1 = 0
-        female_n_group_2 = 0
-        female_n_group_3 = 0
-        female_n_group_4 = 0
+        for n_group in range(1, max_n_groups + 1):
+            log_data[f'InfGroup{n_group}'] = 0
+            log_data[f'MaleGroup{n_group}'] = 0
+            log_data[f'FemaleGroup{n_group}'] = 0
 
         for person_id in infection_people:
             n_group = len(module._get_hpv_group_set(person_id))
             sex = df.at[person_id, 'sex']
 
-            if n_group == 1:
-                n_group_1 += 1
+            if 1 <= n_group <= max_n_groups:
+                log_data[f'InfGroup{n_group}'] += 1
+
                 if sex == 'M':
-                    male_n_group_1 += 1
-                elif sex =='F':
-                    female_n_group_1 += 1
+                    log_data[f'MaleGroup{n_group}'] += 1
+                elif sex == 'F':
+                    log_data[f'FemaleGroup{n_group}'] += 1
 
-            elif n_group == 2:
-                n_group_2 += 1
-                if sex == 'M':
-                    male_n_group_2 += 1
-                elif sex =='F':
-                    female_n_group_2 += 1
-
-            elif n_group == 3:
-                n_group_3 += 1
-                if sex == 'M':
-                    male_n_group_3 += 1
-                elif sex =='F':
-                    female_n_group_3 += 1
-
-            elif n_group == 4:
-                n_group_4 += 1
-                if sex == 'M':
-                    male_n_group_4 += 1
-                elif sex =='F':
-                    female_n_group_4 += 1
-
-        log_data['InfGroup1'] = n_group_1
-        log_data['InfGroup2'] = n_group_2
-        log_data['InfGroup3'] = n_group_3
-        log_data['InfGroup4'] = n_group_4
-
-        log_data['MaleGroup1'] = male_n_group_1
-        log_data['MaleGroup2'] = male_n_group_2
-        log_data['MaleGroup3'] = male_n_group_3
-        log_data['MaleGroup4'] = male_n_group_4
-
-        log_data['FemaleGroup1'] = female_n_group_1
-        log_data['FemaleGroup2'] = female_n_group_2
-        log_data['FemaleGroup3'] = female_n_group_3
-        log_data['FemaleGroup4'] = female_n_group_4
-
-        # 6. Persistent infection 统计
+        # 6. Persistent infection
         for hpv_group in module.HPV_GROUPS:
             pers_col = f'hp_persistent_{hpv_group}'
 
@@ -1072,3 +1286,5 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             log_data[key] = value
 
         logger.info(key='summary', data=log_data)
+
+
