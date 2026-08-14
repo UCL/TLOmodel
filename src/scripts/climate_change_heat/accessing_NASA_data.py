@@ -26,7 +26,7 @@ BASE_DIR = Path(
     "/Users/rachelmurray-watson/Documents/Heat_data/NASA_GDDP-CMIP6"
 )
 
-SCENARIOS = ["ssp245"]
+SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 VARIABLES = ["pr", "hurs", "huss", "rlds", "rsds", "sfcWind", "tas", "tasmax", "tasmin"]
 YEARS = list(range(2025, 2041))
 
