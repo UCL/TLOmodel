@@ -1154,8 +1154,8 @@ SCENARIO_COLORS = {
     "National pooling": "#08306b",
     "District pooling": "#1f78b4",
     "Neighbourhood pooling": "#a6cee3",
-    "Pairwise exchange (60-min radius)": "#33a02c",
-    "Pairwise exchange (30-min radius)": "#b2df8a",
+    "Pairwise exchange (Large radius)": "#33a02c",
+    "Pairwise exchange (Small radius)": "#b2df8a",
 }
 
 

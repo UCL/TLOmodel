@@ -10,7 +10,7 @@ orchestration, and the final merge into the TLO consumable-availability resource
 Run `python redistribution_utils.py` (or call run_smoke_tests()) to execute the synthetic-data
 tests for both models before regenerating scenarios.
 """
-import calendar
+import time
 import datetime
 import pickle
 import re
@@ -175,15 +175,23 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     # ----------------------------------------------------------------------------------------------------------------------
     # 2. Travel-time matrices
     # ----------------------------------------------------------------------------------------------------------------------
-    # T_car = build_time_matrices_by_district(
-    #     lmis[['fac_name', 'district', 'lat', 'long']],
-    #     mode="car",
-    #     backend="osrm",
-    #     osrm_base_url="https://router.project-osrm.org",
-    #     max_chunk=50)
-    # with open(outputfilepath / "T_car.pkl", "wb") as f:
-    #     pickle.dump(T_car, f)
+    print("Now generating travel time matrices")
+    '''
+    start = time.time()
+    T_car = build_time_matrices_by_district(
+         lmis[['fac_name', 'district', 'lat', 'long']],
+         mode="car",
+         backend="osrm",
+         osrm_base_url="https://router.project-osrm.org",
+         max_chunk=50)
+    with open(outputfilepath / "T_car.pkl", "wb") as f:
+         pickle.dump(T_car, f)
+
+    end = time.time()
+    time_matrices_building_time = end - start
+    print(f"Time matrices completed in {time_matrices_building_time:.3f} seconds")
     # -> Commented out because it takes long to run. The result has been stored in pickle format.
+    '''
 
     # Load pre-generated dictionary
     with open(outputfilepath / "T_car.pkl", "rb") as f:
@@ -288,9 +296,10 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     compare_pool_scarcity_across_levels(lmis, cluster_map=cluster_series, figures_path=outputfilepath)
 
     # a0) National-level pooling
-    '''
+
     # Commented out for quicker runs
     print("Now running Pooled Redistribution at National level")
+    '''
     start = time.time()
     pooled_national_df, pool_national_moves = redistribute_pooling_lp(
         df=lmis,
@@ -306,9 +315,11 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
                         'OB', 'OB_prime', 'available_prop_redis', 'received_from_pool']].to_csv(
                         outputfilepath / 'clustering_national_df.csv', index=False)
     end = time.time()
-    print(f"National redistribution completed in {end - start:.3f} seconds")
+    national_pooling_redistribution_time = end - start
+    print(f"National redistribution completed in {national_pooling_redistribution_time:.3f} seconds")
     # 234.276 seconds
     '''
+
     pooled_national_df = pd.read_csv(outputfilepath / 'clustering_national_df.csv')
     validate_redistribution_output(pooled_national_df, "National pooling",
                                    group_cols=("month", "item_code"), conservation="leq", strict=False)
@@ -320,9 +331,10 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     )
 
     # a) District-level pooling
-    '''
+
     # Commented out for quicker runs
     print("Now running Pooled Redistribution at District level")
+    '''
     start = time.time()
     pooled_district_df, pool_district_moves = redistribute_pooling_lp(
         df=lmis,
@@ -338,9 +350,11 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
                         'OB', 'OB_prime', 'available_prop_redis', 'received_from_pool']].to_csv(
                         outputfilepath / 'clustering_district_df.csv', index=False)
     end = time.time()
-    print(f"District redistribution completed in {end - start:.3f} seconds")
-    # 4972.169 seconds
+    district_pooling_redistribution_time = end - start
+    print(f"District redistribution completed in {district_pooling_redistribution_time:.3f} seconds")
+    # 1.2 hours
     '''
+
     pooled_district_df = pd.read_csv(outputfilepath / 'clustering_district_df.csv')
     validate_redistribution_output(pooled_district_df, "District pooling",
                                    conservation="leq", strict=False)
@@ -352,9 +366,10 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     )
 
     # b) Neighbourhood pooling (clusters of 3)
-    '''
+
     # Commented out for quicker runs
     print("Now running pooled redistribution at Cluster (Size = 3) level")
+    '''
     start = time.time()
     pooled_cluster_df, pool_cluster_moves = redistribute_pooling_lp(
         df=lmis,
@@ -370,8 +385,9 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
                        'OB', 'OB_prime', 'available_prop_redis', 'received_from_pool']].to_csv(
                        outputfilepath / 'clustering_n3_df.csv', index=False)
     end = time.time()
-    print(f"Cluster redistribution completed in {end - start:.3f} seconds")
-    #22414.642 seconds
+    neighbourhood_pooling_redistribution_time = end - start
+    print(f"Cluster redistribution completed in {neighbourhood_pooling_redistribution_time:.3f} seconds")
+    #6.34 hours
     '''
     pooled_cluster_df = pd.read_csv(outputfilepath / 'clustering_n3_df.csv')
     validate_redistribution_output(pooled_cluster_df, "Neighbourhood pooling",
@@ -384,12 +400,13 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     )
 
     # c) Pairwise redistribution, 60-minute radius
-    '''
+
     # Commented out for quicker runs
     print("Now running pairwise redistribution with maximum radius 60 minutes")
+    '''
     start = time.time()
     large_radius_df, large_radius_moves = redistribute_radius_lp(
-        df=lmis_test,
+        df=lmis,
         time_matrix=T_car,
         radius_minutes=60,             # facilities within 1 hour by car
         tau_keep=1.5,                  # donor must keep 1.5 x AMC
@@ -403,10 +420,12 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     print(large_radius_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
     large_radius_df.to_csv(outputfilepath / 'large_radius_df.csv', index=False)
     end = time.time()
-    print(f"Large radius exchange distribution completed in {end - start:.3f} seconds")
+    pairwise_redistribution_large_radius_time = end - start
+    print(f"Large radius exchange distribution completed in {pairwise_redistribution_large_radius_time:.3f} seconds")
+    # 3.14 hours
     '''
     large_radius_df = pd.read_csv(outputfilepath / 'large_radius_df.csv')
-    validate_redistribution_output(large_radius_df, "Pairwise exchange (60-min radius)",
+    validate_redistribution_output(large_radius_df, "Pairwise exchange (Large radius)",
                                    tau_max=None, conservation="exact", strict=False)
     tlo_large_radius = (
         large_radius_df
@@ -432,10 +451,12 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     print(small_radius_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
     small_radius_df.to_csv(outputfilepath / 'small_radius_df.csv', index=False)
     end = time.time()
-    print(f"Small radius exchange redistribution completed in {end - start:.3f} seconds")
+    pairwise_redistribution_small_radius_time = end - start
+    print(f"Small radius exchange redistribution completed in {pairwise_redistribution_small_radius_time:.3f} seconds")
+    # 3.08 hours
     '''
     small_radius_df = pd.read_csv(outputfilepath / 'small_radius_df.csv')
-    validate_redistribution_output(small_radius_df, "Pairwise exchange (30-min radius)",
+    validate_redistribution_output(small_radius_df, "Pairwise exchange (Small radius)",
                                    tau_max=None, conservation="exact", strict=False)
     tlo_small_radius = (
         small_radius_df
@@ -916,8 +937,8 @@ rename_dict = {'available_prop': 'Actual',
                'available_prop_scenario20': 'National Pooling',
                'available_prop_scenario16': 'District Pooling',
                'available_prop_scenario17': 'Cluster Pooling',
-               'available_prop_scenario18': 'Pairwise exchange (60-min radius)',
-               'available_prop_scenario19': 'Pairwise exchange (30-min radius)'}
+               'available_prop_scenario18': 'Pairwise exchange (Large radius)',
+               'available_prop_scenario19': 'Pairwise exchange (Small radius)'}
 scenario_names = list(rename_dict.values())
 
 # Plot heatmap for level 1a
