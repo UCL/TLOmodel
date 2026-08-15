@@ -657,7 +657,7 @@ class HealthBurden(Module):
                         'are ascribed to the age of the death and the year of the death.',
             df=self.get_dalys(yld=yld_by_wealth_urban_region, yll=yll_by_wealth_urban_region),
             force_cols=self._causes_of_dalys,
-            level='debug',  # As this is a heavy table, put this out only for debug level
+            logging_level='debug',  # As this is a heavy table, put this out only for debug level
         )
 
         self._years_written_to_log += [year]
