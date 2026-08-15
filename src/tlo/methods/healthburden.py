@@ -4,7 +4,7 @@ and Disability-Adjusted Life-years (DALYS).
 """
 from copy import copy
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Literal
 
 import numpy as np
 import pandas as pd
@@ -532,20 +532,23 @@ class HealthBurden(Module):
                      .reset_index() \
                      .assign(year=year)
 
-        def log_df_line_by_line(key, description, df, force_cols=None) -> None:
+        def log_df_line_by_line(key, description, df, force_cols=None,
+                                logging_level: Literal['info', 'debug'] = 'info') -> None:
             """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
             `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
             log requires the name of the format of each row to be uniform.)."""
             df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
             df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
-            for _, row in df.iterrows():
-                logger.info(
-                    key=key,
-                    data=row.to_dict(),
-                    description=description,
-                )
+            if logging_level == 'info':
+                for _, row in df.iterrows():
+                    logger.info(key=key, data=row.to_dict(),description=description)
+            elif logging_level == 'debug':
+                for _, row in df.iterrows():
+                    logger.debug(key=key, data=row.to_dict(), description=description)
+            else:
+                raise ValueError(f"Level for logging not recognised: {logging_level}")
 
-        # Check that the format of the internal storage is as expected.
+    # Check that the format of the internal storage is as expected.
         self.check_multi_index()
 
         # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
@@ -654,6 +657,7 @@ class HealthBurden(Module):
                         'are ascribed to the age of the death and the year of the death.',
             df=self.get_dalys(yld=yld_by_wealth_urban_region, yll=yll_by_wealth_urban_region),
             force_cols=self._causes_of_dalys,
+            level='debug',  # As this is a heavy table, put this out only for debug level
         )
 
         self._years_written_to_log += [year]
