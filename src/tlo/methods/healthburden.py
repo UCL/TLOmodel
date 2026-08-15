@@ -4,7 +4,7 @@ and Disability-Adjusted Life-years (DALYS).
 """
 from copy import copy
 from pathlib import Path
-from typing import Dict, Optional, Literal
+from typing import Dict, Literal, Optional
 
 import numpy as np
 import pandas as pd
