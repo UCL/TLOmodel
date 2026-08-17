@@ -912,6 +912,79 @@ def plot_percent_deaths_averted_by_district(default_df, improved_df, top_n=30):
     return fig, axes
 
 
+def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
+    """
+    Plot staff scale-up factors by district for all nurse staffing scenarios.
+    """
+
+    scenarios = scaleup_plot_data["Scenario"].unique()
+
+    figures = {}
+
+    for scaleup_column, ylabel, title in [
+        (
+            "Scale2027_2024",
+            "Staff scale-up factor (2027 / 2024)",
+            "Staff scale-up factor by district: 2027 vs 2024",
+        ),
+        (
+            "Scale2027_2019",
+            "Staff scale-up factor (2027 / 2019)",
+            "Staff scale-up factor by district: 2027 vs 2019",
+        ),
+    ]:
+
+        fig, ax = plt.subplots(
+            figsize=(14, 8)
+        )
+
+        for scenario in scenarios:
+
+            scenario_data = scaleup_plot_data[
+                scaleup_plot_data["Scenario"] == scenario
+            ].copy()
+
+            # Average across cadres within each district
+            scenario_data = (
+                scenario_data
+                .groupby("District")[scaleup_column]
+                .mean()
+                .reset_index()
+            )
+
+            ax.scatter(
+                scenario_data["District"],
+                scenario_data[scaleup_column],
+                label=scenario,
+                alpha=0.7,
+            )
+
+        ax.axhline(
+            1.0,
+            linestyle="--",
+            linewidth=1,
+        )
+
+        ax.set_xlabel("District")
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+
+        ax.tick_params(
+            axis="x",
+            rotation=90,
+        )
+
+        ax.legend(
+            bbox_to_anchor=(1.02, 1),
+            loc="upper left",
+        )
+
+        fig.tight_layout()
+
+        figures[scaleup_column] = fig
+
+    return figures
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -980,6 +1053,81 @@ if __name__ == "__main__":
         param_names
     )
     staff_counts_summary = summarize(staff_counts)
+
+    # Staff scale-up factors for all districts
+    # Use mean staff counts
+    nurses_all_mean = staff_counts_summary.xs("mean", axis=1, level=1)
+
+    # Scenarios to include in the scatter plots
+    all_nurse_scenarios = [
+        "Baseline Nurses / Default Healthsystem Function",
+        "Fewer Nurses / Default Healthsystem Function",
+        "More Nurses / Default Healthsystem Function",
+        "More CNP staff / Default Healthsystem Function",
+        "More Nurses by District / Default Healthsystem Function",
+        "More CNP staff by District / Default Healthsystem Function",
+        "Baseline Nurses / Improved Healthsystem Function",
+        "Fewer Nurses / Improved Healthsystem Function",
+        "More Nurses / Improved Healthsystem Function",
+        "More CNP staff / Improved Healthsystem Function",
+        "More Nurses by District / Improved Healthsystem Function",
+        "More CNP staff by District / Improved Healthsystem Function",
+    ]
+
+    scaleup_rows = []
+
+    for scenario in all_nurse_scenarios:
+        scenario_data = nurses_all_mean[scenario].unstack(level="year")
+
+        # Keep only the years required for the scale-up factors
+        scenario_data = scenario_data[
+            [2019, 2024, 2027]
+        ].copy()
+
+        scenario_data["Scale2027_2024"] = (
+            scenario_data[2027] /
+            scenario_data[2024]
+        )
+
+        scenario_data["Scale2027_2019"] = (
+            scenario_data[2027] /
+            scenario_data[2019]
+        )
+
+        scenario_data["Scenario"] = scenario
+
+        scenario_data = scenario_data.reset_index()
+
+        scaleup_rows.append(scenario_data)
+
+    scaleup_plot_data = pd.concat(
+        scaleup_rows,
+        ignore_index=True,
+    )
+
+    print("\n--- Scale-up plot data ---")
+    print(scaleup_plot_data.head())
+    print("\n--- Scale-up plot data columns ---")
+    print(scaleup_plot_data.columns)
+
+    print("\n--- Scenarios in scale-up plot data ---")
+    print(scaleup_plot_data["Scenario"].unique())
+
+    print("\n--- Cadres in scale-up plot data ---")
+    print(scaleup_plot_data["Cadre"].unique())
+
+    print("\n--- Scale-up factor summary ---")
+    print(
+        scaleup_plot_data[
+            ["Scale2027_2024", "Scale2027_2019"]
+        ].describe()
+    )
+
+    # Plot staff scale-up factors by district
+    scaleup_figures = plot_staff_scaleup_factors_by_district(
+        scaleup_plot_data
+    )
+
     # Get nurses only
     nurses = staff_counts_summary.xs(
         "Nursing_and_Midwifery",
@@ -1394,6 +1542,19 @@ if __name__ == "__main__":
         fig_deaths_bar.savefig(
             results_folder /
             "district_deaths_barplots.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        scaleup_figures["Scale2027_2024"].savefig(
+            results_folder /
+            "staff_scaleup_2027_vs_2024_by_district.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        scaleup_figures["Scale2027_2019"].savefig(
+            results_folder /
+            "staff_scaleup_2027_vs_2019_by_district.pdf",
             dpi=300,
             bbox_inches="tight",
         )
