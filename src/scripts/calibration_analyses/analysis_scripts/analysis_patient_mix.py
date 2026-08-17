@@ -402,6 +402,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ),
         )
 
+        # todo: update the service area mapping, may focus on outpatient settings only and making sure that each HSI has only one service area
+        # if not able to do so, need to log appointment footprint in the cons. logger and rerun
         # add loc_cat column; map Event_Name with TLM service area
         _df["loc_cat"] = _df["Event_Name"].map(hsi_loc_cat_map)
 
