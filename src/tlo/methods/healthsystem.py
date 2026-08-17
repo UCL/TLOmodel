@@ -308,6 +308,33 @@ class HealthSystem(Module):
             "(factors informed by survey data); and, `custom` (user can freely set these factors as "
             "parameters in the analysis).",
         ),
+        "HR_scaling_by_year_and_officer_type_table": Parameter(
+            Types.DICT,
+            "Factors by which capabilities of medical officer types will be scaled at the start of "
+            "the years considered. This is the imported from an Excel workbook: keys are the worksheet "
+            "names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can "
+            "be added by adding worksheets to this workbook: the value of "
+            "`HR_scaling_by_year_and_officer_type_mode` indicates which sheet is used.",
+        ),
+        "HR_scaling_by_year_and_officer_type_mode": Parameter(
+            Types.STRING,
+            "Mode of HR scaling considered at the start of the simulation. This corresponds to the name"
+            "of the worksheet in `ResourceFile_HR_scaling_by_year_and_officer_type.xlsx` that should be used. "
+            "Options are: "
+            "`no_historical_growth` (capabilities are scaled by a factor of 1); "
+            "`historical_uniform` (factors across the cadres are the same, informated by the historical growth rate "
+            "in total HRH);"
+            "`historical_cadre_mix` (factors across the cadres are different, indicated by both the overall historical "
+            "increase rate and the gap_allocation HRH expansion scenario by She et al 2026); and,"
+            "`custom` (user can freely set these factors as parameters in the analysis). "
+            "Note that if use historical_ modes in this HRH scaling, use no_scaling mode in DynamicHRHScaling "
+            "to avoid duplicates.",
+        ),
+        "HR_expansion_absorption_rate": Parameter(
+            Types.REAL,
+            "Rate at which HRH expansion is absorbed into the system, expressed as a fraction of the total HRH "
+            "expansion per year. A value of 1 meaning 100% of the expansion is absorbed each year.",
+        ),
         "HR_scaling_by_district_table": Parameter(
             Types.DICT,
             "Factors by which daily capabilities in different districts will be"
@@ -694,6 +721,22 @@ class HealthSystem(Module):
             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}"
         )
 
+        self.parameters["HR_scaling_by_year_and_officer_type_table"]: Dict = read_csv_files(
+            path_to_resourcefiles_for_healthsystem
+            / "human_resources"
+            / "scaling_capabilities"
+            / "ResourceFile_HR_scaling_by_year_and_officer_type",
+            files=None,  # all sheets read in
+        )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert (
+            self.parameters["HR_scaling_by_year_and_officer_type_mode"]
+            in self.parameters["HR_scaling_by_year_and_officer_type_table"]
+        ), (
+            f"Value of `HR_scaling_by_year_and_officer_type_mode` not recognised: "
+            f"{self.parameters['HR_scaling_by_year_and_officer_type_mode']}"
+        )
+
         self.parameters["HR_scaling_by_district_table"]: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
@@ -914,6 +957,9 @@ class HealthSystem(Module):
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+
+        # Schedule recurring event which will rescale daily capabilities annually.
+        sim.schedule_event(RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(self), Date(sim.date))
 
         # Schedule the logger to occur at the start of every year
         sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
@@ -2982,6 +3028,45 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
                 self.module._daily_capabilities[clinic][officer] *= HR_scaling_by_level_and_officer_type_factor.at[
                     officer_type, f"L{level}_factor"
                 ]
+
+
+class RescalingHRCapabilities_ByYearAndOfficerAndAbsorption(RegularEvent, PopulationScopeEventMixin):
+    """This event exists to scale the daily capabilities, with a factor for each Officer Type at each specified year."""
+
+    def __init__(self, module):
+        # set the frequency
+        super().__init__(module, frequency=DateOffset(years=1))
+
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
+        # assumption
+        self.HR_scaling_by_year_and_officer_type_factor = self.module.parameters[
+            "HR_scaling_by_year_and_officer_type_table"
+        ][self.module.parameters["HR_scaling_by_year_and_officer_type_mode"]].set_index("Officer_Category")
+
+        self.HR_scaling_by_year_and_officer_type_factor.columns = (
+            self.HR_scaling_by_year_and_officer_type_factor.columns.astype(int)
+        )
+
+        self.years_for_scaling = np.array(self.HR_scaling_by_year_and_officer_type_factor.columns)
+
+    def apply(self, population):
+
+        most_recent_year_for_scaling = self.years_for_scaling[self.years_for_scaling <= self.sim.date.year].max()
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract officer type
+                officer_type = matches.group(2)
+                # Update capabilities by scaling factor and absorption rate
+                sf = self.HR_scaling_by_year_and_officer_type_factor.at[
+                    officer_type, most_recent_year_for_scaling
+                ]
+                ar = self.module.parameters["HR_expansion_absorption_rate"] if sf >= 1 else 1
+                sf_ar_adjusted = 1 + (sf-1) * ar
+                self.module._daily_capabilities[clinic][officer] *= sf_ar_adjusted
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
