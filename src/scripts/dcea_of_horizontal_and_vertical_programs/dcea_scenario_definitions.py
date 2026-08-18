@@ -15,7 +15,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HTM(self) -> int:
         """Year in which HIV, TB, Malaria scale-up changes are made."""
-        return 2019 #TODO:This is 2024 in the gf_hss_and_htm_scale_up branch, so 2019 or 2024?
+        return 2024 #TODO:changed This is 2024 in the gf_hss_and_htm_scale_up branch, so 2019 or 2024?
 
     def baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
@@ -44,38 +44,6 @@ class ScenarioDefinitions:
             },
         )
 
-    # def double_capacity_at_primary_care(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-    #             'HR_scaling_by_level_and_officer_type_mode': 'x2_fac0&1',
-    #         }
-    #     }
-    #
-    # def hrh_at_pop_grwoth(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'yearly_HR_scaling_mode': 'scaling_by_population_growth',
-    #             # This is in-line with population growth _after 2018_ (baseline year for HRH)
-    #         }
-    #     }
-    #
-    # def hrh_at_gdp_growth(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'yearly_HR_scaling_mode': 'GDP_growth',
-    #             # This is GDP growth after 2018 (baseline year for HRH)
-    #         }
-    #     }
-    #
-    # def hrh_above_gdp_growth(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
-    #             # This is above-GDP growth after 2018 (baseline year for HRH)
-    #         }
-    #     }
-
     def hrh_using_historical_scaling(self) -> Dict:
         return {
             'HealthSystem': {
@@ -83,38 +51,6 @@ class ScenarioDefinitions:
                 # This uses historical trends in HRH scale-up to 2023, then uses 2023 values fixed to 2030
             }
         }
-
-    # def perfect_clinical_practices(self) -> Dict:
-    #     return {
-    #         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-    #             'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-    #             'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS,
-    #         }
-    #     }
-    #
-    # def perfect_healthcare_seeking(self) -> Dict:
-    #     return {
-    #         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-    #             'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
-    #             'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS,
-    #         }
-    #     }
-    #
-    # def vital_items_available(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
-    #             'cons_availability_postSwitch': 'all_vital_available',
-    #         }
-    #     }
-    #
-    # def medicines_available(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
-    #             'cons_availability_postSwitch': 'all_medicines_available',
-    #         }
-    #     }
 
     def cons_at_75th_percentile(self) -> Dict:
         return {
@@ -124,37 +60,7 @@ class ScenarioDefinitions:
             }
         }
 
-    # def all_consumables_available(self) -> Dict:
-    #     return {
-    #         'HealthSystem': {
-    #             'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
-    #             'cons_availability_postSwitch': 'all',
-    #         }
-    #     }
-    #
-    # def hss_package(self) -> Dict:
-    #     """The parameters for the Health System Strengthening Package"""
-    #     return mix_scenarios(
-    #         self.double_capacity_at_primary_care(),  #  }
-    #         self.hrh_above_gdp_growth(),             #  } <-- confirmed that these two do build on one another under
-    #         # mode 2 rescaling: see `test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together`.
-    #         self.perfect_clinical_practices(),
-    #         self.perfect_healthcare_seeking(),
-    #         self.all_consumables_available(),
-    #     )
-    #
-    # def hss_package_normal_HCS(self) -> Dict:
-    #     """The parameters for the Health System Strengthening Package with normal healthcare seeking"""
-    #     return mix_scenarios(
-    #         self.double_capacity_at_primary_care(),  #  }
-    #         self.hrh_above_gdp_growth(),             #  } <-- confirmed that these two do build on one another under
-    #         # mode 2 rescaling: see `test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together`.
-    #         self.perfect_clinical_practices(),
-    #         #self.perfect_healthcare_seeking(),
-    #         self.all_consumables_available(),
-    #     )
-
-    def hss_package_realistic(self) -> Dict:
+      def hss_package_realistic(self) -> Dict:
         """The parameters for the Realistic Health System Strengthening Package with historical HR scale and
         75th percentile cons"""
         return mix_scenarios(
