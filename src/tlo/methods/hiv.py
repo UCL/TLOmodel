@@ -1716,7 +1716,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 tclose=None,
             )
 
-            if "newborn_outcomes" not in self.sim.modules and (
+            if "NewbornOutcomes" not in self.sim.modules and (
                     self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
