@@ -36,7 +36,7 @@ class InterventionLongScenario(BaseScenario):
 
     def modules(self):
         return [*fullmodel(module_kwargs={'SymptomManager':{'always_refer_to_properties':True}}),
-                 mnh_cohort_module.MaternalNewbornHealthCohort()]
+                 mnh_cohort_module.MaternalNewbornHealthCohort(stop_pregnancies=False)]
 
     def draw_parameters(self, draw_number, rng):
 

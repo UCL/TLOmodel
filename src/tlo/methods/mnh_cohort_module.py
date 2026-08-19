@@ -32,8 +32,14 @@ class MaternalNewbornHealthCohort(Module):
     PARAMETERS = {}
     PROPERTIES = {}
 
-    def __init__(self, name=None):
+    def __init__(self,
+                 name=None,
+                 stop_pregnancies: bool = True,
+    ):
         super().__init__(name)
+
+        self.stop_pregnancies = stop_pregnancies
+
         # self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -140,8 +146,9 @@ class MaternalNewbornHealthCohort(Module):
         self.sim.event_queue.queue = updated_event_queue
 
         # Prevent additional pregnancies from occurring during the cohort tun
-        self.sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].iloc[:] = 0
-        self.sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].iloc[:] = 0
+        if self.stop_pregnancies:
+            self.sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].iloc[:] = 0
+            self.sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].iloc[:] = 0
 
         # Set labour date for cohort women
         for person in df.index:
