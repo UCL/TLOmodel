@@ -22,7 +22,7 @@ from scipy.spatial.distance import cdist
 # CONFIG
 # ---------------------------------------------------------------------------
 WBGT_DIRECTORY = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split/")
-WBGT_SCENARIO = "ssp245"
+WBGT_SCENARIOS =  ["ssp126", "ssp245", "ssp585"]
 WBGT_FILE_PREFIX = "wbgt_daynight_"
 
 WBGT_VARS = ["wbgt_day", "wbgt_night"]
@@ -144,130 +144,132 @@ print(f"Projecting for {len(facility_names)} facilities")
 # ---------------------------------------------------------------------------
 # Find CMIP6 model files
 # ---------------------------------------------------------------------------
-model_files = find_model_files(WBGT_DIRECTORY, WBGT_SCENARIO)
-if not model_files:
-    raise FileNotFoundError(
-        f"No '{WBGT_FILE_PREFIX}*.nc' under {WBGT_DIRECTORY}/*/{WBGT_SCENARIO}/")
-print(f"CMIP6 model files: {len(model_files)} ({[m for m, _ in model_files]})")
+for WBGT_SCENARIO in WBGT_SCENARIOS:
+    model_files = find_model_files(WBGT_DIRECTORY, WBGT_SCENARIO)
+    if not model_files:
+        raise FileNotFoundError(
+            f"No '{WBGT_FILE_PREFIX}*.nc' under {WBGT_DIRECTORY}/*/{WBGT_SCENARIO}/")
+    print(f"CMIP6 model files: {len(model_files)} ({[m for m, _ in model_files]})")
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Per model: extract projected WBGT + precip at each facility's nearest grid cell
 # ---------------------------------------------------------------------------
 avg_wbgt_accum = {var: {fac: [] for fac in facility_names} for var in ALL_VARS}
 
-for model_id, path in model_files:
-    print(f"\n--- {model_id} ---")
+for WBGT_SCENARIO in WBGT_SCENARIOS:
+    for model_id, path in model_files:
+        print(f"\n--- {model_id} ---")
 
-    try:
-        time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
-        ds = xr.open_dataset(path, decode_times=time_coder)
-    except AttributeError:
-        ds = xr.open_dataset(path, use_cftime=True)
-    missing = [v for v in WBGT_VARS if v not in ds]
-    if missing:
-        print(f"  ⚠ {missing} not in {path.name} "
-              f"(has {list(ds.data_vars)}) — skipping this file")
+        try:
+            time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
+            ds = xr.open_dataset(path, decode_times=time_coder)
+        except AttributeError:
+            ds = xr.open_dataset(path, use_cftime=True)
+        missing = [v for v in WBGT_VARS if v not in ds]
+        if missing:
+            print(f"  ⚠ {missing} not in {path.name} "
+                  f"(has {list(ds.data_vars)}) — skipping this file")
+            ds.close()
+            continue
+
+        lat_data = ds[WBGT_LAT_COORD].values
+        long_data = ds[WBGT_LON_COORD].values
+        times = ds[WBGT_TIME_COORD].values
+
+        assert_daily(times, path)
+        date_keys = get_time_index(times)
+
+        ix = np.array([((long_data - lon) ** 2).argmin() for lon in facility_lons])
+        iy = np.array([((lat_data - lat) ** 2).argmin() for lat in facility_lats])
+
+        dist = haversine_km(facility_lats, facility_lons,
+                            np.asarray(lat_data)[iy], np.asarray(long_data)[ix])
+        far = dist > DISTANCE_GUARD_KM
+        if far.any():
+            print(f"  ⚠ distance guard: {int(far.sum())} facilit(y/ies) > "
+                  f"{DISTANCE_GUARD_KM:.0f} km from any cell — set to NaN:")
+            for k in np.where(far)[0]:
+                print(f"      {facility_names[k]:<40s} {dist[k]:6.1f} km")
+        print(f"  nearest-cell distance: max {dist.max():.1f} km, "
+              f"median {np.median(dist):.1f} km")
+
+        # Open the matching precip file once (already monthly, same grid)
+        precip_path = path.parent / f"{PRECIP_FILE_PREFIX}{model_id}_{WBGT_SCENARIO}.nc"
+        if not precip_path.exists():
+            raise FileNotFoundError(f"missing precip file for {model_id}: {precip_path}")
+        try:
+            time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
+            ds_pr = xr.open_dataset(precip_path, decode_times=time_coder)
+        except AttributeError:
+            ds_pr = xr.open_dataset(precip_path, use_cftime=True)
+
+        assert np.array_equal(ds_pr[WBGT_LAT_COORD].values, lat_data), \
+            f"{model_id}: precip lat grid differs from WBGT lat grid"
+        assert np.array_equal(ds_pr[WBGT_LON_COORD].values, long_data), \
+            f"{model_id}: precip lon grid differs from WBGT lon grid"
+        missing_pr = [v for v in PRECIP_VARS if v not in ds_pr]
+        if missing_pr:
+            raise KeyError(f"{precip_path.name}: {missing_pr} not in "
+                           f"{list(ds_pr.data_vars)}")
+
+        monthly = {}
+
+        # daily WBGT -> monthly mean
+        for var in WBGT_VARS:
+            arr = ds[var].values
+            series = arr[:, iy, ix].astype(float)
+            if far.any():
+                series[:, far] = np.nan
+            daily_df = pd.DataFrame(series, index=date_keys, columns=facility_names)
+            monthly[var] = daily_df.groupby(level=0).mean()
+            for j, fac in enumerate(facility_names):
+                avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
+
+        # monthly precip — already monthly, no groupby
+        wbgt_month_index = monthly[WBGT_VARS[0]].index
+        if ds_pr.sizes[WBGT_TIME_COORD] != len(wbgt_month_index):
+            raise AssertionError(
+                f"{model_id}: precip has {ds_pr.sizes[WBGT_TIME_COORD]} months, "
+                f"WBGT has {len(wbgt_month_index)}")
+
+        for var in PRECIP_VARS:
+            arr = ds_pr[var].values
+            series = arr[:, iy, ix].astype(float)
+            if far.any():
+                series[:, far] = np.nan
+            monthly[var] = pd.DataFrame(series, index=wbgt_month_index,
+                                        columns=facility_names)
+            for j, fac in enumerate(facility_names):
+                avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
+
         ds.close()
-        continue
+        ds_pr.close()
 
-    lat_data = ds[WBGT_LAT_COORD].values
-    long_data = ds[WBGT_LON_COORD].values
-    times = ds[WBGT_TIME_COORD].values
+        # assemble long: facility, date, wbgt_day, wbgt_night, precip_month, precip_5day
+        dates = (pd.PeriodIndex(monthly[WBGT_VARS[0]].index, freq="M")
+                 .to_timestamp(how="end").normalize())
+        parts = []
+        for var in ALL_VARS:
+            mv = monthly[var].copy()
+            mv.index = dates
+            mv.index.name = "date"
+            parts.append(mv.reset_index().melt(id_vars="date",
+                                               var_name="facility", value_name=var))
+        wbgt_df = parts[0]
+        for p in parts[1:]:
+            wbgt_df = wbgt_df.merge(p, on=["date", "facility"])
+        wbgt_df = (wbgt_df[["facility", "date"] + ALL_VARS]
+                   .sort_values(["facility", "date"]).reset_index(drop=True))
+        if wbgt_df.duplicated(["facility", "date"]).any():
+            raise RuntimeError(f"{path.name}: duplicate facility-month rows")
 
-    assert_daily(times, path)
-    date_keys = get_time_index(times)
-
-    ix = np.array([((long_data - lon) ** 2).argmin() for lon in facility_lons])
-    iy = np.array([((lat_data - lat) ** 2).argmin() for lat in facility_lats])
-
-    dist = haversine_km(facility_lats, facility_lons,
-                        np.asarray(lat_data)[iy], np.asarray(long_data)[ix])
-    far = dist > DISTANCE_GUARD_KM
-    if far.any():
-        print(f"  ⚠ distance guard: {int(far.sum())} facilit(y/ies) > "
-              f"{DISTANCE_GUARD_KM:.0f} km from any cell — set to NaN:")
-        for k in np.where(far)[0]:
-            print(f"      {facility_names[k]:<40s} {dist[k]:6.1f} km")
-    print(f"  nearest-cell distance: max {dist.max():.1f} km, "
-          f"median {np.median(dist):.1f} km")
-
-    # Open the matching precip file once (already monthly, same grid)
-    precip_path = path.parent / f"{PRECIP_FILE_PREFIX}{model_id}_{WBGT_SCENARIO}.nc"
-    if not precip_path.exists():
-        raise FileNotFoundError(f"missing precip file for {model_id}: {precip_path}")
-    try:
-        time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
-        ds_pr = xr.open_dataset(precip_path, decode_times=time_coder)
-    except AttributeError:
-        ds_pr = xr.open_dataset(precip_path, use_cftime=True)
-
-    assert np.array_equal(ds_pr[WBGT_LAT_COORD].values, lat_data), \
-        f"{model_id}: precip lat grid differs from WBGT lat grid"
-    assert np.array_equal(ds_pr[WBGT_LON_COORD].values, long_data), \
-        f"{model_id}: precip lon grid differs from WBGT lon grid"
-    missing_pr = [v for v in PRECIP_VARS if v not in ds_pr]
-    if missing_pr:
-        raise KeyError(f"{precip_path.name}: {missing_pr} not in "
-                       f"{list(ds_pr.data_vars)}")
-
-    monthly = {}
-
-    # daily WBGT -> monthly mean
-    for var in WBGT_VARS:
-        arr = ds[var].values
-        series = arr[:, iy, ix].astype(float)
-        if far.any():
-            series[:, far] = np.nan
-        daily_df = pd.DataFrame(series, index=date_keys, columns=facility_names)
-        monthly[var] = daily_df.groupby(level=0).mean()
-        for j, fac in enumerate(facility_names):
-            avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
-
-    # monthly precip — already monthly, no groupby
-    wbgt_month_index = monthly[WBGT_VARS[0]].index
-    if ds_pr.sizes[WBGT_TIME_COORD] != len(wbgt_month_index):
-        raise AssertionError(
-            f"{model_id}: precip has {ds_pr.sizes[WBGT_TIME_COORD]} months, "
-            f"WBGT has {len(wbgt_month_index)}")
-
-    for var in PRECIP_VARS:
-        arr = ds_pr[var].values
-        series = arr[:, iy, ix].astype(float)
-        if far.any():
-            series[:, far] = np.nan
-        monthly[var] = pd.DataFrame(series, index=wbgt_month_index,
-                                    columns=facility_names)
-        for j, fac in enumerate(facility_names):
-            avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
-
-    ds.close()
-    ds_pr.close()
-
-    # assemble long: facility, date, wbgt_day, wbgt_night, precip_month, precip_5day
-    dates = (pd.PeriodIndex(monthly[WBGT_VARS[0]].index, freq="M")
-             .to_timestamp(how="end").normalize())
-    parts = []
-    for var in ALL_VARS:
-        mv = monthly[var].copy()
-        mv.index = dates
-        mv.index.name = "date"
-        parts.append(mv.reset_index().melt(id_vars="date",
-                                           var_name="facility", value_name=var))
-    wbgt_df = parts[0]
-    for p in parts[1:]:
-        wbgt_df = wbgt_df.merge(p, on=["date", "facility"])
-    wbgt_df = (wbgt_df[["facility", "date"] + ALL_VARS]
-               .sort_values(["facility", "date"]).reset_index(drop=True))
-    if wbgt_df.duplicated(["facility", "date"]).any():
-        raise RuntimeError(f"{path.name}: duplicate facility-month rows")
-
-    out = os.path.join(OUTPUT_DIR,
-                       f"wbgt_monthly_mean_facility_{model_id}_{WBGT_SCENARIO}.csv")
-    wbgt_df.to_csv(out, index=False)
-    print(f"  {wbgt_df['facility'].nunique()} facilities x "
-          f"{wbgt_df['date'].nunique()} months -> {Path(out).name}")
+        out = os.path.join(OUTPUT_DIR,
+                           f"wbgt_monthly_mean_facility_{model_id}_{WBGT_SCENARIO}.csv")
+        wbgt_df.to_csv(out, index=False)
+        print(f"  {wbgt_df['facility'].nunique()} facilities x "
+              f"{wbgt_df['date'].nunique()} months -> {Path(out).name}")
 
 # ---------------------------------------------------------------------------
 # Covariate table (once)
