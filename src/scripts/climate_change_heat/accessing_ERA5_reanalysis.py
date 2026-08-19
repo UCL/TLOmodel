@@ -2,7 +2,7 @@ import os
 
 import cdsapi
 
-years = [str(year) for year in range(2010, 2025)]
+years = [str(year) for year in range(1940, 1949)]
 
 variables = [
     "2m_temperature",
@@ -15,7 +15,7 @@ variables = [
     "total_precipitation"
 ]
 
-base_dir = "/Users/rachelmurray-watson/Documents/Heat_data/ERA5"
+base_dir = "/Users/rachelmurray-watson/Documents/Heat_data/ERA5/Periindustrial"
 
 client = cdsapi.Client()
 
