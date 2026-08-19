@@ -255,13 +255,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df_fac_level = _df.copy()
         _df_fac_level = _df_fac_level.groupby(["Facility_Level"])["patient_count"].sum().reindex(
             ["1a", "2", "3"], fill_value=0)
-        tlm_pat_prop = [0.2466, 0.447, 0.3064]
+        tlm_pat_prop = pd.Series({"1a": 0.2466, "2": 0.4470, "3": 0.3064})
+        # simulated patient mix by facility level
+        sim_pat_prop = _df_fac_level / _df_fac_level.sum()
         # the rescaling factors
-        _df_fac_level.loc["1a"] = (1 if _df_fac_level.loc["1a"] == 0 else tlm_pat_prop[0] / _df_fac_level.loc["1a"])
-        _df_fac_level.loc["2"] = (1 if _df_fac_level.loc["2"] == 0 else tlm_pat_prop[1] / _df_fac_level.loc["2"])
-        _df_fac_level.loc["3"] = (1 if _df_fac_level.loc["3"] == 0 else tlm_pat_prop[2] / _df_fac_level.loc["3"])
-        # rename
-        _df_fac_level = _df_fac_level.rename("scale_factor")
+        _df_fac_level = tlm_pat_prop / sim_pat_prop
+        # handle facility levels with no patients (just in case) and rename
+        _df_fac_level = (
+            _df_fac_level
+            .replace([np.inf, -np.inf], np.nan)
+            .fillna(1.0)
+            .rename("scale_factor")
+        )
 
         # group up by subgroups and get patient proportions across subgroups
         # rescale TLO patient volume per level by TLM patient mix across levels
@@ -307,7 +312,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df_mix
 
-    def get_cons_access_mix_total_period(_df):
+    def get_cons_access_mix_total_period(_df, rescale_by_fac_level=True):
         # keep only months in TLM
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
@@ -338,6 +343,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # keep only districts in TLM
         _df = _df.loc[_df["District"].isin(common_districts)]
+
+        # combine levels 3 and 4 as 3+
+        _df["Facility_Level"] = _df["Facility_Level"].replace({"4": "3"})
+
+        # rescale all HSIs by facility level
+        if rescale_by_fac_level:
+            tlm_pat_prop = pd.Series({"1a": 0.2466, "2": 0.4470, "3": 0.3064})
+
+            sim_hsi_prop = (
+                _df["Facility_Level"]
+                .value_counts(normalize=True)
+                .reindex(["1a", "2", "3"], fill_value=0)
+            )
+
+            scale_factor = (
+                tlm_pat_prop
+                / sim_hsi_prop
+            ).replace([np.inf, -np.inf], np.nan,).fillna(1.0)
+
+            _df["scale_factor"] = _df["Facility_Level"].map(scale_factor)
+
+        else:
+            _df["scale_factor"] = 1.0
 
         # get the proportions of patients getting the prescribed cons. by subgroup (overall, facility level, district)
         # need to identify the HSIs involve prescribing and among which,
@@ -421,17 +449,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         def meds_access_range_by_subgroup_tlo(__df, subgroup=None):
             df_meds = __df[__df["Num_Medicine_Types_Requested"] > 0].copy()
 
-            df_meds["lower"] = (
+            df_meds["complete"] = (
                 df_meds["Num_Medicine_Types_Available"]
                 == df_meds["Num_Medicine_Types_Requested"]
             )
-            df_meds["mean"] = (
+            df_meds["proportional"] = (
                 df_meds["Num_Medicine_Types_Available"]
                 / df_meds["Num_Medicine_Types_Requested"]
             )
-            df_meds["upper"] = df_meds["Num_Medicine_Types_Available"] > 0
+            df_meds["any"] = df_meds["Num_Medicine_Types_Available"] > 0
 
-            output_columns = ["category", "subgroup", "source", "lower", "mean", "upper"]
+            # the rescaling function
+            def weighted_mean(df, col):
+                return np.average(
+                    df[col],
+                    weights=df["scale_factor"],
+                )
+
+            output_columns = ["category", "subgroup", "source",
+                              "complete", "proportional", "any"]
 
             def format_output(df):
                 return (
@@ -444,17 +480,32 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 access_meds_df = pd.DataFrame({
                     "category": ["overall"],
                     "subgroup": ["overall"],
-                    "lower": [df_meds["lower"].mean() * 100],
-                    "mean": [df_meds["mean"].mean() * 100],
-                    "upper": [df_meds["upper"].mean() * 100],
+                    "complete": [weighted_mean(df_meds, "complete") * 100],
+                    "proportional": [weighted_mean(df_meds, "proportional") * 100],
+                    "any": [weighted_mean(df_meds, "any").mean() * 100],
                 })
 
             else:
                 access_meds_df = (
                     df_meds
-                    .groupby(subgroup, dropna=False)[["lower", "mean", "upper"]]
-                    .mean()
-                    .mul(100)
+                    .groupby(
+                        subgroup,
+                        dropna=False,
+                    )
+                    .apply(
+                        lambda x: pd.Series({
+                            "complete": (
+                                weighted_mean(x, "complete") * 100
+                            ),
+                            "proportional": (
+                                weighted_mean(x, "proportional") * 100
+                            ),
+                            "any": (
+                                weighted_mean(x, "any") * 100
+                            ),
+                        }),
+                        include_groups=False,
+                    )
                     .reset_index()
                     .rename(columns={subgroup: "subgroup"})
                     .assign(category=subgroup)
@@ -475,8 +526,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # creat series
         _access_meds = _access_meds \
-            .set_index(["category", "subgroup", "source"])[["lower", "mean", "upper"]] \
-            .rename_axis(columns="range_of_med_access") \
+            .set_index(["category", "subgroup", "source"])[["complete", "proportional", "any"]] \
+            .rename_axis(columns="type_of_med_access") \
             .stack() \
             .rename("percent")
 
@@ -671,7 +722,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
 
     # read in TLM estimates
-    hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder/"tool_3_pat_load.dta", convert_categoricals=True)
+    hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_3_pat_load.dta", convert_categoricals=True)
     fac_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_6_pat_load.dta", convert_categoricals=True)
     pat_exit = pd.read_stata(path_to_tlm_folder / "tool_2_pat_exit.dta", convert_categoricals=True)
 
@@ -680,6 +731,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_tms_pat_load["district"] = hcw_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
     fac_tms_pat_load["district"] = fac_tms_pat_load["district"].replace({"Mzuzu": "Mzuzu City"})
     pat_exit["district"] = pat_exit["district"].replace({"Mzuzu": "Mzuzu City"})
+
+    # combine levels 3 and 4 as 3
+    pat_exit["fac_level"] = pat_exit["fac_level"].replace({"4": "3"})
 
     # assert set(hcw_tms_pat_load['district'].unique()).issubset(
     #     set(daily_patient_load_per_hcw['District'].unique())
@@ -1116,6 +1170,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         {"overall": "Overall", "loc_cat": "Service_Area", "fac_level": "Facility_Level", "district": "District"}
     )
 
+    access_meds["type_of_med_access"] = "binary"
     access_meds.rename(columns={"access_meds_percent": "mean"}, inplace=True)
     access_meds["lower"] = access_meds["mean"].copy()
     access_meds["upper"] = access_meds["mean"].copy()
@@ -1125,7 +1180,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module="tlo.methods.healthsystem",
         key="Consumables",
-        custom_generate_series=get_cons_access_mix_total_period,
+        custom_generate_series=lambda df: get_cons_access_mix_total_period(
+            df,
+            rescale_by_fac_level=True,
+        ),
         do_scaling=False
     )
     # ignore NAN entries; some runs may have no HSIs in some subgroups
@@ -1134,243 +1192,276 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     access_meds_tlo.reset_index(inplace=True)
 
     assert set(access_meds.columns) == set(access_meds_tlo.columns)
-    access_meds = pd.concat([access_meds, access_meds_tlo], ignore_index=True)
-    #
-    # # prepare data and plot
-    # source_categories = (
-    #     access_meds[["source", "category"]]
-    #     .drop_duplicates()
-    # )
-    #
-    # # all possible subgroups within each category
-    # category_subgroups = (
-    #     access_meds[["category", "subgroup"]]
-    #     .drop_duplicates()
-    # )
-    #
-    # # for each existing source-category pair, add every subgroup belonging to that category
-    # complete_grid = source_categories.merge(
-    #     category_subgroups,
-    #     on="category",
-    #     how="left"
-    # )
-    #
-    # # merge back the existing values; ignore NAN entries
-    # access_meds_complete = (
-    #     complete_grid
-    #     .merge(
-    #         access_meds,
-    #         on=["source", "category", "subgroup"],
-    #         how="left",
-    #         validate="one_to_one"
-    #     )
-    # )
-    #
-    # # drop District category
-    # # access_meds_complete = access_meds_complete[access_meds_complete["category"] != "District"]
-    #
-    # # plot
-    # markers = {
-    #     "TLO": "d",
-    #     "Patient Exit": "o"
-    # }
-    #
-    # source_colors = {
-    #     "TLO": "green",
-    #     "Patient Exit": "blue",
-    # }
-    #
-    # def plot_access_meds(
-    #     df,
-    #     markers,
-    #     source_colors,
-    #     ylabel="Medicines accessed in percentage",
-    #     min_width=4.5,
-    #     figure_height=5.5,
-    #     capsize=3,
-    # ):
-    #
-    #     plot_df = df.copy()
-    #
-    #     # Ensure estimate columns are numeric
-    #     plot_df[["mean", "lower", "upper"]] = (
-    #         plot_df[["mean", "lower", "upper"]]
-    #         .apply(pd.to_numeric, errors="coerce")
-    #     )
-    #
-    #     # Plot sources in the order specified by markers
-    #     source_order = [
-    #         source
-    #         for source in markers
-    #         if source in plot_df["source"].unique()
-    #     ]
-    #
-    #     # Horizontal offsets prevent sources from overlapping
-    #     offsets = np.linspace(
-    #         -0.15,
-    #         0.15,
-    #         len(source_order)
-    #     )
-    #
-    #     # sort=False preserves category order from pat_mix_complete
-    #     for category, category_df in plot_df.groupby(
-    #         "category",
-    #         sort=False
-    #     ):
-    #         category_df = category_df.copy()
-    #
-    #         # Preserve the subgroup order already defined in pat_mix_complete
-    #         subgroup_order = (
-    #             category_df["subgroup"]
-    #             .drop_duplicates()
-    #             .tolist()
-    #         )
-    #
-    #         n_subgroups = len(subgroup_order)
-    #
-    #         # Adjust width and label rotation by category
-    #         if category == "Service_Area":
-    #             width_per_subgroup = 1.1
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         elif category == "Facility_Level":
-    #             width_per_subgroup = 0.9
-    #             rotation = 0
-    #             horizontal_alignment = "center"
-    #
-    #         elif category == "District":
-    #             width_per_subgroup = 0.65
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         else:
-    #             width_per_subgroup = 0.8
-    #             rotation = 0
-    #             horizontal_alignment = "center"
-    #
-    #         # legend position
-    #         if category == "Overall":
-    #             legend_location = "lower right"
-    #         else:
-    #             legend_location = "best"
-    #
-    #         fig_width = max(
-    #             min_width,
-    #             n_subgroups * width_per_subgroup
-    #         )
-    #
-    #         x_base = np.arange(n_subgroups)
-    #
-    #         subgroup_positions = {
-    #             subgroup: position
-    #             for position, subgroup in enumerate(subgroup_order)
-    #         }
-    #
-    #         fig, ax = plt.subplots(
-    #             figsize=(fig_width, figure_height)
-    #         )
-    #
-    #         for source, offset in zip(source_order, offsets):
-    #
-    #             source_df = category_df.loc[
-    #                 category_df["source"].eq(source)
-    #             ].copy()
-    #
-    #             if source_df.empty:
-    #                 continue
-    #
-    #             source_df["x_position"] = (
-    #                 source_df["subgroup"]
-    #                 .map(subgroup_positions)
-    #             )
-    #
-    #             source_df = source_df.sort_values("x_position")
-    #
-    #             x = (
-    #                 source_df["x_position"].to_numpy(dtype=float)
-    #                 + offset
-    #             )
-    #
-    #             mean = source_df["mean"].to_numpy(dtype=float)
-    #             lower = source_df["lower"].to_numpy(dtype=float)
-    #             upper = source_df["upper"].to_numpy(dtype=float)
-    #
-    #             # Convert interval limits into distances from the mean
-    #             lower_error = np.maximum(mean - lower, 0)
-    #             upper_error = np.maximum(upper - mean, 0)
-    #
-    #             yerr = np.vstack([
-    #                 lower_error,
-    #                 upper_error
-    #             ])
-    #
-    #             ax.errorbar(
-    #                 x=x,
-    #                 y=mean,
-    #                 yerr=yerr,
-    #                 fmt=markers[source],
-    #                 color=source_colors[source],
-    #                 markerfacecolor=source_colors[source],
-    #                 markeredgecolor=source_colors[source],
-    #                 markersize=7,
-    #                 linestyle="none",
-    #                 elinewidth=1.4,
-    #                 capsize=capsize,
-    #                 capthick=1.4,
-    #                 label=source
-    #             )
-    #
-    #         ax.set_xticks(x_base)
-    #
-    #         ax.set_xticklabels(
-    #             [str(value) for value in subgroup_order],
-    #             rotation=rotation,
-    #             ha=horizontal_alignment
-    #         )
-    #
-    #         ax.set_xlabel("Subgroup")
-    #         ax.set_ylabel(ylabel)
-    #         plot_title = f'Prescribed Medicines Accessibility \nby {str(category).replace("_", " ")}'
-    #         ax.set_title(
-    #             plot_title
-    #         )
-    #
-    #         ax.set_ylim(0, 105)
-    #         ax.yaxis.set_major_locator(MultipleLocator(5))
-    #
-    #         ax.legend(
-    #             title="Source",
-    #             loc=legend_location,
-    #             frameon=False
-    #         )
-    #
-    #         ax.grid(
-    #             axis="y",
-    #             linestyle="--",
-    #             alpha=0.7
-    #         )
-    #
-    #         ax.spines["top"].set_visible(False)
-    #         ax.spines["right"].set_visible(False)
-    #
-    #         # Small horizontal margin at both ends
-    #         ax.set_xlim(
-    #             -0.6,
-    #             n_subgroups - 0.4
-    #         )
-    #
-    #         fig.tight_layout()
-    #
-    #         plt.show()
-    #         plt.close(fig)
-    #
-    # plot_access_meds(
-    #     df=access_meds_complete,
-    #     markers=markers,
-    #     source_colors=source_colors,
-    #     ylabel="Medicines accessed in percentage",
-    # )
+    access_meds = pd.concat([access_meds[access_meds_tlo.columns], access_meds_tlo], ignore_index=True)
+
+    # prepare data and plot
+    source_types = (
+        access_meds[["source", "category", "type_of_med_access"]]
+        .drop_duplicates()
+    )
+
+    # all possible subgroups within each category
+    category_subgroups = (
+        access_meds[["category", "subgroup"]]
+        .drop_duplicates()
+    )
+
+    # for each existing source-category-type pair, add every subgroup belonging to that category
+    complete_grid = source_types.merge(
+        category_subgroups,
+        on="category",
+        how="left"
+    )
+
+    # merge back the existing values; ignore NAN entries
+    access_meds_complete = (
+        complete_grid
+        .merge(
+            access_meds,
+            on=["source", "category", "subgroup", "type_of_med_access"],
+            how="left",
+            validate="one_to_one"
+        )
+    )
+
+    # drop District category
+    # access_meds_complete = access_meds_complete[access_meds_complete["category"] != "District"]
+
+    # Plot style for each (source, type_of_med_access) pair
+    plot_styles = {
+        ("Patient Exit", "binary"): {
+            "marker": "o",
+            "color": "blue",
+            "markerfacecolor": "blue",
+            "markeredgecolor": "blue",
+            "label": "Patient Exit - Binary",
+        },
+        ("TLO", "complete"): {
+            "marker": "d",
+            "color": "red",
+            "markerfacecolor": "red",
+            "markeredgecolor": "red",
+            "label": "TLO - Complete",
+        },
+        ("TLO", "proportional"): {
+            "marker": "d",
+            "color": "goldenrod",
+            "markerfacecolor": "goldenrod",
+            "markeredgecolor": "goldenrod",  # helps visibility
+            "label": "TLO - Proportional",
+        },
+        ("TLO", "any"): {
+            "marker": "d",
+            "color": "green",
+            "markerfacecolor": "green",
+            "markeredgecolor": "green",
+            "label": "TLO - Any",
+        },
+    }
+
+    # Explicit plotting order
+    series_order = [
+        ("Patient Exit", "binary"),
+        ("TLO", "complete"),
+        ("TLO", "proportional"),
+        ("TLO", "any"),
+    ]
+
+    def plot_access_meds(
+        df,
+        plot_styles,
+        series_order,
+        ylabel="Medicines accessibility %",
+        min_width=4.5,
+        figure_height=5.5,
+        capsize=3,
+    ):
+
+        plot_df = df.copy()
+
+        # Ensure estimate columns are numeric
+        plot_df[["mean", "lower", "upper"]] = (
+            plot_df[["mean", "lower", "upper"]]
+            .apply(pd.to_numeric, errors="coerce")
+        )
+
+        # Plot source pairs in the order specified
+        series_order_present = [
+            series
+            for series in series_order
+            if (
+                (plot_df["source"] == series[0])
+                & (plot_df["type_of_med_access"] == series[1])
+            ).any()
+        ]
+
+        # Horizontal offsets prevent sources from overlapping
+        offsets = np.linspace(
+            -0.20,
+            0.20,
+            len(series_order_present)
+        )
+
+        # sort=False preserves category order from pat_mix_complete
+        for category, category_df in plot_df.groupby(
+            "category",
+            sort=False
+        ):
+            category_df = category_df.copy()
+
+            # Preserve the subgroup order already defined in pat_mix_complete
+            subgroup_order = (
+                category_df["subgroup"]
+                .drop_duplicates()
+                .tolist()
+            )
+
+            n_subgroups = len(subgroup_order)
+
+            # Adjust width and label rotation by category
+            if category == "Service_Area":
+                width_per_subgroup = 1.1
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Facility_Level":
+                width_per_subgroup = 0.9
+                rotation = 0
+                horizontal_alignment = "center"
+
+            elif category == "District":
+                width_per_subgroup = 0.65
+                rotation = 45
+                horizontal_alignment = "right"
+
+            else:
+                width_per_subgroup = 0.8
+                rotation = 0
+                horizontal_alignment = "center"
+
+            # legend position
+            if category == "Overall":
+                legend_location = "lower right"
+            else:
+                legend_location = "best"
+
+            fig_width = max(
+                min_width,
+                n_subgroups * width_per_subgroup
+            )
+
+            x_base = np.arange(n_subgroups)
+
+            subgroup_positions = {
+                subgroup: position
+                for position, subgroup in enumerate(subgroup_order)
+            }
+
+            fig, ax = plt.subplots(
+                figsize=(fig_width, figure_height)
+            )
+
+            for (series, offset) in zip(series_order_present, offsets):
+                source, med_access_type = series
+                style = plot_styles[series]
+
+                series_df = category_df.loc[
+                    category_df["source"].eq(source)
+                    & category_df["type_of_med_access"].eq(med_access_type)
+                    ].copy()
+
+                if series_df.empty:
+                    continue
+
+                series_df["x_position"] = (
+                    series_df["subgroup"]
+                    .map(subgroup_positions)
+                )
+
+                series_df = series_df.sort_values("x_position")
+
+                x = (
+                    series_df["x_position"].to_numpy(dtype=float)
+                    + offset
+                )
+
+                mean = series_df["mean"].to_numpy(dtype=float)
+                lower = series_df["lower"].to_numpy(dtype=float)
+                upper = series_df["upper"].to_numpy(dtype=float)
+
+                # Convert interval limits into distances from the mean
+                lower_error = np.maximum(mean - lower, 0)
+                upper_error = np.maximum(upper - mean, 0)
+
+                yerr = np.vstack([
+                    lower_error,
+                    upper_error
+                ])
+
+                ax.errorbar(
+                    x=x,
+                    y=mean,
+                    yerr=yerr,
+                    fmt=style["marker"],
+                    color=style["color"],
+                    markerfacecolor=style["markerfacecolor"],
+                    markeredgecolor=style["markeredgecolor"],
+                    markersize=7,
+                    linestyle="none",
+                    elinewidth=1.4,
+                    capsize=capsize,
+                    capthick=1.4,
+                    label=style["label"]
+                )
+
+            ax.set_xticks(x_base)
+
+            ax.set_xticklabels(
+                [str(value) for value in subgroup_order],
+                rotation=rotation,
+                ha=horizontal_alignment
+            )
+
+            ax.set_xlabel("Subgroup")
+            ax.set_ylabel(ylabel)
+            plot_title = f'Medicines Accessibility \nby {str(category).replace("_", " ")}'
+            ax.set_title(plot_title)
+
+            ax.set_ylim(0, 105)
+            ax.yaxis.set_major_locator(MultipleLocator(5))
+
+            ax.legend(
+                title="Measure",
+                loc=legend_location,
+                frameon=False
+            )
+
+            ax.grid(
+                axis="both",
+                linestyle="--",
+                alpha=0.7
+            )
+
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+            # Small horizontal margin at both ends
+            ax.set_xlim(
+                -0.6,
+                n_subgroups - 0.4
+            )
+
+            fig.tight_layout()
+
+            plt.show()
+            plt.close(fig)
+
+    plot_access_meds(
+        df=access_meds_complete,
+        plot_styles=plot_styles,
+        series_order=series_order,
+        ylabel="Medicines accessibility by patients or HSIs %",
+    )
 
     # todo: notes
     # 1. Has not dropped duplicated persons having multiple HSIs on day
