@@ -70,7 +70,7 @@ OUT_DIR = Path(
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-SCENARIOS = ["ssp245"]
+SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 YEAR_START = 2025
 YEAR_END = 2040
 
