@@ -919,18 +919,68 @@ def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
 
     scenarios = scaleup_plot_data["Scenario"].unique()
 
+    # Short labels for the scatter plot legend
+    label_map = {
+        "Baseline Nurses / Default Healthsystem Function":
+            "Baseline / Default",
+        "Fewer Nurses / Default Healthsystem Function":
+            "Fewer nurses / Default",
+        "More Nurses / Default Healthsystem Function":
+            "More nurses / Default",
+        "More CNP staff / Default Healthsystem Function":
+            "More CNP / Default",
+        "More Nurses by District / Default Healthsystem Function":
+            "More nurses by district / Default",
+        "More CNP staff by District / Default Healthsystem Function":
+            "More CNP by district / Default",
+
+        "Baseline Nurses / Improved Healthsystem Function":
+            "Baseline / Improved",
+        "Fewer Nurses / Improved Healthsystem Function":
+            "Fewer nurses / Improved",
+        "More Nurses / Improved Healthsystem Function":
+            "More nurses / Improved",
+        "More CNP staff / Improved Healthsystem Function":
+            "More CNP / Improved",
+        "More Nurses by District / Improved Healthsystem Function":
+            "More nurses by district / Improved",
+        "More CNP staff by District / Improved Healthsystem Function":
+            "More CNP by district / Improved",
+    }
+
+    color_map = {
+        "Baseline Nurses / Default Healthsystem Function": "black",
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function": "orange",
+
+        "Baseline Nurses / Improved Healthsystem Function": "black",
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function": "orange",
+    }
+
+    marker_map = {
+        "Default": "o",  # circles for default
+        "Improved": "^"  # triangles for improved
+    }
+
     figures = {}
 
     for scaleup_column, ylabel, title in [
         (
             "Scale2027_2024",
-            "Staff scale-up factor (2027 / 2024)",
-            "Staff scale-up factor by district: 2027 vs 2024",
+            "Staff scale-up factor (2027_2024)",
+            "Staff scale-up factor by district: 2027 to 2024",
         ),
         (
             "Scale2027_2019",
-            "Staff scale-up factor (2027 / 2019)",
-            "Staff scale-up factor by district: 2027 vs 2019",
+            "Staff scale-up factor (2027_2019)",
+            "Staff scale-up factor by district: 2027 to 2019",
         ),
     ]:
 
@@ -942,20 +992,44 @@ def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
 
             scenario_data = scaleup_plot_data[
                 scaleup_plot_data["Scenario"] == scenario
-            ].copy()
+                ].copy()
 
-            # Average across cadres within each district
+            # Use Nursing_and_Midwifery for nurse scenarios,
+            # but all three CNP cadres for CNP scenarios
+            # Use the appropriate staff type already prepared
+            # in scaleup_plot_data.
+            if "CNP" in scenario:
+                scenario_data = scenario_data[
+                    scenario_data["Cadre"] == "CNP"
+                    ].copy()
+            else:
+                scenario_data = scenario_data[
+                    scenario_data["Cadre"] == "Nursing_and_Midwifery"
+                    ].copy()
+
+            # Use the same district order as the DALY/death bar plots
             scenario_data = (
                 scenario_data
-                .groupby("District")[scaleup_column]
-                .mean()
+                .set_index("District")
+                .reindex(district_order)
                 .reset_index()
             )
+
+            color = color_map.get(scenario, "gray")
+
+            if "Default" in scenario:
+                marker = marker_map["Default"]
+            elif "Improved" in scenario:
+                marker = marker_map["Improved"]
+            else:
+                marker = "o"
 
             ax.scatter(
                 scenario_data["District"],
                 scenario_data[scaleup_column],
-                label=scenario,
+                color=color,
+                marker=marker,
+                label=label_map.get(scenario, scenario),
                 alpha=0.7,
             )
 
@@ -1077,12 +1151,64 @@ if __name__ == "__main__":
     scaleup_rows = []
 
     for scenario in all_nurse_scenarios:
-        scenario_data = nurses_all_mean[scenario].unstack(level="year")
+
+        scenario_data = nurses_all_mean[scenario].unstack(
+            level="year"
+        )
 
         # Keep only the years required for the scale-up factors
         scenario_data = scenario_data[
             [2019, 2024, 2027]
         ].copy()
+
+        # NURSE SCENARIOS
+        if "CNP" not in scenario:
+
+            scenario_data = scenario_data[
+                scenario_data.index.get_level_values("Cadre")
+                == "Nursing_and_Midwifery"
+                ].copy()
+
+        # CNP SCENARIOS
+        else:
+
+            cnp_cadres = [
+                "Clinical",
+                "Nursing_and_Midwifery",
+                "Pharmacy",
+            ]
+
+            scenario_data = scenario_data[
+                scenario_data.index.get_level_values("Cadre").isin(
+                    cnp_cadres
+                )
+            ].copy()
+
+            # Sum the three CNP cadres within each district
+            scenario_data = (
+                scenario_data
+                .groupby(
+                    level="District"
+                )
+                .sum()
+            )
+
+            # Since CNP is now the combined total, there is no
+            # individual cadre to retain.
+            scenario_data["Cadre"] = "CNP"
+
+            scenario_data = scenario_data.set_index(
+                "Cadre",
+                append=True
+            )
+
+            scenario_data = scenario_data.reorder_levels(
+                ["District", "Cadre"]
+            )
+
+        # ============================================================
+        # CALCULATE SCALE-UP FACTORS
+        # ============================================================
 
         scenario_data["Scale2027_2024"] = (
             scenario_data[2027] /
@@ -1105,8 +1231,32 @@ if __name__ == "__main__":
         ignore_index=True,
     )
 
+    print("\n--- Scale-up data by scenario and cadre ---")
+    print(
+        scaleup_plot_data[
+            ["Scenario", "Cadre"]
+        ].drop_duplicates().to_string(index=False)
+    )
+
+    # Keeping exactly the same districts and order used in the
+    # DALYs and deaths district bar plots
+    scaleup_plot_data = scaleup_plot_data[
+        scaleup_plot_data["District"].isin(district_order)
+    ].copy()
+
+    scaleup_plot_data["District"] = pd.Categorical(
+        scaleup_plot_data["District"],
+        categories=district_order,
+        ordered=True,
+    )
+
+    scaleup_plot_data = scaleup_plot_data.sort_values(
+        ["District", "Cadre", "Scenario"]
+    )
+
     print("\n--- Scale-up plot data ---")
-    print(scaleup_plot_data.head())
+    print(scaleup_plot_data.head(20))
+
     print("\n--- Scale-up plot data columns ---")
     print(scaleup_plot_data.columns)
 
@@ -1128,7 +1278,10 @@ if __name__ == "__main__":
         scaleup_plot_data
     )
 
-    # Get nurses only
+    # ============================================================
+    # STAFF SCALING: NURSES
+    # ============================================================
+
     nurses = staff_counts_summary.xs(
         "Nursing_and_Midwifery",
         level="Cadre"
@@ -1142,73 +1295,211 @@ if __name__ == "__main__":
 
     nurses_mean = nurses.xs("mean", axis=1, level=1)
 
-    nurses_mean = nurses_mean[
-        [
-            "More Nurses / Default Healthsystem Function",
-            "More Nurses by District / Default Healthsystem Function",
-        ]
+    nurse_scenarios = [
+        "More Nurses / Default Healthsystem Function",
+        "More Nurses by District / Default Healthsystem Function",
+        "More Nurses / Improved Healthsystem Function",
+        "More Nurses by District / Improved Healthsystem Function",
     ]
 
-    more_nurses = nurses_mean[
-        ["More Nurses / Default Healthsystem Function"]
-    ].unstack(level="year")
+    nurses_mean = nurses_mean[nurse_scenarios]
 
-    more_nurses_district = nurses_mean[
-        ["More Nurses by District / Default Healthsystem Function"]
-    ].unstack(level="year")
+    nurse_rows = []
 
-    more_nurses.columns = [
-        "Staff2019",
-        "Staff2024",
-        "Staff2027",
+    for scenario in nurse_scenarios:
+        scenario_data = (
+            nurses_mean[[scenario]]
+            .unstack(level="year")
+        )
+
+        # Remove scenario level from columns
+        scenario_data.columns = scenario_data.columns.droplevel(0)
+
+        scenario_data = scenario_data.rename(
+            columns={
+                2019: "Staff2019",
+                2024: "Staff2024",
+                2027: "Staff2027",
+            }
+        )
+
+        scenario_data["Scale2027_2024"] = (
+            scenario_data["Staff2027"] /
+            scenario_data["Staff2024"]
+        )
+
+        scenario_data["Scale2027_2019"] = (
+            scenario_data["Staff2027"] /
+            scenario_data["Staff2019"]
+        )
+
+        scenario_data["Scenario"] = scenario
+
+        scenario_data = scenario_data.reset_index()
+
+        nurse_rows.append(scenario_data)
+
+    nurse_summary = pd.concat(
+        nurse_rows,
+        ignore_index=True,
+    )
+
+    # Short scenario names for Excel
+    # nurse_summary["Scenario"] = nurse_summary["Scenario"].replace({
+    #     "More Nurses / Default Healthsystem Function":
+    #         "More Nurses / Default",
+    #
+    #     "More Nurses by District / Default Healthsystem Function":
+    #         "More Nurses by District / Default",
+    #
+    #     "More Nurses / Improved Healthsystem Function":
+    #         "More Nurses / Improved",
+    #
+    #     "More Nurses by District / Improved Healthsystem Function":
+    #         "More Nurses by District / Improved",
+    # })
+
+    nurse_summary["Staff_Type"] = "Nurses"
+
+    # ============================================================
+    # STAFF SCALING: CNP
+    # ============================================================
+
+    # CNP consists of three cadres in the model
+    cnp_cadres = [
+        "Clinical",
+        "Nursing_and_Midwifery",
+        "Pharmacy",
     ]
-    print("\n---Inspecting renamed More Nurses---")
-    print(more_nurses.head())
 
-    more_nurses_district.columns = [
-        "Staff2019",
-        "Staff2024",
-        "Staff2027",
+    cnp_scenarios = [
+        "More CNP staff / Default Healthsystem Function",
+        "More CNP staff by District / Default Healthsystem Function",
+        "More CNP staff / Improved Healthsystem Function",
+        "More CNP staff by District / Improved Healthsystem Function",
     ]
-    print("\n---Inspecting renamed More Nurses by District---")
-    print(more_nurses_district.head())
 
-    # Scaling factors
-    more_nurses["Scale2027_2024"] = (
-        more_nurses["Staff2027"] /
-        more_nurses["Staff2024"]
+    # Select only the three CNP cadres
+    cnp = staff_counts_summary.loc[
+        staff_counts_summary.index.get_level_values("Cadre").isin(cnp_cadres)
+    ].copy()
+
+    cnp = cnp.loc[
+        cnp.index.get_level_values("year").isin(
+            [2019, 2024, 2027]
+        )
+    ]
+
+    # Select mean across draws
+    cnp_mean = cnp.xs("mean", axis=1, level=1)
+
+    # Keep only the CNP scenarios
+    cnp_mean = cnp_mean[cnp_scenarios]
+
+    # Sum the three CNP cadres within each district/year/scenario
+    cnp_mean = (
+        cnp_mean
+        .groupby(
+            level=["District", "year"]
+        )
+        .sum()
     )
 
-    more_nurses["Scale2027_2019"] = (
-        more_nurses["Staff2027"] /
-        more_nurses["Staff2019"]
+    cnp_rows = []
+
+    for scenario in cnp_scenarios:
+        scenario_data = (
+            cnp_mean[[scenario]]
+            .unstack(level="year")
+        )
+
+        # Remove scenario level from columns
+        scenario_data.columns = scenario_data.columns.droplevel(0)
+
+        scenario_data = scenario_data.rename(
+            columns={
+                2019: "Staff2019",
+                2024: "Staff2024",
+                2027: "Staff2027",
+            }
+        )
+
+        scenario_data["Scale2027_2024"] = (
+            scenario_data["Staff2027"] /
+            scenario_data["Staff2024"]
+        )
+
+        scenario_data["Scale2027_2019"] = (
+            scenario_data["Staff2027"] /
+            scenario_data["Staff2019"]
+        )
+
+        scenario_data["Scenario"] = scenario
+
+        scenario_data = scenario_data.reset_index()
+
+        cnp_rows.append(scenario_data)
+
+    cnp_summary = pd.concat(
+        cnp_rows,
+        ignore_index=True,
     )
 
-    more_nurses_district["Scale2027_2024"] = (
-        more_nurses_district["Staff2027"] /
-        more_nurses_district["Staff2024"]
-    )
+    # Short scenario names for Excel
+    # cnp_summary["Scenario"] = cnp_summary["Scenario"].replace({
+    #     "More CNP staff / Default Healthsystem Function":
+    #         "More CNP / Default",
+    #
+    #     "More CNP staff by District / Default Healthsystem Function":
+    #         "More CNP by District / Default",
+    #
+    #     "More CNP staff / Improved Healthsystem Function":
+    #         "More CNP / Improved",
+    #
+    #     "More CNP staff by District / Improved Healthsystem Function":
+    #         "More CNP by District / Improved",
+    # })
 
-    more_nurses_district["Scale2027_2019"] = (
-        more_nurses_district["Staff2027"] /
-        more_nurses_district["Staff2019"]
-    )
+    cnp_summary["Staff_Type"] = "CNP"
 
-    more_nurses["Scenario"] = "More Nurses"
-    more_nurses_district["Scenario"] = "More Nurses by District"
+    # ============================================================
+    # COMBINE NURSE + CNP STAFF SUMMARIES
+    # ============================================================
 
     staff_summary = pd.concat(
         [
-            more_nurses,
-            more_nurses_district,
-        ]
+            nurse_summary,
+            cnp_summary,
+        ],
+        ignore_index=True,
     )
 
-    # district_order = staff_summary.index.unique().tolist()
+    # Arrange columns
+    staff_summary = staff_summary[
+        [
+            "District",
+            "Staff_Type",
+            "Staff2019",
+            "Staff2024",
+            "Staff2027",
+            "Scale2027_2024",
+            "Scale2027_2019",
+            "Scenario",
+        ]
+    ]
+
+    print("\n--- Staff scaling summary ---")
+    print(staff_summary.head(20))
+
+    print("\n--- Staff types ---")
+    print(staff_summary["Staff_Type"].unique())
+
+    print("\n--- Scenarios ---")
+    print(staff_summary["Scenario"].unique())
 
     staff_summary.to_excel(
         results_folder / "district_staff_scaling.xlsx",
-        index=True,
+        index=False,
     )
 
     # NATIONAL DALYs
@@ -1255,38 +1546,6 @@ if __name__ == "__main__":
         }
     )
 
-    # DALYs table for the two nurse expansion scenarios
-    dalys_summary = default_pct[
-        [
-            "More Nurses / Default Healthsystem Function",
-            "More Nurses by District / Default Healthsystem Function",
-        ]
-    ].copy()
-    # Renaming the columns
-    dalys_summary.columns = [
-        "More Nurses",
-        "More Nurses by District",
-    ]
-
-    dalys_summary = (
-        dalys_summary
-        .stack()
-        .reset_index()
-    )
-
-    dalys_summary.columns = [
-        "District",
-        "Scenario",
-        "Percent_DALYs_Averted",
-    ]
-    print("\n---DALYs Summary after formatting and renaming---")
-    print(dalys_summary.head())
-
-    staff_summary = staff_summary.merge(
-        dalys_summary,
-        on=["District", "Scenario"],
-        how="left",
-    )
 
     district_map_default = district_map.merge(
         default_pct,
@@ -1326,6 +1585,42 @@ if __name__ == "__main__":
             scenario: df["mean"]
             for scenario, df in percent_dalys_improved.items()
         }
+    )
+
+    # Create DALY summary for ALL scenarios
+    # Combine Default and Improved Healthsystem results
+    all_pct_dalys = pd.concat(
+        [
+            default_pct,
+            improved_pct,
+        ],
+        axis=1,
+    )
+
+    # Convert from wide format to long format
+    dalys_summary = (
+        all_pct_dalys
+        .stack()
+        .reset_index()
+    )
+
+    dalys_summary.columns = [
+        "District",
+        "Scenario",
+        "Percent_DALYs_Averted",
+    ]
+
+    print("\n--- ALL DALY SCENARIOS ---")
+    print(dalys_summary.head(20))
+
+    print("\n--- DALY scenarios ---")
+    print(dalys_summary["Scenario"].unique())
+
+    # Merge all DALY scenarios with staff scaling data
+    staff_summary = staff_summary.merge(
+        dalys_summary,
+        on=["District", "Scenario"],
+        how="left",
     )
 
     district_map_improved = district_map.merge(
@@ -1378,6 +1673,7 @@ if __name__ == "__main__":
         param_names
     )
 
+    # DEATHS: DEFAULT HEALTHSYSTEM
     # Keep only Default Healthsystem scenarios
     deaths_by_district_default = deaths_by_district.loc[
                                  :,
@@ -1400,21 +1696,41 @@ if __name__ == "__main__":
         }
     )
 
+    # DEATHS: IMPROVED HEALTHSYSTEM
+    deaths_by_district_improved = deaths_by_district.loc[
+                                  :,
+                                  deaths_by_district.columns.get_level_values(0).isin(
+                                      improved_hs_scenarios
+                                  )
+                                  ]
+
+    percent_deaths_improved = calculate_percent_deaths_averted_by_district(
+        deaths_by_district_improved,
+        baseline_scenario=baseline_improved_scenario,
+    )
+
+    improved_pct_deaths = pd.DataFrame(
+        {
+            scenario: df["mean"]
+            for scenario, df in percent_deaths_improved.items()
+        }
+    )
+
     # Table for Excel
-    deaths_summary = default_pct_deaths[
+    # CREATE DEATHS SUMMARY FOR ALL SCENARIOS
+
+    # Default + Improved Healthsystem scenarios
+    all_pct_deaths = pd.concat(
         [
-            "More Nurses / Default Healthsystem Function",
-            "More Nurses by District / Default Healthsystem Function",
-        ]
-    ].copy()
+            default_pct_deaths,
+            improved_pct_deaths,
+        ],
+        axis=1,
+    )
 
-    deaths_summary.columns = [
-        "More Nurses",
-        "More Nurses by District",
-    ]
-
+    # Convert from wide format to long format
     deaths_summary = (
-        deaths_summary
+        all_pct_deaths
         .stack()
         .reset_index()
     )
@@ -1425,19 +1741,79 @@ if __name__ == "__main__":
         "Percent_Deaths_Averted",
     ]
 
+    print("\n--- ALL DEATH SCENARIOS ---")
+    print(deaths_summary.head(20))
+
+    print("\n--- Death scenarios ---")
+    print(deaths_summary["Scenario"].unique())
+
+    # ============================================================
+    # MERGE DALYs + DEATHS WITH STAFF SCALING
+    # ============================================================
+
     staff_summary = staff_summary.merge(
         deaths_summary,
         on=["District", "Scenario"],
         how="left",
     )
 
-    print("\n---Table with DALYs and Deaths---")
-    print(staff_summary.head())
+    print("\n--- Table with DALYs and Deaths ---")
+    print(staff_summary.head(20))
 
+    print("\n--- Missing DALY outcomes ---")
+    print(
+        staff_summary[
+            staff_summary["Percent_DALYs_Averted"].isna()
+        ][
+            ["District", "Staff_Type", "Scenario"]
+        ].head(20)
+    )
+
+    print("\n--- Missing Death outcomes ---")
+    print(
+        staff_summary[
+            staff_summary["Percent_Deaths_Averted"].isna()
+        ][
+            ["District", "Staff_Type", "Scenario"]
+        ].head(20)
+    )
+
+    # Short scenario names for final Excel output
+    staff_summary["Scenario"] = staff_summary["Scenario"].replace({
+        "More Nurses / Default Healthsystem Function":
+            "More Nurses / Default",
+
+        "More Nurses by District / Default Healthsystem Function":
+            "More Nurses by District / Default",
+
+        "More Nurses / Improved Healthsystem Function":
+            "More Nurses / Improved",
+
+        "More Nurses by District / Improved Healthsystem Function":
+            "More Nurses by District / Improved",
+
+        "More CNP staff / Default Healthsystem Function":
+            "More CNP / Default",
+
+        "More CNP staff by District / Default Healthsystem Function":
+            "More CNP by District / Default",
+
+        "More CNP staff / Improved Healthsystem Function":
+            "More CNP / Improved",
+
+        "More CNP staff by District / Improved Healthsystem Function":
+            "More CNP by District / Improved",
+    })
+
+    # Save final Excel file
     staff_summary.to_excel(
         results_folder / "district_staff_scaling_health_outcomes.xlsx",
         index=False,
     )
+
+    print("\n---Table with DALYs and Deaths---")
+    print(staff_summary.head())
+
 
     district_map_default_deaths = district_map.merge(
         default_pct_deaths,
@@ -1457,28 +1833,6 @@ if __name__ == "__main__":
         ],
         "% Deaths averted (vs Baseline): Default Healthsystem",
         "% Deaths averted (vs Baseline)",
-    )
-
-    # Keep only Improved Healthsystem scenarios
-    deaths_by_district_improved = deaths_by_district.loc[
-                                  :,
-                                  deaths_by_district.columns.get_level_values(0).isin(
-                                      improved_hs_scenarios
-                                  )
-                                  ]
-
-    # Calculate % deaths averted using run-to-run comparisons
-    percent_deaths_improved = calculate_percent_deaths_averted_by_district(
-        deaths_by_district_improved,
-        baseline_scenario=baseline_improved_scenario,
-    )
-
-    # Convert dictionary of dataframes into one dataframe containing the means
-    improved_pct_deaths = pd.DataFrame(
-        {
-            scenario: df["mean"]
-            for scenario, df in percent_deaths_improved.items()
-        }
     )
 
     district_map_improved_deaths = district_map.merge(
@@ -1547,14 +1901,14 @@ if __name__ == "__main__":
         )
         scaleup_figures["Scale2027_2024"].savefig(
             results_folder /
-            "staff_scaleup_2027_vs_2024_by_district.pdf",
+            "staff_scaleup_2027_2024_by_district.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         scaleup_figures["Scale2027_2019"].savefig(
             results_folder /
-            "staff_scaleup_2027_vs_2019_by_district.pdf",
+            "staff_scaleup_2027_2019_by_district.pdf",
             dpi=300,
             bbox_inches="tight",
         )
