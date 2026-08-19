@@ -624,101 +624,101 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     item_is_medicine = pd.read_csv(path_to_cons_folder / "ResourceFile_Consumables_Item_Designations.csv")
     item_is_medicine = item_is_medicine[["Item_Code", "is_medicine"]].copy()
 
-    # ## patient volume
-    # def get_patient_volume_facility_id_per_run(run=0):
-    #     _patient_volume_facility_id = extract_results(
-    #         results_folder,
-    #         module="tlo.methods.healthsystem",
-    #         key="HSI_Event",
-    #         custom_generate_series=get_patient_count_facility_id,
-    #         do_scaling=True
-    #     ).loc[:, [(0, run)]]  # draw=0, run=0
-    #
-    #     _patient_volume_facility_id.columns = _patient_volume_facility_id.columns.droplevel('run')
-    #     _patient_volume_facility_id = _patient_volume_facility_id.reset_index().rename(
-    #         columns={0: "Patient_Volume", "date": "Date"})
-    #     _patient_volume_facility_id = merge_info_from_mfl(_patient_volume_facility_id)
-    #
-    #     return _patient_volume_facility_id
-    #
-    # # concat daily results of all runs
-    # patient_volume_facility_id = pd.concat(
-    #     [
-    #         get_patient_volume_facility_id_per_run(run=run).assign(run=run)
-    #         for run in range(5)
-    #     ],
-    #     ignore_index=True
+    ## patient volume
+    def get_patient_volume_facility_id_per_run(run=0):
+        _patient_volume_facility_id = extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem",
+            key="HSI_Event",
+            custom_generate_series=get_patient_count_facility_id,
+            do_scaling=True
+        ).loc[:, [(0, run)]]  # draw=0, run=0
+
+        _patient_volume_facility_id.columns = _patient_volume_facility_id.columns.droplevel('run')
+        _patient_volume_facility_id = _patient_volume_facility_id.reset_index().rename(
+            columns={0: "Patient_Volume", "date": "Date"})
+        _patient_volume_facility_id = merge_info_from_mfl(_patient_volume_facility_id)
+
+        return _patient_volume_facility_id
+
+    # concat daily results of all runs
+    patient_volume_facility_id = pd.concat(
+        [
+            get_patient_volume_facility_id_per_run(run=run).assign(run=run)
+            for run in range(5)
+        ],
+        ignore_index=True
+    )
+
+    patient_volume_facility_id.drop(columns=["run"], inplace=True)
+
+    ## hcw count
+    hcw_count_facility_id = extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem.summary",
+        key="number_of_hcw_staff",
+        custom_generate_series=get_hcw_count_facility_id,
+        do_scaling=False
+    ).loc[:, [(0, 0)]]  # draw=0, run=0
+
+    hcw_count_facility_id.columns = hcw_count_facility_id.columns.droplevel('run')
+    hcw_count_facility_id = hcw_count_facility_id.reset_index().rename(columns={0: 'Staff_Count'})
+    hcw_count_facility_id = merge_info_from_mfl(hcw_count_facility_id)
+
+    # fix levels in hcw_count: 1b has no staff now as merged to 2; ZMH at 4 to be merged to 3; drop HQ at 5
+    hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "5"].index,
+                               inplace=True)
+    assert (hcw_count_facility_id.loc[hcw_count_facility_id["Facility_Level"] == "1b", "Staff_Count"] == 0).all()
+    hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "1b"].index,
+                               inplace=True)
+    ## patient load
+    assert set(patient_volume_facility_id.Facility_ID.drop_duplicates()).issubset(
+        set(hcw_count_facility_id.Facility_ID.drop_duplicates())
+    )
+    daily_patient_load_per_hcw = patient_volume_facility_id[["Date", "Facility_ID", "Patient_Volume"]].merge(
+        hcw_count_facility_id[["Facility_ID", "District", "Facility_Level", "Region", "Staff_Count"]],
+        on=["Facility_ID"], how="right")
+    # fill NAN entries
+    daily_patient_load_per_hcw.loc[
+        daily_patient_load_per_hcw["Facility_Level"] == "4", ["Patient_Volume", "District", "Region", "Date"]
+    ] = [0, "Central Hospitals (Southern)", "Southern", patient_volume_facility_id.loc[0, "Date"]]  # ZMH
+    daily_patient_load_per_hcw.loc[
+        daily_patient_load_per_hcw["Facility_ID"] == 128, "District"
+    ] = "Central Hospitals (Southern)"
+    daily_patient_load_per_hcw.loc[
+        daily_patient_load_per_hcw["Facility_ID"] == 129, "District"
+    ] = "Central Hospitals (Northern)"
+    daily_patient_load_per_hcw.loc[
+        daily_patient_load_per_hcw["Facility_ID"] == 130, "District"
+    ] = "Central Hospitals (Central)"
+
+    # # check the TLO outputs sample size
+    # tab = pd.crosstab(
+    #     daily_patient_load_per_hcw["District"],
+    #     daily_patient_load_per_hcw["Facility_Level"],
+    #     dropna=False
     # )
     #
-    # patient_volume_facility_id.drop(columns=["run"], inplace=True)
-    #
-    # ## hcw count
-    # hcw_count_facility_id = extract_results(
-    #     results_folder,
-    #     module="tlo.methods.healthsystem.summary",
-    #     key="number_of_hcw_staff",
-    #     custom_generate_series=get_hcw_count_facility_id,
-    #     do_scaling=False
-    # ).loc[:, [(0, 0)]]  # draw=0, run=0
-    #
-    # hcw_count_facility_id.columns = hcw_count_facility_id.columns.droplevel('run')
-    # hcw_count_facility_id = hcw_count_facility_id.reset_index().rename(columns={0: 'Staff_Count'})
-    # hcw_count_facility_id = merge_info_from_mfl(hcw_count_facility_id)
-    #
-    # # fix levels in hcw_count: 1b has no staff now as merged to 2; ZMH at 4 to be merged to 3; drop HQ at 5
-    # hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "5"].index,
-    #                            inplace=True)
-    # assert (hcw_count_facility_id.loc[hcw_count_facility_id["Facility_Level"] == "1b", "Staff_Count"] == 0).all()
-    # hcw_count_facility_id.drop(index=hcw_count_facility_id[hcw_count_facility_id["Facility_Level"] == "1b"].index,
-    #                            inplace=True)
-    # ## patient load
-    # assert set(patient_volume_facility_id.Facility_ID.drop_duplicates()).issubset(
-    #     set(hcw_count_facility_id.Facility_ID.drop_duplicates())
-    # )
-    # daily_patient_load_per_hcw = patient_volume_facility_id[["Date", "Facility_ID", "Patient_Volume"]].merge(
-    #     hcw_count_facility_id[["Facility_ID", "District", "Facility_Level", "Region", "Staff_Count"]],
-    #     on=["Facility_ID"], how="right")
-    # # fill NAN entries
-    # daily_patient_load_per_hcw.loc[
-    #     daily_patient_load_per_hcw["Facility_Level"] == "4", ["Patient_Volume", "District", "Region", "Date"]
-    # ] = [0, "Central Hospitals (Southern)", "Southern", patient_volume_facility_id.loc[0, "Date"]]  # ZMH
-    # daily_patient_load_per_hcw.loc[
-    #     daily_patient_load_per_hcw["Facility_ID"] == 128, "District"
-    # ] = "Central Hospitals (Southern)"
-    # daily_patient_load_per_hcw.loc[
-    #     daily_patient_load_per_hcw["Facility_ID"] == 129, "District"
-    # ] = "Central Hospitals (Northern)"
-    # daily_patient_load_per_hcw.loc[
-    #     daily_patient_load_per_hcw["Facility_ID"] == 130, "District"
-    # ] = "Central Hospitals (Central)"
-    #
-    # # # check the TLO outputs sample size
-    # # tab = pd.crosstab(
-    # #     daily_patient_load_per_hcw["District"],
-    # #     daily_patient_load_per_hcw["Facility_Level"],
-    # #     dropna=False
-    # # )
-    # #
-    # # print(tab)
-    #
-    # def daily_pat_load_per_hcw_per_resolution(_df, resolution=["District", "Facility_Level"], adjust_hcw=True):
-    #     res_plus_date = resolution + ["Date"]
-    #     _df = daily_patient_load_per_hcw.groupby(res_plus_date).agg(
-    #         {"Staff_Count": "sum", "Patient_Volume": "sum"}
-    #     ).reset_index()
-    #     if adjust_hcw:
-    #         # Adjust available HCWs on duty every day by a ratio of 0.5649,
-    #         # which is the prob. that any HCW is on duty on any day (estimates from CHAI data: 206.3381/365.25),
-    #         # given TLO assumes the same HCWs in the HS every day in a year.
-    #         # (TLO also assumes the patients seek care independently of the availability of HCWs and seek care every day;
-    #         # so no need to adjust patient volumes)
-    #         _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / (_df["Staff_Count"] * 206.3381 / 365.25)
-    #     else:
-    #         _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / _df["Staff_Count"]
-    #
-    #     return _df
-    #
-    # daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
+    # print(tab)
+
+    def daily_pat_load_per_hcw_per_resolution(_df, resolution=["District", "Facility_Level"], adjust_hcw=True):
+        res_plus_date = resolution + ["Date"]
+        _df = daily_patient_load_per_hcw.groupby(res_plus_date).agg(
+            {"Staff_Count": "sum", "Patient_Volume": "sum"}
+        ).reset_index()
+        if adjust_hcw:
+            # Adjust available HCWs on duty every day by a ratio of 0.5649,
+            # which is the prob. that any HCW is on duty on any day (estimates from CHAI data: 206.3381/365.25),
+            # given TLO assumes the same HCWs in the HS every day in a year.
+            # (TLO also assumes the patients seek care independently of the availability of HCWs and seek care every day;
+            # so no need to adjust patient volumes)
+            _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / (_df["Staff_Count"] * 206.3381 / 365.25)
+        else:
+            _df['Daily_Patient_Load_Per_HCW'] = _df["Patient_Volume"] / _df["Staff_Count"]
+
+        return _df
+
+    daily_patient_load_per_hcw = daily_pat_load_per_hcw_per_resolution(daily_patient_load_per_hcw)
 
     # read in TLM estimates
     hcw_tms_pat_load = pd.read_stata(path_to_tlm_folder / "tool_3_pat_load.dta", convert_categoricals=True)
@@ -734,396 +734,396 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # combine levels 3 and 4 as 3
     pat_exit["fac_level"] = pat_exit["fac_level"].replace({"4": "3"})
 
-    # assert set(hcw_tms_pat_load['district'].unique()).issubset(
-    #     set(daily_patient_load_per_hcw['District'].unique())
-    # )
-    # assert set(hcw_tms_pat_load['fac_level'].unique()).issubset(
-    #     set(daily_patient_load_per_hcw['Facility_Level'].unique())
-    # )
-    # assert set(pat_exit['district'].unique()).issubset(
-    #     set(daily_patient_load_per_hcw['District'].unique())
-    # )
-    # assert set(pat_exit['fac_level'].unique()).issubset(
-    #     set(daily_patient_load_per_hcw['Facility_Level'].unique())
-    # )
+    assert set(hcw_tms_pat_load['district'].unique()).issubset(
+        set(daily_patient_load_per_hcw['District'].unique())
+    )
+    assert set(hcw_tms_pat_load['fac_level'].unique()).issubset(
+        set(daily_patient_load_per_hcw['Facility_Level'].unique())
+    )
+    assert set(pat_exit['district'].unique()).issubset(
+        set(daily_patient_load_per_hcw['District'].unique())
+    )
+    assert set(pat_exit['fac_level'].unique()).issubset(
+        set(daily_patient_load_per_hcw['Facility_Level'].unique())
+    )
 
     common_districts = hcw_tms_pat_load["district"].drop_duplicates().tolist()
 
-    # # *** patient mix comparisons ***
-    # # from patient exit
-    # def pat_prop_per_subgroup_total_period_tool_2(_df, subgroup="fac_level"):
-    #     _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
-    #     _df["loc_cat"] = _df["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
-    #
-    #     _df = _df[["respondent_id", subgroup]].groupby(subgroup).count().reset_index().rename(
-    #         columns={"respondent_id": "pat_volume", subgroup: "subgroup"})
-    #     _df["category"] = subgroup
-    #     _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
-    #     return _df
-    #
-    # subgroups = ["fac_level", "age_group_tlo", "wealth_tlo", "sex", "education_tlo", "loc_cat"]
-    # pat_mix = pd.concat(
-    #     [pat_prop_per_subgroup_total_period_tool_2(pat_exit, subgroup=s) for s in subgroups],
-    #     ignore_index=True
-    # )
-    # pat_mix["source"] = "Patient Exit"
-    #
-    # # from facility summary
-    # def pat_prop_per_subgroup_total_period_tool_6(_df, subgroup="fac_level"):
-    #     _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
-    #     _df["loc_cat"] = _df["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
-    #
-    #     _df = _df[["num_of_patients", subgroup]].groupby(subgroup).sum().reset_index().rename(
-    #         columns={"num_of_patients": "pat_volume", subgroup: "subgroup"})
-    #     _df["category"] = subgroup
-    #     _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
-    #     return _df
-    #
-    # subgroups_fac_tms = ["fac_level", "loc_cat"]
-    # pat_mix_fac_tms = pd.concat(
-    #     [pat_prop_per_subgroup_total_period_tool_6(fac_tms_pat_load, subgroup=s) for s in subgroups_fac_tms],
-    #     ignore_index=True
-    # )
-    # pat_mix_fac_tms["source"] = "Facility Summary"
-    #
-    # pat_mix = pd.concat([pat_mix, pat_mix_fac_tms], ignore_index=True)
-    #
-    # # format to be consistent to TLO output
-    # pat_mix["category"] = pat_mix["category"].replace({"fac_level": "Facility_Level",
-    #                                                    "age_group_tlo": "Age_Range",
-    #                                                    "wealth_tlo": "Wealth_Quintile",
-    #                                                    "sex": "Sex",
-    #                                                    "education_tlo": "Education",
-    #                                                    "loc_cat": "Service_Area"})
-    # pat_mix = pat_mix[["category", "subgroup", "pat_proportion", "source"]].rename(
-    #     columns={"pat_proportion": "mean"}
-    # ).copy()
-    # pat_mix["lower"] = pat_mix["mean"].copy()
-    # pat_mix["upper"] = pat_mix["mean"].copy()
-    #
-    # patient_mix_tlo = extract_results(
-    #     results_folder,
-    #     module="tlo.methods.healthsystem",
-    #     key="HSI_Event",
-    #     custom_generate_series=lambda df: get_patient_mix_total_period(
-    #         df,
-    #         rescale_by_fac_level=True,
-    #     ),
-    #     do_scaling=False
-    # ).fillna(0)
-    # patient_mix_tlo = summarize(patient_mix_tlo)
-    # patient_mix_tlo.columns = patient_mix_tlo.columns.droplevel('draw')
-    # patient_mix_tlo["source"] = "TLO"
-    # patient_mix_tlo.reset_index(inplace=True)
-    #
-    # patient_mix_tlo["category"] = patient_mix_tlo["category"].replace({"loc_cat": "Service_Area"})
-    # patient_mix_tlo["subgroup"] = patient_mix_tlo["subgroup"].replace({"F": "Female", "M": "Male"})
-    #
-    # assert set(pat_mix.columns) == set(patient_mix_tlo.columns)
-    # pat_mix = pd.concat([pat_mix, patient_mix_tlo], ignore_index=True)
-    #
-    # # prepare data and plot
-    # source_categories = (
-    #     pat_mix[["source", "category"]]
-    #     .drop_duplicates()
-    # )
-    #
-    # # all possible subgroups within each category
-    # category_subgroups = (
-    #     pat_mix[["category", "subgroup"]]
-    #     .drop_duplicates()
-    # )
-    # new_age_group = pd.DataFrame({
-    #     "category": ["Age_Range"],
-    #     "subgroup": ["100+"]
-    # })
-    # category_subgroups = (
-    #     pd.concat(
-    #         [category_subgroups, new_age_group],
-    #         ignore_index=True
-    #     )
-    #     .drop_duplicates()
-    # )
-    #
-    # # for each existing source-category pair, add every subgroup belonging to that category
-    # complete_grid = source_categories.merge(
-    #     category_subgroups,
-    #     on="category",
-    #     how="left"
-    # )
-    #
-    # # merge back the existing values
-    # pat_mix_complete = (
-    #     complete_grid
-    #     .merge(
-    #         pat_mix,
-    #         on=["source", "category", "subgroup"],
-    #         how="left",
-    #         validate="one_to_one"
-    #     )
-    # )
-    #
-    # # fill newly created rows with zero and transform to percentage
-    # pat_mix_complete[["mean", "lower", "upper"]] = (
-    #     pat_mix_complete[["mean", "lower", "upper"]]
-    #     .fillna(0)
-    # ) * 100
-    #
-    # # sort age group for each source
-    # import re
-    #
-    # def age_group_start(value):
-    #     match = re.search(r"\d+", str(value))
-    #     return int(match.group()) if match else np.inf
-    #
-    # pat_mix_complete["subgroup_order"] = np.where(
-    #     pat_mix_complete["category"].eq("Age_Range"),
-    #     pat_mix_complete["subgroup"].map(age_group_start),
-    #     -1
-    # )
-    #
-    # pat_mix_complete = (
-    #     pat_mix_complete
-    #     .sort_values(
-    #         ["source", "category", "subgroup_order", "subgroup"]
-    #     )
-    #     .drop(columns="subgroup_order")
-    #     .reset_index(drop=True)
-    # )
-    #
-    # # make wealth and education subgroups as int
-    # # change to string if needed
-    # mask = pat_mix_complete["category"].eq("Wealth_Quintile")
-    # pat_mix_complete.loc[mask, "subgroup"] = (
-    #     pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
-    #     .replace({1: "1 (richest)", 2: "2", 3: "3", 4: "4", 5: "5 (poorest)"})
-    # )
-    #
-    # mask = pat_mix_complete["category"].eq("Education")
-    # pat_mix_complete.loc[mask, "subgroup"] = (
-    #     pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
-    #     .replace({1: "None", 2: "Some/Completed primary education", 3: "Some/Completed secondary education"})
-    # )
-    #
-    # # make level 3 as level 3+ as it combines levels 3 and 4
-    # mask = pat_mix_complete["category"].eq("Facility_Level")
-    # pat_mix_complete.loc[mask, "subgroup"] = (
-    #     pat_mix_complete.loc[mask, "subgroup"]
-    #     .replace({"1a": "Health centers", "2": "Community/District hospitals", "3": "Central/National hospitals"})
-    # )
-    #
-    # # plot
-    # markers = {
-    #     "TLO": "d",
-    #     "Patient Exit": "o",
-    #     "Facility Summary": "^",
-    # }
-    #
-    # source_colors = {
-    #     "TLO": "green",
-    #     "Patient Exit": "blue",
-    #     "Facility Summary": "orange"
-    # }
-    #
-    # def plot_pat_mix(
-    #     df,
-    #     markers,
-    #     source_colors,
-    #     ylabel="Patient proportion",
-    #     min_width=4.5,
-    #     figure_height=5.5,
-    #     capsize=3,
-    # ):
-    #
-    #     plot_df = df.copy()
-    #
-    #     # Ensure estimate columns are numeric
-    #     plot_df[["mean", "lower", "upper"]] = (
-    #         plot_df[["mean", "lower", "upper"]]
-    #         .apply(pd.to_numeric, errors="coerce")
-    #     )
-    #
-    #     # Plot sources in the order specified by markers
-    #     source_order = [
-    #         source
-    #         for source in markers
-    #         if source in plot_df["source"].unique()
-    #     ]
-    #
-    #     # Horizontal offsets prevent sources from overlapping
-    #     offsets = np.linspace(
-    #         -0.25,
-    #         0.25,
-    #         len(source_order)
-    #     )
-    #
-    #     # sort=False preserves category order from pat_mix_complete
-    #     for category, category_df in plot_df.groupby(
-    #         "category",
-    #         sort=False
-    #     ):
-    #         category_df = category_df.copy()
-    #
-    #         # Preserve the subgroup order already defined in pat_mix_complete
-    #         subgroup_order = (
-    #             category_df["subgroup"]
-    #             .drop_duplicates()
-    #             .tolist()
-    #         )
-    #
-    #         n_subgroups = len(subgroup_order)
-    #
-    #         # Adjust width and label rotation by category
-    #         if category == "Service_Area":
-    #             width_per_subgroup = 1.1
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         elif category == "Age_Range":
-    #             width_per_subgroup = 0.65
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         elif category == "Facility_Level":
-    #             width_per_subgroup = 0.9
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         elif category == "Wealth_Quintile":
-    #             width_per_subgroup = 0.8
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         elif category == "Sex":
-    #             width_per_subgroup = 1.2
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         elif category == "Education":
-    #             width_per_subgroup = 0.9
-    #             rotation = 45
-    #             horizontal_alignment = "right"
-    #
-    #         else:
-    #             width_per_subgroup = 0.8
-    #             rotation = 0
-    #             horizontal_alignment = "center"
-    #
-    #         fig_width = max(
-    #             min_width,
-    #             n_subgroups * width_per_subgroup
-    #         )
-    #
-    #         x_base = np.arange(n_subgroups)
-    #
-    #         subgroup_positions = {
-    #             subgroup: position
-    #             for position, subgroup in enumerate(subgroup_order)
-    #         }
-    #
-    #         fig, ax = plt.subplots(
-    #             figsize=(fig_width, figure_height)
-    #         )
-    #
-    #         for source, offset in zip(source_order, offsets):
-    #
-    #             source_df = category_df.loc[
-    #                 category_df["source"].eq(source)
-    #             ].copy()
-    #
-    #             if source_df.empty:
-    #                 continue
-    #
-    #             source_df["x_position"] = (
-    #                 source_df["subgroup"]
-    #                 .map(subgroup_positions)
-    #             )
-    #
-    #             source_df = source_df.sort_values("x_position")
-    #
-    #             x = (
-    #                 source_df["x_position"].to_numpy(dtype=float)
-    #                 + offset
-    #             )
-    #
-    #             mean = source_df["mean"].to_numpy(dtype=float)
-    #             lower = source_df["lower"].to_numpy(dtype=float)
-    #             upper = source_df["upper"].to_numpy(dtype=float)
-    #
-    #             # Convert interval limits into distances from the mean
-    #             lower_error = np.maximum(mean - lower, 0)
-    #             upper_error = np.maximum(upper - mean, 0)
-    #
-    #             yerr = np.vstack([
-    #                 lower_error,
-    #                 upper_error
-    #             ])
-    #
-    #             ax.errorbar(
-    #                 x=x,
-    #                 y=mean,
-    #                 yerr=yerr,
-    #                 fmt=markers[source],
-    #                 color=source_colors[source],
-    #                 markerfacecolor=source_colors[source],
-    #                 markeredgecolor=source_colors[source],
-    #                 markersize=7,
-    #                 linestyle="none",
-    #                 elinewidth=1.4,
-    #                 capsize=capsize,
-    #                 capthick=1.4,
-    #                 label=source
-    #             )
-    #
-    #         ax.set_xticks(x_base)
-    #
-    #         ax.set_xticklabels(
-    #             [str(value) for value in subgroup_order],
-    #             rotation=rotation,
-    #             ha=horizontal_alignment
-    #         )
-    #
-    #         ax.set_xlabel("Subgroup")
-    #         ax.set_ylabel(ylabel)
-    #         plot_title = f'Patient Mix by {str(category).replace("_", " ")}'
-    #         ax.set_title(
-    #             plot_title
-    #         )
-    #
-    #         ax.set_ylim(0, 105)
-    #         ax.yaxis.set_major_locator(MultipleLocator(5))
-    #
-    #         ax.legend(
-    #             title="Source",
-    #             frameon=False
-    #         )
-    #
-    #         ax.grid(
-    #             axis="y",
-    #             linestyle="--",
-    #             alpha=0.7
-    #         )
-    #
-    #         ax.spines["top"].set_visible(False)
-    #         ax.spines["right"].set_visible(False)
-    #
-    #         # Small horizontal margin at both ends
-    #         ax.set_xlim(
-    #             -0.6,
-    #             n_subgroups - 0.4
-    #         )
-    #
-    #         fig.tight_layout()
-    #
-    #         plt.show()
-    #         plt.close(fig)
-    #
-    # plot_pat_mix(
-    #     df=pat_mix_complete,
-    #     markers=markers,
-    #     source_colors=source_colors,
-    #     ylabel="Patient proportion in percentage",
-    # )
+    # *** patient mix comparisons ***
+    # from patient exit
+    def pat_prop_per_subgroup_total_period_tool_2(_df, subgroup="fac_level"):
+        _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
+        _df["loc_cat"] = _df["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
+
+        _df = _df[["respondent_id", subgroup]].groupby(subgroup).count().reset_index().rename(
+            columns={"respondent_id": "pat_volume", subgroup: "subgroup"})
+        _df["category"] = subgroup
+        _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
+        return _df
+
+    subgroups = ["fac_level", "age_group_tlo", "wealth_tlo", "sex", "education_tlo", "loc_cat"]
+    pat_mix = pd.concat(
+        [pat_prop_per_subgroup_total_period_tool_2(pat_exit, subgroup=s) for s in subgroups],
+        ignore_index=True
+    )
+    pat_mix["source"] = "Patient Exit"
+
+    # from facility summary
+    def pat_prop_per_subgroup_total_period_tool_6(_df, subgroup="fac_level"):
+        _df["fac_level"] = _df["fac_level"].replace({"4": "3"})
+        _df["loc_cat"] = _df["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
+
+        _df = _df[["num_of_patients", subgroup]].groupby(subgroup).sum().reset_index().rename(
+            columns={"num_of_patients": "pat_volume", subgroup: "subgroup"})
+        _df["category"] = subgroup
+        _df["pat_proportion"] = _df["pat_volume"] / _df["pat_volume"].sum()
+        return _df
+
+    subgroups_fac_tms = ["fac_level", "loc_cat"]
+    pat_mix_fac_tms = pd.concat(
+        [pat_prop_per_subgroup_total_period_tool_6(fac_tms_pat_load, subgroup=s) for s in subgroups_fac_tms],
+        ignore_index=True
+    )
+    pat_mix_fac_tms["source"] = "Facility Summary"
+
+    pat_mix = pd.concat([pat_mix, pat_mix_fac_tms], ignore_index=True)
+
+    # format to be consistent to TLO output
+    pat_mix["category"] = pat_mix["category"].replace({"fac_level": "Facility_Level",
+                                                       "age_group_tlo": "Age_Range",
+                                                       "wealth_tlo": "Wealth_Quintile",
+                                                       "sex": "Sex",
+                                                       "education_tlo": "Education",
+                                                       "loc_cat": "Service_Area"})
+    pat_mix = pat_mix[["category", "subgroup", "pat_proportion", "source"]].rename(
+        columns={"pat_proportion": "mean"}
+    ).copy()
+    pat_mix["lower"] = pat_mix["mean"].copy()
+    pat_mix["upper"] = pat_mix["mean"].copy()
+
+    patient_mix_tlo = extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=lambda df: get_patient_mix_total_period(
+            df,
+            rescale_by_fac_level=True,
+        ),
+        do_scaling=False
+    ).fillna(0)
+    patient_mix_tlo = summarize(patient_mix_tlo)
+    patient_mix_tlo.columns = patient_mix_tlo.columns.droplevel('draw')
+    patient_mix_tlo["source"] = "TLO"
+    patient_mix_tlo.reset_index(inplace=True)
+
+    patient_mix_tlo["category"] = patient_mix_tlo["category"].replace({"loc_cat": "Service_Area"})
+    patient_mix_tlo["subgroup"] = patient_mix_tlo["subgroup"].replace({"F": "Female", "M": "Male"})
+
+    assert set(pat_mix.columns) == set(patient_mix_tlo.columns)
+    pat_mix = pd.concat([pat_mix, patient_mix_tlo], ignore_index=True)
+
+    # prepare data and plot
+    source_categories = (
+        pat_mix[["source", "category"]]
+        .drop_duplicates()
+    )
+
+    # all possible subgroups within each category
+    category_subgroups = (
+        pat_mix[["category", "subgroup"]]
+        .drop_duplicates()
+    )
+    new_age_group = pd.DataFrame({
+        "category": ["Age_Range"],
+        "subgroup": ["100+"]
+    })
+    category_subgroups = (
+        pd.concat(
+            [category_subgroups, new_age_group],
+            ignore_index=True
+        )
+        .drop_duplicates()
+    )
+
+    # for each existing source-category pair, add every subgroup belonging to that category
+    complete_grid = source_categories.merge(
+        category_subgroups,
+        on="category",
+        how="left"
+    )
+
+    # merge back the existing values
+    pat_mix_complete = (
+        complete_grid
+        .merge(
+            pat_mix,
+            on=["source", "category", "subgroup"],
+            how="left",
+            validate="one_to_one"
+        )
+    )
+
+    # fill newly created rows with zero and transform to percentage
+    pat_mix_complete[["mean", "lower", "upper"]] = (
+        pat_mix_complete[["mean", "lower", "upper"]]
+        .fillna(0)
+    ) * 100
+
+    # sort age group for each source
+    import re
+
+    def age_group_start(value):
+        match = re.search(r"\d+", str(value))
+        return int(match.group()) if match else np.inf
+
+    pat_mix_complete["subgroup_order"] = np.where(
+        pat_mix_complete["category"].eq("Age_Range"),
+        pat_mix_complete["subgroup"].map(age_group_start),
+        -1
+    )
+
+    pat_mix_complete = (
+        pat_mix_complete
+        .sort_values(
+            ["source", "category", "subgroup_order", "subgroup"]
+        )
+        .drop(columns="subgroup_order")
+        .reset_index(drop=True)
+    )
+
+    # make wealth and education subgroups as int
+    # change to string if needed
+    mask = pat_mix_complete["category"].eq("Wealth_Quintile")
+    pat_mix_complete.loc[mask, "subgroup"] = (
+        pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
+        .replace({1: "1 (richest)", 2: "2", 3: "3", 4: "4", 5: "5 (poorest)"})
+    )
+
+    mask = pat_mix_complete["category"].eq("Education")
+    pat_mix_complete.loc[mask, "subgroup"] = (
+        pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
+        .replace({1: "None", 2: "Some/Completed primary education", 3: "Some/Completed secondary education"})
+    )
+
+    # make level 3 as level 3+ as it combines levels 3 and 4
+    mask = pat_mix_complete["category"].eq("Facility_Level")
+    pat_mix_complete.loc[mask, "subgroup"] = (
+        pat_mix_complete.loc[mask, "subgroup"]
+        .replace({"1a": "Health centers", "2": "Community/District hospitals", "3": "Central/National hospitals"})
+    )
+
+    # plot
+    markers = {
+        "TLO": "d",
+        "Patient Exit": "o",
+        "Facility Summary": "^",
+    }
+
+    source_colors = {
+        "TLO": "green",
+        "Patient Exit": "blue",
+        "Facility Summary": "orange"
+    }
+
+    def plot_pat_mix(
+        df,
+        markers,
+        source_colors,
+        ylabel="Patient proportion",
+        min_width=4.5,
+        figure_height=5.5,
+        capsize=3,
+    ):
+
+        plot_df = df.copy()
+
+        # Ensure estimate columns are numeric
+        plot_df[["mean", "lower", "upper"]] = (
+            plot_df[["mean", "lower", "upper"]]
+            .apply(pd.to_numeric, errors="coerce")
+        )
+
+        # Plot sources in the order specified by markers
+        source_order = [
+            source
+            for source in markers
+            if source in plot_df["source"].unique()
+        ]
+
+        # Horizontal offsets prevent sources from overlapping
+        offsets = np.linspace(
+            -0.25,
+            0.25,
+            len(source_order)
+        )
+
+        # sort=False preserves category order from pat_mix_complete
+        for category, category_df in plot_df.groupby(
+            "category",
+            sort=False
+        ):
+            category_df = category_df.copy()
+
+            # Preserve the subgroup order already defined in pat_mix_complete
+            subgroup_order = (
+                category_df["subgroup"]
+                .drop_duplicates()
+                .tolist()
+            )
+
+            n_subgroups = len(subgroup_order)
+
+            # Adjust width and label rotation by category
+            if category == "Service_Area":
+                width_per_subgroup = 1.1
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Age_Range":
+                width_per_subgroup = 0.65
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Facility_Level":
+                width_per_subgroup = 0.9
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Wealth_Quintile":
+                width_per_subgroup = 0.8
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Sex":
+                width_per_subgroup = 1.2
+                rotation = 45
+                horizontal_alignment = "right"
+
+            elif category == "Education":
+                width_per_subgroup = 0.9
+                rotation = 45
+                horizontal_alignment = "right"
+
+            else:
+                width_per_subgroup = 0.8
+                rotation = 0
+                horizontal_alignment = "center"
+
+            fig_width = max(
+                min_width,
+                n_subgroups * width_per_subgroup
+            )
+
+            x_base = np.arange(n_subgroups)
+
+            subgroup_positions = {
+                subgroup: position
+                for position, subgroup in enumerate(subgroup_order)
+            }
+
+            fig, ax = plt.subplots(
+                figsize=(fig_width, figure_height)
+            )
+
+            for source, offset in zip(source_order, offsets):
+
+                source_df = category_df.loc[
+                    category_df["source"].eq(source)
+                ].copy()
+
+                if source_df.empty:
+                    continue
+
+                source_df["x_position"] = (
+                    source_df["subgroup"]
+                    .map(subgroup_positions)
+                )
+
+                source_df = source_df.sort_values("x_position")
+
+                x = (
+                    source_df["x_position"].to_numpy(dtype=float)
+                    + offset
+                )
+
+                mean = source_df["mean"].to_numpy(dtype=float)
+                lower = source_df["lower"].to_numpy(dtype=float)
+                upper = source_df["upper"].to_numpy(dtype=float)
+
+                # Convert interval limits into distances from the mean
+                lower_error = np.maximum(mean - lower, 0)
+                upper_error = np.maximum(upper - mean, 0)
+
+                yerr = np.vstack([
+                    lower_error,
+                    upper_error
+                ])
+
+                ax.errorbar(
+                    x=x,
+                    y=mean,
+                    yerr=yerr,
+                    fmt=markers[source],
+                    color=source_colors[source],
+                    markerfacecolor=source_colors[source],
+                    markeredgecolor=source_colors[source],
+                    markersize=7,
+                    linestyle="none",
+                    elinewidth=1.4,
+                    capsize=capsize,
+                    capthick=1.4,
+                    label=source
+                )
+
+            ax.set_xticks(x_base)
+
+            ax.set_xticklabels(
+                [str(value) for value in subgroup_order],
+                rotation=rotation,
+                ha=horizontal_alignment
+            )
+
+            ax.set_xlabel("Subgroup")
+            ax.set_ylabel(ylabel)
+            plot_title = f'Patient Mix by {str(category).replace("_", " ")}'
+            ax.set_title(
+                plot_title
+            )
+
+            ax.set_ylim(0, 105)
+            ax.yaxis.set_major_locator(MultipleLocator(5))
+
+            ax.legend(
+                title="Source",
+                frameon=False
+            )
+
+            ax.grid(
+                axis="y",
+                linestyle="--",
+                alpha=0.7
+            )
+
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+            # Small horizontal margin at both ends
+            ax.set_xlim(
+                -0.6,
+                n_subgroups - 0.4
+            )
+
+            fig.tight_layout()
+
+            plt.show()
+            plt.close(fig)
+
+    plot_pat_mix(
+        df=pat_mix_complete,
+        markers=markers,
+        source_colors=source_colors,
+        ylabel="Patient proportion in percentage",
+    )
 
     # todo: notes
     # 1. Do not compare by patient mix by district, as TLM data collection method has not used District as a stratum,
@@ -1467,735 +1467,735 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # 2. Submit full run with pop_size = 100_000 or more? runs_per_draw = 5 or 10?
     # 3. Double confirm if the TLO calculation of medicines accessibility method as  well as patient mix method is sound
 
-    # # *** patient load per hcw per day comparison ***
-    # # merge all three patient load estimates at the same resolution in one dataframe,
-    # # noting the source and keeping all observations
-    # hcw_tms_pat_load = hcw_tms_pat_load.rename(columns={
-    #     "fac_level": "Facility_Level",
-    #     "district": "District",
-    #     "pat_day_tms_nr_adj": "Daily_Patient_Load_Per_HCW",
-    # })
-    # fac_tms_pat_load = fac_tms_pat_load.rename(columns={
-    #     "fac_level": "Facility_Level",
-    #     "district": "District",
-    #     "pat_load_per_hcw": "Daily_Patient_Load_Per_HCW",
-    # })
-    #
-    # hcw_tms_pat_load["Source"] = "HCW TMS"
-    # fac_tms_pat_load["Source"] = "Facility Summary"
-    # daily_patient_load_per_hcw["Source"] = "TLO"
-    #
-    # pat_load_comparison = pd.concat([
-    #     hcw_tms_pat_load[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source",]],
-    #     fac_tms_pat_load[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source"]],
-    #     daily_patient_load_per_hcw[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source"]],
-    # ], ignore_index=True)
-    #
-    # assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
-    #
-    # # *** make comparison plots ***
-    #
-    # # shared settings and helper function
-    #
-    # facility_levels = ["1a", "2", "3", "4"]
-    # sources = ["TLO", "HCW TMS", "Facility Summary"]
-    #
-    # markers = {
-    #     "HCW TMS": "o",
-    #     "Facility Summary": "^",
-    #     "TLO": "d"
-    # }
-    #
-    # source_colors = {
-    #     "TLO": "green",
-    #     "HCW TMS": "blue",
-    #     "Facility Summary": "orange"
-    # }
-    #
-    # PLOT_STYLE = {
-    #     "font.size": 16,
-    #     "axes.labelsize": 16,
-    #     "xtick.labelsize": 15,
-    #     "ytick.labelsize": 15,
-    #     "legend.fontsize": 16
-    # }
-    #
-    # plt.rcParams.update(PLOT_STYLE)
-    #
-    # patient_load_col = "Daily_Patient_Load_Per_HCW"
-    #
-    # def annotate_small_n_horizontal(
-    #     ax,
-    #     y_positions,
-    #     upper_bounds,
-    #     counts,
-    #     threshold=10,
-    #     symbol="*"
-    # ):
-    #     mask = counts < threshold
-    #
-    #     for yy, xx in zip(
-    #         np.asarray(y_positions)[mask],
-    #         np.asarray(upper_bounds)[mask]
-    #     ):
-    #         ax.text(
-    #             xx,
-    #             yy,
-    #             symbol,
-    #             ha="left",
-    #             va="center",
-    #             fontsize=15,
-    #             color="red"
-    #         )
-    #
-    # def annotate_small_n_vertical(
-    #     ax,
-    #     x_positions,
-    #     upper_bounds,
-    #     counts,
-    #     threshold=10,
-    #     symbol="*"
-    # ):
-    #     mask = counts < threshold
-    #
-    #     for xx, yy in zip(
-    #         np.asarray(x_positions)[mask],
-    #         np.asarray(upper_bounds)[mask]
-    #     ):
-    #         ax.text(
-    #             xx,
-    #             yy,
-    #             symbol,
-    #             ha="center",
-    #             va="bottom",
-    #             fontsize=14,
-    #             color="red"
-    #         )
-    #
-    # # prepare data: keep facility levels and districts appearing in HCW TMS
-    #
-    # # drop level 0/community service by DCSA, level 5/HQ
-    # pat_load_comparison = pat_load_comparison.loc[~pat_load_comparison["Facility_Level"].isin(["0", "5"])]
-    #
-    # # keep common district
-    # common_districts = (
-    #     pat_load_comparison
-    #     .loc[pat_load_comparison["Source"] == "HCW TMS", "District"]
-    #     .unique()
-    # )
-    #
-    # df_plot = pat_load_comparison[
-    #     pat_load_comparison["District"].isin(common_districts)
-    # ].copy()
-    #
-    # # ** median + IQR plots **
-    #
-    # def summarise_median_iqr(data, group_cols):
-    #     return (
-    #         data
-    #         .groupby(group_cols)[patient_load_col]
-    #         .agg(
-    #             median="median",
-    #             q25=lambda x: x.quantile(0.25),
-    #             q75=lambda x: x.quantile(0.75),
-    #             n="count"
-    #         )
-    #         .reset_index()
-    #     )
-    #
-    # # Plot 1: by facility level and district
-    # # y-axis = district, x-axis = patient load
-    #
-    # summary = summarise_median_iqr(
-    #     df_plot,
-    #     ["District", "Facility_Level", "Source"]
-    # )
-    #
-    # offset = 0.2
-    #
-    # facility_levels_plot_1 = ["1a", "2"]
-    #
-    # fig, axes = plt.subplots(
-    #     1,
-    #     len(facility_levels_plot_1),
-    #     figsize=(20, 12),
-    #     sharex="all"
-    # )
-    #
-    # for ax, fac_level in zip(axes, facility_levels_plot_1):
-    #
-    #     temp = summary[
-    #         summary["Facility_Level"] == fac_level
-    #         ].copy()
-    #
-    #     districts = sorted(temp["District"].unique())
-    #     y = np.arange(len(districts))
-    #
-    #     for i, src in enumerate(sources):
-    #         dat = (
-    #             temp[temp["Source"] == src]
-    #             .set_index("District")
-    #             .reindex(districts)
-    #         )
-    #
-    #         xerr = np.vstack([
-    #             dat["median"] - dat["q25"],
-    #             dat["q75"] - dat["median"]
-    #         ])
-    #
-    #         ax.errorbar(
-    #             x=dat["median"],
-    #             y=y + (i - 1) * offset,
-    #             xerr=xerr,
-    #             fmt=markers[src],
-    #             color=source_colors[src],
-    #             markersize=8,
-    #             elinewidth=1.5,
-    #             capsize=2,
-    #             capthick=1.5,
-    #             linestyle="none",
-    #             label=src
-    #         )
-    #
-    #         annotate_small_n_horizontal(
-    #             ax=ax,
-    #             y_positions=y + (i - 1) * offset,
-    #             upper_bounds=dat["q75"],
-    #             counts=dat["n"]
-    #         )
-    #
-    #     ax.set_title(f"Facility Level {fac_level}")
-    #
-    #     ax.set_yticks(y)
-    #     ax.set_yticklabels(districts)
-    #     ax.invert_yaxis()
-    #
-    #     ax.xaxis.set_major_locator(MultipleLocator(20))
-    #     ax.xaxis.set_minor_locator(MultipleLocator(10))
-    #
-    #     ax.grid(axis="x", which="major", alpha=0.5)
-    #     ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
-    #
-    #     ax.tick_params(axis="both")
-    #     ax.tick_params(axis="x", labelrotation=0)
-    #
-    # # axes[0].set_ylabel("District")
-    # fig.supxlabel(
-    #     "Median Daily Patient Load per HCW",
-    #     y=0.04
-    # )
-    #
-    # handles, labels = axes[0].get_legend_handles_labels()
-    #
-    # fig.legend(
-    #     handles,
-    #     labels,
-    #     loc="upper center",
-    #     ncol=3,
-    #     frameon=False
-    # )
-    #
-    # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-    # plt.show()
-    #
-    # # Plot 2: overall facility levels
-    # # y-axis = district, x-axis = patient load
-    #
-    # summary = summarise_median_iqr(
-    #     df_plot,
-    #     ["District", "Source"]
-    # )
-    #
-    # fig, ax = plt.subplots(figsize=(10, 12))
-    #
-    # districts_ordered = (
-    #     summary
-    #     .loc[summary["Source"] == "HCW TMS"]
-    #     .sort_values("median", ascending=False)["District"]
-    #     .tolist()
-    # )
-    # y = np.arange(len(districts_ordered))
-    #
-    # offset = 0.2
-    #
-    # for i, src in enumerate(sources):
-    #     dat = (
-    #         summary[summary["Source"] == src]
-    #         .set_index("District")
-    #         .reindex(districts_ordered)
-    #     )
-    #
-    #     xerr = np.vstack([
-    #         dat["median"] - dat["q25"],
-    #         dat["q75"] - dat["median"]
-    #     ])
-    #
-    #     ax.errorbar(
-    #         x=dat["median"],
-    #         y=y + (i - 1) * offset,
-    #         xerr=xerr,
-    #         fmt=markers[src],
-    #         color=source_colors[src],
-    #         markersize=8,
-    #         capsize=2,
-    #         capthick=1.5,
-    #         elinewidth=1.5,
-    #         linestyle="none",
-    #         label=src
-    #     )
-    #
-    #     annotate_small_n_horizontal(
-    #         ax=ax,
-    #         y_positions=y + (i - 1) * offset,
-    #         upper_bounds=dat["q75"],
-    #         counts=dat["n"]
-    #     )
-    #
-    # ax.set_yticks(y)
-    # ax.set_yticklabels(districts_ordered)
-    # ax.invert_yaxis()
-    #
-    # ax.set_xlabel("Median Daily Patient Load per HCW")
-    # ax.set_ylabel("District or Central Hospital")
-    #
-    # ax.xaxis.set_major_locator(MultipleLocator(20))
-    # ax.xaxis.set_minor_locator(MultipleLocator(10))
-    #
-    # ax.grid(axis="x", which="major", alpha=0.5)
-    # ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
-    #
-    # ax.legend(frameon=False, loc="best")
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # # Plot 3: over all districts
-    # # x-axis = facility level, y-axis = patient load
-    #
-    # summary = summarise_median_iqr(
-    #     df_plot,
-    #     ["Facility_Level", "Source"]
-    # )
-    #
-    # fig, ax = plt.subplots(figsize=(8, 6))
-    #
-    # x = np.arange(len(facility_levels))
-    # offset = 0.12
-    #
-    # for i, src in enumerate(sources):
-    #     dat = (
-    #         summary[summary["Source"] == src]
-    #         .set_index("Facility_Level")
-    #         .reindex(facility_levels)
-    #     )
-    #
-    #     y = dat["median"]
-    #
-    #     yerr = np.vstack([
-    #         dat["median"] - dat["q25"],
-    #         dat["q75"] - dat["median"]
-    #     ])
-    #
-    #     ax.errorbar(
-    #         x=x + (i - 1) * offset,
-    #         y=y,
-    #         yerr=yerr,
-    #         fmt=markers[src],
-    #         color=source_colors[src],
-    #         markersize=8,
-    #         capsize=2,
-    #         capthick=1.5,
-    #         elinewidth=1.5,
-    #         linestyle="none",
-    #         label=src
-    #     )
-    #
-    #     annotate_small_n_vertical(
-    #         ax=ax,
-    #         x_positions=x + (i - 1) * offset,
-    #         upper_bounds=dat["q75"],
-    #         counts=dat["n"]
-    #     )
-    #
-    # ax.set_xticks(x)
-    # ax.set_xticklabels(facility_levels)
-    #
-    # ax.grid(axis="y", which="major", alpha=0.5)
-    # ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
-    #
-    # ax.set_xlabel("Facility Level")
-    # ax.set_ylabel("Median Daily Patient Load per HCW")
-    #
-    # ax.legend(frameon=False)
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # # Plot 4: over all districts and facility levels
-    # # x-axis = source, y-axis = patient load
-    #
-    # colors = [source_colors[src] for src in sources]
-    #
-    # fig, ax = plt.subplots(figsize=(7, 6))
-    #
-    # box_data = [
-    #     df_plot.loc[
-    #         df_plot["Source"] == src,
-    #         patient_load_col
-    #     ].dropna()
-    #     for src in sources
-    # ]
-    #
-    # box = ax.boxplot(
-    #     box_data,
-    #     positions=np.arange(len(sources)),
-    #     widths=0.7,
-    #     patch_artist=True,
-    #     showfliers=False
-    # )
-    #
-    # for patch, color in zip(box["boxes"], colors):
-    #     patch.set_facecolor(color)
-    #     patch.set_alpha(0.7)
-    #
-    # summary = (
-    #     df_plot
-    #     .groupby("Source")[patient_load_col]
-    #     .agg(
-    #         n="count",
-    #         q75=lambda x: x.quantile(0.75)
-    #     )
-    #     .reindex(sources)
-    #     .reset_index()
-    # )
-    #
-    # annotate_small_n_vertical(
-    #     ax=ax,
-    #     x_positions=np.arange(len(sources)),
-    #     upper_bounds=summary["q75"],
-    #     counts=summary["n"]
-    # )
-    #
-    # ax.set_xticks(np.arange(len(sources)))
-    # ax.set_xticklabels(sources)
-    #
-    # ax.grid(axis="y", which="major", alpha=0.5)
-    # ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
-    #
-    # ax.set_xlabel("Source")
-    # ax.set_ylabel("Median Daily Patient Load per HCW")
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # # ** mean + 95%CI plots **
-    #
-    # def summarise_mean_ci95(data, group_cols):
-    #     summary = (
-    #         data
-    #         .groupby(group_cols)[patient_load_col]
-    #         .agg(
-    #             mean="mean",
-    #             sd="std",
-    #             n="count"
-    #         )
-    #         .reset_index()
-    #     )
-    #
-    #     summary["se"] = summary["sd"] / np.sqrt(summary["n"])
-    #     summary["ci95"] = 1.96 * summary["se"]
-    #
-    #     summary["ci95"] = summary["ci95"].fillna(0)
-    #
-    #     return summary
-    #
-    # # Plot 1: by facility level and district
-    # # y-axis = district, x-axis = patient load
-    #
-    # summary = summarise_mean_ci95(
-    #     df_plot,
-    #     ["District", "Facility_Level", "Source"]
-    # )
-    #
-    # offset = 0.2
-    #
-    # fig, axes = plt.subplots(
-    #     1,
-    #     len(facility_levels_plot_1),
-    #     figsize=(20, 12),
-    #     sharex="all"
-    # )
-    #
-    # for ax, fac_level in zip(axes, facility_levels_plot_1):
-    #
-    #     temp = summary[
-    #         summary["Facility_Level"] == fac_level
-    #         ].copy()
-    #
-    #     districts = sorted(temp["District"].unique())
-    #     y = np.arange(len(districts))
-    #
-    #     for i, src in enumerate(sources):
-    #         dat = (
-    #             temp[temp["Source"] == src]
-    #             .set_index("District")
-    #             .reindex(districts)
-    #         )
-    #
-    #         lower_err = np.minimum(dat["ci95"], dat["mean"])
-    #         upper_err = dat["ci95"]
-    #
-    #         xerr = np.vstack([
-    #             lower_err,
-    #             upper_err
-    #         ])
-    #
-    #         ax.errorbar(
-    #             x=dat["mean"],
-    #             y=y + (i - 1) * offset,
-    #             xerr=xerr,
-    #             fmt=markers[src],
-    #             color=source_colors[src],
-    #             markersize=8,
-    #             elinewidth=1.5,
-    #             capsize=2,
-    #             capthick=1.5,
-    #             linestyle="none",
-    #             label=src
-    #         )
-    #
-    #         annotate_small_n_horizontal(
-    #             ax=ax,
-    #             y_positions=y + (i - 1) * offset,
-    #             upper_bounds=dat["mean"] + dat["ci95"],
-    #             counts=dat["n"]
-    #         )
-    #
-    #     ax.set_title(f"Facility Level {fac_level}")
-    #
-    #     ax.set_yticks(y)
-    #     ax.set_yticklabels(districts)
-    #     ax.invert_yaxis()
-    #
-    #     ax.xaxis.set_major_locator(MultipleLocator(20))
-    #     ax.xaxis.set_minor_locator(MultipleLocator(10))
-    #
-    #     ax.grid(axis="x", which="major", alpha=0.5)
-    #     ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
-    #
-    #     ax.tick_params(axis="both")
-    #     ax.tick_params(axis="x", labelrotation=0)
-    #
-    # fig.supxlabel(
-    #     "Mean Daily Patient Load per HCW",
-    #     y=0.04
-    # )
-    #
-    # handles, labels = axes[0].get_legend_handles_labels()
-    #
-    # fig.legend(
-    #     handles,
-    #     labels,
-    #     loc="upper center",
-    #     ncol=3,
-    #     frameon=False
-    # )
-    #
-    # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-    # plt.show()
-    #
-    # # Plot 2: overall facility levels
-    # # y-axis = district, x-axis = patient load
-    #
-    # summary = summarise_mean_ci95(
-    #     df_plot,
-    #     ["District", "Source"]
-    # )
-    #
-    # fig, ax = plt.subplots(figsize=(10, 12))
-    #
-    # districts_ordered = (
-    #     summary
-    #     .loc[summary["Source"] == "HCW TMS"]
-    #     .sort_values("mean", ascending=False)["District"]
-    #     .tolist()
-    # )
-    # y = np.arange(len(districts_ordered))
-    #
-    # offset = 0.2
-    #
-    # for i, src in enumerate(sources):
-    #     dat = (
-    #         summary[summary["Source"] == src]
-    #         .set_index("District")
-    #         .reindex(districts_ordered)
-    #     )
-    #
-    #     lower_err = np.minimum(dat["ci95"], dat["mean"])
-    #     upper_err = dat["ci95"]
-    #
-    #     xerr = np.vstack([
-    #         lower_err,
-    #         upper_err
-    #     ])
-    #
-    #     ax.errorbar(
-    #         x=dat["mean"],
-    #         y=y + (i - 1) * offset,
-    #         xerr=xerr,
-    #         fmt=markers[src],
-    #         color=source_colors[src],
-    #         markersize=8,
-    #         capsize=2,
-    #         capthick=1.5,
-    #         elinewidth=1.5,
-    #         linestyle="none",
-    #         label=src
-    #     )
-    #
-    #     annotate_small_n_horizontal(
-    #         ax=ax,
-    #         y_positions=y + (i - 1) * offset,
-    #         upper_bounds=dat["mean"] + dat["ci95"],
-    #         counts=dat["n"]
-    #     )
-    #
-    # ax.set_yticks(y)
-    # ax.set_yticklabels(districts_ordered)
-    # ax.invert_yaxis()
-    #
-    # ax.set_xlabel("Mean Daily Patient Load per HCW")
-    # ax.set_ylabel("District or Central Hospital")
-    #
-    # ax.xaxis.set_major_locator(MultipleLocator(20))
-    # ax.xaxis.set_minor_locator(MultipleLocator(10))
-    #
-    # ax.grid(axis="x", which="major", alpha=0.5)
-    # ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
-    #
-    # ax.legend(frameon=False, loc="best")
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # # Plot 3: over all districts
-    # # x-axis = facility level, y-axis = patient load
-    #
-    # summary = summarise_mean_ci95(
-    #     df_plot,
-    #     ["Facility_Level", "Source"]
-    # )
-    #
-    # fig, ax = plt.subplots(figsize=(8, 6))
-    #
-    # x = np.arange(len(facility_levels))
-    # offset = 0.12
-    #
-    # for i, src in enumerate(sources):
-    #     dat = (
-    #         summary[summary["Source"] == src]
-    #         .set_index("Facility_Level")
-    #         .reindex(facility_levels)
-    #     )
-    #
-    #     y = dat["mean"]
-    #
-    #     lower_err = np.minimum(dat["ci95"], dat["mean"])
-    #     upper_err = dat["ci95"]
-    #
-    #     yerr = np.vstack([
-    #         lower_err,
-    #         upper_err
-    #     ])
-    #
-    #     ax.errorbar(
-    #         x=x + (i - 1) * offset,
-    #         y=y,
-    #         yerr=yerr,
-    #         fmt=markers[src],
-    #         color=source_colors[src],
-    #         markersize=8,
-    #         capsize=2,
-    #         capthick=1.5,
-    #         elinewidth=1.5,
-    #         linestyle="none",
-    #         label=src
-    #     )
-    #
-    #     annotate_small_n_vertical(
-    #         ax=ax,
-    #         x_positions=x + (i - 1) * offset,
-    #         upper_bounds=dat["mean"] + dat["ci95"],
-    #         counts=dat["n"]
-    #     )
-    #
-    # ax.set_xticks(x)
-    # ax.set_xticklabels(facility_levels)
-    #
-    # ax.grid(axis="y", which="major", alpha=0.5)
-    # ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
-    #
-    # ax.set_xlabel("Facility Level")
-    # ax.set_ylabel("Mean Daily Patient Load per HCW")
-    #
-    # ax.legend(frameon=False)
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # # Plot 4: over all districts and facility levels
-    # # x-axis = source, y-axis = patient load
-    #
-    # summary = (
-    #     summarise_mean_ci95(
-    #         df_plot,
-    #         ["Source"]
-    #     )
-    #     .set_index("Source")
-    #     .reindex(sources)
-    #     .reset_index()
-    # )
-    #
-    # lower_err = np.minimum(summary["ci95"], summary["mean"])
-    # upper_err = summary["ci95"]
-    #
-    # yerr = np.vstack([
-    #     lower_err,
-    #     upper_err
-    # ])
-    #
-    # colors = [source_colors[src] for src in sources]
-    #
-    # fig, ax = plt.subplots(figsize=(7, 6))
-    #
-    # bars = ax.bar(
-    #     x=np.arange(len(sources)),
-    #     height=summary["mean"],
-    #     yerr=yerr,
-    #     capsize=5,
-    #     color=colors,
-    #     alpha=0.7,
-    #     width=0.7
-    # )
-    #
-    # annotate_small_n_vertical(
-    #     ax=ax,
-    #     x_positions=np.arange(len(sources)),
-    #     upper_bounds=summary["mean"] + summary["ci95"],
-    #     counts=summary["n"]
-    # )
-    #
-    # ax.set_xticks(np.arange(len(sources)))
-    # ax.set_xticklabels(sources)
-    #
-    # ax.grid(axis="y", which="major", alpha=0.5)
-    # ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
-    #
-    # ax.set_xlabel("Source")
-    # ax.set_ylabel("Mean Daily Patient Load per HCW")
-    #
-    # plt.tight_layout()
-    # plt.show()
+    # *** patient load per hcw per day comparison ***
+    # merge all three patient load estimates at the same resolution in one dataframe,
+    # noting the source and keeping all observations
+    hcw_tms_pat_load = hcw_tms_pat_load.rename(columns={
+        "fac_level": "Facility_Level",
+        "district": "District",
+        "pat_day_tms_nr_adj": "Daily_Patient_Load_Per_HCW",
+    })
+    fac_tms_pat_load = fac_tms_pat_load.rename(columns={
+        "fac_level": "Facility_Level",
+        "district": "District",
+        "pat_load_per_hcw": "Daily_Patient_Load_Per_HCW",
+    })
+
+    hcw_tms_pat_load["Source"] = "HCW TMS"
+    fac_tms_pat_load["Source"] = "Facility Summary"
+    daily_patient_load_per_hcw["Source"] = "TLO"
+
+    pat_load_comparison = pd.concat([
+        hcw_tms_pat_load[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source",]],
+        fac_tms_pat_load[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source"]],
+        daily_patient_load_per_hcw[["District", "Facility_Level", "Daily_Patient_Load_Per_HCW", "Source"]],
+    ], ignore_index=True)
+
+    assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
+
+    # *** make comparison plots ***
+
+    # shared settings and helper function
+
+    facility_levels = ["1a", "2", "3", "4"]
+    sources = ["TLO", "HCW TMS", "Facility Summary"]
+
+    markers = {
+        "HCW TMS": "o",
+        "Facility Summary": "^",
+        "TLO": "d"
+    }
+
+    source_colors = {
+        "TLO": "green",
+        "HCW TMS": "blue",
+        "Facility Summary": "orange"
+    }
+
+    PLOT_STYLE = {
+        "font.size": 16,
+        "axes.labelsize": 16,
+        "xtick.labelsize": 15,
+        "ytick.labelsize": 15,
+        "legend.fontsize": 16
+    }
+
+    plt.rcParams.update(PLOT_STYLE)
+
+    patient_load_col = "Daily_Patient_Load_Per_HCW"
+
+    def annotate_small_n_horizontal(
+        ax,
+        y_positions,
+        upper_bounds,
+        counts,
+        threshold=10,
+        symbol="*"
+    ):
+        mask = counts < threshold
+
+        for yy, xx in zip(
+            np.asarray(y_positions)[mask],
+            np.asarray(upper_bounds)[mask]
+        ):
+            ax.text(
+                xx,
+                yy,
+                symbol,
+                ha="left",
+                va="center",
+                fontsize=15,
+                color="red"
+            )
+
+    def annotate_small_n_vertical(
+        ax,
+        x_positions,
+        upper_bounds,
+        counts,
+        threshold=10,
+        symbol="*"
+    ):
+        mask = counts < threshold
+
+        for xx, yy in zip(
+            np.asarray(x_positions)[mask],
+            np.asarray(upper_bounds)[mask]
+        ):
+            ax.text(
+                xx,
+                yy,
+                symbol,
+                ha="center",
+                va="bottom",
+                fontsize=14,
+                color="red"
+            )
+
+    # prepare data: keep facility levels and districts appearing in HCW TMS
+
+    # drop level 0/community service by DCSA, level 5/HQ
+    pat_load_comparison = pat_load_comparison.loc[~pat_load_comparison["Facility_Level"].isin(["0", "5"])]
+
+    # keep common district
+    common_districts = (
+        pat_load_comparison
+        .loc[pat_load_comparison["Source"] == "HCW TMS", "District"]
+        .unique()
+    )
+
+    df_plot = pat_load_comparison[
+        pat_load_comparison["District"].isin(common_districts)
+    ].copy()
+
+    # ** median + IQR plots **
+
+    def summarise_median_iqr(data, group_cols):
+        return (
+            data
+            .groupby(group_cols)[patient_load_col]
+            .agg(
+                median="median",
+                q25=lambda x: x.quantile(0.25),
+                q75=lambda x: x.quantile(0.75),
+                n="count"
+            )
+            .reset_index()
+        )
+
+    # Plot 1: by facility level and district
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_median_iqr(
+        df_plot,
+        ["District", "Facility_Level", "Source"]
+    )
+
+    offset = 0.2
+
+    facility_levels_plot_1 = ["1a", "2"]
+
+    fig, axes = plt.subplots(
+        1,
+        len(facility_levels_plot_1),
+        figsize=(20, 12),
+        sharex="all"
+    )
+
+    for ax, fac_level in zip(axes, facility_levels_plot_1):
+
+        temp = summary[
+            summary["Facility_Level"] == fac_level
+            ].copy()
+
+        districts = sorted(temp["District"].unique())
+        y = np.arange(len(districts))
+
+        for i, src in enumerate(sources):
+            dat = (
+                temp[temp["Source"] == src]
+                .set_index("District")
+                .reindex(districts)
+            )
+
+            xerr = np.vstack([
+                dat["median"] - dat["q25"],
+                dat["q75"] - dat["median"]
+            ])
+
+            ax.errorbar(
+                x=dat["median"],
+                y=y + (i - 1) * offset,
+                xerr=xerr,
+                fmt=markers[src],
+                color=source_colors[src],
+                markersize=8,
+                elinewidth=1.5,
+                capsize=2,
+                capthick=1.5,
+                linestyle="none",
+                label=src
+            )
+
+            annotate_small_n_horizontal(
+                ax=ax,
+                y_positions=y + (i - 1) * offset,
+                upper_bounds=dat["q75"],
+                counts=dat["n"]
+            )
+
+        ax.set_title(f"Facility Level {fac_level}")
+
+        ax.set_yticks(y)
+        ax.set_yticklabels(districts)
+        ax.invert_yaxis()
+
+        ax.xaxis.set_major_locator(MultipleLocator(20))
+        ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+        ax.grid(axis="x", which="major", alpha=0.5)
+        ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+        ax.tick_params(axis="both")
+        ax.tick_params(axis="x", labelrotation=0)
+
+    # axes[0].set_ylabel("District")
+    fig.supxlabel(
+        "Median Daily Patient Load per HCW",
+        y=0.04
+    )
+
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=3,
+        frameon=False
+    )
+
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    plt.show()
+
+    # Plot 2: overall facility levels
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_median_iqr(
+        df_plot,
+        ["District", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 12))
+
+    districts_ordered = (
+        summary
+        .loc[summary["Source"] == "HCW TMS"]
+        .sort_values("median", ascending=False)["District"]
+        .tolist()
+    )
+    y = np.arange(len(districts_ordered))
+
+    offset = 0.2
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("District")
+            .reindex(districts_ordered)
+        )
+
+        xerr = np.vstack([
+            dat["median"] - dat["q25"],
+            dat["q75"] - dat["median"]
+        ])
+
+        ax.errorbar(
+            x=dat["median"],
+            y=y + (i - 1) * offset,
+            xerr=xerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_horizontal(
+            ax=ax,
+            y_positions=y + (i - 1) * offset,
+            upper_bounds=dat["q75"],
+            counts=dat["n"]
+        )
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(districts_ordered)
+    ax.invert_yaxis()
+
+    ax.set_xlabel("Median Daily Patient Load per HCW")
+    ax.set_ylabel("District or Central Hospital")
+
+    ax.xaxis.set_major_locator(MultipleLocator(20))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+    ax.grid(axis="x", which="major", alpha=0.5)
+    ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+    ax.legend(frameon=False, loc="best")
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 3: over all districts
+    # x-axis = facility level, y-axis = patient load
+
+    summary = summarise_median_iqr(
+        df_plot,
+        ["Facility_Level", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    x = np.arange(len(facility_levels))
+    offset = 0.12
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("Facility_Level")
+            .reindex(facility_levels)
+        )
+
+        y = dat["median"]
+
+        yerr = np.vstack([
+            dat["median"] - dat["q25"],
+            dat["q75"] - dat["median"]
+        ])
+
+        ax.errorbar(
+            x=x + (i - 1) * offset,
+            y=y,
+            yerr=yerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_vertical(
+            ax=ax,
+            x_positions=x + (i - 1) * offset,
+            upper_bounds=dat["q75"],
+            counts=dat["n"]
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(facility_levels)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Facility Level")
+    ax.set_ylabel("Median Daily Patient Load per HCW")
+
+    ax.legend(frameon=False)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 4: over all districts and facility levels
+    # x-axis = source, y-axis = patient load
+
+    colors = [source_colors[src] for src in sources]
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    box_data = [
+        df_plot.loc[
+            df_plot["Source"] == src,
+            patient_load_col
+        ].dropna()
+        for src in sources
+    ]
+
+    box = ax.boxplot(
+        box_data,
+        positions=np.arange(len(sources)),
+        widths=0.7,
+        patch_artist=True,
+        showfliers=False
+    )
+
+    for patch, color in zip(box["boxes"], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+
+    summary = (
+        df_plot
+        .groupby("Source")[patient_load_col]
+        .agg(
+            n="count",
+            q75=lambda x: x.quantile(0.75)
+        )
+        .reindex(sources)
+        .reset_index()
+    )
+
+    annotate_small_n_vertical(
+        ax=ax,
+        x_positions=np.arange(len(sources)),
+        upper_bounds=summary["q75"],
+        counts=summary["n"]
+    )
+
+    ax.set_xticks(np.arange(len(sources)))
+    ax.set_xticklabels(sources)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Source")
+    ax.set_ylabel("Median Daily Patient Load per HCW")
+
+    plt.tight_layout()
+    plt.show()
+
+    # ** mean + 95%CI plots **
+
+    def summarise_mean_ci95(data, group_cols):
+        summary = (
+            data
+            .groupby(group_cols)[patient_load_col]
+            .agg(
+                mean="mean",
+                sd="std",
+                n="count"
+            )
+            .reset_index()
+        )
+
+        summary["se"] = summary["sd"] / np.sqrt(summary["n"])
+        summary["ci95"] = 1.96 * summary["se"]
+
+        summary["ci95"] = summary["ci95"].fillna(0)
+
+        return summary
+
+    # Plot 1: by facility level and district
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_mean_ci95(
+        df_plot,
+        ["District", "Facility_Level", "Source"]
+    )
+
+    offset = 0.2
+
+    fig, axes = plt.subplots(
+        1,
+        len(facility_levels_plot_1),
+        figsize=(20, 12),
+        sharex="all"
+    )
+
+    for ax, fac_level in zip(axes, facility_levels_plot_1):
+
+        temp = summary[
+            summary["Facility_Level"] == fac_level
+            ].copy()
+
+        districts = sorted(temp["District"].unique())
+        y = np.arange(len(districts))
+
+        for i, src in enumerate(sources):
+            dat = (
+                temp[temp["Source"] == src]
+                .set_index("District")
+                .reindex(districts)
+            )
+
+            lower_err = np.minimum(dat["ci95"], dat["mean"])
+            upper_err = dat["ci95"]
+
+            xerr = np.vstack([
+                lower_err,
+                upper_err
+            ])
+
+            ax.errorbar(
+                x=dat["mean"],
+                y=y + (i - 1) * offset,
+                xerr=xerr,
+                fmt=markers[src],
+                color=source_colors[src],
+                markersize=8,
+                elinewidth=1.5,
+                capsize=2,
+                capthick=1.5,
+                linestyle="none",
+                label=src
+            )
+
+            annotate_small_n_horizontal(
+                ax=ax,
+                y_positions=y + (i - 1) * offset,
+                upper_bounds=dat["mean"] + dat["ci95"],
+                counts=dat["n"]
+            )
+
+        ax.set_title(f"Facility Level {fac_level}")
+
+        ax.set_yticks(y)
+        ax.set_yticklabels(districts)
+        ax.invert_yaxis()
+
+        ax.xaxis.set_major_locator(MultipleLocator(20))
+        ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+        ax.grid(axis="x", which="major", alpha=0.5)
+        ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+        ax.tick_params(axis="both")
+        ax.tick_params(axis="x", labelrotation=0)
+
+    fig.supxlabel(
+        "Mean Daily Patient Load per HCW",
+        y=0.04
+    )
+
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=3,
+        frameon=False
+    )
+
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    plt.show()
+
+    # Plot 2: overall facility levels
+    # y-axis = district, x-axis = patient load
+
+    summary = summarise_mean_ci95(
+        df_plot,
+        ["District", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 12))
+
+    districts_ordered = (
+        summary
+        .loc[summary["Source"] == "HCW TMS"]
+        .sort_values("mean", ascending=False)["District"]
+        .tolist()
+    )
+    y = np.arange(len(districts_ordered))
+
+    offset = 0.2
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("District")
+            .reindex(districts_ordered)
+        )
+
+        lower_err = np.minimum(dat["ci95"], dat["mean"])
+        upper_err = dat["ci95"]
+
+        xerr = np.vstack([
+            lower_err,
+            upper_err
+        ])
+
+        ax.errorbar(
+            x=dat["mean"],
+            y=y + (i - 1) * offset,
+            xerr=xerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_horizontal(
+            ax=ax,
+            y_positions=y + (i - 1) * offset,
+            upper_bounds=dat["mean"] + dat["ci95"],
+            counts=dat["n"]
+        )
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(districts_ordered)
+    ax.invert_yaxis()
+
+    ax.set_xlabel("Mean Daily Patient Load per HCW")
+    ax.set_ylabel("District or Central Hospital")
+
+    ax.xaxis.set_major_locator(MultipleLocator(20))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+
+    ax.grid(axis="x", which="major", alpha=0.5)
+    ax.grid(axis="x", which="minor", alpha=0.25, linestyle=":")
+
+    ax.legend(frameon=False, loc="best")
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 3: over all districts
+    # x-axis = facility level, y-axis = patient load
+
+    summary = summarise_mean_ci95(
+        df_plot,
+        ["Facility_Level", "Source"]
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    x = np.arange(len(facility_levels))
+    offset = 0.12
+
+    for i, src in enumerate(sources):
+        dat = (
+            summary[summary["Source"] == src]
+            .set_index("Facility_Level")
+            .reindex(facility_levels)
+        )
+
+        y = dat["mean"]
+
+        lower_err = np.minimum(dat["ci95"], dat["mean"])
+        upper_err = dat["ci95"]
+
+        yerr = np.vstack([
+            lower_err,
+            upper_err
+        ])
+
+        ax.errorbar(
+            x=x + (i - 1) * offset,
+            y=y,
+            yerr=yerr,
+            fmt=markers[src],
+            color=source_colors[src],
+            markersize=8,
+            capsize=2,
+            capthick=1.5,
+            elinewidth=1.5,
+            linestyle="none",
+            label=src
+        )
+
+        annotate_small_n_vertical(
+            ax=ax,
+            x_positions=x + (i - 1) * offset,
+            upper_bounds=dat["mean"] + dat["ci95"],
+            counts=dat["n"]
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(facility_levels)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Facility Level")
+    ax.set_ylabel("Mean Daily Patient Load per HCW")
+
+    ax.legend(frameon=False)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 4: over all districts and facility levels
+    # x-axis = source, y-axis = patient load
+
+    summary = (
+        summarise_mean_ci95(
+            df_plot,
+            ["Source"]
+        )
+        .set_index("Source")
+        .reindex(sources)
+        .reset_index()
+    )
+
+    lower_err = np.minimum(summary["ci95"], summary["mean"])
+    upper_err = summary["ci95"]
+
+    yerr = np.vstack([
+        lower_err,
+        upper_err
+    ])
+
+    colors = [source_colors[src] for src in sources]
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    bars = ax.bar(
+        x=np.arange(len(sources)),
+        height=summary["mean"],
+        yerr=yerr,
+        capsize=5,
+        color=colors,
+        alpha=0.7,
+        width=0.7
+    )
+
+    annotate_small_n_vertical(
+        ax=ax,
+        x_positions=np.arange(len(sources)),
+        upper_bounds=summary["mean"] + summary["ci95"],
+        counts=summary["n"]
+    )
+
+    ax.set_xticks(np.arange(len(sources)))
+    ax.set_xticklabels(sources)
+
+    ax.grid(axis="y", which="major", alpha=0.5)
+    ax.grid(axis="y", which="minor", alpha=0.25, linestyle=":")
+
+    ax.set_xlabel("Source")
+    ax.set_ylabel("Mean Daily Patient Load per HCW")
+
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
