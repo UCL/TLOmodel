@@ -503,8 +503,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             "any": (
                                 weighted_mean(x, "any") * 100
                             ),
-                        }),
-                        include_groups=False,
+                        })
                     )
                     .reset_index()
                     .rename(columns={subgroup: "subgroup"})
@@ -513,7 +512,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             return format_output(access_meds_df)
 
-        subgroups = ["overall", "Facility_Level", "District"]  #  "loc_cat",
+        subgroups = ["overall", "Facility_Level", "District"]  # "loc_cat",
 
         _access_meds = pd.concat(
             [meds_access_range_by_subgroup_tlo(_df, subgroup=s) for s in subgroups],
