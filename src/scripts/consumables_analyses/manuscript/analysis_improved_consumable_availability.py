@@ -46,9 +46,9 @@ path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_impact-2026-02-14T203020Z.py', outputfilepath)[0] # Dec 2025 runs
-suspended_results_folder = get_scenario_outputs('consumables_impact-2026-02-13T183325Z.py', outputfilepath)[0]
-#create_pickles_locally(scenario_output_dir = "./outputs/consumables_impact-2026-02-14T203020Z") # from .log files
+results_folder = get_scenario_outputs('consumables_impact-2026-08-15T070335Z.py', outputfilepath)[0] # Dec 2025 runs
+suspended_results_folder = get_scenario_outputs('consumables_impact-2026-08-14T132540Z.py', outputfilepath)[0]
+#create_pickles_locally(scenario_output_dir = "./outputs/consumables_impact-2026-08-14T132540Z") # from .log files
 scaling_factor =  load_pickled_dataframes(
             suspended_results_folder, draw = 0, run = 0, name = 'tlo.methods.demography'
             )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
@@ -61,11 +61,11 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2029, 12, 31))  # TODO change to 2040
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2040, 12, 31))  # TODO change to 2040
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2025, 2030))
-number_of_years_costed = relevant_period_for_costing[1] - 2025 + 1
+list_of_years_for_plot = list(range(2025, 2041))  # TODO change to 2025 onwards
+number_of_years_costed = relevant_period_for_costing[1] - 2025 + 1  # TODO change to 2025 onwards
 
 discount_rate_health = 0
 chosen_metric = 'mean'
@@ -74,40 +74,43 @@ chosen_cet = 65
 # Scenarios
 cons_scenarios = {
     0:  "Baseline availability – Default health system",
-    1:  "Baseline availability – Perfect health system",
+    13:  "Baseline availability – Perfect health system",
 
-    2:  "Non-therapeutic consumables (NTC) – Default health system",
-    3:  "Non-therapeutic consumables (NTC) – Perfect health system",
+    1:  "Non-therapeutic consumables (NTC) – Default health system",
+    14:  "Non-therapeutic consumables (NTC) – Perfect health system",
 
-    4:  "NTC + Vital medicines (VM) – Default health system",
-    5:  "NTC + Vital medicines (VM) – Perfect health system",
+    2:  "NTC + Vital medicines (VM) – Default health system",
+    15:  "NTC + Vital medicines (VM) – Perfect health system",
 
-    6:  "NTC + VM + Pharmacist-managed stocks – Default health system",
-    7:  "NTC + VM + Pharmacist-managed stocks – Perfect health system",
+    3:  "NTC + VM + Pharmacist-managed stocks – Default health system",
+    16:  "NTC + VM + Pharmacist-managed stocks – Perfect health system",
 
-    8:  "75th percentile facility – Default health system",
-    9:  "75th percentile facility – Perfect health system",
+    4:  "75th percentile facility – Default health system",
+    17:  "75th percentile facility – Perfect health system",
 
-    10: "90th percentile facility – Default health system",
-    11: "90th percentile facility – Perfect health system",
+    5: "90th percentile facility – Default health system",
+    18: "90th percentile facility – Perfect health system",
 
-    12: "Best facility – Default health system",
-    13: "Best facility – Perfect health system",
+    6: "Best facility – Default health system",
+    19: "Best facility – Perfect health system",
 
-    14: "District pooling – Default health system",
-    15: "District pooling – Perfect health system",
+    7: "District pooling – Default health system",
+    20: "District pooling – Perfect health system",
 
-    16: "Neighbourhood pooling – Default health system",
-    17: "Neighbourhood pooling – Perfect health system",
+    8: "Neighbourhood pooling – Default health system",
+    21: "Neighbourhood pooling – Perfect health system",
 
-    18: "Pairwise exchange (Large radius) – Default health system",
-    19: "Pairwise exchange (Large radius) – Perfect health system",
+    9: "Pairwise exchange (Large radius) – Default health system",
+    22: "Pairwise exchange (Large radius) – Perfect health system",
 
-    20: "Pairwise exchange (Small radius) – Default health system",
-    21: "Pairwise exchange (Small radius) – Perfect health system",
+    10: "Pairwise exchange (Small radius) – Default health system",
+    23: "Pairwise exchange (Small radius) – Perfect health system",
 
-    22: "Perfect availability – Default health system",
-    23: "Perfect availability – Perfect health system",
+    11: "National pooling – Default health system",
+    24: "National pooling – Perfect health system",
+
+    12: "Perfect availability – Default health system",
+    25: "Perfect availability – Perfect health system",
 }
 
 main_analysis_subset = [
