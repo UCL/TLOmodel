@@ -807,7 +807,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="HSI_Event",
         custom_generate_series=lambda df: get_patient_mix_total_period(
             df,
-            rescale_by_fac_level=True,
+            rescale_by_fac_level=False,
         ),
         do_scaling=False
     ).fillna(0)
@@ -1180,7 +1180,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="Consumables",
         custom_generate_series=lambda df: get_cons_access_mix_total_period(
             df,
-            rescale_by_fac_level=True,
+            rescale_by_fac_level=False,
         ),
         do_scaling=False
     )
