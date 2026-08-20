@@ -59,8 +59,8 @@ class SmacOptimisationScenario(BaseScenario):
         self.seed = 0  # placeholder - overwritten with SMAC's info.seed
                        # by submit_azure_job() before every real submission
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 50_000  # HYPERPARAMETER: simulation fidelity, not a BO
+        self.end_date = Date(2011, 1, 1)
+        self.pop_size = 1_000  # HYPERPARAMETER: simulation fidelity, not a BO
                                    # hyperparameter, but trades off noise level
                                    # against per-run cost - indirectly relevant
                                    # to min_samples_leaf and max_config_calls in
