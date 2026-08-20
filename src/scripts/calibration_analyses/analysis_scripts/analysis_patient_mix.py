@@ -1892,10 +1892,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # ** mean + 95%CI plots **
 
-    def summarise_mean_ci95(data, group_cols):
+    def summarise_mean_ci95(data, group_cols, rescale_tlo_by_fac_level=False, tlm_obs_level_prop=None):
         summary = (
             data
-            .groupby(group_cols)[patient_load_col]
+            .groupby(group_cols, dropna=False)[patient_load_col]
             .agg(
                 mean="mean",
                 sd="std",
@@ -1909,17 +1909,77 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         summary["ci95"] = summary["ci95"].fillna(0)
 
-        return summary
+        if not rescale_tlo_by_fac_level:
+            return summary
+
+        # check before rescaling
+        assert tlm_obs_level_prop is not None
+        assert "Source" in group_cols
+
+        # rescale tlo summary
+        non_source_cols = [
+            col
+            for col in group_cols
+            if col != "Source"
+        ]
+
+        tlo_group_cols = list(dict.fromkeys(non_source_cols + ["Facility_Level"]))
+
+        tlo_by_fac_level = (
+            data
+            .loc[data["Source"] == "TLO"]
+            .groupby(tlo_group_cols, dropna=False)[patient_load_col]
+            .agg(mean="mean", sd="std", n="count")
+            .reset_index()
+        )
+
+        tlo_by_fac_level["se"] = tlo_by_fac_level["sd"] / np.sqrt(tlo_by_fac_level["n"])
+
+        def standardise(_df):
+            weights = _df["Facility_Level"].map(tlm_obs_level_prop).to_numpy(dtype=float)
+            assert not np.isnan(weights).any()
+            assert weights.sum() > 0
+            weights = weights / weights.sum()
+
+            mean = np.sum(weights * _df["mean"].to_numpy())
+            se = np.sqrt(np.sum((weights * _df["se"].fillna(0).to_numpy()) ** 2))
+            sd = _df["sd"].iloc[0] if len(_df) == 1 else np.nan
+
+            return pd.Series({
+                "mean": mean, "sd": sd, "n": _df["n"].sum(), "se": se, "ci95": 1.96 * se
+            })
+
+        if non_source_cols:
+            _summary = tlo_by_fac_level.groupby(non_source_cols, dropna=False).apply(standardise).reset_index()
+        else:
+            _summary = standardise(tlo_by_fac_level).to_frame().T
+
+        _summary["Source"] = "TLO"
+
+        summary = summary.loc[summary["Source"] != "TLO"]
+
+        return pd.concat([summary, _summary], ignore_index=True)
+
+    tlm_obs_level_prop = (
+        df_plot
+        .loc[df_plot["Source"] == "HCW TMS", "Facility_Level"]
+        .value_counts(normalize=True)
+        .reindex(facility_levels, fill_value=0)
+    )
 
     # Plot 1: by facility level and district
     # y-axis = district, x-axis = patient load
 
     summary = summarise_mean_ci95(
         df_plot,
-        ["District", "Facility_Level", "Source"]
+        ["District", "Facility_Level", "Source"],
+        rescale_tlo_by_fac_level=False,
+        tlm_obs_level_prop=tlm_obs_level_prop
     )
 
     offset = 0.2
+
+    facility_levels_plot_1 = ["1a", "2"]
 
     fig, axes = plt.subplots(
         1,
@@ -2011,7 +2071,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     summary = summarise_mean_ci95(
         df_plot,
-        ["District", "Source"]
+        ["District", "Source"],
+        rescale_tlo_by_fac_level=False,
+        tlm_obs_level_prop=tlm_obs_level_prop
     )
 
     fig, ax = plt.subplots(figsize=(10, 12))
@@ -2085,7 +2147,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     summary = summarise_mean_ci95(
         df_plot,
-        ["Facility_Level", "Source"]
+        ["Facility_Level", "Source"],
+        rescale_tlo_by_fac_level=False,
+        tlm_obs_level_prop=tlm_obs_level_prop
     )
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -2151,7 +2215,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = (
         summarise_mean_ci95(
             df_plot,
-            ["Source"]
+            ["Source"],
+            rescale_tlo_by_fac_level=False,
+            tlm_obs_level_prop=tlm_obs_level_prop
         )
         .set_index("Source")
         .reindex(sources)
