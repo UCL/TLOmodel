@@ -1,0 +1,552 @@
+"""
+Ask-and-tell integration between SMAC3 and TLOmodel's Azure Batch system
+(src/tlo/cli.py), with multiple concurrent jobs in flight.
+
+Conceptually:
+
+    smac.ask()  -> SMAC hands you a config to evaluate. It does NOT run
+                   anything itself and does not care how or where you run it.
+    (you run it)-> entirely your own code: submit to Azure Batch by
+                   calling tlo.cli's reusable functions directly, poll
+                   job state, download + parse outputs.
+    smac.tell() -> you hand the result back. This is the ONLY point at
+                   which SMAC's internal runhistory / surrogate model /
+                   incumbent tracking are updated.
+
+TLOmodel-SPECIFIC DESIGN NOTE
+------------------------------
+`tlo batch-submit` (the CLI command) requires the scenario file to be
+committed and pushed, and is built to be invoked from a terminal - it
+loads the scenario from a file path and parses CLI-style scenario_args.
+Since this loop is calling from Python already, submit_azure_job()
+below skips that CLI layer entirely: it builds the SmacOptimisationScenario
+object directly, sets SMAC's config values on it as real Python
+attributes, and calls the same underlying functions (get_batch_client,
+create_job, add_tasks, etc.) that batch_submit's Click command uses
+internally - no string serialisation, no argparse, no subprocess.
+
+The git-clean/commit check is still required (TLOmodel's reproducibility
+model ties every batch job to a specific commit) but only needs to run
+once per optimisation run, not once per SMAC trial, since the scenario
+file's *code* never changes between trials - only the attribute values
+set on it before each submission.
+
+HYPERPARAMETERS: every tunable knob in this file is marked inline with a
+"HYPERPARAMETER" comment - grep for that tag across all three files
+(constrained_ei.py, smac_scenario.py, ask_tell_azure_example.py) to find
+the complete list in one pass.
+"""
+
+from __future__ import annotations
+
+import datetime
+import os
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+from git import Repo
+from azure.batch import models as batch_models
+
+from ConfigSpace import Configuration, ConfigurationSpace, Float
+from smac import HyperparameterOptimizationFacade, Scenario
+from smac.runhistory.dataclasses import TrialInfo, TrialValue
+
+from tlo.cli import (
+    is_file_clean, load_config, get_batch_client,
+    create_file_share, create_directory, upload_local_file,
+    create_job, add_tasks,
+)
+from smac_scenario import SmacOptimisationScenario  # imported directly - it's a
+                                                       # plain Python class now,
+                                                       # not loaded from a file path
+from constrained_ei import ConstrainedEI  # the module built earlier
+
+
+# --------------------------------------------------------------------------
+# 1. TLO/Azure Batch interaction, built directly on tlo.cli's reusable
+#    functions rather than going through the `tlo` command-line tool at
+#    all - submission is entirely in-process Python from here on.
+# --------------------------------------------------------------------------
+
+SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario.py"  # committed once;
+                                                                     # only used here
+                                                                     # for the git-clean
+                                                                     # check, not for loading
+CONFIG_FILE = "tlo.conf"
+
+_config = None  # lazily loaded, see _get_config()
+_commit_hexsha = None  # resolved once per process, see _get_commit()
+
+
+def _get_config():
+    global _config
+    if _config is None:
+        _config = load_config(CONFIG_FILE)
+    return _config
+
+
+def _get_commit() -> str:
+    """
+    Confirms the repo is committed & pushed (the same reproducibility
+    guarantee `tlo batch-submit` enforces via is_file_clean), and resolves
+    the commit hash once. Since the scenario file never changes between
+    SMAC trials, this only needs to succeed once per optimisation run,
+    not once per config.
+    """
+    global _commit_hexsha
+    if _commit_hexsha is not None:
+        return _commit_hexsha
+
+    current_branch = is_file_clean(SCENARIO_FILE)
+    if current_branch is False:
+        raise RuntimeError(
+            "smac_scenario.py has uncommitted changes or the branch isn't "
+            "in sync with origin. Commit and push once before starting the "
+            "SMAC run - this only needs doing once, not per trial."
+        )
+    repo = Repo(".")
+    _commit_hexsha = next(repo.iter_commits(max_count=1)).hexsha
+    return _commit_hexsha
+
+
+@dataclass
+class AzureJobHandle:
+    job_id: str
+    submitted_at: float
+
+
+def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
+    """
+    Builds a SmacOptimisationScenario in-process (config values set as
+    real Python attributes - no serialization to CLI strings and back),
+    then reproduces the job-creation portion of `batch_submit` using the
+    same reusable functions cli.py exports. This is everything
+    batch_submit's Click command does internally, minus the CLI-parsing
+    and scenario-file-loading steps we don't need since we're already
+    holding the class in Python.
+
+    `seed` is SMAC's own info.seed, and IS passed straight through to
+    scenario.seed - this is the point of setting deterministic=False on
+    the SMAC Scenario: it lets SMAC's own intensifier decide when a
+    config is promising enough to justify evaluating it again under a
+    different seed, rather than paying a fixed per-config averaging cost
+    regardless of merit. See the SEEDING note at the top of
+    smac_scenario.py for the full reasoning, and note runs_per_draw=1
+    below - TLO's own multi-seed averaging is intentionally not used
+    here, since SMAC is now the one deciding how many realisations a
+    given config gets.
+    """
+    commit_hexsha = _get_commit()
+    tlo_config = _get_config()
+
+    # --- build the scenario as a plain Python object ---
+    scenario = SmacOptimisationScenario()
+    for key, value in dict(config).items():
+        setattr(scenario, key, value)  # e.g. scenario.intervention_coverage = 0.73
+    scenario.seed = seed  # SMAC's seed drives this run's stochasticity directly
+    scenario.number_of_draws = 1
+    scenario.runs_per_draw = 1  # one physical realisation per submission
+
+    run_json = scenario.save_draws(commit=commit_hexsha)
+
+    # --- from here down mirrors batch_submit's body in cli.py ---
+    file_share_mount_point = "mnt"
+    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
+    job_id = scenario.get_log_config()["filename"] + "-" + timestamp
+    azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
+
+    batch_client = get_batch_client(
+        tlo_config["BATCH"]["CLIENT_ID"], tlo_config["BATCH"]["SECRET"],
+        tlo_config["AZURE"]["TENANT_ID"], tlo_config["BATCH"]["URL"],
+    )
+    create_file_share(tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"])
+    for idx in range(len(os.path.split(azure_directory))):
+        create_directory(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
+            "/".join(os.path.split(azure_directory)[: idx + 1]),
+        )
+    upload_local_file(
+        tlo_config["STORAGE"]["CONNECTION_STRING"], run_json,
+        tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + os.path.basename(run_json),
+    )
+
+    pool_node_count = scenario.number_of_draws * scenario.runs_per_draw
+    auto_user = batch_models.AutoUserSpecification(
+        elevation_level=batch_models.ElevationLevel.admin, scope=batch_models.AutoUserScope.task,
+    )
+    user_identity = batch_models.UserIdentity(auto_user=auto_user)
+    azure_file_url = "https://{}.file.core.windows.net/{}".format(
+        tlo_config["STORAGE"]["NAME"], tlo_config["STORAGE"]["FILESHARE"],
+    )
+    container_registry = batch_models.ContainerRegistry(
+        registry_server=tlo_config["REGISTRY"]["SERVER"],
+        user_name=tlo_config["REGISTRY"]["NAME"], password=tlo_config["REGISTRY"]["KEY"],
+    )
+    image_name = f"{tlo_config['REGISTRY']['SERVER']}/{tlo_config['REGISTRY']['IMAGE']}:{tlo_config['REGISTRY']['DEFAULT_TAG']}"
+    container_conf = batch_models.ContainerConfiguration(
+        type="dockerCompatible", container_image_names=[image_name], container_registries=[container_registry],
+    )
+    azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
+        account_name=tlo_config["STORAGE"]["NAME"], azure_file_url=azure_file_url,
+        account_key=tlo_config["STORAGE"]["KEY"], relative_mount_path=file_share_mount_point,
+        mount_options="-o rw",
+    )
+    mount_configuration = batch_models.MountConfiguration(
+        azure_file_share_configuration=azure_file_share_configuration,
+    )
+
+    remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
+    azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
+    working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
+    task_dir = "${{AZ_BATCH_TASK_DIR}}"
+    command = f"""
+git fetch origin {commit_hexsha}
+git checkout {commit_hexsha}
+pip install -r requirements/base.txt
+PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+tlo --config-file tlo.example.conf parse-log {working_dir}/{{draw_number}}/{{run_number}}
+cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
+gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{{txt,log}}
+cp -r {working_dir}/* {remote_azure_directory}/.
+"""
+    command = f"/bin/bash -c '{command}'"
+
+    create_job(
+        batch_client, tlo_config["BATCH"]["POOL_VM_SIZE"], pool_node_count, job_id,
+        container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
+    )
+    add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", scenario, command)
+
+    return AzureJobHandle(job_id=job_id, submitted_at=time.time())
+
+
+def azure_job_is_finished(job: AzureJobHandle) -> bool:
+    """Direct Batch API query - same call `tlo batch-job` makes under the hood."""
+    tlo_config = _get_config()
+    batch_client = get_batch_client(
+        tlo_config["BATCH"]["CLIENT_ID"], tlo_config["BATCH"]["SECRET"],
+        tlo_config["AZURE"]["TENANT_ID"], tlo_config["BATCH"]["URL"],
+    )
+    return batch_client.job.get(job_id=job.job_id).state == "completed"
+
+
+def download_run_outputs(job: AzureJobHandle) -> Path:
+    """
+    Downloads job outputs by walking the file share directly (the same
+    traversal `tlo batch-download` performs). Returns the local
+    directory containing draw 0's runs - download only, no analysis.
+    """
+    from azure.storage.fileshare import ShareClient
+
+    tlo_config = _get_config()
+    username = tlo_config["DEFAULT"]["USERNAME"]
+    share_client = ShareClient.from_connection_string(
+        tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
+    )
+
+    remote_root = f"{username}/{job.job_id}"
+    local_root = Path("outputs", remote_root)
+
+    def walk(dir_name: str):
+        local_root_dir = Path("outputs", dir_name)
+        os.makedirs(local_root_dir, exist_ok=True)
+        for item in share_client.list_directories_and_files(dir_name):
+            if item["is_directory"]:
+                walk(f"{dir_name}/{item['name']}")
+            else:
+                file_client = share_client.get_file_client(f"{dir_name}/{item['name']}")
+                with open(local_root_dir / item["name"], "wb") as f:
+                    f.write(file_client.download_file().readall())
+
+    walk(remote_root)
+    return local_root / "0"  # draw 0 - only draw we ever submit
+
+
+def postprocess_run(run_dir: Path) -> dict:
+    """
+    YOUR post-processing step, run once per completed simulation
+    (i.e. once per seed in runs_per_draw). Turn a single run's raw
+    output directory into the four numbers SMAC/ConstrainedEI need.
+
+    Plug in whatever analysis pipeline you already use here - e.g.
+    tlo.analysis.utils.parse_log_file plus your own DALY/costing
+    extraction functions. This is the integration point: it's specific
+    to your model's output structure and not something inferable from
+    cli.py or from this script alone. The stub below is a guess at the
+    output shape - replace it with your real pipeline.
+    """
+    raise NotImplementedError(
+        "Plug in your real post-processing pipeline: parse this run's "
+        "log/pickle outputs and return "
+        "{'dalys': ..., 'cost': ..., 'hr_used': ..., 'stock_used': ...}"
+    )
+
+
+def fetch_azure_result(job: AzureJobHandle) -> dict:
+    """
+    Downloads outputs and postprocesses draw 0's single run via
+    postprocess_run(). With runs_per_draw=1, there's exactly one run per
+    submission now (SMAC's intensifier decides separately whether this
+    config gets resubmitted under a different seed - see submit_azure_job)
+    - the np.mean() calls below are trivial no-ops over a length-1 list,
+    kept only so this still works unchanged if you ever set
+    runs_per_draw>1 for a specific experiment.
+    """
+    draw_dir = download_run_outputs(job)
+    per_run_results = [postprocess_run(run_dir) for run_dir in sorted(draw_dir.iterdir())]
+
+    return {
+        "dalys": float(np.mean([r["dalys"] for r in per_run_results])),
+        "cost": float(np.mean([r["cost"] for r in per_run_results])),
+        "hr_used": float(np.mean([r["hr_used"] for r in per_run_results])),
+        "stock_used": float(np.mean([r["stock_used"] for r in per_run_results])),
+    }
+
+
+
+# --------------------------------------------------------------------------
+# 2. Your real config space, constraint limits, and shared history log
+#    NOTE: every hyperparameter name here must match an attribute
+#    SmacOptimisationScenario expects in smac_scenario.py, since
+#    submit_azure_job() does setattr(scenario, key, value) for each one.
+# --------------------------------------------------------------------------
+
+configspace = ConfigurationSpace()
+configspace.add(Float("intervention_coverage", (0.0, 1.0)))
+configspace.add(Float("consumable_stock_target", (0.5, 1.0)))
+# ... add the rest of your real hyperparameters here ...
+
+# Problem-defined constraints, not algorithm hyperparameters - but kept
+# here as a reminder these are duplicated in constrained_ei.py's
+# standalone example_usage() too, and could drift out of sync if only
+# one copy gets updated.
+COST_LIMIT = 2_000_000
+HR_LIMIT = 500
+STOCK_LIMIT = 10_000
+
+history: list[dict] = []  # raw, disaggregated results - the source of truth
+
+
+def record_result(config: Configuration, seed: int, result: dict) -> TrialValue:
+    """
+    Turns a raw Azure result into (a) a history entry with full detail,
+    and (b) the single scalar TrialValue SMAC's own bookkeeping needs.
+    This is the ask-tell equivalent of what target_function used to do
+    in the synchronous version - same logic, just called manually here
+    instead of by SMAC itself. Shared by both the live polling loop and
+    seed_history_with_prior_runs() below, so there's one place computing
+    violations/penalty rather than two copies that could drift apart.
+
+    `seed` is logged into history (not just used for TrialInfo) because,
+    with deterministic=False and SMAC's intensifier possibly requesting
+    multiple seeds for the same competitive config, history can now
+    contain several distinct noisy realisations of the same config -
+    seed lets you trace and, at final-selection time, group them back
+    together (see the feasible/best selection logic at the bottom of
+    this file).
+    """
+    dalys, cost = result["dalys"], result["cost"]
+    hr_used, stock_used = result["hr_used"], result["stock_used"]
+
+    cost_violation = max(0.0, cost / COST_LIMIT - 1)
+    hr_violation = max(0.0, hr_used / HR_LIMIT - 1)
+    stock_violation = max(0.0, stock_used / STOCK_LIMIT - 1)
+
+    history.append({
+        "config_object": config,
+        "seed": seed,
+        "dalys": dalys,
+        "cost_violation": cost_violation,
+        "hr_violation": hr_violation,
+        "stock_violation": stock_violation,
+    })
+
+    K = 3 * dalys  # HYPERPARAMETER: penalty coefficient - rough, not load-bearing
+    # for search quality now that ConstrainedEI does the real steering,
+    # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
+    penalty = K * (cost_violation + hr_violation + stock_violation)
+    return TrialValue(cost=dalys + penalty)
+
+
+def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
+    """
+    Warm-starts BOTH `history` (which ConstrainedEI trains its random
+    forests on) and SMAC's own runhistory/incumbent tracking, using
+    already-completed runs - so the search doesn't start from scratch.
+
+    Each entry in prior_runs should have the same shape as a
+    postprocessed+aggregated fetch_azure_result() output, plus the
+    raw config values that produced it:
+
+        {
+            "config": {"intervention_coverage": 0.6, "consumable_stock_target": 0.9, ...},
+            "dalys": 41.2, "cost": 1_750_000.0, "hr_used": 470.0, "stock_used": 9100.0,
+        }
+
+    Confirmed supported by SMAC3: previously-evaluated configs can be
+    added via tell() even though they were never produced by SMAC's own
+    ask() - you construct the TrialInfo yourself instead. Call this
+    BEFORE the main ask-tell loop starts.
+
+    Returns the number of runs seeded (use this to offset n_completed's
+    starting value in the main loop, so scenario.n_trials counts total
+    trials including these, not only newly-submitted ones).
+    """
+    n_seeded = 0
+    for i, run in enumerate(prior_runs):
+        config = Configuration(configspace, values=run["config"])
+        # seed is arbitrary here - these runs weren't tied to a real
+        # SMAC-issued seed, so any distinct integer per prior run is
+        # fine; SMAC just uses it as part of the run's identity key.
+        value = record_result(config, i, run)
+        # TO DO: does this need to be the actual seed used
+        info = TrialInfo(config=config, seed=i)
+        smac.tell(info, value)
+        n_seeded += 1
+    return n_seeded
+
+
+# --------------------------------------------------------------------------
+# 3. Build SMAC in ask-tell mode (n_trials still needed for its budget
+#    bookkeeping, even though you're driving the loop yourself)
+# --------------------------------------------------------------------------
+
+scenario = Scenario(configspace, n_trials=400, deterministic=False)  # HYPERPARAMETER (n_trials):
+                                                                        # total trial budget - remember
+                                                                        # max_config_calls means this
+                                                                        # isn't the same as "number of
+                                                                        # distinct configs explored"
+
+# HYPERPARAMETER: max_config_calls caps how many seeds the intensifier
+# will use to confirm any single config (default is 3). Set to 5 to
+# match the "5 seeds for true convergence" threshold - a config can
+# still be discarded early on fewer seeds if it's clearly uncompetitive,
+# but nothing gets promoted to incumbent-quality trust on fewer than up
+# to 5 confirmations. Combined with the noisy-EI correction in
+# ConstrainedEI, this makes the adaptive sampling trustworthy rather
+# than just efficient.
+intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_config_calls=5)
+
+acquisition_function = ConstrainedEI(
+    configspace=configspace,
+    objective_name="dalys",
+    constraint_names=["cost_violation", "hr_violation", "stock_violation"],
+    history_provider=lambda: history,
+    retrain_every=5,  # HYPERPARAMETER: refit every 5 new results
+)
+
+smac = HyperparameterOptimizationFacade(
+    scenario,
+    target_function=lambda config, seed=0: 0.0,  # never actually called in
+                                                    # ask-tell mode, but the
+                                                    # facade still requires
+                                                    # something with the right
+                                                    # signature at construction
+    acquisition_function=acquisition_function,
+    intensifier=intensifier,
+    overwrite=True,
+)
+
+
+# --------------------------------------------------------------------------
+# 4. Warm-start with runs you've already completed, THEN start the loop.
+#    Replace this with however you're currently loading your existing
+#    completed runs (CSV, dataframe, pickle, whatever they're sitting in).
+# --------------------------------------------------------------------------
+
+PRIOR_RUNS = [
+    {
+        "config": {"intervention_coverage": 0.62, "consumable_stock_target": 0.85},
+        "dalys": 45.3, "cost": 1_680_000.0, "hr_used": 455.0, "stock_used": 8_900.0,
+    },
+    {
+        "config": {"intervention_coverage": 0.40, "consumable_stock_target": 0.95},
+        "dalys": 61.7, "cost": 2_400_000.0, "hr_used": 510.0, "stock_used": 9_700.0,  # over cost & HR limits
+    },
+    # ... your other already-completed runs ...
+]
+
+n_seeded = seed_history_with_prior_runs(PRIOR_RUNS, smac)
+print(f"Warm-started with {n_seeded} prior run(s)")
+
+
+# --------------------------------------------------------------------------
+# 5. The ask-tell loop itself: keep N_CONCURRENT Azure jobs in flight,
+#    ask() for a replacement each time one completes and is told back.
+# --------------------------------------------------------------------------
+
+N_CONCURRENT = 6           # HYPERPARAMETER (operational): concurrent Azure jobs in flight -
+                            # interacts with retrain_every; several jobs finishing in the
+                            # same polling pass can mean refitting more often than intended
+POLL_INTERVAL_SECONDS = 10  # HYPERPARAMETER (operational): low-stakes, trades API call
+                              # frequency against latency between job completion and SMAC seeing it
+
+pending: dict[TrialInfo, AzureJobHandle] = {}
+
+# prime the pipeline
+for _ in range(N_CONCURRENT):
+    info = smac.ask()
+    pending[info] = submit_azure_job(info.config, info.seed)
+
+n_completed = n_seeded  # start counting from the warm-started runs, not zero
+while n_completed < scenario.n_trials:
+    made_progress = False
+
+    for info, job in list(pending.items()):
+        if not azure_job_is_finished(job):
+            continue
+
+        result = fetch_azure_result(job)
+        value = record_result(info.config, info.seed, result)
+        smac.tell(info, value)          # <-- the actual "notify SMAC" step
+        del pending[info]
+        n_completed += 1
+        made_progress = True
+
+        # keep concurrency topped up
+        if n_completed < scenario.n_trials:
+            new_info = smac.ask()
+            pending[new_info] = submit_azure_job(new_info.config, new_info.seed)
+
+    if not made_progress:
+        time.sleep(POLL_INTERVAL_SECONDS)
+
+
+# --------------------------------------------------------------------------
+# 6. Final answer: group history by config and average across whatever
+#    seeds SMAC ended up requesting for it, THEN filter+select - never
+#    trust smac.incumbent directly, and never trust a single noisy
+#    realisation's DALYs either, now that history holds individual
+#    (config, seed) results rather than pre-averaged bundles.
+# --------------------------------------------------------------------------
+
+def _config_key(config: Configuration) -> tuple:
+    """Hashable, order-independent identity for grouping history by config."""
+    return tuple(sorted(dict(config).items()))
+
+grouped: dict[tuple, list[dict]] = {}
+for h in history:
+    grouped.setdefault(_config_key(h["config_object"]), []).append(h)
+
+aggregated = []
+for entries in grouped.values():
+    aggregated.append({
+        "config_object": entries[0]["config_object"],
+        "n_seeds_evaluated": len(entries),
+        "dalys": float(np.mean([e["dalys"] for e in entries])),
+        "cost_violation": float(np.mean([e["cost_violation"] for e in entries])),
+        "hr_violation": float(np.mean([e["hr_violation"] for e in entries])),
+        "stock_violation": float(np.mean([e["stock_violation"] for e in entries])),
+    })
+
+feasible = [
+    a for a in aggregated
+    if a["cost_violation"] == 0 and a["hr_violation"] == 0 and a["stock_violation"] == 0
+]
+best = min(feasible, key=lambda a: a["dalys"])
+print(
+    "Best feasible config:", dict(best["config_object"]),
+    "DALYs:", best["dalys"], f"(averaged over {best['n_seeds_evaluated']} seed(s))",
+)
