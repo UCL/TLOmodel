@@ -534,8 +534,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # log = load_pickled_dataframes(results_folder, 0, 0)
     # h = pd.DataFrame(
-    #     log['tlo.methods.healthsystem.']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
-    # ).T
+    #     log['tlo.methods.healthsystem']['Consumables']
+    # )
 
     # get facility list from resource file
     mfl = pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')

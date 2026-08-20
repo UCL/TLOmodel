@@ -298,6 +298,7 @@ class Consumables:
         target: Optional[int] = None,
         event_name: Optional[str] = None,
         module: Optional[str] = None,
+        appt_footprint: Optional[str] = None,
     ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
@@ -348,6 +349,7 @@ class Consumables:
                         "person_id": target,
                         "facility_id": facility_info.id,
                         "event_name": event_name or "",
+                        "appointment": appt_footprint or "",
                     },
                     description="Record of requested and used consumable items.",
                 )

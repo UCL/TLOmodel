@@ -276,7 +276,8 @@ class HSI_Event:
             treatment_id=self.TREATMENT_ID,
             target=self.target,
             event_name=self.__class__.__name__,
-            module = self.module
+            module = self.module,
+            appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
         )
 
         # Return result in expected format:
