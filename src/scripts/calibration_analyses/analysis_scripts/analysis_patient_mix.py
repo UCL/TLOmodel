@@ -902,7 +902,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     mask = pat_mix_complete["category"].eq("Education")
     pat_mix_complete.loc[mask, "subgroup"] = (
         pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
-        .replace({1: "None", 2: "Some/Completed primary education", 3: "Some/Completed secondary education"})
+        .replace({1: "None", 2: "Some/Completed primary", 3: "Some/Completed secondary"})
     )
 
     # mask = pat_mix_complete["category"].eq("Facility_Level")
