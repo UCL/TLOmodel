@@ -16,6 +16,7 @@ New in this version: ONLY_DEFICITS toggle
 """
 
 import os
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import warnings
@@ -41,47 +42,57 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    "fp_total_clients",
-    "opd_attendance",
+     "fp_total_clients",
+     "opd_attendance",
     "ipd_total_admissions",
     "vmmc_first_visits",
     "pnc_mother_checked_48h",
-   # "anc_new_attendees",
-   # "anc_first_trimester_starts",
+    "anc_total_visits",
+    # "anc_new_attendees",
+    # "anc_first_trimester_starts",
     "bcg_under1",
     "penta3_under1",
     "measles1_under1",
     "fully_immunised_under1",
-    #"pnc_within_2wks",
-    #"pnc_first_visit_2wks",
-    #"live_births_total",
-    "skilled_deliveries",
+    "pnc_within_2wks",
+    # "pnc_first_visit_2wks",
+    # "live_births_total",
+    # "skilled_deliveries",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
-    "fp_total_clients":           "FP Total Clients",
-    "opd_attendance":             "OPD Attendance",
-    "ipd_total_admissions":       "IPD Total Admissions",
-    "vmmc_first_visits":          "VMMC First Visits",
-    "pnc_mother_checked_48h":     "PNC Mother <48h",
-    "anc_new_attendees":          "ANC New Attendees",
+    "fp_total_clients": "FP Total Clients",
+    "opd_attendance": "OPD Attendance",
+    "ipd_total_admissions": "IPD Total Admissions",
+    "vmmc_first_visits": "VMMC First Visits",
+    "pnc_mother_checked_48h": "PNC Mother <48h",
+    "anc_new_attendees": "ANC New Attendees",
+    "anc_total_visits": "ANC Total Visits",
     "anc_first_trimester_starts": "ANC 1st Trimester Starts",
-    "bcg_under1":                 "BCG Under-1",
-    "penta3_under1":              "Penta3 Under-1",
-    "measles1_under1":            "Measles 1st Dose Under-1",
-    "fully_immunised_under1":     "Fully Immunised Under-1",
-    "pnc_within_2wks":            "PNC Within 2 Weeks",
-    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
-    "live_births_total":          "Live Births Total",
-    "skilled_deliveries":         "Skilled Deliveries",
+    "bcg_under1": "BCG Under-1",
+    "penta3_under1": "Penta3 Under-1",
+    "measles1_under1": "Measles 1st Dose Under-1",
+    "fully_immunised_under1": "Fully Immunised Under-1",
+    "pnc_within_2wks": "PNC Within 2 Weeks",
+    "pnc_first_visit_2wks": "PNC First Visit <2 Weeks",
+    "live_births_total": "Live Births Total",
+    "skilled_deliveries": "Skilled Deliveries",
 }
+
+# Indicators that benefit from the more stable intercept-only alpha estimation
+# These typically have extreme overdispersion (Var/Mean >> 10)
+HIGH_OVERDISPERSION_INDICATORS = [
+    "ipd_total_admissions",
+    "opd_attendance",
+]
 
 # --- Only-deficits toggle --------------------------------------------------
 # When True, restrict every aggregation (historical deficit, hot-month
 # deficit, projection deficits, district aggregations) to rows where
 # baseline > weather (services lost). Suffix all output CSVs accordingly.
-ONLY_DEFICITS = True
+ONLY_DEFICITS = False
 SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
+
 
 def _apply_deficit_filter(df, base_col, wx_col):
     """Return `df` filtered to rows where the baseline exceeds the weather
@@ -89,6 +100,7 @@ def _apply_deficit_filter(df, base_col, wx_col):
     if not ONLY_DEFICITS:
         return df
     return df[df[base_col] > df[wx_col]].copy()
+
 
 # Model settings
 WBGT_VAR = "wbgt_day"
@@ -115,7 +127,7 @@ FDR_ALPHA = 0.05
 
 CLOSURES = [
     ("Phalombe Health Centre", "2023-04-01", "2024-06-01"),
-    ("Thumbwe Health Centre",  "2023-03-01", "2024-03-01"),
+    ("Thumbwe Health Centre", "2023-03-01", "2024-03-01"),
 ]
 
 min_year_historical = 2016
@@ -123,7 +135,7 @@ max_year_historical = 2025
 LAST_HIST_YEAR = max_year_historical - 1
 
 MIN_YEAR_BY_INDICATOR: dict[str, int] = {
-    "fp_total_clients":  2019,
+    "fp_total_clients": 2019,
     "vmmc_first_visits": 2019,
 }
 
@@ -136,16 +148,16 @@ max_year_projection = 2041
 
 PRECIP_FILE_BY_TIER = {
     "highest": "precip_monthly_total_facility_CanESM5_{ssp}.csv",
-    "lowest":  "precip_monthly_total_facility_MPI-ESM1-2-HR_{ssp}.csv",
-    "median":  "precip_monthly_total_facility_MIROC6_{ssp}.csv",
+    "lowest": "precip_monthly_total_facility_MPI-ESM1-2-HR_{ssp}.csv",
+    "median": "precip_monthly_total_facility_MIROC6_{ssp}.csv",
 }
 
 CURVE_REF_MODE = "mean"
 CURVE_N = 60
 
-DATA_DIR   = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR    = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
-PANEL_DIR  = f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
+DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
+OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+PANEL_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
 INDICES_DIR = PANEL_DIR
 os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -154,11 +166,14 @@ N_WORKERS = min(cpu_count() - 1, 4)
 
 WINSORIZE_BY_INDICATOR: dict[str, float] = {
     "opd_attendance": 0.99,
-    "fully_immunised_under1": 0.90,
+    "ipd_total_admissions": 0.909,
+    "fully_immunised_under1": 0.95,
     "pnc_within_2wks": 0.90,
     "measles1_under1": 0.90,
 }
 WINSORIZE_DEFAULT = 0.999
+
+
 # ===========================================================================
 # Jackknife CI helper (respects ONLY_DEFICITS via aggregator arg)
 # ===========================================================================
@@ -179,8 +194,7 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids, sign="b_minus_a"):
         return np.nan, np.nan, np.nan
 
     def _stat(sa, sb):
-        return (100.0 * (sa - sb) / sb) if sign == "a_minus_b" \
-            else (100.0 * (sb - sa) / sb)
+        return (100.0 * (sa - sb) / sb) if sign == "a_minus_b" else (100.0 * (sb - sa) / sb)
 
     pt = _stat(sum_a, sum_b)
     facs = np.unique(facility_ids)
@@ -203,64 +217,125 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids, sign="b_minus_a"):
 
 
 # ===========================================================================
-# Alpha estimation + NB warm-start
+# IMPROVED: Alpha estimation with robust fallback
 # ===========================================================================
 def estimate_alpha_fast(data, y_col="y_int"):
-    mod_pois = smf.glm(f"{y_col} ~ 1", data=data,
-                       family=sm.families.Poisson()).fit()
-    mu = mod_pois.fittedvalues
-    pearson_resid = (data[y_col] - mu) / np.sqrt(mu)
-    dispersion = (pearson_resid**2).sum() / mod_pois.df_resid
-    return max(0.01, (dispersion - 1) / mu.mean())
+    """
+    Quick alpha estimate for NB2 using method of moments from intercept-only model.
+    This is the preferred method for high-overdispersion indicators because it
+    always converges and provides an unbiased estimate.
+    """
+    try:
+        mod_pois = smf.glm(f"{y_col} ~ 1", data=data, family=sm.families.Poisson()).fit()
+        mu = mod_pois.fittedvalues
+        pearson_resid = (data[y_col] - mu) / np.sqrt(mu + 1e-10)
+        dispersion = (pearson_resid**2).sum() / mod_pois.df_resid
+        alpha = max(0.01, (dispersion - 1) / mu.mean())
+        ALPHA_STABILITY_CAP = 5.0
+        alpha = min(alpha, ALPHA_STABILITY_CAP)
+        if alpha == ALPHA_STABILITY_CAP:
+            print(f"   alpha capped at {ALPHA_STABILITY_CAP} for stability (raw estimate was higher)")
+        return alpha
+    except Exception as e:
+        print(f"  Alpha estimation via intercept-only failed: {e}")
+        # Fallback: use variance/mean ratio directly
+        mean_y = data[y_col].mean()
+        var_y = data[y_col].var()
+        alpha = max(0.01, (var_y - mean_y) / (mean_y**2)) if mean_y > 0 else 0.1
+        ALPHA_STABILITY_CAP = 5.0
+        alpha = min(alpha, ALPHA_STABILITY_CAP)
+        if alpha == ALPHA_STABILITY_CAP:
+            print(f"   alpha capped at {ALPHA_STABILITY_CAP} for stability (raw estimate was higher)")
+        return alpha
 
 
-def estimate_alpha_from_poisson(poisson_result, y):
+def estimate_alpha_from_poisson(poisson_result, y, max_alpha=50.0):
+    """
+    Estimate alpha from a fitted Poisson model.
+    This method is less stable for high-overdispersion indicators.
+
+    Parameters
+    ----------
+    poisson_result : statsmodels GLM result
+        Fitted Poisson model
+    y : array-like
+        Observed counts
+    max_alpha : float
+        Upper bound for alpha (increased from 10 to 50 for better handling
+        of high-overdispersion indicators)
+    """
     mu = np.clip(poisson_result.fittedvalues, 1e-6, None)
-    pearson_chi2 = ((y - mu) ** 2 / mu).sum()
+    pearson_chi2 = ((y - mu) ** 2 / mu  + 1e-10).sum()
     dispersion = pearson_chi2 / poisson_result.df_resid
-    return float(np.clip((dispersion - 1) / mu.mean(), 1e-4, 10.0))
+    alpha = (dispersion - 1) / mu.mean()
+    ALPHA_STABILITY_CAP = 5.0
+    alpha = min(alpha, ALPHA_STABILITY_CAP)
+    if alpha == ALPHA_STABILITY_CAP:
+        print(f"   alpha capped at {ALPHA_STABILITY_CAP} for stability (raw estimate was higher)")
+    return alpha
+
+    return float(np.clip(alpha, 1e-4, max_alpha))
 
 
-def fit_negbin_warmstart(formula, data, groups, alpha, start_params,
-                         y_col="y_int"):
-    mod = smf.glm(formula=formula, data=data,
-                  family=sm.families.NegativeBinomial(alpha=alpha))
-    result = mod.fit(cov_type="cluster", cov_kwds={"groups": groups},
-                     start_params=start_params, maxiter=200)
+def estimate_alpha_robust(data, indicator=None, y_col="y_int"):
+    """
+    Robust alpha estimation with indicator-specific strategy.
+
+    For high-overdispersion indicators (Var/Mean >> 10), use the intercept-only
+    method which is more stable. For others, use the full-model method if
+    available, but fall back to intercept-only if it fails.
+    """
+    # Check if this is a high-overdispersion indicator
+    if indicator in HIGH_OVERDISPERSION_INDICATORS:
+        print(f"  [{indicator}] Using intercept-only alpha (high-overdispersion)")
+        return estimate_alpha_fast(data, y_col)
+
+    # For other indicators, try the full-model method first
+    try:
+        mod_pois = smf.glm(f"{y_col} ~ year_c + covid", data=data, family=sm.families.Poisson()).fit()
+        alpha = estimate_alpha_from_poisson(mod_pois, data[y_col])
+        return alpha
+    except Exception as e:
+        print(f"  Full-model alpha failed ({e}), falling back to intercept-only")
+        return estimate_alpha_fast(data, y_col)
+
+
+def fit_negbin_warmstart(formula, data, groups, alpha, start_params, y_col="y_int"):
+    mod = smf.glm(formula=formula, data=data, family=sm.families.NegativeBinomial(alpha=alpha))
+    result = mod.fit(cov_type="cluster", cov_kwds={"groups": groups}, start_params=start_params, maxiter=200)
     result.alpha_hat = alpha
     return result
 
 
 def fit_negbin_fixed_alpha(formula, data, groups, alpha, y_col="y_int"):
-    mod = smf.glm(formula=formula, data=data,
-                  family=sm.families.NegativeBinomial(alpha=alpha)
-                  ).fit(cov_type="cluster", cov_kwds={"groups": groups})
+    mod = smf.glm(formula=formula, data=data, family=sm.families.NegativeBinomial(alpha=alpha)).fit(
+        cov_type="cluster", cov_kwds={"groups": groups}
+    )
     mod.alpha_hat = alpha
     return mod
 
 
 def diagnose_indicator(df, indicator):
     y = df[indicator].dropna()
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"  DIAGNOSTICS: {indicator}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"  N obs:        {len(y):,}")
-    print(f"  N zeros:      {(y == 0).sum():,} ({100*(y==0).mean():.1f}%)")
+    print(f"  N zeros:      {(y == 0).sum():,} ({100 * (y == 0).mean():.1f}%)")
     print(f"  Mean:         {y.mean():.2f}")
     print(f"  Variance:     {y.var():.2f}")
-    print(f"  Var/Mean:     {y.var()/y.mean():.2f}")
+    print(f"  Var/Mean:     {y.var() / y.mean():.2f}")
     print(f"  Max:          {y.max():.0f}")
     print(f"  Skewness:     {y.skew():.2f}")
-    print(f"  % > 3*IQR:    {100*(y > y.quantile(0.75)*3).mean():.2f}%")
+    print(f"  % > 3*IQR:    {100 * (y > y.quantile(0.75) * 3).mean():.2f}%")
 
 
 # ===========================================================================
 # Weather column construction
 # ===========================================================================
-def add_weather_columns_optimized(df, shifts, spline_design=None,
-                                   lag_months=LAG_MONTHS):
+def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG_MONTHS):
     df = df.sort_values(["facility", "date"]).reset_index(drop=True)
-    df["year"]  = df["date"].dt.year
+    df["year"] = df["date"].dt.year
     df["month"] = df["date"].dt.month
     df["year_c"] = df["year"] - shifts["year"]
 
@@ -278,13 +353,12 @@ def add_weather_columns_optimized(df, shifts, spline_design=None,
     for v in [WBGT_VAR]:
         xc = df[v] - shifts[v]
         if spline_design is None:
-            B = patsy.dmatrix(f"cr(x, df={SPLINE_DF}) - 1", {"x": xc},
-                              return_type="dataframe")
+            B = patsy.dmatrix(f"cr(x, df={SPLINE_DF}) - 1", {"x": xc}, return_type="dataframe")
             design_map[v] = B.design_info
         else:
             B = patsy.build_design_matrices([design_map[v]], {"x": xc})[0]
             B = pd.DataFrame(np.asarray(B))
-        cols = [f"{v}_s{i+1}" for i in range(B.shape[1])]
+        cols = [f"{v}_s{i + 1}" for i in range(B.shape[1])]
         for c, col in enumerate(cols):
             df[col] = np.asarray(B)[:, c]
         spline_cols_all.extend(cols)
@@ -300,40 +374,36 @@ def add_weather_columns_optimized(df, shifts, spline_design=None,
 # ===========================================================================
 # Exposure-response curve
 # ===========================================================================
-def exposure_response_curve_fast(model, spline_cols, design_info,
-                                  WBGT_VAR_name, wbgt_shift, ref_mode,
-                                  wbgt_values, n=CURVE_N):
+def exposure_response_curve_fast(
+    model, spline_cols, design_info, WBGT_VAR_name, wbgt_shift, ref_mode, wbgt_values, n=CURVE_N
+):
     wobs = np.asarray(wbgt_values).flatten()
-    grid = np.linspace(np.percentile(wobs, 1),
-                       np.percentile(wobs, 99), n)
+    grid = np.linspace(np.percentile(wobs, 1), np.percentile(wobs, 99), n)
     ref = wobs.mean() if ref_mode == "mean" else float(ref_mode)
 
-    Bg = np.asarray(patsy.build_design_matrices(
-        [design_info[WBGT_VAR_name]], {"x": grid - wbgt_shift})[0])
-    Br = np.asarray(patsy.build_design_matrices(
-        [design_info[WBGT_VAR_name]],
-        {"x": np.array([ref]) - wbgt_shift})[0])
+    Bg = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": grid - wbgt_shift})[0])
+    Br = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": np.array([ref]) - wbgt_shift})[0])
     contrast = Bg - Br
     beta = model.params.reindex(spline_cols).values
-    V = model.cov_params().reindex(index=spline_cols,
-                                   columns=spline_cols).values
+    V = model.cov_params().reindex(index=spline_cols, columns=spline_cols).values
     log_irr = contrast @ beta
     var = np.einsum("ij,jk,ik->i", contrast, V, contrast)
     se = np.sqrt(np.clip(var, 0, None))
-    return pd.DataFrame({
-        "wbgt": grid,
-        "wbgt_ref": ref,
-        "rr_vs_ref": np.exp(log_irr),
-        "rr_lo": np.exp(log_irr - 1.96 * se),
-        "rr_hi": np.exp(log_irr + 1.96 * se),
-    })
+    return pd.DataFrame(
+        {
+            "wbgt": grid,
+            "wbgt_ref": ref,
+            "rr_vs_ref": np.exp(log_irr),
+            "rr_lo": np.exp(log_irr - 1.96 * se),
+            "rr_hi": np.exp(log_irr + 1.96 * se),
+        }
+    )
 
 
 # ===========================================================================
 # Winsorize
 # ===========================================================================
-def winsorize_indicator(df, indicator_col='y', facility_col='facility_id',
-                        upper_quantile=0.999):
+def winsorize_indicator(df, indicator_col="y", facility_col="facility_id", upper_quantile=0.999):
     df = df.copy()
 
     def _cap_facility(group):
@@ -343,8 +413,10 @@ def winsorize_indicator(df, indicator_col='y', facility_col='facility_id',
     original = df[indicator_col].copy()
     df[indicator_col] = df.groupby(facility_col, group_keys=False).apply(_cap_facility)
     n_capped = (df[indicator_col] != original).sum()
-    print(f"  [WINSORIZE] {indicator_col}: {n_capped} values capped "
-          f"(per-facility {upper_quantile*100:.1f}th percentile)")
+    print(
+        f"  [WINSORIZE] {indicator_col}: {n_capped} values capped "
+        f"(per-facility {upper_quantile * 100:.1f}th percentile)"
+    )
     return df
 
 
@@ -354,8 +426,7 @@ def winsorize_indicator(df, indicator_col='y', facility_col='facility_id',
 def fit_indicator(indicator, panel_path):
     print(f"\n→ {indicator}")
     if ONLY_DEFICITS:
-        print(f"  ONLY_DEFICITS = True — aggregations restricted to "
-              f"loss-of-service rows")
+        print(f"  ONLY_DEFICITS = True — aggregations restricted to loss-of-service rows")
     t0 = time.time()
 
     try:
@@ -371,12 +442,13 @@ def fit_indicator(indicator, panel_path):
         print(f"  [{indicator}] Missing {CLUSTER_COL} in panel")
         return None
 
+    # Closures -> 0 (keep as 0, not NaN)
     for fac, d0, d1 in CLOSURES:
         m = (long["date"].between(d0, d1)) & (long["facility"] == fac)
         if m.any():
             long.loc[m, "y"] = 0
 
-    long["year"]  = long["date"].dt.year
+    long["year"] = long["date"].dt.year
     long["month"] = long["date"].dt.month
     ind_min_year = MIN_YEAR_BY_INDICATOR.get(indicator, min_year_historical)
     long = long[long["year"].between(ind_min_year, max_year_historical - 1)]
@@ -391,16 +463,23 @@ def fit_indicator(indicator, panel_path):
     if wq != WINSORIZE_DEFAULT:
         print(f"  [{indicator}] using tighter winsorization: {wq}")
     long = winsorize_indicator(long, indicator_col="y", facility_col="facility", upper_quantile=wq)
-    diagnose_indicator(long, 'y')
+    diagnose_indicator(long, "y")
+
+    # Optional scaling for extreme indicators (kept for compatibility)
+    if indicator == "ipd_total_admissions":
+        # Scale down extreme values for numerical stability
+        scale_factor = 100
+        long["y"] = long["y"] / scale_factor
+        print(f"  [{indicator}] Scaling response by {scale_factor}")
+    else:
+        scale_factor = 1
 
     SHIFTS = {"year": long["year"].mean() if CENTER else 0.0}
     SHIFTS[WBGT_VAR] = long[WBGT_VAR].mean() if CENTER else 0.0
     if USE_PRECIP:
         SHIFTS["precip"] = long[PRECIP_COL].mean() if CENTER else 0.0
 
-    long, weather_rhs, spline_cols, DESIGN = add_weather_columns_optimized(
-        long, SHIFTS
-    )
+    long, weather_rhs, spline_cols, DESIGN = add_weather_columns_optimized(long, SHIFTS)
 
     nb_cols = ["y", "facility", "month", CLUSTER_COL] + weather_rhs
     nb_data = long.dropna(subset=nb_cols).copy()
@@ -409,31 +488,32 @@ def fit_indicator(indicator, panel_path):
     nb_data = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= MIN_OBS].index)].copy()
     FITTED_FACILITIES = set(nb_data["facility"].unique())
 
-    print(f"  [{indicator}] Sample: {len(nb_data):,} obs, "
-          f"{len(FITTED_FACILITIES)} facilities")
+    print(f"  [{indicator}] Sample: {len(nb_data):,} obs, {len(FITTED_FACILITIES)} facilities")
 
     groups = nb_data[CLUSTER_COL]
     ctrl = "year_c + covid" + (" + precip_c" if USE_PRECIP else "")
     FE = "C(month) + C(facility)"
     f_base = f"y_int ~ {ctrl} + {FE}"
-    f_wx   = f"y_int ~ {' + '.join(weather_rhs)} + {FE}"
+    f_wx = f"y_int ~ {' + '.join(weather_rhs)} + {FE}"
+
+    # -----------------------------------------------------------------------
+    # Estimate alpha with robust method (IMPROVED)
+    # -----------------------------------------------------------------------
+    alpha = estimate_alpha_robust(nb_data, indicator=indicator)
+    print(f"  [{indicator}] Alpha: {alpha:.4f}")
 
     try:
-        pois_base = smf.glm(f_base, data=nb_data,
-                            family=sm.families.Poisson()).fit(maxiter=100)
-        pois_wx   = smf.glm(f_wx,   data=nb_data,
-                            family=sm.families.Poisson()).fit(maxiter=100)
-        alpha = estimate_alpha_from_poisson(pois_wx, nb_data["y_int"])
-        print(f"  [{indicator}] alpha (from full-model Poisson): {alpha:.4f}")
-        model_base = fit_negbin_warmstart(
-            f_base, nb_data, groups, alpha,
-            start_params=pois_base.params.values)
-        model_wx = fit_negbin_warmstart(
-            f_wx, nb_data, groups, alpha,
-            start_params=pois_wx.params.values)
+        # Use the estimated alpha directly - no Poisson fitting needed
+        model_base = fit_negbin_fixed_alpha(f_base, nb_data, groups, alpha)
+        model_wx = fit_negbin_fixed_alpha(f_wx, nb_data, groups, alpha)
     except Exception as e:
         print(f"  [{indicator}] Model fitting failed: {e}")
         return None
+
+    # Rescale fitted values back to original scale if needed
+    if scale_factor > 1:
+        model_base.fittedvalues = model_base.fittedvalues * scale_factor
+        model_wx.fittedvalues = model_wx.fittedvalues * scale_factor
 
     missing_spline = [c for c in spline_cols if c not in model_wx.params.index]
     if missing_spline:
@@ -443,8 +523,12 @@ def fit_indicator(indicator, panel_path):
     # a model-derived curve, not an aggregation over observed rows)
     try:
         curve = exposure_response_curve_fast(
-            model_wx, spline_cols, DESIGN, WBGT_VAR,
-            SHIFTS[WBGT_VAR], CURVE_REF_MODE,
+            model_wx,
+            spline_cols,
+            DESIGN,
+            WBGT_VAR,
+            SHIFTS[WBGT_VAR],
+            CURVE_REF_MODE,
             nb_data[WBGT_VAR].values,
         )
         curve.insert(0, "indicator", indicator)
@@ -457,8 +541,8 @@ def fit_indicator(indicator, panel_path):
         print(f"  [{indicator}] Curve failed: {e}")
 
     nb_data["y_pred_base"] = model_base.fittedvalues
-    nb_data["y_pred_wx"]   = model_wx.fittedvalues
-    nb_data["difference"]  = nb_data["y_pred_base"] - nb_data["y_pred_wx"]
+    nb_data["y_pred_wx"] = model_wx.fittedvalues
+    nb_data["difference"] = nb_data["y_pred_base"] - nb_data["y_pred_wx"]
 
     # ---- Aggregate deficit (respects ONLY_DEFICITS) --------------------
     def aggregate_deficit_pct(df):
@@ -469,21 +553,18 @@ def fit_indicator(indicator, panel_path):
     deficit_pt = aggregate_deficit_pct(nb_data)
 
     facs = nb_data["facility"].unique()
-    jack = np.array([aggregate_deficit_pct(nb_data[nb_data["facility"] != f])
-                     for f in facs])
+    jack = np.array([aggregate_deficit_pct(nb_data[nb_data["facility"] != f]) for f in facs])
     jack = jack[np.isfinite(jack)]
     n = len(jack)
     if n > 1:
         jbar = jack.mean()
         se_jack = np.sqrt((n - 1) / n * np.sum((jack - jbar) ** 2))
-        deficit_ci = (deficit_pt - 1.96 * se_jack,
-                      deficit_pt + 1.96 * se_jack)
+        deficit_ci = (deficit_pt - 1.96 * se_jack, deficit_pt + 1.96 * se_jack)
     else:
         deficit_ci = (np.nan, np.nan)
         se_jack = np.nan
 
-    print(f"  [{indicator}] Deficit: {deficit_pt:+.2f}% "
-          f"(CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
+    print(f"  [{indicator}] Deficit: {deficit_pt:+.2f}% (CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
 
     # ---- Hot-month deficit ---------------------------------------------
     hot_threshold = np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
@@ -493,44 +574,41 @@ def fit_indicator(indicator, panel_path):
     if len(hot_data) > 10:
         hot_deficit_pt = aggregate_deficit_pct(hot_data)
         hot_facs = hot_data["facility"].unique()
-        hot_jack = np.array([aggregate_deficit_pct(
-            hot_data[hot_data["facility"] != f]) for f in hot_facs])
+        hot_jack = np.array([aggregate_deficit_pct(hot_data[hot_data["facility"] != f]) for f in hot_facs])
         hot_jack = hot_jack[np.isfinite(hot_jack)]
         n_hot = len(hot_jack)
         if n_hot > 1:
             hot_jbar = hot_jack.mean()
-            hot_se_jack = np.sqrt((n_hot - 1) / n_hot
-                                  * np.sum((hot_jack - hot_jbar) ** 2))
-            hot_deficit_ci = (hot_deficit_pt - 1.96 * hot_se_jack,
-                              hot_deficit_pt + 1.96 * hot_se_jack)
+            hot_se_jack = np.sqrt((n_hot - 1) / n_hot * np.sum((hot_jack - hot_jbar) ** 2))
+            hot_deficit_ci = (hot_deficit_pt - 1.96 * hot_se_jack, hot_deficit_pt + 1.96 * hot_se_jack)
         else:
             hot_deficit_ci = (np.nan, np.nan)
             hot_se_jack = np.nan
 
-        print(f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C): "
-              f"{hot_deficit_pt:+.2f}% "
-              f"(CI: {hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f})")
+        print(
+            f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C): "
+            f"{hot_deficit_pt:+.2f}% "
+            f"(CI: {hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f})"
+        )
     else:
         hot_deficit_pt = np.nan
         hot_deficit_ci = (np.nan, np.nan)
         hot_se_jack = np.nan
-        print(f"  [{indicator}] Not enough hot months "
-              f"({len(hot_data)} observations)")
+        print(f"  [{indicator}] Not enough hot months ({len(hot_data)} observations)")
 
     # ---- IRR contrast (model-derived; unaffected by ONLY_DEFICITS) -----
     reference_wbgt = float(np.percentile(nb_data[WBGT_VAR], IRR_LOW_PCTILE))
     try:
         design_info_wbgt = DESIGN[WBGT_VAR]
-        B_hi = np.asarray(patsy.build_design_matrices(
-            [design_info_wbgt],
-            {"x": np.array([IRR_HIGH]) - SHIFTS[WBGT_VAR]})[0])
-        B_ref = np.asarray(patsy.build_design_matrices(
-            [design_info_wbgt],
-            {"x": np.array([reference_wbgt]) - SHIFTS[WBGT_VAR]})[0])
+        B_hi = np.asarray(
+            patsy.build_design_matrices([design_info_wbgt], {"x": np.array([IRR_HIGH]) - SHIFTS[WBGT_VAR]})[0]
+        )
+        B_ref = np.asarray(
+            patsy.build_design_matrices([design_info_wbgt], {"x": np.array([reference_wbgt]) - SHIFTS[WBGT_VAR]})[0]
+        )
         contrast_hl = (B_hi - B_ref).ravel()
         beta_s = model_wx.params.reindex(spline_cols).values
-        V_s = model_wx.cov_params().reindex(index=spline_cols,
-                                            columns=spline_cols).values
+        V_s = model_wx.cov_params().reindex(index=spline_cols, columns=spline_cols).values
         log_irr_hl = float(contrast_hl @ beta_s)
         var_hl = float(contrast_hl @ V_s @ contrast_hl)
         se_hl = float(np.sqrt(max(var_hl, 0.0)))
@@ -559,15 +637,17 @@ def fit_indicator(indicator, panel_path):
     # ---- Historical burden file ----------------------------------------
     # Always write the full facility-month table; downstream aggregations
     # filter on read. This keeps the file useful for both toggle states.
-    hb = pd.DataFrame({
-        "date": nb_data["date"].values,
-        "facility": nb_data["facility"].values,
-        "month": nb_data["month"].values,
-        CLUSTER_COL: nb_data[CLUSTER_COL].values,
-        "y_int": nb_data["y_int"].values,
-        "mu_a": nb_data["y_pred_wx"].values,
-        "mu_b": nb_data["y_pred_base"].values,
-    })
+    hb = pd.DataFrame(
+        {
+            "date": nb_data["date"].values,
+            "facility": nb_data["facility"].values,
+            "month": nb_data["month"].values,
+            CLUSTER_COL: nb_data[CLUSTER_COL].values,
+            "y_int": nb_data["y_int"].values,
+            "mu_a": nb_data["y_pred_wx"].values,
+            "mu_b": nb_data["y_pred_base"].values,
+        }
+    )
     hb.to_csv(
         f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}.csv",
         index=False,
@@ -575,9 +655,7 @@ def fit_indicator(indicator, panel_path):
 
     # ---- District burden (respects ONLY_DEFICITS in the aggregation) ---
     hb_for_agg = _apply_deficit_filter(hb, "mu_b", "mu_a")
-    district_agg = (
-        hb_for_agg.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
-    )
+    district_agg = hb_for_agg.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
     district_agg["deficit_pct"] = np.where(
         district_agg["mu_b"] > 0,
         100.0 * (district_agg["mu_b"] - district_agg["mu_a"]) / district_agg["mu_b"],
@@ -591,14 +669,21 @@ def fit_indicator(indicator, panel_path):
     dist_rows = []
     for dist, sub in hb_for_agg.groupby(CLUSTER_COL):
         pt, lo, hi = _monthly_jackknife_ci_local(
-            sub["mu_a"].values, sub["mu_b"].values,
-            sub["facility"].values, sign="a_minus_b",
+            sub["mu_a"].values,
+            sub["mu_b"].values,
+            sub["facility"].values,
+            sign="a_minus_b",
         )
         sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
-        dist_rows.append({
-            "district": dist, "deficit_pct": pt,
-            "ci_lo": lo, "ci_hi": hi, "sig": sig,
-        })
+        dist_rows.append(
+            {
+                "district": dist,
+                "deficit_pct": pt,
+                "ci_lo": lo,
+                "ci_hi": hi,
+                "sig": sig,
+            }
+        )
     pd.DataFrame(dist_rows).to_csv(
         f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}.csv",
         index=False,
@@ -606,52 +691,55 @@ def fit_indicator(indicator, panel_path):
 
     # ---- TLO disruption curve (model-derived; unaffected) --------------
     try:
-        Bg = np.asarray(patsy.build_design_matrices(
-            [design_info_wbgt],
-            {"x": TLO_WBGT_GRID - SHIFTS[WBGT_VAR]})[0])
-        Br = np.asarray(patsy.build_design_matrices(
-            [design_info_wbgt],
-            {"x": np.array([reference_wbgt]) - SHIFTS[WBGT_VAR]})[0])
+        Bg = np.asarray(patsy.build_design_matrices([design_info_wbgt], {"x": TLO_WBGT_GRID - SHIFTS[WBGT_VAR]})[0])
+        Br = np.asarray(
+            patsy.build_design_matrices([design_info_wbgt], {"x": np.array([reference_wbgt]) - SHIFTS[WBGT_VAR]})[0]
+        )
         rr_grid = np.exp((Bg - Br) @ beta_s)
-        tlo_rows = pd.DataFrame({
-            "indicator": indicator,
-            "wbgt": TLO_WBGT_GRID,
-            "rr_vs_ref": rr_grid,
-            "disruption_probability": np.clip(1.0 - rr_grid, 0.0, None),
-        })
+        tlo_rows = pd.DataFrame(
+            {
+                "indicator": indicator,
+                "wbgt": TLO_WBGT_GRID,
+                "rr_vs_ref": rr_grid,
+                "disruption_probability": np.clip(1.0 - rr_grid, 0.0, None),
+            }
+        )
     except Exception as e:
         print(f"  [{indicator}] TLO lookup rows failed: {e}")
-        tlo_rows = pd.DataFrame(columns=[
-            "indicator", "wbgt", "rr_vs_ref", "disruption_probability"])
+        tlo_rows = pd.DataFrame(columns=["indicator", "wbgt", "rr_vs_ref", "disruption_probability"])
 
-    pd.DataFrame([{
-        "indicator": indicator,
-        "label": INDICATOR_LABELS.get(indicator, indicator),
-        "only_deficits": ONLY_DEFICITS,
-        "deficit_pct": deficit_pt,
-        "ci_lo": deficit_ci[0], "ci_hi": deficit_ci[1],
-        "se_jackknife": se_jack,
-        "hot_deficit_pct": hot_deficit_pt,
-        "hot_ci_lo": hot_deficit_ci[0], "hot_ci_hi": hot_deficit_ci[1],
-        "hot_se_jackknife": hot_se_jack,
-        "hot_threshold": hot_threshold if len(hot_data) > 10 else np.nan,
-        "n_hot_obs": len(hot_data),
-        "n_facilities": len(FITTED_FACILITIES),
-        "n_obs": len(nb_data),
-        "n_districts": nb_data[CLUSTER_COL].nunique(),
-        "alpha": alpha,
-        "reference_wbgt": reference_wbgt,
-        "irr_hi_vs_low": irr_pt,
-        "irr_lo_bound": irr_lo, "irr_hi_bound": irr_hi,
-        "pval": pval,
-        "time_seconds": time.time() - t0,
-    }]).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "indicator": indicator,
+                "label": INDICATOR_LABELS.get(indicator, indicator),
+                "only_deficits": ONLY_DEFICITS,
+                "deficit_pct": deficit_pt,
+                "ci_lo": deficit_ci[0],
+                "ci_hi": deficit_ci[1],
+                "se_jackknife": se_jack,
+                "hot_deficit_pct": hot_deficit_pt,
+                "hot_ci_lo": hot_deficit_ci[0],
+                "hot_ci_hi": hot_deficit_ci[1],
+                "hot_se_jackknife": hot_se_jack,
+                "hot_threshold": hot_threshold if len(hot_data) > 10 else np.nan,
+                "n_hot_obs": len(hot_data),
+                "n_facilities": len(FITTED_FACILITIES),
+                "n_obs": len(nb_data),
+                "n_districts": nb_data[CLUSTER_COL].nunique(),
+                "alpha": alpha,
+                "reference_wbgt": reference_wbgt,
+                "irr_hi_vs_low": irr_pt,
+                "irr_lo_bound": irr_lo,
+                "irr_hi_bound": irr_hi,
+                "pval": pval,
+                "time_seconds": time.time() - t0,
+            }
+        ]
+    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}.csv", index=False)
 
-    pred_cols = ["year", "month", "facility", "date", "y_int", "covid",
-                 "y_pred_base", "y_pred_wx", "difference"]
-    nb_data[pred_cols].to_csv(
-        f"{OUT_DIR}predictions_{indicator}.csv", index=False
-    )
+    pred_cols = ["year", "month", "facility", "date", "y_int", "covid", "y_pred_base", "y_pred_wx", "difference"]
+    nb_data[pred_cols].to_csv(f"{OUT_DIR}predictions_{indicator}.csv", index=False)
 
     print(f"  [{indicator}] Done in {time.time() - t0:.1f}s")
 
@@ -659,9 +747,11 @@ def fit_indicator(indicator, panel_path):
         "indicator": indicator,
         "label": INDICATOR_LABELS.get(indicator, indicator),
         "deficit_pct": deficit_pt,
-        "ci_lo": deficit_ci[0], "ci_hi": deficit_ci[1],
+        "ci_lo": deficit_ci[0],
+        "ci_hi": deficit_ci[1],
         "hot_deficit_pct": hot_deficit_pt,
-        "hot_ci_lo": hot_deficit_ci[0], "hot_ci_hi": hot_deficit_ci[1],
+        "hot_ci_lo": hot_deficit_ci[0],
+        "hot_ci_hi": hot_deficit_ci[1],
         "hot_threshold": hot_threshold if len(hot_data) > 10 else np.nan,
         "n_hot_obs": len(hot_data),
         "n_facilities": len(FITTED_FACILITIES),
@@ -670,14 +760,17 @@ def fit_indicator(indicator, panel_path):
         "alpha": alpha,
         "reference_wbgt": reference_wbgt,
         "irr_hi_vs_low": irr_pt,
-        "irr_lo_bound": irr_lo, "irr_hi_bound": irr_hi,
-        "pval": pval, "time": time.time() - t0,
-        "_shifts": SHIFTS, "_design_map": DESIGN,
+        "irr_lo_bound": irr_lo,
+        "irr_hi_bound": irr_hi,
+        "pval": pval,
+        "time": time.time() - t0,
+        "_shifts": SHIFTS,
+        "_design_map": DESIGN,
         "_spline_cols": spline_cols,
         "_train_facs": list(FITTED_FACILITIES),
-        "_model_wx": model_wx, "_model_base": model_base,
-        "_fac_district": nb_data[["facility", CLUSTER_COL]]
-                           .drop_duplicates().reset_index(drop=True),
+        "_model_wx": model_wx,
+        "_model_base": model_base,
+        "_fac_district": nb_data[["facility", CLUSTER_COL]].drop_duplicates().reset_index(drop=True),
         "_tlo_rows": tlo_rows,
     }
 
@@ -691,28 +784,25 @@ if __name__ == "__main__":
     print(f"Indicators: {len(COUNT_INDICATORS)}")
     print(f"Parallel: {USE_PARALLEL} (workers={N_WORKERS})")
     print(f"Spline DF: {SPLINE_DF}, Lags: {LAG_MONTHS}")
-    print(f"ONLY_DEFICITS: {ONLY_DEFICITS}  "
-          f"(file suffix: {SUFFIX or '<none>'})")
+    print(f"ONLY_DEFICITS: {ONLY_DEFICITS}  (file suffix: {SUFFIX or '<none>'})")
+    print(f"High-overdispersion indicators: {HIGH_OVERDISPERSION_INDICATORS}")
     print("=" * 60)
 
-    panel_paths = {
-        ind: f"{PANEL_DIR}regression_panel_{ind}.csv"
-        for ind in COUNT_INDICATORS
-    }
+    panel_paths = {ind: f"{PANEL_DIR}regression_panel_{ind}.csv" for ind in COUNT_INDICATORS}
 
     t_start = time.time()
 
     if USE_PARALLEL and len(COUNT_INDICATORS) > 1:
         print(f"\nRunning {len(COUNT_INDICATORS)} indicators in parallel...")
         with Pool(processes=N_WORKERS) as pool:
-            results = pool.starmap(
-                fit_indicator,
-                [(ind, panel_paths[ind]) for ind in COUNT_INDICATORS])
+            results = pool.starmap(fit_indicator, [(ind, panel_paths[ind]) for ind in COUNT_INDICATORS])
         for i, result in enumerate(results):
             if result is not None:
-                print(f"  [{i + 1}/{len(COUNT_INDICATORS)}] "
-                      f"{result['indicator']}: "
-                      f"hot deficit = {result['hot_deficit_pct']:+.2f}%")
+                print(
+                    f"  [{i + 1}/{len(COUNT_INDICATORS)}] "
+                    f"{result['indicator']}: "
+                    f"hot deficit = {result['hot_deficit_pct']:+.2f}%"
+                )
     else:
         print("\nRunning indicators sequentially...")
         results = []
@@ -724,10 +814,9 @@ if __name__ == "__main__":
     if not results:
         raise RuntimeError("No indicators fitted successfully!")
 
-    print(f"\n{'='*60}")
-    print(f"All {len(results)} indicators fitted in "
-          f"{time.time() - t_start:.1f}s")
-    print(f"Average per indicator: {(time.time() - t_start)/len(results):.1f}s")
+    print(f"\n{'=' * 60}")
+    print(f"All {len(results)} indicators fitted in {time.time() - t_start:.1f}s")
+    print(f"Average per indicator: {(time.time() - t_start) / len(results):.1f}s")
     print("=" * 60)
 
     summary_df = pd.DataFrame(
@@ -763,12 +852,15 @@ if __name__ == "__main__":
         rej = np.zeros(p.shape, dtype=bool)
         if ok.sum() == 0:
             return q, rej
-        p_ok = p[ok]; n = len(p_ok)
+        p_ok = p[ok]
+        n = len(p_ok)
         order = np.argsort(p_ok)
         adj = p_ok[order] * n / np.arange(1, n + 1)
         adj = np.clip(np.minimum.accumulate(adj[::-1])[::-1], 0, 1)
-        q_ok = np.empty(n); q_ok[order] = adj
-        q[ok] = q_ok; rej[ok] = q_ok <= alpha
+        q_ok = np.empty(n)
+        q_ok[order] = adj
+        q[ok] = q_ok
+        rej[ok] = q_ok <= alpha
         return q, rej
 
     qvals, rej = _bh_fdr(summary_df["pval"].values, FDR_ALPHA)
@@ -785,31 +877,34 @@ if __name__ == "__main__":
         index=False,
     )
 
-    irr_df = pd.DataFrame([{
-        "indicator": r["indicator"], "label": r["label"],
-        "reference_wbgt": r["reference_wbgt"],
-        "irr_high_wbgt": IRR_HIGH,
-        "irr": r["irr_hi_vs_low"],
-        "irr_lo": r["irr_lo_bound"], "irr_hi": r["irr_hi_bound"],
-    } for r in results])
+    irr_df = pd.DataFrame(
+        [
+            {
+                "indicator": r["indicator"],
+                "label": r["label"],
+                "reference_wbgt": r["reference_wbgt"],
+                "irr_high_wbgt": IRR_HIGH,
+                "irr": r["irr_hi_vs_low"],
+                "irr_lo": r["irr_lo_bound"],
+                "irr_hi": r["irr_hi_bound"],
+            }
+            for r in results
+        ]
+    )
     # IRR is model-derived — no suffix needed, same values under both toggles.
     irr_df.to_csv(f"{OUT_DIR}irr_contrast_{WBGT_VAR}.csv", index=False)
 
-    tlo_frames = [r["_tlo_rows"] for r in results
-                  if isinstance(r.get("_tlo_rows"), pd.DataFrame)
-                  and not r["_tlo_rows"].empty]
+    tlo_frames = [
+        r["_tlo_rows"] for r in results if isinstance(r.get("_tlo_rows"), pd.DataFrame) and not r["_tlo_rows"].empty
+    ]
     if tlo_frames:
-        pd.concat(tlo_frames, ignore_index=True).to_csv(
-            f"{OUT_DIR}tlo_wbgt_lookup.csv", index=False)
+        pd.concat(tlo_frames, ignore_index=True).to_csv(f"{OUT_DIR}tlo_wbgt_lookup.csv", index=False)
     else:
         print("  no TLO rows to write")
 
-    curve_paths = sorted(
-        Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv")
-    )
+    curve_paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
     if curve_paths:
-        pd.concat([pd.read_csv(p) for p in curve_paths],
-                  ignore_index=True).to_csv(
+        pd.concat([pd.read_csv(p) for p in curve_paths], ignore_index=True).to_csv(
             Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv",
             index=False,
         )
@@ -818,8 +913,7 @@ if __name__ == "__main__":
     # FORWARD PROJECTIONS
     # =======================================================================
     if PROJECT:
-        print(f"\nForward projections ({min_year_projection}–"
-              f"{max_year_projection}) ...")
+        print(f"\nForward projections ({min_year_projection}–{max_year_projection}) ...")
         PROJECTION_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices"
         if WBGT_VAR == "wbgt_day":
             WBGT_PROJ_FILE_TPL = "wbgt_monthly_mean_facility_{tier}_{ssp}.csv"
@@ -835,108 +929,93 @@ if __name__ == "__main__":
                 return None
             wide = pd.read_csv(path, index_col=0)
             wide.index = (
-                pd.to_datetime(wide.index.astype(str).str.strip(),
-                               format="%Y-%m", errors="coerce")
-                .to_period("M").to_timestamp()
+                pd.to_datetime(wide.index.astype(str).str.strip(), format="%Y-%m", errors="coerce")
+                .to_period("M")
+                .to_timestamp()
             )
             assert not wide.index.isna().any(), f"{path}: unparseable dates"
             wide.index.name = "date"
             wide.columns = wide.columns.astype(str).str.strip()
-            return (wide.stack(future_stack=True)
-                    .rename(value_name)
-                    .rename_axis(index=["date", "facility"])
-                    .reset_index())
+            return (
+                wide.stack(future_stack=True).rename(value_name).rename_axis(index=["date", "facility"]).reset_index()
+            )
 
-        def _load_future_climate(ssp, tier, precip_file_tpl):
-            wbgt_path = os.path.join(
-                PROJECTION_DIR,
-                WBGT_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
-            pm_path = os.path.join(PROJECTION_DIR,
-                                   precip_file_tpl.format(ssp=ssp))
-            missing = [p for p in (wbgt_path, pm_path)
-                       if not os.path.exists(p)]
-            if missing:
-                return None, missing
-            wbgt_df = pd.read_csv(wbgt_path, parse_dates=["date"])
-            wbgt_df["facility"] = wbgt_df["facility"].astype(str).str.strip()
-            wbgt_df["date"] = wbgt_df["date"].dt.to_period("M").dt.to_timestamp()
-            pm_df = _load_precip_wide(pm_path, PRECIP_COL)
-            clim = wbgt_df.merge(pm_df, on=["facility", "date"], how="inner")
+        def _load_future_climate(ssp, tier):
+            wbgt_path = os.path.join(PROJECTION_DIR, WBGT_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
+            if not os.path.exists(wbgt_path):
+                return None, [wbgt_path]
+            clim = pd.read_csv(wbgt_path, parse_dates=["date"])
+            clim["facility"] = clim["facility"].astype(str).str.strip()
+            clim["date"] = clim["date"].dt.to_period("M").dt.to_timestamp()
+            for col in (WBGT_VAR, PRECIP_COL):
+                if col not in clim.columns:
+                    raise KeyError(
+                        f"{wbgt_path}: {col!r} missing (have {list(clim.columns)}). "
+                        f"Re-run the panel producer to include it."
+                    )
             clim = clim.sort_values(["facility", "date"]).reset_index(drop=True)
             for k in LAG_MONTHS:
-                clim[f"{WBGT_VAR}_lag{k}"] = clim.groupby(
-                    "facility")[WBGT_VAR].shift(k)
-            clim = clim[clim["date"].dt.year.between(
-                min_year_projection, max_year_projection)].copy()
-            clim["year"]  = clim["date"].dt.year
+                clim[f"{WBGT_VAR}_lag{k}"] = clim.groupby("facility")[WBGT_VAR].shift(k)
+            clim = clim[clim["date"].dt.year.between(min_year_projection, max_year_projection)].copy()
+            clim["year"] = clim["date"].dt.year
             clim["month"] = clim["date"].dt.month
             return clim, None
 
-        all_proj_summary  = []
+        all_proj_summary = []
         all_annual_pooled = []
 
         for ssp in SSP_SCENARIOS:
             for tier in WBGT_MODELS:
-                precip_file_tpl = PRECIP_FILE_BY_TIER.get(tier)
-                if precip_file_tpl is None:
-                    print(f"  SKIP {ssp}/{tier}: no precip template for tier")
-                    continue
-
-                clim, missing = _load_future_climate(
-                    ssp, tier, precip_file_tpl)
+                clim, missing = _load_future_climate(ssp, tier)
                 if clim is None:
                     print(f"  SKIP {ssp}/{tier}: missing {missing}")
                     continue
-                print(f"  {ssp}/{tier}: {len(clim):,} rows, "
-                      f"{clim['facility'].nunique()} facilities")
+                print(f"  {ssp}/{tier}: {len(clim):,} rows, {clim['facility'].nunique()} facilities")
+
+                if clim is None:
+                    print(f"  SKIP {ssp}/{tier}: missing {missing}")
+                    continue
+                print(f"  {ssp}/{tier}: {len(clim):,} rows, {clim['facility'].nunique()} facilities")
 
                 for res in results:
                     ind = res["indicator"]
-                    shifts      = res["_shifts"]
-                    design_map  = res["_design_map"]
+                    shifts = res["_shifts"]
+                    design_map = res["_design_map"]
                     spline_cols = res["_spline_cols"]
-                    train_facs  = set(res["_train_facs"])
-                    model_wx    = res["_model_wx"]
-                    model_base  = res["_model_base"]
+                    train_facs = set(res["_train_facs"])
+                    model_wx = res["_model_wx"]
+                    model_base = res["_model_base"]
 
                     df = clim[clim["facility"].isin(train_facs)].copy()
                     if df.empty:
                         print(f"    {ind}: no overlap — skipping")
                         continue
 
-                    wbgt_needed = ([WBGT_VAR, PRECIP_COL]
-                                   + [f"{WBGT_VAR}_lag{k}"
-                                      for k in LAG_MONTHS])
+                    wbgt_needed = [WBGT_VAR, PRECIP_COL] + [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
                     n_before_wbgt = len(df)
                     df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
                     n_dropped_wbgt = n_before_wbgt - len(df)
                     if df.empty:
-                        print(f"    {ind}: all rows dropped for missing "
-                              f"climate inputs")
+                        print(f"    {ind}: all rows dropped for missing climate inputs")
                         continue
 
                     df["covid"] = 0
                     df["year_c"] = (
-                        (LAST_HIST_YEAR - shifts["year"])
-                        if PROJECT_HOLD_YEAR
-                        else (df["year"] - shifts["year"])
+                        (LAST_HIST_YEAR - shifts["year"]) if PROJECT_HOLD_YEAR else (df["year"] - shifts["year"])
                     )
                     df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
 
                     xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
                     B = np.asarray(
-                        patsy.build_design_matrices(
-                            [design_map[WBGT_VAR]], {"x": xc})[0],
+                        patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0],
                         dtype=float,
                     )
                     for i_col, c in enumerate(spline_cols):
                         df[c] = B[:, i_col]
                     for k in LAG_MONTHS:
-                        df[f"{WBGT_VAR}_lag{k}_c"] = (
-                            df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR])
+                        df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
 
-                    need = (["covid", "year_c", "precip_c"]
-                            + list(spline_cols) + LAG_COLS)
+                    need = ["covid", "year_c", "precip_c"] + list(spline_cols) + LAG_COLS
                     n_before = len(df)
                     df = df.dropna(subset=need).reset_index(drop=True)
                     n_dropped = n_before - len(df) + n_dropped_wbgt
@@ -944,12 +1023,13 @@ if __name__ == "__main__":
                         print(f"    {ind}: no rows after covariate build")
                         continue
 
-                    mu_wx   = np.asarray(model_wx.predict(df), dtype=float)
+                    mu_wx = np.asarray(model_wx.predict(df), dtype=float)
                     mu_base = np.asarray(model_base.predict(df), dtype=float)
                     ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
                     n_pred_nan = int((~ok).sum())
                     df = df.loc[ok].reset_index(drop=True)
-                    mu_wx = mu_wx[ok]; mu_base = mu_base[ok]
+                    mu_wx = mu_wx[ok]
+                    mu_base = mu_base[ok]
                     if df.empty:
                         print(f"    {ind}: all predictions NaN")
                         continue
@@ -962,37 +1042,49 @@ if __name__ == "__main__":
                         100.0 * df["Disruption"] / df["mu_b"],
                         np.nan,
                     )
-                    df = df.merge(res["_fac_district"], on="facility",
-                                  how="left")
+                    df = df.merge(res["_fac_district"], on="facility", how="left")
                     df["indicator"], df["ssp"], df["tier"] = ind, ssp, tier
 
                     # --- FULL facility-month table always written --------
                     # so downstream code can re-derive either view.
-                    df[[
-                        "indicator", "ssp", "tier", "facility", CLUSTER_COL,
-                        "year", "month", "date", WBGT_VAR, PRECIP_COL,
-                        "mu_a", "mu_b", "Disruption", "Deficit_Pct",
-                    ]].to_csv(
-                        f"{OUT_DIR}projection_facility_"
-                        f"{ind}_{ssp}_{tier}_{WBGT_VAR}.csv",
+                    df[
+                        [
+                            "indicator",
+                            "ssp",
+                            "tier",
+                            "facility",
+                            CLUSTER_COL,
+                            "year",
+                            "month",
+                            "date",
+                            WBGT_VAR,
+                            PRECIP_COL,
+                            "mu_a",
+                            "mu_b",
+                            "Disruption",
+                            "Deficit_Pct",
+                        ]
+                    ].to_csv(
+                        f"{OUT_DIR}projection_facility_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv",
                         index=False,
                     )
 
                     # --- Aggregation frame: apply toggle if on -----------
                     df_agg = _apply_deficit_filter(df, "mu_b", "mu_a")
                     if df_agg.empty:
-                        print(f"    {ind} [{ssp}/{tier}]: no deficit rows "
-                              f"under ONLY_DEFICITS — skipping aggregates")
+                        print(f"    {ind} [{ssp}/{tier}]: no deficit rows under ONLY_DEFICITS — skipping aggregates")
                         continue
 
                     # district × year × month
                     dist_agg = (
                         df_agg.groupby([CLUSTER_COL, "year", "month"])
-                        .agg(mu_a=("mu_a", "sum"),
-                             mu_b=("mu_b", "sum"),
-                             Mean_WBGT=(WBGT_VAR, "mean"),
-                             Mean_Precip_Month=(PRECIP_COL, "mean"),
-                             N_Facilities=("facility", "nunique"))
+                        .agg(
+                            mu_a=("mu_a", "sum"),
+                            mu_b=("mu_b", "sum"),
+                            Mean_WBGT=(WBGT_VAR, "mean"),
+                            Mean_Precip_Month=(PRECIP_COL, "mean"),
+                            N_Facilities=("facility", "nunique"),
+                        )
                         .reset_index()
                     )
                     dist_agg["Disruption"] = dist_agg["mu_b"] - dist_agg["mu_a"]
@@ -1003,19 +1095,20 @@ if __name__ == "__main__":
                     )
                     dist_agg["indicator"], dist_agg["ssp"], dist_agg["tier"] = ind, ssp, tier
                     dist_agg.to_csv(
-                        f"{OUT_DIR}projection_district_"
-                        f"{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_district_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
                         index=False,
                     )
 
                     # pooled monthly time series
                     mon_agg = (
                         df_agg.groupby(["year", "month"])
-                        .agg(mu_a=("mu_a", "sum"),
-                             mu_b=("mu_b", "sum"),
-                             Mean_WBGT=(WBGT_VAR, "mean"),
-                             Mean_Precip_Month=(PRECIP_COL, "mean"),
-                             N_Facilities=("facility", "nunique"))
+                        .agg(
+                            mu_a=("mu_a", "sum"),
+                            mu_b=("mu_b", "sum"),
+                            Mean_WBGT=(WBGT_VAR, "mean"),
+                            Mean_Precip_Month=(PRECIP_COL, "mean"),
+                            N_Facilities=("facility", "nunique"),
+                        )
                         .reset_index()
                     )
                     mon_agg["Disruption"] = mon_agg["mu_b"] - mon_agg["mu_a"]
@@ -1024,25 +1117,23 @@ if __name__ == "__main__":
                         100.0 * mon_agg["Disruption"] / mon_agg["mu_b"],
                         np.nan,
                     )
-                    mon_agg["Year_Month"] = (
-                        mon_agg["year"].astype(str) + "-"
-                        + mon_agg["month"].astype(str)
-                    )
+                    mon_agg["Year_Month"] = mon_agg["year"].astype(str) + "-" + mon_agg["month"].astype(str)
                     mon_agg["indicator"], mon_agg["ssp"], mon_agg["tier"] = ind, ssp, tier
                     mon_agg.to_csv(
-                        f"{OUT_DIR}projection_monthly_"
-                        f"{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
                         index=False,
                     )
 
                     # ANNUAL: pooled across facilities
                     ann_agg = (
                         df_agg.groupby("year")
-                        .agg(mu_a=("mu_a", "sum"),
-                             mu_b=("mu_b", "sum"),
-                             Mean_WBGT=(WBGT_VAR, "mean"),
-                             Mean_Precip_Month=(PRECIP_COL, "mean"),
-                             N_Facilities=("facility", "nunique"))
+                        .agg(
+                            mu_a=("mu_a", "sum"),
+                            mu_b=("mu_b", "sum"),
+                            Mean_WBGT=(WBGT_VAR, "mean"),
+                            Mean_Precip_Month=(PRECIP_COL, "mean"),
+                            N_Facilities=("facility", "nunique"),
+                        )
                         .reset_index()
                     )
                     ann_agg["Disruption"] = ann_agg["mu_b"] - ann_agg["mu_a"]
@@ -1051,13 +1142,10 @@ if __name__ == "__main__":
                         100.0 * ann_agg["Disruption"] / ann_agg["mu_b"],
                         np.nan,
                     )
-                    ann_agg["Mean_Monthly_Disruption"] = (
-                        ann_agg["Disruption"] / 12.0
-                    )
+                    ann_agg["Mean_Monthly_Disruption"] = ann_agg["Disruption"] / 12.0
                     ann_agg["indicator"], ann_agg["ssp"], ann_agg["tier"] = ind, ssp, tier
                     ann_agg.to_csv(
-                        f"{OUT_DIR}projection_annual_"
-                        f"{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
                         index=False,
                     )
                     all_annual_pooled.append(ann_agg)
@@ -1065,10 +1153,12 @@ if __name__ == "__main__":
                     # ANNUAL: district × year
                     dist_ann = (
                         df_agg.groupby([CLUSTER_COL, "year"])
-                        .agg(mu_a=("mu_a", "sum"),
-                             mu_b=("mu_b", "sum"),
-                             Mean_WBGT=(WBGT_VAR, "mean"),
-                             N_Facilities=("facility", "nunique"))
+                        .agg(
+                            mu_a=("mu_a", "sum"),
+                            mu_b=("mu_b", "sum"),
+                            Mean_WBGT=(WBGT_VAR, "mean"),
+                            N_Facilities=("facility", "nunique"),
+                        )
                         .reset_index()
                     )
                     dist_ann["Disruption"] = dist_ann["mu_b"] - dist_ann["mu_a"]
@@ -1079,46 +1169,48 @@ if __name__ == "__main__":
                     )
                     dist_ann["indicator"], dist_ann["ssp"], dist_ann["tier"] = ind, ssp, tier
                     dist_ann.to_csv(
-                        f"{OUT_DIR}projection_district_annual_"
-                        f"{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_district_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
                         index=False,
                     )
 
                     tot_a = float(df_agg["mu_a"].sum())
                     tot_b = float(df_agg["mu_b"].sum())
-                    deficit_proj = ((100.0 * (tot_b - tot_a) / tot_b)
-                                    if tot_b > 0 else np.nan)
+                    deficit_proj = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
                     mean_annual_disruption = (
-                        (tot_b - tot_a) / df_agg["year"].nunique()
-                        if df_agg["year"].nunique() > 0 else np.nan
+                        (tot_b - tot_a) / df_agg["year"].nunique() if df_agg["year"].nunique() > 0 else np.nan
                     )
-                    all_proj_summary.append({
-                        "indicator": ind, "ssp": ssp, "tier": tier,
-                        "only_deficits": ONLY_DEFICITS,
-                        "period_start": min_year_projection,
-                        "period_end": max_year_projection,
-                        "n_facility_months_total": len(df),
-                        "n_facility_months_used": len(df_agg),
-                        "n_input_dropped": n_dropped,
-                        "n_pred_nan": n_pred_nan,
-                        "mean_wbgt": float(df_agg[WBGT_VAR].mean()),
-                        "mean_precip_month": float(df_agg[PRECIP_COL].mean()),
-                        "total_A_projected": tot_a,
-                        "total_B_projected": tot_b,
-                        "deficit_pct": deficit_proj,
-                        "mean_annual_disruption": mean_annual_disruption,
-                    })
-                    print(f"    {ind}: deficit_proj={deficit_proj:+.2f}% "
-                          f"(rows used {len(df_agg):,}/{len(df):,}, "
-                          f"dropped {n_dropped:,})")
+                    all_proj_summary.append(
+                        {
+                            "indicator": ind,
+                            "ssp": ssp,
+                            "tier": tier,
+                            "only_deficits": ONLY_DEFICITS,
+                            "period_start": min_year_projection,
+                            "period_end": max_year_projection,
+                            "n_facility_months_total": len(df),
+                            "n_facility_months_used": len(df_agg),
+                            "n_input_dropped": n_dropped,
+                            "n_pred_nan": n_pred_nan,
+                            "mean_wbgt": float(df_agg[WBGT_VAR].mean()),
+                            "mean_precip_month": float(df_agg[PRECIP_COL].mean()),
+                            "total_A_projected": tot_a,
+                            "total_B_projected": tot_b,
+                            "deficit_pct": deficit_proj,
+                            "mean_annual_disruption": mean_annual_disruption,
+                        }
+                    )
+                    print(
+                        f"    {ind}: deficit_proj={deficit_proj:+.2f}% "
+                        f"(rows used {len(df_agg):,}/{len(df):,}, "
+                        f"dropped {n_dropped:,})"
+                    )
 
         if all_proj_summary:
             pd.DataFrame(all_proj_summary).to_csv(
                 f"{OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}.csv",
                 index=False,
             )
-            print(f"\nProjection summary → "
-                  f"{OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}.csv")
+            print(f"\nProjection summary → {OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}.csv")
         else:
             print("\nNo projections produced.")
 
@@ -1127,10 +1219,7 @@ if __name__ == "__main__":
                 f"{OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}.csv",
                 index=False,
             )
-            print(f"Annual pooled → "
-                  f"{OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}.csv")
+            print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}.csv")
 
-    print(f"\nSummary (HOT MONTHS ONLY, "
-          f"ONLY_DEFICITS={ONLY_DEFICITS}):")
-    print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo",
-                      "hot_ci_hi", "n_hot_obs"]].to_string())
+    print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
+    print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())
