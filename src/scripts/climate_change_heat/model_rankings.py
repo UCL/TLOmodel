@@ -31,7 +31,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
-SCENARIO = "ssp245"
+SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 INDICES_DIR = Path(
     "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices"
 )
@@ -45,14 +45,14 @@ PANEL_PREFIXES = [
 
 # One ranking applied to ALL prefixes, so low/median/high are the same models
 # across quantities. wbgtx_day matches the ranking in the extremes script.
-RANK_PREFIX = "wbgt_extreme_indices_facility_"
-RANK_COLUMN = "wbgtx_day"
+RANK_PREFIX = "wbgt_monthly_mean_facility_"#"wbgt_extreme_indices_facility_"
+RANK_COLUMN = "wbgt_day"#"wbgtx_day"
 
 ROLES = ["lowest", "median", "highest"]   # exact words model_of_wbgt_dhis2 expects
 
 
 # ---------------------------------------------------------------------------
-def model_files_for(prefix):
+def model_files_for(prefix, SCENARIO):
     """{model_id: path} for {prefix}{model}_{scenario}.csv, skipping any files
     already named with a role word (so re-runs don't rank the copies)."""
     tail = f"_{SCENARIO}.csv"
@@ -65,10 +65,10 @@ def model_files_for(prefix):
     return out
 
 
-def rank_models():
+def rank_models(SCENARIO):
     """Rank models coolest->hottest by mean(RANK_COLUMN). Models with an
     all-NaN column are excluded with a warning."""
-    files = model_files_for(RANK_PREFIX)
+    files = model_files_for(RANK_PREFIX, SCENARIO)  # FIXED: Added SCENARIO argument
     if not files:
         raise FileNotFoundError(
             f"No {RANK_PREFIX}*{'_' + SCENARIO}.csv in {INDICES_DIR} — run the "
@@ -97,41 +97,42 @@ def pick_roles(ranked):
 
 
 def main():
-    ranked, means = rank_models()
-    print(f"Model ranking by mean {RANK_COLUMN} (coolest -> hottest):")
-    for m in ranked:
-        print(f"  {m:25s} {means[m]:.2f} °C")
+    for SCENARIO in SCENARIOS:
+        ranked, means = rank_models(SCENARIO = SCENARIO)
+        print(f"Model ranking by mean {RANK_COLUMN} (coolest -> hottest):")
+        for m in ranked:
+            print(f"  {m:25s} {means[m]:.2f} °C")
 
-    roles = pick_roles(ranked)
-    print("\nRepresentative models:")
-    for role in ROLES:
-        print(f"  {role:8s} -> {roles[role]} ({means[roles[role]]:.2f} °C)")
-
-    # Materialise role-named copies for each panel prefix
-    for prefix in PANEL_PREFIXES:
-        files = model_files_for(prefix)
-        if not files:
-            print(f"\n⚠ no files for prefix '{prefix}' — skipping this panel type")
-            continue
-        print(f"\n{prefix}:")
+        roles = pick_roles(ranked)
+        print("\nRepresentative models:")
         for role in ROLES:
-            model = roles[role]
-            src = files.get(model)
-            if src is None:
-                print(f"  ⚠ {role}: model '{model}' has no {prefix} file — skipped")
-                continue
-            dst = INDICES_DIR / f"{prefix}{role}_{SCENARIO}.csv"
-            shutil.copyfile(src, dst)
-            print(f"  {role:8s} <- {src.name}  ->  {dst.name}")
+            print(f"  {role:8s} -> {roles[role]} ({means[roles[role]]:.2f} °C)")
 
-    # Mapping for the record
-    map_df = pd.DataFrame(
-        {"role": ROLES,
-         "model": [roles[r] for r in ROLES],
-         f"mean_{RANK_COLUMN}": [means[roles[r]] for r in ROLES]})
-    map_path = INDICES_DIR / f"representative_models_{SCENARIO}.csv"
-    map_df.to_csv(map_path, index=False)
-    print(f"\nSaved mapping -> {map_path.name}")
+        # Materialise role-named copies for each panel prefix
+        for prefix in PANEL_PREFIXES:
+            files = model_files_for(prefix, SCENARIO)  # FIXED: Added SCENARIO argument
+            if not files:
+                print(f"\n⚠ no files for prefix '{prefix}' — skipping this panel type")
+                continue
+            print(f"\n{prefix}:")
+            for role in ROLES:
+                model = roles[role]
+                src = files.get(model)
+                if src is None:
+                    print(f"  ⚠ {role}: model '{model}' has no {prefix} file — skipped")
+                    continue
+                dst = INDICES_DIR / f"{prefix}{role}_{SCENARIO}.csv"
+                shutil.copyfile(src, dst)
+                print(f"  {role:8s} <- {src.name}  ->  {dst.name}")
+
+        # Mapping for the record
+        map_df = pd.DataFrame(
+            {"role": ROLES,
+             "model": [roles[r] for r in ROLES],
+             f"mean_{RANK_COLUMN}": [means[roles[r]] for r in ROLES]})
+        map_path = INDICES_DIR / f"representative_models_{SCENARIO}.csv"
+        map_df.to_csv(map_path, index=False)
+        print(f"\nSaved mapping -> {map_path.name}")
 
 
 if __name__ == "__main__":

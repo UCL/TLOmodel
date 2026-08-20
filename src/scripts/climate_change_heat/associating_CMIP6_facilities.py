@@ -156,9 +156,19 @@ for WBGT_SCENARIO in WBGT_SCENARIOS:
 # ---------------------------------------------------------------------------
 # Per model: extract projected WBGT + precip at each facility's nearest grid cell
 # ---------------------------------------------------------------------------
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 avg_wbgt_accum = {var: {fac: [] for fac in facility_names} for var in ALL_VARS}
 
 for WBGT_SCENARIO in WBGT_SCENARIOS:
+    model_files = find_model_files(WBGT_DIRECTORY, WBGT_SCENARIO)
+    if not model_files:
+        raise FileNotFoundError(
+            f"No '{WBGT_FILE_PREFIX}*.nc' under {WBGT_DIRECTORY}/*/{WBGT_SCENARIO}/")
+    print(f"CMIP6 model files ({WBGT_SCENARIO}): {len(model_files)} "
+          f"({[m for m, _ in model_files]})")
+
+    for model_id, path in model_files:
+        print(f"\n--- {model_id} [{WBGT_SCENARIO}] ---")
     for model_id, path in model_files:
         print(f"\n--- {model_id} ---")
 

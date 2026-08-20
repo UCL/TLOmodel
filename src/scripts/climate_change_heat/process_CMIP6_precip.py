@@ -30,7 +30,7 @@ COMBINED_DIR = Path(
 WBGT_SPLIT_DIR = Path(
     "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split"
 )
-SCENARIO = "ssp245"
+SCENARIO = "ssp585"
 
 # ACTIVE_MODELS should match accessing_NASA_data.py exactly. Do not infer
 # from folder listings — a folder can exist with no combined pr file.
