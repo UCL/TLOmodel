@@ -902,7 +902,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     mask = pat_mix_complete["category"].eq("Education")
     pat_mix_complete.loc[mask, "subgroup"] = (
         pat_mix_complete.loc[mask, "subgroup"].astype(float).astype(int)
-        .replace({1: "None", 2: "Some/Completed primary", 3: "Some/Completed secondary"})
+        .replace({1: "None", 2: "Some/Completed primary education", 3: "Some/Completed secondary education"})
     )
 
     # mask = pat_mix_complete["category"].eq("Facility_Level")
@@ -922,12 +922,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         "TLO": "tab:green",
         "Patient Exit": "tab:blue",
         "Facility Summary": "tab:orange"
-    }
-
-    dhs_2024_pop_edu = {
-        "None": 10.7,
-        "Some/Completed primary": 71.3,
-        "Some/Completed secondary": 18.0
     }
 
     def plot_pat_mix(
@@ -1080,30 +1074,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     label=source
                 )
 
-            if category == "Education":
-                ax2 = ax.twinx()
-                dhs_values = [
-                    dhs_2024_pop_edu.get(subgroup, np.nan)
-                    for subgroup in subgroup_order
-                ]
-
-                ax2.plot(
-                    x_base,
-                    dhs_values,
-                    marker="*",
-                    color="tab:purple",
-                    markerfacecolor="tab:purple",
-                    markeredgecolor="tab:purple",
-                    markersize=7,
-                    linestyle="none",
-                    label="DHS 2024"
-                )
-
-                ax2.set_ylabel("Education distribution in DHS 2024 survey")
-
-                ax2.set_ylim(0, 105)
-                ax2.yaxis.set_major_locator(MultipleLocator(5))
-
             ax.set_xticks(x_base)
 
             ax.set_xticklabels(
@@ -1122,21 +1092,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_ylim(0, 105)
             ax.yaxis.set_major_locator(MultipleLocator(5))
 
-            if category == "Education":
-                handles1, labels1 = ax.get_legend_handles_labels()
-                handles2, labels2 = ax2.get_legend_handles_labels()
-
-                ax.legend(
-                    handles1 + handles2,
-                    labels1 + labels2,
-                    title="Source",
-                    frameon=False
-                )
-            else:
-                ax.legend(
-                    title="Source",
-                    frameon=False
-                )
+            ax.legend(
+                title="Source",
+                frameon=False
+            )
 
             ax.grid(
                 axis="y",
@@ -1146,9 +1105,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
-
-            if category == "Education":
-                ax2.spines["top"].set_visible(False)
 
             # Small horizontal margin at both ends
             ax.set_xlim(
