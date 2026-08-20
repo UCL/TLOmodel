@@ -1,3 +1,10 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:5d68d6a40ca2436cb6a07534244423c98a11f473e86b761f3b73f6eb5b5510e0
-size 452
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+tb_treatment_coverage,90,scenario,,,,
+tb_prob_tx_success_ds,0.9,scenario,,,,
+tb_prob_tx_success_mdr,0.9,scenario,,,,
+tb_prob_tx_success_0_4,0.9,scenario,,,,
+tb_prob_tx_success_5_14,0.9,scenario,,,,
+first_line_test,xpert,,sputum,xpert,scenario,
+second_line_test,sputum,,sputum,xpert,scenario,
+ipt_coverage_plhiv,0.9,scenario,,,,
+ipt_coverage_paediatric,90,scenario,,,,

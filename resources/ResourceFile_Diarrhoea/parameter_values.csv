@@ -1,3 +1,106 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:54d41b23d1d35c84a3039417d967eb1cb2eaffd5505def01fd6b63d818767213
-size 10019
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+base_inc_rate_diarrhoea_by_rotavirus,"[0.175245863,0.097007598,0.009324]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_shigella,"[0.117936461999999,0.078794104,0.093018]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_adenovirus,"[0.0586618,0.058661803,0.006438]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_cryptosporidium,"[0.030886699,0.0117923629999999,0.004662]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_campylobacter,"[0.098663257,0.027915478,0.004884]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_ETEC,"[0.27925146,0.170477152,0.019758]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_sapovirus,"[0.100972179,0.132603114,0.00555]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_norovirus,"[0.204864004,0.066146727,0.000888]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_astrovirus,"[0.054208352,0.035974076,0.001332]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+base_inc_rate_diarrhoea_by_tEPEC,"[0.0608224569999999,0.022716889,0.001998]",local,"[0,0,0]","[1,1,1]",vague prior,"Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019"
+rr_diarrhoea_HHhandwashing,0.7,universal,0.64,0.77,CI,Wolf et al. 2018
+rr_diarrhoea_improved_sanitation,0.75,universal,0.63,0.88,CI,Wolf et al. 2018
+rr_diarrhoea_clean_water,0.67,universal,0.62,0.73,CI,Wolf et al. 2018
+rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo,1.68,universal,1.03,2.76,CI,Lamberti et al. 2011
+rr_diarrhoea_exclusive_vs_no_breastfeeding_<6mo,2.65,universal,1.72,4.07,CI,Lamberti et al. 2011
+rr_diarrhoea_any_vs_no_breastfeeding_6_11mo,1.32,universal,1.06,1.63,CI,Lamberti et al. 2011
+rr_diarrhoea_untreated_HIV,5.4,universal,0.01,100,vague prior,Groome and Madhi 2011
+rr_diarrhoea_SAM,1.2,universal,1.1,1.4,CI,Black et al. 2013
+proportion_AWD_in_rotavirus,0.97668,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_shigella,0.861942,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_adenovirus,0.950061,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_cryptosporidium,0.970984,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_campylobacter,0.896768,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_ETEC,0.950465,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_sapovirus,0.966385,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_norovirus,0.961643,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_astrovirus,0.974147,universal,0,1,vague prior,Platts-Mills et al 2018
+proportion_AWD_in_tEPEC,0.961485,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_rotavirus,0.153093,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_shigella,0.102962,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_adenovirus,0.079524,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_cryptosporidium,0.121458,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_campylobacter,0.072808,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_ETEC,0.075925,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_sapovirus,0.10364,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_norovirus,0.090728,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_astrovirus,0.122776,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_dehydration_by_tEPEC,0.113362,universal,0,1,vague prior,Platts-Mills et al 2018
+probability_of_severe_dehydration_if_some_dehydration,0.167,universal,0,1,vague prior,Levine et al. 2016
+prob_remove_dehydration_no_treatment,0,universal,0,0.5,vague prior,
+prob_prolonged_diarr_rotavirus,0.117706,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_shigella,0.165342,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_adenovirus,0.116406,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_cryptosporidium,0.169134,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_campylobacter,0.152206,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_ETEC,0.114177,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_sapovirus,0.133209,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_norovirus,0.118223,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_astrovirus,0.13511,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_diarr_tEPEC,0.190845,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_prolonged_to_persistent_diarr,0.2866,universal,0,1,vague prior,Moore et al. 2010
+rr_bec_persistent_age>6mo,0.26,universal,0,1,vague prior,Ochoa et al. 2009
+rr_bec_persistent_HIV,1.7,universal,0,1,vague prior,* dummy
+rr_bec_persistent_SAM,1.7,universal,0,1,vague prior,* dummy
+rr_bec_persistent_stunted,33.3,universal,0,1,vague prior,Schilling et al 2017
+min_dur_acute,1,universal,0,1,vague prior,* definitional
+min_dur_prolonged,5,universal,0,1,vague prior,* definitional
+min_dur_persistent,13,universal,0,1,vague prior,* definitional
+max_dur_persistent,30,universal,0,1,vague prior,* definitional
+prob_fever_by_rotavirus,0.384925,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_shigella,0.319876,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_adenovirus,0.271513,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_cryptosporidium,0.322385,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_campylobacter,0.312807,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_ETEC,0.258931,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_sapovirus,0.292276,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_norovirus,0.251071,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_astrovirus,0.195905,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_fever_by_tEPEC,0.384547,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_rotavirus,0.471793,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_shigella,0.209852,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_adenovirus,0.308677,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_cryptosporidium,0.243581,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_campylobacter,0.218669,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_ETEC,0.283139,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_sapovirus,0.303154,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_norovirus,0.299343,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_astrovirus,0.276018,universal,0,1,vague prior,Platts-Mills et al 2018
+prob_vomiting_by_tEPEC,0.285661,universal,0,1,vague prior,Platts-Mills et al 2018
+adjustment_factor_on_cfr,3.75,undetermined,0.5,8,calibration,Can be used in fitting.
+case_fatality_rate_AWD,0.0015,universal,0,1,vague prior,To be calibrated. Guideline values: Bhandari et al 1992 (0.0056); GBD 2016 paper (0.0015)
+rr_diarr_death_bloody,7.6,universal,0,1,vague prior,"Relative CFR for bloody versus non-bloody diarrhoea, per Bhandari et al., 1992"
+rr_diarr_death_age24to59mo,0.38,universal,0,1,vague prior,Walker et al. 2013
+rr_diarr_death_if_duration_longer_than_13_days,0.0035,universal,0,1,vague prior,* dummy
+rr_diarr_death_severe_dehydration,3.45,universal,0,1,vague prior,Levine et al. 2020
+rr_diarr_death_untreated_HIV,5.05,universal,0,1,vague prior,Acacio et al. 2016
+rr_diarr_death_SAM,4.13,universal,2.428,6.877,CI,Acacio et al. 2016
+rr_diarr_death_alri,3.51,universal,2.158,5.682,CI,Acacio et al. 2016
+rr_diarr_death_cryptosporidium,2.14,universal,0,1,vague prior,Acacio et al. 2016
+rr_diarr_death_shigella,2.8,universal,0,1,vague prior,Tickell et al. 2017
+sensitivity_severe_dehydration_visual_inspection,0.77,local,0,1,vague prior,Levine et al. 2016
+specificity_severe_dehydration_visual_inspection,0.67,local,0,1,vague prior,Levine et al. 2016
+prob_hospitalization_on_danger_signs,0.7,local,0,1,vague prior,* dummy
+prob_WHOPlanC_cures_dehydration_if_severe_dehydration,0.9,universal,0,1,vague prior,* dummy
+prob_ORS_cures_dehydration_if_severe_dehydration,0.721,universal,0,1,vague prior,Pulungsih et al 1992
+prob_ORS_cures_dehydration_if_non_severe_dehydration,0.93,universal,0,1,vague prior,Munos et al. 2010
+prob_antibiotic_cures_dysentery,0.99,universal,0,1,vague prior,Traa et al. 2010
+number_of_days_reduced_duration_with_zinc,1,universal,0,1,vague prior,Lazzerini and Wanzira et al 2016
+days_between_treatment_and_cure,5,universal,0,1,vague prior,
+prob_clear_bacterial_infection_no_treatment,0,universal,0,0.5,vague prior,
+rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo,0.63,universal,0,1,vague prior,Soares-Weiser et al. 2019
+rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo,0.35,universal,0,1,vague prior,Soares-Weiser et al. 2019
+relative_prob_severe_dehydration_no_vaccine,1,universal,0.5,1,vague prior,
+persistent_diarrhoea_threshold_days,13,universal,8,20,vague prior,
+main_polling_frequency,3,undetermined,1,12,vague prior,

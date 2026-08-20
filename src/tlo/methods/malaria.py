@@ -218,12 +218,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'rdt_scheduling_retry_days': Parameter(
             Types.INT, 'Days to retry RDT scheduling if not received'
         ),
-        'rdt_scheduling_delay_days': Parameter(
-            Types.INT, 'Days to delay RDT scheduling'
-        ),
-        'rdt_scheduling_min_delay_days': Parameter(
-            Types.INT, 'minimum delay in days for RDT scheduling'
-        ),
         'rdt_scheduling_max_delay_days': Parameter(
             Types.INT, 'maximum delay in days for RDT scheduling'
         ),
@@ -1248,7 +1242,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self.module, facility_level='1a'),
                 priority=1,
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=self.module.parameters['rdt_scheduling_delay_days']),
+                tclose=self.sim.date + pd.DateOffset(days=self.module.parameters['rdt_scheduling_retry_days']),
             )
 
 
@@ -1571,7 +1565,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=idx, facility_level='1a'),
                 priority=1,
-                topen=random_date(now + DateOffset(days=p['rdt_scheduling_min_delay_days']),
+                topen=random_date(now + DateOffset(days=p['rdt_scheduling_retry_days']),
                                   now + DateOffset(days=p['rdt_scheduling_max_delay_days']),
                                   self.module.rng),
                 tclose=None

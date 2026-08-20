@@ -435,7 +435,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         df['de_ever_depr'] = False
         df['de_date_init_most_rec_depr'] = pd.NaT
         df['de_date_depr_resolved'] = pd.NaT
-        df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+        df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
         df['de_ever_diagnosed_depression'] = False
         df['de_on_antidepr'] = False
         df['de_ever_talk_ther'] = False
@@ -547,7 +547,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'de_ever_depr'] = False
         df.at[child_id, 'de_date_init_most_rec_depr'] = pd.NaT
         df.at[child_id, 'de_date_depr_resolved'] = pd.NaT
-        df.at[child_id, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+        df.at[child_id, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
         df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_ever_talk_ther'] = False

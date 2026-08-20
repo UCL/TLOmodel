@@ -1,3 +1,138 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4ca8399225f017afd3c1acf947c2b47acc08349527cb83724cc72a277319d723
-size 11022
+Module,Parameter,max_healthsystem_function,max_healthcare_seeking,Note [0 .0---> 0.0001 and 1.0 --> 0.9999 so that floating point value is preserved]
+Alri,sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0,0.9999,,
+Alri,sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0,0.9999,,
+Alri,sensitivity_of_classification_of_non_severe_pneumonia_facility_level1,0.9999,,
+Alri,sensitivity_of_classification_of_severe_pneumonia_facility_level1,0.9999,,
+Alri,sensitivity_of_classification_of_non_severe_pneumonia_facility_level2,0.9999,,
+Alri,sensitivity_of_classification_of_severe_pneumonia_facility_level2,0.9999,,
+Alri,prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia,0.7,,"Remain, as sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0 = 1.0, this parameter does not matter"
+Alri,prob_IMCI_severe_pneumonia_treated_as_non_severe_pneumonia,0.7,,"Remain, as sensitivity_of_classification_of_severe_pneumonia_facility_level1 = 1.0, this parameter does not matter"
+Alri,prob_for_followup_if_treatment_failure,0.9999,,
+CardioMetabolicDisorders,ever_stroke_hsi,#ever_stroke!A1,,"ever_stroke_hsi/sensitivity_of_assessment, ever_stroke_hsi/pr_assessed_other_symptoms"
+CardioMetabolicDisorders,ever_heart_attack_hsi,#ever_heart_attack!A1,,"ever_heart_attack_hsi/sensitivity_of_assessment, ever_heart_attack_hsi/pr_assessed_other_symptoms"
+CardioMetabolicDisorders,diabetes_hsi,#diabetes!A1,,"diabetes_hsi/sensitivity_of_assessment, diabetes_hsi/pr_assessed_other_symptoms"
+CardioMetabolicDisorders,diabetes_hsi,,#diabetes!A1,diabetes_hsi/pr_seeking_further_appt_if_drug_not_available
+CardioMetabolicDisorders,hypertension_hsi,#hypertension!A1,,"hypertension_hsi/sensitivity_of_assessment, hypertension_hsi/pr_assessed_other_symptoms"
+CardioMetabolicDisorders,hypertension_hsi,,#hypertension!A1,hypertension_hsi/pr_seeking_further_appt_if_drug_not_available
+CardioMetabolicDisorders,chronic_lower_back_pain_hsi,#chronic_lower_back_pain!A1,,"chronic_lower_back_pain_hsi/sensitivity_of_assessment, chronic_lower_back_pain_hsi/pr_assessed_other_symptoms"
+CardioMetabolicDisorders,chronic_lower_back_pain_hsi,,#chronic_lower_back_pain!A1,chronic_lower_back_pain_hsi/pr_seeking_further_appt_if_drug_not_available
+CardioMetabolicDisorders,chronic_kidney_disease_hsi,#chronic_kidney_disease!A1,,chronic_kidney_disease_hsi/pr_assessed_other_symptoms
+CardioMetabolicDisorders,chronic_kidney_disease_hsi,,#chronic_kidney_disease!A1,chronic_kidney_disease_hsi/pr_seeking_further_appt_if_drug_not_available
+CardioMetabolicDisorders,chronic_ischemic_hd_hsi,#chronic_ischemic_hd!A1,,"chronic_ischemic_hd_hsi/sensitivity_of_assessment, chronic_ischemic_hd_hsi/pr_assessed_other_symptoms"
+CardioMetabolicDisorders,chronic_ischemic_hd_hsi,,#chronic_ischemic_hd!A1,chronic_ischemic_hd_hsi/pr_seeking_further_appt_if_drug_not_available
+CardioMetabolicDisorders,hypertension_testing,#hypertension_testing!A1,#hypertension_testing!A1,hypertension_testing/baseline_annual_probability
+CardioMetabolicDisorders,prob_care_provided_given_seek_emergency_care,0.9999,,
+CareOfWomenDuringPregnancy,prob_seek_anc2,,"[1.0, 1.0]",
+CareOfWomenDuringPregnancy,prob_seek_anc3,,"[1.0, 1.0]",
+CareOfWomenDuringPregnancy,prob_seek_anc5,,"[1.0, 1.0]",
+CareOfWomenDuringPregnancy,prob_seek_anc6,,"[1.0, 1.0]",
+CareOfWomenDuringPregnancy,prob_seek_anc7,,"[1.0, 1.0]",
+CareOfWomenDuringPregnancy,prob_seek_anc8,,"[1.0, 1.0]",
+CareOfWomenDuringPregnancy,prob_intervention_delivered_urine_ds,"[1.0, 1.0] ",,
+CareOfWomenDuringPregnancy,prob_intervention_delivered_bp,"[1.0, 1.0] ",,
+CareOfWomenDuringPregnancy,prob_adherent_ifa,,"[1.0, 1.0] ",
+CareOfWomenDuringPregnancy,prob_intervention_delivered_syph_test,"[1.0, 1.0] ",,
+CareOfWomenDuringPregnancy,prob_intervention_delivered_gdm_test,"[1.0, 1.0] ",,
+Contraception,max_number_of_runs_of_hsi_if_consumable_not_available,,1000,"Remain, this value is already big enough"
+Depression,prob_3m_stop_antidepr,,0.7,"Remain, not sure what is the ideal value"
+Depression,prob_3m_default_antidepr,,0.0001,
+Depression,pr_assessed_for_depression_in_generic_appt_level1,0.9999,,
+Depression,pr_assessed_for_depression_for_perinatal_female,0.9999,,
+Depression,sensitivity_of_assessment_of_depression,0.9999,,
+Diarrhoea,prob_hospitalization_on_danger_signs,0.9999,,
+Diarrhoea,sensitivity_severe_dehydration_visual_inspection,0.9999,,
+Diarrhoea,specificity_severe_dehydration_visual_inspection,0.9999,,
+Epilepsy,base_prob_3m_stop_antiepileptic,,0.0001,
+Epilepsy,prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt,0.9999,,
+HealthSeekingBehaviour,force_any_symptom_to_lead_to_healthcareseeking,,TRUE,
+Hiv,hiv_testing_rates,#MoH_numbers_tests!A1,#MoH_numbers_tests!A1,100% for 2010 onwards
+Hiv,prob_start_art_or_vs,#spectrum_treatment_cascade!A1,,100% for 2010 onwards
+Hiv,hiv_testing_rate_adjustment,0.9999,0.9999,Make sure hiv_testing_rates is not changed in the ideal case
+Hiv,prob_hiv_test_at_anc_or_delivery,0.9999,,
+Hiv,prob_hiv_test_for_newborn_infant,0.9999,,
+Hiv,prob_behav_chg_after_hiv_test,,0.9999,
+Hiv,prob_prep_for_fsw_after_hiv_test,0.9999,0.9999,
+Hiv,prob_prep_for_agyw,0.9999,0.9999,
+Hiv,prob_circ_after_hiv_test,0.9999,0.9999,
+Hiv,probability_of_being_retained_on_prep_every_3_months,,0.9999,
+Hiv,probability_of_being_retained_on_art_every_3_months,,0.9999,
+Hiv,probability_of_seeking_further_art_appointment_if_drug_not_available,,0.9999,
+Hiv,probability_of_seeking_further_art_appointment_if_appointment_not_available,,0.9999,
+Labour,odds_deliver_at_home,,"[0.0,0.0]",Make the prob of delivery at home as 0.0
+Labour,prob_intervention_delivered_anaemia_assessment_pnc,"[1.0,1.0] ",,
+Labour,prob_timings_pnc,"[[1.0,0.0], [1.0,0.0]]",,
+Labour,odds_will_attend_pnc,,"[10000.0,10000.0]","Particularly note that the prob can never reach 1.0 by simply increaseing odds; ideally, we should make the prob param exlicit in the coding"
+Labour,or_pnc_age_30_35,,"[1.75, 1.75]",Remain
+Labour,or_pnc_age_>35,,"[1.86, 1.86]",Remain
+Labour,or_pnc_rural,,"[0.55, 0.55]",Remain
+Labour,or_pnc_wealth_level_1,,"[0.72, 0.72]",Remain
+Labour,or_pnc_anc4+,,"[1.2 , 1.2]",Remain
+Labour,or_pnc_caesarean_delivery,,"[1.93, 1.93]",Remain
+Labour,or_pnc_facility_delivery,,"[1.91, 1.91]",Remain
+Labour,or_pnc_parity_>4,,"[0.03, 0.03]",Remain
+Labour,prob_careseeking_for_complication,,"[1.0,1.0]",
+Labour,prob_careseeking_for_complication_pn,,"[1.0,1.0]",
+Labour,prob_adherent_ifa,,"[1.0,1.0]",
+Labour,prob_hcw_avail_iv_abx,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_uterotonic,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_anticonvulsant,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_man_r_placenta,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_avd,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_blood_tran,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_surg,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_neo_resus,"[1.0, 1.0] ",,
+Labour,prob_hcw_avail_retained_prod,"[1.0, 1.0] ",,
+Labour,mean_hcw_competence_hc,"[1.0, 1.0]",,
+Labour,mean_hcw_competence_hp,"[1.0, 1.0]",,
+Malaria,prob_malaria_case_tests,0.9999,,Default value 0.4
+Malaria,rdt_testing_rates,#WHO_TestData2023!A1,#WHO_TestData2023!A1,"Rate_rdt_testing, default values from 2010-2023 < 0.65"
+Malaria,scaling_factor_for_rdt_availability,0.9999,0.9999,"This is to make sure that the rdt_testing_rates of 0.9999 remain/not to be scaled up, although its defualt value is 1.2."
+NewbornOutcomes,prob_care_seeking_for_complication,,"[1.0, 1.0]",
+NewbornOutcomes,prob_pnc_check_newborn,"[1.0,1.0]",,
+NewbornOutcomes,prob_timings_pnc_newborns,"[[1.0,0.0],[1.0,0.0]]",,
+PostnatalSupervisor,prob_care_seeking_postnatal_emergency,,"[1.0,1.0]",
+PostnatalSupervisor,prob_care_seeking_postnatal_emergency_neonate,,"[1.0,1.0]",
+PostnatalSupervisor,odds_care_seeking_fistula_repair,,"[10000.0,10000.0]","Particularly note that the prob can never reach 1.0 by simply increaseing odds; ideally, we should make the prob param exlicit in the coding"
+PostnatalSupervisor,aor_cs_fistula_age_15_19,,"[0.31, 0.31]",Remain
+PostnatalSupervisor,aor_cs_fistula_age_lowest_education,,"[0.69, 0.69]",Remain
+PregnancySupervisor,prob_care_seeking_ectopic_pre_rupture,,"[1.0,1.0]",
+PregnancySupervisor,prob_seek_care_pregnancy_complication,,"[1.0,1.0]",
+PregnancySupervisor,prob_seek_care_pregnancy_loss,,"[1.0,1.0]",
+PregnancySupervisor,prob_seek_care_induction,,"[1.0,1.0]",
+PregnancySupervisor,prob_anc1_months_2_to_4,,"[[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]",
+PregnancySupervisor,prob_anc1_months_5_to_9,,"[[0.345, 0.245, 0.28, 0.015, 0.015, 0.1], [0.41, 0.25, 0.21, 0.015, 0.015, 0.1]]",Remain
+PregnancySupervisor,odds_early_init_anc4,,"[10000.0,10000.0]","Particularly note that the prob can never reach 1.0 by simply increaseing odds; ideally, we should make the prob param exlicit in the coding"
+PregnancySupervisor,aor_early_anc4_20_24,,"[1.26, 1.26]",Remain
+PregnancySupervisor,aor_early_anc4_25_29,,"[1.42, 1.42]",Remain
+PregnancySupervisor,aor_early_anc4_30_34,,"[1.48, 1.48]",Remain
+PregnancySupervisor,aor_early_anc4_35_39,,"[1.61, 1.61]",Remain
+PregnancySupervisor,aor_early_anc4_40_44,,"[1.47, 1.47]",Remain
+PregnancySupervisor,aor_early_anc4_45_49,,"[1.77, 1.77]",Remain
+PregnancySupervisor,aor_early_anc4_2010,,"[1.21, 1.21]",Remain
+PregnancySupervisor,aor_early_anc4_2015,,"[2.12,2.12]",Remain
+PregnancySupervisor,aor_early_anc4_parity_2_3,,"[0.7, 0.7]",Remain
+PregnancySupervisor,aor_early_anc4_parity_4_5,,"[0.62, 0.62]",Remain
+PregnancySupervisor,aor_early_anc4_parity_6+,,"[0.59, 0.59]",Remain
+PregnancySupervisor,aor_early_anc4_secondary_edu,,"[1.24, 1.24]",Remain
+PregnancySupervisor,aor_early_anc4_tertiary_edu,,"[2.35, 2.35]",Remain
+PregnancySupervisor,aor_early_anc4_richest_wealth,,"[1.23, 1.23]",Remain
+PregnancySupervisor,prob_late_initiation_anc4,,"[0.3, 0.29]",Remain
+PregnancySupervisor,prob_early_initiation_anc_below4,,"[0.115, 0.101]",Remain
+PregnancySupervisor,prob_early_anc_at_facility_level_1_2,,"[[0.5, 0.5], [0.5, 0.5]]",Remain
+Schisto,delay_till_hsi_a_repeated,,1.0000001,
+Schisto,delay_till_hsi_b_repeated,,1.0000001,
+Schisto,MDA_coverage_historical,#MDA_historical_Coverage!A1,,"100% for 2010 onwards, incl. PSAC, SAC, Adults"
+Schisto,mda_coverage,0.99,,99% for 2023 onwards
+Schisto,mda_target_group,ALL,,"MDA including PSAC, SAC, Adults"
+Schisto,mda_frequency_months,12,,repeat MDA every 12 months
+Stunting,prob_stunting_diagnosed_at_generic_appt,0.9999,,
+Tb,ipt_coverage,#ipt_coverage!A1,,100% for 2010 onwards
+Tb,rate_testing_active_tb,,#NTP2019!A1,100% for 2010 onwards
+Tb,sens_clinical,0.9999,,
+Tb,spec_clinical,0.9999,,
+Tb,prob_retained_ipt_6_months,,0.9999,
+CervicalCancer,prob_referral_biopsy_given_vaginal_bleeding,,0.9999,
+CervicalCancer,prob_xpert_screen,0.9999,,
+CervicalCancer,yrs_between_screen_hv_pos,1.0000001,1.0000001,
+CervicalCancer,yrs_between_screen_hv_neg,1.0000001,1.0000001,
+CervicalCancer,min_yrs_between_screening_if_cin_treated,1.0000001,1.0000001,

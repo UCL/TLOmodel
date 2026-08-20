@@ -1420,7 +1420,7 @@ class SimplifiedPregnancyAndLabour(Module):
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
         df.loc[df.is_alive, 'la_has_had_hysterectomy'] = False
         df.loc[df.is_alive, 'la_is_postpartum'] = False
-        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = np.NAN
+        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = np.nan
 
     def initialise_simulation(self, *args):
         pass
@@ -1430,7 +1430,7 @@ class SimplifiedPregnancyAndLabour(Module):
         df.at[child_id, 'la_currently_in_labour'] = False
         df.at[child_id, 'la_has_had_hysterectomy'] = False
         df.at[child_id, 'la_is_postpartum'] = False
-        df.at[child_id, 'ps_ectopic_pregnancy'] = np.NAN
+        df.at[child_id, 'ps_ectopic_pregnancy'] = np.nan
 
     def set_date_of_labour(self, person_id):
         """This is a drop-in replacement for the method in Labour that triggers the processes that determine the outcome

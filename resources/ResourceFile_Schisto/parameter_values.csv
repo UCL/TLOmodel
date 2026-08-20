@@ -1,3 +1,84 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:89d9913cc3abf3842d95ebe2f96d1b82ad1cb6a328d9d5b70fa79fcb2bf6bd2e
-size 5382
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+delay_till_hsi_a_repeated,5.00001,local,1,24,vague prior,assumption
+delay_till_hsi_b_repeated,20.0001,local,1,24,vague prior,assumption
+rr_WASH,0.6,local,0.01,100,vague prior,Grimes 2014
+calibration_scenario,0,scenario,NA,NA,scenario,
+urine_filtration_sensitivity_lowWB,0.6,universal,0,1,vague prior,
+urine_filtration_sensitivity_moderateWB,0.68,universal,0,1,vague prior,
+urine_filtration_sensitivity_heavyWB,0.75,universal,0,1,vague prior,
+urine_filtration_specificity_lowWB,0.999999,universal,0,1,vague prior,
+urine_filtration_specificity_moderateWB,0.999999,universal,0,1,vague prior,
+urine_filtration_specificity_heavyWB,0.999999,universal,0,1,vague prior,
+kato_katz_sensitivity_moderateWB,0.5,universal,0,1,vague prior,
+kato_katz_sensitivity_heavyWB,0.62,universal,0,1,vague prior,
+kato_katz_specificity_moderateWB,0.999999,universal,0,1,vague prior,
+kato_katz_specificity_heavyWB,0.999999,universal,0,1,vague prior,
+scaleup_WASH,continue,scenario,NA,NA,scenario,
+scaleup_WASH_start_year,2024,scenario,2020,2050,scenario,
+mda_coverage,0.7,scenario,0,1,scenario,
+mda_target_group,SAC,scenario,,,scenario,
+mda_frequency_months,12,scenario,1,12,scenario,
+scaling_factor_baseline_risk,0.01,undetermined,0,1,calibration,
+baseline_risk,5,undetermined,0,100,calibration,
+background_gamma,1.3,undetermined,0,5,calibration,
+background_rel,0.02,undetermined,0,1,calibration,
+daly_weight_mild_schistosomiasis,0,universal,0,1,vague prior,
+daly_weight_moderate_s_mansoni,0.011,universal,0,1,vague prior,
+daly_weight_heavy_s_mansoni,0.325,universal,0,1,vague prior,
+daly_weight_moderate_s_haematobium,0.011,universal,0,1,vague prior,
+daly_weight_heavy_s_haematobium,0.325,universal,0,1,vague prior,
+R0_haematobium,1.6,local,0,5,vague prior,
+heavy_intensity_threshold_haematobium,20,universal,0,100,vague prior,WHO
+heavy_intensity_threshold_PSAC_haematobium,5,universal,0,100,vague prior,assumption
+low_intensity_threshold_haematobium,10,universal,0,100,vague prior,assumption
+worms_fecundity_haematobium,0.005,universal,0,1,vague prior,Truscott et al
+worm_lifespan_haematobium,6,universal,0,20,vague prior,Anderson et al 2016
+beta_PSAC_haematobium,0.3,universal,0,5,vague prior,Truscott et al
+beta_SAC_haematobium,1.0000001,universal,0,5,vague prior,Truscott et al
+beta_Adults_haematobium,0.06,universal,0,5,vague prior,Toor 2018
+PZQ_efficacy_haematobium,0.941,universal,0,1,vague prior,Zwang 2014
+baseline_prevalence_haematobium,0.116,local,0,1,vague prior,average from LatestData 2010
+R0_mansoni,1.66,undetermined,0,5,calibration,
+heavy_intensity_threshold_mansoni,28,universal,0,100,vague prior,WHO
+heavy_intensity_threshold_PSAC_mansoni,20,universal,0,100,vague prior,assumption
+low_intensity_threshold_mansoni,7,universal,0,100,vague prior,assumption
+worms_fecundity_mansoni,0.0006,universal,0,1,vague prior,Chan et al
+worm_lifespan_mansoni,4,universal,0,20,vague prior,Anderson et al 2017
+beta_PSAC_mansoni,0.3,universal,0,5,vague prior,Truscott et al
+beta_SAC_mansoni,1.000001,universal,0,5,vague prior,Truscott et al
+beta_Adults_mansoni,0.06,universal,0,5,vague prior,Toor 2018
+PZQ_efficacy_mansoni,0.863,universal,0,1,vague prior,Zwang 2014
+baseline_prevalence_mansoni,0.031,local,0,1,vague prior,average from LatestData 2010
+odds_ratio_health_seeking_children_schisto_low,0.01,local,0.01,100,vague prior,
+odds_ratio_health_seeking_adults_schisto_low,0.01,local,0.01,100,vague prior,
+kato_katz_sensitivity_lowWB,0.0000001,universal,0,1,vague prior,
+kato_katz_specificity_lowWB,0.0000001,universal,0,1,vague prior,
+urine_filtration_sensitivity_noneWB,0.0000001,universal,0,1,vague prior,
+urine_filtration_specificity_noneWB,0.0000001,universal,0,1,vague prior,
+single_district_calibration_number,19,scenario,NA,NA,scenario,
+single_district_calibration_name,Zomba,scenario,NA,NA,scenario,
+single_district_calibration_region,Southern,scenario,NA,NA,scenario,
+mda_schedule_month,7,undetermined,1,12,design decision,
+mda_schedule_day,1,undetermined,1,31,design decision,
+minimum_baseline_prevalence,0.000001,undetermined,1.00E-10,1.00E-03,design decision,
+prevalence_lower_bound,0.000000001,undetermined,0,1,design decision,
+prevalence_upper_bound,0.9999999,undetermined,0,1,design decision,
+infant_min_age,0,undetermined,0,5,structural,
+infant_max_age,1,undetermined,0,5,structural,
+psac_min_age,2,undetermined,0,10,structural,
+psac_max_age,4,undetermined,0,10,structural,
+sac_min_age,5,undetermined,0,20,structural,
+sac_max_age,14,undetermined,0,20,structural,
+adults_min_age,15,undetermined,10,25,structural,
+adults_max_age,120,undetermined,80,150,structural,
+mda_execute,TRUE,scenario,NA,NA,scenario,
+single_district,FALSE,scenario,NA,NA,scenario,
+main_polling_frequency,1,undetermined,1,12,design decision,
+worm_maturation_period_months,1,universal,1,12,vague prior,
+worm_death_check_frequency_years,1,local,1,5,vague prior,
+mda_appointment_window_months,1,local,1,12,vague prior,
+wash_scaleup_frequency_years,1,local,1,5,vague prior,
+recent_sanitation_window_years,1,local,1,5,vague prior,
+avg_weight_psac_kg,17.5,universal,10,25,vague prior,"Child 0-5, maximum weight 17.5kg (WHO- average between girls/boys)"
+avg_weight_sac_kg,30,universal,20,50,vague prior,"Child aged 5-15, use mid-point age 10: 50th percentile weight=30kg"
+avg_weight_adult_kg,62,universal,50,80,vague prior,"Adult, average weight 62kg"

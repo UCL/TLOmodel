@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ca507e9a48d12cea8a2c143f142b9d3d997b852355d6034c607ef03cbeb41f20
-size 76
+parameter_name,value
+prob_facility_level_for_vaccine,"[0,0.80,0.10,0.10]"

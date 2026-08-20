@@ -1549,6 +1549,15 @@ class HealthSystem(Module):
             hsi_event.initialise()
             clinic_eligibility = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
 
+            # Check we recognise requested officers
+            for officer in hsi_event.expected_time_requests:
+                if officer not in self._daily_capabilities[clinic_eligibility]:
+                    logger.warning(
+                        key="message",
+                        data=f"Unknown officer '{officer}' requested by "
+                             f"{hsi_event.__class__.__name__} at time of scheduling."
+                    )
+
             self._add_hsi_event_queue_item_to_hsi_event_queue(
                 clinic_eligibility=clinic_eligibility,
                 priority=priority,
@@ -1874,6 +1883,10 @@ class HealthSystem(Module):
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
+        # Do nothing if person is not alive
+        if not self.sim.population.props.at[hsi_event.target, 'is_alive']:
+            return
+
         # Invoke never ran function here
         hsi_event.never_ran()
 
@@ -2105,26 +2118,13 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
+    def do_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
-
-        ok_to_run = True
-
-        for officer in expected_time_requests.keys():
-            availability = self.capabilities_today[clinic][officer]
-
-            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
-            if availability is None:
-                logger.warning(
-                    key="message",
-                    data=(f"Requested officer {officer} is not contemplated by health system. ")
-                )
-                availability = 0.0
-
-            if availability == 0.0:
-                ok_to_run = False
-
-        return ok_to_run
+        clinic_capabilities = self.capabilities_today[clinic]
+        for officer in expected_time_requests:
+            if clinic_capabilities.get(officer, 0.0) == 0.0:
+                return False
+        return True
 
     def run_individual_level_events_in_mode_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
@@ -2134,47 +2134,21 @@ class HealthSystem(Module):
         assert self.mode_appt_constraints == 1
 
         if _list_of_individual_hsi_event_tuples:
-            # Examine total call on health officers time from the HSI events in the list:
-
-            # For all events in the list, expand the appt-footprint of the event to give the demands on each
-            # officer-type in each facility_id and clinic.
-            footprints_of_all_individual_level_hsi_event = defaultdict(list)
-            ## _list_of_individual_hsi_event_tuples is a flat list, whereas we will now
-            ## store the footprint by clinic; as we loop over the list of events to be run, we
-            ## will retrieve the updated footprint using get_appt_footprint_as_time_request.
-            ## We want to ensure that we update the footprint of the ``correct'' event. We will
-            ## therefore also store the number of the event in the original flat list in a
-            ## dictionary keyed by clinics.
-            event_num_of_all_individual_level_hsi_event = defaultdict(list)
-            for eve_num, event_tuple in enumerate(_list_of_individual_hsi_event_tuples):
-                event_clinic = event_tuple.clinic_eligibility
-                footprints_of_all_individual_level_hsi_event[event_clinic].append(
-                    event_tuple.hsi_event.expected_time_requests
-                )
-                event_num_of_all_individual_level_hsi_event[event_clinic].append(eve_num)
-
-            # For each clinic, compute total appointment footprint across all events
-
-            for clinic, footprint in footprints_of_all_individual_level_hsi_event.items():
-                for hsi_footprint in footprint:
-                    # Counter.update method when called with dict-like argument adds counts
-                    # from argument to Counter object called from
-                    self.running_total_footprint[clinic].update(hsi_footprint)
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 clinic = event.clinic_eligibility
                 event = event.hsi_event
-
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
                 # In this mode, all HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
                 if event.expected_time_requests:
-                    ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                    ok_to_run = self.do_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
+
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = self.bed_days.issue_bed_days_according_to_availability(
@@ -2197,20 +2171,17 @@ class HealthSystem(Module):
                         # check its formatting:
                         assert self.appt_footprint_is_valid(actual_appt_footprint)
 
-                        # Update load factors:
-                        updated_call = self.get_appt_footprint_as_time_request(
-                            facility_info=event.facility_info, appt_footprint=actual_appt_footprint
-                        )
-                        ev_num_in_clinics_fp = event_num_of_all_individual_level_hsi_event[clinic].index(ev_num)
-                        original_call = footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp]
-                        footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp] = updated_call
-                        self.running_total_footprint[clinic] -= original_call
-                        self.running_total_footprint[clinic] += updated_call
 
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual,
                         # as recorded before the HSI event run
                         actual_appt_footprint = _appt_footprint_before_running
+
+                    # Update load factors:
+                    actual_call = self.get_appt_footprint_as_time_request(
+                        facility_info=event.facility_info, appt_footprint=actual_appt_footprint
+                    )
+                    self.running_total_footprint[clinic].update(actual_call)
 
                     # Write to the log
                     self.record_hsi_event(
@@ -3121,14 +3092,14 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
         current_staff_count = {}
-        for clinic in sorted(hs.capabilities_today):
+        for clinic in sorted(hs._daily_capabilities):
             current_staff_count[clinic] = {}
-            for fid in sorted(hs.capabilities_today[clinic]):
+            for fid in sorted(hs._daily_capabilities[clinic]):
                 denom = hs._daily_capabilities_per_staff[clinic][fid]
                 if denom == 0:
                     current_staff_count[clinic][fid] = 0
                 else:
-                    current_staff_count[clinic][fid] = hs.capabilities_today[clinic][fid] / denom
+                    current_staff_count[clinic][fid] = hs._daily_capabilities[clinic][fid] / denom
 
         logger_summary.info(
             key="number_of_hcw_staff",

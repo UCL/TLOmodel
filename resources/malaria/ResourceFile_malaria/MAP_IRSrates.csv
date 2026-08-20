@@ -1,3 +1,289 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c4a6f9bdd86179dcf924384effa8ce339cfe70181c7ab2e75b7ce53e640922f5
-size 16987
+Region,District,Year,value,prior_label,prior_min,prior_max,prior_note,reference
+Southern Region,Balaka,2010,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2011,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2012,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2013,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2014,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2015,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2016,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2017,0,local,0,1,vague prior,MAP
+Southern Region,Balaka,2018,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2010,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2011,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2012,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2013,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2014,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2015,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2016,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2017,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre,2018,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2010,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2011,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2012,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2013,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2014,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2015,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2016,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2017,0,local,0,1,vague prior,MAP
+Southern Region,Blantyre City,2018,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2010,0.458223253,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2011,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2012,0.403926962,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2013,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2014,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2015,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2016,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2017,0,local,0,1,vague prior,MAP
+Southern Region,Chikwawa,2018,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2010,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2011,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2012,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2013,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2014,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2015,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2016,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2017,0,local,0,1,vague prior,MAP
+Southern Region,Chiradzulu,2018,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2010,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2011,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2012,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2013,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2014,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2015,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2016,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2017,0,local,0,1,vague prior,MAP
+Northern Region,Chitipa,2018,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2010,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2011,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2012,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2013,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2014,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2015,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2016,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2017,0,local,0,1,vague prior,MAP
+Central Region,Dedza,2018,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2010,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2011,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2012,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2013,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2014,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2015,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2016,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2017,0,local,0,1,vague prior,MAP
+Central Region,Dowa,2018,0,local,0,1,vague prior,MAP
+Northern Region,Karonga,2010,0.835191292,local,0,1,vague prior,MAP
+Northern Region,Karonga,2011,0,local,0,1,vague prior,MAP
+Northern Region,Karonga,2012,0.733117247,local,0,1,vague prior,MAP
+Northern Region,Karonga,2013,0,local,0,1,vague prior,MAP
+Northern Region,Karonga,2014,0,local,0,1,vague prior,MAP
+Northern Region,Karonga,2015,0.6975373,local,0,1,vague prior,MAP
+Northern Region,Karonga,2016,0,local,0,1,vague prior,MAP
+Northern Region,Karonga,2017,0,local,0,1,vague prior,MAP
+Northern Region,Karonga,2018,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2010,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2011,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2012,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2013,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2014,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2015,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2016,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2017,0,local,0,1,vague prior,MAP
+Central Region,Kasungu,2018,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2010,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2011,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2012,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2013,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2014,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2015,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2016,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2017,0,local,0,1,vague prior,MAP
+Northern Region,Likoma,2018,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2010,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2011,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2012,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2013,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2014,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2015,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2016,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2017,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe,2018,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2010,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2011,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2012,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2013,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2014,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2015,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2016,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2017,0,local,0,1,vague prior,MAP
+Central Region,Lilongwe City,2018,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2010,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2011,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2012,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2013,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2014,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2015,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2016,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2017,0,local,0,1,vague prior,MAP
+Southern Region,Machinga,2018,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2010,0.264321025,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2011,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2012,0.236382235,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2013,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2014,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2015,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2016,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2017,0,local,0,1,vague prior,MAP
+Southern Region,Mangochi,2018,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2010,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2011,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2012,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2013,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2014,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2015,0.374022456,local,0,1,vague prior,MAP
+Central Region,Mchinji,2016,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2017,0,local,0,1,vague prior,MAP
+Central Region,Mchinji,2018,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2010,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2011,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2012,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2013,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2014,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2015,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2016,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2017,0,local,0,1,vague prior,MAP
+Southern Region,Mulanje,2018,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2010,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2011,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2012,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2013,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2014,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2015,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2016,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2017,0,local,0,1,vague prior,MAP
+Southern Region,Mwanza,2018,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2010,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2011,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2012,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2013,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2014,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2015,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2016,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2017,0,local,0,1,vague prior,MAP
+Northern Region,Mzimba,2018,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2010,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2011,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2012,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2013,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2014,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2015,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2016,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2017,0,local,0,1,vague prior,MAP
+Northern Region,Mzuzu City,2018,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2010,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2011,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2012,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2013,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2014,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2015,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2016,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2017,0,local,0,1,vague prior,MAP
+Southern Region,Neno,2018,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2010,1,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2011,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2012,0.883860981,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2013,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2014,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2015,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2016,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2017,0,local,0,1,vague prior,MAP
+Northern Region,Nkhata Bay,2018,0,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2010,0.376785947,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2011,0.575915205,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2012,0.585150448,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2013,0,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2014,0,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2015,0,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2016,0,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2017,0,local,0,1,vague prior,MAP
+Central Region,Nkhotakota,2018,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2010,0.849360278,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2011,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2012,0.748722684,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2013,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2014,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2015,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2016,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2017,0,local,0,1,vague prior,MAP
+Southern Region,Nsanje,2018,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2010,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2011,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2012,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2013,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2014,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2015,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2016,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2017,0,local,0,1,vague prior,MAP
+Central Region,Ntcheu,2018,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2010,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2011,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2012,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2013,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2014,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2015,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2016,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2017,0,local,0,1,vague prior,MAP
+Central Region,Ntchisi,2018,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2010,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2011,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2012,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2013,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2014,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2015,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2016,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2017,0,local,0,1,vague prior,MAP
+Southern Region,Phalombe,2018,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2010,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2011,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2012,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2013,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2014,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2015,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2016,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2017,0,local,0,1,vague prior,MAP
+Northern Region,Rumphi,2018,0,local,0,1,vague prior,MAP
+Central Region,Salima,2010,0.335071467,local,0,1,vague prior,MAP
+Central Region,Salima,2011,0,local,0,1,vague prior,MAP
+Central Region,Salima,2012,0.535895245,local,0,1,vague prior,MAP
+Central Region,Salima,2013,0.501379614,local,0,1,vague prior,MAP
+Central Region,Salima,2014,0,local,0,1,vague prior,MAP
+Central Region,Salima,2015,0,local,0,1,vague prior,MAP
+Central Region,Salima,2016,0,local,0,1,vague prior,MAP
+Central Region,Salima,2017,0,local,0,1,vague prior,MAP
+Central Region,Salima,2018,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2010,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2011,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2012,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2013,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2014,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2015,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2016,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2017,0,local,0,1,vague prior,MAP
+Southern Region,Thyolo,2018,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2010,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2011,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2012,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2013,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2014,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2015,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2016,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2017,0,local,0,1,vague prior,MAP
+Southern Region,Zomba,2018,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2010,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2011,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2012,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2013,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2014,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2015,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2016,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2017,0,local,0,1,vague prior,MAP
+Southern Region,Zomba City,2018,0,local,0,1,vague prior,MAP

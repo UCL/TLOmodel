@@ -1,3 +1,68 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d1d4eedc8152885d3c252e11580f5d34c6a9f1ed9101ea15dc66479284ee89b6
-size 4988
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+baseline_annual_probability,0.0007,local,0,1,vague prior,
+rr_male,1.25,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_0_4,0,universal,0,100,vague prior,
+rr_5_9,0,universal,0,100,vague prior,
+rr_10_14,0,universal,0,100,vague prior,
+rr_15_19,0,universal,0,100,vague prior,
+rr_20_24,0.515463918,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_25_29,0.515463918,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_30_34,0.515463918,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_35_39,1,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_40_44,1,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_45_49,1.675257732,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_50_54,1.675257732,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_55_59,2.87628866,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_60_64,2.87628866,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_65_69,4.190721649,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_70_74,4.190721649,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_75_79,5.190721649,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_80_84,5.190721649,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_85_89,2.087628866,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_90_94,2.087628866,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_95_99,2.087628866,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_100,2.087628866,universal,0,100,vague prior,Judge A. et al. Nep Dial Trans. 2012
+rr_urban,,local,0,100,vague prior,
+rr_wealth_1,1,local,0,100,vague prior,Weldegiorgis M. et al. Nep Dial Trans. 2020
+rr_wealth_2,1.26,local,0,100,vague prior,Weldegiorgis M. et al. Nep Dial Trans. 2020
+rr_wealth_3,1.36,local,0,100,vague prior,Weldegiorgis M. et al. Nep Dial Trans. 2020
+rr_wealth_4,1.63,local,0,100,vague prior,Weldegiorgis M. et al. Nep Dial Trans. 2020
+rr_wealth_5,1.73,local,0,100,vague prior,Weldegiorgis M. et al. Nep Dial Trans. 2020
+rr_bmi_1,1.02,universal,0,100,vague prior,Herrington WG. et al. PLoS One. 2017 
+rr_bmi_2,1,universal,0,100,vague prior,Herrington WG. et al. PLoS One. 2018
+rr_bmi_3,1.45,universal,0,100,vague prior,Herrington WG. et al. PLoS One. 2019
+rr_bmi_4,1.66,universal,0,100,vague prior,Herrington WG. et al. PLoS One. 2020
+rr_bmi_5,2.2,universal,0,100,vague prior,Herrington WG. et al. PLoS One. 2021
+rr_low_exercise,,universal,0,100,vague prior,
+rr_high_salt,,universal,0,100,vague prior,
+rr_high_sugar,,universal,0,100,vague prior,
+rr_tobacco,1.24,universal,0,100,vague prior,Bello A et al. Clin J Am Soc Nephrol. 2008
+rr_alcohol,1.33,universal,0,100,vague prior,Hossain M et al. Nephron Clin Pract. 2012
+rr_marital_status_1,1,local,0,100,vague prior,Akrawi D et al. Eur J Intern Med. 2014
+rr_marital_status_2,0.862068966,local,0,100,vague prior,Akrawi D et al. Eur J Intern Med. 2014
+rr_marital_status_3,0.862068966,local,0,100,vague prior,Akrawi D et al. Eur J Intern Med. 2014
+rr_in_education,1.345454545,local,0,100,vague prior,Weldegiorgis M. et al. Nep Dial Trans. 2020
+rr_current_education_level_1,1.181818182,local,0,100,vague prior,Fored C et al. Nep Dial Tran. 2003
+rr_current_education_level_2,1,local,0,100,vague prior,Fored C et al. Nep Dial Tran. 2003
+rr_current_education_level_3,0.909090909,local,0,100,vague prior,Fored C et al. Nep Dial Tran. 2003
+rr_unimproved_sanitation,,local,0,100,vague prior,
+rr_no_access_handwashing,,local,0,100,vague prior,
+rr_no_clean_drinking_water,,local,0,100,vague prior,
+rr_wood_burning_stove,,local,0,100,vague prior,
+rr_diabetes,1.87,universal,0,100,vague prior,Bello A et al. Clin J Am Soc Nephrol. 2008
+rr_hypertension,1.75,universal,0,100,vague prior,Bello A et al. Clin J Am Soc Nephrol. 2008
+rr_depression,1.62,local,0,100,vague prior,Kop W et al. Clin J Am Soc Nephrol. 2011
+rr_chronic_kidney_disease,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain,1.3,universal,0,100,vague prior,Lipworth et al. PlosOne 2012
+rr_chronic_ischemic_heart_disease,1,universal,0,100,vague prior,
+rr_cancers,1,universal,0,100,vague prior,
+rr_hiv,1,universal,0,100,vague prior,
+rr_ever_stroke,1,universal,0,100,vague prior,
+rr_ever_heart_attack,1,universal,0,100,vague prior,
+rr_diabetes_on_medication,1,universal,0,100,vague prior,
+rr_hypertension_on_medication,1,universal,0,100,vague prior,
+rr_chronic_kidney_disease_on_medication,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain_on_medication,1,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease_on_medication,1,universal,0,100,vague prior,
+rr_stroke_on_medication,1,universal,0,100,vague prior,
+rr_heart_attack_on_medication,1,universal,0,100,vague prior,

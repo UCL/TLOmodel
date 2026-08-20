@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c8c41e64aa6869060fdf8f366e97966ff9b20e56d827622ce8213767ef8f4b41
-size 121
+parameter_name,value,param_label,prior_min,prior_max,prior_note
+chronic_lower_back_pain_symptoms,1,local,0,1,vague prior

@@ -85,7 +85,7 @@ class Deviance(Module):
         ].values[0]
 
         # UNAIDS AIDS deaths data: 2010-
-        data_hiv_unaids_deaths = xls["unaids_mortality_dalys2021"]
+        data_hiv_unaids_deaths = xls["unaids_mortality_dalys2023"]
         self.data_dict["unaids_deaths_per_100k"] = data_hiv_unaids_deaths["AIDS_mortality_per_100k"]
 
         # TB

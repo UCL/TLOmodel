@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime
 import heapq
-import itertools
 import time
 from collections import Counter, OrderedDict
 from pathlib import Path
@@ -139,6 +138,9 @@ class Simulation:
         # Whether simulation has been initialised
         self._initialised = False
 
+        # To allow for graceful termination
+        self._terminate = False
+
     def _configure_logging(
         self,
         filename: Optional[str] = None,
@@ -265,7 +267,7 @@ class Simulation:
             a keyword parameter for clarity.
         """
         start = time.time()
-        
+
         # Collect information from all modules, that is required the population dataframe
         for module in self.modules.values():
             module.pre_initialise_population()
@@ -284,10 +286,10 @@ class Simulation:
                 key="debug",
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
-                               
+
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
-        
+
     def initialise(self, *, end_date: Date) -> None:
         """Initialise all modules in simulation.
         :param end_date: Date to end simulation on - accessible to modules to allow
@@ -303,11 +305,11 @@ class Simulation:
         for module in self.modules.values():
             module.initialise_simulation(self)
         self._initialised = True
-        
+
         # Since CollectEventChains listeners are added to notified upon module initialisation,
         # this can only be dispatched here.
         # Otherwise, would have to add listener outside of CollectEventChains initialisation
-        
+
         # Dispatch notification that pop has been initialised
         notifier.dispatch("simulation.post-initialise")
 
@@ -384,7 +386,7 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar = self._initialise_progress_bar(to_date)
         while (
-            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date
+            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date and not self._terminate
         ):
             event, date = self.event_queue.pop_next_event_and_date()
             if self.show_progress_bar:
@@ -446,7 +448,7 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
-            
+
         # Dispatch notification that birth is about to occur
         notifier.dispatch("simulation.post-do_birth", data={'child_id': child_id})
 
@@ -507,6 +509,9 @@ class Simulation:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
 
+    def terminate(self):
+        self._terminate = True
+
 
 class EventQueue:
     """A simple priority queue for events.
@@ -516,7 +521,7 @@ class EventQueue:
 
     def __init__(self):
         """Create an empty event queue."""
-        self.counter = itertools.count()
+        self.counter = 0
         self.queue = []
 
     def schedule(self, event: Event, date: Date) -> None:
@@ -525,7 +530,8 @@ class EventQueue:
         :param event: The event to schedule.
         :param date: When it should happen.
         """
-        entry = (date, event.priority, next(self.counter), event)
+        entry = (date, event.priority, self.counter, event)
+        self.counter += 1
         heapq.heappush(self.queue, entry)
 
     def pop_next_event_and_date(self) -> tuple[Event, Date]:
