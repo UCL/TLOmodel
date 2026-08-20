@@ -905,12 +905,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .replace({1: "None", 2: "Some/Completed primary education", 3: "Some/Completed secondary education"})
     )
 
-    # make level 3 as level 3+ as it combines levels 3 and 4
-    mask = pat_mix_complete["category"].eq("Facility_Level")
-    pat_mix_complete.loc[mask, "subgroup"] = (
-        pat_mix_complete.loc[mask, "subgroup"]
-        .replace({"1a": "Health centers", "2": "Community/District hospitals", "3": "Central/National hospitals"})
-    )
+    # mask = pat_mix_complete["category"].eq("Facility_Level")
+    # pat_mix_complete.loc[mask, "subgroup"] = (
+    #     pat_mix_complete.loc[mask, "subgroup"]
+    #     .replace({"1a": "Health centers", "2": "Community/District hospitals", "3": "Central/National hospitals"})
+    # )
 
     # plot
     markers = {
@@ -920,9 +919,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
 
     source_colors = {
-        "TLO": "green",
-        "Patient Exit": "blue",
-        "Facility Summary": "orange"
+        "TLO": "tab:green",
+        "Patient Exit": "tab:blue",
+        "Facility Summary": "tab:orange"
     }
 
     def plot_pat_mix(
@@ -986,8 +985,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             elif category == "Facility_Level":
                 width_per_subgroup = 0.9
-                rotation = 45
-                horizontal_alignment = "right"
+                rotation = 0
+                horizontal_alignment = "center"
 
             elif category == "Wealth_Quintile":
                 width_per_subgroup = 0.8
@@ -1230,30 +1229,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plot_styles = {
         ("Patient Exit", "binary"): {
             "marker": "o",
-            "color": "blue",
-            "markerfacecolor": "blue",
-            "markeredgecolor": "blue",
+            "color": "tab:blue",
+            "markerfacecolor": "tab:blue",
+            "markeredgecolor": "tab:blue",
             "label": "Patient Exit - Binary",
         },
         ("TLO", "complete"): {
             "marker": "d",
-            "color": "red",
-            "markerfacecolor": "red",
-            "markeredgecolor": "red",
+            "color": "tab:pink",
+            "markerfacecolor": "tab:pink",
+            "markeredgecolor": "tab:pink",
             "label": "TLO - Complete",
         },
         ("TLO", "proportional"): {
             "marker": "d",
-            "color": "goldenrod",
-            "markerfacecolor": "goldenrod",
-            "markeredgecolor": "goldenrod",  # helps visibility
+            "color": "tab:olive",
+            "markerfacecolor": "tab:olive",
+            "markeredgecolor": "tab:olive",  # helps visibility
             "label": "TLO - Proportional",
         },
         ("TLO", "any"): {
             "marker": "d",
-            "color": "green",
-            "markerfacecolor": "green",
-            "markeredgecolor": "green",
+            "color": "tab:green",
+            "markerfacecolor": "tab:green",
+            "markeredgecolor": "tab:green",
             "label": "TLO - Any",
         },
     }
@@ -1493,11 +1492,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     assert len(hcw_tms_pat_load) + len(fac_tms_pat_load) + len(daily_patient_load_per_hcw) == len(pat_load_comparison)
 
+    # combine levels 3 and 4
+    pat_load_comparison["Facility_Level"] = pat_load_comparison["Facility_Level"].replace({"4": "3"})
+
     # *** make comparison plots ***
 
     # shared settings and helper function
 
-    facility_levels = ["1a", "2", "3", "4"]
+    facility_levels = ["1a", "2", "3"]
     sources = ["TLO", "HCW TMS", "Facility Summary"]
 
     markers = {
@@ -1507,9 +1509,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
 
     source_colors = {
-        "TLO": "green",
-        "HCW TMS": "blue",
-        "Facility Summary": "orange"
+        "TLO": "tab:green",
+        "HCW TMS": "tab:blue",
+        "Facility Summary": "tab:orange"
     }
 
     PLOT_STYLE = {
