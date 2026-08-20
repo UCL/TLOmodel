@@ -17,7 +17,7 @@ class InterventionLongScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': f'emonc_interventions_{self.pop_size/1000}K', 'directory': './outputs',
+            'filename': f'emonc_interventions_40K', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
