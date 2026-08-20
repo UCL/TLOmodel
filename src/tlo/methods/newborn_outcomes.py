@@ -49,7 +49,8 @@ class NewbornOutcomes(Module):
         'CareOfWomenDuringPregnancy',
         'Labour',
         'PostnatalSupervisor',
-        'PregnancySupervisor'
+        'PregnancySupervisor',
+        'Syphilis'
     }
 
     METADATA = {
@@ -265,6 +266,8 @@ class NewbornOutcomes(Module):
         'nb_preterm_birth_disab': Property(Types.CATEGORICAL, 'Disability associated with preterm delivery',
                                            categories=['none', 'mild_motor_and_cog', 'mild_motor', 'moderate_motor',
                                                        'severe_motor']),
+        'nb_congenital_syphilis': Property(
+            Types.BOOL, 'whether this newborn was live-born with congenital syphilis'),
         'nb_congenital_anomaly': Property(Types.BITSET, 'Types of congenital anomaly of the newborn stored as bitset'),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether this neonate has developed neonatal sepsis'
                                                                ' following birth'),
@@ -348,6 +351,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_early_preterm'] = False
         df.loc[df.is_alive, 'nb_late_preterm'] = False
         df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
+        df.loc[df.is_alive, 'nb_congenital_syphilis'] = False
         df.loc[df.is_alive, 'nb_congenital_anomaly'] = 0
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_inj_abx_neonatal_sepsis'] = False
@@ -1081,6 +1085,7 @@ class NewbornOutcomes(Module):
                 'nb_early_preterm': False,
                 'nb_late_preterm': False,
                 'nb_preterm_birth_disab': 'none',
+                'nb_congenital_syphilis': False,
                 'nb_congenital_anomaly': 0,
                 'nb_early_onset_neonatal_sepsis': False,
                 'nb_inj_abx_neonatal_sepsis': False,
@@ -1127,6 +1132,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
         df.at[child_id, 'nb_preterm_birth_disab'] = 'none'
+        self.sim.modules['Syphilis'].do_newborn_congenital_syphilis_handoff(mother_id, child_id)
         df.at[child_id, 'nb_congenital_anomaly'] = 0
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
         df.at[child_id, 'nb_inj_abx_neonatal_sepsis'] = False

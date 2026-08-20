@@ -70,7 +70,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Malaria', 'CardioMetabolicDisorders', 'Hiv'}
 
     ADDITIONAL_DEPENDENCIES = {
-         'Contraception', 'HealthSystem', 'Labour', 'CareOfWomenDuringPregnancy', 'Lifestyle'}
+        'Contraception', 'HealthSystem', 'Labour', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'Syphilis'}
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
@@ -113,10 +113,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'relative risk of placenta praevia in a woman who has previously delivered via caesarean '
                         'section'),
 
-        # SYPHILIS
-        'prob_syphilis_during_pregnancy': Parameter(
-            Types.LIST, 'probability that this womans will develop syphilis during her pregnancy'),
-
         # SPONTANEOUS AND INDUCED ABORTION
         'prob_previous_miscarriage_at_baseline': Parameter(
             Types.REAL, 'probability that a woman at baseline will have previously experienced a miscarriage'),
@@ -147,7 +143,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'underlying risk of death following an induced abortion'),
         'prob_spontaneous_abortion_death': Parameter(
             Types.LIST, 'underlying risk of death following an spontaneous abortion'),
-
 
         # ANAEMIA...
         'baseline_prob_anaemia_per_month': Parameter(
@@ -274,7 +269,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'relative risk of still birth in women with antepartum haemorrhage'),
         'rr_still_birth_chorio': Parameter(
             Types.LIST, 'relative risk of still birth in women with chorioamnionitis'),
-
 
         # CARE SEEKING (NOT ANC)...
         'prob_seek_care_pregnancy_complication': Parameter(
@@ -411,7 +405,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a woman is pregnant with multiple fetuses'),
         'ps_placenta_praevia': Property(Types.BOOL, 'Whether a woman pregnancy will be complicated by placenta'
                                                     'praevia'),
-        'ps_syphilis': Property(Types.BOOL, 'Whether a woman has syphilis during pregnancy'),
+
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
                                                                'severity',
                                             categories=['none', 'mild', 'moderate', 'severe']),
@@ -449,7 +443,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         # load parameters from the resource file
         parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_PregnancySupervisor',
-                                            files='parameter_values')
+                                             files='parameter_values')
+        parameter_dataframe = parameter_dataframe[
+            parameter_dataframe['parameter_name'].isin(self.PARAMETERS)
+        ].copy()
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
@@ -491,7 +488,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = 'none'
         df.loc[df.is_alive, 'ps_placenta_praevia'] = False
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
-        df.loc[df.is_alive, 'ps_syphilis'] = False
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
         df.loc[df.is_alive, 'ps_anc4'] = False
         df.loc[df.is_alive, 'ps_abortion_complications'] = 0
@@ -639,7 +635,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'ps_ectopic_pregnancy'] = 'none'
         df.at[child_id, 'ps_placenta_praevia'] = False
         df.at[child_id, 'ps_multiple_pregnancy'] = False
-        df.at[child_id, 'ps_syphilis'] = False
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
         df.at[child_id, 'ps_anc4'] = False
         df.at[child_id, 'ps_abortion_complications'] = 0
@@ -743,7 +738,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 # Otherwise, if the complication started this month she gets a daly weight relative to the number of
                 # days she has experience the complication
                 elif (self.sim.date - DateOffset(months=1)) <= mni[person][
-                     f'{complication}_onset'] <= self.sim.date:
+                    f'{complication}_onset'] <= self.sim.date:
                     days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
                                                     unit='d')
                     daly_weight = days_since_onset.days * (p[f'{complication}'] / DAYS_IN_YEAR)
@@ -759,7 +754,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
 
                     if (mni[person][f'{complication}_resolution'] == (self.sim.date - DateOffset(months=1))) and \
-                      (mni[person][f'{complication}_onset'] == self.sim.date):
+                        (mni[person][f'{complication}_onset'] == self.sim.date):
                         return
 
                     # Calculate daily weight and how many days this woman hasnt had the complication
@@ -811,7 +806,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
                 for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic', 'ectopic_rupture',
                                      'mild_mod_aph', 'severe_aph', 'chorio', 'eclampsia', 'obstructed_labour',
-                                     'sepsis', 'uterine_rupture',  'mild_mod_pph', 'severe_pph', 'secondary_pph']:
+                                     'sepsis', 'uterine_rupture', 'mild_mod_pph', 'severe_pph', 'secondary_pph']:
                     acute_daly_calculation(complication=complication, person=person)
 
                 for complication in ['hypertension', 'gest_diab', 'mild_anaemia', 'moderate_anaemia',
@@ -857,7 +852,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.loc[id_or_index, 'ps_date_of_anc1'] = pd.NaT
         df.loc[id_or_index, 'ps_multiple_pregnancy'] = False
         df.loc[id_or_index, 'ps_placenta_praevia'] = False
-        df.loc[id_or_index, 'ps_syphilis'] = False
         df.loc[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
         df.loc[id_or_index, 'ps_anc4'] = False
         df.loc[id_or_index, 'ps_htn_disorders'] = 'none'
@@ -867,6 +861,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.loc[id_or_index, 'ps_premature_rupture_of_membranes'] = False
         df.loc[id_or_index, 'ps_chorioamnionitis'] = False
         df.loc[id_or_index, 'ps_emergency_event'] = False
+        self.sim.modules['Syphilis'].reset_pregnancy_syphilis_properties(id_or_index)
 
     def apply_linear_model(self, lm, df_slice):
         """
@@ -964,7 +959,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # This function follows the same pattern as apply_risk_of_spontaneous_abortion (only women with unintended
         # pregnancy may seek induced abortion)
-        at_risk =\
+        at_risk = \
             df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
             (df.ps_ectopic_pregnancy == 'none')
 
@@ -1107,7 +1102,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         self.mnh_outcome_counter['gest_diab'] += len(gest_diab.loc[gest_diab].index)
 
-
     def apply_risk_of_hypertensive_disorders(self, gestation_of_interest):
         """
         This function applies risk of mild pre-eclampsia and mild gestational diabetes to a slice of the data frame. It
@@ -1193,7 +1187,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
                     # And log all of the new onset cases of any hypertensive disease
                     for person in new_onset_disease.index:
-                        self.mnh_outcome_counter[disease] +=1
+                        self.mnh_outcome_counter[disease] += 1
 
                         if disease == 'severe_pre_eclamp':
                             self.mother_and_newborn_info[person]['new_onset_spe'] = True
@@ -1209,7 +1203,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         women_on_anti_htns = \
             df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-            (df.ps_htn_disorders.str.contains('gest_htn|mild_pre_eclamp|severe_gest_htn|severe_pre_eclamp'))\
+            (df.ps_htn_disorders.str.contains('gest_htn|mild_pre_eclamp|severe_gest_htn|severe_pre_eclamp')) \
             & ~df.la_currently_in_labour & df.ac_gest_htn_on_treatment
 
         # Check theres no accidental cross over between these subsets
@@ -1310,7 +1304,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         self.mnh_outcome_counter['severe_antepartum_haemorrhage'] += len(severe_women.loc[severe_women].index)
 
         non_severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index,
-                                   'ps_antepartum_haemorrhage'] != 'severe')
+        'ps_antepartum_haemorrhage'] != 'severe')
 
         non_severe_women.loc[non_severe_women].index.to_series().apply(
             pregnancy_helper_functions.store_dalys_in_mni, mni=mni, mni_variable='mild_mod_aph_onset',
@@ -1459,6 +1453,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
 
+        # Apply congenital syphilis stillbirths that were assigned when fetal infection was established.
+        self.sim.modules['Syphilis'].apply_assigned_congenital_syphilis_stillbirths(gestation_of_interest)
+
         still_birth = self.apply_linear_model(
             self.ps_linear_models['antenatal_stillbirth'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
@@ -1562,7 +1559,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-                self, individual_id=individual_id, timing='antenatal')
+            self, individual_id=individual_id, timing='antenatal')
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
@@ -1614,7 +1611,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             # Of the women who will not attend ANC4 early, we determine who will attend ANC4 later in pregnancy
             late_initiation_anc4 = pd.Series(self.rng.random_sample(
                 len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
-                                            index=early_initiation_anc4.loc[~early_initiation_anc4].index)
+                                             index=early_initiation_anc4.loc[~early_initiation_anc4].index)
 
             # Check there are no duplicates
             for v in late_initiation_anc4.loc[late_initiation_anc4].index:
@@ -1627,7 +1624,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
             # Select any women who are not predicted to attend ANC4
             anc_below_4 = \
-                df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) &\
+                df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
                 (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
 
             # See if any of the women who wont attend ANC4 will still attend their first visit early in pregnancy
@@ -1666,10 +1663,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         **kwargs,
     ) -> None:
         scheduling_options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": self.sim.date + pd.DateOffset(days=1),
-            }
+            "priority": 0,
+            "topen": self.sim.date,
+            "tclose": self.sim.date + pd.DateOffset(days=1),
+        }
 
         # -----  ECTOPIC PREGNANCY  -----
         if individual_properties["ps_ectopic_pregnancy"] != 'none':
@@ -1692,12 +1689,14 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             )
             schedule_hsi_event(event, **scheduling_options)
 
+
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.
     1.) It updates the gestational age (in weeks) of all women who are pregnant
     2.) It applies monthly risk of key complications associated with pregnancy
     3.) It determines if women who experience life seeking complications associated with pregnancy will seek care
     4.) It applies risk of death and stillbirth to women who do not seek care following complications"""
+
     def __init__(self, module, ):
         super().__init__(module, frequency=DateOffset(weeks=1))
 
@@ -1728,6 +1727,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         newly_pregnant = df.loc[alive_and_preg & (df['ps_gestational_age_in_weeks'] == 3)]
         for person in newly_pregnant.index:
             pregnancy_helper_functions.update_mni_dictionary(self.module, individual_id=person)
+            self.sim.modules['Syphilis'].initialise_pre_existing_syphilis_for_pregnancy(person)
 
         # =========================== APPLYING RISK OF ADVERSE PREGNANCY OUTCOMES =====================================
         # The aim of this event is to apply risk of certain outcomes of pregnancy at relevant points in a womans
@@ -1763,7 +1763,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & (df.ps_ectopic_pregnancy == 'none')
 
         multiples = pd.Series(self.module.rng.random_sample(len(multiple_risk.loc[multiple_risk]))
-                              < params['prob_multiples'],  index=multiple_risk.loc[multiple_risk].index)
+                              < params['prob_multiples'], index=multiple_risk.loc[multiple_risk].index)
 
         df.loc[multiples.loc[multiples].index, 'ps_multiple_pregnancy'] = True
         self.module.mnh_outcome_counter['multiple_pregnancy'] += len(multiples.loc[multiples].index)
@@ -1779,20 +1779,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.mnh_outcome_counter['placenta_praevia'] += len(placenta_praevia.loc[placenta_praevia].index)
 
         #  ------------------------- APPLYING RISK OF SYPHILIS INFECTION DURING PREGNANCY  ---------------------------
-        # Finally apply risk that syphilis will develop during pregnancy
-        at_risk_women = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & (df.ps_ectopic_pregnancy
-                                                                                                == 'none')
-
-        syphilis_risk = pd.Series(self.module.rng.random_sample(len(at_risk_women.loc[at_risk_women]))
-                                  < params['prob_syphilis_during_pregnancy'],
-                                  index=at_risk_women.loc[at_risk_women].index)
-
-        # Schedule point of onset randomly during possible length of pregnancy
-        for person in syphilis_risk.loc[syphilis_risk].index:
-            onset_day = self.module.rng.randint(0, 280)
-            mni[person]['pred_syph_infect'] = self.sim.date + pd.Timedelta(days=onset_day)
-            self.sim.schedule_event(SyphilisInPregnancyEvent(self.module, person),
-                                    (self.sim.date + pd.Timedelta(days=onset_day)))
+        self.sim.modules['Syphilis'].schedule_incident_syphilis_infections_for_new_pregnancies()
 
         # ------------------------ APPLY RISK OF ADDITIONAL PREGNANCY COMPLICATIONS -----------------------------------
         # The following functions apply risk of key complications/outcomes of pregnancy at specific time points of a
@@ -1828,6 +1815,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_placental_abruption(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_antepartum_haemorrhage(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis(
+                gestation_of_interest=gestation_of_interest)
+
+            self.sim.modules['Syphilis'].apply_risk_of_congenital_syphilis(
                 gestation_of_interest=gestation_of_interest)
 
         for gestation_of_interest in [27, 31, 35, 40]:
@@ -1938,7 +1928,6 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         care_seeking_result = self.module.care_seeking_pregnancy_loss_complications(individual_id,
                                                                                     cause='ectopic_pre_rupture')
         if not care_seeking_result:
-
             # For women who dont seek care (and get treatment) we schedule EctopicPregnancyRuptureEvent (simulating
             # fallopian tube rupture) in an additional 2-4 weeks from this event (if care seeking is unsuccessful
             # then this event is scheduled by the HSI (did_not_run)
@@ -2038,44 +2027,22 @@ class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin)
         if (not mother.is_alive or
             not mother.is_pregnant or
             (mother.ps_gestational_age_in_weeks < 20) or
-           ((mother.ps_gest_diab == 'none') and (mother.ac_gest_diab_on_treatment == 'none'))):
+            ((mother.ps_gest_diab == 'none') and (mother.ac_gest_diab_on_treatment == 'none'))):
             return
 
         # We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/
         # oral anti-diabetics) will not control this womans hyperglycaemia
-        if self.module.rng.random_sample() > params[f'prob_glycaemic_control_{mother.ac_gest_diab_on_treatment }']:
+        if self.module.rng.random_sample() > params[f'prob_glycaemic_control_{mother.ac_gest_diab_on_treatment}']:
             # If so we reset her diabetes status as uncontrolled, her treatment is ineffective at reducing
             # risk of still birth, and when she returns for follow up she should be started on the next
             # treatment available
             df.at[individual_id, 'ps_gest_diab'] = 'uncontrolled'
 
 
-class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
-    """
-    This is SyphilisInPregnancyEvent. It is scheduled by PregnancySupervisorEvent module after a
-    woman becomes pregnant and is predicted to experience syphilis during their pregnancy. This event onsets Syphilis
-    in those women """
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
-
-        if (not df.at[individual_id, 'is_alive'] or
-            not df.at[individual_id, 'is_pregnant'] or
-            (individual_id not in mni) or
-           (not (mni[individual_id]['pred_syph_infect'] == self.sim.date))):
-            return
-
-        df.at[individual_id, 'ps_syphilis'] = True
-
-        self.module.mnh_outcome_counter['syphilis'] += 1
-
 class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
     """This is ParameterUpdateEvent. It is scheduled to occur once on 2015 to update parameters being used by the
     maternal and newborn health model"""
+
     def __init__(self, module):
         super().__init__(module)
 
@@ -2083,11 +2050,14 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         logger.debug(key='message', data='Now updating parameters in the maternal and perinatal health modules...')
 
-        for module in [self.module,
-                       self.sim.modules['CareOfWomenDuringPregnancy'],
-                       self.sim.modules['Labour'],
-                       self.sim.modules['NewbornOutcomes'],
-                       self.sim.modules['PostnatalSupervisor']]:
+        modules_to_update = [self.module,
+                             self.sim.modules['CareOfWomenDuringPregnancy'],
+                             self.sim.modules['Labour'],
+                             self.sim.modules['NewbornOutcomes'],
+                             self.sim.modules['PostnatalSupervisor'],
+                             self.sim.modules['Syphilis']]
+
+        for module in modules_to_update:
             pregnancy_helper_functions.update_current_parameter_dictionary(module, list_position=1)
 
         # Scale the linear models again according to the distribution of the population
@@ -2125,6 +2095,7 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
     either of the module parameters the signify analysis is being conducted are set to True, then key parameters
     are overridden to alter the coverage and/or quality of routine antenatal care delivery.
     """
+
     def __init__(self, module):
         super().__init__(module)
 
@@ -2137,7 +2108,7 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
             params['alternative_anc_quality'] or \
             params['alternative_ip_anc_quality'] or \
             params['sens_analysis_max'] or \
-           params['sens_analysis_min'] or  \
+            params['sens_analysis_min'] or \
             params['interventions_analysis']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
@@ -2148,7 +2119,6 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
             # When this parameter is set as True, the following parameters are overridden when the event is called.
             # Otherwise no parameters are updated.
             if params['alternative_anc_coverage']:
-
                 # Reset the intercept parameter of the equation determining care seeking for ANC4+ and scale the model
                 target = params['anc_availability_odds']
                 params['odds_early_init_anc4'] = 1
@@ -2197,7 +2167,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # DENOMINATORS
         # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
         live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
-        pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
+        pregnancies = len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
         comp_pregnancies = (c['ectopic_unruptured'] + c['spontaneous_abortion'] +
                             c['induced_abortion'] + c['antenatal_stillbirth'] +
                             c['intrapartum_stillbirth'] + live_births)
@@ -2214,8 +2184,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='yearly_mnh_counter_dict', data=c)
 
         # Calculate and store rates of key maternal and neonatal complications
-        def rate (count, denom, multiplier):
-            return (count/denom) * multiplier
+        def rate(count, denom, multiplier):
+            return (count / denom) * multiplier
 
         total_an_anaemia_cases = c['an_anaemia_mild'] + c['an_anaemia_moderate'] + c['an_anaemia_severe']
         total_pn_anaemia_cases = c['pn_anaemia_mild'] + c['pn_anaemia_moderate'] + c['pn_anaemia_severe']
@@ -2231,8 +2201,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(key='mat_comp_incidence',
                     data={'an_anaemia': rate(total_an_anaemia_cases, live_births, 100),
-                          'ectopic_unruptured' : rate(c['ectopic_unruptured'], pregnancies, 1000),
-                          'induced_abortion' : rate(c['induced_abortion'], comp_pregnancies, 1000),
+                          'ectopic_unruptured': rate(c['ectopic_unruptured'], pregnancies, 1000),
+                          'induced_abortion': rate(c['induced_abortion'], comp_pregnancies, 1000),
                           'spontaneous_abortion': rate(c['spontaneous_abortion'], comp_pregnancies, 1000),
                           'placenta_praevia': rate(c['placenta_praevia'], pregnancies, 1000),
                           'gest_diab': rate(c['gest_diab'], comp_pregnancies, 1000),
@@ -2258,6 +2228,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'nb_enceph': rate(total_neo_enceph, live_births, 1000),
                           'nb_resp_diff': rate(total_neo_resp_conds, live_births, 100),
                           'nb_cba': rate(total_cba, live_births, 1000),
+                          'nb_congenital_syphilis': rate(c['congenital_syphilis_live_birth'], live_births, 1000),
                           'nb_rds': rate(c['respiratory_distress_syndrome'], total_preterm_birth, 1000),
                           'nb_lbw': rate(c['low_birth_weight'], live_births, 100),
                           'nb_macrosomia': rate(c['macrosomia'], live_births, 100),
@@ -2273,7 +2244,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                               'total_stillbirths': stillbirths,
                               'sbr': rate(stillbirths, total_births, 1000),
                               'neonatal_deaths': neonatal_deaths,
-                              'nmr' : rate(neonatal_deaths, live_births, 1000),
+                              'nmr': rate(neonatal_deaths, live_births, 1000),
                               'direct_maternal_deaths': c['direct_mat_death'],
                               'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000)}
 
@@ -2285,7 +2256,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Finally log coverage of key health services
         anc1 = sum(c[f'anc{i}'] for i in range(1, 9)) + c['anc8+']
-        anc4 = sum(c[f'anc{i}'] for i in range(4, 9))+ c['anc8+']
+        anc4 = sum(c[f'anc{i}'] for i in range(4, 9)) + c['anc8+']
         anc8 = c['anc8'] + c['anc8+']
 
         m_pnc1 = sum(c[f'm_pnc{i}'] for i in range(1, 3)) + c['m_pnc3+']
@@ -2293,14 +2264,14 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # HEALTH SERVICE COVERAGE
         logger.info(key='service_coverage',
-                    data={'anc1+': rate(anc1 , total_births, 100),
+                    data={'anc1+': rate(anc1, total_births, 100),
                           'anc4+': rate(anc4, total_births, 100),
                           'anc8+': rate(anc8, total_births, 100),
 
-                          'fd_rate': rate(anc1 , total_births, 100),
-                          'hb_rate': rate(c['home_birth_delivery'] , total_births, 100),
-                          'hc_rate': rate(c['health_centre_delivery']  , total_births, 100),
-                          'hp_rate': rate(c['hospital_delivery']  , total_births, 100),
+                          'fd_rate': rate(anc1, total_births, 100),
+                          'hb_rate': rate(c['home_birth_delivery'], total_births, 100),
+                          'hc_rate': rate(c['health_centre_delivery'], total_births, 100),
+                          'hp_rate': rate(c['hospital_delivery'], total_births, 100),
 
                           'm_pnc1+': rate(m_pnc1, total_births, 100),
                           'n_pnc1+': rate(n_pnc1, total_births, 100)})
@@ -2308,4 +2279,4 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the dictionary so all values = 0
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
         outcome_list = mnh_oc['outcomes']
-        self.module.mnh_outcome_counter = {k:0 for k in outcome_list}
+        self.module.mnh_outcome_counter = {k: 0 for k in outcome_list}

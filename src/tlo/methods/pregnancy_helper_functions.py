@@ -15,56 +15,64 @@ def generate_mnh_outcome_counter():
     each outcome as the simulation moves forward in time.
     """
 
-    outcome_list = [ # early/abortive outcomes
-                    'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',
-                    'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
-                    'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
-                    'induced_abortion_haemorrhage','induced_abortion_other_comp','spontaneous_abortion_sepsis',
-                    'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
+    outcome_list = [  # early/abortive outcomes
+        'ectopic_unruptured', 'ectopic_ruptured', 'multiple_pregnancy', 'twin_birth', 'placenta_praevia',
+        'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
+        'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
+        'induced_abortion_haemorrhage', 'induced_abortion_other_comp', 'spontaneous_abortion_sepsis',
+        'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
 
-                    # antenatal onset outcomes
-                    'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
-                    'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn','severe_pre_eclamp', 'eclampsia','severe_gest_htn',
-                    'syphilis',  'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
-                    'mild_mod_antepartum_haemorrhage','severe_antepartum_haemorrhage', 'antenatal_stillbirth',
+        # antenatal onset outcomes
+        'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
+        'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn',
+        'syphilis',
+        'syphilis_progression_primary_secondary',
+        'syphilis_progression_secondary_latent',
+        'syphilis_progression_late_latent',
+        'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
+        'mild_mod_antepartum_haemorrhage', 'severe_antepartum_haemorrhage', 'antenatal_stillbirth',
+        'congenital_syphilis_infection',
+        'congenital_syphilis_stillbirth',
+        'congenital_syphilis_live_birth',
 
-                    # intrapartum/postpartum onset outcomes
-                    'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other','obstructed_labour',
-                    'uterine_rupture','sepsis_intrapartum','sepsis_endometritis', 'sepsis_urinary_tract',
-                    'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
-                    'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
-                    'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
-                    'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
-                    'pn_anaemia_severe',
+        # intrapartum/postpartum onset outcomes
+        'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other', 'obstructed_labour',
+        'uterine_rupture', 'sepsis_intrapartum', 'sepsis_endometritis', 'sepsis_urinary_tract',
+        'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
+        'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
+        'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
+        'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
+        'pn_anaemia_severe',
 
-                    # newborn outcomes
-                    'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
-                    'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
-                    'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
-                    'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
+        # newborn outcomes
+        'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+        'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
+        'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
+        'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
 
-                    # death outcomes
-                    'direct_mat_death', 'six_week_survivors','induced_abortion_m_death', 'spontaneous_abortion_m_death',
-                    'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
-                    'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
-                    'antenatal_sepsis_m_death',
-                    'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
-                    'postpartum_haemorrhage_m_death','secondary_postpartum_haemorrhage_m_death',
-                    'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
-                    'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
-                    'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
-                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
-                    'digestive_anomaly_n_death', 'other_anomaly_n_death',
+        # death outcomes
+        'direct_mat_death', 'six_week_survivors', 'induced_abortion_m_death', 'spontaneous_abortion_m_death',
+        'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
+        'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
+        'antenatal_sepsis_m_death',
+        'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
+        'postpartum_haemorrhage_m_death', 'secondary_postpartum_haemorrhage_m_death',
+        'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
+        'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
+        'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
+        'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
+        'digestive_anomaly_n_death', 'other_anomaly_n_death',
 
-                    # service coverage outcomes
-                    'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
-                    'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
-                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
+        # service coverage outcomes
+        'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
+        'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
+        'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
 
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 
     return {'counter': mnh_outcome_counter,
             'outcomes': outcome_list}
+
 
 def get_list_of_items(self, item_list):
     """
@@ -76,6 +84,7 @@ def get_list_of_items(self, item_list):
     codes = [item_code_function(item) for item in item_list]
 
     return codes
+
 
 def check_int_deliverable(self, int_name, hsi_event,
                           q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
@@ -362,17 +371,17 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
 
     # Cycle through mothers properties to ascertain what she is at risk of death from and store in a list
     if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
-       (timing != 'postnatal')) or \
-       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
-       (timing == 'postnatal')):
+        (timing != 'postnatal')) or \
+        (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
+         (timing == 'postnatal')):
         causes.append('severe_pre_eclampsia')
 
     if ((mother.ps_htn_disorders == 'eclampsia') and (timing != 'postnatal')) or \
-       ((mother.pn_htn_disorders == 'eclampsia') and (timing == 'postnatal')):
+        ((mother.pn_htn_disorders == 'eclampsia') and (timing == 'postnatal')):
         causes.append('eclampsia')
 
     if ((mother.ps_antepartum_haemorrhage != 'none') and (timing != 'postnatal')) or \
-       ((mother.la_antepartum_haem != 'none') and (timing == 'intrapartum')):
+        ((mother.la_antepartum_haem != 'none') and (timing == 'intrapartum')):
         causes.append('antepartum_haemorrhage')
 
     if mother.ps_chorioamnionitis and (timing != 'postnatal'):
@@ -577,6 +586,11 @@ def update_mni_dictionary(self, individual_id):
                               'rectovaginal_fistula_resolution': pd.NaT,
                               'test_run': False,  # used by labour module when running some model tests
                               'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
+                              'syphilis_treatment_date': pd.NaT,
+                              'syphilis_infection_origin': 'none',
+                              'syphilis_stage_onset_date': pd.NaT,
+                              'syphilis_next_progression_date': pd.NaT,
+                              'congenital_syphilis_stillbirth_week': None,
                               'new_onset_spe': False,
                               'cs_indication': 'none'
                               }

@@ -6,7 +6,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Metadata, pregnancy_helper_functions
+from tlo.methods import Metadata, pregnancy_helper_functions, syphilis
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.epi import HSI_TdVaccine
 from tlo.methods.hsi_event import HSI_Event
@@ -60,7 +60,7 @@ class CareOfWomenDuringPregnancy(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
 
-    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
+    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle', 'Syphilis'}
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
@@ -422,7 +422,8 @@ class CareOfWomenDuringPregnancy(Module):
 
             # This test represents point of care testing for syphilis
             blood_test_syphilis=DxTest(
-                property='ps_syphilis',
+                property='ps_syphilis_state',
+                target_categories=syphilis.DETECTABLE_STAGES,
                 sensitivity=params['sensitivity_blood_test_syphilis'],
                 specificity=params['specificity_blood_test_syphilis']))
 
@@ -974,7 +975,6 @@ class CareOfWomenDuringPregnancy(Module):
         """
         params = self.current_parameters
         person_id = hsi_event.target
-        df = self.sim.population.props
 
         # If this woman has already been screened twice for syphilis then the intervention will not run
         if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
@@ -997,7 +997,7 @@ class CareOfWomenDuringPregnancy(Module):
             if syph_treatment_delivered:
 
                 # We assume that treatment is 100% effective at curing infection
-                df.at[person_id, 'ps_syphilis'] = False
+                self.sim.modules['Syphilis'].treat_maternal_syphilis(person_id)
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_treat'})
 
     def hiv_testing(self, hsi_event):
