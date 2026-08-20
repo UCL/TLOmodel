@@ -99,13 +99,22 @@ def _get_commit() -> str:
     if _commit_hexsha is not None:
         return _commit_hexsha
 
-    current_branch = is_file_clean(SCENARIO_FILE)
+    try:
+        current_branch = is_file_clean(SCENARIO_FILE)
+    except Exception as e:
+        raise RuntimeError(
+            "Scenario file's branch has not been pushed to remote yet - "
+            "there's no origin/<branch> to compare against. Run "
+            "'git push -u origin <branch>' once, then retry."
+        ) from e
+
     if current_branch is False:
         raise RuntimeError(
-            "smac_scenario.py has uncommitted changes or the branch isn't "
-            "in sync with origin. Commit and push once before starting the "
+            "Scenario file has uncommitted changes, or local commits that "
+            "haven't been pushed yet. Commit and push before starting the "
             "SMAC run - this only needs doing once, not per trial."
         )
+
     repo = Repo(".")
     _commit_hexsha = next(repo.iter_commits(max_count=1)).hexsha
     return _commit_hexsha
