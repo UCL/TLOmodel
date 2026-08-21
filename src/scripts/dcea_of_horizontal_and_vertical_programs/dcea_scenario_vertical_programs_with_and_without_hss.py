@@ -179,7 +179,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE - - -
-            "HIV/Tb/Malaria Programs Scale-up Without HSS":
+            "HTM Programs Scale-up Without HSS":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
