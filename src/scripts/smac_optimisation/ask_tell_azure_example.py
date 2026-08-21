@@ -42,9 +42,12 @@ from __future__ import annotations
 import datetime
 import os
 import time
+import uuid
+from string import Template
 from dataclasses import dataclass
 from pathlib import Path
-
+import logging
+logging.getLogger("azure").setLevel(logging.WARNING)
 import numpy as np
 from git import Repo
 from azure.batch import models as batch_models
@@ -158,12 +161,14 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     scenario.number_of_draws = 1
     scenario.runs_per_draw = 1  # one physical realisation per submission
 
+    scenario.scenario_path = Path(SCENARIO_FILE)   # <-- add this line
+
     run_json = scenario.save_draws(commit=commit_hexsha)
 
     # --- from here down mirrors batch_submit's body in cli.py ---
     file_share_mount_point = "mnt"
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-    job_id = scenario.get_log_config()["filename"] + "-" + timestamp
+    job_id = scenario.get_log_config()["filename"] + "-" + timestamp + "-" + uuid.uuid4().hex[:8]
     azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
@@ -206,20 +211,33 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
+    # NOTE: single braces throughout below - these are plain strings, not
+    # f-strings, so ${AZ_BATCH_...} needs no escaping at all. The double
+    # braces in the previous version were a leftover bug: harmless where
+    # nothing ever substituted into them, but the same root cause as the
+    # {txt,log} KeyError below.
     remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
-    command = f"""
-git fetch origin {commit_hexsha}
-git checkout {commit_hexsha}
-pip install -r requirements/base.txt
-PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
-tlo --config-file tlo.example.conf parse-log {working_dir}/{{draw_number}}/{{run_number}}
-cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
-gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{{txt,log}}
-cp -r {working_dir}/* {remote_azure_directory}/.
-"""
+
+    command_template = Template("""
+    git fetch origin $commit_hexsha
+    git checkout $commit_hexsha
+    pip install -r requirements/base.txt
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
+    tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
+    cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
+    gzip $working_dir/{draw_number}/{run_number}/*.{{txt,log}}
+    cp -r $working_dir/* $remote_azure_directory/.
+    """)
+    command = command_template.substitute(
+        commit_hexsha=commit_hexsha,
+        azure_run_json=azure_run_json,
+        working_dir=working_dir,
+        task_dir=task_dir,
+        remote_azure_directory=remote_azure_directory,
+    )
     command = f"/bin/bash -c '{command}'"
 
     create_job(
@@ -227,6 +245,8 @@ cp -r {working_dir}/* {remote_azure_directory}/.
         container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
     )
     add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", scenario, command)
+
+    print(f"[submitted] job_id={job_id}")
 
     return AzureJobHandle(job_id=job_id, submitted_at=time.time())
 
@@ -422,7 +442,7 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
 #    bookkeeping, even though you're driving the loop yourself)
 # --------------------------------------------------------------------------
 
-scenario = Scenario(configspace, n_trials=400, deterministic=False)  # HYPERPARAMETER (n_trials):
+scenario = Scenario(configspace, n_trials=100, deterministic=False)  # HYPERPARAMETER (n_trials):
                                                                         # total trial budget - remember
                                                                         # max_config_calls means this
                                                                         # isn't the same as "number of
@@ -492,33 +512,35 @@ N_CONCURRENT = 6           # HYPERPARAMETER (operational): concurrent Azure jobs
 POLL_INTERVAL_SECONDS = 10  # HYPERPARAMETER (operational): low-stakes, trades API call
                               # frequency against latency between job completion and SMAC seeing it
 
-pending: dict[TrialInfo, AzureJobHandle] = {}
+pending: list[tuple[TrialInfo, AzureJobHandle]] = []
 
 # prime the pipeline
 for _ in range(N_CONCURRENT):
     info = smac.ask()
-    pending[info] = submit_azure_job(info.config, info.seed)
+    pending.append((info, submit_azure_job(info.config, info.seed)))
 
 n_completed = n_seeded  # start counting from the warm-started runs, not zero
 while n_completed < scenario.n_trials:
     made_progress = False
+    still_pending = []
 
-    for info, job in list(pending.items()):
+    for info, job in pending:
         if not azure_job_is_finished(job):
+            still_pending.append((info, job))
             continue
 
         result = fetch_azure_result(job)
         value = record_result(info.config, info.seed, result)
         smac.tell(info, value)          # <-- the actual "notify SMAC" step
-        del pending[info]
         n_completed += 1
         made_progress = True
 
         # keep concurrency topped up
         if n_completed < scenario.n_trials:
             new_info = smac.ask()
-            pending[new_info] = submit_azure_job(new_info.config, new_info.seed)
+            still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
 
+    pending = still_pending
     if not made_progress:
         time.sleep(POLL_INTERVAL_SECONDS)
 
