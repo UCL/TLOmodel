@@ -286,8 +286,12 @@ for WBGT_SCENARIO in WBGT_SCENARIOS:
 # ---------------------------------------------------------------------------
 info = facilities.set_index(FACILITY_NAME_COL)[COVARIATE_COLS].copy()
 info.index.name = "facility"
-info["Dist"] = info["Dist"].replace({"Blanytyre": "Blantyre",
-                                     "Nkhatabay": "Nkhata Bay"})
+
+info["Dist"] = info["Dist"].replace(
+    {"Blanytyre": "Blantyre",
+     "Nkhatabay": "Nkhata Bay",
+     "Mzimba North": "Mzimba",
+     "Mzimba South": "Mzimba"})
 
 coords = info[["A109__Latitude", "A109__Longitude"]].astype(float).values
 dmat = cdist(coords, coords, metric="euclidean")

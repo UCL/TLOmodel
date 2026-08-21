@@ -292,7 +292,10 @@ for reporting_facility in matched_facilities:
 facility_info_full = pd.DataFrame(info_rows)
 facility_info_full.index.name = "facility"
 facility_info_full["Dist"] = facility_info_full["Dist"].replace(
-    {"Blanytyre": "Blantyre", "Nkhatabay": "Nkhata Bay"})
+    {"Blanytyre": "Blantyre",
+     "Nkhatabay": "Nkhata Bay",
+     "Mzimba North": "Mzimba",
+     "Mzimba South": "Mzimba"})
 
 # minimum distance uses the FULL matched set (nearest neighbour among all
 # matched facilities, not just one indicator's reporters)
