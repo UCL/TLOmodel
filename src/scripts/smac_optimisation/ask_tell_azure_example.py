@@ -19,7 +19,7 @@ TLOmodel-SPECIFIC DESIGN NOTE
 committed and pushed, and is built to be invoked from a terminal - it
 loads the scenario from a file path and parses CLI-style scenario_args.
 Since this loop is calling from Python already, submit_azure_job()
-below skips that CLI layer entirely: it builds the SmacOptimisationScenario
+below skips that CLI layer entirely: it builds the TloOptimisationScenario
 object directly, sets SMAC's config values on it as real Python
 attributes, and calls the same underlying functions (get_batch_client,
 create_job, add_tasks, etc.) that batch_submit's Click command uses
@@ -61,7 +61,7 @@ from tlo.cli import (
     create_file_share, create_directory, upload_local_file,
     create_job, add_tasks,
 )
-from smac_scenario import SmacOptimisationScenario  # imported directly - it's a
+from smac_scenario import TloOptimisationScenario  # imported directly - it's a
                                                        # plain Python class now,
                                                        # not loaded from a file path
 from constrained_ei import ConstrainedEI  # the module built earlier
@@ -131,7 +131,7 @@ class AzureJobHandle:
 
 def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     """
-    Builds a SmacOptimisationScenario in-process (config values set as
+    Builds a TloOptimisationScenario in-process (config values set as
     real Python attributes - no serialization to CLI strings and back),
     then reproduces the job-creation portion of `batch_submit` using the
     same reusable functions cli.py exports. This is everything
@@ -154,16 +154,16 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     tlo_config = _get_config()
 
     # --- build the scenario as a plain Python object ---
-    scenario = SmacOptimisationScenario()
+    tlo_scenario = TloOptimisationScenario()
     for key, value in dict(config).items():
-        setattr(scenario, key, value)  # e.g. scenario.intervention_coverage = 0.73
-    scenario.seed = seed  # SMAC's seed drives this run's stochasticity directly
-    scenario.number_of_draws = 1
-    scenario.runs_per_draw = 1  # one physical realisation per submission
+        setattr(tlo_scenario, key, value)  # e.g. scenario.intervention_coverage = 0.73
+    tlo_scenario.seed = seed  # SMAC's seed drives this run's stochasticity directly
+    tlo_scenario.number_of_draws = 1
+    tlo_scenario.runs_per_draw = 1  # one physical realisation per submission
 
-    scenario.scenario_path = Path(SCENARIO_FILE)   # <-- add this line
+    tlo_scenario.scenario_path = Path(SCENARIO_FILE)   # <-- add this line
 
-    run_json = scenario.save_draws(commit=commit_hexsha)
+    run_json = tlo_scenario.save_draws(commit=commit_hexsha)
 
     # --- from here down mirrors batch_submit's body in cli.py ---
     file_share_mount_point = "mnt"
@@ -338,7 +338,7 @@ def fetch_azure_result(job: AzureJobHandle) -> dict:
 # --------------------------------------------------------------------------
 # 2. Your real config space, constraint limits, and shared history log
 #    NOTE: every hyperparameter name here must match an attribute
-#    SmacOptimisationScenario expects in smac_scenario.py, since
+#    TloOptimisationScenario expects in smac_scenario.py, since
 #    submit_azure_job() does setattr(scenario, key, value) for each one.
 # --------------------------------------------------------------------------
 

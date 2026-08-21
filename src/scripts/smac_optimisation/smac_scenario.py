@@ -53,7 +53,7 @@ from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsyst
 from tlo.scenario import BaseScenario
 
 
-class SmacOptimisationScenario(BaseScenario):
+class TloOptimisationScenario(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0  # placeholder - overwritten with SMAC's info.seed
