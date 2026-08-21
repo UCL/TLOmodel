@@ -15,7 +15,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HTM(self) -> int:
         """Year in which HIV, TB, Malaria scale-up changes are made."""
-        return 2024 #TODO:changed This is 2024 in the gf_hss_and_htm_scale_up branch, so 2019 or 2024?
+        return 2024
 
     def baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
@@ -60,7 +60,7 @@ class ScenarioDefinitions:
             }
         }
 
-      def hss_package_realistic(self) -> Dict:
+    def hss_package_realistic(self) -> Dict:
         """The parameters for the Realistic Health System Strengthening Package with historical HR scale and
         75th percentile cons"""
         return mix_scenarios(
@@ -93,6 +93,4 @@ class ScenarioDefinitions:
                 'type_of_scaleup': 'target',
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
-        } #TODO: Check rdt_testing_rates value
-        # In ResourceFile_malaria/scaleup_parameters.csv, the parameter rdt_testing_rates is 0.1 in
-        # gf_hss_and_htm_scale_up branch, and 0.8 in master branch
+        }
