@@ -48,8 +48,12 @@ HYPERPARAMETERS: every tunable knob in this file is marked inline with a
 the complete list in one pass.
 """
 
+from pathlib import Path
+from typing import Dict
+
 from tlo import Date, logging
 from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsystem
+from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
