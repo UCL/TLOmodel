@@ -52,7 +52,7 @@ import numpy as np
 from git import Repo
 from azure.batch import models as batch_models
 
-from ConfigSpace import Configuration, ConfigurationSpace, Float
+from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer
 from smac import HyperparameterOptimizationFacade, Scenario
 from smac.runhistory.dataclasses import TrialInfo, TrialValue
 
@@ -152,7 +152,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     """
     commit_hexsha = _get_commit()
     tlo_config = _get_config()
-    seed = 992
+
     # --- build the scenario as a plain Python object ---
     tlo_scenario = TloOptimisationScenario()
     for key, value in dict(config).items():
@@ -343,8 +343,8 @@ def fetch_azure_result(job: AzureJobHandle) -> dict:
 # --------------------------------------------------------------------------
 
 configspace = ConfigurationSpace()
-configspace.add(Int("year_mode_switch", (2019,2026)))
-configspace.add(Int("tclose_days_offset_overwrite", (4,100)))
+configspace.add(Integer("year_mode_switch", (2019,2026)))
+configspace.add(Integer("tclose_days_offset_overwrite", (4,100)))
 
 # Problem-defined constraints, not algorithm hyperparameters - but kept
 # here as a reminder these are duplicated in constrained_ei.py's
@@ -486,11 +486,11 @@ smac = HyperparameterOptimizationFacade(
 
 PRIOR_RUNS = [
     {
-        "config": {"year_mode_change": 2019, "tclose_days_offset_overwrite": 0.85},
+        "config": {"year_mode_switch": 2019, "tclose_days_offset_overwrite": 5},
         "dalys": 45.3, "cost": 1_680_000.0, "hr_used": 455.0, "stock_used": 8_900.0,
     },
     {
-        "config": {"year_mode_change": 0.40, "tclose_days_offset_overwrite": 0.95},
+        "config": {"year_mode_switch": 2023, "tclose_days_offset_overwrite": 10},
         "dalys": 61.7, "cost": 2_400_000.0, "hr_used": 510.0, "stock_used": 9_700.0,  # over cost & HR limits
     },
     # ... your other already-completed runs ...
