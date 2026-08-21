@@ -72,11 +72,8 @@ class TloOptimisationScenario(BaseScenario):
                                        # config gets re-evaluated with a
                                        # different seed, not a fixed sweep
 
-        # Defaults so `tlo scenario-run ...` works standalone for local
-        # sanity-checking. Overwritten directly by submit_azure_job()
-        # before every real submission.
-        self.intervention_coverage = 0.5
-        self.consumable_stock_target = 0.8
+        self.tclose_days_offset_overwrite = None
+        self.year_mode_switch = None
 
     def log_configuration(self):
         return {
@@ -86,20 +83,15 @@ class TloOptimisationScenario(BaseScenario):
         }
 
     def modules(self):
-        return [
-            demography.Demography(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources),
-            # ... your real set of disease/intervention modules ...
-        ]
+        return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
         # draw_number is ignored - number_of_draws=1, so this always
         # returns the single SMAC config currently set on self.
         return {
             "HealthSystem": {
-                "consumable_stock_target": self.consumable_stock_target,
+                "tclose_days_offset_overwrite": self.tclose_days_offset_overwrite,
+                "year_mode_switch" : self.year_mode_switch,
             },
             # map intervention_coverage / other config values onto
             # whichever module parameters they actually control in

@@ -152,7 +152,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     """
     commit_hexsha = _get_commit()
     tlo_config = _get_config()
-
+    seed = 992
     # --- build the scenario as a plain Python object ---
     tlo_scenario = TloOptimisationScenario()
     for key, value in dict(config).items():
@@ -168,7 +168,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # --- from here down mirrors batch_submit's body in cli.py ---
     file_share_mount_point = "mnt"
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-    job_id = scenario.get_log_config()["filename"] + "-" + timestamp + "-" + uuid.uuid4().hex[:8]
+    job_id = tlo_scenario.get_log_config()["filename"] + "-" + timestamp + "-" + uuid.uuid4().hex[:8]
     azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
@@ -186,7 +186,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + os.path.basename(run_json),
     )
 
-    pool_node_count = scenario.number_of_draws * scenario.runs_per_draw
+    pool_node_count = tlo_scenario.number_of_draws * tlo_scenario.runs_per_draw
     auto_user = batch_models.AutoUserSpecification(
         elevation_level=batch_models.ElevationLevel.admin, scope=batch_models.AutoUserScope.task,
     )
@@ -244,7 +244,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         batch_client, tlo_config["BATCH"]["POOL_VM_SIZE"], pool_node_count, job_id,
         container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
     )
-    add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", scenario, command)
+    add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", tlo_scenario, command)
 
     print(f"[submitted] job_id={job_id}")
 
@@ -343,9 +343,8 @@ def fetch_azure_result(job: AzureJobHandle) -> dict:
 # --------------------------------------------------------------------------
 
 configspace = ConfigurationSpace()
-configspace.add(Float("intervention_coverage", (0.0, 1.0)))
-configspace.add(Float("consumable_stock_target", (0.5, 1.0)))
-# ... add the rest of your real hyperparameters here ...
+configspace.add(Int("year_mode_switch", (2019,2026)))
+configspace.add(Int("tclose_days_offset_overwrite", (4,100)))
 
 # Problem-defined constraints, not algorithm hyperparameters - but kept
 # here as a reminder these are duplicated in constrained_ei.py's
@@ -487,11 +486,11 @@ smac = HyperparameterOptimizationFacade(
 
 PRIOR_RUNS = [
     {
-        "config": {"intervention_coverage": 0.62, "consumable_stock_target": 0.85},
+        "config": {"year_mode_change": 2019, "tclose_days_offset_overwrite": 0.85},
         "dalys": 45.3, "cost": 1_680_000.0, "hr_used": 455.0, "stock_used": 8_900.0,
     },
     {
-        "config": {"intervention_coverage": 0.40, "consumable_stock_target": 0.95},
+        "config": {"year_mode_change": 0.40, "tclose_days_offset_overwrite": 0.95},
         "dalys": 61.7, "cost": 2_400_000.0, "hr_used": 510.0, "stock_used": 9_700.0,  # over cost & HR limits
     },
     # ... your other already-completed runs ...
