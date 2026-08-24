@@ -87,7 +87,7 @@ class TloOptimisationScenario(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
         # draw_number is ignored - number_of_draws=1, so this always
