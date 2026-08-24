@@ -84,6 +84,7 @@ INDICATOR_LABELS: dict[str, str] = {
 HIGH_OVERDISPERSION_INDICATORS = [
     "ipd_total_admissions",
     "opd_attendance",
+    "penta3_under1"
 ]
 
 # --- Only-deficits toggle --------------------------------------------------
@@ -170,6 +171,7 @@ WINSORIZE_BY_INDICATOR: dict[str, float] = {
     "fully_immunised_under1": 0.95,
     "pnc_within_2wks": 0.90,
     "measles1_under1": 0.90,
+    "penta3_under1": 0.90,
 }
 WINSORIZE_DEFAULT = 0.999
 
@@ -828,10 +830,12 @@ if __name__ == "__main__":
                 "deficit_pct": r["deficit_pct"],
                 "ci_lo": r["ci_lo"],
                 "ci_hi": r["ci_hi"],
+                "se_jackknife": r.get("se_jackknife"),
                 "hot_deficit_pct": r["hot_deficit_pct"],
                 "hot_ci_lo": r["hot_ci_lo"],
                 "hot_ci_hi": r["hot_ci_hi"],
                 "hot_threshold": r["hot_threshold"],
+                "hot_se_jackknife": r.get("hot_se_jackknife"),
                 "n_hot_obs": r["n_hot_obs"],
                 "n_facilities": r["n_facilities"],
                 "n_obs": r["n_obs"],
