@@ -66,6 +66,25 @@ from smac_scenario import TloOptimisationScenario  # imported directly - it's a
                                                        # not loaded from a file path
 from constrained_ei import ConstrainedEI  # the module built earlier
 
+import json
+JOB_LOG_FILE = Path("submitted_jobs.jsonl")
+
+def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hexsha: str) -> None:
+    """
+    Appends one line per submission, immediately after a job is
+    successfully created on Azure. JSON Lines format specifically
+    because each line is a complete, independent record - if the
+    process crashes mid-write, only the last (incomplete) line is
+    affected, every prior submission's record stays intact and readable.
+
+    commit_hexsha records exactly which commit of smac_scenario.py this
+    job was submitted under - relevant if the scenario file changes
+    between pipeline runs, so a recovered result can always be traced
+    back to the code that actually produced it.
+    """
+    record = {"job_id": job_id, "config": dict(config), "seed": seed, "commit": commit_hexsha}
+    with open(JOB_LOG_FILE, "a") as f:
+        f.write(json.dumps(record) + "\n")
 
 # --------------------------------------------------------------------------
 # 1. TLO/Azure Batch interaction, built directly on tlo.cli's reusable
@@ -245,6 +264,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
     )
     add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", tlo_scenario, command)
+    _log_submitted_job(job_id, config, seed, commit_hexsha)   # <-- add this line
 
     print(f"[submitted] job_id={job_id}")
 
@@ -313,25 +333,20 @@ def postprocess_run(run_dir: Path) -> dict:
     )
 
 
-def fetch_azure_result(job: AzureJobHandle) -> dict:
-    """
-    Downloads outputs and postprocesses draw 0's single run via
-    postprocess_run(). With runs_per_draw=1, there's exactly one run per
-    submission now (SMAC's intensifier decides separately whether this
-    config gets resubmitted under a different seed - see submit_azure_job)
-    - the np.mean() calls below are trivial no-ops over a length-1 list,
-    kept only so this still works unchanged if you ever set
-    runs_per_draw>1 for a specific experiment.
-    """
-    draw_dir = download_run_outputs(job)
+def aggregate_postprocessed_results(draw_dir: Path) -> dict:
+    """Shared by fetch_azure_result (fresh download) and crash-recovery
+    (already-downloaded outputs from a prior process)."""
     per_run_results = [postprocess_run(run_dir) for run_dir in sorted(draw_dir.iterdir())]
-
     return {
         "dalys": float(np.mean([r["dalys"] for r in per_run_results])),
         "cost": float(np.mean([r["cost"] for r in per_run_results])),
         "hr_used": float(np.mean([r["hr_used"] for r in per_run_results])),
         "stock_used": float(np.mean([r["stock_used"] for r in per_run_results])),
     }
+
+def fetch_azure_result(job: AzureJobHandle) -> dict:
+    draw_dir = download_run_outputs(job)
+    return aggregate_postprocessed_results(draw_dir)
 
 
 
@@ -396,6 +411,54 @@ def record_result(config: Configuration, seed: int, result: dict) -> TrialValue:
     # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
     penalty = K * (cost_violation + hr_violation + stock_violation)
     return TrialValue(cost=dalys + penalty)
+
+
+def recover_from_job_log() -> list[dict]:
+    """
+    Checks every previously-submitted job against the local outputs
+    directory. If a job's output was already downloaded (i.e. a prior
+    process got far enough to fetch it, but crashed before calling
+    smac.tell()), re-postprocess it and return it in PRIOR_RUNS shape.
+
+    Only jobs submitted under the CURRENT commit are recovered - a run
+    submitted under a different commit may have used a different
+    smac_scenario.py (different draw_parameters mapping, different
+    modules, etc.), so silently folding its DALYs/cost into history
+    would risk mixing results that aren't actually comparable. Such
+    jobs are skipped, with a warning, rather than loaded.
+
+    SCOPE: only recovers jobs whose outputs are already downloaded
+    locally. A job that finished on Azure but was never downloaded
+    before the crash is NOT recovered here - it's neither re-checked
+    against Azure nor re-downloaded.
+    """
+    if not JOB_LOG_FILE.exists():
+        return []
+
+    tlo_config = _get_config()
+    username = tlo_config["DEFAULT"]["USERNAME"]
+    current_commit = _get_commit()
+
+    recovered = []
+    with open(JOB_LOG_FILE) as f:
+        for line in f:
+            record = json.loads(line)
+
+            if record.get("commit") != current_commit:
+                print(
+                    f"[warning] skipping recovered job {record['job_id']} - "
+                    f"submitted under commit {record.get('commit', 'unknown')[:12]}, "
+                    f"current commit is {current_commit[:12]}"
+                )
+                continue
+
+            draw_dir = Path("outputs", username, record["job_id"], "0")
+            if not draw_dir.exists() or not any(draw_dir.iterdir()):
+                continue  # not downloaded - out of scope, see docstring
+
+            result = aggregate_postprocessed_results(draw_dir)
+            recovered.append({"config": record["config"], "seed": record["seed"], **result})
+    return recovered
 
 
 def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
@@ -496,8 +559,10 @@ PRIOR_RUNS = [
     # ... your other already-completed runs ...
 ]
 
-n_seeded = seed_history_with_prior_runs(PRIOR_RUNS, smac)
-print(f"Warm-started with {n_seeded} prior run(s)")
+recovered_runs = recover_from_job_log()
+all_prior_runs = PRIOR_RUNS + recovered_runs
+n_seeded = seed_history_with_prior_runs(all_prior_runs, smac)
+print(f"Warm-started with {n_seeded} run(s): {len(PRIOR_RUNS)} manual, {len(recovered_runs)} recovered from job log")
 
 
 # --------------------------------------------------------------------------
