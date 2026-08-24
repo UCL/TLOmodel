@@ -76,8 +76,8 @@ class TloOptimisationScenario(BaseScenario):
                                        # config gets re-evaluated with a
                                        # different seed, not a fixed sweep
 
-        self.tclose_days_offset_overwrite = None
-        self.year_mode_switch = None
+        self.tclose_days_offset_overwrite = 7
+        self.year_mode_switch = 2019
 
     def log_configuration(self):
         return {
@@ -102,3 +102,7 @@ class TloOptimisationScenario(BaseScenario):
             # your real model
         }
 
+if __name__ == '__main__':
+    from tlo.cli import scenario_run
+
+    scenario_run([__file__])
