@@ -65,7 +65,7 @@ from smac_scenario import TloOptimisationScenario  # imported directly - it's a
                                                        # plain Python class now,
                                                        # not loaded from a file path
 from constrained_ei import ConstrainedEI  # the module built earlier
-
+from postprocess_output import postprocess_run
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
 
@@ -311,26 +311,6 @@ def download_run_outputs(job: AzureJobHandle) -> Path:
 
     walk(remote_root)
     return local_root / "0"  # draw 0 - only draw we ever submit
-
-
-def postprocess_run(run_dir: Path) -> dict:
-    """
-    YOUR post-processing step, run once per completed simulation
-    (i.e. once per seed in runs_per_draw). Turn a single run's raw
-    output directory into the four numbers SMAC/ConstrainedEI need.
-
-    Plug in whatever analysis pipeline you already use here - e.g.
-    tlo.analysis.utils.parse_log_file plus your own DALY/costing
-    extraction functions. This is the integration point: it's specific
-    to your model's output structure and not something inferable from
-    cli.py or from this script alone. The stub below is a guess at the
-    output shape - replace it with your real pipeline.
-    """
-    raise NotImplementedError(
-        "Plug in your real post-processing pipeline: parse this run's "
-        "log/pickle outputs and return "
-        "{'dalys': ..., 'cost': ..., 'hr_used': ..., 'stock_used': ...}"
-    )
 
 
 def aggregate_postprocessed_results(draw_dir: Path) -> dict:
