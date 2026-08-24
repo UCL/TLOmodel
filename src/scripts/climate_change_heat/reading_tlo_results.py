@@ -4,7 +4,7 @@ Combine WBGT-model deficits with TLO HSI projections.
 For each (indicator, ssp, tier, year), compute:
   - HSIs_expected      : TLO count from hsi_event_counts_by_facility_monthly
   - deficit_prop        : from WBGT model (mu_b - mu_a)/mu_b
-  - HSIs_lost          : HSIs_expected * deficit_pct / 100
+  - HSIs_lost          : HSIs_expected * deficit_prop / 100
 
 Two outputs per (indicator, ssp, tier): facility-year, district-year.
 """
@@ -18,7 +18,6 @@ from tlo.analysis.utils import extract_results
 # ---- Config ----
 MIN_YEAR = 2025
 MAX_YEAR = 2041
-PREFIX_ON_FILENAME = "1"
 
 # WBGT indicator → TLO TREATMENT_ID prefixes
 WBGT_TO_TLO = {
@@ -98,12 +97,24 @@ def load_tlo_hsi_by_facility_year(prefixes, target_period, draw):
     return df
 
 
-def load_facility_to_district():
-    fl = pd.read_csv(FACILITY_LIST)
-    name_col = "Facility_Name" if "Facility_Name" in fl.columns else "facility_name"
-    dist_col = "District" if "District" in fl.columns else "district"
-    return fl.set_index(name_col)[dist_col]
+FACILITY_INFO = Path("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
+                     "resources/climate_change_impacts/facilities_with_lat_long_region.csv")
 
+DISTRICT_NORMALISATIONS = {
+    "Blanytyre":    "Blantyre",
+    "Nkhatabay":    "Nkhata Bay",
+    "Mzimba North": "Mzimba",
+    "Mzimba South": "Mzimba",
+}
+
+
+def load_facility_to_district():
+    """Map facility name → district using the WBGT registry (same source
+    the WBGT panels use, so districts line up across the pipeline)."""
+    fl = pd.read_csv(FACILITY_INFO, low_memory=False)
+    s = fl.drop_duplicates("Fname").set_index("Fname")["Dist"]
+    s = s.replace(DISTRICT_NORMALISATIONS)
+    return s
 
 # ---------------------------------------------------------------------------
 # Combine
@@ -111,64 +122,79 @@ def load_facility_to_district():
 def combine_for_indicator(wbgt_indicator, tlo_prefixes, target_period, fac_to_dist):
     print(f"\n=== {wbgt_indicator} ← TLO prefixes {tlo_prefixes} ===")
 
-    # 1) Pull TLO HSI counts once (doesn't depend on ssp/tier)
+    # 1) Pull TLO HSI counts once
     tlo = load_tlo_hsi_by_facility_year(tlo_prefixes, target_period, TLO_DRAW)
     if tlo.empty:
         print(f"  [skip] no TLO HSIs match {tlo_prefixes}")
         return
     tlo["District"] = tlo["facility"].map(fac_to_dist)
-    n_missing_dist = tlo["District"].isna().sum()
-    if n_missing_dist:
-        print(f"  [warn] {n_missing_dist} facility rows unmatched to district — dropped for district agg only")
-    print(f"  TLO: {len(tlo):,} facility-year rows, total HSIs={tlo['HSIs_expected'].sum():,.0f}")
+    tlo_total_all = tlo["HSIs_expected"].sum()
 
     for ssp in SSP_SCENARIOS:
         for tier in WBGT_MODELS:
-            # 2) WBGT facility-level projections (facility-month)
             fac_path = HEAT_OUT_DIR / f"projection_facility_{wbgt_indicator}_{ssp}_{tier}_{WBGT_VAR}.csv"
             if not fac_path.exists():
                 print(f"  [skip {ssp}/{tier}] no {fac_path.name}")
                 continue
 
             fac = pd.read_csv(fac_path)
+            modelled_facs = set(fac["facility"].unique())
+
+            # ------- restrict TLO to modelled facilities -------
+            tlo_r = tlo[tlo["facility"].isin(modelled_facs)].copy()
+            n_dropped_fac = tlo["facility"].nunique() - tlo_r["facility"].nunique()
+            hsi_dropped = tlo_total_all - tlo_r["HSIs_expected"].sum()
+            print(f"  [{ssp}/{tier}] restricting to {tlo_r['facility'].nunique()} modelled facilities "
+                  f"(dropped {n_dropped_fac} facilities, {hsi_dropped:,.0f} HSIs = "
+                  f"{100*hsi_dropped/tlo_total_all:.1f}% of TLO volume)")
+            if tlo_r.empty:
+                print(f"  [{ssp}/{tier}] no overlap — skipping")
+                continue
+
             # Aggregate WBGT facility-month → facility-year
             fac_yr = (fac.groupby(["facility", "year"])
                          .agg(mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum"))
                          .reset_index())
             fac_yr["deficit_pct"] = (fac_yr["mu_b"] - fac_yr["mu_a"]) / fac_yr["mu_b"] * 100.0
+            fac_yr["deficit_pct"]
+            merged = tlo_r.merge(
+                fac_yr[["facility", "year", "deficit_pct"]],
+                on=["facility", "year"], how="left",
+            )
+            n_still_missing = merged["deficit_pct"].isna().sum()
+            if n_still_missing:
+                print(f"  [{ssp}/{tier}] {n_still_missing} facility-years still missing deficit "
+                      f"(WBGT projection didn't cover that year for that facility)")
 
-            # 3) Join to TLO by facility × year
-            merged = tlo.merge(fac_yr[["facility", "year", "deficit_pct"]],
-                               on=["facility", "year"], how="left")
-            n_unmatched = merged["deficit_pct"].isna().sum()
-            if n_unmatched:
-                print(f"  [{ssp}/{tier}] {n_unmatched}/{len(merged)} facility-year rows have no WBGT deficit")
+            merged["deficit_pct_loss"] = merged["deficit_pct"].clip(lower=0)
+            merged["HSIs_lost_net"]    = merged["HSIs_expected"] * merged["deficit_pct"]      / 100.0
+            merged["HSIs_lost_only"]   = merged["HSIs_expected"] * merged["deficit_pct_loss"] / 100.0
+            merged["people_impacted_net"]  = merged["HSIs_lost_net"]
+            merged["people_impacted_only"] = merged["HSIs_lost_only"]
 
-            merged["HSIs_lost"] = merged["HSIs_expected"] * merged["deficit_pct"] / 100.0
-            merged["people_impacted"] = merged["HSIs_lost"]  # 1:1 mapping
-
-            out_fac = OUT_DIR / f"{PREFIX_ON_FILENAME}_combined_facility_{wbgt_indicator}_{ssp}_{tier}.csv"
+            out_fac = OUT_DIR / f"combined_facility_{wbgt_indicator}_{ssp}_{tier}.csv"
             merged.to_csv(out_fac, index=False)
 
-            # 4) District-year aggregation
-            # Note: we sum HSIs and lost-HSIs at the district level, then recompute deficit_pct
-            #       from the aggregates rather than averaging facility-level %s.
             dist = (merged.dropna(subset=["District"])
                           .groupby(["District", "year"])
-                          .agg(HSIs_expected=("HSIs_expected", "sum"),
-                               HSIs_lost=("HSIs_lost", "sum"))
+                          .agg(HSIs_expected =("HSIs_expected",  "sum"),
+                               HSIs_lost_net =("HSIs_lost_net",  "sum"),
+                               HSIs_lost_only=("HSIs_lost_only", "sum"))
                           .reset_index())
-            dist["deficit_pct"] = dist["HSIs_lost"] / dist["HSIs_expected"] * 100.0
-            dist["people_impacted"] = dist["HSIs_lost"]
+            dist["deficit_pct_net"]        = dist["HSIs_lost_net"]  / dist["HSIs_expected"] * 100.0
+            dist["deficit_pct_only"]       = dist["HSIs_lost_only"] / dist["HSIs_expected"] * 100.0
+            dist["people_impacted_net"]    = dist["HSIs_lost_net"]
+            dist["people_impacted_only"]   = dist["HSIs_lost_only"]
 
-            out_dist = OUT_DIR / f"{PREFIX_ON_FILENAME}_combined_district_{wbgt_indicator}_{ssp}_{tier}.csv"
+            out_dist = OUT_DIR / f"combined_district_{wbgt_indicator}_{ssp}_{tier}.csv"
             dist.to_csv(out_dist, index=False)
 
-            tot_hsi = merged["HSIs_expected"].sum()
-            tot_lost = merged["HSIs_lost"].sum(skipna=True)
+            tot_hsi   = merged["HSIs_expected"].sum()
+            tot_net   = merged["HSIs_lost_net"].sum(skipna=True)
+            tot_only  = merged["HSIs_lost_only"].sum(skipna=True)
             print(f"  [{ssp}/{tier}] wrote {out_fac.name}, {out_dist.name} — "
-                  f"HSIs={tot_hsi:,.0f}, lost={tot_lost:,.0f} ({tot_lost/tot_hsi*100:.2f}%)")
-
+                  f"HSIs={tot_hsi:,.0f}, lost_net={tot_net:,.0f}, lost_only={tot_only:,.0f} "
+                  f"({tot_only/tot_hsi*100:.2f}% loss-only)")
 
 def main():
     target_period = (Date(MIN_YEAR, 1, 1), Date(MAX_YEAR, 12, 31))
