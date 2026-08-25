@@ -143,7 +143,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
         # update the HSI list in the map based on long-run simulation output
-        X = _df[["Event_Name", "Facility_Level", "Number_By_Appt_Type_Code"]].copy()
+        X = _df[["Event_Name", "Facility_Level", "Number_By_Appt_Type_Code", "TREATMENT_ID"]].copy()
         X["Number_By_Appt_Type_Code_Tuple"] = (
             X["Number_By_Appt_Type_Code"]
             .apply(lambda x: tuple(sorted(x.items())))
@@ -158,6 +158,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     "Event_Name",
                     "Facility_Level",
                     "Appt_Type_Code",
+                    "TREATMENT_ID",
                 ]
             )
             .reset_index(drop=True)
@@ -165,13 +166,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 "Event_Name": "Event",
                 "Facility_Level": "Facility level",
                 "Appt_Type_Code": "Appointment footprint",
+                "TREATMENT_ID": "Treatment ID"
             })
         )
 
         X_unique = (
-            X_unique[["Event", "Facility level", "Appointment footprint"]]
+            X_unique[["Event", "Facility level", "Appointment footprint", "Treatment ID"]]
             .drop_duplicates()
-            .set_index(["Event", "Facility level", "Appointment footprint"])
+            .set_index(["Event", "Facility level", "Appointment footprint", "Treatment ID"])
             .assign(Value=1)["Value"]
         )
 
@@ -180,6 +182,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def get_patient_mix_total_period(_df, rescale_by_fac_level=True):
         # keep only months in TLM for comparison consistency
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
+        # keep HSIs that did run, those did not run are treated as unmet needs/patients did not successfully see the HRH
+        # in mode 1, only depression HSIs with MentOPD footprint did not run due to no mental health staff at multiple
+        # facilities at level 2
+        # analyses that specifically look at HRH expansion impact on depression health outcomes should be cautious
+        _df = _df[_df["did_run"] == True].copy()
 
         # create columns for mapping: Appointment_Footprint, Facility_Level
         _df["Appointment_Footprint"] = (
@@ -315,6 +323,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def get_cons_access_mix_total_period(_df, rescale_by_fac_level=True):
         # keep only months in TLM
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
+        # do not need to select did run HSIs as all HSI in the cons. logger did run
 
         # merge in facility information from mfl and format
         _df.rename(columns={
@@ -540,17 +550,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get facility list from resource file
     mfl = pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
-    # # full HSI list from the simulation
-    # sim_hsi = extract_results(
-    #     results_folder,
-    #     module="tlo.methods.healthsystem",
-    #     key="HSI_Event",
-    #     custom_generate_series=get_all_hsi_events,
-    #     do_scaling=False
-    # ).reset_index()
-    #
-    # sim_hsi = sim_hsi[["Event", "Facility level", "Appointment footprint"]].copy()
-    # sim_hsi.columns = sim_hsi.columns.droplevel(1)
+    # full HSI list from the simulation
+    sim_hsi = extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=get_all_hsi_events,
+        do_scaling=False
+    ).reset_index()
+
+    sim_hsi = sim_hsi[["Event", "Facility level", "Appointment footprint", "Treatment ID"]].copy()
+    sim_hsi.columns = sim_hsi.columns.droplevel(1)
 
     # path to TLM data sources
     path_to_tlm_folder = (
