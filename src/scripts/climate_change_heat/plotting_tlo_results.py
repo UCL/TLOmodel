@@ -17,7 +17,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import colormaps
-hex_colors = ["#FAF0F1", "#E5B3BA", "DB7E8B", "#D48E95", "#D66473", "#721D28"]
+hex_colors = ["#FAF0F1", "#E5B3BA", "#DB7E8B", "#D48E95", "#D66473", "#721D28"]
 custom_cmap = LinearSegmentedColormap.from_list("custom_diverging", hex_colors)
 colormaps.register(custom_cmap, name="custom_cmap")
 

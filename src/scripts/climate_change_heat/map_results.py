@@ -979,7 +979,7 @@ def plot_projection_forest(
     ax.set_yticks(list(y_pos.values()))
     ax.set_yticklabels([_label(i) for i in ind_order], fontsize=9)
     ax.set_xlabel(
-        f"Projected % deficit, mean over {window[0]}–{window[1]}",
+        f"Projected % difference, mean over {window[0]}–{window[1]}",
         fontsize=10,
     )
     ax.grid(axis="x", ls=":", alpha=0.4)
