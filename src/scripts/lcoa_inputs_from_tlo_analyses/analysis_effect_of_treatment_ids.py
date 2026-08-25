@@ -64,8 +64,6 @@ from tlo.analysis.utils import (
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=10runstest --load-input-costs-from-checkpoint=True
-PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
-
 EXCLUDED_HSIs = [
     "FirstAttendance_Emergency",
     "FirstAttendance_NonEmergency",
@@ -88,6 +86,8 @@ def parse_bool(value: str) -> bool:
         f"Invalid boolean value '{value}'. Use True or False."
     )
 
+# source: http://doi.org/https://doi.org/10.1016/j.vhri.2023.10.007
+MALAWI_CET = 65.8
 
 def apply(
     results_folder: Path,
@@ -107,15 +107,12 @@ def apply(
 
     param_names = get_parameter_names_from_scenario_file()
     get_num_deaths_by_cause_label_and_period = make_get_num_deaths_by_cause_label_and_period(
-        PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
         target_period_tuple,
     )
     get_num_dalys_by_cause_label_and_period = make_get_num_dalys_by_cause_label_and_period(
-        PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
         target_period_tuple,
     )
     get_num_hsi_by_period = make_get_counts_of_hsis_by_period(
-        PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
         target_period_tuple=target_period_tuple,
     )
     results = {}
@@ -281,7 +278,15 @@ def apply(
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
-    results['dalys'] = compute_summary_statistics(dalys, central_measure='median')
+    discount_rate_dalys = 0.03
+    dalys_years = dalys.index.get_level_values("period").astype(int)
+    discount_base_year = dalys_years.min()
+    discounted_dalys = dalys.div(
+        (1.0 + discount_rate_dalys) ** (dalys_years - discount_base_year),
+        axis=0,
+    )
+
+    results['discounted_dalys'] = compute_summary_statistics(discounted_dalys, central_measure='median')
 
     # Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
     # To get the actual minutes, we need to multiply by the total available minutes.
@@ -454,9 +459,8 @@ def apply(
 
         incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
 
-
     if do_comparison:
-        dalys_2026 = dalys.xs('2026-2026', level='period')
+        dalys_2026 = dalys.xs('2026', level='period')
         dalys_averted_2026 = (
             -1.0 * pd.DataFrame(
                 find_difference_extra_relative_to_comparison(dalys_2026.sum(), comparison='Nothing'))
@@ -466,20 +470,22 @@ def apply(
 
         dalys_averted = (
             -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing'))
+                find_difference_extra_relative_to_comparison(discounted_dalys.sum(), comparison='Nothing'))
 
         )
 
         pc_dalys_averted = 100.0 * compute_summary_statistics(
             -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(dalys.sum(), comparison='Nothing', scaled=True)).T,
+                find_difference_extra_relative_to_comparison(discounted_dalys.sum(), comparison='Nothing', scaled=True)).T,
             central_measure='median'
         ).iloc[0].unstack()
-        # Run-by-run incremental cost-effectiveness ratio calculation
-        icers = incremental_scenario_cost.T / dalys_averted
-        icers_summarized = compute_summary_statistics(icers.T, central_measure='median').iloc[0].unstack()
-        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
 
+        net_health = dalys_averted.T - incremental_scenario_cost / MALAWI_CET
+        net_health_summarized = (
+            compute_summary_statistics(net_health, central_measure='median').iloc[0].unstack()
+        )
+
+        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
 
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
@@ -490,9 +496,8 @@ def apply(
     results['dalys'] = compute_summary_statistics(dalys, 'median')
     results['dalys_averted'] = dalys_averted if do_comparison else None
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
-    results['icers_summarized'] = icers_summarized if do_comparison else None
+    results['net_health'] = net_health_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
-
 
     # Extract DALYs and costs from the LCOA input workbook (EHP_BasedOnLCOA sheet).
     lcoa_workbook_path = Path(__file__).resolve().parent / "ResourceFile_PriorityRanking_ALLPOLICIES_EHP_dalys_costs.xlsx"
@@ -533,6 +538,7 @@ def apply(
             | dalys_and_costs_from_lcoa["icer"].notna()
         )
     ]
+    dalys_and_costs_from_lcoa['net_health'] = dalys_and_costs_from_lcoa['overall_dalys'] - dalys_and_costs_from_lcoa['overall_costs'] / MALAWI_CET
     results["dalys_and_costs_from_lcoa"] = dalys_and_costs_from_lcoa
 
     return results

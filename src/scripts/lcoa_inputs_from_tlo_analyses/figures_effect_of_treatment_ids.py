@@ -8,7 +8,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from tlo.analysis.utils import CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
+from tlo.analysis.utils import (
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
+    SHORT_TREATMENT_ID_TO_COLOR_MAP,
+)
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     get_parameter_names_from_scenario_file,
@@ -27,7 +30,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 )
 
 
-# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs2
+# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs-with-discounted-dalys
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs10runs
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
@@ -165,13 +168,6 @@ def apply(
     include_exclude_demo: bool = False,
 ):
     """Produce standard plots describing effect of each TREATMENT_ID."""
-    print("Starting figure generation for treatment-ID effects.")
-    hbp = pd.read_csv(os.path.join("src/scripts/lcoa_inputs_from_tlo_analyses" ,"health_benefit_package.csv"))
-    fig, ax = plot_treatment_id_include_exclude_table(hbp.iloc[range(43), :])
-    outfile = os.path.join(output_folder, make_graph_file_name("HBP derived from simulated inputs"))
-    fig.savefig(outfile)
-    plt.close(fig)
-
 
     print(f"Output folder: {output_folder}")
     output_folder.mkdir(parents=True, exist_ok=True)
@@ -187,7 +183,7 @@ def apply(
     pc_deaths_averted = primary_results.get('pc_deaths_averted')
     dalys_averted = primary_results.get('dalys_averted')
     pc_dalys_averted = primary_results.get('pc_dalys_averted')
-    icers = primary_results.get('icers_summarized')
+    net_health = primary_results.get('net_health')
     incremental_scenario_cost = primary_results.get('incremental_scenario_cost')
     dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
     annual_cost_by_cadre = primary_results.get('annual_cost_by_cadre')
@@ -201,14 +197,10 @@ def apply(
             pc_deaths_averted,
             dalys_averted,
             pc_dalys_averted,
-            icers,
             incremental_scenario_cost
         )
     )
     print(f"Comparison metrics available: {comparison_metrics_available}")
-
-
-    counts_of_hsi = counts_of_hsi.drop(['2010-2040'], level=1)
 
     result_rows = []
     for draw in counts_of_hsi.columns.get_level_values(0).unique():
@@ -241,7 +233,7 @@ def apply(
             ['2010-2010', '2011-2011', '2012-2012', '2013-2013',
              '2014-2014', '2015-2015', '2016-2016', '2017-2017',
              '2018-2018', '2019-2019', '2020-2020', '2021-2021',
-             '2022-2022', '2023-2023', '2024-2024', '2025-2025', '2010-2040']
+             '2022-2022', '2023-2023', '2024-2024', '2025-2025']
         )
         # Filter rows to retain those in implementation period only
         mask_other_periods = (
@@ -321,9 +313,9 @@ def apply(
     plt.close(fig)
 
     # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
-    num_dalys_by_cause_label_implementation = primary_results['dalys'].drop(['2010-2040'], level=1)
+    num_dalys_by_cause_label_implementation = primary_results['dalys']
 
-    num_deaths_by_cause_label_implementation = primary_results['num_deaths'].drop(['2010-2040'], level=1)
+    num_deaths_by_cause_label_implementation = primary_results['num_deaths']
     print("Prepared deaths and DALYs by cause for plotting.")
 
     daly_draw_labels = [format_scenario_name(param) for param in param_names]
@@ -379,7 +371,7 @@ def apply(
         plt.close(fig)
 
     if comparison_metrics_available:
-        print("Plotting comparison metrics: deaths/DALYs averted, percentages, and ICERs.")
+        print("Plotting comparison metrics: deaths/DALYs averted, percentages, and net health.")
         dalys_averted_sorted = (dalys_averted.sort_values(by="central", ascending=True) / 1e3)
         dalys_order = dalys_averted_sorted.index
         fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
@@ -413,7 +405,6 @@ def apply(
         plt.close(fig)
         print("Saved: Deaths Averted by Each Treatment ID")
 
-
         pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="central", ascending=True))
         fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -446,21 +437,14 @@ def apply(
         plt.close(fig)
         print("Saved: Percentage DALYs Averted by Each Treatment ID")
 
-        icers_sorted = icers.sort_values(by="central", ascending=True)
-        # Do not plot treatment ids with very wide uncertainty
-        # CervicalCancer_Screening_Xpert_*              -110.336087   -6.192826  5064.399284
-        # BreastCancer_PalliativeCare_*                  -25.104866   -5.740423  2611.046029
-        # Hiv_Test_*                                   -7335.183554  248.738016   856.794914
-
-        mask = ~icers_sorted.index.get_level_values("draw").isin(["Hiv_Test_*", "CervicalCancer_Screening_Xpert_*", "BreastCancer_PalliativeCare_*"])
-        icers_sorted = icers_sorted[mask]
-        icers_sorted = icers_sorted.reindex(dalys_order.intersection(icers_sorted.index))
-        fig_height = max(6, min(0.28 * len(icers_sorted.index) + 4, 18))
+        nh_sorted = net_health.sort_values(by="central", ascending=True)
+        nh_sorted = nh_sorted.reindex(dalys_order.intersection(nh_sorted.index))
+        fig_height = max(6, min(0.28 * len(nh_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
-        name_of_plot = "ICERs for Each Treatment ID"
-        do_barh_plot_with_ci(icers_sorted, ax)
+        name_of_plot = "Net Health for Each Treatment ID"
+        do_barh_plot_with_ci(nh_sorted / 1000, ax)
         ax.set_title(name_of_plot)
-        ax.set_xlabel("ICER (USD per DALY averted)")
+        ax.set_xlabel("Net Health (/1000)")
         ax.grid(axis="x")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -468,7 +452,7 @@ def apply(
         fig.tight_layout()
         fig.savefig(outfile)
         plt.close(fig)
-        print("Saved: ICERs for Each Treatment ID")
+        print("Saved: Net health for Each Treatment ID")
 
         incremental_cost_sorted = incremental_scenario_cost.reindex(dalys_order)
         fig_height = max(6, min(0.28 * len(incremental_cost_sorted.index) + 4, 18))
@@ -486,18 +470,20 @@ def apply(
         plt.close(fig)
         print("Saved: Incremental Cost for Each Treatment ID")
 
+        # We choose to exclude Hiv_Prevention_Prep for now.
+
         facet_order = (
             dalys_order
             .intersection(incremental_cost_sorted.dropna().index)
-            .intersection(icers_sorted.dropna().index)
+            .intersection(nh_sorted.dropna().index)
         )
         dalys_facet = dalys_averted_sorted.reindex(facet_order)
         costs_facet = incremental_cost_sorted.reindex(facet_order)
-        icers_facet = icers_sorted.reindex(facet_order)
+        nh_facet = nh_sorted.reindex(facet_order)
 
         fig_height = max(6, min(0.28 * len(facet_order) + 4, 18))
         fig, axes = plt.subplots(1, 3, figsize=(20, fig_height), sharey=True)
-        name_of_plot = "DALYs, Incremental Cost, and ICERs by Treatment ID"
+        name_of_plot = "DALYs, Incremental Cost, and Net health by Treatment ID"
 
         do_barh_plot_with_ci(dalys_facet, axes[0])
         axes[0].set_title("DALYs")
@@ -507,13 +493,13 @@ def apply(
         axes[1].set_title("Costs")
         axes[1].set_xlabel("Incremental cost (USD)")
 
-        do_barh_plot_with_ci(icers_facet, axes[2])
-        axes[2].set_title("ICERs")
-        axes[2].set_xlabel("ICER (USD per DALY averted)")
+        do_barh_plot_with_ci(nh_facet / 1000, axes[2])
+        axes[2].set_title("Net Health")
+        axes[2].set_xlabel("Net Health (/1000)")
 
         if isinstance(dalys_and_costs_from_lcoa, pd.DataFrame):
             lcoa_overlay = (
-                dalys_and_costs_from_lcoa[["treatment_id", "overall_dalys", "overall_costs", "icer"]]
+                dalys_and_costs_from_lcoa[["treatment_id", "overall_dalys", "overall_costs", "net_health"]]
                 .dropna(subset=["treatment_id"])
                 .drop_duplicates(subset=["treatment_id"], keep="first")
                 .set_index("treatment_id")
@@ -521,6 +507,13 @@ def apply(
             facet_overlay = pd.DataFrame({"draw": facet_order})
             facet_overlay["treatment_id"] = facet_overlay["draw"].str.replace(r"_\*$", "", regex=True)
             facet_overlay = facet_overlay.join(lcoa_overlay, on="treatment_id")
+            facet_overlay["short_treatment_id"] = facet_overlay["draw"].str.split("_").str[0] + "*"
+            facet_overlay["color"] = (
+                facet_overlay["short_treatment_id"].map(SHORT_TREATMENT_ID_TO_COLOR_MAP).fillna("grey")
+            )
+            facet_overlay["tlo_dalys"] = (dalys_facet["central"] * 1e3).to_numpy()
+            facet_overlay["tlo_costs"] = costs_facet["central"].to_numpy()
+            facet_overlay["tlo_net_health"] = nh_facet["central"].to_numpy()
 
             daly_overlay = facet_overlay["overall_dalys"].notna()
             if daly_overlay.any():
@@ -543,15 +536,67 @@ def apply(
                     zorder=10,
                 )
 
-            icer_overlay = facet_overlay["icer"].notna()
-            if icer_overlay.any():
+            nh_overlay = facet_overlay["net_health"].notna()
+            if nh_overlay.any():
                 axes[2].scatter(
-                    facet_overlay.loc[icer_overlay, "icer"],
-                    facet_overlay.index[icer_overlay],
+                    facet_overlay.loc[nh_overlay, "net_health"] / 1e3,
+                    facet_overlay.index[nh_overlay],
                     c="black",
                     s=16,
                     zorder=10,
                 )
+
+            scatter_metrics = (
+                ("DALYs Averted", "overall_dalys", "tlo_dalys", 1e3, "DALYs averted (/1000)"),
+                ("Incremental Cost", "overall_costs", "tlo_costs", 1.0, "Incremental cost (USD)"),
+                ("Net Health", "net_health", "tlo_net_health", 1e3, "Net health (/1000)"),
+            )
+            for metric_name, lcoa_column, tlo_column, scale, axis_label in scatter_metrics:
+                scatter_data = facet_overlay.dropna(subset=[lcoa_column, tlo_column])
+                if scatter_data.empty:
+                    continue
+
+                x = scatter_data[lcoa_column] / scale
+                y = scatter_data[tlo_column] / scale
+                positive = x.gt(0) & y.gt(0)
+                excluded_count = int((~positive).sum())
+                scatter_data = scatter_data.loc[positive]
+                x = x.loc[positive]
+                y = y.loc[positive]
+                if scatter_data.empty:
+                    print(f"Skipped {metric_name} scatter plot: no positive LCOA/TLO pairs")
+                    continue
+
+                fig_scatter, ax_scatter = plt.subplots(figsize=(8, 8))
+                ax_scatter.scatter(x, y, c=scatter_data["color"], s=30)
+                equality_min = min(x.min(), y.min())
+                equality_max = max(x.max(), y.max())
+                ax_scatter.plot(
+                    [equality_min, equality_max],
+                    [equality_min, equality_max],
+                    color="black",
+                    linestyle="--",
+                    linewidth=1,
+                )
+                ax_scatter.set_xscale("log")
+                ax_scatter.set_yscale("log")
+                name_of_scatter_plot = f"LCOA vs TLO-Derived {metric_name}"
+                ax_scatter.set_title(name_of_scatter_plot)
+                ax_scatter.set_xlabel(f"LCOA inputs: {axis_label}")
+                ax_scatter.set_ylabel(f"TLO-derived inputs: {axis_label}")
+                ax_scatter.grid(alpha=0.3)
+                ax_scatter.spines["top"].set_visible(False)
+                ax_scatter.spines["right"].set_visible(False)
+                fig_scatter.tight_layout()
+                scatter_outfile = os.path.join(
+                    output_folder,
+                    make_graph_file_name(name_of_scatter_plot),
+                )
+                fig_scatter.savefig(scatter_outfile)
+                plt.close(fig_scatter)
+                print(f"Saved: {name_of_scatter_plot}")
+                if excluded_count:
+                    print(f"Excluded {excluded_count} non-positive pairs from {name_of_scatter_plot}")
 
         for ax in axes:
             ax.grid(axis="x")
@@ -564,8 +609,7 @@ def apply(
         fig.tight_layout()
         fig.savefig(outfile)
         plt.close(fig)
-        print("Saved: DALYs, Incremental Cost, and ICERs by Treatment ID")
-
+        print("Saved: DALYs, Incremental Cost, and Net Health by Treatment ID")
 
     print("Finished generating figures.")
 

@@ -167,69 +167,42 @@ def get_num_dalys_by_cause_label(_df: pd.DataFrame, target_period_tuple: tuple[D
 
 
 def make_get_num_deaths_by_cause_label_and_period(
-    period_length_years: int,
     target_period_tuple: tuple[Date, Date]
 ):
-    """Create helper that summarizes deaths by cause and period chunks + overall."""
-    periods = get_periods_within_target_period(
-        period_length_years=period_length_years,
-        target_period_tuple=target_period_tuple,
-    )
-    period_lookup = {
-        year: period_label
-        for period_label, (start_year, end_year) in periods
-        for year in range(start_year, end_year + 1)
-    }
-    target_period_label = target_period(target_period_tuple)
+    """Create helper that summarizes annual deaths by cause."""
     start_year, end_year = (i.year for i in target_period_tuple)
 
     def _get_num_deaths_by_cause_label_and_period(_df: pd.DataFrame) -> pd.Series:
         years = pd.to_datetime(_df.date).dt.year
         _df_in_target = _df.loc[years.between(start_year, end_year)].copy()
         _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
-        _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+        _df_in_target["period"] = _df_in_target["year"].astype(str)
 
-        chunked = _df_in_target.groupby(["label", "period"]).size()
-        overall = _df_in_target.groupby("label").size()
-        overall.index = pd.MultiIndex.from_arrays(
-            [overall.index, np.repeat(target_period_label, len(overall.index))], names=["label", "period"]
-        )
-        return pd.concat([chunked, overall]).sort_index()
+        return _df_in_target.groupby(["label", "period"]).size().sort_index()
 
     return _get_num_deaths_by_cause_label_and_period
 
 
 def make_get_num_dalys_by_cause_label_and_period(
-    period_length_years: int,
     target_period_tuple: tuple[Date, Date]
 ):
-    """Create helper that summarizes DALYS by cause and period chunks + overall."""
-    periods = get_periods_within_target_period(
-        period_length_years=period_length_years,
-        target_period_tuple=target_period_tuple,
-    )
-    period_lookup = {
-        year: period_label
-        for period_label, (period_start, period_end) in periods
-        for year in range(period_start, period_end + 1)
-    }
+    """Create helper that summarizes annual DALYs by cause."""
     start_year, end_year = target_period_tuple[0].year, target_period_tuple[1].year
-    target_period_label = target_period(target_period_tuple)
 
     def _get_num_dalys_by_cause_label_and_period(_df: pd.DataFrame) -> pd.Series:
         _df_in_target = _df.loc[_df.year.between(start_year, end_year)].copy()
-        _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+        _df_in_target["period"] = _df_in_target["year"].astype(str)
 
         melted = (
             _df_in_target.drop(columns=["date", "sex", "age_range"])
             .melt(id_vars=["year", "period"], var_name="label", value_name="dalys")
         )
         chunked = melted.groupby(["label", "period"])["dalys"].sum()
-        overall = melted.groupby("label")["dalys"].sum()
-        overall.index = pd.MultiIndex.from_arrays(
-            [overall.index, np.repeat(target_period_label, len(overall.index))], names=["label", "period"]
-        )
-        return pd.concat([chunked, overall]).sort_index()
+        #overall = melted.groupby("label")["dalys"].sum()
+        #overall.index = pd.MultiIndex.from_arrays(
+        #    [overall.index, np.repeat(target_period_label, len(overall.index))], names=["label", "period"]
+        #)
+        return chunked.sort_index()
 
     return _get_num_dalys_by_cause_label_and_period
 
@@ -335,38 +308,22 @@ def make_get_counts_of_appts_by_period(
 
 
 def make_get_counts_of_hsis_by_period(
-    period_length_years: int,
     target_period_tuple: tuple[Date, Date],
 ):
-    """Create helper that summarizes appointment counts by period chunks + overall."""
-    periods = get_periods_within_target_period(
-        period_length_years=period_length_years,
-        target_period_tuple=target_period_tuple,
-    )
-    period_lookup = {
-        year: period_label
-        for period_label, (start_year, end_year) in periods
-        for year in range(start_year, end_year + 1)
-    }
-    target_period_label = target_period(target_period_tuple)
+    """Create helper that summarizes annual HSI counts."""
     start_year, end_year = (i.year for i in target_period_tuple)
 
     def _get_counts_of_hsis_by_period(_df: pd.DataFrame) -> pd.Series:
         years = pd.to_datetime(_df["date"]).dt.year
         _df_in_target = _df.loc[years.between(start_year, end_year)].copy()
         _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
-        _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+        _df_in_target["period"] = _df_in_target["year"].astype(str)
 
         hsis = _df_in_target["TREATMENT_ID"].apply(pd.Series)
         chunked = hsis.groupby(_df_in_target["period"]).sum().T.stack()
         chunked.index = chunked.index.set_names(["appt_type", "period"])
 
-        overall = hsis.sum()
-        overall.index = pd.MultiIndex.from_arrays(
-            [overall.index, np.repeat(target_period_label, len(overall.index))],
-            names=["appt_type", "period"],
-        )
-        return pd.concat([chunked, overall]).astype(int).sort_index()
+        return chunked.astype(int).sort_index()
 
     return _get_counts_of_hsis_by_period
 
