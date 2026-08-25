@@ -1,6 +1,7 @@
 import ast
 import itertools
 import math
+import re
 import textwrap
 from collections import defaultdict
 from itertools import cycle
@@ -166,6 +167,117 @@ def apply_discounting_to_cost_data(_df: pd.DataFrame,
     _df.loc[:, _column_for_discounting] = _df[_column_for_discounting] / _df['year'].apply(get_discount_factor)
 
     return _df
+
+# Clean the names of consumables in input cost dataframe
+def clean_consumable_name(name: str) -> str:
+    """
+    Clean consumable names for analysis and plotting.
+    Removes procurement suffixes, packaging metadata,
+    harmonises spelling, and capitalises the first letter.
+    """
+    if not isinstance(name, str):
+        return name
+
+    cleaned = name
+
+    # --- 1. Remove common procurement suffixes ---
+    cleaned = re.sub(
+        r'_(CMST|IDA|Each_CMST|each_CMST|each|ID|PFR|nt)(\b|_)',
+        '',
+        cleaned,
+        flags=re.IGNORECASE
+    )
+
+    # --- 2. Remove trailing numeric package indicators ---
+    cleaned = re.sub(r'_\d+(\.\d+)?$', '', cleaned)
+    cleaned = re.sub(
+        r'\b\d+\s*(tests|pieces|doses|pack|packs|box|boxes)\b',
+        '',
+        cleaned,
+        flags=re.IGNORECASE
+    )
+
+    # --- 3. Remove awkward characters ---
+    cleaned = cleaned.replace('Â', '')
+    cleaned = cleaned.replace('½', '1/2')
+
+    # --- 4. Normalise whitespace ---
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+    # --- 5. Harmonise common spelling variants ---
+    harmonisation = {
+        'Amoxycillin': 'Amoxicillin',
+        'Gentamycin': 'Gentamicin',
+        'Declofenac': 'Diclofenac',
+        'Frusemide': 'Furosemide',
+        'Cotrimoxizole': 'Cotrimoxazole',
+        "ringer's lactate": "Ringer's lactate",
+    }
+
+    for old, new in harmonisation.items():
+        cleaned = re.sub(rf'\b{old}\b', new, cleaned, flags=re.IGNORECASE)
+
+    # --- 6. Canonical renaming for key nutrition / diagnostics items ---
+    canonical_map = {
+        'Therapeutic spread, sachet 92g/CAR-150':
+            'Ready-to-use therapeutic food (RUTF)',
+        'Therapeutic spread, sachet 92g / CAR-150':
+            'Ready-to-use therapeutic food (RUTF)',
+        'VL test':
+            'Viral load test',
+        'Dietary supplements (country-specific)':
+            'Multiple micronutrient powder (MNP) supplement'
+    }
+
+    # Apply canonical renaming (case-insensitive exact match)
+    for old, new in canonical_map.items():
+        if cleaned.lower() == old.lower():
+            cleaned = new
+            break
+
+    # --- 7. Capitalise first letter only (preserve acronyms elsewhere) ---
+    cleaned = re.sub(r'^.', lambda m: m.group(0).upper(), cleaned)
+
+    return cleaned
+
+# Clean the names of equipment in the cost dataframe, Drop irrelevant ones
+def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
+    """
+    Clean and standardise medical equipment names for analysis.
+    Applies light normalisation and explicit renaming only.
+    """
+    if not isinstance(name, str):
+        return name
+
+    cleaned = name
+
+    # --- 1. Fix known encoding artefacts ---
+    cleaned = cleaned.replace('â\x80\x99', '’')
+    cleaned = cleaned.replace('Â', '')
+
+    # --- 2. Normalise slashes and whitespace ---
+    cleaned = re.sub(r'\s*/\s*', ' / ', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+    # --- 3. Explicit canonical renaming (keep minimal) ---
+    rename_map = {
+        'Image view station, for conferences':
+            'Clinical image viewing workstation (PACS / case review)',
+        'Cusco’s / bivalved Speculum (small, medium, large)':
+            'Cusco’s / bivalved speculum (small, medium, large)',
+        'Cuscoâ\x80\x99s/ bivalved Speculum (small, medium, large)':
+            'Cusco’s / bivalved speculum (small, medium, large)',
+    }
+
+    for old, new in rename_map.items():
+        if cleaned.lower() == old.lower():
+            cleaned = new
+            break
+
+    # --- 4. Capitalise first letter only (preserve acronyms) ---
+    cleaned = re.sub(r'^.', lambda m: m.group(0).upper(), cleaned)
+
+    return cleaned
 
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
@@ -1218,7 +1330,11 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
                                             _scenario_dict: Optional[dict[int, str]] = None,
                                             show_title: bool = True,
                                             _outputfilepath: Optional[Path] = None,
-                                            _add_figname_suffix: str = ''):
+                                            _add_figname_suffix: str = '',
+                                            _label_fontsize: float = 9.0,
+                                            _tick_fontsize: float = 10.0,
+                                            _legend_label_map: Optional[dict[str, str]] = None
+                                            ):
     """
         Create and save a stacked bar chart of costs by category, subcategory or subgroup.
 
@@ -1257,6 +1373,14 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         _add_figname_suffix : str, default ''
             Optional string to append to the saved figure's filename
 
+        _label_fontsize : float, optional
+        fontsize of data labels
+
+        _tick_fontsize: float, optional
+        font size of axis ticks
+
+        _legend_label_map: dict, optional
+        Dictionary proving clean category names for publishable legends
         Returns:
         -------
         None
@@ -1395,10 +1519,11 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
                             xy=(x, rect.get_y() + height),  # Arrow start
                             xytext=(x + 0.3, rect.get_y() + height + threshold),  # Offset text
                             arrowprops=dict(arrowstyle="->", color='black', lw=0.8),
-                            fontsize='small', ha='left', va='center', color='black'
+                            fontsize=_label_fontsize, ha='left', va='center', color='black', fontweight='bold',
                         )
                     else:  # Large segment -> label inside
-                        ax.text(x, y, f'{round(height, 1)}', ha='center', va='center', fontsize='small', color='white')
+                        ax.text(x, y, f'{round(height, 1)}', ha='center', va='center', fontsize=_label_fontsize,
+                                fontweight='bold', color='white')
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
@@ -1408,7 +1533,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
 
     # Wrap x-tick labels for readability
     wrapped_labels = [textwrap.fill(str(label), 20) for label in labels]
-    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right', fontsize='small')
+    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right', fontsize=_tick_fontsize)
 
     # Period included for plot title and name
     if _year == 'all':
@@ -1419,16 +1544,29 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         period = (f"{min(_year)} - {max(_year)}")
 
     # Save plot
-    plt.xlabel('Scenario')
-    plt.ylabel('Cost (2023 USD), millions')
+    plt.xlabel('Scenario', fontsize = _tick_fontsize, fontweight = 'bold')
+    plt.ylabel('Cost (2023 USD), millions', fontsize = _tick_fontsize, fontweight = 'bold')
 
     # Arrange the legend in the same ascending order
     handles, labels = plt.gca().get_legend_handles_labels()
-    plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.05, 0.7), loc='center left', fontsize='small')
+    if _legend_label_map is not None:
+        labels = [
+            _legend_label_map.get(label, label)
+            for label in labels
+        ]
+
+    plt.legend(
+        handles[::-1],
+        labels[::-1],
+        bbox_to_anchor=(1.05, 0.7),
+        loc='center left',
+        fontsize=_tick_fontsize
+    )
 
     # Extend the y-axis by 25%
     max_y = ax.get_ylim()[1]
     ax.set_ylim(0, max_y * 1.25)
+    ax.tick_params(axis='y', labelsize=_tick_fontsize)
 
     # Save the plot with tight layout
     plt.tight_layout(pad=2.0)  # Ensure there is enough space for the legend
@@ -1712,9 +1850,17 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
     if _draw is not None:
         _df = _df[_df.draw == _draw]
 
+    if _year != 'all':
+        _df = _df[_df['year'].isin(_year)]
+
+    if 'mean' in _df.stat.unique():
+        _df = _df[_df['stat'] == 'mean']
+    else:
+        _df = _df[_df['stat'] == 'median']
+
     # Remove non-specific subgroup for consumables
     if _cost_category == 'medical consumables':
-        _df = _df[~(_df.cost_subgroup == 'supply chain (all consumables)')]
+        _df = _df[~(_df.cost_subgroup.str.contains('all consumables'))] # These are supply chain costs
 
     # Create summary dataframe for treemap
     _df = _df.groupby('cost_subgroup')['cost'].sum().reset_index()

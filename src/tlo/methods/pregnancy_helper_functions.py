@@ -15,12 +15,12 @@ def generate_mnh_outcome_counter():
     each outcome as the simulation moves forward in time.
     """
 
-    outcome_list = [  # early/abortive outcomes
-        'ectopic_unruptured', 'ectopic_ruptured', 'multiple_pregnancy', 'twin_birth', 'placenta_praevia',
-        'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
-        'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
-        'induced_abortion_haemorrhage', 'induced_abortion_other_comp', 'spontaneous_abortion_sepsis',
-        'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
+    outcome_list = [ # early/abortive outcomes
+                    'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',
+                    'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
+                    'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
+                    'induced_abortion_haemorrhage','induced_abortion_other_comp','spontaneous_abortion_sepsis',
+                    'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
 
         # antenatal onset outcomes
         'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
@@ -35,38 +35,38 @@ def generate_mnh_outcome_counter():
         'congenital_syphilis_stillbirth',
         'congenital_syphilis_live_birth',
 
-        # intrapartum/postpartum onset outcomes
-        'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other', 'obstructed_labour',
-        'uterine_rupture', 'sepsis_intrapartum', 'sepsis_endometritis', 'sepsis_urinary_tract',
-        'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
-        'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
-        'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
-        'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
-        'pn_anaemia_severe',
+                    # intrapartum/postpartum onset outcomes
+                    'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other','obstructed_labour',
+                    'uterine_rupture','sepsis_intrapartum','sepsis_endometritis', 'sepsis_urinary_tract',
+                    'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
+                    'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
+                    'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
+                    'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
+                    'pn_anaemia_severe',
 
-        # newborn outcomes
-        'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
-        'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
-        'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
-        'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
+                    # newborn outcomes
+                    'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+                    'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
+                    'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
+                    'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
 
-        # death outcomes
-        'direct_mat_death', 'six_week_survivors', 'induced_abortion_m_death', 'spontaneous_abortion_m_death',
-        'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
-        'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
-        'antenatal_sepsis_m_death',
-        'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
-        'postpartum_haemorrhage_m_death', 'secondary_postpartum_haemorrhage_m_death',
-        'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
-        'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
-        'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
-        'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
-        'digestive_anomaly_n_death', 'other_anomaly_n_death',
+                    # death outcomes
+                    'direct_mat_death', 'six_week_survivors','induced_abortion_m_death', 'spontaneous_abortion_m_death',
+                    'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
+                    'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
+                    'antenatal_sepsis_m_death',
+                    'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
+                    'postpartum_haemorrhage_m_death','secondary_postpartum_haemorrhage_m_death',
+                    'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
+                    'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
+                    'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
+                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
+                    'digestive_anomaly_n_death', 'other_anomaly_n_death',
 
-        # service coverage outcomes
-        'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
-        'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
-        'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
+                    # service coverage outcomes
+                    'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
+                    'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
+                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
 
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 
@@ -371,17 +371,17 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
 
     # Cycle through mothers properties to ascertain what she is at risk of death from and store in a list
     if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
-        (timing != 'postnatal')) or \
-        (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
-         (timing == 'postnatal')):
+       (timing != 'postnatal')) or \
+       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
+       (timing == 'postnatal')):
         causes.append('severe_pre_eclampsia')
 
     if ((mother.ps_htn_disorders == 'eclampsia') and (timing != 'postnatal')) or \
-        ((mother.pn_htn_disorders == 'eclampsia') and (timing == 'postnatal')):
+       ((mother.pn_htn_disorders == 'eclampsia') and (timing == 'postnatal')):
         causes.append('eclampsia')
 
     if ((mother.ps_antepartum_haemorrhage != 'none') and (timing != 'postnatal')) or \
-        ((mother.la_antepartum_haem != 'none') and (timing == 'intrapartum')):
+       ((mother.la_antepartum_haem != 'none') and (timing == 'intrapartum')):
         causes.append('antepartum_haemorrhage')
 
     if mother.ps_chorioamnionitis and (timing != 'postnatal'):
@@ -594,42 +594,13 @@ def update_mni_dictionary(self, individual_id):
                               'new_onset_spe': False,
                               'cs_indication': 'none'
                               }
+        mni[individual_id] = self.sim.modules['PregnancySupervisor'].default_mni_values.copy()
 
     elif self == self.sim.modules['Labour']:
-        labour_variables = {'labour_state': None,
-                            # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
-                            'birth_weight': 'normal_birth_weight',
-                            'birth_size': 'average_for_gestational_age',
-                            'delivery_setting': None,  # home_birth, health_centre, hospital
-                            'twins': df.at[individual_id, 'ps_multiple_pregnancy'],
-                            'twin_count': 0,
-                            'twin_one_comps': False,
-                            'pnc_twin_one': 'none',
-                            'bf_status_twin_one': 'none',
-                            'eibf_status_twin_one': False,
-                            'an_placental_abruption': df.at[individual_id, 'ps_placental_abruption'],
-                            'corticosteroids_given': False,
-                            'clean_birth_practices': False,
-                            'abx_for_prom_given': False,
-                            'abx_for_pprom_given': False,
-                            'endo_pp': False,
-                            'retained_placenta': False,
-                            'uterine_atony': False,
-                            'amtsl_given': False,
-                            'cpd': False,
-                            'mode_of_delivery': 'vaginal_delivery',
-                            'neo_will_receive_resus_if_needed': False,
-                            # vaginal_delivery, instrumental, caesarean_section
-                            'hsi_cant_run': False,  # True (T) or False (F)
-                            'sought_care_for_complication': False,  # True (T) or False (F)
-                            'sought_care_labour_phase': 'none',
-                            'referred_for_cs': False,  # True (T) or False (F)
-                            'referred_for_blood': False,  # True (T) or False (F)
-                            'received_blood_transfusion': False,  # True (T) or False (F)
-                            'referred_for_surgery': False,  # True (T) or False (F)'
-                            'death_in_labour': False,  # True (T) or False (F)
-                            'single_twin_still_birth': False,  # True (T) or False (F)
-                            'will_receive_pnc': 'none',
-                            'passed_through_week_one': False}
 
-        mni[individual_id].update(labour_variables)
+        labour_default = self.sim.modules['PregnancySupervisor'].default_labour_values.copy()
+        mni[individual_id].update(labour_default)
+
+        # Update from default based on individual case
+        mni[individual_id]['twins'] = df.at[individual_id, 'ps_multiple_pregnancy']
+        mni[individual_id]['an_placental_abruption'] = df.at[individual_id, 'ps_placental_abruption']

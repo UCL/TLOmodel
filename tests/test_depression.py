@@ -145,7 +145,7 @@ def test_hsi_functions(tmpdir, seed):
     df['de_ever_depr'] = False
     df['de_date_init_most_rec_depr'] = pd.NaT
     df['de_date_depr_resolved'] = pd.NaT
-    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
     df['de_ever_diagnosed_depression'] = False
     df['de_on_antidepr'] = False
     df['de_ever_talk_ther'] = False
@@ -202,7 +202,7 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
     df['de_ever_depr'] = False
     df['de_date_init_most_rec_depr'] = pd.NaT
     df['de_date_depr_resolved'] = pd.NaT
-    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
     df['de_ever_diagnosed_depression'] = False
     df['de_on_antidepr'] = False
     df['de_ever_talk_ther'] = False
@@ -264,7 +264,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
     df['de_ever_depr'] = False
     df['de_date_init_most_rec_depr'] = pd.NaT
     df['de_date_depr_resolved'] = pd.NaT
-    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
     df['de_ever_diagnosed_depression'] = False
     df['de_on_antidepr'] = False
     df['de_ever_talk_ther'] = False

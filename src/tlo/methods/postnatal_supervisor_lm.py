@@ -63,7 +63,7 @@ def predict_gest_htn_pn(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['weekly_prob_gest_htn_pn'], index=df.index)
 
-    result[df.li_bmi > 3] *= params['rr_gest_htn_obesity']
+    result[df.li_bmi > params['bmi_obesity']] *= params['rr_gest_htn_obesity']
 
     return result
 
@@ -76,7 +76,7 @@ def predict_pre_eclampsia_pn(self, df, rng=None, **externals):
     params = self.module.current_parameters
     result = pd.Series(data=params['weekly_prob_pre_eclampsia_pn'], index=df.index)
 
-    result[df.li_bmi > 3] *= params['rr_gest_htn_obesity']
+    result[df.li_bmi > params['bmi_obesity']] *= params['rr_gest_htn_obesity']
 
     if 'CardioMetabolicDisorders' in self.module.sim.modules:
         result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']

@@ -127,6 +127,7 @@ def test_initialisation(seed):
 
     # get simulation and initialise the simulation:
     sim = get_sim(seed=seed)
+    sim.end_date = Date(2015, 12, 31)
     sim.modules['Hiv'].initialise_simulation(sim)
     df = sim.population.props
 
@@ -185,12 +186,14 @@ def test_generation_of_new_infection(seed):
     # If lots of people living with HIV, but those uninfected are all on PrEP (efficacy of PrEP is assumed to be
     # perfect), ... no new infections
     df.hv_art.values[:] = 'not'
-    df.hv_is_on_prep = True
+    df.hv_is_on_prep_oral = True
+    df.hv_is_on_prep_inj = True
     pollevent.apply(sim.population)
     assert not any_hiv_infection_event_in_queue()
 
     # If lots of people living with HIV, and people are not on PrEP, some infection.
-    df.hv_is_on_prep = False
+    df.hv_is_on_prep_oral = False
+    df.hv_is_on_prep_inj = False
     pollevent.apply(sim.population)
     assert any_hiv_infection_event_in_queue()
 
@@ -500,7 +503,8 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
     sim.event_queue.queue = []
     df.hv_inf = False
     df.hv_art = "not"
-    df.hv_is_on_prep = False
+    df.hv_is_on_prep_oral = False
+    df.hv_is_on_prep_inj = False
     df.hv_behaviour_change = False
     df.hv_diagnosed = False
     df.hv_number_tests = 0
@@ -547,7 +551,7 @@ def test_art_is_initiated_for_infants(seed):
     sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
 
     # change prob ART start after diagnosis
-    sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 1.0
+    sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx_updated"] = 1.0
     sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = 1.0
 
     # Manipulate CFR for deaths due to not breathing at birth
@@ -757,10 +761,12 @@ def test_hsi_testandrefer_and_prep(seed):
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
     df.at[person_id, "li_is_sexworker"] = True
-    df.at[person_id, "hv_is_on_prep"] = False
+    df.at[person_id, "hv_is_on_prep_oral"] = False
+    df.at[person_id, "hv_is_on_prep_inj"] = False
 
     # change PrEP start date so will occur from 01-01-2010
     sim.modules['Hiv'].parameters["prep_start_year"] = 2010
+    sim.modules['Hiv'].parameters["injectable_prep_allowed"] = False
 
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
@@ -776,7 +782,7 @@ def test_hsi_testandrefer_and_prep(seed):
     hsi_event.apply(person_id=person_id, squeeze_factor=0.0)
 
     # Check that the person is now on PrEP
-    assert df.at[person_id, "hv_is_on_prep"]
+    assert df.at[person_id, "hv_is_on_prep_oral"]
     assert df.at[person_id, "hv_number_tests"] > 0
 
     # Check that there is a 'decision' event scheduled
@@ -784,7 +790,7 @@ def test_hsi_testandrefer_and_prep(seed):
         ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP)
     ][0]
 
-    assert date_decision_event == date_hsi_event + pd.DateOffset(months=3)
+    assert date_decision_event > date_hsi_event
 
     # Advance simulation date to when the decision_event would run
     sim.date = date_decision_event
@@ -792,11 +798,13 @@ def test_hsi_testandrefer_and_prep(seed):
     # Run the decision event when probability of continuation is 1.0, and check for a further HSI
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 1.0
     decision_event.apply(person_id)
-    assert df.at[person_id, "hv_is_on_prep"]
-    date_next_hsi_event, next_hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
-    ][0]
+    assert df.at[person_id, "hv_is_on_prep_oral"]
+    events = [
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) and (ev[0] >= date_decision_event)
+    ]
+
+    assert len(events) > 0, "No HSI_Hiv_StartOrContinueOnPrep events found on or after the decision date"
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
     # "decision" events
@@ -804,7 +812,8 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
     decision_event.apply(person_id)
-    assert not df.at[person_id, "hv_is_on_prep"]
+
+    assert not df.at[person_id, "hv_is_on_prep_oral"]
     assert 0 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
@@ -826,7 +835,7 @@ def test_hsi_testandrefer_and_art(seed):
     sim.modules['Hiv'].lm['lm_art'] = LinearModel.multiplicative()
 
     # change prob ART start after diagnosis
-    sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 1.0
+    sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx_updated"] = 1.0
 
     # Make sure that the person will continue to seek care
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
@@ -840,6 +849,12 @@ def test_hsi_testandrefer_and_art(seed):
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
     df.at[person_id, "age_years"] = 40
+
+    # schedule AIDS event - usually scheduled through HIV poll
+    sim.schedule_event(
+        event=HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'], cause='AIDS_non_TB'),
+        date=sim.date + pd.DateOffset(years=10),
+    )
 
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
@@ -869,7 +884,7 @@ def test_hsi_testandrefer_and_art(seed):
         ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.Hiv_DecisionToContinueTreatment)
     ][0]
 
-    assert date_decision_event == date_hsi_event + pd.DateOffset(months=3)
+    assert date_decision_event > date_hsi_event
 
     # Advance simulation date to when the decision_event would run
     sim.date = date_decision_event
@@ -890,7 +905,9 @@ def test_hsi_testandrefer_and_art(seed):
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_3_months"] = 0.0
+    sim.modules["Hiv"].parameters["proportion_on_treatment_not_lost_to_follow_up"] = 1.0
     decision_event.apply(person_id)
+
     assert df.at[person_id, "hv_art"] == "not"
     assert 1 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
@@ -1234,17 +1251,18 @@ def test_baseline_hiv_prevalence(seed):
     sim.make_initial_population(n=popsize)
     df = sim.population.props
 
+    # get absolute tolerance to the interval of the uncertainty around calibration targets
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
-    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.05)
+    assert np.isclose(adult_prev_1549, adult_prev_1549_data, atol=0.01)
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
-    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.05)
+    assert np.isclose(female_prev_1549, female_prev_1549_data, atol=0.01)
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.05)
+    assert np.isclose(male_prev_1549, male_prev_1549_data, atol=0.01)

@@ -13,7 +13,8 @@ from scripts.costing.cost_estimation import (
     estimate_input_cost_of_scenarios,
     load_unit_cost_assumptions,
 )
-from tlo.analysis.utils import extract_results, get_scenario_outputs
+from tlo import Date
+from tlo.analysis.utils import compute_summary_statistics, extract_results, get_scenario_outputs
 from tlo.methods.healthsystem import get_item_code_from_item_name
 
 # Define a timestamp for script outputs
@@ -57,12 +58,20 @@ calibration_data = calibration_data.set_index(['calibration_category', 'stat'])
 #-----------------------------
 # Load result files
 resourcefilepath = Path("./resources")
-outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
+outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
 #results_folder = get_scenario_outputs('hss_elements-2024-11-12T172311Z.py', outputfilepath)[0] # November 2024 runs
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', outputfilepath)[0] # January 2025 runs
+results_folder = get_scenario_outputs('full_system_costing-2025-12-15T162956Z.py', outputfilepath)[0] # Dec 2025 runs
 
 # Estimate costs for 2018
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
+
+def scale_consumable_cost(cost_df, item_name, scaling_factor):
+    cost_df.loc[cost_df.cost_subgroup == item_name, 'cost'] = scaling_factor * cost_df.loc[cost_df.cost_subgroup == item_name, 'cost']
+    return cost_df
+
+input_costs = scale_consumable_cost(cost_df = input_costs,
+                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
+                                                         scaling_factor = 102.5/500)
 
 # Manually create a dataframe of model costs and relevant calibration values
 def assign_item_codes_to_consumables(_df):
@@ -144,11 +153,12 @@ condoms = [get_item_code("Condom, male"),
            get_item_code("Female Condom_Each_CMST")]
 # Undernutrition
 undernutrition = [get_item_code('Supplementary spread, sachet 92g/CAR-150'),
-                  get_item_code('Complementary feeding--education only drugs/supplies to service a client'),
+                  get_item_code('F-75 therapeutic milk, 102.5 g'),
                   get_item_code('SAM theraputic foods'),
                   get_item_code('SAM medicines'),
                   get_item_code('Therapeutic spread, sachet 92g/CAR-150'),
-                  get_item_code('F-100 therapeutic diet, sach., 114g/CAR-90')]
+                  get_item_code('F-100 therapeutic diet, sach., 114g/CAR-90'),
+                  get_item_code('Corn Soya Blend (or Supercereal - CSB++)')]
 # Cervical cancer
 cervical_cancer = [get_item_code('Specimen container'),
                    get_item_code('Biopsy needle'),
@@ -263,17 +273,17 @@ list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medi
 list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastructure - Rehabilitation', 'Vehicles - Maintenance','Vehicles - Fuel and Maintenance']
 
 # Create folders to store results
-costing_outputs_folder = Path('./outputs/costing')
+costing_outputs_folder = Path('./outputs/costing_dec25')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
-figurespath = costing_outputs_folder / "figures_post_jan2025fix"
+figurespath = costing_outputs_folder / "figures"
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 calibration_outputs_folder = Path(figurespath / 'calibration')
 if not os.path.exists(calibration_outputs_folder):
     os.makedirs(calibration_outputs_folder)
 
-def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
+def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 11, _label_fontsize = 11):
     # Filter the dataframe
     _df = _df[(_df.model_cost.notna()) & (_df.index.get_level_values(0).isin(_costs_included))]
 
@@ -309,12 +319,12 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
     yerr_lower = (df_mean['model_cost'] - df_lower['model_cost']).clip(lower = 0)
     yerr_upper = (df_upper['model_cost'] - df_mean['model_cost']).clip(lower = 0)
     plt.errorbar(df_mean.index, df_mean['model_cost'],
-                 yerr=[yerr_lower, yerr_upper],
+                 yerr=[yerr_lower, yerr_upper], markersize = 10,
                  fmt='o', label='Model Cost', ecolor='gray', capsize=5, color='saddlebrown')
 
     # Plot annual_expenditure_2019 and max_annual_budget_2020-22 as dots
-    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=8)
-    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=8)
+    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=9, alpha=0.95)
+    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=9, alpha=0.95)
 
     # Draw a blue line between annual_expenditure_2019 and max_annual_budget_2020-22
     plt.vlines(df_mean.index, df_mean['actual_expenditure_2019'], df_mean['max_annual_budget_2020-22'], color='blue',
@@ -322,15 +332,30 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
 
     # Add labels to the model_cost dots (yellow color, slightly shifted right)
     for i, (x, y) in enumerate(zip(df_mean.index, df_mean['model_cost'])):
-        plt.text(i + 0.05, y, f'{y:.2f}', ha='left', va='bottom', fontsize=9,
-                 color='saddlebrown')  # label model_cost values
+        plt.text(
+            i + 0.08,
+            y,
+            f'{y:.2f}',
+            ha='left',
+            va='bottom',
+            fontsize=_label_fontsize,
+            color='white',
+            fontweight='bold',
+            bbox=dict(
+                boxstyle='round,pad=0.25',
+                facecolor='saddlebrown',
+                edgecolor='black',
+                linewidth=0.8,
+                alpha=0.7
+            )
+        )
 
     # Add labels and title
     cost_subcategory = [name for name in globals() if globals()[name] is _costs_included][0]
     cost_subcategory = cost_subcategory.replace('list_of_', '').replace('_for_calibration', '')
-    plt.xlabel('Cost Sub-Category')
-    plt.ylabel('Costs (USD), millions')
-    plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
+    plt.xlabel('Cost Sub-Category', fontsize = 12, fontweight='bold')
+    plt.ylabel('Costs (USD), millions', fontsize = 12, fontweight='bold')
+    #plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
 
     # Set a white background and black border
     plt.grid(False)
@@ -341,12 +366,13 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
         spine.set_linewidth(1.5)  # Adjust the border width if desired
 
     # Customize x-axis labels for readability
-    max_label_length = 15  # Define a maximum label length for wrapping
+    max_label_length = 25  # Define a maximum label length for wrapping
     wrapped_labels = [textwrap.fill(str(label), max_label_length) for label in df_mean.index]
     plt.xticks(ticks=range(len(wrapped_labels)), labels=wrapped_labels, rotation=45, ha='right', fontsize=_xtick_fontsize)
+    plt.yticks(fontsize=_xtick_fontsize)
 
     # Adding a legend
-    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=10)
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
 
     # Tight layout and save the figure
     plt.tight_layout()
@@ -360,7 +386,7 @@ all_calibration_costs = all_consumable_costs + list_of_hr_costs_for_calibration 
 
 do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_without_hiv)
 do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_only_hiv)
-do_cost_calibration_plot(calibration_data,all_consumable_costs)
+do_cost_calibration_plot(calibration_data,all_consumable_costs, _label_fontsize = 10)
 do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_operating_costs_for_calibration)
@@ -508,11 +534,46 @@ calibration_data_extract[cols_to_convert] = (
 total_expenditure = calibration_data_extract[calibration_data_extract['Cost Category'] != 'Not represented in TLO model']['Recorded Expenditure (FY 2018/19)'].sum()
 total_cost_estimate = calibration_data_extract[calibration_data_extract['Cost Category'] != 'Not represented in TLO model']['Estimated cost (TLO Model, 2018)'].sum()
 
+# Get per capita estimates
+TARGET_PERIOD = (Date(2018, 12, 31), Date(2018, 1, 1))  # This is the period that is costed
+def get_total_population_by_year(_df):
+    years_needed = [i.year for i in TARGET_PERIOD ]  # Malaria scale-up period years
+    _df['year'] = pd.to_datetime(_df['date']).dt.year
+
+    # Validate that all necessary years are in the DataFrame
+    if not set(years_needed).issubset(_df['year'].unique()):
+        raise ValueError("Some years are not recorded in the dataset.")
+
+    # Filter for relevant years and return the total population as a Series
+    return \
+        _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+            'total']
+
+
+# Get total population by year
+total_population_2018 = extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='population',
+    custom_generate_series=get_total_population_by_year,
+    do_scaling=True
+)
+
+total_population_2018 = compute_summary_statistics(total_population_2018, central_measure = 'mean')
+total_population_2018 = total_population_2018[( 0, 'central')]
+per_capita_model_cost = (total_cost_estimate/total_population_2018).iloc[0]
+per_capita_expenditure = 20.88
+
 # Extract
 print(f"Based on the TLO model, we estimate the total healthcare cost to be "
       f"\${total_cost_estimate/1e6:,.2f} million "
       f"({(1 - total_cost_estimate/total_expenditure)*100:,.2f}\% "
       f"lower than the RM expenditure estimate).")
+print(f"This translates to a per capita cost of  "
+      f"\${per_capita_model_cost:,.2f}"
+      f"({(1 - per_capita_model_cost/per_capita_expenditure)*100:,.2f}\% "
+      f"lower than the adjusted RM per capita expenditure estimate).") # Not added to the manuscript because it doesn't add
+# new information
 
 # Extracts on consumable calibration for Appendix C
 # first obtain consumables dispensed estimate
@@ -647,3 +708,16 @@ print(f"\item `Jadelle (implant), box of 2\_CMST' -  53,585 units dispensed as p
       f"\item `IUD, Copper T-380A' -  4,079 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(iud)]:,.0f} units dispensed as per modelled estimates"
       f"\item `Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly' -   2,807,681 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(depot)]:,.0f} dispensed as per modelled estimates"
       f"\item `Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle' -  1,795,325 units (37,701,825 tablets) dispensed as per OpenLMIS, {consumables_dispensed_dict[str(levonorgestrel)]:,.0f} tablets dispensed as per modelled estimates")
+
+# Undernutrition commodities
+rutf = get_item_code('Therapeutic spread, sachet 92g/CAR-150')
+f75 = get_item_code('F-75 therapeutic milk, 102.5 g')
+sam_meds = get_item_code('SAM medicines')
+csb = get_item_code('Corn Soya Blend (or Supercereal - CSB++)')
+
+print(f"Since nutrition commodities are sourced externally, data on actual units dispensed was not available in OpenLMIS. "
+      f"As per the model, the following quantities were dispensed of the major nutritional commodities - "
+      f"{consumables_dispensed_dict[str(rutf)]:,.0f} sachets of Ready-To-Use Therapeutic Food (RUTF), "
+      f"{consumables_dispensed_dict[str(f75)]/1000:,.0f} kilograms of powder to prepare F-75 therapeutic milk, "
+      f"{consumables_dispensed_dict[str(sam_meds)]:,.0f} courses of standard treatment therapy for Severe Acute Malnutrition (SAM), and "
+      f"{consumables_dispensed_dict[str(csb)]/1000:,.0f} kilograms of Corn Soya Blend (or Supercereal)")

@@ -1,3 +1,36 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:8ca6e943b68e4c5a863c5fa5d0499466c2b3f8885e37d2b1502f6c16cdffdfdb
-size 3651
+﻿parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+init_prop_breast_cancer_stage,"[0.00005,0.00005,0.00005,0.000015]",local,"[0,0,0,0]","[1,1,1,1]",vague prior,Missing
+init_prop_breast_lump_discernible_breast_cancer_by_stage,"[0.5,0.8,0.9,0.98]",local,"[0,0,0,0]","[1,1,1,1]",vague prior,Missing
+init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage,"[0.9,0.9,0.9,0.9]",local,"[0,0,0,0]","[1,1,1,1]",vague prior,Missing
+init_prop_treatment_status_breast_cancer,"[0.1,0.1,0.1,0.1]",local,"[0,0,0,0]","[1,1,1,1]",vague prior,Missing
+init_prob_palliative_care,0.8,local,0,1,vague prior,Missing
+r_stage1_none,2.00E-06,universal,1.00E-10,1.00E-01,vague prior,Missing
+rr_stage1_none_age3049,20,universal,0.01,100,vague prior,Chasimpha et al 2017
+rr_stage1_none_agege50,20,universal,0,100,vague prior,Chasimpha et al 2017
+r_stage2_stage1,0.15,universal,0,1,vague prior,Riffenburgh et al. Survival Patterns of Cancer Patients.   Cancer 2001; 91:2469–75.
+rr_stage2_undergone_curative_treatment,0.05,universal,0.01,100,vague prior,https://www.cancerresearchuk.org/health-professional/cancer-statistics/statistics-by-cancer-type/breast-cancer/survival#heading-Three
+r_stage3_stage2,0.15,universal,0.1,0.3,vague prior,Riffenburgh et al. Survival Patterns of Cancer Patients.   Cancer 2001; 91:2469–75.
+rr_stage3_undergone_curative_treatment,0.05,universal,0.01,100,vague prior,https://www.cancerresearchuk.org/health-professional/cancer-statistics/statistics-by-cancer-type/breast-cancer/survival#heading-Three
+r_stage4_stage3,0.15,universal,0.1,0.3,vague prior,Riffenburgh et al. Survival Patterns of Cancer Patients.   Cancer 2001; 91:2469–75.
+rr_stage4_undergone_curative_treatment,0.5,universal,0.01,100,vague prior,https://www.cancerresearchuk.org/health-professional/cancer-statistics/statistics-by-cancer-type/breast-cancer/survival#heading-Three
+r_death_breast_cancer,0.1,universal,0,1,vague prior,https://www.cancerresearchuk.org/health-professional/cancer-statistics/statistics-by-cancer-type/breast-cancer/survival#heading-Three
+r_breast_lump_discernible_stage1,0.05,universal,0,1,vague prior,Missing
+rr_breast_lump_discernible_stage2,2,universal,0.01,100,vague prior,Missing
+rr_breast_lump_discernible_stage3,4,universal,0.01,100,vague prior,Missing
+rr_breast_lump_discernible_stage4,10,universal,0.01,100,vague prior,Missing
+rp_breast_cancer_age0014,0,local,0,100,vague prior,Chasimpha et al. 2017
+rp_breast_cancer_age3049,20,local,0.01,100,vague prior,Chasimpha et al. 2017
+rp_breast_cancer_agege50,20,local,0.01,100,vague prior,Chasimpha et al. 2017
+sensitivity_of_biopsy_for_stage1_breast_cancer,0.8,universal,0,1,vague prior,Missing
+sensitivity_of_biopsy_for_stage2_breast_cancer,0.95,universal,0,1,vague prior,Missing
+sensitivity_of_biopsy_for_stage3_breast_cancer,0.95,universal,0,1,vague prior,Missing
+sensitivity_of_biopsy_for_stage4_breast_cancer,0.95,universal,0,1,vague prior,Missing
+health_seeking_odds_ratio_adults,4,local,0.01,100,vague prior,Missing
+age_threshold_symptom_investigation,5,local,0,20,vague prior,Missing
+post_intial_treatment_followup_months,12,local,1,24,vague prior,Missing
+post_treatment_check_interval_months,3,local,1,24,vague prior,Missing
+palliative_treatment_interval_months,3,local,1,24,vague prior,Missing
+initial_polling_start_months,1,undetermined,1,12,design decision,N/A
+main_polling_event_frequency_months,1,undetermined,1,12,design decision,N/A
+initial_polling_start_months_palliative_care,1,undetermined,1,12,design decision,N/A
+initial_polling_start_delay_weeks_palliative_care,1,undetermined,1,52,design decision,N/A

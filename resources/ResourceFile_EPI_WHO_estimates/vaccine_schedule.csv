@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:27341d0df15927ea78658668fd24de74d391244213e8875f53fbd07d02ebe7c8
-size 307
+vaccine,date_administration_days
+bcg,1.0
+opv1,1.0
+opv2,42.0
+opv3,70.0
+opvIpv4,98.0
+dtpHibHep1,42.0
+dtpHibHep2,70.0
+dtpHibHep3,98.0
+pneumo1,42.0
+pneumo2,70.0
+pneumo3,98.0
+rota1,42.0
+rota2,70.0
+vitA1,183.0
+vitA2,365.0
+vitA3,549.0
+vitA4,732.0
+vitA5,915.0
+vitA6,1098.0
+MR1,274.5
+MR2,457.5

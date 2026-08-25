@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -35,7 +36,8 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -290,6 +292,12 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
     def report_daly_values(self):
         df = self.sim.population.props  # shortcut to population properties dataframe
         return df.loc[df.is_alive, 'ep_disability']
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of epilepsy for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ep_seiz_stat', (2, 3))
+        return {'number_with_current_seizures': number_by_age_group_sex}
 
     def transition_seizure_stat(self):
         """

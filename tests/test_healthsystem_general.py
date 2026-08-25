@@ -1,0 +1,1531 @@
+import heapq as hp
+import os
+from pathlib import Path
+from typing import Dict, Set, Tuple
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from tlo import Date, Module, Simulation, logging
+from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
+from tlo.analysis.utils import get_filtered_treatment_ids, parse_log_file
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import (
+    Metadata,
+    chronicsyndrome,
+    demography,
+    enhanced_lifestyle,
+    healthseekingbehaviour,
+    healthsystem,
+    mockitis,
+    simplified_births,
+    symptommanager,
+)
+from tlo.methods.fullmodel import fullmodel
+from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters
+from tlo.methods.hsi_event import HSI_Event
+from tlo.util import BitsetDType
+
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
+
+start_date = Date(2010, 1, 1)
+end_date = Date(2012, 1, 1)
+popsize = 200
+
+"""
+Test whether the system runs under multiple configurations of the healthsystem.
+
+This test file is focussed on the overall function of the module and its behaviour in Mode 1.
+"""
+
+
+def check_dtypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+
+def test_using_parameter_or_argument_to_set_service_availability(seed):
+    """
+    Check that can set service_availability through argument or through parameter.
+    Should be equal to what is specified by the parameter, but overwrite with what was provided in argument if an
+    argument was specified -- provided for backward compatibility.)
+    """
+
+    # No specification with argument --> everything is available
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(), healthsystem.HealthSystem())
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert sim.modules["HealthSystem"].service_availability == ["*"]
+
+    # Editing parameters --> that is reflected in what is used
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    service_availability_params = ["HSI_that_begin_with_A*", "HSI_that_begin_with_B*"]
+    sim.register(demography.Demography(), healthsystem.HealthSystem())
+    sim.modules["HealthSystem"].parameters["Service_Availability"] = service_availability_params
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert sim.modules["HealthSystem"].service_availability == service_availability_params
+
+    # Editing parameters, but with an argument provided to module --> argument over-writes parameter edits
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    service_availability_arg = ["HSI_that_begin_with_C*"]
+    service_availability_params = ["HSI_that_begin_with_A*", "HSI_that_begin_with_B*"]
+    sim.register(demography.Demography(), healthsystem.HealthSystem(service_availability=service_availability_arg))
+    sim.modules["HealthSystem"].parameters["Service_Availability"] = service_availability_params
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert sim.modules["HealthSystem"].service_availability == service_availability_arg
+
+
+@pytest.mark.slow
+def test_run_with_healthsystem_no_disease_modules_defined(seed):
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+
+    # Register the core modules
+    sim.register(
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(service_availability=["*"], capabilities_coefficient=1.0, mode_appt_constraints=2),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        simplified_births.SimplifiedBirths(),
+    )
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
+
+
+def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
+    """Check that all treatment_IDs included in the fullmodel have been assigned a priority
+    in each of the priority policies that could be considered."""
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+    }
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
+    sim.make_initial_population(n=100)
+
+    clean_set_of_filtered_treatment_ids = set([i.replace("_*", "") for i in get_filtered_treatment_ids()])
+    # Manually add treatment_IDs which are not found by get_filtered_treatment_ids
+    clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient")
+    clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient_Followup")
+    clean_set_of_filtered_treatment_ids.add("DeliveryCare_Comprehensive")
+
+    for policy_name in sim.modules["HealthSystem"].parameters["priority_rank"].keys():
+        sim.modules["HealthSystem"].load_priority_policy(policy_name)
+        policy = list(sim.modules["HealthSystem"].priority_rank_dict.keys())
+        assert not pd.Series(policy).duplicated().any()  # Check that no duplicates are included in priority input file
+        assert set(policy) == clean_set_of_filtered_treatment_ids  # Check that all treatment_ids defined are allowed
+        #                                                            for in policy
+
+
+@pytest.mark.slow
+def test_run_no_interventions_allowed(tmpdir, seed):
+    # There should be no events run or scheduled
+
+    # Establish the simulation object
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {
+            "*": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
+        },
+    }
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+
+    # Get ready for temporary log-file
+    # Define the service availability as null
+    service_availability = []
+
+    # Register the core modules
+    sim.register(
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(
+            service_availability=service_availability, capabilities_coefficient=1.0, mode_appt_constraints=2
+        ),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+        simplified_births.SimplifiedBirths(),
+    )
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath)
+
+    # Do the checks for the healthsystem
+    assert (output["tlo.methods.healthsystem"]["Capacity"]["Frac_Time_Used_Overall"] == 0.0).all()
+    assert len(sim.modules["HealthSystem"].HSI_EVENT_QUEUE) == 0
+
+    # Do the checks for the symptom manager: some symptoms should be registered
+    assert (
+        sim.population.props.loc[:, sim.population.props.columns.str.startswith("sy_")]
+        .apply(lambda x: x != set())
+        .any()
+        .any()
+    )
+    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith("sy_")].dtypes == BitsetDType).all()
+    assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith("sy_")]).any().any()
+
+    # Check that no one was cured of mockitis:
+    assert not any(sim.population.props["mi_status"] == "P")  # No cures
+
+
+@pytest.mark.slow
+def test_run_in_with_hs_disabled(tmpdir, seed):
+    # All events should run but no logging from healthsystem
+
+    # Establish the simulation object
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            },
+        },
+        resourcefilepath=resourcefilepath,
+    )
+
+    # Define the service availability
+    service_availability = ["*"]
+
+    # Register the core modules
+    sim.register(
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(
+            service_availability=service_availability,
+            capabilities_coefficient=1.0,
+            mode_appt_constraints=2,
+            disable=True,
+        ),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+    )
+
+    # Run the simulation
+    sim.make_initial_population(n=2000)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Do the checks
+    assert "HSI_Event" not in output["tlo.methods.healthsystem"]  # HealthSystem no logging
+    assert "Consumables" not in output["tlo.methods.healthsystem"]  # HealthSystem no logging
+    assert "Capacity" not in output["tlo.methods.healthsystem"]  # HealthSystem no logging
+    assert not pd.isnull(sim.population.props["mi_date_cure"]).all()  # At least some cures occurred (through HS)
+    assert any(sim.population.props["mi_status"] == "P")  # At least some mockitis cure have occurred (though HS)
+
+    # Check for hsi_wrappers in the main event queue
+    list_of_ev_name = [ev[3] for ev in sim.event_queue.queue]
+    assert any(["HSIEventWrapper" in str(ev_name) for ev_name in list_of_ev_name])
+
+
+@pytest.mark.slow
+def test_all_appt_types_can_run(seed):
+    """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
+    run at the level for persons in any district."""
+
+    # Create Dummy Module to host the HSI
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = "DummyHSIEvent"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+            self.this_hsi_event_ran = False
+
+        def apply(self, person_id, squeeze_factor):
+            if squeeze_factor != np.inf:
+                # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
+                # is not at all available.
+                self.this_hsi_event_ran = True
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+
+    # Register the core modules and simulate for 0 days
+    sim.register(
+        demography.Demography(),
+        healthsystem.HealthSystem(
+            capabilities_coefficient=1.0, mode_appt_constraints=1, use_funded_or_actual_staffing="funded_plus"
+        ),
+        # <-- hard constraint (only HSI events with no squeeze factor can run)
+        # <-- using the 'funded_plus' number/distribution of officers
+        DummyModule(),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    # Get pointer to the HealthSystemScheduler event
+    healthsystemscheduler = sim.modules["HealthSystem"].healthsystemscheduler
+
+    # Get the table showing which types of appointment can occur at which level
+    appt_types_offered = (
+        sim.modules["HealthSystem"].parameters["Appt_Offered_By_Facility_Level"].set_index("Appt_Type_Code")
+    )
+
+    # Get the all the districts in which a person could be resident, and allocate one person to each district
+    person_for_district = {d: i for i, d in enumerate(sim.population.props["district_of_residence"].cat.categories)}
+    sim.population.props.loc[person_for_district.values(), "is_alive"] = True
+    sim.population.props.loc[person_for_district.values(), "district_of_residence"] = list(person_for_district.keys())
+
+    # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and check it runs
+    error_msg = list()
+
+    def check_appt_works(district, level, appt_type):
+        sim.modules["HealthSystem"].reset_queue()
+
+        hsi = DummyHSIEvent(
+            module=sim.modules["DummyModule"], person_id=person_for_district[district], appt_type=appt_type, level=level
+        )
+
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+        )
+
+        healthsystemscheduler.apply(sim.population)
+
+        if not hsi.this_hsi_event_ran:
+            return False
+        else:
+            return True
+
+    for _district in person_for_district:
+        for _facility_level_col_name in appt_types_offered.columns:
+            for _appt_type in (
+                appt_types_offered[_facility_level_col_name].loc[appt_types_offered[_facility_level_col_name]].index
+            ):
+                _level = _facility_level_col_name.split("_")[-1]
+                if not check_appt_works(district=_district, level=_level, appt_type=_appt_type):
+                    error_msg.append(
+                        f"The HSI did not run: level={_level}, appt_type={_appt_type}, district={_district}"
+                    )
+
+    if len(error_msg):
+        for _line in error_msg:
+            print(_line)
+
+    assert 0 == len(error_msg)
+
+
+def test_HealthSystemChangeParameters(seed, tmpdir):
+    """Check that the event `HealthSystemChangeParameters` can change the internal parameters of the HealthSystem. And
+    check that this is effectual in the case of consumables."""
+
+    test_parameters = {
+        "cons_availability": "all",
+        "cons_availability_postSwitch": "none",
+        "equip_availability": "all",
+        "equip_availability_postSwitch": "default",
+        "use_funded_or_actual_staffing": "funded_plus",
+        "use_funded_or_actual_staffing_postSwitch": "actual",
+    }
+    parameters_to_change = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
+
+    initial_parameters = {
+        "cons_availability": test_parameters["cons_availability"],
+        "equip_availability": test_parameters["equip_availability"],
+        "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing"],
+    }
+
+    new_parameters = {
+        "cons_availability": test_parameters["cons_availability_postSwitch"],
+        "equip_availability": test_parameters["equip_availability_postSwitch"],
+        "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing_postSwitch"],
+    }
+
+    class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
+        def __init__(self, module):
+            super().__init__(module, frequency=pd.DateOffset(days=1))
+
+        def apply(self, population):
+            hs = self.sim.modules["HealthSystem"]
+            _params = dict()
+            _params["cons_availability"] = hs.consumables.availability
+            _params["equip_availability"] = hs.equipment.availability
+            _params["use_funded_or_actual_staffing"] = hs.use_funded_or_actual_staffing
+
+            logger = logging.getLogger("tlo.methods.healthsystem")
+            logger.info(key="CheckHealthSystemParameters", data=_params)
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = "Dummy"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Under5OPD": 1})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 2})
+            self.ACCEPTED_FACILITY_LEVEL = "1a"
+
+        def apply(self, person_id, squeeze_factor):
+            logger = logging.getLogger("tlo.methods.healthsystem")
+            logger.info(
+                key="HSI_Dummy_get_consumables",
+                data=self.get_consumables(item_codes=list(range(100)), return_individual_results=True),
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                self, topen=self.sim.date + pd.DateOffset(days=1), tclose=None, priority=0
+            )
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            hs = sim.modules["HealthSystem"]
+            sim.schedule_event(CheckHealthSystemParameters(self), sim.date)
+            sim.schedule_event(
+                HealthSystemChangeParameters(hs, parameters_to_change=parameters_to_change),
+                sim.date + pd.DateOffset(days=2),
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(HSI_Dummy(self, 0), topen=sim.date, tclose=None, priority=0)
+
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "tmpfile",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            },
+        },
+        resourcefilepath=resourcefilepath,
+    )
+
+    sim.register(
+        demography.Demography(),
+        healthsystem.HealthSystem(**initial_parameters),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False,
+    )
+    sim.make_initial_population(n=100)
+    # In order to ensure that parameter switch relies on values stored in module parameters,
+    # rathen than instance variables, overwrite 'postSwitch' parameters here
+    for k, v in test_parameters.items():
+        if k not in initial_parameters:
+            sim.modules["HealthSystem"].parameters[k] = test_parameters[k]
+
+    sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+    # Check parameters are changed as expected:
+    logged_params = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem"][
+        "CheckHealthSystemParameters"
+    ].set_index("date")
+    assert logged_params.loc[start_date].to_dict() == initial_parameters
+    assert logged_params.loc[start_date + pd.DateOffset(days=4)].to_dict() == new_parameters
+
+    logged_access_consumables = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem"][
+        "HSI_Dummy_get_consumables"
+    ].set_index("date")
+    assert logged_access_consumables.loc[start_date].all()  # All consumables available at start
+    assert not logged_access_consumables.loc[start_date + pd.DateOffset(days=4)].any()  # No consumables available after
+    #                                                                                 parameter change
+
+
+def test_is_treatment_id_allowed():
+    """Check the pattern matching in `is_treatment_id_allowed` works as expected."""
+    hs = HealthSystem()
+
+    # An empty list means nothing is allowed
+    assert not hs.is_treatment_id_allowed("Hiv", [])
+
+    # A list that contains only an asteriks ['*'] means run anything
+    assert hs.is_treatment_id_allowed("Hiv", ["*"])
+
+    # If the list is not empty, then a treatment_id with a first part "FirstAttendance_" is also allowed
+    assert hs.is_treatment_id_allowed("FirstAttendance_Em", ["A_B_C_D_E"])
+    assert not hs.is_treatment_id_allowed("FirstAttendance_Em", [])
+
+    # An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
+    assert hs.is_treatment_id_allowed("A", ["A", "B_C_D", "E_F_G_H"])
+    assert hs.is_treatment_id_allowed("B_C_D", ["A", "B_C_D", "E_F_G_H"])
+
+    assert not hs.is_treatment_id_allowed("A_", ["A", "B_C_D", "E_F_G_H"])
+    assert not hs.is_treatment_id_allowed("E_F_G", ["E", "E_F", "E_F_G_H"])
+
+    # An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
+    assert hs.is_treatment_id_allowed("Hiv_X", ["Hiv_*"])
+    assert hs.is_treatment_id_allowed("Hiv_Y", ["Hiv_*"])
+    assert hs.is_treatment_id_allowed("Hiv_A_B_C", ["Hiv_A_B_*"])
+    assert hs.is_treatment_id_allowed("Hiv_A_B", ["Hiv_A_B_*"])
+    assert hs.is_treatment_id_allowed("Hiv_A_B_C_D", ["Hiv_A_B_C_*"])
+    assert hs.is_treatment_id_allowed("Hiv_A_B_C", ["Hiv_A_B_C_*"])
+    assert hs.is_treatment_id_allowed("Hiv_X_1_2_3_4", ["Hiv_X_*"])
+    assert hs.is_treatment_id_allowed("Hiv_X_1_2_3_4", ["Hiv_*"])
+
+    assert not hs.is_treatment_id_allowed("Hiv_X", ["Hiv_A_*"])
+    assert not hs.is_treatment_id_allowed("Hiv_Y", ["Y_*"])
+    assert not hs.is_treatment_id_allowed("Hiv_A_B_C", ["Hiv_X_B_C_*"])
+    assert not hs.is_treatment_id_allowed("Hiv_A_B_C", ["Hiv1_A_B_C_*"])
+    assert not hs.is_treatment_id_allowed("Hiv_X_1_2_3_4", ["Hiv_Y_*"])
+    assert not hs.is_treatment_id_allowed("A", ["A_B_C_*"])
+
+    # (An asteriks that is not preceded by an "_" has no effect is allowing treatment_ids).
+    assert not hs.is_treatment_id_allowed("Hiv_A_B", ["Hiv*"])
+    assert not hs.is_treatment_id_allowed("Hiv", ["Hiv*"])
+
+    # (And no confusion about stubs that are similar...)
+    assert hs.is_treatment_id_allowed("Epi", ["Epi_*"])
+    assert not hs.is_treatment_id_allowed("Epilepsy", ["Epi_*"])
+    assert not hs.is_treatment_id_allowed("Epi", ["Epilepsy_*"])
+    assert hs.is_treatment_id_allowed("Epilepsy", ["Epilepsy_*"])
+    assert hs.is_treatment_id_allowed("Epi", ["Epi", "Epilepsy_*"])
+    assert hs.is_treatment_id_allowed("Epilepsy", ["Epi", "Epilepsy_*"])
+
+
+def test_manipulation_of_service_availability(seed, tmpdir):
+    """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
+    N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
+
+    generic_first_appts = {
+        "FirstAttendance_NonEmergency",
+        "FirstAttendance_Emergency",
+        "FirstAttendance_SpuriousEmergencyCare",
+    }
+
+    def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
+        """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
+        sim = Simulation(
+            start_date=start_date,
+            seed=seed,
+            log_config={
+                "filename": "tmpfile",
+                "directory": tmpdir,
+                "custom_levels": {
+                    "tlo.methods.healthsystem": logging.DEBUG,
+                },
+            },
+            resourcefilepath=resourcefilepath,
+        )
+
+        sim.register(*fullmodel())
+        sim.modules["HealthSystem"].parameters["Service_Availability"] = service_availability  # Change parameter
+        sim.modules["HealthSystem"].parameters["cons_availability"] = "default"
+        sim.make_initial_population(n=500)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        log = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]
+        if "HSI_Event" in log:
+            return set(log["HSI_Event"]["TREATMENT_ID"].value_counts().to_dict().keys())
+        else:
+            return set()
+
+    # Run model with everything available by default using "*"
+    everything = get_set_of_treatment_ids_that_run(service_availability=["*"])
+
+    # Run model with everything specified individually
+    all_treatment_ids = sorted(set([i.treatment_id for i in get_details_of_defined_hsi_events()]))
+    assert everything == get_set_of_treatment_ids_that_run(service_availability=all_treatment_ids)
+
+    # Run model with nothing available
+    assert set() == get_set_of_treatment_ids_that_run(service_availability=[])
+
+    # Only allow 'Hiv_Test' (Not `Hiv_Treatment`)
+    assert (
+        set({"Hiv_Test"})
+        == get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
+    )
+
+    # Allow all `Hiv` things (but nothing else)
+    hiv_hsi_events = {
+        "Hiv_Test",
+        "Hiv_Treatment",
+        "Hiv_Prevention_Circumcision",
+        "Hiv_Prevention_Infant",
+        "Hiv_Prevention_Prep",
+        "Hiv_PalliativeCare",
+    }
+    returned_treatment_ids = get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"])
+
+    assert returned_treatment_ids.intersection(hiv_hsi_events), (
+        "None of the expected treatment IDs are found in the returned set"
+    )
+
+    # Allow all except `Hiv_Test`
+    everything_except_hiv_test = everything - set({"Hiv_Test"})
+    run_everything_except_hiv_test = get_set_of_treatment_ids_that_run(
+        service_availability=list(everything_except_hiv_test)
+    )
+    assert "Hiv_Test" not in run_everything_except_hiv_test
+    assert len(run_everything_except_hiv_test.union(everything))
+
+    # Allow all except `Hiv_Treatment`
+    everything_except_hiv_treatment = everything - set({"Hiv_Treatment"})
+    run_everything_except_hiv_treatment = get_set_of_treatment_ids_that_run(
+        service_availability=list(everything_except_hiv_treatment)
+    )
+    assert "Hiv_Treatment" not in run_everything_except_hiv_treatment
+    assert len(run_everything_except_hiv_treatment.union(everything))
+
+    # Allow all except `HIV*`
+    everything_except_hiv_anything = {x for x in everything if not x.startswith("Hiv")}
+    run_everything_except_hiv_anything = get_set_of_treatment_ids_that_run(
+        service_availability=list(everything_except_hiv_anything)
+    )
+    assert "Hiv_Treatment" not in run_everything_except_hiv_anything
+    assert "Hiv_Test" not in run_everything_except_hiv_anything
+    assert len(run_everything_except_hiv_anything.union(everything))
+
+
+def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
+    """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
+    whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event. Test this in
+    mode 1 and 2."""
+
+    class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that will demonstrate it has been run."""
+
+        def __init__(self, module, person_id, source):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = f"{self.__class__.__name__}_{source}"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = "1a"
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class DummyHSI_To_Run_On_First_Day_Of_Simulation(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = self.__class__.__name__
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = "1a"
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source="HSI"),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+    class Event_To_Run_On_First_Day_Of_Simulation(Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+        def apply(self, person_id):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source="Event"),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+    class DummyModule(Module):
+        """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
+        will schedule the event for the same day."""
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule the HSI to run on the same day
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(self, person_id=0, source="initialise_simulation"),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+            # Schedule an HSI that will schedule a further HSI to run on the same day
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                DummyHSI_To_Run_On_First_Day_Of_Simulation(module=self, person_id=0),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+            # Schedule an event that will schedule an HSI to run on the same day
+            sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
+
+    for mode in (1, 2):
+        log_config = {
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+        }
+        sim = Simulation(
+            start_date=Date(2010, 1, 1), seed=seed, log_config=log_config, resourcefilepath=resourcefilepath
+        )
+
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(
+                mode_appt_constraints=mode,
+                capabilities_coefficient=10000.0,
+                disable=False,
+                cons_availability="all",
+            ),
+            DummyModule(),
+            check_all_dependencies=False,
+        )
+
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+
+        # Check that all events ran on the same day, the first day of the simulation.
+        log = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
+        assert 4 == len(log)  # 3 HSI events should have occurred
+        assert (log["date"] == sim.start_date).all()
+
+
+def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
+    """The correct number of events scheduled for today should be returned when querying the HSI_EVENT_QUEUE,
+    and the ordering in the queue should follow the correct logic."""
+
+    class DummyHSI(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = self.__class__.__name__
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = "1a"
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                DummyHSI(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+    class DummyModule(Module):
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim.register(
+        demography.Demography(),
+        healthsystem.HealthSystem(randomise_queue=True, disable=False, cons_availability="all"),
+        DummyModule(),
+        check_all_dependencies=False,
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+    sim.event_queue.queue = []  # clear the queue
+
+    Ntoday = 10
+    Nlater = 90
+
+    for i in range(Nlater):
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            DummyHSI(module=sim.modules["DummyModule"], person_id=0),
+            topen=sim.date + pd.DateOffset(days=sim.modules["DummyModule"].rng.randint(1, 30)),
+            tclose=None,
+            priority=sim.modules["DummyModule"].rng.randint(0, 3),
+        )
+
+    for i in range(Ntoday):
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            DummyHSI(module=sim.modules["DummyModule"], person_id=0),
+            topen=sim.date,
+            tclose=None,
+            priority=sim.modules["DummyModule"].rng.randint(0, 3),
+        )
+
+    list_of_individual_hsi_event_tuples_due_today = sim.modules[
+        "HealthSystem"
+    ].healthsystemscheduler._get_events_due_today()
+
+    # Check that HealthSystemScheduler is recovering the correct number of events for today
+    assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday
+
+    # Check that the remaining events obey ordering rules
+    event_prev = hp.heappop(sim.modules["HealthSystem"].HSI_EVENT_QUEUE)
+
+    while len(sim.modules["HealthSystem"].HSI_EVENT_QUEUE) > 0:
+        next_event_tuple = hp.heappop(sim.modules["HealthSystem"].HSI_EVENT_QUEUE)
+        assert event_prev.priority <= next_event_tuple.priority, "Not respecting priority"
+        if event_prev.priority == next_event_tuple.priority:
+            assert event_prev.topen <= next_event_tuple.topen, "Not respecting topen"
+            if event_prev.topen == next_event_tuple.topen:
+                assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, "Not respecting rand"
+        event_prev = next_event_tuple
+
+
+@pytest.mark.slow
+def test_which_hsi_can_run(seed):
+    """This test confirms whether, and how, HSI with each Appointment Type can run at each facility, under the
+    different modes of the HealthSystem and the different assumptions for the HR resources."""
+
+    class DummyModule(Module):
+        """Dummy Module to host the HSI"""
+
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = "DummyHSIEvent"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+            self.this_hsi_event_ran = False
+            self.squeeze_factor_of_this_hsi = None
+
+        def apply(self, person_id, squeeze_factor):
+            self.squeeze_factor_of_this_hsi = squeeze_factor
+            self.this_hsi_event_ran = True
+
+    def collapse_into_set_of_strings(df: pd.DataFrame) -> Set:
+        """Returns a set of strings wherein the column value are seperated by |"""
+        lst = list()
+        for _, row in df.iterrows():
+            lst.append("|".join([_c for _c in row]))
+        return set(lst)
+
+    # For each Mode and assumption on HR resources, test whether each type of appointment can run in each district
+    # at each level for which it is defined.
+    results = list()
+    for mode_appt_constraints in (1, 2):
+        for use_funded_or_actual_staffing in ("actual", "funded", "funded_plus"):
+            sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
+
+            # Register the core modules and simulate for 0 days
+            sim.register(
+                demography.Demography(),
+                healthsystem.HealthSystem(
+                    capabilities_coefficient=1.0,
+                    mode_appt_constraints=mode_appt_constraints,
+                    use_funded_or_actual_staffing=use_funded_or_actual_staffing,
+                ),
+                DummyModule(),
+            )
+            sim.make_initial_population(n=40)
+            sim.simulate(end_date=sim.start_date)
+
+            # Get pointer to the HealthSystemScheduler event
+            healthsystemscheduler = sim.modules["HealthSystem"].healthsystemscheduler
+
+            # Get the table showing which types of appointment can occur at which level
+            appt_types_offered = (
+                sim.modules["HealthSystem"].parameters["Appt_Offered_By_Facility_Level"].set_index("Appt_Type_Code")
+            )
+
+            # Get the all the districts in which a person could be resident, and allocate one person to each district
+            person_for_district = {
+                d: i for i, d in enumerate(sim.population.props["district_of_residence"].cat.categories)
+            }
+            sim.population.props.loc[person_for_district.values(), "is_alive"] = True
+            sim.population.props.loc[person_for_district.values(), "district_of_residence"] = list(
+                person_for_district.keys()
+            )
+
+            def check_appt_works(district, level, appt_type) -> Tuple:
+                sim.modules["HealthSystem"].reset_queue()
+
+                hsi = DummyHSIEvent(
+                    module=sim.modules["DummyModule"],
+                    person_id=person_for_district[district],
+                    appt_type=appt_type,
+                    level=level,
+                )
+
+                sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+                )
+
+                healthsystemscheduler.run()
+
+                return hsi.this_hsi_event_ran, hsi.squeeze_factor_of_this_hsi
+
+            for _district in person_for_district:
+                for _facility_level_col_name in appt_types_offered.columns:
+                    for _appt_type in (
+                        appt_types_offered[_facility_level_col_name]
+                        .loc[appt_types_offered[_facility_level_col_name]]
+                        .index
+                    ):
+                        _level = _facility_level_col_name.split("_")[-1]
+                        hsi_did_run, sqz = check_appt_works(district=_district, level=_level, appt_type=_appt_type)
+
+                        results.append(
+                            dict(
+                                mode_appt_constraints=mode_appt_constraints,
+                                use_funded_or_actual_staffing=use_funded_or_actual_staffing,
+                                level=_level,
+                                appt_type=_appt_type,
+                                district=_district,
+                                hsi_did_run=hsi_did_run,
+                                sqz=sqz,
+                            )
+                        )
+
+    # Check that all hsi events that ran had reasonable (float) squeeze
+    for r in results:
+        if r["hsi_did_run"]:
+            assert isinstance(r["sqz"], float)
+            assert r["sqz"] != float("nan")
+
+    results = pd.DataFrame(results)
+
+    # check under each mode (1, 2) and each HR scenario (actual, funded, funded_plus), the hsi runs as we expect.
+    # note that in both actual and funded scenarios, there are some required (by appt time) HCW cadres not there, i.e.,
+    # those cadres with 0-minute capability.
+
+    # mode 1 - actual, funded, funded_plus -> every hsi that does run, has sqz in [0.0, Inf)
+    res = results.loc[(results["mode_appt_constraints"] == 1) & (results["hsi_did_run"])]
+    assert res["sqz"].between(0.0, float("inf"), "left").all()
+
+    # mode 1 - funded_plus -> every hsi runs
+    assert results.loc[
+        (results["mode_appt_constraints"] == 1) & (results["use_funded_or_actual_staffing"] == "funded_plus"),
+        "hsi_did_run",
+    ].all()
+
+    # mode 1 - actual, funded -> some don't run (the ones we expect, i.e., where the HCW is not there)
+    # simple checks that some hsi did not run
+    assert not results.loc[
+        (results["mode_appt_constraints"] == 1) & (results["use_funded_or_actual_staffing"] == "actual"), "hsi_did_run"
+    ].all(), "Mode 1: Some HSI under actual hr scenario did not run"
+    assert not results.loc[
+        (results["mode_appt_constraints"] == 1) & (results["use_funded_or_actual_staffing"] == "funded"), "hsi_did_run"
+    ].all(), "Mode 1: Some HSI under funded hr scenario did not run"
+    # now refer to the detailed appts/hsi that don't run as the required HCW is not there and do a detailed check
+    # read necessary files
+    mfl = pd.read_csv(resourcefilepath / "healthsystem/organisation/ResourceFile_Master_Facilities_List.csv")
+    appts_not_run = pd.read_csv(
+        resourcefilepath
+        / "healthsystem/human_resources/definitions/ResourceFile_Appts_That_Require_HCW_Who_Are_Not_Present.csv"
+    )  # this file includes both actual and funded scenarios
+    # reformat to map with results file for convenience
+    appts_not_run = (
+        appts_not_run.drop(columns="Officer_Category")
+        .drop_duplicates()
+        .rename(
+            columns={
+                "HR_Scenario": "use_funded_or_actual_staffing",
+                "Facility_Level": "level",
+                "Appt_Type_Code": "appt_type",
+                "Fail_District_Or_CenHos": "district",
+            }
+        )
+    )  # drop_duplicates is due to possible rows with same column info except Officer_Category
+    appts_not_run = appts_not_run[["use_funded_or_actual_staffing", "level", "appt_type", "district"]]  # re-order cols
+
+    # With the merging of levels '1b' and '2' (and labelling them '2'), the only entries in this list of HSI that are
+    # expected not to be able to run at levels '1b' and '2', are those that cannot happen at EITHER level '1b' OR '2'.
+    # (If they can happen at either, then this test will make it look like they are happening at both!)
+    # The file on the HSI expected not to run should show such appointments as not happening at either '1b' or '2'.
+    # .... work out which appointment cannot happen at either '1b' or '2'
+    _levels_at_which_appts_dont_run = appts_not_run.groupby(
+        by=["use_funded_or_actual_staffing", "appt_type", "district"]
+    )["level"].sum()
+    _levels_at_which_appts_dont_run = _levels_at_which_appts_dont_run.drop(
+        _levels_at_which_appts_dont_run.index[_levels_at_which_appts_dont_run.isin(["1b", "2"])]
+    )
+    appts_not_run = _levels_at_which_appts_dont_run.reset_index().dropna()
+    appts_not_run["level"] = appts_not_run["level"].replace({"21b": "2"})  # ... label such appointments for level '2'
+    # ... reproduce that block labelled for level '1b'
+    appts_not_run_level2 = appts_not_run.loc[appts_not_run.level == "2"].copy()
+    appts_not_run_level2["level"] = "1b"
+    appts_not_run = pd.concat([appts_not_run, appts_not_run_level2])
+    # ... re-order columns to suit.
+    appts_not_run = appts_not_run[["use_funded_or_actual_staffing", "level", "appt_type", "district"]]
+
+    # reformat the 'district' info at levels 3 and 4 in results to map with appts_not_run file for convenience
+    districts_per_region = (
+        mfl[["District", "Region"]].drop_duplicates().dropna(axis="index", how="any").set_index("District", drop=True)
+    )
+    districts_per_region["CenHos"] = "Referral Hospital_" + districts_per_region["Region"]
+    districts_per_cenhos = districts_per_region["CenHos"].T.to_dict()
+    results_alt = results.copy()  # do not overwrite the results file
+    results_alt.loc[results_alt["level"] == "4", "district"] = "Zomba Mental Hospital"
+    results_alt.loc[results_alt["level"] == "3", "district"] = results_alt.loc[
+        results_alt["level"] == "3", "district"
+    ].replace(districts_per_cenhos)
+    # the detailed check
+    results_alt = results_alt.loc[(results_alt["mode_appt_constraints"] == 1) & (~results_alt["hsi_did_run"])].drop(
+        columns=["mode_appt_constraints", "hsi_did_run", "sqz"]
+    )
+    assert (results_alt.columns == appts_not_run.columns).all()
+    assert collapse_into_set_of_strings(results_alt) == collapse_into_set_of_strings(appts_not_run)
+
+    # mode 2 - actual, funded, funded_plus -> every hsi that does run, has sqz <= max squeeze allowed for priority
+    max_squeeze = 0  # For now assume squeeze is always zero
+    assert (results.loc[(results["mode_appt_constraints"] == 2) & (results["hsi_did_run"]), "sqz"] <= max_squeeze).all()
+
+
+def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir):
+    """Check that two runs of model with the same seed gives the same sequence of HSI that run and the same state of
+    the Consumables class at initiation."""
+
+    def get_hsi_log_and_consumables_state() -> pd.DataFrame:
+        """Return state of Consumables at the start of a simulation and the HSI_Event log that occur when running the
+        simulation (when all services available)."""
+        sim = Simulation(
+            start_date=start_date,
+            seed=seed,
+            log_config={
+                "filename": "tmpfile",
+                "directory": tmpdir,
+                "custom_levels": {
+                    "tlo.methods.healthsystem": logging.DEBUG,
+                },
+            },
+            resourcefilepath=resourcefilepath,
+        )
+        sim.register(*fullmodel())
+        sim.modules["HealthSystem"].parameters["Service_Availability"] = ["*"]
+        sim.modules["HealthSystem"].parameters["cons_availability"] = "default"
+        sim.make_initial_population(n=1_000)
+
+        # Initialise consumables and capture its state
+        sim.modules["HealthSystem"].consumables.on_start_of_day(sim.date)
+
+        consumables_state_at_init = dict(
+            unknown_items=sim.modules["HealthSystem"].consumables._is_unknown_item_available,
+            known_items=sim.modules["HealthSystem"].consumables._is_available,
+            random_samples=list(sim.modules["HealthSystem"].consumables._rng.random_sample(100)),
+        )
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return {
+            "consumables_state_at_init": consumables_state_at_init,
+            "hsi_event": parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"],
+        }
+
+    first_run = get_hsi_log_and_consumables_state()
+
+    # Check that all runs (with the same seed to simulation) are identical to the first run
+    for _ in range(2):
+        next_run = get_hsi_log_and_consumables_state()
+        # - Consumables State at Initialisation
+        assert next_run["consumables_state_at_init"] == first_run["consumables_state_at_init"]
+        # - HSI Events
+        pd.testing.assert_frame_equal(next_run["hsi_event"], first_run["hsi_event"])
+
+
+def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asterisk(seed, tmpdir):
+    """Check the two identical runs of model can be produced when the service_availability is set using ['*'] and when
+    using the list of TREATMENT_IDs that are defined. Repeated for with and without randomisation of the HSI Event
+    queue."""
+
+    def get_hsi_log(service_availability, randomise_hsi_queue) -> pd.DataFrame:
+        """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
+        indicated."""
+        sim = Simulation(
+            start_date=start_date,
+            seed=seed,
+            log_config={
+                "filename": "tmpfile",
+                "directory": tmpdir,
+                "custom_levels": {
+                    "tlo.methods.healthsystem": logging.DEBUG,
+                },
+            },
+            resourcefilepath=resourcefilepath,
+        )
+        sim.register(*fullmodel(module_kwargs={"HealthSystem": {"randomise_queue": randomise_hsi_queue}}))
+        sim.modules["HealthSystem"].parameters["Service_Availability"] = service_availability
+        sim.modules["HealthSystem"].parameters["cons_availability"] = "default"
+        sim.make_initial_population(n=500)
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
+
+    # Look-up all the treatment_ids that are defined to be run.
+    all_treatment_ids = sorted(set([i.treatment_id for i in get_details_of_defined_hsi_events()]))
+
+    for _randomise_hsi_queue in (False, True):
+        # - when specifying service-availability as "*"
+        run_with_asterisk = get_hsi_log(
+            service_availability=["*"],
+            randomise_hsi_queue=_randomise_hsi_queue,
+        )
+
+        # - when specifying service-availability as a list of TREATMENT_IDs
+        run_with_list = get_hsi_log(
+            service_availability=all_treatment_ids,
+            randomise_hsi_queue=_randomise_hsi_queue,
+        )
+
+        # Check that HSI event logs are identical
+        pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
+
+
+def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
+    """Check that we can use the parameter `HR_scaling_by_level_and_officer_type_mode` to manipulate the minutes of
+    time available for healthcare workers."""
+
+    def get_capabilities_today(HR_scaling_by_level_and_officer_type_mode: str) -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(demography.Demography(), healthsystem.HealthSystem())
+        sim.modules["HealthSystem"].parameters["HR_scaling_by_level_and_officer_type_mode"] = (
+            HR_scaling_by_level_and_officer_type_mode
+        )
+        sim.modules["HealthSystem"].parameters["year_HR_scaling_by_level_and_officer_type"] = 2010
+        sim.make_initial_population(n=100)
+        # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place
+        sim.simulate(end_date=start_date + pd.DateOffset(days=1))
+
+        ctoday = sim.modules["HealthSystem"].capabilities_today
+
+        return pd.Series(ctoday["GenericClinic"])
+
+    caps = {
+        _HR_scaling_by_level_and_officer_type_mode: get_capabilities_today(_HR_scaling_by_level_and_officer_type_mode)
+        for _HR_scaling_by_level_and_officer_type_mode in ("default", "data", "custom")
+    }
+
+    # Check that the custom assumption (multiplying all capabilities by 0.5) gives expected result
+    assert np.allclose(caps["custom"].values, caps["default"].values * 0.5)
+
+    # Check that the "data" assumptions leads to changes in the capabilities (of any direction)
+    assert not np.allclose(caps["data"].values, caps["default"].values)
+
+
+def test_dynamic_HR_scaling(seed, tmpdir):
+    """Check that we can scale the minutes of time available for healthcare workers on a yearly basis based on either
+    a fixed scaling factor or population grown, or both."""
+
+    def get_initial_capabilities() -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(demography.Demography(), healthsystem.HealthSystem())
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        ctoday = sim.modules["HealthSystem"].capabilities_today
+
+        return pd.Series(ctoday["GenericClinic"])
+
+    def get_capabilities_after_two_updates(dynamic_HR_scaling_factor: float, scale_HR_by_pop_size: bool) -> tuple:
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+            simplified_births.SimplifiedBirths(),
+        )
+        params = sim.modules["HealthSystem"].parameters
+        df = params["yearly_HR_scaling"][params["yearly_HR_scaling_mode"]]
+        df.loc[df["year"] == 2010, "dynamic_HR_scaling_factor"] = dynamic_HR_scaling_factor
+        df.loc[df["year"] == 2010, "scale_HR_by_popsize"] = scale_HR_by_pop_size
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+
+        # Ensure simulation lasts long enough so that current capabilities reflect that used after two updates
+        # (updates occur on 1st Jan, starting in 2010, so simulation should stop on 2nd Jan 2011).
+        sim.simulate(end_date=Date(2011, 1, 2))
+
+        popsize_start = popsize
+        popsize_curr = sim.population.props["is_alive"].sum()
+        final_popsize_increase = popsize_curr / popsize_start
+
+        ctoday = sim.modules["HealthSystem"].capabilities_today
+
+        return pd.Series(ctoday["GenericClinic"]), final_popsize_increase
+
+    dynamic_HR_scaling_factor = 1.05
+
+    # Get initial capabilities and remove all officers with no minutes available
+    initial_caps = get_initial_capabilities()
+    initial_caps = initial_caps[initial_caps != 0]
+
+    # Check that dynamic expansion over two years leads to expansion = dynamic_HR_scaling_factor^2
+    caps, final_popsize_increase = get_capabilities_after_two_updates(
+        dynamic_HR_scaling_factor=dynamic_HR_scaling_factor, scale_HR_by_pop_size=False
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps / initial_caps
+    expected_value = dynamic_HR_scaling_factor * dynamic_HR_scaling_factor
+    assert np.allclose(ratio_in_sim, expected_value)
+
+    # Check that expansion over two years with scaling prop to pop expansion works as expected
+    caps, final_popsize_increase = get_capabilities_after_two_updates(
+        dynamic_HR_scaling_factor=1.0, scale_HR_by_pop_size=True
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps / initial_caps
+    expected_value = final_popsize_increase
+    assert np.allclose(ratio_in_sim, expected_value)
+
+    # Check that expansion over two years with both fixed scaling and pop expansion scaling works as expected
+    caps, final_popsize_increase = get_capabilities_after_two_updates(
+        dynamic_HR_scaling_factor=dynamic_HR_scaling_factor, scale_HR_by_pop_size=True
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps / initial_caps
+    expected_value = final_popsize_increase * dynamic_HR_scaling_factor * dynamic_HR_scaling_factor
+    assert np.allclose(ratio_in_sim, expected_value)
+
+
+def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
+    """Check that we can scale the minutes of time available for healthcare workers with a sequence of factors that
+    apply in different years."""
+
+    def get_initial_capabilities() -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(demography.Demography(), healthsystem.HealthSystem())
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        ctoday = sim.modules["HealthSystem"].capabilities_today
+
+        return pd.Series(ctoday["GenericClinic"])
+
+    def run_sim(dynamic_HR_scaling_factor: Dict[int, float]) -> tuple:
+        """Run simulation for 10 years, with a sequence of factors that apply, specified in a dict of the form
+        {year: factor_to_apply_this_year_and_subsequent_years_until_next_instruction} (i.e. how the ResourceFile should
+        be structured.)
+        Returns capabilities at the end of the 10-year simulation"""
+
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+            simplified_births.SimplifiedBirths(),
+        )
+        params = sim.modules["HealthSystem"].parameters
+        params["yearly_HR_scaling"][params["yearly_HR_scaling_mode"]] = pd.DataFrame(
+            {
+                "year": dynamic_HR_scaling_factor.keys(),
+                "dynamic_HR_scaling_factor": dynamic_HR_scaling_factor.values(),
+                "scale_HR_by_popsize": False,
+            }
+        )
+
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+
+        # Ensure simulation lasts long enough so that current capabilities reflect that used after two updates
+        # (updates occur on 1st Jan, starting in 2010, so simulation should stop on 2nd Jan 2011).
+        sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))
+
+        ctoday = sim.modules["HealthSystem"].capabilities_today
+
+        return pd.Series(ctoday["GenericClinic"])
+
+    dynamic_HR_scaling_factor = {
+        2010: 1.0,
+        2011: 2.0,
+        # (2012 and 2013) are skipped: implies that the value for 2010 should apply in these years
+        2014: 0.2,
+        2015: 1.0,
+        # (2016, ..., 2020 are skipped: implies that the value for 2015 should apply in the years)
+    }
+    expected_overall_scaling = 2.0 * 2.0 * 2.0 * 0.2
+
+    # Get initial capabilities and remove all officers with no minutes available
+    initial_caps = get_initial_capabilities()
+    initial_caps = initial_caps[initial_caps != 0]
+
+    # Check that dynamic expansion over two years leads to expansion = dynamic_HR_scaling_factor^2
+    caps = run_sim(dynamic_HR_scaling_factor=dynamic_HR_scaling_factor)
+    caps = caps[caps != 0]
+    ratio_in_sim = caps / initial_caps
+
+    assert np.allclose(ratio_in_sim, expected_overall_scaling)
+
+
+def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed):
+    """We want the behaviour of HRH 'yearly scaling' and 'scaling_by_level' to operate together, so that, for instance,
+    the total capabilities is greater when scaling up by level _and_ by yearly-scaling than by using either
+    independently."""
+
+    def get_capabilities(yearly_scaling: bool, scaling_by_level: bool, rescaling: bool) -> float:
+        """Return total capabilities of HRH when optionally using 'yearly scaling' and/or 'scaling_by_level'"""
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+            simplified_births.SimplifiedBirths(),
+        )
+        params = sim.modules["HealthSystem"].parameters
+
+        # In Mode 1, from the beginning.
+        params["mode_appt_constraints"] = 1
+
+        if yearly_scaling:
+            params["yearly_HR_scaling_mode"] = "GDP_growth_fHE_case5"
+            # This is above-GDP growth after 2018 (baseline year for HRH)
+
+        if scaling_by_level:
+            params["year_HR_scaling_by_level_and_officer_type"] = 2018  # <--  same time as yearly-scaling
+            params["HR_scaling_by_level_and_officer_type_mode"] = "x2_fac0&1"
+
+        if rescaling:
+            # Switch to Mode 2, with the rescaling, at the same time as the other changes occur
+            params["mode_appt_constraints_postSwitch"] = 2
+            params["scale_to_effective_capabilities"] = True
+            params["year_mode_switch"] = 2018
+
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))  # run simulation until at least past 2018
+
+        ctoday = sim.modules["HealthSystem"].capabilities_today
+
+        return pd.Series(ctoday["GenericClinic"]).sum()
+
+    # - When running without any rescaling
+    caps_only_scaling_by_level = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=False)
+    caps_only_scaling_by_year = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=False)
+    caps_scaling_by_both = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=False)
+    assert caps_scaling_by_both > caps_only_scaling_by_level
+    assert caps_scaling_by_both > caps_only_scaling_by_year
+
+    # - When there is also rescaling as we go from Mode 2 into Mode 1
+    caps_only_scaling_by_level_with_rescaling = get_capabilities(
+        yearly_scaling=False, scaling_by_level=True, rescaling=True
+    )
+    caps_only_scaling_by_year_with_rescaling = get_capabilities(
+        yearly_scaling=True, scaling_by_level=False, rescaling=True
+    )
+    caps_scaling_by_both_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=True)
+    assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_level_with_rescaling
+    assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_year_with_rescaling
+
+
+def test_clinics_rescaling_factor(seed, tmpdir):
+    """Test that rescaling factor for clinics is computed correctly."""
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level, treatment_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = treatment_id
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    def create_simulation(tmpdir: Path, tot_population) -> Simulation:
+        class DummyModuleGenericClinic(Module):
+            METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                pass
+
+        class DummyModuleClinic1(Module):
+            METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                pass
+
+        log_config = {
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+        }
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(
+                capabilities_coefficient=1.0,
+                mode_appt_constraints=1,
+                ignore_priority=False,
+                randomise_queue=True,
+                policy_name="",
+                use_funded_or_actual_staffing="funded_plus",
+            ),
+            DummyModuleGenericClinic(),
+            DummyModuleClinic1(),
+        )
+        sim.make_initial_population(n=tot_population)
+
+        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
+
+        # Get any level 0 facility
+        district, fac_info = next(iter(sim.modules["HealthSystem"]._facilities_for_each_district["0"].items()))
+        fac_id = fac_info.id
+        col = "district_of_residence"
+        s = sim.population.props[col]
+
+        ## Not specifying the dtype explicitly here made the col a string rather than a category
+        ## and that caused problems later on.
+        sim.population.props[col] = pd.Series(district, index=s.index, dtype=s.dtype)
+
+        ## Even though we don't use the split specified here in this test, we do need
+        ## to include Clinic1 as a column in the _clinic_configuration object, and
+        ## explicitly call setup_daily_capabilities as this function populates several
+        ## key objects.
+        sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
+            [{"Facility_ID": fac_id, "Officer_Type_Code": "DCSA", "Clinic1": 0, "GenericClinic": 1.0}]
+        )
+        sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
+            [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
+        )
+        sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
+
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
+
+        return sim
+
+    def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        for i in range(0, ngenericclinic):
+            hsi = DummyHSIEvent(
+                module=sim.modules["DummyModuleGenericClinic"],
+                person_id=i,
+                appt_type="ConWithDCSA",
+                level="0",
+                treatment_id="DummyHSIEventGenericClinic",
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+            )
+
+        for i in range(ngenericclinic, ngenericclinic + nclinic1):
+            hsi = DummyHSIEvent(
+                module=sim.modules["DummyModuleClinic1"],
+                person_id=i,
+                appt_type="ConWithDCSA",
+                level="0",
+                treatment_id="DummyHSIEvent",
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+            )
+
+        return sim
+
+    tot_population = 100
+    sim = create_simulation(tmpdir, tot_population)
+
+    # Schedule an identical appointment for all individuals, assigning clinic as follows:
+    # 10 HSIs have clinic_eligibility=GenericClinic and 90 clinic_eligibility=Clinic1
+    nevents_generic_clinic = 10
+    nevents_clinic1 = 90
+    sim = schedule_hsi_events(nevents_generic_clinic, nevents_clinic1, sim)
+
+    ## This hsi is only created to get the expected officer type and minutes needed
+    ## for an appointment of type ConWithDCSA
+    ## therefore the treatment_id is not important
+    ## ConWithDCSA needs 10 mins of officer type DCSA at level 0
+    hsi1 = DummyHSIEvent(
+        module=sim.modules["DummyModuleGenericClinic"],
+        person_id=0,  # Ensures call is on officers in first district
+        appt_type="ConWithDCSA",
+        level="0",
+        treatment_id="DummyHSIEventGenericClinic",
+    )
+    hsi1.initialise()
+
+    # Now adjust capabilities available.
+    # GenericClinic has exactly the capability than needed to run all the appointments;
+    # Clinic1  has less capability than needed to run all the appointments;
+    # This will ensure rescaling factor for GenericClinic is 1 (it cannot be less than 1)
+    # and that for Clinic1 > 1
+
+    ## We will use this key to query capabilities later
+    fac_id_off_type = next(iter(hsi1.expected_time_requests))
+
+    hs = sim.modules["HealthSystem"]
+
+    hs._daily_capabilities["Clinic1"] = {}
+    for k, v in hsi1.expected_time_requests.items():
+        hs._daily_capabilities["GenericClinic"][k] = v * nevents_generic_clinic
+        hs._daily_capabilities["Clinic1"][k] = v * (nevents_clinic1 / 2)
+
+    # Run healthsystemscheduler
+    hs.healthsystemscheduler.apply(sim.population)
+
+    # Record capabilities before rescaling
+    genericclinic_capabilities_before = hs._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_before = hs._daily_capabilities["Clinic1"][fac_id_off_type]
+
+    # Now trigger rescaling of capabilities
+    hs._rescale_capabilities_to_capture_effective_capability()
+
+    # Record capabilities after rescaling
+    genericclinic_capabilities_after = hs._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_after = hs._daily_capabilities["Clinic1"][fac_id_off_type]
+
+    # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
+    assert np.isclose(
+        genericclinic_capabilities_before,
+        genericclinic_capabilities_after,
+    ), "Expected no change in GenericClinic capabilities after rescaling"
+
+    assert np.isclose(
+        clinic1_capabilities_before * 2,
+        clinic1_capabilities_after,
+    ), "Expected Clinic1 capabilities to be rescaled by factor of 2"

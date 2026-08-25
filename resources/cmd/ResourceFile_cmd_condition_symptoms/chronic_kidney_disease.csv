@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0a5c2adb82a2edc53fb670c400299b806a1c17aa639e264b6650d13e4f3311f6
-size 58
+parameter_name,value,param_label,prior_min,prior_max,prior_note
+chronic_kidney_disease_symptoms,0.02,local,0,1,vague prior

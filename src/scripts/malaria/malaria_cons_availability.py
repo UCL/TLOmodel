@@ -15,7 +15,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # get consumables spreadsheet
 cons_availability = pd.read_csv(
-    resourcefilepath / "healthsystem/consumables/ResourceFile_Consumables_availability_small.csv")
+    resourcefilepath / "healthsystem/consumables/ResourceFile_Consumables_availability_small_original.csv")
 items_list = pd.read_csv(
     resourcefilepath / "healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv")
 

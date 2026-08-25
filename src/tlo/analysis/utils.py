@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
 
 import git
 import matplotlib.colors as mcolors
@@ -364,6 +364,130 @@ def extract_results(results_folder: Path,
     _concat = pd.concat(res, axis=1)
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
+
+def check_info_value_changes(df):
+
+    problems = {}  # store issues
+
+    # iterate group-by-group
+    for E, g in df.groupby("entity"):
+        prev_info = {}
+
+        for _, row in g.iterrows():
+            current_info = row["Info"]
+
+            for key, value in current_info.items():
+                if key in prev_info and key != 'footprint' and key != 'level':
+                    # compare with previous value
+                    if prev_info[key] == value and key not in problems.keys():
+                        problems[key] = value
+
+            # update latest value
+            prev_info = row["Info"]
+
+    return problems
+    
+def remove_events_for_individual_after_death(df):
+    rows_to_drop = []
+
+    # Group by entity
+    for entity, g in df.groupby("entity"):
+        died = False
+
+        for idx, row in g.iterrows():
+            current_info = row["Info"]
+
+            if not died:
+                # Check if this row marks death
+                if isinstance(current_info, dict) and current_info.get("is_alive") is False:
+                    died = True
+            else:
+                # Already dead → mark this row for removal
+                rows_to_drop.append(idx)
+
+    # Drop all marked rows
+    return df.drop(index=rows_to_drop)
+
+def reconstruct_individual_histories(df):
+
+    # Collapse into 'entity', 'date', 'event_name', 'Info' format where 'Info' is dict listing attributes
+    # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
+    df_collapsed = (
+            df.groupby(['entity', 'date', 'event_name'], sort=False)
+              .apply(lambda g: dict(zip(g['attribute'], g['value'])))
+              .reset_index(name='Info')
+        )
+
+    df_final = (
+        df_collapsed
+            .sort_values(by=['entity', 'date'])
+            .reset_index(drop=True)
+    )
+
+    df_final = remove_events_for_individual_after_death(df_final)
+
+    problems = check_info_value_changes(df_final)
+    if len(problems)>0:
+        print("Values didn't change but were still detected")
+        print(problems)
+        
+    
+
+    return df_final
+
+
+def extract_individual_histories(results_folder: Path,
+                        ) -> dict:
+    """Utility function to collect chains of events. Individuals across runs of the same draw
+    will be combined into unique df.
+    Returns dictionary where keys are draws, and each draw is associated with a dataframe of
+    format 'entity', 'date', 'event_name', 'Info' where 'Info' is a dictionary that combines
+    A&Vs for a particular individual + date + event name combination.
+    """
+    module = 'tlo.methods.individual_history'
+    key = 'individual_histories'
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Collect results from each draw/run. Individuals across runs of the same draw will be combined into unique df.
+    res = dict()
+
+    for draw in range(info['number_of_draws']):
+
+        # All individuals in same draw will be combined across runs, so their ID will be offset.
+        dfs_from_runs = []
+        ID_offset = 0
+
+        for run in range(info['runs_per_draw']):
+
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                df_single_run= reconstruct_individual_histories(df)
+
+                # Offset person ID to account for the fact that we are collecting chains across runs
+                df_single_run['entity'] = df_single_run['entity'] + ID_offset
+
+                # Calculate ID offset for next run
+                ID_offset = (max(df_single_run['entity']) + 1)
+
+                # The E has now become an ID for the individual in the draw overall, so rename column as such
+                df_single_run = df_single_run.rename(columns={'entity': 'person_ID_in_draw'})
+
+                # Append these chains to list
+                dfs_from_runs.append(df_single_run)
+
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                # Simply to not append anything to the df collecting chains.
+                print("Run failed")
+
+        # Combine all dfs into a single DataFrame
+        res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
+
+        res[0].to_csv('individual_histories.csv')
+
+    return res
 
 
 def compute_summary_statistics(
@@ -1460,3 +1584,34 @@ def mix_scenarios(*dicts) -> Dict:
                 d[mod].update({param: value})
 
     return d
+
+
+def flatten_nested_dict(my_dict, sep='_'):
+    """Flatten a nested dictionary into a single level dictionary."""
+    return pd.pandas.io.json._normalize.nested_to_record(my_dict, sep=sep)
+
+
+def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Optional[Tuple[Any]|str] = None) -> dict:
+    """Returns dict giving counts (by sex and age-group) of alive individuals with truthy
+    values for that property (if no `target` is provided) or with a value included in `targets` (if a `target` is
+    provided).
+
+    Returns: {sex: {age_group: count}}
+    """
+
+    if targets is None:
+        counts = df.loc[
+            df.is_alive & df[property]
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+
+    elif isinstance(targets, tuple):
+        counts = df.loc[
+            df.is_alive & df[property].isin(targets)
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+
+    elif isinstance(targets, str):
+        counts = df.loc[
+            df.is_alive & (df[property] == targets)
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+
+    return counts.to_dict(orient='index')

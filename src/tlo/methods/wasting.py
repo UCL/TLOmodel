@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.stats import norm
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -41,7 +42,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -758,6 +760,39 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                               df.un_am_nutritional_oedema] = self.daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
+    def report_summary_stats(self):
+        """
+        Reports prevalence of wasting categories for all alive children under 5.
+        Returns prevalence proportions for moderate and severe wasting.
+        """
+        df = self.sim.population.props
+        p = self.parameters
+        number_by_age_group_sex_dict = {}
+        # Select (alive) children under 5
+        alive_under5 = df.loc[df.is_alive & (df.age_exact_years < p['max_age_child_wasting'])]
+        total_under5 = len(alive_under5)
+
+        if total_under5 == 0:
+            return {'number_moderate': 0.0, 'number_severe': 0.0}
+
+        # Get counts by sex and age group for each wasting category
+        mod_counts = get_counts_by_sex_and_age_group(
+            alive_under5,
+            'un_WHZ_category',
+            targets='-3<=WHZ<-2'
+        )
+        sev_counts = get_counts_by_sex_and_age_group(
+            alive_under5,
+            'un_WHZ_category',
+            targets='WHZ<-3'
+        )
+
+        # Sum across all age groups and sexes
+        number_by_age_group_sex_dict['mod_wasted'] = mod_counts
+        number_by_age_group_sex_dict['sev_wasted'] = sev_counts
+        return {
+            'number_under_5_with_wasting_by_category': number_by_age_group_sex_dict,
+        }
     def wasting_clinical_symptoms(self, person_id) -> None:
         """
         Assigns clinical symptoms to the new acute malnutrition case
@@ -1344,17 +1379,16 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Undernutrition_GrowthMonitoring"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-        rng = self.module.rng
+        person_age = self.sim.population.props.at[self.target, 'age_exact_years']
+
         p = self.module.parameters
-        person_age = self.sim.population.props.loc[self.target].age_exact_years
-        def get_attendance_prob(age):
-            if age < 1:
-                return p["growth_monitoring_attendance_prob_agecat"][0]
-            if age < 2:
-                return p["growth_monitoring_attendance_prob_agecat"][1]
-            else:
-                return p["growth_monitoring_attendance_prob_agecat"][2]
-        self.attendance = rng.random_sample() < get_attendance_prob(person_age)
+        if person_age < 1:
+            prob = p["growth_monitoring_attendance_prob_agecat"][0]
+        elif person_age < 2:
+            prob = p["growth_monitoring_attendance_prob_agecat"][1]
+        else:
+            prob = p["growth_monitoring_attendance_prob_agecat"][2]
+        self.attendance = self.module.rng.random_sample() < prob
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
 
     def apply(self, person_id, squeeze_factor):

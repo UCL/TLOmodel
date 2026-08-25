@@ -27,7 +27,7 @@ first_line_nmb_csv = 2
 last_line_interv_pkg_name = 'Female Condom'
 name_containing = 'sutur'
 what_to_check = 'lines'  # 'lines' or 'item_name'
-avail_data_filename = 'ResourceFile_Consumables_availability_small.csv'
+avail_data_filename = 'ResourceFile_Consumables_availability_small_original.csv'
 #####
 
 avail_data = pd.read_csv(Path(
