@@ -44,11 +44,10 @@ numpy.random.seed(42)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    # existing
+    # existing — kept
     "fp_total_clients",
     "opd_attendance",
     "ipd_total_admissions",
-    "vmmc_first_visits",
     "pnc_mother_checked_48h",
     "anc_total_visits",
     # "anc_new_attendees",
@@ -58,29 +57,41 @@ COUNT_INDICATORS = [
     "measles1_under1",
     "fully_immunised_under1",
     "pnc_within_2wks",
-    "pnc_first_visit_2wks",
     # "live_births_total",
     # "skilled_deliveries",
 
-    # --- new: demand-driven attendance (heat-elastic) ---
-    "htc_results_new_negative",
+    # existing — dropped based on completeness diagnostics:
+    # "vmmc_first_visits",        # 8% completeness, 364 fac; also campaign-dominated
+    # "pnc_first_visit_2wks",     # 8 facilities, 0% — redundant with pnc_within_2wks
+
+    # --- new: demand-driven attendance (heat-elastic), survived LEVEL-4 pull ---
+    "htc_results_new_negative",        # 80k rows, dense
     "htc_results_new_positive",
-    "fp_subsequent_clients_total",
-    "tb_hh_referred_female",
-    "tb_hh_referred_male",
-    "fully_immunised_outreach",
-    # "fully_immunised_outreach_alt",   # pick one after comparing coverage
-    "cervical_screening_initial",
-    "fp_acceptors_pills",
-    "fp_acceptors_injectable",
-    "fp_acceptors_condoms",
-    "dental_tooth_fillings",
-    "mental_health_clinical_officer",
-    "mental_health_nurse",
+    "fp_subsequent_clients_total",     # cleaner FP resupply signal than fp_acceptors_*
+    "fully_immunised_outreach",        # 92k rows across the two variants
+    # "fully_immunised_outreach_alt",  # pick one after comparing coverage by year
+    "cervical_screening_initial",      # requires re-download — was missing from raw_pulls
+
+    # --- new: dropped because HMIS does not capture these at LEVEL-4 (health-centre) ---
+    # Reported only at district-hospital level, if at all. Not observable at
+    # facility-month resolution in this instance — consider a district-level
+    # parallel run if you want to keep them, otherwise flag as an HMIS limitation.
+    # "tb_hh_referred_female",              # 16 rows total across 2015-2024
+    # "tb_hh_referred_male",                # same
+    # "dental_tooth_fillings",              # 139 rows across a decade
+    # "mental_health_clinical_officer",     # 107 rows across a decade
+    # "mental_health_nurse",                # same
+
+    # --- new: dropped because CAC (community-access) form has ~3.6% completeness ---
+    # Register is CBDA-specific, not routine facility reporting. fp_subsequent_clients_total
+    # covers the FP-resupply concept more cleanly.
+    # "fp_acceptors_pills",
+    # "fp_acceptors_injectable",
+    # "fp_acceptors_condoms",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
-    # existing
+    # existing — kept for the ones we still fit; older entries kept for plot backwards-compat
     "fp_total_clients": "FP Total Clients",
     "opd_attendance": "OPD Attendance",
     "ipd_total_admissions": "IPD Total Admissions",
@@ -98,47 +109,33 @@ INDICATOR_LABELS: dict[str, str] = {
     "live_births_total": "Live Births Total",
     "skilled_deliveries": "Skilled Deliveries",
 
-    # new
-    "htc_results_new_negative":       "HTC New Negative",
-    "htc_results_new_positive":       "HTC New Positive",
-    "fp_subsequent_clients_total":    "FP Subsequent Clients",
-    "tb_hh_referred_female":          "TB HH Referred (F)",
-    "tb_hh_referred_male":            "TB HH Referred (M)",
-    "fully_immunised_outreach":       "Fully Immunised Under-1 (Outreach)",
-    "cervical_screening_initial":     "Cervical Screening (Initial Visit)",
-    "fp_acceptors_pills":             "FP Acceptors — Pills",
-    "fp_acceptors_injectable":        "FP Acceptors — Injectable",
-    "fp_acceptors_condoms":           "FP Acceptors — Condoms",
-    "dental_tooth_fillings":          "Dental Fillings",
-    "mental_health_clinical_officer": "Mental Health — Clinical Officer Visits",
-    "mental_health_nurse":            "Mental Health — Nurse Visits",
+    # new — only the four we're actually fitting
+    "htc_results_new_negative":    "HTC New Negative",
+    "htc_results_new_positive":    "HTC New Positive",
+    "fp_subsequent_clients_total": "FP Subsequent Clients",
+    "fully_immunised_outreach":    "Fully Immunised Under-1 (Outreach)",
+    "cervical_screening_initial":  "Cervical Screening (Initial Visit)",
 }
 
 HIGH_OVERDISPERSION_INDICATORS = [
     "ipd_total_admissions",
     "opd_attendance",
     "anc_total_visits",
-    # new — sparse at facility-month, expect heavy right tails:
-    "dental_tooth_fillings",
-    "mental_health_clinical_officer",
-    "mental_health_nurse",
-    "tb_hh_referred_female",
-    "tb_hh_referred_male",
+    # new — cervical screening will be sparse and pulsed post-rollout;
+    # defensive add so alpha estimation uses the intercept-only path.
     "cervical_screening_initial",
 ]
 
 MIN_YEAR_BY_INDICATOR: dict[str, int] = {
     "fp_total_clients": 2019,
     "vmmc_first_visits": 2019,
-    # new — DHIS2 forms introduced later; earlier years are structural zeros
-    "htc_results_new_negative":       2019,
-    "htc_results_new_positive":       2019,
-    "cervical_screening_initial":     2020,   # CECAP form rollout — verify from your pull
-    "tb_hh_referred_female":          2019,
-    "tb_hh_referred_male":            2019,
-    "fully_immunised_outreach":       2018,
-    "mental_health_clinical_officer": 2019,
-    "mental_health_nurse":            2019,
+    # new — DHIS2 forms introduced later; earlier years are structural zeros.
+    # VERIFY these against the pulled data (plot national monthly totals; the
+    # hockey-stick shows the true rollout month).
+    "htc_results_new_negative":   2019,
+    "htc_results_new_positive":   2019,
+    "cervical_screening_initial": 2020,  # CECAP form rollout — verify
+    "fully_immunised_outreach":   2018,
 }
 
 
@@ -1280,5 +1277,160 @@ if __name__ == "__main__":
             )
             print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}.csv")
 
+    # ===========================================================================
+    # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
+    # ===========================================================================
+    # Predicts facility-month services under early-20th-century climate while
+    # holding the secular trend at LAST_HIST_YEAR and covid at 0. The contrast
+    # with the observed historical deficit isolates the burden attributable to
+    # warming since ~1948, conditional on today's baseline demand and facility mix.
+    COUNTERFACTUAL = True
+    CF_LABEL = "ERA5_periindustrial_1940_1948"
+    CF_WBGT_FILE = (
+        f"wbgt_extreme_indices_facility_{CF_LABEL}.csv"
+        if WBGT_VAR == "wbgt5x_day"
+        else f"wbgt_monthly_mean_facility_{CF_LABEL}.csv"
+    )
+
+    if COUNTERFACTUAL:
+        print(f"\nCounterfactual scenario: {CF_LABEL}")
+        cf_path = os.path.join(PROJECTION_DIR, CF_WBGT_FILE)
+        if not os.path.exists(cf_path):
+            print(f"  SKIP counterfactual: missing {cf_path}")
+        else:
+            cf = pd.read_csv(cf_path, parse_dates=["date"])
+            cf["facility"] = cf["facility"].astype(str).str.strip()
+            cf["date"] = cf["date"].dt.to_period("M").dt.to_timestamp()
+            for col in (WBGT_VAR, PRECIP_COL):
+                if col not in cf.columns:
+                    raise KeyError(f"{cf_path}: {col!r} missing (have {list(cf.columns)})")
+            cf = cf.sort_values(["facility", "date"]).reset_index(drop=True)
+            for k in LAG_MONTHS:
+                cf[f"{WBGT_VAR}_lag{k}"] = cf.groupby("facility")[WBGT_VAR].shift(k)
+            cf["year"], cf["month"] = cf["date"].dt.year, cf["date"].dt.month
+            print(
+                f"  {CF_LABEL}: {len(cf):,} rows, {cf['facility'].nunique()} facilities, "
+                f"{cf['year'].min()}–{cf['year'].max()}"
+            )
+
+            cf_rows = []
+            for res in results:
+                ind = res["indicator"]
+                shifts = res["_shifts"]
+                design_map = res["_design_map"]
+                spline_cols = res["_spline_cols"]
+                train_facs = set(res["_train_facs"])
+                model_wx = res["_model_wx"]
+                model_base = res["_model_base"]
+
+                df = cf[cf["facility"].isin(train_facs)].copy()
+                wbgt_needed = [WBGT_VAR, PRECIP_COL] + [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
+                df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
+                if df.empty:
+                    print(f"    {ind}: no facility overlap in counterfactual — skipping")
+                    continue
+
+                # Diagnostic: how far outside the fit range is the counterfactual WBGT?
+                fit_lo, fit_hi = shifts[WBGT_VAR] - 5, shifts[WBGT_VAR] + 5  # approx; splines cr(df=3)
+                frac_below = float((df[WBGT_VAR] < fit_lo).mean())
+                if frac_below > 0.05:
+                    print(
+                        f"    {ind}: {100 * frac_below:.1f}% of CF WBGT below ~{fit_lo:.1f}°C "
+                        f"(fit centre {shifts[WBGT_VAR]:.1f}°C) — spline extrapolation, treat with care"
+                    )
+
+                df["covid"] = 0
+                df["year_c"] = LAST_HIST_YEAR - shifts["year"]  # freeze secular trend
+                df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
+
+                xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
+                B = np.asarray(patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0], dtype=float)
+                for i_col, c in enumerate(spline_cols):
+                    df[c] = B[:, i_col]
+                for k in LAG_MONTHS:
+                    df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+
+                need = (
+                    ["covid", "year_c", "precip_c"] + list(spline_cols) + [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
+                )
+                df = df.dropna(subset=need).reset_index(drop=True)
+                if df.empty:
+                    continue
+
+                mu_wx = np.asarray(model_wx.predict(df), dtype=float)
+                mu_base = np.asarray(model_base.predict(df), dtype=float)
+                ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
+                df = df.loc[ok].reset_index(drop=True)
+                mu_wx, mu_base = mu_wx[ok], mu_base[ok]
+                if df.empty:
+                    continue
+
+                df["mu_a"], df["mu_b"] = mu_wx, mu_base
+                df = df.merge(res["_fac_district"], on="facility", how="left")
+                df["indicator"] = ind
+
+                df[
+                    [
+                        "indicator",
+                        "facility",
+                        CLUSTER_COL,
+                        "year",
+                        "month",
+                        "date",
+                        WBGT_VAR,
+                        PRECIP_COL,
+                        "mu_a",
+                        "mu_b",
+                    ]
+                ].to_csv(
+                    f"{OUT_DIR}counterfactual_facility_{ind}_{CF_LABEL}_{WBGT_VAR}.csv",
+                    index=False,
+                )
+
+                df_agg = _apply_deficit_filter(df, "mu_b", "mu_a")
+                if df_agg.empty:
+                    continue
+                tot_a, tot_b = float(df_agg["mu_a"].sum()), float(df_agg["mu_b"].sum())
+                cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
+
+                # Jackknife CI on the counterfactual deficit
+                _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
+                    df_agg["mu_a"].values,
+                    df_agg["mu_b"].values,
+                    df_agg["facility"].values,
+                    sign="a_minus_b",
+                )
+
+                hist_row = summary_df.loc[summary_df["indicator"] == ind]
+                hist_deficit = float(hist_row["deficit_pct"].iloc[0]) if not hist_row.empty else np.nan
+
+                cf_rows.append(
+                    {
+                        "indicator": ind,
+                        "scenario": CF_LABEL,
+                        "only_deficits": ONLY_DEFICITS,
+                        "n_facility_months": len(df_agg),
+                        "n_facilities": df_agg["facility"].nunique(),
+                        "mean_wbgt_cf": float(df_agg[WBGT_VAR].mean()),
+                        "mean_precip_cf": float(df_agg[PRECIP_COL].mean()),
+                        "deficit_pct_cf": cf_deficit,
+                        "cf_ci_lo": cf_lo,
+                        "cf_ci_hi": cf_hi,
+                        "deficit_pct_historical": hist_deficit,
+                        "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
+                        "frac_wbgt_below_fit_range": frac_below,
+                    }
+                )
+                print(
+                    f"    {ind}: cf={cf_deficit:+.2f}%  hist={hist_deficit:+.2f}%  "
+                    f"excess={hist_deficit - cf_deficit:+.2f}pp"
+                )
+
+            if cf_rows:
+                pd.DataFrame(cf_rows).to_csv(
+                    f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}.csv",
+                    index=False,
+                )
+                print(f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}.csv")
     print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
     print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())

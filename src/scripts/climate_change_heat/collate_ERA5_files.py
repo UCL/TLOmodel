@@ -4,21 +4,22 @@ from pathlib import Path
 
 import xarray as xr
 
-BASE_DIR = Path("/Users/rachelmurray-watson/Documents/Heat_data/ERA5")
+BASE_DIR = Path("/Users/rachelmurray-watson/Documents/Heat_data/ERA5/Periindustrial")
 OUT_DIR = BASE_DIR / "Combined"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 VARIABLES = [
-    "2m_temperature",
-    "2m_dewpoint_temperature",
-    "10m_u_component_of_wind",
-    "10m_v_component_of_wind",
-    "surface_solar_radiation_downwards",
-    "total_sky_direct_solar_radiation_at_surface",
-    "surface_pressure",
+    #"2m_temperature",
+    #"2m_dewpoint_temperature",
+    #"10m_u_component_of_wind",
+    #"10m_v_component_of_wind",
+    #"surface_solar_radiation_downwards",
+    #"total_sky_direct_solar_radiation_at_surface",
+    #"surface_pressure",
+    "total_precipitation",
 ]
 
-YEAR_START, YEAR_END = 2010, 2024
+YEAR_START, YEAR_END = 1940, 1948
 
 for variable in VARIABLES:
     var_dir = BASE_DIR / variable

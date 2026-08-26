@@ -50,13 +50,13 @@ MAX_ITER = 50;  CONVERGENCE = 0.02;  MIN_SPEED = 0.13
 # ============================================================================
 # Configuration
 # ============================================================================
-DATA_DIR   = Path("/Users/rachelmurray-watson/Documents/Heat_data/ERA5/Combined")
-OUT_DIR    = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5")
+DATA_DIR   = Path("/Users/rachelmurray-watson/Documents/Heat_data/ERA5/Periindustrial/Combined")
+OUT_DIR    = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/Periindustrial")
 CMIP6_DIR  = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-YEAR_START       = 2010
-YEAR_END         = 2024
+YEAR_START       = 1940
+YEAR_END         = 1948
 TIME_CHUNK       = 2000
 DTYPE            = np.float32
 UTC_OFFSET       = 2          # Malawi UTC+2 (used to define the LOCAL calendar day)
@@ -268,7 +268,16 @@ def main():
     t2m = load_var("t2m");  d2m = load_var("d2m")
     u10 = load_var("u10");  v10 = load_var("v10")
     ssrd = load_var("ssrd"); fdir_r = load_var("fdir"); sp = load_var("sp")
-
+    before = {n: da.sizes["valid_time"] for n, da in
+              [("t2m",t2m),("d2m",d2m),("u10",u10),("v10",v10),
+               ("ssrd",ssrd),("fdir",fdir_r),("sp",sp)]}
+    t2m, d2m, u10, v10, ssrd, fdir_r, sp = xr.align(
+        t2m, d2m, u10, v10, ssrd, fdir_r, sp, join="inner"
+    )
+    after = t2m.sizes["valid_time"]
+    for n, b in before.items():
+        if b != after:
+            print(f"  {n}: dropped {b - after} step(s) after align ({b} -> {after})")
     times = t2m.valid_time.values
     lats  = t2m.latitude.values;  lons = t2m.longitude.values
     lon_g, lat_g = np.meshgrid(lons, lats)
