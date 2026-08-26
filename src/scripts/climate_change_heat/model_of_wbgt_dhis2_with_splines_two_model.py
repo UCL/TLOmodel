@@ -17,6 +17,8 @@ New in this version: ONLY_DEFICITS toggle
 
 import os
 
+import numpy.random
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import warnings
@@ -37,13 +39,14 @@ import statsmodels.formula.api as smf
 from scipy.optimize import minimize_scalar
 
 warnings.filterwarnings("ignore", category=UserWarning)
-
+numpy.random.seed(42)
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-     "fp_total_clients",
-     "opd_attendance",
+    # existing
+    "fp_total_clients",
+    "opd_attendance",
     "ipd_total_admissions",
     "vmmc_first_visits",
     "pnc_mother_checked_48h",
@@ -55,12 +58,29 @@ COUNT_INDICATORS = [
     "measles1_under1",
     "fully_immunised_under1",
     "pnc_within_2wks",
-    # "pnc_first_visit_2wks",
+    "pnc_first_visit_2wks",
     # "live_births_total",
     # "skilled_deliveries",
+
+    # --- new: demand-driven attendance (heat-elastic) ---
+    "htc_results_new_negative",
+    "htc_results_new_positive",
+    "fp_subsequent_clients_total",
+    "tb_hh_referred_female",
+    "tb_hh_referred_male",
+    "fully_immunised_outreach",
+    # "fully_immunised_outreach_alt",   # pick one after comparing coverage
+    "cervical_screening_initial",
+    "fp_acceptors_pills",
+    "fp_acceptors_injectable",
+    "fp_acceptors_condoms",
+    "dental_tooth_fillings",
+    "mental_health_clinical_officer",
+    "mental_health_nurse",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
+    # existing
     "fp_total_clients": "FP Total Clients",
     "opd_attendance": "OPD Attendance",
     "ipd_total_admissions": "IPD Total Admissions",
@@ -77,15 +97,50 @@ INDICATOR_LABELS: dict[str, str] = {
     "pnc_first_visit_2wks": "PNC First Visit <2 Weeks",
     "live_births_total": "Live Births Total",
     "skilled_deliveries": "Skilled Deliveries",
+
+    # new
+    "htc_results_new_negative":       "HTC New Negative",
+    "htc_results_new_positive":       "HTC New Positive",
+    "fp_subsequent_clients_total":    "FP Subsequent Clients",
+    "tb_hh_referred_female":          "TB HH Referred (F)",
+    "tb_hh_referred_male":            "TB HH Referred (M)",
+    "fully_immunised_outreach":       "Fully Immunised Under-1 (Outreach)",
+    "cervical_screening_initial":     "Cervical Screening (Initial Visit)",
+    "fp_acceptors_pills":             "FP Acceptors — Pills",
+    "fp_acceptors_injectable":        "FP Acceptors — Injectable",
+    "fp_acceptors_condoms":           "FP Acceptors — Condoms",
+    "dental_tooth_fillings":          "Dental Fillings",
+    "mental_health_clinical_officer": "Mental Health — Clinical Officer Visits",
+    "mental_health_nurse":            "Mental Health — Nurse Visits",
 }
 
-# Indicators that benefit from the more stable intercept-only alpha estimation
-# These typically have extreme overdispersion (Var/Mean >> 10)
 HIGH_OVERDISPERSION_INDICATORS = [
     "ipd_total_admissions",
     "opd_attendance",
-    "penta3_under1"
+    "anc_total_visits",
+    # new — sparse at facility-month, expect heavy right tails:
+    "dental_tooth_fillings",
+    "mental_health_clinical_officer",
+    "mental_health_nurse",
+    "tb_hh_referred_female",
+    "tb_hh_referred_male",
+    "cervical_screening_initial",
 ]
+
+MIN_YEAR_BY_INDICATOR: dict[str, int] = {
+    "fp_total_clients": 2019,
+    "vmmc_first_visits": 2019,
+    # new — DHIS2 forms introduced later; earlier years are structural zeros
+    "htc_results_new_negative":       2019,
+    "htc_results_new_positive":       2019,
+    "cervical_screening_initial":     2020,   # CECAP form rollout — verify from your pull
+    "tb_hh_referred_female":          2019,
+    "tb_hh_referred_male":            2019,
+    "fully_immunised_outreach":       2018,
+    "mental_health_clinical_officer": 2019,
+    "mental_health_nurse":            2019,
+}
+
 
 # --- Only-deficits toggle --------------------------------------------------
 # When True, restrict every aggregation (historical deficit, hot-month
@@ -167,11 +222,11 @@ N_WORKERS = min(cpu_count() - 1, 4)
 
 WINSORIZE_BY_INDICATOR: dict[str, float] = {
     "opd_attendance": 0.99,
-    "ipd_total_admissions": 0.909,
+    "ipd_total_admissions": 1,
     "fully_immunised_under1": 0.95,
     "pnc_within_2wks": 0.90,
     "measles1_under1": 0.90,
-    "penta3_under1": 0.90,
+    "anc_total_visits": 1,
 }
 WINSORIZE_DEFAULT = 0.999
 

@@ -26,14 +26,35 @@ WBGT_TO_TLO = {
     "bcg_under1":              ("Epi_Childhood_Bcg",),
     "measles1_under1":         ("Epi_Childhood_MeaslesRubella",),
     "penta3_under1":           ("Epi_Childhood_DtpHibHep",),
-    "fully_immunised_under1":  ("Epi_Childhood_",),   # union — flag below
+    "fully_immunised_under1":  ("Epi_Childhood_",),           # union
     "pnc_within_2wks":         ("PostnatalCare_",),
     "pnc_mother_checked_48h":  ("PostnatalCare_",),
     "fp_total_clients":        ("Contraception_",),
     "opd_attendance":          ("FirstAttendance_NonEmergency",),
     "ipd_total_admissions":    ("Inpatient_Care",),
+
+    # --- new: TLO analogue exists (VERIFY prefixes against TLO source) ---
+    "htc_results_new_negative":     ("Hiv_Test",),            # TODO verify TREATMENT_ID
+    "htc_results_new_positive":     ("Hiv_Test",),
+    "fp_subsequent_clients_total":  ("Contraception_",),       # shares volume with fp_total_clients — don't sum losses
+    "fp_acceptors_pills":           ("Contraception_",),
+    "fp_acceptors_injectable":      ("Contraception_",),
+    "fp_acceptors_condoms":         ("Contraception_",),
+    "tb_hh_referred_female":        ("Tb_",),                  # TODO narrow to contact-tracing TREATMENT_ID
+    "tb_hh_referred_male":          ("Tb_",),
+    "fully_immunised_outreach":     ("Epi_Childhood_",),       # TLO does not split outreach/static — projection loses that distinction
 }
 
+# WBGT indicator → no TLO analogue (or too indirect to project honestly).
+# These are fit historically for evidence of a heat-demand effect, but no
+# forward HSI-loss projection is produced. Listing them explicitly so the
+# absence in the projection outputs is documented, not accidental.
+HISTORICAL_ONLY_INDICATORS = {
+    "cervical_screening_initial":     "TLO cervical cancer module coverage is limited/absent — historical only.",
+    "dental_tooth_fillings":          "TLO does not model dental services.",
+    "mental_health_clinical_officer": "TLO mental health is depression-focused; MH OPD visits don't map cleanly.",
+    "mental_health_nurse":            "As above.",
+}
 SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 WBGT_MODELS = ["lowest", "median", "highest"]
 WBGT_VAR = "wbgt_day"
@@ -203,6 +224,10 @@ def main():
     for wbgt_ind, tlo_prefixes in WBGT_TO_TLO.items():
         combine_for_indicator(wbgt_ind, tlo_prefixes, target_period, fac_to_dist)
 
+    if HISTORICAL_ONLY_INDICATORS:
+        print("\nHistorical-only indicators (no TLO projection written):")
+        for ind, reason in HISTORICAL_ONLY_INDICATORS.items():
+            print(f"  - {ind}: {reason}")
 
 if __name__ == "__main__":
     main()

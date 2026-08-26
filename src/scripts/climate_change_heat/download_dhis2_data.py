@@ -49,6 +49,29 @@ INDICATOR_IDS: dict[str, str] = {
     # --- HIV service volume (partial coverage only — see note below) ---
     "vmmc_first_visits": "jblfwnIgu1i",            # HIV P VMMC Total With 1st Visits
 
+    # --- demand-driven attendance, heat-elastic (elective / discretionary) ---
+    # Visit is optional or easily deferred — cleanest demand signal for WBGT.
+    "cervical_screening_30_44":     "E6J2CwQbyld",  # RHD CECAP % women 30-44 screened for cervical cancer
+    "cervical_screening_total":     "CRkpKFuC2Oe",  # RHD Total women screened for cervical cancer
+    "htc_results_new_negative":     "H3MMa491P8s",  # HTC Results Given - New Negative (walk-in HIV testing)
+    "htc_results_new_positive":     "O4k3jslnsgc",  # HTC Results Given - New Positive
+    "fp_subsequent_clients_pct":    "OnRiYAdJMId",  # BNA % subsequent clients accessing modern FP (resupply)
+    "fp_subsequent_clients_total":  "rF9fxym97Cm",  # PI FP - Total number of Subsequent FP clients
+    "cataract_surgical_coverage":   "vKSXGzLdUP8",  # OPHTH Cataract Surgical Coverage (elective)
+
+    # --- demand-driven, scheduled but reschedulable ---
+    # Missed visits substitute into later acute care (IPD/OPD) — model with lags,
+    # or accept coefficients will be entangled with substitution effects.
+    "tb_hh_referred_female":        "PXPJHF7eLFx",  # TB HH Referred for TB screening_female
+    "tb_hh_referred_male":          "Q7YotR4Pi3O",  # TB HH Referred for TB screening_male
+
+    # --- outreach delivery (natural experiment vs matched static-clinic indicators) ---
+    # Client-side heat exposure bites harder for outreach than static-clinic
+    # equivalents; the difference isolates demand from facility-side supply.
+    "fully_immunised_outreach":     "dK1Ii8xLkfn",  # CH P EPI Total fully immunised children (Outreach)
+    "fully_immunised_outreach_alt": "JaL8yOHqP0e",  # EPI - Fully Immunized children (Outreach) — HMIS variant; keep only one after checking
+    "vitA_postnatal_outreach":      "AXvX2eIHcUQ",  # EPI - Vit A supplemented postnatal mothers coverage (Outreach)
+
 }
 DATA_ELEMENT_IDS: dict[str, str] = {
     "pnc_mother_checked_48h": "JSN2CbjKFt9",       # RHD PNC # Mother Checked in <48 Hours (first PNC contact, WHO-standard window)
@@ -77,6 +100,16 @@ DATA_ELEMENT_IDS: dict[str, str] = {
     # DENOMINATOR: the delivered cohort (pick one; live births is the cleaner base).
     "live_births_total":            "ftyQGpirFHE",  # HMIS Total # of Live Births
     "skilled_deliveries":           "Dv7Hcho5dCr",  # HMIS # of Deliveries Attended by Skilled Health Personnel
+
+    # --- demand-driven attendance, heat-elastic (raw counts) ---
+    # FP resupply by method — direct attendance signal, not smoothed by a denominator.
+    "fp_acceptors_pills":           "IaH2jmlQuCe",  # CAC # of FP methods acceptors pills
+    "fp_acceptors_injectable":      "YRfKFMSSIt9",  # CAC # of FP methods acceptors injectible
+    "fp_acceptors_condoms":         "JSGA24sSjX3",  # CAC # of FP methods acceptors condoms
+    # Non-emergency service volume — highly discretionary.
+    "dental_tooth_fillings":        "iDC0XxAcN4O",  # CH DT Tooth fillings (extractions kept separate — pain-driven)
+    "mental_health_clinical_officer": "GR04Eon4ASl", # CH MT Patients seen by Mental Health Clinical Officer
+    "mental_health_nurse":          "eK6AXOTNslS",  # CH MT Patients seen by Mental Health Nurse
 }
 
 # Root org unit to pull under (e.g. national root UID) — data will be
