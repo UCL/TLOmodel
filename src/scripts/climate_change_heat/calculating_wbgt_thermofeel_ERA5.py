@@ -372,7 +372,7 @@ def main():
 
     mc = {"time": midx.values, "lat": lats, "lon": lons}
 
-    # monthly-mean file — feeds associating_grid_squares_weather.py (var names
+    # monthly-mean file — feeds associating_grid_squares_weather_build_regression.py (var names
     # wbgt_day / wbgt_night preserved so that script needs no change).
     ds_m = xr.Dataset({
         "wbgt_day":   xr.DataArray(m_day,   coords=mc, dims=["time","lat","lon"],
