@@ -66,6 +66,9 @@ from smac_scenario import TloOptimisationScenario  # imported directly - it's a
                                                        # not loaded from a file path
 from constrained_ei import ConstrainedEI  # the module built earlier
 from postprocess_output import postprocess_run
+from convergence_monitoring import (
+    append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
+)
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
 
@@ -230,11 +233,6 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
-    # NOTE: single braces throughout below - these are plain strings, not
-    # f-strings, so ${AZ_BATCH_...} needs no escaping at all. The double
-    # braces in the previous version were a leftover bug: harmless where
-    # nothing ever substituted into them, but the same root cause as the
-    # {txt,log} KeyError below.
     remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
@@ -385,6 +383,8 @@ def record_result(config: Configuration, seed: int, result: dict) -> TrialValue:
         "hr_violation": hr_violation,
         "stock_violation": stock_violation,
     })
+    
+    append_history_to_file(history[-1])
 
     K = 3 * dalys  # HYPERPARAMETER: penalty coefficient - rough, not load-bearing
     # for search quality now that ConstrainedEI does the real steering,
@@ -468,12 +468,12 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
     n_seeded = 0
     for i, run in enumerate(prior_runs):
         config = Configuration(configspace, values=run["config"])
-        # seed is arbitrary here - these runs weren't tied to a real
-        # SMAC-issued seed, so any distinct integer per prior run is
-        # fine; SMAC just uses it as part of the run's identity key.
-        value = record_result(config, i, run)
-        # TO DO: does this need to be the actual seed used
-        info = TrialInfo(config=config, seed=i)
+        # use the real seed if this prior run's was recorded (honest
+        # provenance in SMAC's runhistory); fall back to the enumeration
+        # index only when it's genuinely unknown.
+        seed = run.get("seed", i)
+        value = record_result(config, seed, run)
+        info = TrialInfo(config=config, seed=seed)
         smac.tell(info, value)
         n_seeded += 1
     return n_seeded
@@ -564,7 +564,10 @@ for _ in range(N_CONCURRENT):
     pending.append((info, submit_azure_job(info.config, info.seed)))
 
 n_completed = n_seeded  # start counting from the warm-started runs, not zero
-while n_completed < scenario.n_trials:
+best_dalys_over_time: list[float] = []
+converged = False
+
+while pending or (n_completed < scenario.n_trials and not converged):
     made_progress = False
     still_pending = []
 
@@ -579,8 +582,17 @@ while n_completed < scenario.n_trials:
         n_completed += 1
         made_progress = True
 
-        # keep concurrency topped up
-        if n_completed < scenario.n_trials:
+        # --- convergence check (logic lives in convergence_monitoring.py) ---
+        current_best = get_best_feasible_dalys(history)
+        if current_best is not None:
+            best_dalys_over_time.append(current_best)
+
+        if not converged and check_convergence(best_dalys_over_time):
+            converged = True
+            print(f"Stopping new submissions; draining {len(pending) - 1} pending job(s).")
+
+        # keep concurrency topped up - unless we've converged or hit budget
+        if n_completed < scenario.n_trials and not converged:
             new_info = smac.ask()
             still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
 
@@ -597,13 +609,9 @@ while n_completed < scenario.n_trials:
 #    (config, seed) results rather than pre-averaged bundles.
 # --------------------------------------------------------------------------
 
-def _config_key(config: Configuration) -> tuple:
-    """Hashable, order-independent identity for grouping history by config."""
-    return tuple(sorted(dict(config).items()))
-
 grouped: dict[tuple, list[dict]] = {}
 for h in history:
-    grouped.setdefault(_config_key(h["config_object"]), []).append(h)
+    grouped.setdefault(config_key(h["config_object"]), []).append(h)
 
 aggregated = []
 for entries in grouped.values():
