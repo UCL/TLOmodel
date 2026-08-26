@@ -19,7 +19,7 @@ from tlo.analysis.utils import load_pickled_dataframes
 
 # TARGET_PERIOD: adjust to match the evaluation window your simulation
 # actually covers - this determines which years' DALYs/costs get summed.
-TARGET_PERIOD = (pd.Timestamp(2025, 1, 1), pd.Timestamp(2050, 12, 31))
+TARGET_PERIOD = (pd.Timestamp(2010, 1, 1), pd.Timestamp(2011, 1, 1))
 
 
 def postprocess_run(run_dir: Path) -> dict:
