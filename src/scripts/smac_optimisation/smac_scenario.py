@@ -79,6 +79,30 @@ class TloOptimisationScenario(BaseScenario):
         # Place holders
         self.tclose_days_offset_overwrite = 7
         self.year_mode_switch = 2019
+        
+        """
+        self.hiv_testing_rates = None
+        self.annual_rate_selftest = None
+        self.annual_testing_rate_adults = None
+        self.prob_hiv_test_at_anc_or_delivery = None
+        self.prob_hiv_test_for_newborn_infant = None
+        self.selftest_available = None
+        self.switch_vl_test_to_tdf = None
+        self.prob_prep_for_fsw_after_hiv_test = None
+        self.prob_prep_for_agyw = None
+        self.prob_injectable_prep_vs_oral = None
+        self.prob_circ_after_hiv_test = None
+        self.prob_circ_for_child_from_2020 = None
+        self.beta = None
+        self.reduction_in_hiv_beta = None
+        self.probability_of_being_retained_on_prep_every_3_months = None
+        self.probability_of_being_retained_on_art_every_3_months = None
+        self.prob_start_art_or_vs = None
+        self.tb_ipt_coverage = None
+        self.virally_suppressed_on_art = None
+        self.consumable_availability_HIV_test = None
+        self.consumable_availability_VL_test = None
+        """
 
     def log_configuration(self):
         return {
@@ -98,6 +122,31 @@ class TloOptimisationScenario(BaseScenario):
                 "tclose_days_offset_overwrite": self.tclose_days_offset_overwrite,
                 "year_mode_switch" : self.year_mode_switch,
             },
+            """
+            "Hiv": {
+                "hiv_testing_rates": self.hiv_testing_rates,
+                "annual_rate_selftest": self.annual_rate_selftest,
+                "annual_testing_rate_adults": self.annual_testing_rate_adults,
+                "prob_hiv_test_at_anc_or_delivery": self.prob_hiv_test_at_anc_or_delivery,
+                "prob_hiv_test_for_newborn_infant": self.prob_hiv_test_for_newborn_infant,
+                "selftest_available": self.selftest_available,
+                "switch_vl_test_to_tdf": self.switch_vl_test_to_tdf,
+                "prob_prep_for_fsw_after_hiv_test": self.prob_prep_for_fsw_after_hiv_test,
+                "prob_prep_for_agyw": self.prob_prep_for_agyw,
+                "prob_injectable_prep_vs_oral": self.prob_injectable_prep_vs_oral,
+                "prob_circ_after_hiv_test": self.prob_circ_after_hiv_test,
+                "prob_circ_for_child_from_2020": self.prob_circ_for_child_from_2020,
+                "beta": self.beta,
+                "reduction_in_hiv_beta": self.reduction_in_hiv_beta,
+                "probability_of_being_retained_on_prep_every_3_months": self.probability_of_being_retained_on_prep_every_3_months,
+                "probability_of_being_retained_on_art_every_3_months": self.probability_of_being_retained_on_art_every_3_months,
+                "prob_start_art_or_vs": self.prob_start_art_or_vs,
+                "tb_ipt_coverage": self.tb_ipt_coverage,
+                "virally_suppressed_on_art": self.virally_suppressed_on_art,
+                "consumable_availability_HIV_test": self.consumable_availability_HIV_test,
+                "consumable_availability_VL_test": self.consumable_availability_VL_test,
+            }
+            """
             # map intervention_coverage / other config values onto
             # whichever module parameters they actually control in
             # your real model
