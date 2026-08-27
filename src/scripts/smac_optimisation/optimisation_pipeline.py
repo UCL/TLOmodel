@@ -32,9 +32,9 @@ file's *code* never changes between trials - only the attribute values
 set on it before each submission.
 
 HYPERPARAMETERS: every tunable knob in this file is marked inline with a
-"HYPERPARAMETER" comment - grep for that tag across all three files
-(constrained_ei.py, smac_scenario.py, ask_tell_azure_example.py) to find
-the complete list in one pass.
+"HYPERPARAMETER" comment - grep for that tag across all files
+(constrained_ei.py, smac_scenario.py, convergence_monitoring.py,
+optimisation_pipeline.py) to find the complete list in one pass.
 """
 
 from __future__ import annotations
@@ -55,6 +55,7 @@ from azure.batch import models as batch_models
 from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer
 from smac import HyperparameterOptimizationFacade, Scenario
 from smac.runhistory.dataclasses import TrialInfo, TrialValue
+from smac.runhistory.enumerations import StatusType
 
 from tlo.cli import (
     is_file_clean, load_config, get_batch_client,
@@ -103,6 +104,7 @@ CONFIG_FILE = "tlo.conf"
 
 _config = None  # lazily loaded, see _get_config()
 _commit_hexsha = None  # resolved once per process, see _get_commit()
+_batch_client = None  # lazily built, see _get_batch_client()
 
 
 def _get_config():
@@ -110,6 +112,22 @@ def _get_config():
     if _config is None:
         _config = load_config(CONFIG_FILE)
     return _config
+
+
+def _get_batch_client():
+    """
+    Cached so repeated polling (azure_job_is_finished / azure_task_succeeded
+    get called once per pending job, every POLL_INTERVAL_SECONDS) doesn't
+    re-authenticate against Key Vault on every single check.
+    """
+    global _batch_client
+    if _batch_client is None:
+        tlo_config = _get_config()
+        _batch_client = get_batch_client(
+            tlo_config["BATCH"]["CLIENT_ID"], tlo_config["BATCH"]["SECRET"],
+            tlo_config["AZURE"]["TENANT_ID"], tlo_config["BATCH"]["URL"],
+        )
+    return _batch_client
 
 
 def _get_commit() -> str:
@@ -193,10 +211,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     job_id = tlo_scenario.get_log_config()["filename"] + "-" + timestamp + "-" + uuid.uuid4().hex[:8]
     azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
 
-    batch_client = get_batch_client(
-        tlo_config["BATCH"]["CLIENT_ID"], tlo_config["BATCH"]["SECRET"],
-        tlo_config["AZURE"]["TENANT_ID"], tlo_config["BATCH"]["URL"],
-    )
+    batch_client = _get_batch_client()
     create_file_share(tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"])
     for idx in range(len(os.path.split(azure_directory))):
         create_directory(
@@ -270,13 +285,35 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
 
 
 def azure_job_is_finished(job: AzureJobHandle) -> bool:
-    """Direct Batch API query - same call `tlo batch-job` makes under the hood."""
-    tlo_config = _get_config()
-    batch_client = get_batch_client(
-        tlo_config["BATCH"]["CLIENT_ID"], tlo_config["BATCH"]["SECRET"],
-        tlo_config["AZURE"]["TENANT_ID"], tlo_config["BATCH"]["URL"],
-    )
-    return batch_client.job.get(job_id=job.job_id).state == "completed"
+    """
+    True once the task has reached a terminal state (completed OR
+    failed) - i.e. it's no longer running and safe to stop polling.
+    Does NOT imply success: Batch's "completed" state means the task
+    finished RUNNING, not that it finished successfully. A crashed TLO
+    run (non-zero exit code) also reaches "completed" - see
+    azure_task_succeeded() to distinguish a genuine result from that.
+    """
+    batch_client = _get_batch_client()
+    tasks = list(batch_client.task.list(job_id=job.job_id))
+    if not tasks:
+        return False  # task not yet visible to the API
+    return tasks[0].state == "completed"
+
+
+def azure_task_succeeded(job: AzureJobHandle) -> bool:
+    """
+    Only meaningful once azure_job_is_finished(job) is True. Checks the
+    task's actual exit code - a completed-but-crashed TLO run (e.g. an
+    exception partway through the simulation) still reaches "completed"
+    task state, so exit code is what actually separates a real result
+    from a failure. exit_code == 0 is success; anything else, or a
+    missing execution_info entirely, is treated as failed.
+    """
+    batch_client = _get_batch_client()
+    tasks = list(batch_client.task.list(job_id=job.job_id))
+    if not tasks or tasks[0].execution_info is None:
+        return False
+    return tasks[0].execution_info.exit_code == 0
 
 
 def download_run_outputs(job: AzureJobHandle) -> Path:
@@ -567,6 +604,20 @@ n_completed = n_seeded  # start counting from the warm-started runs, not zero
 best_dalys_over_time: list[float] = []
 converged = False
 
+
+def _top_up_pending(still_pending: list) -> None:
+    """
+    Ask SMAC for a fresh config and submit it, keeping N_CONCURRENT
+    slots full - unless the budget or convergence say otherwise. Shared
+    by the success path and both failure paths below, so a failed Azure
+    task or a postprocessing crash doesn't permanently shrink how many
+    jobs are in flight.
+    """
+    if n_completed < scenario.n_trials and not converged:
+        new_info = smac.ask()
+        still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
+
+
 while pending or (n_completed < scenario.n_trials and not converged):
     made_progress = False
     still_pending = []
@@ -576,9 +627,46 @@ while pending or (n_completed < scenario.n_trials and not converged):
             still_pending.append((info, job))
             continue
 
-        result = fetch_azure_result(job)
-        value = record_result(info.config, info.seed, result)
-        smac.tell(info, value)          # <-- the actual "notify SMAC" step
+        # --- the Azure task itself failed (non-zero exit code) - this
+        # trial produced no usable result. Told to SMAC as CRASHED (not
+        # skipped entirely) so its runhistory/intensifier have an honest
+        # record that this (config, seed) was attempted and failed -
+        # SMAC's own runhistory encoder already knows to exclude crashed
+        # trials from surrogate training via considered_states, so this
+        # doesn't pollute the model, but it does stop SMAC from being
+        # blind to the fact that this specific combination was tried.
+        # Doesn't count toward n_trials or touch history/ConstrainedEI -
+        # a replacement config is still submitted so the failure doesn't
+        # shrink concurrency.
+        if not azure_task_succeeded(job):
+            print(
+                f"[failed] job_id={job.job_id} - Azure task exited non-zero. "
+                f"Skipping this trial."
+            )
+            smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
+            made_progress = True
+            _top_up_pending(still_pending)
+            continue
+
+        # --- the Azure task succeeded, but postprocessing can still
+        # fail (missing/malformed output files, the year-completeness
+        # assertion in postprocess_output.py, etc). Catching this
+        # separately from the exit-code check above means one bad run
+        # can't propagate up and kill the whole optimisation process -
+        # in particular, it can't wipe out SMAC's accumulated in-memory
+        # surrogate/incumbent state built up over potentially hours.
+        # Same CRASHED-status reasoning as above applies here too.
+        try:
+            result = fetch_azure_result(job)
+            value = record_result(info.config, info.seed, result)
+            smac.tell(info, value)          # <-- the actual "notify SMAC" step
+        except Exception as e:
+            print(f"[postprocessing failed] job_id={job.job_id} - {e!r}. Skipping this trial.")
+            smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
+            made_progress = True
+            _top_up_pending(still_pending)
+            continue
+
         n_completed += 1
         made_progress = True
 
@@ -591,10 +679,7 @@ while pending or (n_completed < scenario.n_trials and not converged):
             converged = True
             print(f"Stopping new submissions; draining {len(pending) - 1} pending job(s).")
 
-        # keep concurrency topped up - unless we've converged or hit budget
-        if n_completed < scenario.n_trials and not converged:
-            new_info = smac.ask()
-            still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
+        _top_up_pending(still_pending)
 
     pending = still_pending
     if not made_progress:
