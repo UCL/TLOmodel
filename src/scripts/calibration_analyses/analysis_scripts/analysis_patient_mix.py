@@ -230,7 +230,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # check that all events are mapped
         unmapped = _df.loc[_df["loc_cat"].isna(), "Event_Name"].unique()
-        assert set(unmapped["Event_Name"].drop_duplicates()).issubset(
+        assert set(unmapped).issubset(
             {'Inpatient_Care', 'HSI_GenericNonEmergencyFirstAppt',
              'HSI_GenericEmergencyFirstAppt', '_BaseHSIGenericFirstAppt'})
 
@@ -802,9 +802,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pat_exit["loc_cat"] = pat_exit["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
     fac_tms_pat_load["loc_cat"] = fac_tms_pat_load["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
 
-    common_loc_cats = hsi_loc_cat_map["loc_cat"].dropna().unique()
-    pat_exit = pat_exit.loc[pat_exit["loc_cat"].isin(common_loc_cats)]
-    fac_tms_pat_load = fac_tms_pat_load.loc[fac_tms_pat_load["loc_cat"].isin(common_loc_cats)]
+    common_loc_cats = hsi_loc_cat_map.dropna().unique()
+    pat_exit = pat_exit.loc[pat_exit["loc_cat"].isin(common_loc_cats)].copy()
+    fac_tms_pat_load = fac_tms_pat_load.loc[fac_tms_pat_load["loc_cat"].isin(common_loc_cats)].copy()
 
     # *** patient mix comparisons ***
     # from patient exit
