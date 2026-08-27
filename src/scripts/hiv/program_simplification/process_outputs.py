@@ -2200,6 +2200,40 @@ cons_hrh_costs_year_draw_run = cons_summed_by_year + hrh_costs_by_year
 # cons_hrh_costs_year_draw_run.to_excel(results_folder / f'cons_hrh_costs_year_draw_run_{target_period()}.xlsx')
 
 
+total_costs = cons_hrh_costs_year_draw_run.sum(axis=0)
+total_costs_summary = (
+    total_costs
+    .groupby(level="draw")
+    .agg(
+        mean="mean",
+        p2_5=lambda x: x.quantile(0.025),
+        p97_5=lambda x: x.quantile(0.975)
+    )
+)
+
+
+total_cost_diff = find_difference_relative_to_comparison_series(
+        total_costs,
+        comparison="Status Quo"
+    )
+
+total_costs_diff_summary = (
+    total_cost_diff
+    .groupby(level="draw")
+    .agg(
+        mean="mean",
+        p2_5=lambda x: x.quantile(0.025),
+        p97_5=lambda x: x.quantile(0.975)
+    )
+)
+
+total_costs_summary.to_excel(results_folder / f'total_costs_cons_hrh{target_period()}.xlsx')
+total_costs_diff_summary.to_excel(results_folder / f'total_costs_cons_hrh_diff_from_SQ{target_period()}.xlsx')
+
+# todo costs by year for fig 1D plot? then summary table also for Table 1
+
+
+
 
 ################################
 # construct the fiscal envelopes
@@ -2217,94 +2251,94 @@ summary_total_costs_year_table = format_cost_table(summary_total_costs_year)
 
 
 # apply the contraction for future funding scenarios
-
-def apply_compound_contraction(
-    baseline_runs_df: pd.DataFrame,
-    base_year: int = 2025,
-    rates: dict[str, float] | None = None,
-    draw: str | None = "Status quo",
-) -> pd.DataFrame:
-    """
-    Apply compound contraction to each run and return dataframe.
-    """
-
-    if rates is None:
-        rates = {
-            "constant": 0.00,
-            "mild_2pc": 0.02,
-            "severe_6pc": 0.06,
-        }
-
-    df = baseline_runs_df.copy()
-
-    # --- select draw if provided ---
-    if draw is not None:
-        df = df.xs(draw, axis=1, level="draw")
-
-    if base_year not in df.index:
-        raise KeyError(f"{base_year} not found in index")
-
-    years = df.index.to_numpy()
-    t = years - base_year
-
-    # multipliers per year
-    def multipliers(rate):
-        return (1.0 - rate) ** np.maximum(t, 0)
-
-    base_vals = df.loc[base_year]   # Series indexed by run
-
-    scenario_frames = []
-
-    for scen_name, rate in rates.items():
-
-        m = multipliers(rate)
-
-        # projection matrix: years x runs
-        proj = pd.DataFrame(
-            np.outer(m, base_vals.to_numpy()),
-            index=df.index,
-            columns=df.columns,
-        )
-
-        # keep historical years unchanged
-        proj.loc[proj.index < base_year] = df.loc[df.index < base_year]
-
-        # add scenario level
-        proj.columns = pd.MultiIndex.from_product(
-            [[scen_name], proj.columns],
-            names=["scenario", "run"]
-        )
-
-        scenario_frames.append(proj)
-
-    out = pd.concat(scenario_frames, axis=1)
-
-    return out
-
-
-
-
-rates = {
-    "constant": 0.00,
-    "moderate_2pc": 0.02,
-    "severe_6pc": 0.06,
-}
-
-scen_runs = apply_compound_contraction(
-    baseline_runs_df=cons_hrh_costs_year_draw_run,
-    base_year=2025,
-    rates=rates,
-    draw="Status Quo",
-)
-scen_runs.columns.names = ["draw", "run"]
-
-
-summary_contract_funding = compute_summary_statistics(
-    scen_runs,
-    central_measure='mean'
-)
-# summary_contract_funding.to_excel(results_folder / f'summary_contract_funding_{target_period()}.xlsx')
-
+#
+# def apply_compound_contraction(
+#     baseline_runs_df: pd.DataFrame,
+#     base_year: int = 2025,
+#     rates: dict[str, float] | None = None,
+#     draw: str | None = "Status quo",
+# ) -> pd.DataFrame:
+#     """
+#     Apply compound contraction to each run and return dataframe.
+#     """
+#
+#     if rates is None:
+#         rates = {
+#             "constant": 0.00,
+#             "mild_2pc": 0.02,
+#             "severe_6pc": 0.06,
+#         }
+#
+#     df = baseline_runs_df.copy()
+#
+#     # --- select draw if provided ---
+#     if draw is not None:
+#         df = df.xs(draw, axis=1, level="draw")
+#
+#     if base_year not in df.index:
+#         raise KeyError(f"{base_year} not found in index")
+#
+#     years = df.index.to_numpy()
+#     t = years - base_year
+#
+#     # multipliers per year
+#     def multipliers(rate):
+#         return (1.0 - rate) ** np.maximum(t, 0)
+#
+#     base_vals = df.loc[base_year]   # Series indexed by run
+#
+#     scenario_frames = []
+#
+#     for scen_name, rate in rates.items():
+#
+#         m = multipliers(rate)
+#
+#         # projection matrix: years x runs
+#         proj = pd.DataFrame(
+#             np.outer(m, base_vals.to_numpy()),
+#             index=df.index,
+#             columns=df.columns,
+#         )
+#
+#         # keep historical years unchanged
+#         proj.loc[proj.index < base_year] = df.loc[df.index < base_year]
+#
+#         # add scenario level
+#         proj.columns = pd.MultiIndex.from_product(
+#             [[scen_name], proj.columns],
+#             names=["scenario", "run"]
+#         )
+#
+#         scenario_frames.append(proj)
+#
+#     out = pd.concat(scenario_frames, axis=1)
+#
+#     return out
+#
+#
+#
+#
+# rates = {
+#     "constant": 0.00,
+#     "moderate_2pc": 0.02,
+#     "severe_6pc": 0.06,
+# }
+#
+# scen_runs = apply_compound_contraction(
+#     baseline_runs_df=cons_hrh_costs_year_draw_run,
+#     base_year=2025,
+#     rates=rates,
+#     draw="Status Quo",
+# )
+# scen_runs.columns.names = ["draw", "run"]
+#
+#
+# summary_contract_funding = compute_summary_statistics(
+#     scen_runs,
+#     central_measure='mean'
+# )
+# # summary_contract_funding.to_excel(results_folder / f'summary_contract_funding_{target_period()}.xlsx')
+#
 
 ####################################
 # plot funding trajectories
@@ -2830,229 +2864,894 @@ dalys_ci = (
     .reindex(draw_order, axis=1, level="draw")
 )
 
+#
+#
+# def plot_combined_cadre_and_funding(
+#     num_hcw_hours_diff_edit,
+#     epi_df,
+#     df_funding,
+#     df_program,
+#     selected_programs,
+#     scenario_colours,
+#     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
+#     figsize=(16, 12),
+#     ylabel="Difference in HIV/AIDS DALYs vs Status Quo",
+#     exclude_scenarios=None,
+#     a_fund=0.8,
+#     a_prog=0.30,
+#     lw=2.2,
+#     stat_central="central",
+#     fund_colours=("0.85", "#fddbc7", "#d1e5f0"),
+# ):
+#     """
+#     Multi-panel figure: 2x2 layout with cadre hours vs outcomes (3 panels) + funding vs programs (1 panel)
+#     """
+#     if exclude_scenarios is None:
+#         exclude_scenarios = []
+#
+#     # Create 2x2 subplot grid
+#     fig, axes = plt.subplots(2, 2, figsize=figsize)
+#
+#     # Panel positions: (0,0), (0,1), (1,0), (1,1)
+#     # First three panels: cadre hours vs outcomes
+#     cadre_axes = [axes[0, 0], axes[0, 1], axes[1, 0]]
+#     funding_ax = axes[1, 1]
+#
+#     # --- Panels 1-3: Cadre hours vs outcomes (using original working code logic) ---
+#     # Extract infections (assume single row)
+#     y_c = epi_df.xs("central", axis=1, level="stat").iloc[0]
+#     y_l = epi_df.xs("lower", axis=1, level="stat").iloc[0]
+#     y_u = epi_df.xs("upper", axis=1, level="stat").iloc[0]
+#
+#     # Use draw order from the first cadre's row
+#     first_cadre = cadres[0]
+#     draws_order = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").loc[first_cadre].index
+#
+#     # Drop any excluded scenarios
+#     if exclude_scenarios:
+#         draws_order = [d for d in draws_order if d not in exclude_scenarios]
+#
+#     for i, (ax, cadre) in enumerate(zip(cadre_axes, cadres)):
+#         x_c = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").loc[cadre]
+#         x_l = num_hcw_hours_diff_edit.xs("lower", axis=1, level="stat").loc[cadre]
+#         x_u = num_hcw_hours_diff_edit.xs("upper", axis=1, level="stat").loc[cadre]
+#
+#         yc = y_c.reindex(draws_order)
+#         yl = y_l.reindex(draws_order)
+#         yu = y_u.reindex(draws_order)
+#
+#         for d in draws_order:
+#             xc, xm, xp = x_c[d], x_c[d] - x_l[d], x_u[d] - x_c[d]
+#             yc_d, ym, yp = yc[d], yc[d] - yl[d], yu[d] - yc[d]
+#             colour = scenario_colours.get(d, "grey") if scenario_colours else "C0"
+#
+#             ax.errorbar(
+#                 xc, yc_d,
+#                 xerr=[[xm], [xp]], yerr=[[ym], [yp]],
+#                 fmt='o', capsize=3,
+#                 color=colour, ecolor=colour, elinewidth=1, alpha=0.9,
+#             )
+#
+#         ax.set_title("Nursing" if cadre == "Nursing_and_Midwifery" else cadre)
+#         ax.set_xlabel("Difference in hours vs Status Quo")
+#         ax.set_ylabel(ylabel)
+#         ax.grid(True, linestyle="--", alpha=0.4)
+#         ax.axhline(0, color="grey", linewidth=1, alpha=0.6)
+#         ax.axvline(0, color="grey", linewidth=1, alpha=0.6)
+#
+#     # --- Panel 4: Funding vs Programs ---
+#     if df_funding.columns.nlevels != 2 or df_program.columns.nlevels != 2:
+#         raise ValueError("Both funding inputs must have 2-level MultiIndex columns: (name, stat).")
+#
+#     # Filter programs
+#     all_programs = df_program.columns.get_level_values(0).unique()
+#     programs = [p for p in selected_programs if p in all_programs]
+#     if not programs:
+#         raise ValueError("None of the selected programs found in the data.")
+#
+#     fund_groups = list(df_funding.columns.get_level_values(0).unique())
+#
+#     # Y-limits for funding panel
+#     program_data = df_program[[col for col in df_program.columns if col[0] in programs]]
+#     ymin = min(
+#         df_funding.xs("lower", level=1, axis=1).min().min(),
+#         program_data.xs("lower", level=1, axis=1).min().min()
+#     )
+#     ymax = max(
+#         df_funding.xs("upper", level=1, axis=1).max().max(),
+#         program_data.xs("upper", level=1, axis=1).max().max()
+#     )
+#
+#     # Plot funding trajectories (background shaded areas)
+#     funding_handles = []
+#     # funding_labels = ["Constant", "2% contraction", "6% contraction"]
+#     funding_labels = ["Constant"]
+#
+#     for k, g in enumerate(fund_groups):
+#         c = fund_colours[k % len(fund_colours)]
+#         funding_patch = funding_ax.fill_between(
+#             df_funding.index,
+#             df_funding[(g, "lower")],
+#             df_funding[(g, "upper")],
+#             color=c,
+#             alpha=a_fund,
+#             linewidth=0,
+#             zorder=1,
+#             label=funding_labels[k] if k < len(funding_labels) else g
+#         )
+#         funding_handles.append(funding_patch)
+#
+#     # Plot selected program costs (lines with confidence bands)
+#     program_handles = []
+#     for i, p in enumerate(programs):
+#         color = scenario_colours.get(p, colours[i % len(colours)])
+#
+#         # Confidence band
+#         program_band = funding_ax.fill_between(
+#             df_program.index,
+#             df_program[(p, "lower")],
+#             df_program[(p, "upper")],
+#             color=color,
+#             alpha=a_prog,
+#             linewidth=0,
+#             zorder=3
+#         )
+#
+#         # Central line
+#         program_line = funding_ax.plot(
+#             df_program.index,
+#             df_program[(p, stat_central)],
+#             color=color,
+#             lw=lw,
+#             zorder=4,
+#             label=f"{p}"
+#         )[0]
+#
+#         program_handles.append(program_line)
+#
+#     funding_ax.set_ylim(ymin, ymax)
+#     funding_ax.set_xlabel("Year")
+#     funding_ax.set_ylabel("Annual costs (USD)")
+#     funding_ax.set_title("Programme Cost Trajectories")
+#     funding_ax.grid(False)
+#     funding_ax.yaxis.grid(True, alpha=0.18)
+#     funding_ax.set_axisbelow(True)
+#
+#     # Create funding legend
+#     # funding_legend = funding_ax.legend(handles=funding_handles,
+#     #                                    title="Funding Trajectory",
+#     #                                    loc='lower left',
+#     #                                    bbox_to_anchor=(0.01, 0.2),
+#     #                                    frameon=True,
+#     #                                    title_fontsize=9,
+#     #                                    fontsize=8,
+#     #                                    borderaxespad=0)
+#     #
+#     # funding_ax.add_artist(funding_legend)
+#
+#     # Create program legend
+#     # program_legend = funding_ax.legend(handles=program_handles,
+#     #                                    title="Scenario",
+#     #                                    loc='lower left',
+#     #                                    bbox_to_anchor=(0.01, 0.01),
+#     #                                    frameon=True,
+#     #                                    title_fontsize=9,
+#     #                                    fontsize=8,
+#     #                                    borderaxespad=0,
+#     #                                    alignment='left')
+#
+#     # Create scenario legend for the cadre plots (top right of figure)
+#     handles = [
+#         mlines.Line2D([], [], color=scenario_colours.get(d, "grey"),
+#                       marker='o', linestyle='None', markersize=8, label=d)
+#         for d in draws_order
+#     ]
+#
+#     scenario_legend = fig.legend(handles=handles, title="Scenario",
+#                                  loc="upper right", bbox_to_anchor=(0.99, 0.97),
+#                                  bbox_transform=fig.transFigure, frameon=True,
+#                                  title_fontsize=9, fontsize=8)
+#
+#     # Add panel labels to bottom-left of each panel
+#     panel_labels = ["A", "B", "C", "D"]
+#
+#     for ax, label in zip(axes.flat, panel_labels):
+#         ax.text(
+#             0.02, 0.03, label,
+#             transform=ax.transAxes,
+#             fontsize=14,
+#             fontweight="bold",
+#             va="bottom",
+#             ha="left"
+#         )
+#
+#     plt.tight_layout()
+#     return fig, axes
+#
+#
+# # Create the combined multi-panel figure
+# selected_programs = [
+#     'Status Quo',
+#     'Reduce HIV testing',
+#     'Remove Viral Load Testing',
+#     'Reduce All Elements',
+# ]
+#
+# fig, axes = plot_combined_cadre_and_funding(
+#     num_hcw_hours_diff_edit=num_hcw_hours_diff_edit,
+#     epi_df=dalys_ci,
+#     df_funding=constant_funding,
+#     df_program=summary_total_costs_year,
+#     selected_programs=all_except_scaleup_sq,
+#     scenario_colours=scenario_colours,
+#     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
+#     ylabel="Difference in HIV/AIDS DALYs vs Status Quo",
+#     exclude_scenarios=["Program Scale-up"]
+# )
+# plt.savefig(results_folder / "combined_cadre_and_funding_analysis.png", dpi=300, bbox_inches='tight')
+# plt.show()
+
+
+############################################################################
+#%%  revised main figure
+
+
+
+
+
+
 
 
 def plot_combined_cadre_and_funding(
     num_hcw_hours_diff_edit,
     epi_df,
-    df_funding,
     df_program,
     selected_programs,
     scenario_colours,
+    scenario_impact_groups,
+    impact_group_markers,
+    impact_group_order,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(16, 12),
-    ylabel="Difference in HIV/AIDS DALYs vs Status Quo",
     exclude_scenarios=None,
-    a_fund=0.8,
-    a_prog=0.30,
-    lw=2.2,
+    a_prog=0.14,
+    lw=2.0,
     stat_central="central",
-    fund_colours=("0.85", "#fddbc7", "#d1e5f0"),
 ):
     """
-    Multi-panel figure: 2x2 layout with cadre hours vs outcomes (3 panels) + funding vs programs (1 panel)
+    Four-panel figure.
+
+    Panels A-C
+    ----------
+    Difference in HCW time versus difference in HIV/AIDS DALYs.
+    - x-axis: million HCW hours
+    - y-axis: million DALYs
+    - colour: scenario
+    - marker shape: impact category
+
+    Panel D
+    -------
+    Annual programme cost trajectories in USD millions.
+    - selected_programs determines which scenarios are shown
+    - Status Quo is highlighted separately and directly labelled
+
+    Notes
+    -----
+    exclude_scenarios applies only to panels A-C.
     """
+
     if exclude_scenarios is None:
         exclude_scenarios = []
 
-    # Create 2x2 subplot grid
-    fig, axes = plt.subplots(2, 2, figsize=figsize)
+    MILLION = 1e6
 
-    # Panel positions: (0,0), (0,1), (1,0), (1,1)
-    # First three panels: cadre hours vs outcomes
-    cadre_axes = [axes[0, 0], axes[0, 1], axes[1, 0]]
-    funding_ax = axes[1, 1]
+    # =========================================================
+    # Helpers
+    # =========================================================
 
-    # --- Panels 1-3: Cadre hours vs outcomes (using original working code logic) ---
-    # Extract infections (assume single row)
-    y_c = epi_df.xs("central", axis=1, level="stat").iloc[0]
-    y_l = epi_df.xs("lower", axis=1, level="stat").iloc[0]
-    y_u = epi_df.xs("upper", axis=1, level="stat").iloc[0]
+    def get_marker(scenario):
+        group = scenario_impact_groups.get(scenario)
+        return impact_group_markers.get(group, "o")
 
-    # Use draw order from the first cadre's row
+    # =========================================================
+    # Figure
+    # =========================================================
+
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=figsize,
+        facecolor="white"
+    )
+
+    cadre_axes = [
+        axes[0, 0],
+        axes[0, 1],
+        axes[1, 0],
+    ]
+
+    cost_ax = axes[1, 1]
+
+    for ax in axes.flat:
+        ax.set_facecolor("white")
+
+    # =========================================================
+    # PANELS A-C
+    # Epidemiological outcomes
+    # =========================================================
+
+    y_c = (
+        epi_df
+        .xs("central", axis=1, level="stat")
+        .iloc[0]
+        / MILLION
+    )
+
+    y_l = (
+        epi_df
+        .xs("lower", axis=1, level="stat")
+        .iloc[0]
+        / MILLION
+    )
+
+    y_u = (
+        epi_df
+        .xs("upper", axis=1, level="stat")
+        .iloc[0]
+        / MILLION
+    )
+
+    # Scenario order for A-C comes from HCW data
     first_cadre = cadres[0]
-    draws_order = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").loc[first_cadre].index
 
-    # Drop any excluded scenarios
-    if exclude_scenarios:
-        draws_order = [d for d in draws_order if d not in exclude_scenarios]
+    draws_order = list(
+        num_hcw_hours_diff_edit
+        .xs("central", axis=1, level="stat")
+        .loc[first_cadre]
+        .index
+    )
 
-    for i, (ax, cadre) in enumerate(zip(cadre_axes, cadres)):
-        x_c = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").loc[cadre]
-        x_l = num_hcw_hours_diff_edit.xs("lower", axis=1, level="stat").loc[cadre]
-        x_u = num_hcw_hours_diff_edit.xs("upper", axis=1, level="stat").loc[cadre]
+    # Status quo will not normally be present here because these
+    # are differences versus status quo, but exclusions are applied
+    # independently from Panel D.
+    draws_order = [
+        d for d in draws_order
+        if d not in exclude_scenarios
+    ]
+
+    # ---------------------------------------------------------
+    # Sort scenarios by impact category
+    # ---------------------------------------------------------
+
+    group_rank = {
+        group: i
+        for i, group in enumerate(impact_group_order)
+    }
+
+    original_rank = {
+        d: i
+        for i, d in enumerate(draws_order)
+    }
+
+    draws_order = sorted(
+        draws_order,
+        key=lambda d: (
+            group_rank.get(
+                scenario_impact_groups.get(d),
+                len(group_rank)
+            ),
+            original_rank[d]
+        )
+    )
+
+    unmapped = [
+        d for d in draws_order
+        if d not in scenario_impact_groups
+    ]
+
+    if unmapped:
+        print(
+            "Warning: scenarios without impact-group mapping:",
+            unmapped
+        )
+
+    # ---------------------------------------------------------
+    # Labels
+    # ---------------------------------------------------------
+
+    cadre_titles = {
+        "Clinical": "Clinical",
+        "Nursing_and_Midwifery": "Nursing",
+        "Pharmacy": "Pharmacy",
+    }
+
+    cadre_names = {
+        "Clinical": "clinical",
+        "Nursing_and_Midwifery": "nursing",
+        "Pharmacy": "pharmacy",
+    }
+
+    # ---------------------------------------------------------
+    # Plot A-C
+    # ---------------------------------------------------------
+
+    for ax, cadre in zip(cadre_axes, cadres):
+
+        x_c = (
+            num_hcw_hours_diff_edit
+            .xs("central", axis=1, level="stat")
+            .loc[cadre]
+            / MILLION
+        )
+
+        x_l = (
+            num_hcw_hours_diff_edit
+            .xs("lower", axis=1, level="stat")
+            .loc[cadre]
+            / MILLION
+        )
+
+        x_u = (
+            num_hcw_hours_diff_edit
+            .xs("upper", axis=1, level="stat")
+            .loc[cadre]
+            / MILLION
+        )
 
         yc = y_c.reindex(draws_order)
         yl = y_l.reindex(draws_order)
         yu = y_u.reindex(draws_order)
 
         for d in draws_order:
-            xc, xm, xp = x_c[d], x_c[d] - x_l[d], x_u[d] - x_c[d]
-            yc_d, ym, yp = yc[d], yc[d] - yl[d], yu[d] - yc[d]
-            colour = scenario_colours.get(d, "grey") if scenario_colours else "C0"
 
+            xc = x_c[d]
+            yc_d = yc[d]
+
+            xerr_low = xc - x_l[d]
+            xerr_high = x_u[d] - xc
+
+            yerr_low = yc_d - yl[d]
+            yerr_high = yu[d] - yc_d
+
+            colour = scenario_colours.get(d, "grey")
+            marker = get_marker(d)
+
+            # Uncertainty intervals
             ax.errorbar(
-                xc, yc_d,
-                xerr=[[xm], [xp]], yerr=[[ym], [yp]],
-                fmt='o', capsize=3,
-                color=colour, ecolor=colour, elinewidth=1, alpha=0.9,
+                xc,
+                yc_d,
+                xerr=[[xerr_low], [xerr_high]],
+                yerr=[[yerr_low], [yerr_high]],
+                fmt="none",
+                ecolor=colour,
+                elinewidth=0.9,
+                capsize=3,
+                alpha=0.40,
+                zorder=2,
             )
 
-        ax.set_title("Nursing" if cadre == "Nursing_and_Midwifery" else cadre)
-        ax.set_xlabel("Difference in hours vs Status Quo")
-        ax.set_ylabel(ylabel)
-        ax.grid(True, linestyle="--", alpha=0.4)
-        ax.axhline(0, color="grey", linewidth=1, alpha=0.6)
-        ax.axvline(0, color="grey", linewidth=1, alpha=0.6)
+            # Central estimate
+            ax.plot(
+                xc,
+                yc_d,
+                marker=marker,
+                linestyle="None",
+                markersize=7.5,
+                markerfacecolor=colour,
+                markeredgecolor=colour,
+                markeredgewidth=0.7,
+                zorder=3,
+            )
 
-    # --- Panel 4: Funding vs Programs ---
-    if df_funding.columns.nlevels != 2 or df_program.columns.nlevels != 2:
-        raise ValueError("Both funding inputs must have 2-level MultiIndex columns: (name, stat).")
-
-    # Filter programs
-    all_programs = df_program.columns.get_level_values(0).unique()
-    programs = [p for p in selected_programs if p in all_programs]
-    if not programs:
-        raise ValueError("None of the selected programs found in the data.")
-
-    fund_groups = list(df_funding.columns.get_level_values(0).unique())
-
-    # Y-limits for funding panel
-    program_data = df_program[[col for col in df_program.columns if col[0] in programs]]
-    ymin = min(
-        df_funding.xs("lower", level=1, axis=1).min().min(),
-        program_data.xs("lower", level=1, axis=1).min().min()
-    )
-    ymax = max(
-        df_funding.xs("upper", level=1, axis=1).max().max(),
-        program_data.xs("upper", level=1, axis=1).max().max()
-    )
-
-    # Plot funding trajectories (background shaded areas)
-    funding_handles = []
-    # funding_labels = ["Constant", "2% contraction", "6% contraction"]
-    funding_labels = ["Constant"]
-
-    for k, g in enumerate(fund_groups):
-        c = fund_colours[k % len(fund_colours)]
-        funding_patch = funding_ax.fill_between(
-            df_funding.index,
-            df_funding[(g, "lower")],
-            df_funding[(g, "upper")],
-            color=c,
-            alpha=a_fund,
-            linewidth=0,
-            zorder=1,
-            label=funding_labels[k] if k < len(funding_labels) else g
+        cadre_name = cadre_names.get(
+            cadre,
+            cadre.lower()
         )
-        funding_handles.append(funding_patch)
 
-    # Plot selected program costs (lines with confidence bands)
-    program_handles = []
-    for i, p in enumerate(programs):
-        color = scenario_colours.get(p, colours[i % len(colours)])
+        ax.set_title(
+            cadre_titles.get(cadre, cadre),
+            fontsize=12
+        )
 
-        # Confidence band
-        program_band = funding_ax.fill_between(
+        ax.set_xlabel(
+            f"Difference in {cadre_name} time vs status quo\n"
+            "(million hours)"
+        )
+
+        ax.set_ylabel(
+            "Difference in HIV/AIDS DALYs vs status quo\n"
+            "(million)"
+        )
+
+        # Light grid
+        ax.grid(
+            True,
+            linestyle="--",
+            linewidth=0.6,
+            alpha=0.16
+        )
+
+        # Reference lines at zero
+        ax.axhline(
+            0,
+            color="0.40",
+            linewidth=0.9,
+            alpha=0.75,
+            zorder=1
+        )
+
+        ax.axvline(
+            0,
+            color="0.40",
+            linewidth=0.9,
+            alpha=0.75,
+            zorder=1
+        )
+
+        ax.set_axisbelow(True)
+
+    # ---------------------------------------------------------
+    # Use common y-axis limits for A-C
+    # Retain different x-axis scales
+    # ---------------------------------------------------------
+
+    common_ymin = min(
+        ax.get_ylim()[0]
+        for ax in cadre_axes
+    )
+
+    common_ymax = max(
+        ax.get_ylim()[1]
+        for ax in cadre_axes
+    )
+
+    for ax in cadre_axes:
+        ax.set_ylim(
+            common_ymin,
+            common_ymax
+        )
+
+    # =========================================================
+    # PANEL D
+    # Programme cost trajectories
+    # =========================================================
+
+    if df_program.columns.nlevels != 2:
+        raise ValueError(
+            "df_program must have 2-level MultiIndex columns "
+            "(scenario, stat)."
+        )
+
+    available_programs = (
+        df_program.columns
+        .get_level_values(0)
+        .unique()
+    )
+
+    # selected_programs controls Panel D only
+    programs = [
+        p for p in selected_programs
+        if p in available_programs
+    ]
+
+    if not programs:
+        raise ValueError(
+            "None of selected_programs were found in df_program."
+        )
+
+    # ---------------------------------------------------------
+    # Determine y-axis range from ALL selected programmes,
+    # including Status Quo
+    # ---------------------------------------------------------
+
+    program_data = df_program[
+        [
+            col
+            for col in df_program.columns
+            if col[0] in programs
+        ]
+    ]
+
+    program_lower = (
+        program_data
+        .xs("lower", level=1, axis=1)
+        / MILLION
+    )
+
+    program_upper = (
+        program_data
+        .xs("upper", level=1, axis=1)
+        / MILLION
+    )
+
+    ymin = program_lower.min().min()
+    ymax = program_upper.max().max()
+
+    yrange = ymax - ymin
+
+    if yrange == 0:
+        yrange = 1
+
+    cost_ax.set_ylim(
+        ymin - 0.03 * yrange,
+        ymax + 0.03 * yrange
+    )
+
+    # ---------------------------------------------------------
+    # Plot intervention scenarios first
+    # ---------------------------------------------------------
+
+    programs_without_sq = [
+        p for p in programs
+        if p != "Status Quo"
+    ]
+
+    for i, p in enumerate(programs_without_sq):
+
+        colour = scenario_colours.get(
+            p,
+            f"C{i % 10}"
+        )
+
+        # Uncertainty interval
+        cost_ax.fill_between(
             df_program.index,
-            df_program[(p, "lower")],
-            df_program[(p, "upper")],
-            color=color,
+            df_program[(p, "lower")] / MILLION,
+            df_program[(p, "upper")] / MILLION,
+            color=colour,
             alpha=a_prog,
             linewidth=0,
+            zorder=2
+        )
+
+        # Central estimate
+        cost_ax.plot(
+            df_program.index,
+            df_program[(p, stat_central)] / MILLION,
+            color=colour,
+            lw=lw,
             zorder=3
         )
 
-        # Central line
-        program_line = funding_ax.plot(
+    # ---------------------------------------------------------
+    # Plot Status Quo LAST so it is not buried
+    # ---------------------------------------------------------
+
+    if "Status Quo" in programs:
+
+        sq = "Status Quo"
+
+        sq_central = (
+            df_program[(sq, stat_central)]
+            / MILLION
+        )
+
+        # Very light uncertainty band
+        cost_ax.fill_between(
             df_program.index,
-            df_program[(p, stat_central)],
-            color=color,
-            lw=lw,
-            zorder=4,
-            label=f"{p}"
-        )[0]
+            df_program[(sq, "lower")] / MILLION,
+            df_program[(sq, "upper")] / MILLION,
+            color="0.35",
+            alpha=0.08,
+            linewidth=0,
+            zorder=4
+        )
 
-        program_handles.append(program_line)
+        # Narrow white underlay separates it from coincident lines
+        cost_ax.plot(
+            df_program.index,
+            sq_central,
+            color="white",
+            lw=3.6,
+            zorder=5
+        )
 
-    funding_ax.set_ylim(ymin, ymax)
-    funding_ax.set_xlabel("Year")
-    funding_ax.set_ylabel("Annual costs (USD)")
-    funding_ax.set_title("Programme Cost Trajectories")
-    funding_ax.grid(False)
-    funding_ax.yaxis.grid(True, alpha=0.18)
-    funding_ax.set_axisbelow(True)
+        # Status quo trajectory
+        cost_ax.plot(
+            df_program.index,
+            sq_central,
+            color="0.25",
+            lw=2.2,
+            linestyle="--",
+            zorder=6
+        )
 
-    # Create funding legend
-    # funding_legend = funding_ax.legend(handles=funding_handles,
-    #                                    title="Funding Trajectory",
-    #                                    loc='lower left',
-    #                                    bbox_to_anchor=(0.01, 0.2),
-    #                                    frameon=True,
-    #                                    title_fontsize=9,
-    #                                    fontsize=8,
-    #                                    borderaxespad=0)
-    #
-    # funding_ax.add_artist(funding_legend)
+        # Direct label rather than including Status Quo in
+        # the impact-category legend
+        cost_ax.annotate(
+            "Status quo",
+            xy=(
+                df_program.index[-1],
+                sq_central.iloc[-1]
+            ),
+            xytext=(-6, 7),
+            textcoords="offset points",
+            fontsize=8.5,
+            fontweight="bold",
+            color="0.25",
+            ha="right",
+            va="bottom",
+            annotation_clip=False,
+            zorder=7
+        )
 
-    # Create program legend
-    # program_legend = funding_ax.legend(handles=program_handles,
-    #                                    title="Scenario",
-    #                                    loc='lower left',
-    #                                    bbox_to_anchor=(0.01, 0.01),
-    #                                    frameon=True,
-    #                                    title_fontsize=9,
-    #                                    fontsize=8,
-    #                                    borderaxespad=0,
-    #                                    alignment='left')
+    # ---------------------------------------------------------
+    # Panel D formatting
+    # ---------------------------------------------------------
 
-    # Create scenario legend for the cadre plots (top right of figure)
-    handles = [
-        mlines.Line2D([], [], color=scenario_colours.get(d, "grey"),
-                      marker='o', linestyle='None', markersize=8, label=d)
-        for d in draws_order
-    ]
+    cost_ax.set_title(
+        "Programme cost trajectories",
+        fontsize=12
+    )
 
-    scenario_legend = fig.legend(handles=handles, title="Scenario",
-                                 loc="upper right", bbox_to_anchor=(0.99, 0.97),
-                                 bbox_transform=fig.transFigure, frameon=True,
-                                 title_fontsize=9, fontsize=8)
+    cost_ax.set_xlabel("Year")
 
-    # Add panel labels to bottom-left of each panel
+    cost_ax.set_ylabel(
+        "Annual programme costs\n"
+        "(USD million)"
+    )
+
+    cost_ax.grid(False)
+
+    cost_ax.yaxis.grid(
+        True,
+        linewidth=0.6,
+        alpha=0.15
+    )
+
+    cost_ax.set_axisbelow(True)
+
+    # =========================================================
+    # GROUPED LEGEND FOR PANELS A-C
+    # =========================================================
+
+    legend_handles = []
+
+    for group in impact_group_order:
+
+        scenarios_in_group = [
+            d for d in draws_order
+            if scenario_impact_groups.get(d) == group
+        ]
+
+        if not scenarios_in_group:
+            continue
+
+        # Category heading
+        legend_handles.append(
+            mlines.Line2D(
+                [],
+                [],
+                linestyle="None",
+                marker=None,
+                color="none",
+                label=group
+            )
+        )
+
+        # Scenarios underneath
+        for d in scenarios_in_group:
+
+            legend_handles.append(
+                mlines.Line2D(
+                    [],
+                    [],
+                    color=scenario_colours.get(d, "grey"),
+                    marker=get_marker(d),
+                    linestyle="None",
+                    markersize=7,
+                    label=d
+                )
+            )
+
+    # Any accidentally unmapped scenarios
+    if unmapped:
+
+        legend_handles.append(
+            mlines.Line2D(
+                [],
+                [],
+                linestyle="None",
+                marker=None,
+                color="none",
+                label="Other scenarios"
+            )
+        )
+
+        for d in unmapped:
+
+            legend_handles.append(
+                mlines.Line2D(
+                    [],
+                    [],
+                    color=scenario_colours.get(d, "grey"),
+                    marker="o",
+                    linestyle="None",
+                    markersize=7,
+                    label=d
+                )
+            )
+
+    scenario_legend = fig.legend(
+        handles=legend_handles,
+        loc="center left",
+        bbox_to_anchor=(0.835, 0.52),
+        frameon=False,
+        fontsize=8,
+        labelspacing=0.40,
+        handletextpad=0.6,
+        handlelength=1.5,
+        borderaxespad=0
+    )
+
+    # Bold category headings
+    heading_names = set(impact_group_order)
+
+    if unmapped:
+        heading_names.add("Other scenarios")
+
+    for text in scenario_legend.get_texts():
+
+        if text.get_text() in heading_names:
+            text.set_fontweight("bold")
+            text.set_fontsize(8.5)
+
+    # =========================================================
+    # Panel labels
+    # =========================================================
+
     panel_labels = ["A", "B", "C", "D"]
 
-    for ax, label in zip(axes.flat, panel_labels):
+    for ax, label in zip(
+        axes.flat,
+        panel_labels
+    ):
         ax.text(
-            0.02, 0.03, label,
+            0.98,
+            0.97,
+            label,
             transform=ax.transAxes,
             fontsize=14,
             fontweight="bold",
-            va="bottom",
-            ha="left"
+            va="top",
+            ha="right"
         )
 
-    plt.tight_layout()
+    # Leave right-hand space for grouped legend
+    plt.tight_layout(
+        rect=[0, 0, 0.82, 1]
+    )
+
     return fig, axes
 
 
-# Create the combined multi-panel figure
-selected_programs = [
-    'Status Quo',
-    'Reduce HIV testing',
-    'Remove Viral Load Testing',
-    'Reduce All Elements',
-]
 
 fig, axes = plot_combined_cadre_and_funding(
     num_hcw_hours_diff_edit=num_hcw_hours_diff_edit,
     epi_df=dalys_ci,
-    df_funding=constant_funding,
     df_program=summary_total_costs_year,
-    selected_programs=all_except_scaleup_sq,
+    selected_programs=all_except_scaleup,
     scenario_colours=scenario_colours,
+    scenario_impact_groups=scenario_impact_groups,
+    impact_group_markers=impact_group_markers,
+    impact_group_order=impact_group_order,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
-    ylabel="Difference in HIV/AIDS DALYs vs Status Quo",
     exclude_scenarios=["Program Scale-up"]
 )
-plt.savefig(results_folder / "combined_cadre_and_funding_analysis.png", dpi=300, bbox_inches='tight')
+
+fig.savefig(
+    results_folder / "combined_cadre_and_funding_analysis.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
 plt.show()
+
+
+
+
+
+
+
+
+
