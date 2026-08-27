@@ -42,6 +42,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup, read_csv_files
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+import json
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -595,11 +596,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
         )
         
-        # TO PRINT CONFIG ASSOCIATED WITH SCALE UP
-        self.update_parameters_for_program_change()
-        self.save_scaleup_config()
-        exit(-1)
-
 
     def adjust_viral_load_suppression_rates(self):
         """
@@ -788,6 +784,34 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         """Set our property values for the initial population."""
+
+        # TO PRINT CONFIG ASSOCIATED WITH SCALE UP
+        config_parameters = [
+           # "hiv_testing_rates",
+            "annual_rate_selftest",
+           # "annual_testing_rate_adults",
+            "prob_hiv_test_at_anc_or_delivery",
+            "prob_hiv_test_for_newborn_infant",
+            "selftest_available",
+            "switch_vl_test_to_tdf",
+            "prob_prep_for_fsw_after_hiv_test",
+            "prob_prep_for_agyw",
+            "prob_injectable_prep_vs_oral",
+            "prob_circ_after_hiv_test",
+            "prob_circ_for_child_from_2020",
+            "beta",
+            #"reduction_in_hiv_beta",
+            "probability_of_being_retained_on_prep_every_3_months",
+            "probability_of_being_retained_on_art_every_3_months",
+            "prob_start_art_or_vs",
+            #"tb_ipt_coverage",
+            "virally_suppressed_on_art",
+            "consumable_availability_HIV_test",
+            "consumable_availability_VL_test",
+        ]
+        self.save_scaleup_config(config_parameters)
+        exit(-1)
+
 
         df = population.props
 
@@ -1304,9 +1328,36 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         """
         p = self.parameters
         
-        record = {
-            p["type_of_scaleup"]: {x: p[x] for x in config_parameters}
-        }
+        scaleup_scenarios = [
+            "none",
+            "reduce_HIV_test",
+            "remove_VL",
+            "target_VL",
+            "replace_VL_with_TDF",
+            "remove_prep_fsw",
+            "remove_prep_agyw",
+            "switch_to_injectable_prep",
+            "remove_IPT",
+            "target_IPT",
+            "remove_vmmc",
+            "increase_6MMD",
+            "target_all",
+            "remove_all",
+            "target",
+        ]
+        
+        record = {}
+
+        for s in scaleup_scenarios:
+            print("At ", s)
+            p['type_of_scaleup'] = s
+            self.update_parameters_for_program_change()
+            record[s] = {}
+            for x in config_parameters:
+                try:
+                    record[p['type_of_scaleup']][x] = p[x]
+                except:
+                    record[p['type_of_scaleup']][x] = None
         
         with open(filepath, "a") as f:
             f.write(json.dumps(record, default=str) + "\n")
