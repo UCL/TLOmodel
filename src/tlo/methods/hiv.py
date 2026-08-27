@@ -594,6 +594,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 odds_ratio_health_seeking_in_children=10.0,
             )
         )
+        
+        # TO PRINT CONFIG ASSOCIATED WITH SCALE UP
+        self.update_parameters_for_program_change()
+        self.save_scaleup_config()
+        exit(-1)
+
 
     def adjust_viral_load_suppression_rates(self):
         """
@@ -1287,6 +1293,24 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.vl_testing_available_by_year = {
             year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year + 1)
         }
+
+    def save_scaleup_config(
+        self,
+        config_parameters: list,
+        filepath: str = "scaleup_config_log.jsonl",
+    ) -> None:
+        """ 
+        Helper function to translate scale up scenario into configs
+        """
+        p = self.parameters
+        
+        record = {
+            p["type_of_scaleup"]: {x: p[x] for x in config_parameters}
+        }
+        
+        with open(filepath, "a") as f:
+            f.write(json.dumps(record, default=str) + "\n")
+        
 
     def update_parameters_for_program_change(self):
         """
