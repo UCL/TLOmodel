@@ -38,7 +38,7 @@ DHIS2_PERIOD_COL = "period_parsed"
 # structural columns above. Set a list to restrict, e.g. ["anc1_coverage"].
 INDICATORS = None
 
-WBGT_DIRECTORY = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/Periindustrial")
+WBGT_DIRECTORY = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/")
 WBGT_FILE_PREFIX = "wbgt_monthly_"
 WBGT_MONTHLY_VARS = ['wbgt_day', 'wbgt_night']     # from wbgt_monthly_*.nc
 WBGT_EXTREME_VARS = ['wbgt5x_day']                 # from the extreme file
@@ -56,7 +56,7 @@ FACILITIES_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources
 MALAWI_GRID_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/"
                    "Data/malawi_grid.shp")
 
-OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/Periindustrial")
+OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/")
 
 COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
                   "Ftype", "A109__Latitude", "A109__Longitude"]
