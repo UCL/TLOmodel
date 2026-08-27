@@ -41,9 +41,9 @@ def postprocess_run(run_dir: Path) -> dict:
     log = load_pickled_dataframes(job_root, draw=0, run=run_number)
 
     dalys = _get_total_dalys(log)
-    cost = _get_total_cost(log)
-    hr_used = _get_hr_capacity_used(log)
-    stock_used = _get_consumables_used(log)
+    cost = 0.1 # _get_total_cost(log)
+    hr_used = 0.1 # _get_hr_capacity_used(log)
+    stock_used = 0.1 # _get_consumables_used(log)
 
     return {"dalys": dalys, "cost": cost, "hr_used": hr_used, "stock_used": stock_used}
 
