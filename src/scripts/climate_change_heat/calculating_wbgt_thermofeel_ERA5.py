@@ -51,7 +51,7 @@ MAX_ITER = 50;  CONVERGENCE = 0.02;  MIN_SPEED = 0.13
 # Configuration
 # ============================================================================
 DATA_DIR   = Path("/Users/rachelmurray-watson/Documents/Heat_data/ERA5/Periindustrial/Combined")
-OUT_DIR    = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/Periindustrial")
+OUT_DIR    = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/")
 CMIP6_DIR  = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -67,7 +67,12 @@ REGRID_TO_CMIP6  = True       # also write *_cmip6grid.nc versions
 # None -> auto-discover a CMIP6 WBGT file under CMIP6_DIR to read the target grid.
 # Point this at a specific file if auto-discovery grabs the wrong one.
 CMIP6_REF_FILE   = None
+if YEAR_START < 2000:
+    PERIOD_LABEL = "periindustrial_1940_1948"
+    OUT_DIR = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/Periindustrial")
 
+else:
+    PERIOD_LABEL = ""
 VAR_FILES = {
     "t2m": "2m_temperature",           "d2m": "2m_dewpoint_temperature",
     "u10": "10m_u_component_of_wind",  "v10": "10m_v_component_of_wind",
@@ -382,7 +387,7 @@ def main():
                         attrs={"units":"degC","bracket":"night",
                                "note":"monthly mean of local-day MIN WBGT (trough-of-day; matches CMIP6 tasmin bracket)"}),
     })
-    f_m = OUT_DIR / "wbgt_monthly_ERA5_historical.nc"
+    f_m = OUT_DIR / f"wbgt_monthly_ERA5_{PERIOD_LABEL}.nc"
     save(ds_m, f_m, "monthly mean")
 
     # extreme-index file — mirrors WBGT_extreme_indices_projections.py vars
@@ -400,7 +405,7 @@ def main():
                           attrs={"units":"degC","bracket":"night",
                                  "note":f"monthly max of {WBGT5X_WINDOW}-day rolling mean of local-day MIN WBGT"}),
     })
-    f_ix = OUT_DIR / "wbgt_extreme_indices_ERA5_historical.nc"
+    f_ix = OUT_DIR / f"wbgt_extreme_indices_ERA5_{PERIOD_LABEL}.nc"
     save(ds_ix, f_ix, "extreme indices")
 
     # ---- Optional: regrid the comparable fields onto the CMIP6 grid -------
@@ -415,10 +420,16 @@ def main():
             print(f"Regridding onto CMIP6 grid from: {ref.name}")
             tgt_lat, tgt_lon = read_cmip6_grid(ref)
             print(f"  CMIP6 target grid: {len(tgt_lat)} lat x {len(tgt_lon)} lon")
-            save(regrid_dataset(ds_m,  tgt_lat, tgt_lon),
-                 OUT_DIR / "wbgt_monthly_ERA5_historical_cmip6grid.nc", "monthly (CMIP6 grid)")
-            save(regrid_dataset(ds_ix, tgt_lat, tgt_lon),
-                 OUT_DIR / "wbgt_extreme_indices_ERA5_historical_cmip6grid.nc", "indices (CMIP6 grid)")
+            save(
+                regrid_dataset(ds_m, tgt_lat, tgt_lon),
+                OUT_DIR / f"wbgt_monthly_ERA5_{PERIOD_LABEL}_cmip6grid.nc",
+                "monthly (CMIP6 grid)",
+            )
+            save(
+                regrid_dataset(ds_ix, tgt_lat, tgt_lon),
+                OUT_DIR / f"wbgt_extreme_indices_ERA5_{PERIOD_LABEL}_cmip6grid.nc",
+                "indices (CMIP6 grid)",
+            )
             print("  -> point the historical facility panel at the *_cmip6grid.nc "
                   "files so facility->cell matching is identical to the projection.")
 
