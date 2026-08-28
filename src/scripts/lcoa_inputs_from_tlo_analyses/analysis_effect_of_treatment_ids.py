@@ -1,0 +1,595 @@
+"""Produce plots to show the impact each set of treatments."""
+
+import warnings
+from time import perf_counter
+from pandas.errors import (
+    PerformanceWarning,
+    SettingWithCopyWarning
+)
+import argparse
+from datetime import date
+import pickle
+from pathlib import Path
+import pandas as pd
+
+
+from tlo import Date
+
+from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
+    format_scenario_name,
+    get_counts_of_appts,
+    get_counts_of_hsi_by_short_treatment_id,
+    get_num_dalys_by_cause_label,
+    get_num_deaths_by_cause_label,
+    get_parameter_names_from_scenario_file,
+    get_periods_within_target_period,
+    get_total_num_dalys_by_agegrp_and_label,
+    get_total_num_death_by_agegrp_and_label,
+    get_total_population_by_year,
+    make_get_num_dalys_by_cause_label_and_period,
+    make_get_num_deaths_by_cause_label_and_period,
+    make_get_counts_of_appts_by_period,
+    make_get_counts_of_hsis_by_period,
+    set_param_names_as_column_index_level_0,
+    target_period,
+    find_difference_extra_relative_to_comparison,
+    find_difference_relative_to_comparison,
+    get_staff_count_by_facid_and_officer_type,
+    get_capacity_used_by_officer_type_and_facility_level,
+    melt_model_output_draws_and_runs
+)
+
+from scripts.costing.cost_estimation import (
+    apply_discounting_to_cost_data,
+    do_line_plot_of_cost,
+    do_stacked_bar_plot_of_cost_by_category,
+    estimate_input_cost_of_scenarios,
+    estimate_projected_health_spending,
+    extract_roi_at_specific_implementation_costs,
+    generate_multiple_scenarios_roi_plot,
+    load_unit_cost_assumptions,
+    summarize_cost_data,
+    tabulate_roi_estimates,
+)
+from tlo.analysis.utils import (
+    compute_summary_statistics,
+    extract_results,
+    get_color_short_treatment_id,
+    make_age_grp_lookup,
+    summarize,
+)
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=10runstest --load-input-costs-from-checkpoint=True
+EXCLUDED_HSIs = [
+    "FirstAttendance_Emergency",
+    "FirstAttendance_NonEmergency",
+    "FirstAttendance_SpuriousEmergencyCare",
+    "Inpatient_Care"
+]
+
+
+def parse_iso_date(value: str) -> Date:
+    parsed = date.fromisoformat(value)
+    return Date(parsed.year, parsed.month, parsed.day)
+
+
+def parse_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"true", "t", "1", "yes", "y"}:
+        return True
+    if normalized in {"false", "f", "0", "no", "n"}:
+        return False
+    raise argparse.ArgumentTypeError(
+        f"Invalid boolean value '{value}'. Use True or False."
+    )
+
+# source: http://doi.org/https://doi.org/10.1016/j.vhri.2023.10.007
+MALAWI_CET = 65.8
+
+def apply(
+    results_folder: Path,
+    output_folder: Path,
+    resourcefilepath: Path,
+    target_period_tuple: tuple[Date, Date],
+    do_comparison: bool = True,
+    cost_checkpoint_profile: str | None = None,
+    load_input_costs_from_checkpoint: bool | None = None,
+):
+    """Process results to produce objects needed for LCOA analysis."""
+    _, age_grp_lookup = make_age_grp_lookup()
+
+    # Extract districts and facility levels from the Master Facility List
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
+
+    param_names = get_parameter_names_from_scenario_file()
+    get_num_deaths_by_cause_label_and_period = make_get_num_deaths_by_cause_label_and_period(
+        target_period_tuple,
+    )
+    get_num_dalys_by_cause_label_and_period = make_get_num_dalys_by_cause_label_and_period(
+        target_period_tuple,
+    )
+    get_num_hsi_by_period = make_get_counts_of_hsis_by_period(
+        target_period_tuple=target_period_tuple,
+    )
+    results = {}
+    # Costs calculation
+    print("Calculating costs...")
+    discount_rate_cost = 0.03
+    # Period relevant for costing
+    TARGET_PERIOD = (Date(2026, 1, 1), Date(2040, 12, 31))  # This is the period that is costed
+    relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
+    list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
+    print("List of relevant years for costing:", list_of_relevant_years_for_costing)
+    checkpoint_path = None
+    if cost_checkpoint_profile is not None:
+        checkpoint_path = output_folder / "checkpoints" / f"input_costs_{cost_checkpoint_profile}.pkl"
+
+    if checkpoint_path is not None and load_input_costs_from_checkpoint is True:
+        print(f"Loading input costs from checkpoint: {checkpoint_path}")
+        if not checkpoint_path.exists():
+            raise FileNotFoundError(
+                f"Input-cost checkpoint not found at {checkpoint_path}. "
+                "Run once with --cost-checkpoint-profile <name> and without "
+                "--load-input-costs-from-checkpoint to create it."
+            )
+        with open(checkpoint_path, "rb") as f:
+            input_costs = pickle.load(f)
+    else:
+        if checkpoint_path is None:
+            print("No cost checkpoint profile provided. Recomputing input costs.")
+        else:
+            print("Recomputing input costs")
+        start = perf_counter()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=PerformanceWarning)
+            warnings.filterwarnings("ignore", category=UserWarning)
+            warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
+            input_costs = estimate_input_cost_of_scenarios(
+                              results_folder,
+                              resourcefilepath,
+                              _years=list_of_relevant_years_for_costing,
+                              cost_only_used_staff=True,
+                              _discount_rate=discount_rate_cost,
+                              _metric="median",)
+
+        elapsed = perf_counter() - start
+        print(f"\n=== TIMING: estimate_input_cost_of_scenarios took {elapsed:.3f}s ===\n", flush=True)
+        if checkpoint_path is not None:
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(checkpoint_path, "wb") as f:
+                pickle.dump(input_costs, f)
+            print(f"Saved input costs checkpoint to: {checkpoint_path}")
+
+    # Map draw numbers to draw names in input costs
+    draw_lookup = dict(enumerate(param_names))
+    formatted_draw_lookup = {
+        draw: format_scenario_name(name)
+        for draw, name in draw_lookup.items()
+    }
+    input_costs.loc[:, "draw_name"] = input_costs["draw"].map(formatted_draw_lookup)
+    input_costs.drop(columns=["draw"], inplace=True)
+    input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
+    results['input_costs'] = input_costs
+    print(input_costs['draw'].unique())
+
+    # Get total population by year
+    print("Extracting population data...")
+    total_population_by_year = (
+        extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=lambda _df: get_total_population_by_year(_df, target_period_tuple),
+            do_scaling=True,
+            autodiscover=True
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
+
+    cols_to_drop = [
+        col for col in total_population_by_year.columns
+        if col[0].strip().startswith(tuple(EXCLUDED_HSIs))
+    ]
+    print(f"Dropping columns from total_population_by_year: {cols_to_drop}")
+    total_population_by_year.drop(columns=cols_to_drop, inplace=True)
+
+    total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure='median')
+    results['total_population_by_year'] = total_population_by_year
+
+    counts_of_hsi_by_short_treatment_id = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
+            custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, target_period_tuple),
+            do_scaling=True,
+            autodiscover=True,
+        )
+        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        .fillna(0.0)
+        .sort_index()
+    ).drop(EXCLUDED_HSIs, errors='ignore')
+
+    counts_of_hsi_by_short_treatment_id = (
+        compute_summary_statistics(counts_of_hsi_by_short_treatment_id, 'median')
+    )
+
+    results['counts_of_hsi_by_short_treatment_id'] = counts_of_hsi_by_short_treatment_id
+
+    counts_of_hsi_by_period = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
+            custom_generate_series=lambda _df: get_num_hsi_by_period(_df),
+            do_scaling=True,
+            autodiscover=True,
+        )
+        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        .fillna(0.0)
+        .sort_index()
+    ).drop(EXCLUDED_HSIs, level=0, errors='ignore')
+
+    counts_of_hsi_by_period = (
+        compute_summary_statistics(counts_of_hsi_by_period, 'median')
+    )
+    results['counts_of_hsi_by_period'] = counts_of_hsi_by_period
+
+    print("Extracting total deaths and DALYs by label...")
+    num_deaths = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=get_num_deaths_by_cause_label_and_period,
+            do_scaling=True,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    ).drop(columns=cols_to_drop, errors='ignore')
+
+    if do_comparison:
+        num_deaths_averted = compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T,
+            central_measure='median'
+        ).iloc[0].unstack()
+
+        pc_deaths_averted = 100.0 * compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T,
+            central_measure='median'
+        ).iloc[0].unstack()
+    else:
+        num_deaths_averted = None
+        pc_deaths_averted = None
+
+    num_deaths = compute_summary_statistics(num_deaths, central_measure='median')
+
+    results['num_deaths'] = num_deaths
+    results['num_deaths_averted'] = num_deaths_averted
+    results['pc_deaths_averted'] = pc_deaths_averted
+
+    dalys = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="dalys_stacked_by_age_and_time",
+            custom_generate_series=get_num_dalys_by_cause_label_and_period,
+            do_scaling=True,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    ).drop(columns=cols_to_drop, errors='ignore')
+
+    discount_rate_dalys = 0.03
+    dalys_years = dalys.index.get_level_values("period").astype(int)
+    discount_base_year = dalys_years.min()
+    discounted_dalys = dalys.div(
+        (1.0 + discount_rate_dalys) ** (dalys_years - discount_base_year),
+        axis=0,
+    )
+
+    results['discounted_dalys'] = compute_summary_statistics(discounted_dalys, central_measure='median')
+
+    # Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
+    # To get the actual minutes, we need to multiply by the total available minutes.
+    annual_capacity_used_by_cadre_and_level = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Capacity_By_FacID_and_Officer',
+        custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
+        do_scaling=False, # Not scaling as this is a fraction calculated during runtime.
+        autodiscover=True,
+    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+
+    results['annual_capacity_used_by_cadre_and_level'] = (
+        compute_summary_statistics(annual_capacity_used_by_cadre_and_level, 'median')
+    )
+
+    baseline = results['annual_capacity_used_by_cadre_and_level'].xs('Nothing', level='draw', axis=1)
+    obs_productivity_in_2025 = baseline.xs(2025, level='year')
+
+    # Get the total available capacity by cadre needed for LCOA
+    # resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv
+    daily_capacity_by_cadre_and_level = (
+        pd.read_csv(resourcefilepath / "healthsystem" / "human_resources" / "actual" / "ResourceFile_Daily_Capabilities.csv")
+    )
+    annual_capacity_by_cadre_and_level = (
+        daily_capacity_by_cadre_and_level.groupby(['Officer_Category', 'Facility_Level'])['Total_Mins_Per_Day'].sum() * 365
+    )
+    # Scale annual_capacity_by_cadre by the observed productivity in 2025
+    annual_capacity_by_cadre_and_level.index.names = ['OfficerType', 'FacilityLevel']
+    # If no fraction of available capacity is used, then the observed productivity in 2025 will be 0.
+    # In that case, we want to use a multiplier of 1.0
+    multiplier = obs_productivity_in_2025['central'].where(obs_productivity_in_2025['central'] != 0, other=1.0)
+    annual_capacity_by_cadre_and_level_scaled = annual_capacity_by_cadre_and_level * multiplier
+    annual_capacity_by_cadre = annual_capacity_by_cadre_and_level_scaled.groupby('OfficerType').sum()
+
+    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
+
+    staff_count_by_cadre = (
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
+    )
+    results['staff_count_by_cadre'] = staff_count_by_cadre
+
+    # This gives the total minutes available per day by cadre and facility level.
+    # Sum across levels to get cadre specific constraints, and multiply by 365 to get annual capacity
+    annual_capacity_available_by_cadre_and_level = (
+        daily_capacity_by_cadre_and_level.groupby(['Officer_Category', 'Facility_Level'])['Total_Mins_Per_Day'].sum() * 365
+    )
+
+    annual_capacity_available_by_cadre_and_level.index = (
+        annual_capacity_available_by_cadre_and_level.index.rename(['OfficerType', 'FacilityLevel'])
+    )
+
+    # Now we use the fraction of time used from the results to get the actual minutes used
+    series_reindexed = annual_capacity_available_by_cadre_and_level.reindex(
+        annual_capacity_used_by_cadre_and_level.index.droplevel('year')
+    )
+
+    series_reindexed.index = annual_capacity_used_by_cadre_and_level.index
+    assert series_reindexed.notna().all()
+
+    actual_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
+    results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
+    # We need the time used by cadre in 2026
+    actual_capacity_used_by_cadre = (
+        actual_capacity_used_by_cadre_and_level
+        .groupby(['OfficerType', 'year'])
+        .sum()
+    )
+    actual_capacity_used_by_cadre_2026 = actual_capacity_used_by_cadre.xs(2026, level='year', axis=0)
+
+    results['actual_capacity_used_by_cadre_2026'] = (
+        compute_summary_statistics(actual_capacity_used_by_cadre_2026, 'median')
+    )
+    print(results['actual_capacity_used_by_cadre_2026'])
+    # Load the salary per minutes by cadre and facility level
+    # ResourceFile_Minute_Salary_HR.csv is produced using Bingling's code,
+    # except that she was dropping Facility_Level, which I have retained.
+    salary_by_cadre_and_level = (
+        pd.read_csv(resourcefilepath / "costing"  / "ResourceFile_Minute_Salary_HR.csv")
+    )
+    salary_by_cadre_and_level =(
+        salary_by_cadre_and_level
+        .groupby(['Facility_Level', 'Officer_Type_Code'])['Minute_Salary_USD']
+        .mean()
+        .rename_axis(index={'Facility_Level': 'FacilityLevel', 'Officer_Type_Code': 'OfficerType'})
+    ).reorder_levels(['OfficerType', 'FacilityLevel'])
+
+    # Scale down the costs by observed productivity in 2025.
+    print("Scaling down the salary costs by observed productivity in 2025")
+    salary_by_cadre_and_level = salary_by_cadre_and_level / multiplier
+
+    # Multiply actual minutes used by the salary per minute to get the total
+    # salary cost by cadre and facility level
+    series_reindexed = salary_by_cadre_and_level.reindex(
+        actual_capacity_used_by_cadre_and_level.index.droplevel('year')
+    )
+
+    series_reindexed.index = actual_capacity_used_by_cadre_and_level.index
+
+    actual_cost_by_cadre_and_level = (
+        actual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
+    )
+
+    # The costing script calculates the HRH costs for the total cadre, not for the strength used.
+    # We will remove the HRH costs from the input_costs; this includes other things besides salary
+    # Then we will add to the remaining costs the salary costs calculated above. This will gives us
+    # the total input costs for the intervention. Note that for the moment, we are ignoring non-salary HRH costs.
+
+    # Wrangling to make the actual_cost_by_cadre_and_level the same same as input_costs
+    actual_cost_by_cadre_and_level = (
+        actual_cost_by_cadre_and_level
+        .stack(level=['draw', 'run'])
+        .rename('cost')
+        .reset_index()
+    )
+
+    actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.rename(columns={
+        'OfficerType':   'cost_subgroup',
+        'FacilityLevel': 'Facility_Level',
+    })
+    actual_cost_by_cadre_and_level['cost_subcategory'] = 'salary_for_cadres_used'
+    actual_cost_by_cadre_and_level['cost_category'] = 'human resources for health'
+
+    actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level[[
+        'draw', 'run', 'year',
+        'cost_subcategory',
+        'Facility_Level',
+        'cost_subgroup',
+        'cost',
+        'cost_category',
+    ]]
+
+    actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.reset_index(drop=True)
+
+    mask = actual_cost_by_cadre_and_level['year'] > 2025
+    # Now combine with input_costs
+    input_costs = input_costs[input_costs['cost_category'] != 'human resources for health']
+    input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level[mask]])
+
+    # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
+    annual_cons_cost = input_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
+    mask = (
+        (annual_cons_cost.index.get_level_values('year') == 2026) &
+        (annual_cons_cost.index.get_level_values('cost_category') == 'medical consumables')
+    )
+    annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
+    results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026.to_frame().T, 'median')).T
+
+    # Overall costs in 2026
+    mask = (input_costs_with_proportional_hrh_costs['year'] == 2026)
+
+    annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs[mask].groupby(['draw', 'run'])['cost'].sum()
+    results['annual_scenario_cost_2026'] = (
+        compute_summary_statistics(annual_scenario_cost_2026.to_frame().T).iloc[0].unstack()
+    )
+
+    # Computing incremental costs
+    if do_comparison:
+        print("Computing incremental_scenario_cost...")
+        total_input_cost = input_costs_with_proportional_hrh_costs.groupby(['draw', 'run'])['cost'].sum()
+        incremental_scenario_cost = (pd.DataFrame(
+            find_difference_relative_to_comparison(
+                total_input_cost,
+                comparison='Nothing',)
+        ))
+
+        incremental_scenario_cost = (
+            incremental_scenario_cost.T.reorder_levels(["draw", "run"], axis=1).sort_index(axis=1)
+        )
+
+        incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
+
+    if do_comparison:
+        dalys_2026 = dalys.xs('2026', level='period')
+        dalys_averted_2026 = (
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(dalys_2026.sum(), comparison='Nothing'))
+
+        )
+        results['dalys_averted_2026'] = compute_summary_statistics(dalys_averted_2026.T, 'median').iloc[0].unstack()
+
+        dalys_averted = (
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(discounted_dalys.sum(), comparison='Nothing'))
+
+        )
+
+        pc_dalys_averted = 100.0 * compute_summary_statistics(
+            -1.0 * pd.DataFrame(
+                find_difference_extra_relative_to_comparison(discounted_dalys.sum(), comparison='Nothing', scaled=True)).T,
+            central_measure='median'
+        ).iloc[0].unstack()
+
+        net_health = dalys_averted.T - incremental_scenario_cost / MALAWI_CET
+        net_health_summarized = (
+            compute_summary_statistics(net_health, central_measure='median').iloc[0].unstack()
+        )
+
+        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
+
+    # Add consumables budget to this dictionary so that we have everything in one place
+    # USD 225,602,946 (203136642 from donors + 22466304 from the government)
+    # Revision of Malawi’s Health Benefits Package: A Critical Analysis of Policy Formulation and Implementation
+    # https://doi.org/10.1016/j.vhri.2023.10.007
+    results['annual_consumables_budget'] = 225602946
+
+    results['dalys'] = compute_summary_statistics(dalys, 'median')
+    results['dalys_averted'] = dalys_averted if do_comparison else None
+    results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
+    results['net_health'] = net_health_summarized if do_comparison else None
+    results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
+
+    # Extract DALYs and costs from the LCOA input workbook (EHP_BasedOnLCOA sheet).
+    lcoa_workbook_path = Path(__file__).resolve().parent / "ResourceFile_PriorityRanking_ALLPOLICIES_EHP_dalys_costs.xlsx"
+    lcoa_df = pd.read_excel(lcoa_workbook_path, sheet_name="EHP_BasedOnLCOA")
+    col_a, col_i, col_j, col_k, col_l, col_m = (
+        lcoa_df.columns[0],
+        lcoa_df.columns[8],
+        lcoa_df.columns[9],
+        lcoa_df.columns[10],
+        lcoa_df.columns[11],
+        lcoa_df.columns[12],
+    )
+    dalys_and_costs_from_lcoa = lcoa_df[[col_a, col_i, col_j, col_k, col_l, col_m]].rename(
+        columns={
+            col_a: "treatment_id",
+            col_i: "icer",
+            col_j: "dalys_per_patient",
+            col_k: "cost_per_case",
+            col_l: "eligible_cases",
+            col_m: "lcoa_flag",
+        }
+    )
+    for numeric_col in ["icer", "dalys_per_patient", "cost_per_case", "eligible_cases"]:
+        dalys_and_costs_from_lcoa[numeric_col] = pd.to_numeric(
+            dalys_and_costs_from_lcoa[numeric_col], errors="coerce"
+        )
+    dalys_and_costs_from_lcoa["overall_dalys"] = (
+        dalys_and_costs_from_lcoa["dalys_per_patient"] * dalys_and_costs_from_lcoa["eligible_cases"]
+    )
+    dalys_and_costs_from_lcoa["overall_costs"] = (
+        dalys_and_costs_from_lcoa["cost_per_case"] * dalys_and_costs_from_lcoa["eligible_cases"]
+    )
+    dalys_and_costs_from_lcoa = dalys_and_costs_from_lcoa[
+        dalys_and_costs_from_lcoa["treatment_id"].notna()
+        & (
+            dalys_and_costs_from_lcoa["overall_dalys"].notna()
+            | dalys_and_costs_from_lcoa["overall_costs"].notna()
+            | dalys_and_costs_from_lcoa["icer"].notna()
+        )
+    ]
+    dalys_and_costs_from_lcoa['net_health'] = dalys_and_costs_from_lcoa['overall_dalys'] - dalys_and_costs_from_lcoa['overall_costs'] / MALAWI_CET
+    results["dalys_and_costs_from_lcoa"] = dalys_and_costs_from_lcoa
+
+    return results
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    parser.add_argument("output_folder", type=Path, nargs="?", default=None)
+    parser.add_argument("--target-start", type=str, default=None)
+    parser.add_argument("--target-end", type=str, default=None)
+    parser.add_argument("--do-comparison", type=parse_bool, default=True)
+    parser.add_argument("--cost-checkpoint-profile", type=str, default=None)
+    parser.add_argument("--load-input-costs-from-checkpoint", type=parse_bool, default=None)
+    args = parser.parse_args()
+
+    if (args.target_start is None) != (args.target_end is None):
+        parser.error("Provide both --target-start and --target-end, or neither.")
+
+    target_period_tuple = (
+        parse_iso_date(args.target_start),
+        parse_iso_date(args.target_end),
+    )
+    if not target_period_tuple[0] < target_period_tuple[1]:
+        parser.error("--target-start must be earlier than --target-end.")
+    if args.load_input_costs_from_checkpoint is not None and args.cost_checkpoint_profile is None:
+        parser.error(
+            "Provide --cost-checkpoint-profile when using --load-input-costs-from-checkpoint."
+        )
+
+    out = args.output_folder if args.output_folder is not None else args.results_folder
+    results = apply(
+        results_folder=args.results_folder,
+        output_folder=out,
+        resourcefilepath=Path("./resources"),
+        target_period_tuple=target_period_tuple,
+        do_comparison=args.do_comparison,
+        cost_checkpoint_profile=args.cost_checkpoint_profile,
+        load_input_costs_from_checkpoint=args.load_input_costs_from_checkpoint,
+    )
+    outfile = (
+        f"{target_period_tuple[1].year:04d}-{target_period_tuple[1].month:02d}-{target_period_tuple[1].day:02d}"
+        "_fullresults.pkl"
+    )
+    with open(out / outfile, 'wb') as f:
+        pickle.dump(results, f)
+
+    print(f"Analysis complete! Results saved to {out / outfile}")
