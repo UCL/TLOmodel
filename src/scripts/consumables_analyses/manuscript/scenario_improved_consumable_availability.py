@@ -34,20 +34,20 @@ class ConsumablesImpact(BaseScenario):
     # -----------------------------
     CONSUMABLE_SCENARIOS = [
         'default',
-        'scenario1', 'scenario2', 'scenario3',  # Predictive factors
-        'scenario6', 'scenario7', 'scenario8',  # Benchmark facilities
-        'scenario16', 'scenario17', 'scenario18', 'scenario19', 'scenario20',  # Redistribution
-        'all'  # Perfect
+#        'scenario1', 'scenario2', 'scenario3',  # Predictive factors
+#        'scenario6', 'scenario7', 'scenario8',  # Benchmark facilities
+#        'scenario16', 'scenario17', 'scenario18', 'scenario19', 'scenario20',  # Redistribution
+#        'all'  # Perfect
     ]
 
     SYSTEM_MODES = [
         {
-            "mode_appt_constraints": 2,
+            "mode_appt_constraints_postSwitch": 2,
             "max_healthsystem_function": [False, False],
             "max_healthcare_seeking": [False, False],
         },
         {
-            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 1,
             "max_healthsystem_function": [False, True],
             "max_healthcare_seeking": [False, True],
         },
@@ -102,7 +102,7 @@ class ConsumablesImpact(BaseScenario):
                 'year_cons_availability_switch': 2026, # TODO change to 2026
                 'cons_availability_postSwitch': cons_scenario,
                 'mode_appt_constraints':1,
-                'mode_appt_constraints_postSwitch':sys["mode_appt_constraints"], # once without HR constraints and once with HR constraints
+                'mode_appt_constraints_postSwitch':sys["mode_appt_constraints_postSwitch"], # once without HR constraints and once with HR constraints
                 'year_mode_switch':2026, # TODO change to 2026
                 'policy_name': 'Naive',
                 'use_funded_or_actual_staffing': 'actual',
