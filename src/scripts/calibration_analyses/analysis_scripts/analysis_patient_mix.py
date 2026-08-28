@@ -453,6 +453,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             {"HSI_Alri_Treatment", "HSI_GenericEmergencyFirstAppt",
              "HSI_GenericNonEmergencyFirstAppt", "Inpatient_Care"})
 
+        # drop NAN loc_cat HSIs
+        _df = _df.dropna(subset=["loc_cat"])
+
         # range of percent meds access, by subgroup ["overall", "loc_cat", "fac_level", "district"]
         def meds_access_range_by_subgroup_tlo(__df, subgroup=None):
             df_meds = __df[__df["Num_Medicine_Types_Requested"] > 0].copy()
@@ -804,7 +807,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     common_loc_cats = hsi_loc_cat_map.dropna().unique()
     pat_exit = pat_exit.loc[pat_exit["loc_cat"].isin(common_loc_cats)].copy()
+    pat_exit["loc_cat"] = pat_exit["loc_cat"].cat.remove_unused_categories()
     fac_tms_pat_load = fac_tms_pat_load.loc[fac_tms_pat_load["loc_cat"].isin(common_loc_cats)].copy()
+    fac_tms_pat_load["loc_cat"] = fac_tms_pat_load["loc_cat"].cat.remove_unused_categories()
 
     # *** patient mix comparisons ***
     # from patient exit
