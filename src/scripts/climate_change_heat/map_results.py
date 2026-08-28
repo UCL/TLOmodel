@@ -53,20 +53,6 @@ SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
 # deliveries, ANC 1st trimester, ANC new attendees, and PNC first-visit <2wks
 # are omitted to keep the heatmap readable and consistent with the version
 # in plot_district_indicator_heatmap.py.
-HEATMAP_INDICATOR_ORDER = [
-    "vmmc_first_visits",
-    "opd_attendance",
-    "ipd_total_admissions",
-    "measles1_under1",
-    "fully_immunised_under1",
-    "fp_total_clients",
-    "pnc_mother_checked_48h",
-    "penta3_under1",
-    "live_births_total",
-    "bcg_under1",
-    "pnc_within_2wks",
-    "anc_total_visits"
-]
 
 # Rough Malawi north → south latitude order; cities placed last, separated by
 # a dashed rule in the heatmap.
@@ -80,25 +66,30 @@ DISTRICT_ORDER = [
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
-    "fp_total_clients":           "FP Total Clients",
-    "opd_attendance":             "OPD Attendance",
-    "ipd_total_admissions":       "IPD Total Admissions",
-    "vmmc_first_visits":          "VMMC First Visits",
-    "pnc_mother_checked_48h":     "PNC Mother <48h",
-    "anc_new_attendees":          "ANC New Attendees",
+    "fp_total_clients": "FP Total Clients",
+    "opd_attendance": "OPD Attendance",
+    "ipd_total_admissions": "IPD Total Admissions",
+    "vmmc_first_visits": "VMMC First Visits",
+    "pnc_mother_checked_48h": "PNC Mother <48h",
+    "anc_new_attendees": "ANC New Attendees",
     "anc_first_trimester_starts": "ANC 1st Trimester Starts",
-    "bcg_under1":                 "BCG Under-1",
-    "penta3_under1":              "Penta3 Under-1",
-    "measles1_under1":            "Measles 1st Dose Under-1",
-    "fully_immunised_under1":     "Fully Immunised Under-1",
-    "pnc_within_2wks":            "PNC Within 2 Weeks",
-    "pnc_first_visit_2wks":       "PNC First Visit <2 Weeks",
-    "live_births_total":          "Live Births Total",
-    "skilled_deliveries":         "Skilled Deliveries",
+    "bcg_under1": "BCG Under-1",
+    "penta3_under1": "Penta3 Under-1",
+    "measles1_under1": "Measles 1st Dose Under-1",
+    "fully_immunised_under1": "Fully Immunised Under-1",
+    "pnc_within_2wks": "PNC Within 2 Weeks",
+    "pnc_first_visit_2wks": "PNC First Visit <2 Weeks",
+    "live_births_total": "Live Births Total",
+    "skilled_deliveries": "Skilled Deliveries",
     "anc_total_visits": "ANC Total Visits",
+    "htc_results_new_negative": "HTC New Negative",
+    "htc_results_new_positive": "HTC New Positive",
+    "fp_subsequent_clients_total": "FP Subsequent Clients",
+    "fully_immunised_outreach": "Fully Immunised Under-1 (Outreach)",
+    "cervical_screening_total": "Cervical Screening Total",
 }
 
-labels = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)"]
+labels = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", "(K)", "(L)", "(M)", "(N)", "(O)"]
 
 
 # =====================================================================
@@ -759,52 +750,39 @@ def plot_projection_heatmaps(fitted: list[str],
     return out_paths
 
 
-# =====================================================================
-# 10. TLO DISRUPTION CURVES
-# =====================================================================
-def plot_tlo_curves(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
-    tlo_path = f"{out_dir}tlo_wbgt_lookup{SUFFIX}.csv"  # writer path (no suffix)
-    if not os.path.exists(tlo_path):
-        # tolerate the alternative suffix in case you fix the writer later
-        alt = f"{out_dir}tlo_wbgt_lookup_{WBGT_VAR}{SUFFIX}.csv"
-        if os.path.exists(alt):
-            tlo_path = alt
-        else:
-            print(f"  TLO lookup missing at {tlo_path} — skipping")
-            return ""
-    tlo = pd.read_csv(tlo_path)
-    ref_wbgt = float(results_df["reference_wbgt"].iloc[0])
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    for ind in tlo["indicator"].unique():
-        sub = tlo[tlo["indicator"] == ind]
-        ax.plot(sub["wbgt"], sub["disruption_probability"], lw=1.3,
-                label=_label(ind))
-    ax.set_xlabel("WBGT (°C)")
-    ax.set_ylabel(f"Disruption probability (vs {ref_wbgt:.1f}°C)")
-    ax.legend(fontsize=7)
-    ax.grid(ls=":", alpha=0.4)
-    ax.set_ylim(bottom=-0.01)
-    plt.tight_layout()
-    out_path = f"{out_dir}tlo_disruption_curves_{WBGT_VAR}.png"
-    plt.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close()
-    return out_path
-
 
 # =====================================================================
 # 11. DISTRICT × INDICATOR HEATMAP
 # =====================================================================
 def plot_district_indicator_heatmap(
     out_dir: str = OUT_DIR,
-    indicator_order: list[str] = HEATMAP_INDICATOR_ORDER,
     district_order: list[str] = DISTRICT_ORDER,
     vabs: float = 2.0,
+    indicator_order: list = None,  # Make this parameter optional
 ) -> str:
     """Reads district_burden_ci_{ind}_{WBGT_VAR}.csv per indicator and plots
     a district × indicator heatmap of services-lost (%) with delta-method
     significance flagged by a black border on each cell.
     """
+    # If indicator_order is not provided, discover it from available files
+    if indicator_order is None:
+        # Discover available indicators from CSV files
+        pattern = f"{out_dir}district_burden_ci_*_{WBGT_VAR}{SUFFIX}.csv"
+        csv_files = list(Path(out_dir).glob(pattern))
+
+        indicator_order = []
+        for file_path in csv_files:
+            filename = file_path.name
+            # Extract indicator name from filename
+            prefix = "district_burden_ci_"
+            suffix = f"_{WBGT_VAR}{SUFFIX}.csv"
+            if filename.startswith(prefix) and filename.endswith(suffix):
+                indicator = filename[len(prefix) : -len(suffix)]
+                indicator_order.append(indicator)
+
+        # Sort alphabetically for consistency
+        indicator_order = sorted(indicator_order)
+
     rows = []
     for ind in indicator_order:
         # Writer path uses WBGT_VAR suffix; the standalone heatmap script
@@ -815,12 +793,16 @@ def plot_district_indicator_heatmap(
             continue
         df = pd.read_csv(path)
         for _, r in df.iterrows():
-            rows.append({
-                "district":          r["district"],
-                "indicator":         ind,
-                "services_lost_pct": -r["deficit_pct"],   # sign flip: see docstring
-                "sig":               bool(r["sig"]),
-            })
+            rows.append(
+                {
+                    "district": r["district"],
+                    "indicator": ind,
+                    "services_lost_pct": -r["deficit_pct"],  # sign flip: see docstring
+                    "sig": bool(r["sig"]),
+                }
+            )
+
+    # Rest of the function remains the same...
     if not rows:
         print("  no district CI rows found — skipping heatmap")
         return ""
@@ -1409,6 +1391,102 @@ def print_summary_statistics(stats: dict, by_ind: pd.DataFrame):
     print("-" * 108)
 
 # =====================================================================
+# 17. 1940s REFERENCE-PERIOD CONTRAST
+# =====================================================================
+CF_LABEL = "ERA5_periindustrial_1940_1948"
+CF_COLOURS = {"reference": "#4a7298", "observed": "#823038"}
+
+def plot_reference_period_contrast(
+    fitted: list[str],
+    out_dir: str = None,
+    wbgt_var: str = None,
+    cf_label: str = CF_LABEL,
+) -> str:
+    """Paired forest: 2016–24 observed deficit vs 1940–48 reference-period
+    deficit, one row per indicator. The horizontal gap between the two
+    points is the period-to-period contrast — read it as "how much more
+    services lose under recent climate than under 1940s climate", holding
+    baseline demand, facilities and secular trend fixed at LAST_HIST_YEAR.
+
+    Reads counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}.csv written
+    by the counterfactual block in the model script.
+    """
+    out_dir  = out_dir  or OUT_DIR
+    wbgt_var = wbgt_var or WBGT_VAR
+
+    csv_path = f"{out_dir}counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}.csv"
+    if not os.path.exists(csv_path):
+        print(f"  reference-period summary missing at {csv_path} — skipping")
+        return ""
+
+    df = pd.read_csv(csv_path)
+    df = df[df["indicator"].isin(fitted)].copy()
+    if df.empty:
+        print("  no matching indicators in reference-period summary")
+        return ""
+
+    # Sort by the observed (recent) deficit so the most-affected indicators
+    # sit at the top, matching the main forest plot convention.
+    df = df.sort_values("deficit_pct_historical").reset_index(drop=True)
+    y_pos = np.arange(len(df))
+
+    fig, ax = plt.subplots(figsize=(8, max(4, 0.55 * len(df) + 1.5)))
+
+    # 1940s reference dots (with jackknife CI where available)
+    for i, r in df.iterrows():
+        lo, hi = r.get("cf_ci_lo"), r.get("cf_ci_hi")
+        if pd.notna(lo) and pd.notna(hi):
+            ax.plot([lo, hi], [i, i],
+                    color=CF_COLOURS["reference"], lw=1.2, alpha=0.7, zorder=1)
+        ax.scatter(r["deficit_pct_cf"], i,
+                   color=CF_COLOURS["reference"], s=55, zorder=3,
+                   edgecolor="white", linewidth=0.6)
+
+    # 2016–24 observed dots (no CI here — that's on the main forest plot)
+    ax.scatter(df["deficit_pct_historical"], y_pos,
+               color=CF_COLOURS["observed"], s=55, zorder=3,
+               edgecolor="white", linewidth=0.6, marker="D")
+
+    # Connectors: thin grey line from reference to observed to make the
+    # gap read as "the shift", not two unrelated points.
+    for i, r in df.iterrows():
+        ax.plot([r["deficit_pct_cf"], r["deficit_pct_historical"]], [i, i],
+                color="#888888", lw=0.8, ls=":", alpha=0.6, zorder=2)
+
+    # Flag rows where the 1940s WBGT was materially outside the fit range;
+    # these are extrapolation-dependent and shouldn't be over-interpreted.
+    if "frac_wbgt_below_fit_range" in df.columns:
+        flagged = df["frac_wbgt_below_fit_range"] > 0.05
+        for i in y_pos[flagged]:
+            ax.text(ax.get_xlim()[1], i, "  †",
+                    va="center", ha="left", fontsize=9, color="#666")
+
+    ax.axvline(0, color="black", ls="--", lw=0.9)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
+    ax.set_xlabel("% change in appointments associated with WBGT", fontsize=10)
+    ax.grid(axis="x", ls=":", alpha=0.4)
+
+    legend_handles = [
+        mpatches.Patch(color=CF_COLOURS["reference"], label="1940–48 reference"),
+        mpatches.Patch(color=CF_COLOURS["observed"],  label="2016–24 observed"),
+    ]
+    ax.legend(handles=legend_handles, loc="lower right",
+              fontsize=9, frameon=False)
+
+    if "frac_wbgt_below_fit_range" in df.columns and (df["frac_wbgt_below_fit_range"] > 0.05).any():
+        fig.text(0.99, 0.01,
+                 "†  >5% of 1940s WBGT below fit range — spline extrapolation",
+                 ha="right", fontsize=7, style="italic", color="#666")
+
+    plt.tight_layout()
+    out_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.png"
+    plt.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close()
+    return out_path
+
+
+# =====================================================================
 # MAIN — run everything
 # =====================================================================
 def load_results_df(out_dir: str = OUT_DIR) -> pd.DataFrame:
@@ -1454,11 +1532,9 @@ if __name__ == "__main__":
     for p in plot_projection_heatmaps(fitted):
         print("  ->", p)
 
-    print("\n[10] TLO disruption curves")
-    print("  ->", plot_tlo_curves(results_df))
 
     print("\n[11] district × indicator heatmap")
-    print("  ->", plot_district_indicator_heatmap())
+    print("  ->", plot_district_indicator_heatmap(indicator_order=fitted))
 
     print("\\n[12] projection forest")
     print("  ->", plot_projection_forest(fitted))
@@ -1476,4 +1552,6 @@ if __name__ == "__main__":
     print("  ->", calculate_summary_statistics_by_indicator(fitted))
     print("\nDone.")
 
+    print("\n[17] 1940s reference-period contrast")
+    print("  ->", plot_reference_period_contrast(fitted))
 

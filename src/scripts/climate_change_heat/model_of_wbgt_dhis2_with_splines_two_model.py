@@ -44,30 +44,20 @@ numpy.random.seed(42)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
+    "opd_attendance",
+    "ipd_total_admissions",
     "fp_total_clients",
-    # "opd_attendance",
-    # "ipd_total_admissions",
-    # "pnc_mother_checked_48h",
-    # "anc_total_visits",
-    # # "anc_new_attendees",
-    # # "anc_first_trimester_starts",
-    # "bcg_under1",
-    # "penta3_under1",
-    # "measles1_under1",
-    # "fully_immunised_under1",
-    # "pnc_within_2wks",
-    # # "live_births_total",
-    # # "skilled_deliveries",
-    #
-    # # "vmmc_first_visits",
-    # # "pnc_first_visit_2wks",
-    # "htc_results_new_negative",        # 80k rows, dense
-    # "htc_results_new_positive",
-    # "fp_subsequent_clients_total",     # cleaner FP resupply signal than fp_acceptors_*
-    # "fully_immunised_outreach",        # 92k rows across the two variants
-    # # "fully_immunised_outreach_alt",  # pick one after comparing coverage by year
-    # "cervical_screening_initial",      # requires re-download — was missing from raw_pulls
-
+    "fp_subsequent_clients_total",
+    "bcg_under1",
+    "penta3_under1",
+    "measles1_under1",
+    "fully_immunised_under1",
+    "live_births_total",
+    "htc_results_new_negative",
+    "htc_results_new_positive",
+    "anc_total_visits",
+    "cervical_screening_total",
+    "pnc_within_2wks",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
@@ -92,7 +82,7 @@ INDICATOR_LABELS: dict[str, str] = {
     "htc_results_new_positive":    "HTC New Positive",
     "fp_subsequent_clients_total": "FP Subsequent Clients",
     "fully_immunised_outreach":    "Fully Immunised Under-1 (Outreach)",
-    "cervical_screening_initial":  "Cervical Screening (Initial Visit)",
+    "cervical_screening_total":  "Cervical Screening (Total)",
 }
 
 HIGH_OVERDISPERSION_INDICATORS = [
@@ -121,7 +111,7 @@ MIN_YEAR_BY_INDICATOR: dict[str, int] = {
 # When True, restrict every aggregation (historical deficit, hot-month
 # deficit, projection deficits, district aggregations) to rows where
 # baseline > weather (services lost). Suffix all output CSVs accordingly.
-ONLY_DEFICITS = False
+ONLY_DEFICITS = True
 SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
 
 
