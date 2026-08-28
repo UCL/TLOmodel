@@ -196,6 +196,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .apply(lambda x: ",".join(sorted(map(str, x.keys()))))
         )
 
+        # drop rows with no appointment footprint
+        # todo: need better understanding of what make blank footprint (consumables not available; what else)
+        _df = _df.loc[_df["Appointment_Footprint"] != ""].copy()
+
         # merge info from mfl and format
         _df = merge_info_from_mfl(_df)
 
@@ -239,13 +243,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Duplicated case 2: same person id received multiple HSIs due to the same episode of condition
         # in the target period, such as inpatient postnatal care
         # Rough solution: drop nan loc_cat entries () and then
-        # drop duplicated person ids receiving care in the same tlm service area on the same day, consistent with
-        # TLM data collection method that is based on daily collection
+        # drop duplicated person ids receiving care in the same tlm service area at the same facility on the same day,
+        # consistent with TLM data collection method that is based on daily collection
         # One possible issue is that this drop may drop more than necessary,
         # such as a patient visiting OPD clinic may have multiple diseases to see, whereas TLM patient exit shows
         # no duplicated patients and that each patient has only visited one clinic on a day
         _df = _df.dropna(subset=["loc_cat"])
-        _df = _df.drop_duplicates(subset=["date", "Person_ID", "loc_cat"])
+        _df = _df.drop_duplicates(subset=["date", "Person_ID", "Facility_ID", "loc_cat"])
 
         # get patient counts per target subgroups initially
         _df = _df.groupby(
@@ -317,9 +321,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df_mix
 
-    def get_cons_access_mix_total_period(_df, rescale_by_fac_level=True):
+    def get_cons_access_by_hsi_total_period(_df, rescale_by_fac_level=True):
         # keep only months in TLM
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)].copy()
 
         # do not need to select did run HSIs as all HSI in the cons. logger did run
 
@@ -417,25 +421,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
         _df["Num_Medicine_Types_Available"] = _df["Item_Available"].apply(
-            lambda requested: sum(
+            lambda available: sum(
                 medicine_lookup.get(item_code, False)
-                for item_code in requested.keys()
+                for item_code in available.keys()
             )
         )
-
-        def medicine_item_codes(item_codes):
-            return {
-                item_code
-                for item_code in item_codes.keys()
-                if medicine_lookup.get(item_code, False)
-            }
-
-        assert _df.apply(
-            lambda row: medicine_item_codes(row["Item_Available"]).issubset(
-                medicine_item_codes(row["Item_Requested"])
-            ),
-            axis=1
-        ).all(), "Some available medicine item_codes are not present in requested medicine item_codes."
 
         # todo: may focus on outpatient settings only for the sensitivity analysis
         _df["loc_cat"] = pd.MultiIndex.from_frame(
@@ -450,8 +440,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # check that all events are mapped
         unmapped = _df.loc[_df["loc_cat"].isna(), "Event_Name"].unique()
         assert set(unmapped).issubset(
-            {"HSI_Alri_Treatment", "HSI_GenericEmergencyFirstAppt",
-             "HSI_GenericNonEmergencyFirstAppt", "Inpatient_Care"})
+            {'Inpatient_Care', 'HSI_GenericNonEmergencyFirstAppt',
+             'HSI_GenericEmergencyFirstAppt', '_BaseHSIGenericFirstAppt'})
 
         # drop NAN loc_cat HSIs
         _df = _df.dropna(subset=["loc_cat"])
@@ -469,8 +459,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 / df_meds["Num_Medicine_Types_Requested"]
             )
             df_meds["any"] = df_meds["Num_Medicine_Types_Available"] > 0
-
-            # todo: may drop duplicated person_id + loc_cat + day and do rescale by level after this
 
             # the rescaling function
             def weighted_mean(df, col):
@@ -495,7 +483,227 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     "subgroup": ["overall"],
                     "complete": [weighted_mean(df_meds, "complete") * 100],
                     "proportional": [weighted_mean(df_meds, "proportional") * 100],
-                    "any": [weighted_mean(df_meds, "any").mean() * 100],
+                    "any": [weighted_mean(df_meds, "any") * 100],
+                })
+
+            else:
+                access_meds_df = (
+                    df_meds
+                    .groupby(
+                        subgroup,
+                        dropna=False,
+                    )
+                    .apply(
+                        lambda x: pd.Series({
+                            "complete": (
+                                weighted_mean(x, "complete") * 100
+                            ),
+                            "proportional": (
+                                weighted_mean(x, "proportional") * 100
+                            ),
+                            "any": (
+                                weighted_mean(x, "any") * 100
+                            ),
+                        })
+                    )
+                    .reset_index()
+                    .rename(columns={subgroup: "subgroup"})
+                    .assign(category=subgroup)
+                )
+
+            return format_output(access_meds_df)
+
+        subgroups = ["overall", "Facility_Level", "District", "loc_cat"]
+
+        _access_meds = pd.concat(
+            [meds_access_range_by_subgroup_tlo(_df, subgroup=s) for s in subgroups],
+            ignore_index=True
+        )
+
+        _access_meds["category"] = _access_meds["category"].replace(
+            {"overall": "Overall", "loc_cat": "Service_Area"}
+        )
+
+        # creat series
+        _access_meds = _access_meds \
+            .set_index(["category", "subgroup", "source"])[["complete", "proportional", "any"]] \
+            .rename_axis(columns="type_of_med_access") \
+            .stack() \
+            .rename("percent")
+
+        return _access_meds
+
+
+    def get_cons_access_by_person_total_period(_df, rescale_by_fac_level=True):
+        # keep only months in TLM
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)].copy()
+
+        # do not need to select did run HSIs as all HSI in the cons. logger did run
+
+        # merge in facility information from mfl and format
+        _df.rename(columns={
+            "event_name": "Event_Name",
+            "facility_id": "Facility_ID",
+            "person_id": "Person_ID"
+        }, inplace=True)
+        _df = merge_info_from_mfl(_df)
+
+        # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
+        _df.drop(index=_df[_df["Facility_Level"].isin(["0", "5"])].index, inplace=True)
+
+        # fill NANs
+        _df.loc[
+            _df["Facility_Level"] == "4", ["District", "Region"]
+        ] = ["Central Hospitals (Southern)", "Southern"]  # ZMH
+        _df.loc[
+            _df["Facility_ID"] == 128, "District"
+        ] = "Central Hospitals (Southern)"
+        _df.loc[
+            _df["Facility_ID"] == 129, "District"
+        ] = "Central Hospitals (Northern)"
+        _df.loc[
+            _df["Facility_ID"] == 130, "District"
+        ] = "Central Hospitals (Central)"
+
+        # keep only districts in TLM
+        _df = _df.loc[_df["District"].isin(common_districts)]
+
+        # combine levels 3 and 4 as 3+
+        _df["Facility_Level"] = _df["Facility_Level"].replace({"4": "3"})
+
+        # todo: may focus on outpatient settings only for the sensitivity analysis
+        # checked that "Inpatient_Care" HSIs are not in cons.logger
+        # add loc_cat/TLM service area column
+        _df["loc_cat"] = pd.MultiIndex.from_frame(
+            _df[
+                [
+                    "Event_Name",
+                    "TREATMENT_ID",
+                ]
+            ]
+        ).map(hsi_loc_cat_map)
+
+        # check that all events are mapped
+        unmapped = _df.loc[_df["loc_cat"].isna(), "Event_Name"].unique()
+        assert set(unmapped).issubset(
+            {'Inpatient_Care', 'HSI_GenericNonEmergencyFirstAppt',
+             'HSI_GenericEmergencyFirstAppt', '_BaseHSIGenericFirstAppt'})
+
+        # drop NAN loc_cat HSIs
+        _df = _df.dropna(subset=["loc_cat"])
+
+        # add in column of item_requested
+        # change item columns to dicts from string then to list
+        import ast
+        _df["Item_NotAvailable"] = _df["Item_NotAvailable"].apply(ast.literal_eval)
+        _df["Item_Available"] = _df["Item_Available"].apply(ast.literal_eval)
+
+        _df["Item_NotAvailable"] = _df["Item_NotAvailable"].apply(lambda d: list(d.items()))
+        _df["Item_Available"] = _df["Item_Available"].apply(lambda d: list(d.items()))
+
+        _df["Item_Requested"] = _df.apply(
+            lambda row: row["Item_Available"] + row["Item_NotAvailable"],
+            axis=1
+        )
+
+        # check if any item in Item_Requested is medicine/drug/vaccine
+        medicine_lookup = item_is_medicine.set_index("Item_Code")["is_medicine"]
+        medicine_lookup.loc[2678] = True  # one missing item (Isoniazid/Rifapentine)
+
+        missing_item_codes = (
+            {item_code for items in _df["Item_Requested"] for item_code, quantity in items}
+            - set(medicine_lookup.index)
+        )
+
+        assert not missing_item_codes, f"Missing item codes in item_is_medicine: {missing_item_codes}"
+
+        # groupby by date, person_id, facility_id, facility level, district, loc_cat
+        # aggregate Item_Requested and Item_Available
+        _df = _df.groupby(["date", "Person_ID", "Facility_ID", "Facility_Level", "District", "loc_cat"]).agg(
+            Item_Requested=(
+                "Item_Requested",
+                lambda x: [item for lst in x for item in lst]
+            ),
+            Item_Available=(
+                "Item_Available",
+                lambda x: [item for lst in x for item in lst]
+            ),
+        ).reset_index()
+
+        # calculate the medicine accessibility by person_id
+        # count all medicine occurrences, including duplicated items from different HSIs for the same person
+        _df["Num_Medicines_Requested"] = _df["Item_Requested"].apply(
+            lambda requested: sum(
+                medicine_lookup.get(item_code, False)
+                for item_code, quantity in requested
+            )
+        )
+
+        _df["Num_Medicines_Available"] = _df["Item_Available"].apply(
+            lambda available: sum(
+                medicine_lookup.get(item_code, False)
+                for item_code, quantity in available
+            )
+        )
+
+        # prepare the rescaling factor to rescale all persons by facility level
+        if rescale_by_fac_level:
+            tlm_pat_prop = pd.Series({"1a": 0.2466, "2": 0.4470, "3": 0.3064})
+
+            sim_pat_prop = (
+                _df["Facility_Level"]
+                .value_counts(normalize=True)
+                .reindex(["1a", "2", "3"], fill_value=0)
+            )
+
+            scale_factor = (
+                tlm_pat_prop
+                / sim_pat_prop
+            ).replace([np.inf, -np.inf], np.nan, ).fillna(1.0)
+
+            _df["scale_factor"] = _df["Facility_Level"].map(scale_factor)
+
+        else:
+            _df["scale_factor"] = 1.0
+
+        # range of percent meds access, by subgroup ["overall", "loc_cat", "fac_level", "district"]
+        def meds_access_range_by_subgroup_tlo(__df, subgroup=None):
+            df_meds = __df[__df["Num_Medicines_Requested"] > 0].copy()
+
+            df_meds["complete"] = (
+                df_meds["Num_Medicines_Available"]
+                == df_meds["Num_Medicines_Requested"]
+            )
+            df_meds["proportional"] = (
+                df_meds["Num_Medicines_Available"]
+                / df_meds["Num_Medicines_Requested"]
+            )
+            df_meds["any"] = df_meds["Num_Medicines_Available"] > 0
+
+            # the rescaling function
+            def weighted_mean(df, col):
+                return np.average(
+                    df[col],
+                    weights=df["scale_factor"],
+                )
+
+            output_columns = ["category", "subgroup", "source",
+                              "complete", "proportional", "any"]
+
+            def format_output(df):
+                return (
+                    df
+                    .assign(source="TLO")
+                    [output_columns]
+                )
+
+            if subgroup == "overall":
+                access_meds_df = pd.DataFrame({
+                    "category": ["overall"],
+                    "subgroup": ["overall"],
+                    "complete": [weighted_mean(df_meds, "complete") * 100],
+                    "proportional": [weighted_mean(df_meds, "proportional") * 100],
+                    "any": [weighted_mean(df_meds, "any") * 100],
                 })
 
             else:
@@ -800,10 +1008,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     common_districts = hcw_tms_pat_load["district"].drop_duplicates().tolist()
 
     # drop clinics that are not explicitly modelled/matched in TLO: such as Pharmacy and Laboratory and Surgery,
-    # as they are incorported into other areas like Outpatient and Inpatient
+    # as they are incorporated into other areas like Outpatient and Inpatient; or do the combination too in TLM
     # combine NCD and outpatient-general
-    pat_exit["loc_cat"] = pat_exit["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
-    fac_tms_pat_load["loc_cat"] = fac_tms_pat_load["loc_cat"].replace({"NCD/Other clinic": "Outpatient - General"})
+    pat_exit["loc_cat"] = pat_exit["loc_cat"].replace({
+        "NCD/Other clinic": "Outpatient - General",
+        "Pharmacy": "Outpatient - General",
+        "Laboratory": "Outpatient - General",
+        "Surgery": "Inpatient - General"
+    })
+    fac_tms_pat_load["loc_cat"] = fac_tms_pat_load["loc_cat"].replace({
+        "NCD/Other clinic": "Outpatient - General",
+        "Pharmacy": "Outpatient - General",
+        "Laboratory": "Outpatient - General",
+        "Surgery": "Inpatient - General"
+    })
 
     common_loc_cats = hsi_loc_cat_map.dropna().unique()
     pat_exit = pat_exit.loc[pat_exit["loc_cat"].isin(common_loc_cats)].copy()
@@ -867,7 +1085,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="HSI_Event",
         custom_generate_series=lambda df: get_patient_mix_total_period(
             df,
-            rescale_by_fac_level=False,
+            rescale_by_fac_level=True,
         ),
         do_scaling=False
     ).fillna(0)
@@ -1238,9 +1456,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module="tlo.methods.healthsystem",
         key="Consumables",
-        custom_generate_series=lambda df: get_cons_access_mix_total_period(
+        custom_generate_series=lambda df: get_cons_access_by_person_total_period(
             df,
-            rescale_by_fac_level=False,
+            rescale_by_fac_level=True,
         ),
         do_scaling=False
     )
@@ -2033,7 +2251,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = summarise_mean_ci95(
         df_plot,
         ["District", "Facility_Level", "Source"],
-        rescale_tlo_by_fac_level=False,
+        rescale_tlo_by_fac_level=True,
         tlm_obs_level_prop=tlm_obs_level_prop
     )
 
@@ -2132,7 +2350,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = summarise_mean_ci95(
         df_plot,
         ["District", "Source"],
-        rescale_tlo_by_fac_level=False,
+        rescale_tlo_by_fac_level=True,
         tlm_obs_level_prop=tlm_obs_level_prop
     )
 
@@ -2208,7 +2426,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = summarise_mean_ci95(
         df_plot,
         ["Facility_Level", "Source"],
-        rescale_tlo_by_fac_level=False,
+        rescale_tlo_by_fac_level=True,
         tlm_obs_level_prop=tlm_obs_level_prop
     )
 
@@ -2276,7 +2494,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         summarise_mean_ci95(
             df_plot,
             ["Source"],
-            rescale_tlo_by_fac_level=False,
+            rescale_tlo_by_fac_level=True,
             tlm_obs_level_prop=tlm_obs_level_prop
         )
         .set_index("Source")
