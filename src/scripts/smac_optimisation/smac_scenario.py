@@ -108,8 +108,17 @@ class TloOptimisationScenario(BaseScenario):
         return {
             "filename": "smac_optimisation",
             "directory": "./outputs",
-            "custom_levels": {"*": logging.INFO},
-        }
+            "custom_levels": {
+                '*': logging.WARNING,
+                'tlo.methods.demography': logging.INFO,
+                'tlo.methods.demography.detail': logging.WARNING,
+                'tlo.methods.healthburden': logging.INFO,
+                'tlo.methods.healthsystem': logging.WARNING,
+                'tlo.methods.healthsystem.summary': logging.INFO,
+                'tlo.methods.hiv': logging.INFO,
+                'tlo.methods.tb': logging.INFO,
+                }
+            }
 
     def modules(self):
         return fullmodel()
