@@ -14,6 +14,11 @@ Outputs, per indicator (columns identical and identically ordered across the thr
     historical_{var}_by_facility_{INDICATOR}.csv        date x facility
     monthly_reporting_{INDICATOR}_by_facility_wbgt.csv  date x facility
     expanded_facility_info_wbgt_{INDICATOR}.csv         covariate x facility
+    regression_panel_{INDICATOR}.csv                    long: facility x date
+
+Plus, if CF_ENABLED:
+    wbgt_monthly_mean_facility_{CF_LABEL}.csv           long: facility x date
+    wbgt_extreme_indices_facility_{CF_LABEL}.csv        long: facility x date
 """
 
 import difflib
@@ -44,12 +49,28 @@ WBGT_MONTHLY_VARS = ['wbgt_day', 'wbgt_night']     # from wbgt_monthly_*.nc
 WBGT_EXTREME_VARS = ['wbgt5x_day']                 # from the extreme file
 WBGT_EXTREME_FILE = "wbgt_extreme_indices_ERA5_historical.nc"   # native grid (matches monthly)
 
-WBGT_VARS = WBGT_MONTHLY_VARS + WBGT_EXTREME_VARS   # everything downstream loops over thisWBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
-WBGT_LAT_COORD = "lat"     # 'lat' in the CMIP6-derived files
-WBGT_LON_COORD = "lon"    # 'lon' in the CMIP6-derived files
-WBGT_TIME_COORD = "time"  # 'time' in the CMIP6-derived files
+WBGT_VARS = WBGT_MONTHLY_VARS + WBGT_EXTREME_VARS   # everything downstream loops over this
+WBGT_TIME_COORD = "time"
+WBGT_LAT_COORD  = "lat"
+WBGT_LON_COORD  = "lon"
 
+# --- Counterfactual (periindustrial ERA5) ----------------------------------
+# Reuses matched_facilities + facility_name_mapping from the historical pass:
+# facility coords don't change, only the WBGT time series does.
+CF_ENABLED           = True
+CF_LABEL             = "ERA5_periindustrial_1940_1948"
+CF_WBGT_DIRECTORY    = ("/Users/rachelmurray-watson/Documents/Heat_data/"
+                        "Thermofeel_WBGT/ERA5/Periindustrial/")
+CF_MONTHLY_FILE      = "wbgt_monthly_ERA5_periindustrial_1940_1948.nc"
+CF_EXTREME_FILE      = "wbgt_extreme_indices_ERA5_periindustrial_1940_1948.nc"
+# If you renamed the periindustrial precip file, update this. Filename only —
+# it's joined to CF_WBGT_DIRECTORY below.
+CF_PRECIP_FILE = "precip_monthly_ERA5_periindustrial_1940_1948.nc"
+CF_MONTHLY_VARS      = WBGT_MONTHLY_VARS       # wbgt_day, wbgt_night
+CF_EXTREME_VARS      = WBGT_EXTREME_VARS       # wbgt5x_day
+# CF_PRECIP_VARS is set below, after PRECIP_VARS is defined.
 
+# Files
 FACILITIES_CSV = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_lat_long_region.csv")
 
 FACILITIES_SHP = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/climate_change_impacts/facilities_with_districts.shp")
@@ -127,8 +148,6 @@ long_data = ds_wbgt[WBGT_LON_COORD].values
 time_data = pd.to_datetime(ds_wbgt[WBGT_TIME_COORD].values)
 
 # --- Add the extreme index (wbgt5x_day) from the ERA5 extreme file ----------
-# Same ERA5 dir, same native grid + time axis as the monthly means, so it slots
-# straight into wbgt_data and flows through the rest unchanged.
 ds_ext = xr.open_dataset(os.path.join(WBGT_DIRECTORY, WBGT_EXTREME_FILE))
 assert ds_ext.sizes.get(WBGT_TIME_COORD) == len(time_data), \
     "extreme file has a different number of months than the monthly-mean file"
@@ -141,6 +160,7 @@ ds_ext.close()
 
 PRECIP_FILE = "precip_monthly_ERA5_historical.nc"
 PRECIP_VARS = ["precip_month", "precip_5day"]
+CF_PRECIP_VARS = PRECIP_VARS               # CF carries the same precip vars
 
 ds_precip = xr.open_dataset(os.path.join(WBGT_DIRECTORY, PRECIP_FILE))
 assert ds_precip.sizes.get(WBGT_TIME_COORD) == len(time_data), \
@@ -343,10 +363,9 @@ for indicator in indicator_cols:
     info_out = facility_info_full.loc[facs].T
 
     # ----------------------------------------------------------------
-    # NEW: long-format regression panel
+    # Long-format regression panel
     #   rows = (facility x date), columns = wbgt vars + indicator value
     # ----------------------------------------------------------------
-    # Stack each WBGT variable from wide (date x facility) -> long
     wbgt_long_parts = []
     for var in WBGT_VARS:
         part = (
@@ -358,19 +377,15 @@ for indicator in indicator_cols:
         )
         wbgt_long_parts.append(part.set_index(["facility", "date"]))
 
-    # Merge all WBGT vars on the same (facility, date) index
     wbgt_long = pd.concat(wbgt_long_parts, axis=1).reset_index()
 
-    # Stack the indicator the same way
     indicator_long = (
         reporting_out.stack(future_stack=True).rename(indicator).reset_index().rename(columns={"level_1": "facility"})
     )
 
-    # Merge WBGT + indicator on facility + date
     panel = pd.merge(wbgt_long, indicator_long,
                      on=["facility", "date"], how="left")
 
-    # Optionally attach static covariates (altitude, district, etc.)
     static_cols = COVARIATE_COLS + ["minimum_distance"]
     panel = pd.merge(
         panel,
@@ -380,7 +395,6 @@ for indicator in indicator_cols:
 
     panel = panel.sort_values(["facility", "date"]).reset_index(drop=True)
 
-    # Save
     p_panel = os.path.join(OUTPUT_DIR,
                            f"regression_panel_{indicator}.csv")
     panel.to_csv(p_panel, index=False)
@@ -398,6 +412,7 @@ for indicator in indicator_cols:
     print(f"  {indicator}: {len(facs)} facilities, "
           f"{reporting_out.shape[0]} reporting months, "
           f"{len(time_data)} WBGT months  -> regression_panel written")
+
 # ---------------------------------------------------------------------------
 # Alignment note (WBGT vs reporting month coverage)
 # ---------------------------------------------------------------------------
@@ -412,7 +427,150 @@ print("\nProcessing complete!")
 print(f"WBGT extracted once for {len(matched_facilities)} facilities; "
       f"{len(indicator_cols)} indicator file sets written to {OUTPUT_DIR}")
 
+# ---------------------------------------------------------------------------
+# Counterfactual: extract periindustrial WBGT (+ precip) at the same facility
+# locations and write the two long-format CSVs the model script expects.
+# ---------------------------------------------------------------------------
+if CF_ENABLED:
+    print("\n" + "=" * 80)
+    print(f"COUNTERFACTUAL EXTRACTION ({CF_LABEL})")
+    print("=" * 80)
+
+    cf_monthly_path = os.path.join(CF_WBGT_DIRECTORY, CF_MONTHLY_FILE)
+    cf_extreme_path = os.path.join(CF_WBGT_DIRECTORY, CF_EXTREME_FILE)
+    cf_precip_path  = os.path.join(CF_WBGT_DIRECTORY, CF_PRECIP_FILE)
+
+    if not (os.path.exists(cf_monthly_path) and os.path.exists(cf_extreme_path)):
+        print(f"  ⚠ Missing counterfactual NetCDFs — skipping.")
+        print(f"    monthly:  {cf_monthly_path}  exists={os.path.exists(cf_monthly_path)}")
+        print(f"    extreme:  {cf_extreme_path}  exists={os.path.exists(cf_extreme_path)}")
+    else:
+        # ---- load counterfactual NCs and stack vars into one dict ----------
+        ds_cf_m = xr.open_dataset(cf_monthly_path)
+        ds_cf_x = xr.open_dataset(cf_extreme_path)
+        if not os.path.exists(cf_precip_path):
+            raise FileNotFoundError(f"CF precip file missing: {cf_precip_path}")
+        ds_cf_p = xr.open_dataset(cf_precip_path)
+
+        missing_m = [v for v in CF_MONTHLY_VARS if v not in ds_cf_m]
+        missing_x = [v for v in CF_EXTREME_VARS if v not in ds_cf_x]
+        missing_p = [v for v in CF_PRECIP_VARS  if v not in ds_cf_p]
+        if missing_m or missing_x or missing_p:
+            raise KeyError(f"CF vars missing: monthly={missing_m}, "
+                           f"extreme={missing_x}, precip={missing_p}")
+
+        cf_lat  = ds_cf_m[WBGT_LAT_COORD].values
+        cf_lon  = ds_cf_m[WBGT_LON_COORD].values
+        cf_time = pd.to_datetime(ds_cf_m[WBGT_TIME_COORD].values)
+
+        # sanity: precip should share time axis with the monthly means
+        if ds_cf_p.sizes.get(WBGT_TIME_COORD) != len(cf_time):
+            raise ValueError("CF precip time axis differs from CF monthly time axis")
+
+        cf_data = {v: ds_cf_m[v].values for v in CF_MONTHLY_VARS}
+        for v in CF_EXTREME_VARS:
+            cf_data[v] = ds_cf_x[v].values
+        for v in CF_PRECIP_VARS:
+            cf_data[v] = ds_cf_p[v].values
+
+        ds_cf_m.close(); ds_cf_x.close(); ds_cf_p.close()
+
+        # sanity: same grid orientation as historical (this doesn't require
+        # identical cells — periindustrial is on the same ERA5 grid — but
+        # catches accidental transposes)
+        cf_all_vars = CF_MONTHLY_VARS + CF_EXTREME_VARS + CF_PRECIP_VARS
+        for v in cf_all_vars:
+            if cf_data[v].shape[1:] != (len(cf_lat), len(cf_lon)):
+                raise ValueError(f"CF var {v!r} shape {cf_data[v].shape} "
+                                 f"inconsistent with ({len(cf_lat)}, {len(cf_lon)})")
+
+        # ---- extract at each matched facility ------------------------------
+        # Skip special-case facilities: their historical exposure uses a
+        # district grid rule, not lat/lon; keeping counterfactual on the same
+        # rule would need a CF-aware grid cache. Small in number, warned below.
+        cf_by_facility = {v: {} for v in cf_all_vars}
+        skipped_special, skipped_nocoord = [], []
+
+        for reporting_facility in matched_facilities:
+            registry_name = facility_name_mapping[reporting_facility]
+
+            if reporting_facility in SPECIAL_CASES:
+                skipped_special.append(reporting_facility)
+                continue
+
+            frow = facilities_with_lat_long[
+                facilities_with_lat_long["Fname"] == registry_name]
+            if frow.empty:
+                skipped_nocoord.append(reporting_facility)
+                continue
+            lat_f = frow.iloc[0]["A109__Latitude"]
+            lon_f = frow.iloc[0]["A109__Longitude"]
+            if pd.isna(lat_f) or pd.isna(lon_f):
+                skipped_nocoord.append(reporting_facility)
+                continue
+
+            ix = ((cf_lon - lon_f) ** 2).argmin()
+            iy = ((cf_lat - lat_f) ** 2).argmin()
+            for v in cf_by_facility:
+                cf_by_facility[v][reporting_facility] = cf_data[v][:, iy, ix]
+
+        if skipped_special:
+            print(f"  ⚠ CF skipped {len(skipped_special)} special-case facilities "
+                  f"(district-rule exposure not implemented for CF): "
+                  f"{skipped_special}")
+        if skipped_nocoord:
+            print(f"  ⚠ CF skipped {len(skipped_nocoord)} facilities with no coords "
+                  f"in registry (unexpected — they matched historical): "
+                  f"{skipped_nocoord[:10]}")
+
+        cf_facilities = list(cf_by_facility[CF_MONTHLY_VARS[0]].keys())
+        print(f"  CF extracted for {len(cf_facilities)} facilities x "
+              f"{len(cf_time)} months ({cf_time.min():%Y-%m} to {cf_time.max():%Y-%m})")
+
+        # ---- write the two long-format CSVs --------------------------------
+        # Long: one row per (facility, date). Precip is written to BOTH files
+        # so the model script finds it whether it uses the monthly or extreme
+        # branch.
+        def _to_long(vars_):
+            frames = []
+            for v in vars_:
+                wide = pd.DataFrame(cf_by_facility[v], index=cf_time)
+                wide.index.name = "date"
+                long = (wide.stack(future_stack=True)
+                            .rename(v)
+                            .reset_index()
+                            .rename(columns={"level_1": "facility"}))
+                frames.append(long.set_index(["facility", "date"]))
+            out = pd.concat(frames, axis=1).reset_index()
+            return out.sort_values(["facility", "date"]).reset_index(drop=True)
+
+        cf_monthly_long = _to_long(CF_MONTHLY_VARS + CF_PRECIP_VARS)
+        cf_extreme_long = _to_long(CF_EXTREME_VARS + CF_PRECIP_VARS)
+
+        p_cf_m = os.path.join(OUTPUT_DIR,
+            f"wbgt_monthly_mean_facility_{CF_LABEL}.csv")
+        p_cf_x = os.path.join(OUTPUT_DIR,
+            f"wbgt_extreme_indices_facility_{CF_LABEL}.csv")
+        cf_monthly_long.to_csv(p_cf_m, index=False)
+        cf_extreme_long.to_csv(p_cf_x, index=False)
+        print(f"  wrote {p_cf_m}")
+        print(f"  wrote {p_cf_x}")
+
 ds_wbgt.close()
+
+# ---------------------------------------------------------------------------
+# Indicator summary
+# ---------------------------------------------------------------------------
+def in_scope_denominator(sub, period_col):
+    """For each facility, count months in the panel between its first and last
+    non-null report for this indicator, and sum across facilities."""
+    spans = sub.groupby("facility")[period_col].agg(["min", "max"])
+    all_months = dhis2[period_col].drop_duplicates().sort_values().values
+    total = 0
+    for _, (lo, hi) in spans.iterrows():
+        total += int(((all_months >= lo) & (all_months <= hi)).sum())
+    return total
+
 
 print("\n=== INDICATOR SUMMARY ===")
 for ind in indicator_cols:
@@ -420,6 +578,8 @@ for ind in indicator_cols:
     n_facilities = sub["facility"].nunique()
     years = sorted(sub[DHIS2_PERIOD_COL].dt.year.unique())
     total_obs = len(sub)
-    possible_obs = dhis2[["facility", DHIS2_PERIOD_COL]].drop_duplicates().shape[0]
-    completeness = round(100 * total_obs / possible_obs, 1)
-    print(f"{ind} | facilities={n_facilities} | completeness={completeness}% | years={years[0]}-{years[-1]}")
+    possible_obs = in_scope_denominator(sub, DHIS2_PERIOD_COL)
+    completeness = round(100 * total_obs / possible_obs, 1) if possible_obs else float("nan")
+    print(f"{ind} | facilities={n_facilities} | obs={total_obs:,} | "
+          f"in-scope-months={possible_obs:,} | completeness={completeness}% | "
+          f"years={years[0]}-{years[-1]}")

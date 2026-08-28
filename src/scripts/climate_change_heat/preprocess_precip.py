@@ -14,4 +14,5 @@ precip_5day  = r5.resample({TIME: "1MS"}).max().rename("precip_5day")
 
 out = xr.Dataset({"precip_month": precip_month, "precip_5day": precip_5day})
 out = out.rename({TIME: "time"})  # match WBGT_TIME_COORD
-out.to_netcdf(f"{WBGT_DIRECTORY}/precip_monthly_ERA5_historical.nc")
+#out.to_netcdf(f"{WBGT_DIRECTORY}/precip_monthly_ERA5_historical.nc")
+out.to_netcdf(f"{WBGT_DIRECTORY}/precip_monthly_ERA5_periindustrial_1940_1948.nc")

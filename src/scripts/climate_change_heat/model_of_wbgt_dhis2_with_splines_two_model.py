@@ -44,50 +44,30 @@ numpy.random.seed(42)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    # existing — kept
     "fp_total_clients",
-    "opd_attendance",
-    "ipd_total_admissions",
-    "pnc_mother_checked_48h",
-    "anc_total_visits",
-    # "anc_new_attendees",
-    # "anc_first_trimester_starts",
-    "bcg_under1",
-    "penta3_under1",
-    "measles1_under1",
-    "fully_immunised_under1",
-    "pnc_within_2wks",
-    # "live_births_total",
-    # "skilled_deliveries",
+    # "opd_attendance",
+    # "ipd_total_admissions",
+    # "pnc_mother_checked_48h",
+    # "anc_total_visits",
+    # # "anc_new_attendees",
+    # # "anc_first_trimester_starts",
+    # "bcg_under1",
+    # "penta3_under1",
+    # "measles1_under1",
+    # "fully_immunised_under1",
+    # "pnc_within_2wks",
+    # # "live_births_total",
+    # # "skilled_deliveries",
+    #
+    # # "vmmc_first_visits",
+    # # "pnc_first_visit_2wks",
+    # "htc_results_new_negative",        # 80k rows, dense
+    # "htc_results_new_positive",
+    # "fp_subsequent_clients_total",     # cleaner FP resupply signal than fp_acceptors_*
+    # "fully_immunised_outreach",        # 92k rows across the two variants
+    # # "fully_immunised_outreach_alt",  # pick one after comparing coverage by year
+    # "cervical_screening_initial",      # requires re-download — was missing from raw_pulls
 
-    # existing — dropped based on completeness diagnostics:
-    # "vmmc_first_visits",        # 8% completeness, 364 fac; also campaign-dominated
-    # "pnc_first_visit_2wks",     # 8 facilities, 0% — redundant with pnc_within_2wks
-
-    # --- new: demand-driven attendance (heat-elastic), survived LEVEL-4 pull ---
-    "htc_results_new_negative",        # 80k rows, dense
-    "htc_results_new_positive",
-    "fp_subsequent_clients_total",     # cleaner FP resupply signal than fp_acceptors_*
-    "fully_immunised_outreach",        # 92k rows across the two variants
-    # "fully_immunised_outreach_alt",  # pick one after comparing coverage by year
-    "cervical_screening_initial",      # requires re-download — was missing from raw_pulls
-
-    # --- new: dropped because HMIS does not capture these at LEVEL-4 (health-centre) ---
-    # Reported only at district-hospital level, if at all. Not observable at
-    # facility-month resolution in this instance — consider a district-level
-    # parallel run if you want to keep them, otherwise flag as an HMIS limitation.
-    # "tb_hh_referred_female",              # 16 rows total across 2015-2024
-    # "tb_hh_referred_male",                # same
-    # "dental_tooth_fillings",              # 139 rows across a decade
-    # "mental_health_clinical_officer",     # 107 rows across a decade
-    # "mental_health_nurse",                # same
-
-    # --- new: dropped because CAC (community-access) form has ~3.6% completeness ---
-    # Register is CBDA-specific, not routine facility reporting. fp_subsequent_clients_total
-    # covers the FP-resupply concept more cleanly.
-    # "fp_acceptors_pills",
-    # "fp_acceptors_injectable",
-    # "fp_acceptors_condoms",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
@@ -108,8 +88,6 @@ INDICATOR_LABELS: dict[str, str] = {
     "pnc_first_visit_2wks": "PNC First Visit <2 Weeks",
     "live_births_total": "Live Births Total",
     "skilled_deliveries": "Skilled Deliveries",
-
-    # new — only the four we're actually fitting
     "htc_results_new_negative":    "HTC New Negative",
     "htc_results_new_positive":    "HTC New Positive",
     "fp_subsequent_clients_total": "FP Subsequent Clients",
@@ -1287,14 +1265,13 @@ if __name__ == "__main__":
     COUNTERFACTUAL = True
     CF_LABEL = "ERA5_periindustrial_1940_1948"
     CF_WBGT_FILE = (
-        f"wbgt_extreme_indices_facility_{CF_LABEL}.csv"
+        f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_extreme_indices_facility_{CF_LABEL}.csv"
         if WBGT_VAR == "wbgt5x_day"
-        else f"wbgt_monthly_mean_facility_{CF_LABEL}.csv"
+        else f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_monthly_mean_facility_{CF_LABEL}.csv"
     )
-
     if COUNTERFACTUAL:
         print(f"\nCounterfactual scenario: {CF_LABEL}")
-        cf_path = os.path.join(PROJECTION_DIR, CF_WBGT_FILE)
+        cf_path = CF_WBGT_FILE
         if not os.path.exists(cf_path):
             print(f"  SKIP counterfactual: missing {cf_path}")
         else:
