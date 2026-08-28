@@ -35,42 +35,6 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
-
-def build_dummy_include_exclude_table() -> pd.DataFrame:
-    """Create a small include/exclude matrix for figure testing."""
-    treatment_ids = [
-        "Antenatal_Care",
-        "Cervical_Cancer_Screening",
-        "Diabetes_Followup",
-        "HIV_Testing",
-        "Malaria_Treatment",
-    ]
-    flags = pd.DataFrame(
-        [
-            [True, False, True, True, False],
-            [False, True, None, True, True],
-            [True, True, True, False, False],
-            [False, None, True, True, True],
-            [True, False, False, True, None],
-        ],
-        index=treatment_ids,
-        columns=treatment_ids,
-    )
-    flags.index.name = "treatment_id"
-    return flags
-
-
-def save_demo_include_exclude_table(output_folder: Path):
-    """Generate and save a demo include/exclude table figure."""
-    flags_df = build_dummy_include_exclude_table()
-    fig, ax = plot_treatment_id_include_exclude_table(flags_df, title="Demo Treatment ID Include/Exclude Table")
-    output_folder.mkdir(parents=True, exist_ok=True)
-    outfile = output_folder / make_graph_file_name("Demo Treatment ID Include/Exclude Table")
-    fig.savefig(outfile, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Saved: {outfile}")
-
-
 def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
     loaded = {}
     for results_file in results_files:
@@ -159,8 +123,6 @@ def plot_dalys_by_cause_label_stacked_by_draw(
     return fig, ax
 
 
-
-
 def apply(
     results_files: list[Path],
     output_folder: Path,
@@ -172,9 +134,6 @@ def apply(
     print(f"Output folder: {output_folder}")
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    param_names = get_parameter_names_from_scenario_file()
-    print(f"Loaded parameter names: {len(param_names)}")
-
     all_results = load_results_files(results_files)
     primary_results = all_results[results_files[0]]
     print(f"Using primary results from: {results_files[0]}")
@@ -185,6 +144,8 @@ def apply(
     pc_dalys_averted = primary_results.get('pc_dalys_averted')
     net_health = primary_results.get('net_health')
     incremental_scenario_cost = primary_results.get('incremental_scenario_cost')
+    undiscounted_dalys = primary_results.get('dalys')
+    discounted_dalys = primary_results.get('discounted_dalys')
     dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
     annual_cost_by_cadre = primary_results.get('annual_cost_by_cadre')
     counts_of_hsi = primary_results['counts_of_hsi_by_period']
@@ -201,6 +162,75 @@ def apply(
         )
     )
     print(f"Comparison metrics available: {comparison_metrics_available}")
+    # Get the list of draws directly from the results and not from scenario files
+    # as some draws have been excluded at the previous step.
+    param_names = primary_results['total_population_by_year'].columns.get_level_values('draw').unique()
+    print(f"Loaded parameter names: {len(param_names)}")
+
+    if isinstance(undiscounted_dalys, pd.DataFrame) and isinstance(discounted_dalys, pd.DataFrame):
+        undiscounted_totals = undiscounted_dalys.sum(axis=0).unstack("stat")
+        discounted_totals = discounted_dalys.sum(axis=0).unstack("stat")
+        daly_totals_order = undiscounted_totals["central"].sort_values().index
+        undiscounted_totals = undiscounted_totals.reindex(daly_totals_order) / 1e6
+        discounted_totals = discounted_totals.reindex(daly_totals_order) / 1e6
+
+        colors = [
+            SHORT_TREATMENT_ID_TO_COLOR_MAP.get(str(draw).split("_")[0] + "*", "grey")
+            for draw in daly_totals_order
+        ]
+        y_positions = np.arange(len(daly_totals_order))
+        fig_height = max(6, min(0.28 * len(daly_totals_order) + 4, 24))
+        fig, ax = plt.subplots(figsize=(12, fig_height))
+
+        ax.barh(
+            y_positions,
+            undiscounted_totals["central"],
+            color=colors,
+            alpha=0.3,
+            label="Undiscounted DALYs",
+        )
+        ax.barh(
+            y_positions,
+            discounted_totals["central"],
+            color=colors,
+            alpha=0.9,
+            label="Discounted DALYs",
+        )
+
+        for position, color, (_, undiscounted), (_, discounted) in zip(
+            y_positions,
+            colors,
+            undiscounted_totals.iterrows(),
+            discounted_totals.iterrows(),
+        ):
+            for values, alpha in ((undiscounted, 0.4), (discounted, 1.0)):
+                ax.errorbar(
+                    values["central"],
+                    position,
+                    xerr=[[values["central"] - values["lower"]], [values["upper"] - values["central"]]],
+                    fmt="none",
+                    ecolor=color,
+                    elinewidth=1,
+                    capsize=2,
+                    alpha=alpha,
+                    zorder=3,
+                )
+
+        name_of_plot = "Discounted and Undiscounted DALYs by Treatment ID"
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels(daly_totals_order)
+        ax.set_xlabel("Total DALYs (millions)")
+        ax.set_ylabel("Treatment ID")
+        ax.set_title(name_of_plot)
+        ax.grid(axis="x", alpha=0.3)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.legend()
+        fig.tight_layout()
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile)
+        plt.close(fig)
+        print(f"Saved: {name_of_plot}")
 
     result_rows = []
     for draw in counts_of_hsi.columns.get_level_values(0).unique():
@@ -223,18 +253,13 @@ def apply(
     for param in param_names:
         if param == "Nothing":
             continue
-        draw = format_scenario_name(param)
+        draw = param
         print(f"Plotting yearly HSI counts for draw: {draw}")
         name_of_plot = f"Yearly HSI counts for {draw}"
         # Since all HSIs will be delivered before the service availability switch
         # retain only the treatment id of interest in this period to avoid plot
         # clutter.
-        pre_switch_periods = (
-            ['2010-2010', '2011-2011', '2012-2012', '2013-2013',
-             '2014-2014', '2015-2015', '2016-2016', '2017-2017',
-             '2018-2018', '2019-2019', '2020-2020', '2021-2021',
-             '2022-2022', '2023-2023', '2024-2024', '2025-2025']
-        )
+        pre_switch_periods = [str(i) for i in list(range(2010, 2025))]
         # Filter rows to retain those in implementation period only
         mask_other_periods = (
             ~counts_of_hsi.
@@ -263,7 +288,7 @@ def apply(
         for param in param_names:
             if param == "Nothing":
                 continue
-            draw = format_scenario_name(param)
+            draw = param
             try:
                 name_of_plot = f"Capacity Used by Cadre and Facility Level Over Time for {draw}"
                 fig, ax = plot_capacity_used_by_cadre_and_level_over_time_for_draw(
@@ -312,13 +337,14 @@ def apply(
     fig.savefig(outfile)
     plt.close(fig)
 
-    # Plot number of deaths and DALYS by cause for each parameter, with confidence intervals, for the target period
+    # Plot number of deaths and DALYS by cause for each parameter, with
+    # confidence intervals, for the target period
     num_dalys_by_cause_label_implementation = primary_results['dalys']
 
     num_deaths_by_cause_label_implementation = primary_results['num_deaths']
     print("Prepared deaths and DALYs by cause for plotting.")
 
-    daly_draw_labels = [format_scenario_name(param) for param in param_names]
+    daly_draw_labels = param_names
     print("Plotting stacked DALYs by cause label for each draw.")
     fig, ax = plot_dalys_by_cause_label_stacked_by_draw(
         num_dalys_by_cause_label_implementation,
@@ -332,7 +358,7 @@ def apply(
     print("Saved: DALYs by Cause Label for Each Draw")
 
     for param in param_names:
-        draw = format_scenario_name(param)
+        draw = param
         print(f"Plotting deaths over time by cause for draw: {draw}")
         fig, ax = plot_deaths_by_period_for_draw(
             num_deaths_by_cause_label_implementation / 1e3,
@@ -469,8 +495,6 @@ def apply(
         fig.savefig(outfile)
         plt.close(fig)
         print("Saved: Incremental Cost for Each Treatment ID")
-
-        # We choose to exclude Hiv_Prevention_Prep for now.
 
         facet_order = (
             dalys_order
@@ -610,6 +634,63 @@ def apply(
         fig.savefig(outfile)
         plt.close(fig)
         print("Saved: DALYs, Incremental Cost, and Net Health by Treatment ID")
+
+        facet_order_without_prep = facet_order.drop("Hiv_Prevention_Prep_*", errors="ignore")
+        dalys_facet_without_prep = dalys_facet.reindex(facet_order_without_prep)
+        costs_facet_without_prep = costs_facet.reindex(facet_order_without_prep)
+        nh_facet_without_prep = nh_facet.reindex(facet_order_without_prep)
+
+        fig_height = max(6, min(0.28 * len(facet_order_without_prep) + 4, 18))
+        fig, axes = plt.subplots(1, 3, figsize=(20, fig_height), sharey=True)
+        name_of_plot = "DALYs, Incremental Cost, and Net Health Excluding Hiv Prevention Prep"
+
+        do_barh_plot_with_ci(dalys_facet_without_prep, axes[0])
+        axes[0].set_title("DALYs")
+        axes[0].set_xlabel("DALYs averted (/1000)")
+
+        do_barh_plot_with_ci(costs_facet_without_prep, axes[1])
+        axes[1].set_title("Costs")
+        axes[1].set_xlabel("Incremental cost (USD)")
+
+        do_barh_plot_with_ci(nh_facet_without_prep / 1000, axes[2])
+        axes[2].set_title("Net Health")
+        axes[2].set_xlabel("Net Health (/1000)")
+
+        if isinstance(dalys_and_costs_from_lcoa, pd.DataFrame):
+            facet_overlay_without_prep = pd.DataFrame({"draw": facet_order_without_prep})
+            facet_overlay_without_prep["treatment_id"] = facet_overlay_without_prep["draw"].str.replace(
+                r"_\*$", "", regex=True
+            )
+            facet_overlay_without_prep = facet_overlay_without_prep.join(lcoa_overlay, on="treatment_id")
+
+            overlay_specs = (
+                (axes[0], "overall_dalys", 1e3),
+                (axes[1], "overall_costs", 1.0),
+                (axes[2], "net_health", 1e3),
+            )
+            for overlay_ax, overlay_column, scale in overlay_specs:
+                has_overlay = facet_overlay_without_prep[overlay_column].notna()
+                if has_overlay.any():
+                    overlay_ax.scatter(
+                        facet_overlay_without_prep.loc[has_overlay, overlay_column] / scale,
+                        facet_overlay_without_prep.index[has_overlay],
+                        c="black",
+                        s=16,
+                        zorder=10,
+                    )
+
+        for ax in axes:
+            ax.grid(axis="x")
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+        axes[0].set_ylabel("Treatment ID")
+        fig.suptitle(name_of_plot, y=1.02)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.tight_layout()
+        fig.savefig(outfile)
+        plt.close(fig)
+        print(f"Saved: {name_of_plot}")
 
     print("Finished generating figures.")
 

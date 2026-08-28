@@ -55,12 +55,11 @@ def _coerce_central_series(df: pd.DataFrame) -> pd.Series:
     out.index = out.index.map(format_scenario_name)
     return out.astype(float)
 
+
 def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
 
     # Use full-horizon incremental outcomes for the objective.
-    # The 2026-only snapshot is still useful for annual constraints, but it
-    # makes the objective far too pessimistic for interventions whose benefits
-    # accrue over multiple years.
+    # Use 2026-only snapshot for constraints
     dalys_averted = results.get('dalys_averted')
     ce_dalys = dalys_averted['central']
 
@@ -103,7 +102,6 @@ def _build_hr_constraints_from_results(results: dict[str, Any]) -> pd.DataFrame:
         {'capacity': capacity_constraints, 'staff_count': count_constraints}
     )
     return pd.DataFrame(combined)
-
 
 
 def _parse_args() -> argparse.Namespace:

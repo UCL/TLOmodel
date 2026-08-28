@@ -215,7 +215,8 @@ def get_num_deaths_by_age_group(
     """Return total deaths by age-group in target years."""
     start_year, end_year = (i.year for i in target_period_tuple)
     return (
-        _df.loc[pd.to_datetime(_df.date).dt.year.between(start_year, end_year)]
+        _df.l
+        oc[pd.to_datetime(_df.date).dt.year.between(start_year, end_year)]
         .groupby(_df["age"].map(age_grp_lookup).astype(make_age_grp_types()))
         .size()
     )

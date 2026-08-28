@@ -71,6 +71,7 @@ EXCLUDED_HSIs = [
     "Inpatient_Care"
 ]
 
+
 def parse_iso_date(value: str) -> Date:
     parsed = date.fromisoformat(value)
     return Date(parsed.year, parsed.month, parsed.day)
@@ -164,7 +165,6 @@ def apply(
                 pickle.dump(input_costs, f)
             print(f"Saved input costs checkpoint to: {checkpoint_path}")
 
-
     # Map draw numbers to draw names in input costs
     draw_lookup = dict(enumerate(param_names))
     formatted_draw_lookup = {
@@ -176,7 +176,6 @@ def apply(
     input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     results['input_costs'] = input_costs
     print(input_costs['draw'].unique())
-
 
     # Get total population by year
     print("Extracting population data...")
@@ -190,6 +189,13 @@ def apply(
             autodiscover=True
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
+
+    cols_to_drop = [
+        col for col in total_population_by_year.columns
+        if col[0].strip().startswith(tuple(EXCLUDED_HSIs))
+    ]
+    print(f"Dropping columns from total_population_by_year: {cols_to_drop}")
+    total_population_by_year.drop(columns=cols_to_drop, inplace=True)
 
     total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure='median')
     results['total_population_by_year'] = total_population_by_year
@@ -243,7 +249,7 @@ def apply(
             do_scaling=True,
             autodiscover=True,
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    )
+    ).drop(columns=cols_to_drop, errors='ignore')
 
     if do_comparison:
         num_deaths_averted = compute_summary_statistics(
@@ -276,7 +282,7 @@ def apply(
             do_scaling=True,
             autodiscover=True,
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    )
+    ).drop(columns=cols_to_drop, errors='ignore')
 
     discount_rate_dalys = 0.03
     dalys_years = dalys.index.get_level_values("period").astype(int)
