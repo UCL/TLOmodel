@@ -533,7 +533,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _access_meds
 
-
     def get_cons_access_by_person_total_period(_df, rescale_by_fac_level=True):
         # keep only months in TLM
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)].copy()
