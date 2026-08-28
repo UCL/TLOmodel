@@ -26,7 +26,6 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_population_by_year,
     plot_capacity_used_by_cadre_and_level_over_time_for_draw,
     plot_cost_by_cadre_over_time_for_draw,
-    plot_treatment_id_include_exclude_table,
 )
 
 
