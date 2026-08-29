@@ -34,10 +34,10 @@ class ConsumablesImpact(BaseScenario):
     # -----------------------------
     CONSUMABLE_SCENARIOS = [
         'default',
-#        'scenario1', 'scenario2', 'scenario3',  # Predictive factors
-#        'scenario6', 'scenario7', 'scenario8',  # Benchmark facilities
-#        'scenario16', 'scenario17', 'scenario18', 'scenario19', 'scenario20',  # Redistribution
-#        'all'  # Perfect
+        'scenario1', 'scenario2', 'scenario3',  # Predictive factors
+        'scenario6', 'scenario7', 'scenario8',  # Benchmark facilities
+        'scenario16', 'scenario17', 'scenario18', 'scenario19', 'scenario20',  # Redistribution
+        'all'  # Perfect
     ]
 
     SYSTEM_MODES = [
@@ -46,11 +46,11 @@ class ConsumablesImpact(BaseScenario):
             "max_healthsystem_function": [False, False],
             "max_healthcare_seeking": [False, False],
         },
-        {
-            "mode_appt_constraints_postSwitch": 1,
-            "max_healthsystem_function": [False, True],
-            "max_healthcare_seeking": [False, True],
-        },
+#        {
+#            "mode_appt_constraints_postSwitch": 1,
+#            "max_healthsystem_function": [False, True],
+#            "max_healthcare_seeking": [False, True],
+#        },
     ]
 
     def __init__(self):
