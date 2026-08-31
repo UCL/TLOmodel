@@ -533,7 +533,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _access_meds
 
-    def get_cons_access_by_person_total_period(_df, rescale_by_fac_level=True):
+    def get_cons_access_by_person_total_period(_df, rescale_by_fac_level=True, stratify_by_opd=False):
         # keep only months in TLM
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)].copy()
 
@@ -590,6 +590,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # drop NAN loc_cat HSIs
         _df = _df.dropna(subset=["loc_cat"])
+
+        # stratify by opd for sensitivity analysis
+        if stratify_by_opd:
+            _df = _df[_df["loc_cat"].isin({"Outpatient - General", "Outpatient - Maternity/Gynaecology"})].copy()
 
         # add in column of item_requested
         # change item columns to dicts from string then to list
@@ -1410,7 +1414,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # *** prescribed cons. access comparison ***
     ## from TLM
-    def meds_access_by_subgroup(_df, subgroup=None):
+    def meds_access_by_subgroup(_df, subgroup=None, stratify_by_opd=False):
+        if stratify_by_opd:
+            _df = _df[_df["loc_cat"].isin({"Outpatient - General", "Outpatient - Maternity/Gynaecology"})].copy()
         if subgroup == "overall":
             _df_yn = _df[_df["access_meds"].isin(["Yes", "No"])]
             access_meds_percent = (_df_yn["access_meds"] == "Yes").mean() * 100
@@ -1437,7 +1443,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     subgroups = ["overall", "loc_cat", "fac_level", "district"]
 
     access_meds = pd.concat(
-        [meds_access_by_subgroup(pat_exit, subgroup=s) for s in subgroups],
+        [meds_access_by_subgroup(pat_exit, subgroup=s, stratify_by_opd=True) for s in subgroups],
         ignore_index=True
     )
 
@@ -1458,6 +1464,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=lambda df: get_cons_access_by_person_total_period(
             df,
             rescale_by_fac_level=True,
+            stratify_by_opd=True,
         ),
         do_scaling=False
     )
@@ -1550,6 +1557,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         min_width=4.5,
         figure_height=5.5,
         capsize=3,
+        stratify_by_opd=False,
     ):
 
         plot_df = df.copy()
@@ -1594,10 +1602,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             n_subgroups = len(subgroup_order)
 
             # Adjust width and label rotation by category
-            if category == "Service_Area":
+            if (category == "Service_Area") & (not stratify_by_opd):
                 width_per_subgroup = 1.1
                 rotation = 45
                 horizontal_alignment = "right"
+
+            elif (category == "Service_Area") & stratify_by_opd:
+                width_per_subgroup = 0.8
+                rotation = 0
+                horizontal_alignment = "centre"
 
             elif category == "Facility_Level":
                 width_per_subgroup = 0.9
@@ -1736,12 +1749,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plot_styles=plot_styles,
         series_order=series_order,
         ylabel="Medicines accessibility by patients or HSIs %",
+        stratify_by_opd=True,
     )
-
-    # todo: notes
-    # 1. Has not dropped duplicated persons having multiple HSIs on day
-    # 2. Submit full run with pop_size = 100_000 or more? runs_per_draw = 5 or 10?
-    # 3. Double confirm if the TLO calculation of medicines accessibility method as  well as patient mix method is sound
 
     # *** patient load per hcw per day comparison ***
     # merge all three patient load estimates at the same resolution in one dataframe,
