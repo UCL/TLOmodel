@@ -20,6 +20,8 @@ When the program terminates, there will be two output files: the log file and a 
 tlo scenario-run src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py --resume-simulation outputs/consumables_impact-2026-08-14T132540Z/0
 This needs to be run separately for the sensitivity analysis. Comment out irrelevant SYSTEM_MODES when running the main and the sensitivity analysis.
 (Run with draw 1 rather than 0 for the sensitivity analysis mode_appt_constraints = 1)
+
+(For Azure runs, tlo batch-submit src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py --resume-simulation consumables_impact-2026-08-28T153202Z/0)
  ```
 
 """
@@ -41,16 +43,16 @@ class ConsumablesImpact(BaseScenario):
     ]
 
     SYSTEM_MODES = [
-        {
-            "mode_appt_constraints_postSwitch": 2,
-            "max_healthsystem_function": [False, False],
-            "max_healthcare_seeking": [False, False],
-        },
 #        {
-#            "mode_appt_constraints_postSwitch": 1,
-#            "max_healthsystem_function": [False, True],
-#            "max_healthcare_seeking": [False, True],
+#            "mode_appt_constraints_postSwitch": 2,
+#            "max_healthsystem_function": [False, False],
+#            "max_healthcare_seeking": [False, False],
 #        },
+        {
+            "mode_appt_constraints_postSwitch": 1,
+            "max_healthsystem_function": [False, True],
+            "max_healthcare_seeking": [False, True],
+        },
     ]
 
     def __init__(self):
