@@ -1444,7 +1444,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     subgroups = ["overall", "loc_cat", "fac_level", "district"]
 
     access_meds = pd.concat(
-        [meds_access_by_subgroup(pat_exit, subgroup=s, stratify_by_opd=True) for s in subgroups],
+        [meds_access_by_subgroup(pat_exit, subgroup=s, stratify_by_opd=False) for s in subgroups],
         ignore_index=True
     )
 
@@ -1465,7 +1465,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=lambda df: get_cons_access_by_person_total_period(
             df,
             rescale_by_fac_level=True,
-            stratify_by_opd=True,
+            stratify_by_opd=False,
         ),
         do_scaling=False
     )
@@ -1750,7 +1750,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plot_styles=plot_styles,
         series_order=series_order,
         ylabel="Medicines accessibility by patients or HSIs %",
-        stratify_by_opd=True,
+        stratify_by_opd=False,
     )
 
     # *** patient load per hcw per day comparison ***
