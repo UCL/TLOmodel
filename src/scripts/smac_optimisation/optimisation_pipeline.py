@@ -102,6 +102,27 @@ SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario.py"  # committed on
                                                                      # check, not for loading
 CONFIG_FILE = "tlo.conf"
 
+# --- Suspend/resume (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations) ---
+# When SUSPENDED_JOB_ID is set (not None), every submission resumes from
+# the SAME pre-recorded suspended simulation - i.e. every new SMAC trial
+# shares identical pre-resume history, and only parameters affecting
+# POST-resume behaviour can meaningfully differ between trials (confirmed
+# with the person building this pipeline: all their tunable parameters
+# are post-resume only, so this is a safe fit for their use case - see
+# the caveat in submit_azure_job()'s docstring for what would go wrong
+# if that weren't true).
+#
+# SUSPENDED_JOB_ID/DRAW/RUN together identify exactly ONE suspended
+# pickle - <job_id>/<draw>/<run>/suspended_simulation.pickle on the file
+# share - to resume from every time. Draw/run default to 0, matching
+# this pipeline's own convention (number_of_draws=1, runs_per_draw=1),
+# but are left overridable in case the suspended job being resumed from
+# was created outside this pipeline (e.g. a manually-run multi-draw
+# `tlo batch-submit ... --suspend-date ...`).
+SUSPENDED_JOB_ID: str | None = None   # e.g. "long_run_all_diseases-2025-08-12T133044Z"
+SUSPENDED_JOB_DRAW = 0
+SUSPENDED_JOB_RUN = 0
+
 _config = None  # lazily loaded, see _get_config()
 _commit_hexsha = None  # resolved once per process, see _get_commit()
 _batch_client = None  # lazily built, see _get_batch_client()
@@ -254,11 +275,39 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
+    # If SUSPENDED_JOB_ID is set, every task resumes from the SAME
+    # suspended pickle rather than starting fresh. Path mirrors the
+    # structure documented on the wiki (<job_id>/<draw>/<run>/
+    # suspended_simulation.pickle), referenced via the SAME file-share
+    # mount every other path in this function already uses - since
+    # every job this pipeline submits copies its full working directory
+    # (including any suspended_simulation.pickle) back to the file
+    # share via the final `cp -r` below, an earlier suspended job's
+    # pickle is already sitting there to be referenced.
+    #
+    # ASSUMPTION, not yet independently verified: this assumes
+    # `tlo batch-run` itself accepts --resume-simulation <path> directly
+    # (mirroring `tlo scenario-run`'s documented syntax), since this
+    # pipeline builds its own remote command rather than going through
+    # `tlo batch-submit`'s CLI layer (which is what the wiki's own
+    # examples use, and which may do its own path resolution/translation
+    # before invoking batch-run remotely). Worth confirming with a
+    # cheap manual test (or `tlo batch-run --help`) before relying on
+    # this for a real, costly run.
+    resume_arg = ""
+    if SUSPENDED_JOB_ID is not None:
+        suspended_pickle_path = (
+            "${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
+            + f"{file_share_mount_point}/{tlo_config['DEFAULT']['USERNAME']}/"
+              f"{SUSPENDED_JOB_ID}/{SUSPENDED_JOB_DRAW}/{SUSPENDED_JOB_RUN}/suspended_simulation.pickle"
+        )
+        resume_arg = f"--resume-simulation {suspended_pickle_path}"
+
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
-    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number} $resume_arg
     tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
     cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
     gzip $working_dir/{draw_number}/{run_number}/*.{{txt,log}}
@@ -270,6 +319,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         working_dir=working_dir,
         task_dir=task_dir,
         remote_azure_directory=remote_azure_directory,
+        resume_arg=resume_arg,
     )
     command = f"/bin/bash -c '{command}'"
 
