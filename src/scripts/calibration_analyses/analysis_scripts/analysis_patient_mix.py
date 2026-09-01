@@ -1417,6 +1417,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def meds_access_by_subgroup(_df, subgroup=None, stratify_by_opd=False):
         if stratify_by_opd:
             _df = _df[_df["loc_cat"].isin({"Outpatient - General", "Outpatient - Maternity/Gynaecology"})].copy()
+            _df["loc_cat"] = _df["loc_cat"].cat.remove_unused_categories()
         if subgroup == "overall":
             _df_yn = _df[_df["access_meds"].isin(["Yes", "No"])]
             access_meds_percent = (_df_yn["access_meds"] == "Yes").mean() * 100
@@ -1609,8 +1610,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             elif (category == "Service_Area") & stratify_by_opd:
                 width_per_subgroup = 0.8
-                rotation = 0
-                horizontal_alignment = "centre"
+                rotation = 45
+                horizontal_alignment = "right"
 
             elif category == "Facility_Level":
                 width_per_subgroup = 0.9
