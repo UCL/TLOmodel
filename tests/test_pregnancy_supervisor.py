@@ -975,7 +975,11 @@ def test_run_all_births_end_ectopic_no_care_seeking(seed):
     # We force all pregnancies to be ectopic, never trigger care seeking, always lead to rupture and death
     params = sim.modules['PregnancySupervisor'].current_parameters
     params['prob_ectopic_pregnancy'] = 1.0
+    # Never seek care before ectopic rupture
+    params['prob_care_seeking_ectopic_pre_rupture'] = 0.0
+    # Never seek care after rupture
     params['prob_seek_care_pregnancy_loss'] = 0.0
+    # Ensure ruptured ectopic pregnancy leads to death
     params['prob_ectopic_pregnancy_death'] = 1.0
     params['treatment_effect_ectopic_pregnancy_treatment'] = 1.0
 

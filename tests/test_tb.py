@@ -24,6 +24,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     tb,
+    syphilis,
 )
 
 try:
@@ -80,6 +81,7 @@ def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constr
                      epi.Epi(),
                      hiv.Hiv(run_with_checks=False),
                      tb.Tb(),
+                     syphilis.Syphilis(),
                      )
 
     return sim
@@ -351,6 +353,7 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
                          epi.Epi(),
                          hiv.Hiv(run_with_checks=False),
                          tb.Tb(),
+                         syphilis.Syphilis(),
                          )
 
         return sim

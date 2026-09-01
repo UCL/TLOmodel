@@ -26,6 +26,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     tb,
+    syphilis,
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler
@@ -83,6 +84,7 @@ def get_sim(seed, use_simplified_birth=True, cons_availability='all'):
                      epi.Epi(),
                      hiv.Hiv(run_with_checks=True),
                      tb.Tb(),
+                     syphilis.Syphilis(),
                      # Disable check to avoid error due to lack of Contraception module
                      check_all_dependencies=False,
                      )

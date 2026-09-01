@@ -21,6 +21,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
+    syphilis
 )
 
 start_date = Date(2010, 1, 1)
@@ -85,6 +86,7 @@ def register_core_modules(sim):
                  postnatal_supervisor.PostnatalSupervisor(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  hiv.DummyHivModule(),
+                 syphilis.Syphilis(),
                  )
 
     return sim
@@ -187,6 +189,7 @@ def test_application_of_maternal_complications_and_care_seeking_postnatal_week_o
         isinstance(ev[1], labour.HSI_Labour_ReceivesPostnatalCheck)
     ][0]
     assert date_event == sim.date
+
 
 # todo: htn progression/resolution
 
@@ -518,6 +521,7 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
     # check this time that she will die as she didnt seek care
     assert not sim.population.props.at[mother_id_onset, 'is_alive']
 
+
 # todo: effect of orals on reduced risk of progression
 # todo: death from severe hypertension
 
@@ -560,9 +564,9 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis(seed):
 
     # and care has been sought
     date_event, event = [
-            ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
-            isinstance(ev[1], newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck)
-        ][0]
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
+        isinstance(ev[1], newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck)
+    ][0]
     assert date_event == sim.date
 
     # reset the property and set care seeking to 0, risk of death to 1
