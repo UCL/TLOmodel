@@ -28,6 +28,17 @@ from scripts.costing.cost_estimation import load_unit_cost_assumptions
 
 # TARGET_PERIOD: adjust to match the evaluation window your simulation
 # actually covers - this determines which years' DALYs/costs get summed.
+# TARGET_PERIOD: adjust to match the evaluation window your simulation
+# actually covers - this determines which years' DALYs/costs get summed.
+#
+# DELIBERATELY INDEPENDENT of TARGET_PERIOD in
+# process_outputs_for_smac_input.py (which uses 2025-2050, the real
+# evaluation window for full analysis runs) - this file's TARGET_PERIOD
+# is set for whatever simulation window is actually being run through
+# THIS pipeline (e.g. a shorter window during small-scale testing) and
+# is not meant to be kept in sync with that file. If you change the
+# simulated start/end dates in smac_scenario.py, update this value to
+# match THIS pipeline's own run, not the other script's.
 TARGET_PERIOD = (pd.Timestamp(2010, 1, 1), pd.Timestamp(2011, 1, 1))
 
 
