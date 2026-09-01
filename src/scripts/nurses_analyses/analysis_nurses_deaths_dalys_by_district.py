@@ -394,6 +394,11 @@ def extract_dalys_by_district(results_folder):
     def get_dalys_by_district(df):
 
         df = df.assign(year=df["date"].dt.year)
+        df["district_of_residence"] = df["district_of_residence"].replace(
+            {
+                "Likoma": "Nkhata Bay",
+            }
+        )
 
         cause_cols = [
             c for c in df.columns
@@ -421,6 +426,12 @@ def extract_deaths_by_district(results_folder):
         if "year" not in df.columns:
             df = df.assign(year=df["date"].dt.year)
 
+        df["district_of_residence"] = df["district_of_residence"].replace(
+            {
+                "Likoma": "Nkhata Bay",
+            }
+        )
+
         return (
             df.groupby(
                 ["year", "district_of_residence"]
@@ -442,6 +453,12 @@ def extract_total_dalys_by_district(results_folder):
     def get_total_dalys(df):
         df = df.assign(year=df["date"].dt.year)
         df = df[df["year"].between(2027, 2034)]
+
+        df["district_of_residence"] = df["district_of_residence"].replace(
+            {
+                "Likoma": "Nkhata Bay",
+            }
+        )
 
         cause_cols = [
             c
@@ -470,6 +487,13 @@ def extract_total_deaths_by_district(results_folder):
     def get_total_deaths(df):
         df = df.assign(year=df["date"].dt.year)
         df = df[df["year"].between(2027, 2034)]
+
+        # Combining Likoma and Nkhata Bay
+        df["district_of_residence"] = df["district_of_residence"].replace(
+            {
+                "Likoma": "Nkhata Bay",
+            }
+        )
 
         return (
             df.groupby("district_of_residence")["person_id"]
@@ -1072,6 +1096,11 @@ if __name__ == "__main__":
     )
 
     district_order = district_map["ADM2_EN"].tolist()
+
+    district_order = [
+        district for district in district_order
+        if district != "Likoma"
+    ]
 
     # Optional: load logs
     log = load_pickled_dataframes(results_folder)
