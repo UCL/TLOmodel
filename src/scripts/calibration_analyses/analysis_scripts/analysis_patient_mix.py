@@ -180,7 +180,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return X_unique
 
-    def get_patient_mix_total_period(_df, rescale_by_fac_level=True):
+    def get_patient_mix_total_period(_df, rescale_by_fac_level=True, keep_blank_footprint_hsi=False):
         # keep only months in TLM for comparison consistency
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
@@ -198,7 +198,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # drop rows with no appointment footprint
         # todo: need better understanding of what make blank footprint (consumables not available; what else)
-        _df = _df.loc[_df["Appointment_Footprint"] != ""].copy()
+        if not keep_blank_footprint_hsi:
+            _df = _df.loc[_df["Appointment_Footprint"] != ""].copy()
 
         # merge info from mfl and format
         _df = merge_info_from_mfl(_df)
@@ -1089,6 +1090,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=lambda df: get_patient_mix_total_period(
             df,
             rescale_by_fac_level=False,
+            keep_blank_footprint_hsi=False,
         ),
         do_scaling=False
     ).fillna(0)
