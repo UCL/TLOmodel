@@ -277,14 +277,34 @@ def plot_annual_service_volumes(
 def calculate_percent_service_volume_change(
     annual_service_volumes,
     baseline_scenario,
+    comparison_years=range(2027, 2035),
 ):
-    pct_change = find_difference_relative_to_comparison_series_dataframe(
-        annual_service_volumes,
+    """
+    Calculate percentage change in total service volumes over the
+    comparison period relative to baseline.
+
+    Service volumes are first summed across 2027-2034 for each
+    scenario and simulation run. The percentage change is then
+    calculated run-to-run relative to the baseline scenario.
+    """
+    # Selecting comparison years
+    years = annual_service_volumes.index.astype(int)
+    year_mask = np.isin(years, list(comparison_years),)
+    selected = annual_service_volumes.loc[year_mask]
+
+    # Sum service volumes over 2027-2034 for each scenario/run
+    total_service_volumes = selected.sum(axis=0).to_frame().T
+
+    # Run-to-run comparison with baseline
+    pct_diff = find_difference_relative_to_comparison_series_dataframe(
+        total_service_volumes,
         comparison=baseline_scenario,
         scaled=True,
     )
 
-    return summarize(pct_change)
+    # Summarize across simulation runs
+    summarized = summarize(pct_diff)
+    return summarized
 
 
 def make_treatment_volume_table(
@@ -475,7 +495,7 @@ def plot_percent_service_volume_change(
     summarized_percent_change,
     title,
 ):
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     label_map = {
         "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
@@ -511,53 +531,74 @@ def plot_percent_service_volume_change(
         "More CNP staff by District / Improved Healthsystem Function": "orange",
     }
 
-    # Get the scenario names (top level of the MultiIndex)
+    # Get scenario names
     scenarios = (
         summarized_percent_change.columns
         .get_level_values(0)
         .unique()
     )
 
-    years = summarized_percent_change.index
-
-    n_scenarios = len(scenarios)
-    width = 0.8 / n_scenarios
-
-    x = np.arange(len(years))
-
-    offsets = (
-                  np.arange(n_scenarios) - (n_scenarios - 1) / 2
-              ) * width
+    x = np.arange(len(scenarios))
 
     for i, scenario in enumerate(scenarios):
-        mean = summarized_percent_change[scenario]["mean"] * 100
-        lower = summarized_percent_change[scenario]["lower"] * 100
-        upper = summarized_percent_change[scenario]["upper"] * 100
 
-        xpos = x + offsets[i]
+        # Extract the single summary value for this scenario.
+        # .iloc[0] ensures that mean, lower and upper are scalars.
+        mean = float(
+            summarized_percent_change[scenario]["mean"].iloc[0]
+        ) * 100
 
-        ax.bar(xpos, mean.values, width=width, color=color_map.get(scenario, "gray"),
-               label=label_map.get(scenario, scenario))
+        lower = float(
+            summarized_percent_change[scenario]["lower"].iloc[0]
+        ) * 100
 
-        ax.errorbar(xpos, mean.values,
-                    yerr=[
-                        mean.values - lower.values,
-                        upper.values - mean.values,
-                    ],
-                    fmt="none",
-                    ecolor="black",
-                    capsize=2,
-                    lw=1,
-                    )
+        upper = float(
+            summarized_percent_change[scenario]["upper"].iloc[0]
+        ) * 100
 
-    ax.axhline(0, color="black", linestyle="--", linewidth=1)
+        ax.bar(
+            x[i],
+            mean,
+            color=color_map.get(
+                scenario,
+                "gray",
+            ),
+            label=label_map.get(
+                scenario,
+                scenario,
+            ),
+        )
+
+        # Calculate asymmetric error bars as scalars.
+        lower_error = mean - lower
+        upper_error = upper - mean
+
+        ax.errorbar(
+            x[i],
+            mean,
+            yerr=[[lower_error], [upper_error]],
+            fmt="none",
+            ecolor="black",
+            capsize=3,
+            lw=1,
+        )
+
+    ax.axhline(0, color="black", linestyle="--", linewidth=1,)
     ax.set_xticks(x)
-    ax.set_xticklabels(years)
-    ax.set_xlabel("Year")
-    ax.set_ylabel("% change in service volume")
+
+    ax.set_xticklabels(
+        [
+            label_map.get(scenario, scenario)
+            for scenario in scenarios
+        ],
+        rotation=45,
+        ha="right",
+    )
+
+    ax.set_xlabel("Nurse staffing scenario")
+    ax.set_ylabel("% change in total service volume")
     ax.set_title(title)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=3)
-    ax.grid(axis="y", alpha=0.3)
+    ax.grid(axis="y", alpha=0.3,)
     fig.tight_layout()
     return fig
 
@@ -812,14 +853,38 @@ if __name__ == "__main__":
     #     baseline_improved_scenario,
     # )
 
+    # percent_change_default = calculate_percent_service_volume_change(
+    #     annual_service_volumes[default_hs_scenarios],
+    #     baseline_scenario,
+    # )
+
+    # percent_change_default = calculate_percent_service_volume_change(
+    #     annual_service_volumes[default_hs_scenarios],
+    #     baseline_scenario=baseline_scenario,
+    #     comparison_years=range(2027, 2035),
+    # )
+
+    # percent_change_improved = calculate_percent_service_volume_change(
+    #     annual_service_volumes[improved_hs_scenarios],
+    #     baseline_improved_scenario,
+    # )
+
+    # percent_change_improved = calculate_percent_service_volume_change(
+    #     annual_service_volumes[improved_hs_scenarios],
+    #     baseline_scenario=baseline_improved_scenario,
+    #     comparison_years=range(2027, 2035),
+    # )
+
     percent_change_default = calculate_percent_service_volume_change(
         annual_service_volumes[default_hs_scenarios],
         baseline_scenario,
+        comparison_years=range(2027, 2035),
     )
 
     percent_change_improved = calculate_percent_service_volume_change(
         annual_service_volumes[improved_hs_scenarios],
         baseline_improved_scenario,
+        comparison_years=range(2027, 2035),
     )
 
     fig_default = plot_annual_service_volumes(
@@ -837,12 +902,12 @@ if __name__ == "__main__":
 
     fig_default_percent = plot_percent_service_volume_change(
         percent_change_default,
-        "% Change in Service Volume vs Baseline\n(Default Healthsystem Function)",
+        "% Change in Total Service Volume vs Baseline\n(2027–2034, Default Healthsystem Function)",
     )
 
     fig_improved_percent = plot_percent_service_volume_change(
         percent_change_improved,
-        "% Change in Service Volume vs Baseline\n(Improved Healthsystem Function)",
+        "% Change in Total Service Volume vs Baseline\n(2027–2034, Improved Healthsystem Function)",
     )
 
     fig_service_area_default = (
