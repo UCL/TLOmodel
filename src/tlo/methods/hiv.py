@@ -830,8 +830,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "consumable_availability_HIV_test",
             "consumable_availability_VL_test",
         ]
-        self.save_scaleup_config(config_parameters)
-        exit(-1)
+        #self.save_scaleup_config(config_parameters)
+        #exit(-1)
 
 
         df = population.props
@@ -1395,12 +1395,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         """
         p = self.parameters
         
+        print("I am updating params")
+        
         # Over-ride probability of HIV test cons. availability
         self.sim.modules['HealthSystem'].override_availability_of_consumables({196: p['config_consumable_availability_HIV_test']})
         # Over-ride probability of VL test cons. availability
         self.sim.modules['HealthSystem'].override_availability_of_consumables({190: p['config_consumable_availability_VL_test']})
         # Over-ride coverage_plhiv'
-        Tb.parameters['ipt_coverage']['coverage_plhiv'] = p['config_coverage_plhiv']
+        self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = p['config_coverage_plhiv']
         # Change adult testing rates
         p['hiv_testing_rates']['annual_testing_rate_adults'] = p['config_annual_testing_rate_adults']
     
