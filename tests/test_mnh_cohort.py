@@ -66,6 +66,16 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
     print(f'The maternal DALYs for this simulation (unscaled) are {maternal_dalys}')
 
 
+def test_run_sim_with_mnh_cohort_over_longer_time_horizon(tmpdir, seed):
+    sim = Simulation(start_date=start_date, seed=12345, resourcefilepath=resourcefilepath,
+                     log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
+
+    register_modules(sim)
+    sim.make_initial_population(n=500)
+    sim.simulate(end_date=Date(2040, 1, 2))
+
+
+
 def test_mnh_cohort_module_updates_properties_as_expected(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
                      log_config={"filename": "log", "directory": tmpdir})

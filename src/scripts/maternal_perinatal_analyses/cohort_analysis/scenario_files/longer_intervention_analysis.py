@@ -17,7 +17,7 @@ class InterventionLongScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': f'emonc_interventions_40K', 'directory': './outputs',
+            'filename': 'longer_cohort_run_stop_preg', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -31,6 +31,7 @@ class InterventionLongScenario(BaseScenario):
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
+                "tlo.methods.rti": logging.INFO,
             }
         }
 

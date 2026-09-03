@@ -81,7 +81,7 @@ class MaternalNewbornHealthCohort(Module):
             # Concatenate the original DataFrame with the additional rows
             preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
 
-        # As merging in master may results in more/fewer columns than in the cohort dataframe which has been read in,
+        # As merging in master may result in more/fewer columns than in the cohort dataframe which has been read in,
         # here we remove old columns and/or append new columns. New column values are set as the most common value in
         # the population.props dataframe
         additional_cols =  [col for col in preg_pop.columns if col not in self.sim.population.props.columns]
@@ -126,6 +126,9 @@ class MaternalNewbornHealthCohort(Module):
         population = df.loc[df.is_alive]
         df.loc[population.index, 'date_of_last_pregnancy'] = self.sim.start_date
         df.loc[population.index, 'co_contraception'] = "not_using"
+
+        # TODO: getting errors from RTI - remove this code?
+        self.sim.modules['RTI'].initialise_population(self.sim.population)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.

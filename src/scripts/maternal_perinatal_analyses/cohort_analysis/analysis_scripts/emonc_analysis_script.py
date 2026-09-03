@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 # create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
 #  ======================================= DEFINE SCENARIO INFORMATION  ===============================================
-scenario = 'testing_scenario_747943'
+scenario = 'testing_scenario_172156'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 sim_start_year = 2025
 
@@ -50,7 +50,7 @@ int_analysis = ['baseline',
                 'neo_resus']
 
 scenario_names = ['Status quo',
-                  'Post-abortion and ectopic pregnancy case magagement',
+                  'Post-abortion and ectopic pregnancy case management',
                   'Maternal sepsis case management',
                   'Postpartum haemorrhage case management',
                   'Severe pre-eclampsia/eclampsia case management',
@@ -210,13 +210,13 @@ results.update({
 TARGET_PERIOD = (Date(sim_start_year, 1, 1), Date(sim_start_year, 12, 31))
 # list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
 # #
-input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
-                                     resourcefilepath=resourcefilepath,
-                                     suspended_results_folder=results_folder,
-                                     _draws=draws,
-                                     _years=list_of_relevant_years_for_costing,
-                                     cost_only_used_staff= True,
-                                     _discount_rate=0.03)
+# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+#                                      resourcefilepath=resourcefilepath,
+#                                      suspended_results_folder=results_folder,
+#                                      _draws=draws,
+#                                      _years=list_of_relevant_years_for_costing,
+#                                      cost_only_used_staff= True,
+#                                      _discount_rate=0.03)
 #
 # input_costs_df.to_csv(f'{g_path}/input_costs.csv')
 #
@@ -985,13 +985,20 @@ person_dalys_averted_df = dalys_per_person.sub(
 person_dalys_averted_df.rename(index={sim_start_year: "person_dalys_averted"}, inplace=True)
 
 # 4.) DALYs accounting for stillbirths
-#  TODO: add weighted YLL for antenatal pregnancy loss
-ip_stillbirths = results['deaths_and_stillbirths']['crude'].loc[['intrapartum_stillbirths']]
-# ip_stillbirths_yll = (ip_stillbirths * p_scaling_factor) * 90
-ip_stillbirths_yll = ip_stillbirths * 90
-ip_stillbirths_yll.rename(index={'intrapartum_stillbirths': sim_start_year}, inplace=True)
 
-adj_dalys = total_dalys + ip_stillbirths_yll
+#  TODO: determine GA that whill be included
+preg_loss = extract_results(
+    results_folder,
+    module="tlo.methods.pregnancy_supervisor",
+    key="pregnancy_loss",
+    custom_generate_series=(
+        lambda df: df.loc[(df['gest_age'] > 28)].assign(
+            year=df['date'].dt.year).groupby(['year'])['year'].count()),
+    do_scaling=False)
+
+preg_loss_yll = preg_loss * 90
+
+adj_dalys = total_dalys + preg_loss_yll
 baseline = adj_dalys.xs(0, axis=1, level="draw")
 adj_dalys_averted_df = baseline.sub(
     adj_dalys,
