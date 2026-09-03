@@ -119,7 +119,10 @@ class TloOptimisationScenario(BaseScenario):
             }
 
     def modules(self):
-        return fullmodel()
+        return (
+            fullmodel(use_simplified_births=True,
+                      module_kwargs={"HealthSystem": {"equip_availability": 'all'}})
+        )
 
     def draw_parameters(self, draw_number, rng):
         # draw_number is ignored - number_of_draws=1, so this always
