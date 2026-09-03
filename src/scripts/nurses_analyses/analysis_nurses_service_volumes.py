@@ -361,6 +361,28 @@ def calculate_treatment_volume_percent_change(
     return summarized
 
 
+def calculate_service_area_volume_percent_change(
+    service_area_volumes,
+    baseline_scenario,
+):
+    """
+    Calculate percentage change in service volume by service area
+    relative to baseline using run-to-run comparisons.
+    """
+
+    pct_diff = (
+        100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            service_area_volumes,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    summarized = summarize(pct_diff)
+    return summarized
+
+
 # def add_service_area_to_treatment_results(treatment_results):
 #     # Adds service area based on the text before the first underscore in the treatment ID.
 #     results = treatment_results.copy()
@@ -603,38 +625,19 @@ def plot_percent_service_volume_change(
     return fig
 
 
-def plot_service_area_treatment_volumes(
-    service_area_volumes,
+def plot_percent_service_area_volume_change(
+    summarized_percent_change,
     scenarios,
     title,
 ):
     """
-    Plot total treatment volumes by service area for 2027-2034.
+    Plot percentage change in service volume by service area
+    relative to baseline for 2027-2034.
+
+    Values are calculated using run-to-run comparisons and
+    summarized across simulation draws.
     """
 
-    # Get the mean across runs for the requested scenarios
-    mean_data = pd.DataFrame(
-        {
-            scenario: service_area_volumes[scenario]["mean"]
-            for scenario in scenarios
-        }
-    )
-
-    # Service areas
-    service_areas = mean_data.index
-
-    x = np.arange(len(service_areas))
-
-    n_scenarios = len(scenarios)
-
-    width = 0.8 / n_scenarios
-
-    offsets = (
-        np.arange(n_scenarios)
-        - (n_scenarios - 1) / 2
-    ) * width
-
-    # Scenario labels
     label_map = {
         "Baseline Nurses / Default Healthsystem Function":
             "Baseline",
@@ -663,7 +666,6 @@ def plot_service_area_treatment_volumes(
             "More CNP by district",
     }
 
-    # Scenario colours
     color_map = {
         "Baseline Nurses / Default Healthsystem Function": "black",
         "Fewer Nurses / Default Healthsystem Function": "indianred",
@@ -684,17 +686,42 @@ def plot_service_area_treatment_volumes(
             "orange",
     }
 
+    # Get service areas
+    service_areas = summarized_percent_change.index
+
+    # Get scenario names
+    scenarios = [
+        scenario
+        for scenario in scenarios
+        if scenario in summarized_percent_change.columns
+        .get_level_values(0)
+        .unique()
+    ]
+
+    x = np.arange(len(service_areas))
+
+    n_scenarios = len(scenarios)
+
+    width = 0.8 / n_scenarios
+
+    offsets = (
+        np.arange(n_scenarios)
+        - (n_scenarios - 1) / 2
+    ) * width
+
     fig, ax = plt.subplots(
         figsize=(18, 8)
     )
 
     for i, scenario in enumerate(scenarios):
-
+        mean = (summarized_percent_change[scenario]["mean"])
+        lower = (summarized_percent_change[scenario]["lower"])
+        upper = (summarized_percent_change[scenario]["upper"])
         xpos = x + offsets[i]
 
         ax.bar(
             xpos,
-            mean_data[scenario].values,
+            mean.values,
             width=width,
             color=color_map.get(
                 scenario,
@@ -706,13 +733,27 @@ def plot_service_area_treatment_volumes(
             ),
         )
 
+        ax.errorbar(
+            xpos,
+            mean.values,
+            yerr=[
+                mean.values - lower.values,
+                upper.values - mean.values,
+            ],
+            fmt="none",
+            ecolor="black",
+            capsize=2,
+            lw=1,
+        )
+
+    ax.axhline(0, color="black", linestyle="--",linewidth=1,)
     ax.set_xlabel("Service area")
-    ax.set_ylabel("Number of treatments\n(2027–2034)")
+    ax.set_ylabel("% change in service volume\n(2027–2034)")
     ax.set_title(title)
     ax.set_xticks(x)
-    ax.set_xticklabels(service_areas, rotation=45, ha="right")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3)
-    ax.grid(axis="y", alpha=0.3)
+    ax.set_xticklabels(service_areas, rotation=45, ha="right",)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3,)
+    ax.grid(axis="y", alpha=0.3,)
     fig.tight_layout()
     return fig
 
@@ -800,6 +841,25 @@ if __name__ == "__main__":
 
     summarized_service_area_treatment_volumes = summarize(
         service_area_treatment_volumes
+    )
+
+    # Service-area % change vs baseline
+    percent_service_area_volume_change_default = (
+        calculate_service_area_volume_percent_change(
+            service_area_treatment_volumes[
+                default_hs_scenarios
+            ],
+            baseline_scenario=baseline_scenario,
+        )
+    )
+
+    percent_service_area_volume_change_improved = (
+        calculate_service_area_volume_percent_change(
+            service_area_treatment_volumes[
+                improved_hs_scenarios
+            ],
+            baseline_scenario=baseline_improved_scenario,
+        )
     )
 
     # Aggregate treatment volumes into broader disease/service areas
@@ -911,20 +971,20 @@ if __name__ == "__main__":
     )
 
     fig_service_area_default = (
-        plot_service_area_treatment_volumes(
-            summarized_service_area_treatment_volumes,
-            default_hs_scenarios,
-            "Treatment Volumes by Service Area (2027–2034)\n"
-            "Default Healthsystem Function",
+        plot_percent_service_area_volume_change(
+            percent_service_area_volume_change_default,
+            default_hs_scenarios[1:],
+            "% Change in Service Volume by Area vs Baseline\n"
+            "(2027–2034, Default Healthsystem Function)",
         )
     )
 
     fig_service_area_improved = (
-        plot_service_area_treatment_volumes(
-            summarized_service_area_treatment_volumes,
-            improved_hs_scenarios,
-            "Treatment Volumes by Service Area (2027–2034)\n"
-            "Improved Healthsystem Function",
+        plot_percent_service_area_volume_change(
+            percent_service_area_volume_change_improved,
+            improved_hs_scenarios[1:],
+            "% Change in Service Volume by Area vs Baseline\n"
+            "(2027–2034, Improved Healthsystem Function)",
         )
     )
 
@@ -958,13 +1018,13 @@ if __name__ == "__main__":
         )
 
         fig_service_area_default.savefig(
-            output_folder / "treatment_volumes_by_service_area_default.pdf",
+            output_folder / "percent_change_service_volume_by_area_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_service_area_improved.savefig(
-            output_folder / "treatment_volumes_by_service_area_improved.pdf",
+            output_folder / "percent_change_service_volume_by_area_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
