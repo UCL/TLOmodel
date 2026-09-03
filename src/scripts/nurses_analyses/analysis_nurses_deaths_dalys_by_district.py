@@ -938,119 +938,104 @@ def plot_percent_deaths_averted_by_district(default_df, improved_df, top_n=30):
 
 def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
     """
-    Plot staff scale-up factors by district for all nurse staffing scenarios.
+    Plot staff scale-up factors by district.
+    Only Default Healthsystem scenarios are plotted.
+    Improved scenarios are excluded because their staff scale-up
+    factors are the same as the Default scenarios.
     """
-    scenarios = scaleup_plot_data["Scenario"].unique()
 
-    # Short labels for the scatter plot legend
-    label_map = {
-        "Baseline Nurses / Default Healthsystem Function":
-            "Baseline / Default",
-        "Fewer Nurses / Default Healthsystem Function":
-            "Fewer nurses / Default",
-        "More Nurses / Default Healthsystem Function":
-            "More nurses / Default",
-        "More CNP staff / Default Healthsystem Function":
-            "More CNP / Default",
-        "More Nurses by District / Default Healthsystem Function":
-            "More nurses by district / Default",
-        "More CNP staff by District / Default Healthsystem Function":
-            "More CNP by district / Default",
-
-        "Baseline Nurses / Improved Healthsystem Function":
-            "Baseline / Improved",
-        "Fewer Nurses / Improved Healthsystem Function":
-            "Fewer nurses / Improved",
-        "More Nurses / Improved Healthsystem Function":
-            "More nurses / Improved",
-        "More CNP staff / Improved Healthsystem Function":
-            "More CNP / Improved",
-        "More Nurses by District / Improved Healthsystem Function":
-            "More nurses by district / Improved",
-        "More CNP staff by District / Improved Healthsystem Function":
-            "More CNP by district / Improved",
-    }
-
-    color_map = {
-        "Baseline Nurses / Default Healthsystem Function": "black",
-        "Fewer Nurses / Default Healthsystem Function": "indianred",
-        "More Nurses / Default Healthsystem Function": "steelblue",
-        "More CNP staff / Default Healthsystem Function": "darkgreen",
-        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
-        "More CNP staff by District / Default Healthsystem Function": "orange",
-
-        "Baseline Nurses / Improved Healthsystem Function": "black",
-        "Fewer Nurses / Improved Healthsystem Function": "indianred",
-        "More Nurses / Improved Healthsystem Function": "steelblue",
-        "More CNP staff / Improved Healthsystem Function": "darkgreen",
-        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
-        "More CNP staff by District / Improved Healthsystem Function": "orange",
-    }
-
-    marker_map = {
-        "Default": "o",
-        "Improved": "^"
-    }
+    # Scenario/cadre combinations to plot.
+    plot_combinations = [
+        (
+            "Baseline Nurses / Default Healthsystem Function",
+            "Nursing_and_Midwifery",
+            "Baseline nurses",
+            "black",
+        ),
+        (
+            "Fewer Nurses / Default Healthsystem Function",
+            "Nursing_and_Midwifery",
+            "Fewer nurses",
+            "indianred",
+        ),
+        (
+            "More Nurses / Default Healthsystem Function",
+            "Nursing_and_Midwifery",
+            "More nurses",
+            "steelblue",
+        ),
+        (
+            "More Nurses by District / Default Healthsystem Function",
+            "Nursing_and_Midwifery",
+            "More nurses by district",
+            "mediumpurple",
+        ),
+        (
+            "More CNP staff / Default Healthsystem Function",
+            "Clinical",
+            "More CNP - Clinical",
+            "darkgreen",
+        ),
+        (
+            "More CNP staff by District / Default Healthsystem Function",
+            "Clinical",
+            "More CNP by district - Clinical",
+            "limegreen",
+        ),
+        (
+            "More CNP staff / Default Healthsystem Function",
+            "Pharmacy",
+            "More CNP - Pharmacy",
+            "darkorange",
+        ),
+        (
+            "More CNP staff by District / Default Healthsystem Function",
+            "Pharmacy",
+            "More CNP by district - Pharmacy",
+            "gold",
+        ),
+    ]
 
     figures = {}
 
     for scaleup_column, ylabel, title in [
         (
             "Scale2027_2024",
-            "Staff scale-up factor (2027_2024)",
-            "Staff scale-up factor by district: 2027 to 2024",
+            "Staff scale-up factor (2027/2024)",
+            "Staff scale-up factor by district: 2027 vs 2024",
         ),
         (
             "Scale2027_2019",
-            "Staff scale-up factor (2027_2019)",
-            "Staff scale-up factor by district: 2027 to 2019",
+            "Staff scale-up factor (2027/2019)",
+            "Staff scale-up factor by district: 2027 vs 2019",
         ),
     ]:
 
-        fig, ax = plt.subplots(figsize=(14, 8))
+        fig, ax = plt.subplots(figsize=(16, 8))
 
-        for scenario in scenarios:
+        for (scenario, cadre, label, color,) in plot_combinations:
+            # Select exactly the requested scenario and cadre.
             scenario_data = scaleup_plot_data[
-                scaleup_plot_data["Scenario"] == scenario
-                ].copy()
+                (scaleup_plot_data["Scenario"] == scenario)
+                & (scaleup_plot_data["Cadre"] == cadre)
+            ].copy()
 
-            # Use the appropriate staff type already prepared
-            # in scaleup_plot_data.
-            if "CNP" in scenario:
-                scenario_data = scenario_data[
-                    scenario_data["Cadre"] == "CNP"
-                    ].copy()
-            else:
-                scenario_data = scenario_data[
-                    scenario_data["Cadre"] == "Nursing_and_Midwifery"
-                    ].copy()
+            # Skip if this scenario/cadre combination is absent.
+            if scenario_data.empty:
+                continue
 
-            # Use the same district order as the DALY/death bar plots
-            scenario_data = (
-                scenario_data
-                .set_index("District")
-                .reindex(district_order)
-                .reset_index()
-            )
-
-            color = color_map.get(scenario, "gray")
-
-            if "Default" in scenario:
-                marker = marker_map["Default"]
-            elif "Improved" in scenario:
-                marker = marker_map["Improved"]
-            else:
-                marker = "o"
+            scenario_data = scenario_data.sort_values("District")
 
             ax.scatter(
                 scenario_data["District"],
                 scenario_data[scaleup_column],
                 color=color,
-                marker=marker,
-                label=label_map.get(scenario, scenario),
+                marker="o",
+                label=label,
                 alpha=0.7,
             )
 
+        # Reference line: no scale-up relative to the comparison year.
         ax.axhline(1.0, linestyle="--", linewidth=1,)
         ax.set_xlabel("District")
         ax.set_ylabel(ylabel)
@@ -1140,74 +1125,45 @@ if __name__ == "__main__":
     # Use mean staff counts
     nurses_all_mean = staff_counts_summary.xs("mean", axis=1, level=1)
 
-    # Scenarios to include in the scatter plots
-    all_nurse_scenarios = [
-        "Baseline Nurses / Default Healthsystem Function",
-        "Fewer Nurses / Default Healthsystem Function",
-        "More Nurses / Default Healthsystem Function",
-        "More CNP staff / Default Healthsystem Function",
-        "More Nurses by District / Default Healthsystem Function",
-        "More CNP staff by District / Default Healthsystem Function",
-        "Baseline Nurses / Improved Healthsystem Function",
-        "Fewer Nurses / Improved Healthsystem Function",
-        "More Nurses / Improved Healthsystem Function",
-        "More CNP staff / Improved Healthsystem Function",
-        "More Nurses by District / Improved Healthsystem Function",
-        "More CNP staff by District / Improved Healthsystem Function",
-    ]
-
     scaleup_rows = []
 
-    for scenario in all_nurse_scenarios:
+    # Get only Default scenarios.
+    scaleup_scenario_cadres = {
+        "Baseline Nurses / Default Healthsystem Function":
+            ["Nursing_and_Midwifery"],
 
+        "Fewer Nurses / Default Healthsystem Function":
+            ["Nursing_and_Midwifery"],
+
+        "More Nurses / Default Healthsystem Function":
+            ["Nursing_and_Midwifery"],
+
+        "More Nurses by District / Default Healthsystem Function":
+            ["Nursing_and_Midwifery"],
+
+        "More CNP staff / Default Healthsystem Function":
+            ["Clinical", "Pharmacy"],
+
+        "More CNP staff by District / Default Healthsystem Function":
+            ["Clinical", "Pharmacy"],
+    }
+
+    for scenario, cadres in scaleup_scenario_cadres.items():
+        # Select the scenario and calculate the yearly staff counts.
         scenario_data = nurses_all_mean[scenario].unstack(
             level="year"
         )
 
-        # Keep only the years required for the scale-up factors
+        # Keep only the years required for the scale-up factors.
+        scenario_data = scenario_data[[2019, 2024, 2027]].copy()
+
+        # Keep only the relevant cadre(s).
         scenario_data = scenario_data[
-            [2019, 2024, 2027]
+            scenario_data.index.get_level_values("Cadre").isin(cadres)
         ].copy()
 
-        # Nurse scenarios
-        if "CNP" not in scenario:
-
-            scenario_data = scenario_data[
-                scenario_data.index.get_level_values("Cadre")
-                == "Nursing_and_Midwifery"
-                ].copy()
-
-        # CNP scenarios
-        else:
-            cnp_cadres = [
-                "Clinical",
-                "Nursing_and_Midwifery",
-                "Pharmacy",
-            ]
-
-            scenario_data = scenario_data[
-                scenario_data.index.get_level_values("Cadre").isin(
-                    cnp_cadres
-                )
-            ].copy()
-
-            # Sum the three CNP cadres within each district
-            scenario_data = (
-                scenario_data
-                .groupby(
-                    level="District"
-                )
-                .sum()
-            )
-
-            # Since CNP is now the combined total, there is no
-            # individual cadre to retain.
-            scenario_data["Cadre"] = "CNP"
-
-            scenario_data = scenario_data.set_index("Cadre", append=True)
-            scenario_data = scenario_data.reorder_levels(["District", "Cadre"])
-
-        # Calculate scale-up factors
+        # Calculate scale-up factors separately for each
+        # District + Cadre combination.
         scenario_data["Scale2027_2024"] = (
             scenario_data[2027] /
             scenario_data[2024]
@@ -1218,14 +1174,34 @@ if __name__ == "__main__":
             scenario_data[2019]
         )
 
+        # Store scenario as a column.
         scenario_data["Scenario"] = scenario
 
+        # Convert District and Cadre from the MultiIndex to columns.
         scenario_data = scenario_data.reset_index()
+
         scaleup_rows.append(scenario_data)
 
     scaleup_plot_data = pd.concat(
         scaleup_rows,
         ignore_index=True,
+    )
+
+    # Keep only districts used in the district plots.
+    scaleup_plot_data = scaleup_plot_data[
+        scaleup_plot_data["District"].isin(district_order)
+    ].copy()
+
+    # Make District categorical so that the plotting order is fixed.
+    scaleup_plot_data["District"] = pd.Categorical(
+        scaleup_plot_data["District"],
+        categories=district_order,
+        ordered=True,
+    )
+
+    # Sort the final plotting data.
+    scaleup_plot_data = scaleup_plot_data.sort_values(
+        ["District", "Cadre", "Scenario"]
     )
 
     # Keeping exactly the same districts and order used in the
