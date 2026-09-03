@@ -652,7 +652,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # prepare the rescaling factor to rescale all persons by facility level
         if rescale_by_fac_level:
-            tlm_pat_prop = pd.Series({"1a": 0.2466, "2": 0.4470, "3": 0.3064})
+            if not stratify_by_opd:
+                tlm_pat_prop = pd.Series({"1a": 0.2466, "2": 0.4470, "3": 0.3064})
+            else:
+                tlm_pat_prop = pd.Series({"1a": 0.2714, "2": 0.4780, "3": 0.2506})
 
             sim_pat_prop = (
                 _df["Facility_Level"]
@@ -1089,8 +1092,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="HSI_Event",
         custom_generate_series=lambda df: get_patient_mix_total_period(
             df,
-            rescale_by_fac_level=False,
-            keep_blank_footprint_hsi=False,
+            rescale_by_fac_level=True,
+            keep_blank_footprint_hsi=True,
         ),
         do_scaling=False
     ).fillna(0)
@@ -1466,7 +1469,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="Consumables",
         custom_generate_series=lambda df: get_cons_access_by_person_total_period(
             df,
-            rescale_by_fac_level=False,
+            rescale_by_fac_level=True,
             stratify_by_opd=False,
         ),
         do_scaling=False
@@ -2262,7 +2265,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = summarise_mean_ci95(
         df_plot,
         ["District", "Facility_Level", "Source"],
-        rescale_by_fac_level=False,
+        rescale_by_fac_level=True,
         tlm_obs_level_prop=tlm_obs_level_prop
     )
 
@@ -2361,7 +2364,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = summarise_mean_ci95(
         df_plot,
         ["District", "Source"],
-        rescale_by_fac_level=False,
+        rescale_by_fac_level=True,
         tlm_obs_level_prop=tlm_obs_level_prop
     )
 
@@ -2437,7 +2440,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     summary = summarise_mean_ci95(
         df_plot,
         ["Facility_Level", "Source"],
-        rescale_by_fac_level=False,
+        rescale_by_fac_level=True,
         tlm_obs_level_prop=tlm_obs_level_prop
     )
 
@@ -2505,7 +2508,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         summarise_mean_ci95(
             df_plot,
             ["Source"],
-            rescale_by_fac_level=False,
+            rescale_by_fac_level=True,
             tlm_obs_level_prop=tlm_obs_level_prop
         )
         .set_index("Source")
