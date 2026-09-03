@@ -276,7 +276,6 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
         df.loc[df.is_alive, 'pn_sepsis_early_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
-        df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_anaemia_following_pregnancy'] = 'none'
         df.loc[df.is_alive, 'pn_obstetric_fistula'] = 'none'
         df.loc[df.is_alive, 'pn_emergency_event_mother'] = False
@@ -788,7 +787,10 @@ class PostnatalSupervisor(Module):
         for person in onset_sepsis.loc[onset_sepsis].index:
             if person in nci:
                 nci[person]['sepsis_postnatal'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
+
+            comp = "late_onset_sepsis_pt" if (df.at[person, 'nb_early_preterm'] or df.at[person, 'nb_late_preterm']) \
+                else 'late_onset_sepsis'
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
 
         # Then we determine if care will be sought for newly septic newborns
         care_seeking = pd.Series(
