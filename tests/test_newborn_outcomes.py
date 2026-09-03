@@ -20,8 +20,8 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_helper_functions,
     pregnancy_supervisor,
-    syphilis,
     symptommanager,
+    syphilis,
 )
 
 start_date = Date(2010, 1, 1)

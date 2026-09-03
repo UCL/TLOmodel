@@ -21,7 +21,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
-    syphilis
+    syphilis,
 )
 
 start_date = Date(2010, 1, 1)

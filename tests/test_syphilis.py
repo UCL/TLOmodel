@@ -19,10 +19,9 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_helper_functions,
     pregnancy_supervisor,
-    syphilis,
     symptommanager,
+    syphilis,
 )
-
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'

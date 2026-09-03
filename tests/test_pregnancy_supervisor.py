@@ -8,7 +8,6 @@ import pytest
 from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
-from tlo.methods.hsi_event import FacilityInfo
 from tlo.methods import (
     alri,
     cardio_metabolic_disorders,
@@ -30,11 +29,12 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     stunting,
-    syphilis,
     symptommanager,
+    syphilis,
     tb,
     wasting,
 )
+from tlo.methods.hsi_event import FacilityInfo
 
 # The resource files
 try:

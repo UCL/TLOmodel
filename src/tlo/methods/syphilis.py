@@ -283,7 +283,7 @@ def apply_risk_of_congenital_syphilis(module, gestation_of_interest):
     at_risk = df.is_alive & df.is_pregnant & \
               (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
               (df.ps_syphilis_state.isin(DETECTABLE_STAGES)) & \
-              (df.ps_congenital_syphilis == False) & \
+              (~df.ps_congenital_syphilis) & \
               (df.ps_ectopic_pregnancy == 'none')
 
     if not at_risk.any():
@@ -334,7 +334,7 @@ def apply_assigned_congenital_syphilis_stillbirths(module, gestation_of_interest
 
     at_risk_congenital = df.is_alive & df.is_pregnant & \
                          (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-                         (df.ps_congenital_syphilis == True) & \
+                         df.ps_congenital_syphilis & \
                          (df.ps_ectopic_pregnancy == 'none') & \
                          (df.ac_admitted_for_immediate_delivery == 'none') & \
                          ~df.la_currently_in_labour & ~df.ps_emergency_event

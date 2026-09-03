@@ -23,8 +23,8 @@ from tlo.methods import (
     pregnancy_supervisor,
     simplified_births,
     symptommanager,
-    tb,
     syphilis,
+    tb,
 )
 
 try:

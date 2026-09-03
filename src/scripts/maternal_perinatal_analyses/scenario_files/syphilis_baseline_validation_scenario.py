@@ -4,7 +4,6 @@ from tlo.methods import syphilis
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
-
 logger = logging.getLogger('tlo.analysis.syphilis_prevalence_validation')
 logger.setLevel(logging.INFO)
 

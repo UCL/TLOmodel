@@ -8,7 +8,6 @@ import pandas as pd
 
 from tlo.analysis.utils import get_scenario_outputs, parse_log_file
 
-
 LOGGER_NAME = 'tlo.analysis.syphilis_prevalence_validation'
 LOG_KEY = 'maternal_syphilis_prevalence'
 SCENARIO_FILENAME = 'syphilis_baseline_validation_scenario.py'

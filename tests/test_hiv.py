@@ -25,8 +25,8 @@ from tlo.methods import (
     pregnancy_supervisor,
     simplified_births,
     symptommanager,
-    tb,
     syphilis,
+    tb,
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler

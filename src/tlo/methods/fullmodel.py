@@ -33,8 +33,8 @@ from tlo.methods import (
     schisto,
     simplified_births,
     stunting,
-    syphilis,
     symptommanager,
+    syphilis,
     tb,
     wasting,
 )
