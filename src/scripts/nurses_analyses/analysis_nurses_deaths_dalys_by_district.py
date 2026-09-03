@@ -1452,13 +1452,13 @@ if __name__ == "__main__":
         district_map_default,
         [
             "More Nurses / Default Healthsystem Function",
-            "Fewer Nurses / Default Healthsystem Function",
             "More CNP staff / Default Healthsystem Function",
+            "Fewer Nurses / Default Healthsystem Function",
             "More Nurses by District / Default Healthsystem Function",
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Default Healthsystem",
-        "% DALYs averted (vs Baseline)",
+        "DALYs averted in percentage",
     )
 
     # Keep only Improved Healthsystem scenarios
@@ -1528,13 +1528,13 @@ if __name__ == "__main__":
         district_map_improved,
         [
             "More Nurses / Improved Healthsystem Function",
-            "Fewer Nurses / Improved Healthsystem Function",
             "More CNP staff / Improved Healthsystem Function",
+            "Fewer Nurses / Improved Healthsystem Function",
             "More Nurses by District / Improved Healthsystem Function",
             "More CNP staff by District / Improved Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Improved Healthsystem",
-        "% DALYs averted (vs Baseline)",
+        "DALYs averted in percentage",
     )
 
     fig_dalys_bar, ax_dalys_bar = (
@@ -1680,13 +1680,13 @@ if __name__ == "__main__":
         district_map_default_deaths,
         [
             "More Nurses / Default Healthsystem Function",
-            "Fewer Nurses / Default Healthsystem Function",
             "More CNP staff / Default Healthsystem Function",
+            "Fewer Nurses / Default Healthsystem Function",
             "More Nurses by District / Default Healthsystem Function",
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% Deaths averted (vs Baseline): Default Healthsystem",
-        "% Deaths averted (vs Baseline)",
+        "Deaths averted in percentage",
     )
 
     district_map_improved_deaths = district_map.merge(
@@ -1700,13 +1700,13 @@ if __name__ == "__main__":
         district_map_improved_deaths,
         [
             "More Nurses / Improved Healthsystem Function",
-            "Fewer Nurses / Improved Healthsystem Function",
             "More CNP staff / Improved Healthsystem Function",
+            "Fewer Nurses / Improved Healthsystem Function",
             "More Nurses by District / Improved Healthsystem Function",
             "More CNP staff by District / Improved Healthsystem Function",
         ],
         "% Deaths averted (vs Baseline): Improved Healthsystem",
-        "% Deaths averted (vs Baseline)",
+        "Deaths averted in percentage",
     )
 
     fig_deaths_bar, ax_deaths_bar = (
