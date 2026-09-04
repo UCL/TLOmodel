@@ -140,7 +140,7 @@ class TloOptimisationScenario(BaseScenario):
                # "virally_suppressed_on_art": self.virally_suppressed_on_art,
                # "config_consumable_availability_VL_test": self.config_consumable_availability_VL_test,
                # "config_consumable_availability_HIV_test": self.config_consumable_availability_HIV_test,
-            }
+            },
             # map intervention_coverage / other config values onto
             # whichever module parameters they actually control in
             # your real model
