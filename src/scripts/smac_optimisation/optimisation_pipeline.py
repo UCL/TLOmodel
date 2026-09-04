@@ -52,7 +52,7 @@ import numpy as np
 from git import Repo
 from azure.batch import models as batch_models
 
-from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer, Bool
+from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer, Categorical
 from smac import HyperparameterOptimizationFacade, Scenario
 from smac.runhistory.dataclasses import TrialInfo, TrialValue
 from smac.runhistory.enumerations import StatusType
@@ -435,8 +435,7 @@ configspace.add(Float("prob_circ_after_hiv_test",(0.,1.)))
 configspace.add(Float("linked_to_care_after_selftest",(0.,1.)))
 configspace.add(Float("prob_receive_viral_load_test_result",(0.,1.)))
 configspace.add(Float("config_coverage_plhiv",(0.,1.)))
-configspace.add(Bool("switch_vl_test_to_tdf",(True,False)))
-
+configspace.add(Categorical("switch_vl_test_to_tdf",[True,False]))
 
 # Problem-defined constraints, not algorithm hyperparameters - but kept
 # here as a reminder these are duplicated in constrained_ei.py's
