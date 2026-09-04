@@ -34,6 +34,25 @@ HISTORY_LOG_FILE = Path("history_log.jsonl")  # append-only, one line per
                                                 # to inspect progress live
 
 
+def json_safe_config(config) -> dict:
+    """
+    ConfigSpace hands back numpy scalar types (numpy.bool_, numpy.int64,
+    numpy.float64, ...) for sampled hyperparameter values - these look
+    identical to their Python equivalents but aren't JSON-serialisable,
+    which surfaces as a `TypeError: Object of type bool_/int64/... is
+    not JSON serializable` the first time any config touches
+    json.dumps. Use this everywhere a config gets written to disk,
+    instead of a bare dict(config). Lives here (not in
+    optimisation_pipeline.py) so both files can use it without a
+    circular import - optimisation_pipeline.py already imports several
+    things from this module.
+    """
+    return {
+        k: (v.item() if isinstance(v, np.generic) else v)
+        for k, v in dict(config).items()
+    }
+
+
 def append_history_to_file(entry: dict) -> None:
     """
     Mirrors a single history entry to disk, immediately after it's
@@ -43,9 +62,11 @@ def append_history_to_file(entry: dict) -> None:
     crash mid-write only corrupts the last line rather than the whole
     file - same convention as JOB_LOG_FILE. config_object (a ConfigSpace
     Configuration) isn't JSON-serialisable directly, so it's converted
-    to a plain dict first.
+    to a plain dict first via json_safe_config() - a bare dict(config)
+    would leave numpy scalar values (numpy.bool_, numpy.int64, ...)
+    behind, which json.dumps then can't serialise.
     """
-    record = {**entry, "config_object": dict(entry["config_object"])}
+    record = {**entry, "config_object": json_safe_config(entry["config_object"])}
     with open(HISTORY_LOG_FILE, "a") as f:
         f.write(json.dumps(record) + "\n")
 

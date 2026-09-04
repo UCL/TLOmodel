@@ -69,9 +69,11 @@ from constrained_ei import ConstrainedEI  # the module built earlier
 from postprocess_output import postprocess_run
 from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
+    json_safe_config,
 )
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
+
 
 def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hexsha: str) -> None:
     """
@@ -86,7 +88,7 @@ def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hex
     between pipeline runs, so a recovered result can always be traced
     back to the code that actually produced it.
     """
-    record = {"job_id": job_id, "config": dict(config), "seed": seed, "commit": commit_hexsha}
+    record = {"job_id": job_id, "config": json_safe_config(config), "seed": seed, "commit": commit_hexsha}
     with open(JOB_LOG_FILE, "a") as f:
         f.write(json.dumps(record) + "\n")
 
@@ -217,9 +219,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
 
     # --- build the scenario as a plain Python object ---
     tlo_scenario = TloOptimisationScenario()
-    for key, value in dict(config).items():
-        if isinstance(value, np.bool_):
-            value = bool(value)
+    for key, value in json_safe_config(config).items():
         setattr(tlo_scenario, key, value)  # e.g. scenario.intervention_coverage = 0.73
     tlo_scenario.seed = seed  # SMAC's seed drives this run's stochasticity directly
     tlo_scenario.number_of_draws = 1
