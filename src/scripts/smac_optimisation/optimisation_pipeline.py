@@ -52,7 +52,7 @@ import numpy as np
 from git import Repo
 from azure.batch import models as batch_models
 
-from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer
+from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer, Bool
 from smac import HyperparameterOptimizationFacade, Scenario
 from smac.runhistory.dataclasses import TrialInfo, TrialValue
 from smac.runhistory.enumerations import StatusType
