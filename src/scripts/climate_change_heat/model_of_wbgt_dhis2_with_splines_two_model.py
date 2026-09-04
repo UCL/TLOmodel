@@ -52,18 +52,18 @@ numpy.random.seed(42)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    "opd_attendance",
-    "ipd_total_admissions",
-    "fp_total_clients",
-    "fp_subsequent_clients_total",
-    "bcg_under1",
+    #"opd_attendance",
+    #"ipd_total_admissions",
+    #"fp_total_clients",
+    #"fp_subsequent_clients_total",
+    #"bcg_under1",
     "penta3_under1",
     "measles1_under1",
     "fully_immunised_under1",
     "live_births_total",
-    "htc_tests_new",
-    "anc_total_visits",
-    "cervical_screening_total",
+    #"htc_tests_new",
+    #"anc_total_visits",
+    #"cervical_screening_total",
     #"pnc_within_2wks",
 ]
 COMPOSITE_INDICATORS: dict[str, list[str]] = {
@@ -96,7 +96,7 @@ INDICATOR_LABELS: dict[str, str] = {
 HIGH_OVERDISPERSION_INDICATORS = [
     "ipd_total_admissions",
     "opd_attendance",
-    #"anc_total_visits",
+    "anc_total_visits",
     "cervical_screening_initial",
 ]
 
@@ -109,6 +109,45 @@ MIN_YEAR_BY_INDICATOR: dict[str, int] = {
     "fp_subsequent_clients_total": 2019
 }
 
+HARD_CEILINGS = { # based on visual inspection of data
+    "anc1_coverage": 2000,
+    "anc4_coverage": 600,
+    "anc_first_trimester_starts": 2000,
+    "anc_new_attendees": 10000,
+    "anc_total_visits": 20000,
+    "bcg_under1": 20000,
+    "cataract_surgical_coverage": 300,
+    "cervical_screening_30_44": 20,
+    "cervical_screening_total": 200000,
+    "diarrhoea_incidence_rate": 2000,
+    "fp_acceptors_condoms": 30,
+    "fp_acceptors_injectable": 100,
+    "fp_acceptors_pills": 20,
+    "fp_subsequent_clients_pct": 3000,
+    "fp_subsequent_clients_total": 50000,
+    "fp_total_clients": 120000,
+    "fully_immunised_outreach": 10000,
+    "fully_immunised_outreach_alt": 2000,
+    "fully_immunised_under1": 10000,
+    "htc_results_new_negative": 15000,
+    "htc_results_new_positive": 2000,
+    "institutional_delivery_rate": 10000,
+    "ipd_total_admissions": 20000,
+    "live_births_total": 6000,
+    "malaria_confirmed_cases": 20000,
+    "measles1_under1": 2000,
+    "opd_attendance": 70000,
+    "penta3_under1": 2000,
+    "pnc_first_visit_2wks": 400,
+    "pnc_mother_checked_48h": 3000,
+    "pnc_within_2wks": 5000,
+    "pneumonia_incidence_u5": 5,
+    "skilled_deliveries": 3000,
+    "tb_hh_referred_female": 10,
+    "tb_hh_referred_male": 10,
+    "vitA_postnatal_outreach": 12000,
+    "vmmc_first_visits": 7000,
+}
 
 # --- Only-deficits toggle --------------------------------------------------
 ONLY_DEFICITS = False
@@ -137,9 +176,14 @@ SUPPORT_HIGH_PCTILE = 99.0
 WBGT_VAR = "wbgt_day"
 SPLINE_DF = 3
 LAG_MONTHS = [1,2,3]
+SA_LAG = True
+if SA_LAG:
+    LAG_SUFFIX = "_with_lags"
+else:
+    LAG_SUFFIX = ""
 CENTER = True
 MIN_OBS = 24
-
+MIN_OBS_COVERAGE = 0.5
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
 CLUSTER_COL = "Dist"
@@ -190,6 +234,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 USE_PARALLEL = False
 N_WORKERS = min(cpu_count() - 1, 4)
 
+WINSORIZE = False
 WINSORIZE_BY_INDICATOR: dict[str, float] = {
     # "opd_attendance": 0.999,
     # "ipd_total_admissions": 0.999,
@@ -198,12 +243,35 @@ WINSORIZE_BY_INDICATOR: dict[str, float] = {
     # "measles1_under1": 0.999,
     # "anc_total_visits": 0.999,
 }
-WINSORIZE_DEFAULT = 0.99
+WINSORIZE_DEFAULT = 1
 
+# ===========================================================================
+# Min obs function
+# ===========================================================================
+def get_min_obs(indicator: str) -> int:
 
+    start_year   = MIN_YEAR_BY_INDICATOR.get(indicator, min_year_historical)
+    total_months = (LAST_HIST_YEAR - start_year + 1) * 12
+    dynamic_min  = int(np.floor(total_months * MIN_OBS_COVERAGE))
+    return max(dynamic_min, MIN_OBS)
+
+MIN_OBS_BY_INDICATOR: dict[str, int] = {
+    ind: get_min_obs(ind) for ind in COUNT_INDICATORS
+}
 # ===========================================================================
 # Predict-time clipping helper
 # ===========================================================================
+
+def apply_hard_ceilings(df, indicator):
+    ceiling = HARD_CEILINGS.get(indicator)
+    if ceiling is not None:
+        n_before = len(df)
+        df = df[df[indicator] <= ceiling].copy()
+        n_dropped = n_before - len(df)
+        if n_dropped > 0:
+            print(f"  [{indicator}] Dropped {n_dropped} rows exceeding ceiling {ceiling}")
+    return df
+
 def _clip_wbgt_to_support(df, support, wbgt_var=WBGT_VAR, lag_months=LAG_MONTHS):
     """Clip WBGT and its lag columns (raw, pre-centring) to [p_lo, p_hi] of
     the training distribution. Returns (df_clipped, diagnostics_dict).
@@ -419,10 +487,11 @@ def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG
             df[col] = np.asarray(B)[:, c]
         spline_cols_all.extend(cols)
         rhs.extend(cols)
-        for lag in lag_months:
-            lc = f"{v}_lag{lag}_c"
-            df[lc] = df.groupby("facility")[v].shift(lag) - shifts[v]
-            rhs.append(lc)
+        if SA_LAG:
+            for lag in lag_months:
+                lc = f"{v}_lag{lag}_c"
+                df[lc] = df.groupby("facility")[v].shift(lag) - shifts[v]
+                rhs.append(lc)
 
     return df, rhs, spline_cols_all, design_map
 
@@ -456,6 +525,99 @@ def exposure_response_curve_fast(
     )
 
 
+def mask_spike_and_revert(
+    df: pd.DataFrame,
+    indicator: str,
+    facility_col: str = "facility",
+    date_col: str = "date",
+    oom: float = 10.0,
+    include_trough: bool = True,
+    return_flags: bool = False,
+) -> tuple[pd.DataFrame, dict]:
+    """
+    Set `indicator` to NaN at facility-months where the value is >= `oom`x
+    BOTH the previous AND next month's value at the same facility
+    (adjacent calendar months only). Symmetric trough case included by default.
+
+    Facility-month rows are preserved (only the value is NaN'd), so panel
+    structure for fixed-effects estimation is unchanged.
+
+    Parameters
+    ----------
+    df : the regression panel, must contain [facility_col, date_col, indicator]
+    indicator : column to mask
+    oom : order-of-magnitude threshold (10 -> 10x)
+    include_trough : also mask isolated troughs (value <= 1/oom of both neighbours)
+    return_flags : if True, the returned df carries a boolean
+                   f"{indicator}__masked" column recording which rows were masked
+                   (useful for sensitivity analyses / audit)
+
+    Returns
+    -------
+    (df_out, report) where report is a dict with counts.
+    """
+    if indicator not in df.columns:
+        raise KeyError(f"{indicator!r} not in dataframe columns")
+
+    df_out = df.copy()
+    df_out[date_col] = pd.to_datetime(df_out[date_col])
+
+    # Work on a sorted view; keep original index so we can write back
+    d = df_out[[facility_col, date_col, indicator]].sort_values([facility_col, date_col]).copy()
+
+    g = d.groupby(facility_col, sort=False)
+    prev = g[indicator].shift(1).astype(float)
+    nxt = g[indicator].shift(-1).astype(float)
+    prev_date = g[date_col].shift(1)
+    next_date = g[date_col].shift(-1)
+    curr = d[indicator].astype(float)
+
+    gap_prev = (d[date_col].dt.year - prev_date.dt.year) * 12 + (d[date_col].dt.month - prev_date.dt.month)
+    gap_next = (next_date.dt.year - d[date_col].dt.year) * 12 + (next_date.dt.month - d[date_col].dt.month)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        r_prev = np.where(prev > 0, curr / prev, np.nan)
+        r_next = np.where(nxt > 0, curr / nxt, np.nan)
+
+    adj_prev = gap_prev == 1
+    adj_next = gap_next == 1
+
+    spike = (r_prev >= oom) & (r_next >= oom) & adj_prev & adj_next
+    if include_trough:
+        # NaN <= x is always False, so no explicit NaN guard is needed —
+        # dropping the r_prev > 0 / r_next > 0 guards lets us catch valid
+        # zero-collapse troughs (positive -> 0 -> positive), which are the
+        # classic single-month reporting dropout signature.
+        trough = (r_prev <= 1 / oom) & (r_next <= 1 / oom) & adj_prev & adj_next
+        mask = spike | trough
+    else:
+        trough = pd.Series(False, index=d.index)
+        mask = spike
+
+    # Write NaNs back into df_out using the original index preserved on d
+    mask_series = pd.Series(mask, index=d.index)
+    df_out.loc[mask_series[mask_series].index, indicator] = np.nan
+
+    if return_flags:
+        flag_col = f"{indicator}__masked"
+        df_out[flag_col] = False
+        df_out.loc[mask_series[mask_series].index, flag_col] = True
+
+    report = {
+        "indicator": indicator,
+        "n_rows": int(len(df_out)),
+        "n_nonnull_before": int(curr.notna().sum()),
+        "n_masked_spike": int(pd.Series(spike).sum()),
+        "n_masked_trough": int(pd.Series(trough).sum()),
+        "n_masked_total": int(mask_series.sum()),
+        "pct_masked_of_nonnull": (100.0 * mask_series.sum() / max(curr.notna().sum(), 1)),
+        "n_facilities_affected": int(d.loc[mask_series[mask_series].index, facility_col].nunique()),
+        "oom": oom,
+        "include_trough": include_trough,
+    }
+    return df_out, report
+
+
 # ===========================================================================
 # Winsorize
 # ===========================================================================
@@ -484,9 +646,16 @@ def fit_indicator(indicator, panel_path):
     if ONLY_DEFICITS:
         print(f"  ONLY_DEFICITS = True — aggregations restricted to loss-of-service rows")
     t0 = time.time()
+    min_obs = MIN_OBS_BY_INDICATOR.get(indicator, MIN_OBS)
 
     try:
         long = load_indicator_panel(indicator, PANEL_DIR)
+        long, qa_report = mask_spike_and_revert(
+            long,
+            indicator=indicator,
+            oom=10,
+            return_flags=False,
+        )
         long = long.rename(columns={indicator: "y"})
     except Exception as e:
         print(f"  [{indicator}] Failed to load: {e}")
@@ -509,15 +678,16 @@ def fit_indicator(indicator, panel_path):
     long = long[long["year"].between(ind_min_year, max_year_historical - 1)]
 
     obs_per_fac = long.dropna(subset=["y", WBGT_VAR]).groupby("facility").size()
-    long = long[long["facility"].isin(obs_per_fac[obs_per_fac >= MIN_OBS].index)].copy()
+    long = long[long["facility"].isin(obs_per_fac[obs_per_fac >= min_obs].index)].copy()
 
     if len(long) < 100 or long["facility"].nunique() < 2:
         print(f"  [{indicator}] Too few observations/facilities")
         return None
-    wq = WINSORIZE_BY_INDICATOR.get(indicator, WINSORIZE_DEFAULT)
-    if wq != WINSORIZE_DEFAULT:
-        print(f"  [{indicator}] using tighter winsorization: {wq}")
-    long = winsorize_indicator(long, indicator_col="y", facility_col="facility", upper_quantile=wq)
+    if WINSORIZE:
+        wq = WINSORIZE_BY_INDICATOR.get(indicator, WINSORIZE_DEFAULT)
+        if wq != WINSORIZE_DEFAULT:
+            print(f"  [{indicator}] using tighter winsorization: {wq}")
+        long = winsorize_indicator(long, indicator_col="y", facility_col="facility", upper_quantile=wq)
     diagnose_indicator(long, "y")
 
     if indicator == "ipd_total_admissions":
@@ -538,7 +708,7 @@ def fit_indicator(indicator, panel_path):
     nb_data = long.dropna(subset=nb_cols).copy()
     nb_data["y_int"] = nb_data["y"].round().clip(lower=0).astype(int)
     obs_nb = nb_data.groupby("facility").size()
-    nb_data = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= MIN_OBS].index)].copy()
+    nb_data = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= min_obs].index)].copy()
     FITTED_FACILITIES = set(nb_data["facility"].unique())
 
     print(f"  [{indicator}] Sample: {len(nb_data):,} obs, {len(FITTED_FACILITIES)} facilities")
@@ -720,7 +890,7 @@ def fit_indicator(indicator, panel_path):
         np.nan,
     )
     district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
-        f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}.csv",
+        f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
         index=False,
     )
 
@@ -743,7 +913,7 @@ def fit_indicator(indicator, panel_path):
             }
         )
     pd.DataFrame(dist_rows).to_csv(
-        f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}.csv",
+        f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
         index=False,
     )
 
@@ -797,7 +967,7 @@ def fit_indicator(indicator, panel_path):
                 "time_seconds": time.time() - t0,
             }
         ]
-    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}.csv", index=False)
+    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}_{LAG_SUFFIX}.csv", index=False)
 
     pred_cols = ["year", "month", "facility", "date", "y_int", "covid", "y_pred_base", "y_pred_wx", "difference"]
     nb_data[pred_cols].to_csv(f"{OUT_DIR}predictions_{indicator}.csv", index=False)
@@ -937,11 +1107,11 @@ if __name__ == "__main__":
     summary_df = summary_df.sort_values("hot_deficit_pct", na_position="last")
 
     summary_df.to_csv(
-        f"{OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}{SUFFIX}.csv",
+        f"{OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
         index=False,
     )
     summary_df.to_csv(
-        f"{OUT_DIR}summary_all_indicators_{WBGT_VAR}{SUFFIX}.csv",
+        f"{OUT_DIR}summary_all_indicators_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
         index=False,
     )
 
@@ -1165,7 +1335,7 @@ if __name__ == "__main__":
                     )
                     dist_agg["indicator"], dist_agg["ssp"], dist_agg["tier"] = ind, ssp, tier
                     dist_agg.to_csv(
-                        f"{OUT_DIR}projection_district_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_district_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1189,7 +1359,7 @@ if __name__ == "__main__":
                     mon_agg["Year_Month"] = mon_agg["year"].astype(str) + "-" + mon_agg["month"].astype(str)
                     mon_agg["indicator"], mon_agg["ssp"], mon_agg["tier"] = ind, ssp, tier
                     mon_agg.to_csv(
-                        f"{OUT_DIR}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1213,7 +1383,7 @@ if __name__ == "__main__":
                     ann_agg["Mean_Monthly_Disruption"] = ann_agg["Disruption"] / 12.0
                     ann_agg["indicator"], ann_agg["ssp"], ann_agg["tier"] = ind, ssp, tier
                     ann_agg.to_csv(
-                        f"{OUT_DIR}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                         index=False,
                     )
                     all_annual_pooled.append(ann_agg)
@@ -1236,7 +1406,7 @@ if __name__ == "__main__":
                     )
                     dist_ann["indicator"], dist_ann["ssp"], dist_ann["tier"] = ind, ssp, tier
                     dist_ann.to_csv(
-                        f"{OUT_DIR}projection_district_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv",
+                        f"{OUT_DIR}projection_district_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1280,19 +1450,19 @@ if __name__ == "__main__":
 
         if all_proj_summary:
             pd.DataFrame(all_proj_summary).to_csv(
-                f"{OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}.csv",
+                f"{OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                 index=False,
             )
-            print(f"\nProjection summary → {OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}.csv")
+            print(f"\nProjection summary → {OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv")
         else:
             print("\nNo projections produced.")
 
         if all_annual_pooled:
             pd.concat(all_annual_pooled, ignore_index=True).to_csv(
-                f"{OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}.csv",
+                f"{OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                 index=False,
             )
-            print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}.csv")
+            print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv")
 
     # ===========================================================================
     # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
@@ -1455,9 +1625,9 @@ if __name__ == "__main__":
 
             if cf_rows:
                 pd.DataFrame(cf_rows).to_csv(
-                    f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}.csv",
+                    f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
                     index=False,
                 )
-                print(f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}.csv")
+                print(f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv")
     print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
     print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())
