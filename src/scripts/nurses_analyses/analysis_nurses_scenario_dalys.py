@@ -888,7 +888,7 @@ def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=30):
             )
 
             ax.errorbar(df["mean"], y + offset, xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"],],
-                        fmt="none", capsize=1.5, color="black", alpha=0.5,)
+                        fmt="none", elinewidth=1, capsize=1.5, color="black", alpha=0.4,)
 
         ax.axvline(0, color="black")
 
@@ -1009,7 +1009,7 @@ def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=30):
             )
 
             ax.errorbar(df["mean"], y + offset, xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"], ],
-                        fmt="none", capsize=1.5, color="black", alpha=0.5, )
+                        fmt="none", elinewidth=1, capsize=1.5, color="black", alpha=0.4, )
 
         ax.axvline(0, color="black")
 
@@ -1166,7 +1166,7 @@ def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
             )
 
             ax.errorbar(df["mean"], y + offset, xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"], ],
-                        fmt="none", capsize=1.5, color="black", alpha=0.5, )
+                        fmt="none", elinewidth=1, capsize=1.5, color="black", alpha=0.4, )
 
         ax.axvline(0, color="black")
 
@@ -1320,7 +1320,7 @@ def plot_percent_deaths_averted_by_age_group(default_df,improved_df,):
             )
 
             ax.errorbar(df["mean"], y + offset, xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"], ],
-                        fmt="none", capsize=1.5, color="black", alpha=0.5, )
+                        fmt="none", elinewidth=1, capsize=1.5, color="black", alpha=0.4, )
 
         ax.axvline(0, color="black")
 
