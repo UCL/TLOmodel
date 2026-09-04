@@ -218,6 +218,8 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # --- build the scenario as a plain Python object ---
     tlo_scenario = TloOptimisationScenario()
     for key, value in dict(config).items():
+        if isinstance(value, np.bool_):
+            value = bool(value)
         setattr(tlo_scenario, key, value)  # e.g. scenario.intervention_coverage = 0.73
     tlo_scenario.seed = seed  # SMAC's seed drives this run's stochasticity directly
     tlo_scenario.number_of_draws = 1
