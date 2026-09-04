@@ -3844,7 +3844,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
 
         # 1) Choose test type
-        test_type = 'TDF' if p['type_of_scaleup'] == 'replace_VL_with_TDF' else 'VL'
+        test_type = 'TDF' if p['switch_vl_test_to_tdf'] else 'VL'
 
         # 2) Base probability from dispensing / VL interval
         test_prob = person['hv_arv_dispensing_interval'] / p['interval_for_viral_load_measurement_months']
