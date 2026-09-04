@@ -424,36 +424,18 @@ def fetch_azure_result(job: AzureJobHandle) -> dict:
 # --------------------------------------------------------------------------
 
 configspace = ConfigurationSpace()
-configspace.add(Integer("year_mode_switch", (2019,2026)))
-configspace.add(Integer("tclose_days_offset_overwrite", (4,100)))
-
-"""
-configspace.add(Float("hiv_testing_rates",()))
-configspace.add(Float("annual_rate_selftest",()))
-configspace.add(Float("annual_testing_rate_adults",()))
-configspace.add(Float("prob_hiv_test_at_anc_or_delivery",()))
-configspace.add(Float("prob_hiv_test_for_newborn_infant",()))
-configspace.add(Float("selftest_available",()))
-configspace.add(Float("switch_vl_test_to_tdf",()))
-configspace.add(Float("prob_prep_for_fsw_after_hiv_test",()))
-configspace.add(Float("prob_prep_for_agyw",()))
-configspace.add(Float("prob_injectable_prep_vs_oral",()))
-configspace.add(Float("prob_circ_after_hiv_test",()))
-configspace.add(Float("prob_circ_for_child_from_2020",()))
-configspace.add(Float("beta",()))
-configspace.add(Float("reduction_in_hiv_beta",()))
-configspace.add(Float("probability_of_being_retained_on_prep_every_3_months",()))
-configspace.add(Float("probability_of_being_retained_on_art_every_3_months",()))
-configspace.add(Float("prob_start_art_or_vs",()))
-configspace.add(Float("tb_ipt_coverage",()))
-configspace.add(Float("virally_suppressed_on_art",()))
-configspace.add(Float("consumable_availability_HIV_test",()))
-configspace.add(Float("consumable_availability_VL_test",()))
-
-# Add this to HIV initialisation
-self.sim.modules['HealthSystem'].override_availability_of_consumables({196: parameters['consumable_availability_HIV_test']})
-self.sim.modules['HealthSystem'].override_availability_of_consumables({190: parameters['consumable_availability_VL_test']})
-"""
+configspace.add(Float("config_annual_testing_rate_adults",(0.,1.)))
+configspace.add(Float("annual_rate_selftest",(0.,1.)))
+configspace.add(Float("prob_hiv_test_at_anc_or_delivery",(0.,1.)))
+configspace.add(Float("prob_hiv_test_for_newborn_infant",(0.,1.)))
+configspace.add(Float("prob_prep_for_fsw_after_hiv_test",(0.,1.)))
+configspace.add(Float("prob_prep_for_agyw",(0.,1.)))
+configspace.add(Float("prob_injectable_prep_vs_oral",(0.,1.)))
+configspace.add(Float("prob_circ_after_hiv_test",(0.,1.)))
+configspace.add(Float("linked_to_care_after_selftest",(0.,1.)))
+configspace.add(Float("prob_receive_viral_load_test_result",(0.,1.)))
+configspace.add(Float("config_coverage_plhiv",(0.,1.)))
+configspace.add(Bool("switch_vl_test_to_tdf",(True,False)))
 
 
 # Problem-defined constraints, not algorithm hyperparameters - but kept
@@ -657,14 +639,10 @@ smac = HyperparameterOptimizationFacade(
 # --------------------------------------------------------------------------
 
 PRIOR_RUNS = [
-    {
-        "config": {"year_mode_switch": 2019, "tclose_days_offset_overwrite": 5},
-        "dalys": 45.3, "cost": 1_680_000.0, "hr_used": 455.0, "stock_used": 8_900.0,
-    },
-    {
-        "config": {"year_mode_switch": 2023, "tclose_days_offset_overwrite": 10},
-        "dalys": 61.7, "cost": 2_400_000.0, "hr_used": 510.0, "stock_used": 9_700.0,  # over cost & HR limits
-    },
+    #{
+    #    "config": {"year_mode_switch": 2019, "tclose_days_offset_overwrite": 5},
+    #    "dalys": 45.3, "cost": 1_680_000.0, "hr_used": 455.0, "stock_used": 8_900.0,
+    #},
     # ... your other already-completed runs ...
 ]
 

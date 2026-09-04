@@ -1398,13 +1398,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         print("I am updating params")
         
         # Over-ride probability of HIV test cons. availability
-        self.sim.modules['HealthSystem'].override_availability_of_consumables({196: p['config_consumable_availability_HIV_test']})
+        #self.sim.modules['HealthSystem'].override_availability_of_consumables({196: p['config_consumable_availability_HIV_test']})
         # Over-ride probability of VL test cons. availability
-        self.sim.modules['HealthSystem'].override_availability_of_consumables({190: p['config_consumable_availability_VL_test']})
+        #self.sim.modules['HealthSystem'].override_availability_of_consumables({190: p['config_consumable_availability_VL_test']})
+
         # Over-ride coverage_plhiv'
         self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = p['config_coverage_plhiv']
         # Change adult testing rates
         p['hiv_testing_rates']['annual_testing_rate_adults'] = p['config_annual_testing_rate_adults']
+        
+        # Set VL test availability to zero if using TDF instead
+        if['switch_vl_test_to_tdf']:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({190: 0})
     
 
     def update_parameters_for_program_change(self):
