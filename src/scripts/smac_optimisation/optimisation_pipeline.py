@@ -443,6 +443,20 @@ def fetch_azure_result(job: AzureJobHandle) -> dict:
 #    submit_azure_job() does setattr(scenario, key, value) for each one.
 # --------------------------------------------------------------------------
 
+configspace = ConfigurationSpace()
+configspace.add(Float("config_annual_testing_rate_adults", (0., 1.)))
+configspace.add(Float("annual_rate_selftest", (0., 1.)))
+configspace.add(Float("prob_hiv_test_at_anc_or_delivery", (0., 1.)))
+configspace.add(Float("prob_hiv_test_for_newborn_infant", (0., 1.)))
+configspace.add(Float("prob_prep_for_fsw_after_hiv_test", (0., 1.)))
+configspace.add(Float("prob_prep_for_agyw", (0., 1.)))
+configspace.add(Float("prob_injectable_prep_vs_oral", (0., 1.)))
+configspace.add(Float("prob_circ_after_hiv_test", (0., 1.)))
+configspace.add(Float("linked_to_care_after_selftest", (0., 1.)))
+configspace.add(Float("prob_receive_viral_load_test_result", (0., 1.)))
+configspace.add(Float("config_coverage_plhiv", (0., 1.)))
+configspace.add(Categorical("switch_vl_test_to_tdf", [True, False]))
+
 # --------------------------------------------------------------------------
 # Period-bucketed HIV-HRH and HIV-consumable cost constraints
 #
