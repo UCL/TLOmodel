@@ -54,7 +54,7 @@ from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
 # --------------------------------------------------------------------------
 
 PERIOD_BOUNDARIES = [
-    (2025, 2029),  # period 1 - HYPERPARAMETER (user-definable): edit these
+    (2010, 2029),  # period 1 - HYPERPARAMETER (user-definable): edit these
     (2030, 2034),  # period 2   three (start_year, end_year) tuples to
     (2035, 2049),  # period 3   whatever periods you actually want enforced.
 ]
