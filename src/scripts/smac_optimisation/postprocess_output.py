@@ -75,7 +75,7 @@ def postprocess_run(run_dir: Path) -> dict:
     dalys = _get_hiv_dalys(log)
     hiv_hrh_cost_by_year = _get_hiv_hrh_cost_by_year(log)
     hiv_consumable_cost_by_year = _get_hiv_consumable_cost_by_year(log)
-
+    print("I obtained from ", Path, ": dalys ",  dalys, ",  hiv_hrh_cost_by_year", hiv_hrh_cost_by_year)
     return {
         "dalys": dalys,
         "hiv_hrh_cost_by_year": hiv_hrh_cost_by_year,
