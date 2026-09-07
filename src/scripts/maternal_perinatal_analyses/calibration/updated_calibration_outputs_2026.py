@@ -408,6 +408,53 @@ calibration_targets = {
         "label": "LSEP NMR",
     },
 
+    "anc1+": {
+        "value": 95,
+        "measure": "Service coverage",
+        "label": "ANC1",
+    },
+
+    "anc4+": {
+        "value": 51,
+        "measure": "Service coverage",
+        "label": "ANC4",
+    },
+
+    "fd_rate": {
+        "value": 91,
+        "measure": "Service coverage",
+        "label": "Fac Del.",
+    },
+
+    "hb_rate": {
+        "value": 8,
+        "measure": "Service coverage",
+        "label": "Home Birth",
+    },
+    "hc_rate": {
+        "value": 52,
+        "measure": "Service coverage",
+        "label": "HC Del.",
+    },
+
+    "hp_rate": {
+        "value": 40,
+        "measure": "Service coverage",
+        "label": "HP Del.",
+    },
+
+    "m_pnc1+": {
+        "value": 48,
+        "measure": "Service coverage",
+        "label": "M.PNC1",
+    },
+
+    "n_pnc1+": {
+        "value": 60,
+        "measure": "Service coverage",
+        "label": "N.PNC1",
+    },
+
 }
 
 
@@ -415,6 +462,7 @@ model_dfs = [
     results["mat_comp_incidence"]["summarised"],
     results["nb_comp_incidence"]["summarised"],
     results["deaths_and_stillbirths"]["summarised"],
+    results['service_coverage']["summarised"]
 ]
 
 def plot_calibration(

@@ -1779,8 +1779,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
-        if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
-           (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
+        if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp' and labour_stage == 'ip') or \
+           (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp' and labour_stage =='pp'):
 
             # Determine if this person will deliver vaginally or via caesarean
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
@@ -1867,8 +1867,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
-        if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or \
-           (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia'):
+        if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia' and labour_stage == "ip") or \
+           (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia' and labour_stage == "pp"):
 
             mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self, int_name='mgso4_ec', hsi_event=hsi_event,
@@ -1956,11 +1956,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         person_id = hsi_event.target
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
-        if (
-            df.at[person_id, 'la_sepsis'] or
-            df.at[person_id, 'la_sepsis_pp'] or
-            ((labour_stage == 'ip') and df.at[person_id, 'ps_chorioamnionitis']) or
-           (labour_stage == 'pp' and df.at[person_id, 'pn_sepsis_late_postpartum'])):
+        if ((labour_stage == 'ip' and (df.at[person_id, 'la_sepsis'] or
+                                      df.at[person_id, 'ps_chorioamnionitis']))
+            or (labour_stage == 'pp' and (df.at[person_id, 'la_sepsis_pp'] or
+                                      df.at[person_id, 'pn_sepsis_late_postpartum']))):
 
             sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self, int_name='sepsis_treatment', hsi_event=hsi_event,
@@ -2145,7 +2144,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 self.pph_treatment.set(person_id, 'hysterectomy')
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
-    def blood_transfusion(self, hsi_event):
+    def blood_transfusion(self, hsi_event, labour_stage):
         """
         This function represents the blood transfusion during or after labour. This function is called during
         HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have experience blood loss due to
@@ -2159,12 +2158,14 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
 
-        if df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary']:
+        if labour_stage == 'pp' and (df.at[person_id, 'la_postpartum_haem'] or
+                                     df.at[person_id, 'pn_postpartum_haem_secondary']):
             intervention = 'blood_transfusion_pph'
 
-        elif ((df.at[person_id, 'la_antepartum_haem'] != 'none') or df.at[person_id, 'la_uterine_rupture'] or
-              (df.at[person_id, 'ps_antepartum_haemorrhage'] != 'none') and
-              (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')):
+        elif labour_stage == 'ip' and (df.at[person_id, 'la_antepartum_haem'] != 'none' or
+                                       df.at[person_id, 'la_uterine_rupture'] or
+                                       (df.at[person_id, 'ps_antepartum_haemorrhage'] != 'none' and
+                                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')):
             intervention = 'blood_transfusion_aph'
 
         else:
@@ -3284,7 +3285,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women referred for blood transfusion alone or in conjunction with one of the above interventions will receive
         # that here
         if mni[person_id]['referred_for_blood']:
-            self.module.blood_transfusion(self)
+            labour_stage = 'ip' if self.timing == 'intrapartum' else 'pp'
+            self.module.blood_transfusion(self, labour_stage)
 
         # Women who have passed through the postpartum SBA HSI have not yet had their risk of death calculated because
         # they required interventions delivered via this event. We now determine if these women will survive

@@ -128,7 +128,7 @@ class MaternalNewbornHealthCohort(Module):
         df.loc[population.index, 'co_contraception'] = "not_using"
 
         # TODO: getting errors from RTI - remove this code?
-        self.sim.modules['RTI'].initialise_population(self.sim.population)
+        # self.sim.modules['RTI'].initialise_population(self.sim.population)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.

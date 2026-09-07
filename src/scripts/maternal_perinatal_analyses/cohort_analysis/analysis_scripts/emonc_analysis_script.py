@@ -209,7 +209,7 @@ results.update({
 #  ===================================== EXTRACT AND ADJUST COST DATA  ===============================================
 TARGET_PERIOD = (Date(sim_start_year, 1, 1), Date(sim_start_year, 12, 31))
 # list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
-# #
+#
 # input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
 #                                      resourcefilepath=resourcefilepath,
 #                                      suspended_results_folder=results_folder,
@@ -219,12 +219,10 @@ TARGET_PERIOD = (Date(sim_start_year, 1, 1), Date(sim_start_year, 12, 31))
 #                                      _discount_rate=0.03)
 #
 # input_costs_df.to_csv(f'{g_path}/input_costs.csv')
-#
-# # Read in costs (takes a long time to generate)
+# #
 # # TODO: COST RESULTS ARE SCALED TO POPULATION...
-# input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
-# input_costs = input_costs.set_index('Unnamed: 0')
-
+input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
+input_costs = input_costs.set_index('Unnamed: 0')
 
 # ============================================ FIG 1 - MET NEED =======================================================
 met_need_df = results['met_need']['summarised']
@@ -1621,159 +1619,154 @@ total_dalys_averted_df = baseline.sub(
 total_dalys_averted_df_summarised = summarize_confidence_intervals(total_dalys_averted_df)
 
 # # 2. Get total costs
-# cost_by_draw_and_year = input_costs.groupby(['draw', 'run', 'year'])['cost'].sum()
-# cost_by_draw_and_year_df = cost_by_draw_and_year.reset_index().pivot(index='year', columns=['draw','run'], values='cost')
-# baseline = cost_by_draw_and_year_df.xs(0, axis=1, level="draw")
-# incremental_cost =  cost_by_draw_and_year_df.sub(
-#     baseline,
-#     axis="columns",
-#     level="run"
-# ).drop(columns=0, level="draw")
-# incremental_cost_summarised = summarize_confidence_intervals(incremental_cost)
-#
-# icers = incremental_cost / total_dalys_averted_df
-# icers_summarized = summarize_confidence_intervals(icers)
-#
-
+cost_by_draw_and_year = input_costs.groupby(['draw', 'run', 'year'])['cost'].sum()
+cost_by_draw_and_year_df = cost_by_draw_and_year.reset_index().pivot(index='year', columns=['draw','run'], values='cost')
+baseline = cost_by_draw_and_year_df.xs(0, axis=1, level="draw")
+incremental_cost =  cost_by_draw_and_year_df.sub(
+    baseline,
+    axis="columns",
+    level="run"
+).drop(columns=0, level="draw")
+incremental_cost_summarised = summarize_confidence_intervals(incremental_cost)
 
 # # ============================================ DEBUGGING PLOTS ========================================================
-# cost_by_category = input_costs.groupby(['draw', 'run', 'year', 'cost_category'])['cost'].sum()
-# reformatted_cost_cat_df = (
-#     cost_by_category
-#     .reorder_levels(["year", "cost_category", "draw", "run"])
-#     .unstack(["draw", "run"])
-#     .sort_index()
-#     .sort_index(axis=1)
-# )
-#
-# baseline = reformatted_cost_cat_df.xs(0, level="draw", axis=1)
-# difference_df = reformatted_cost_cat_df.subtract(
-#     baseline,
-#     axis="columns",
-#     level="run"
-# )
-#
-# summ_cost_cat_diff = summarize_confidence_intervals(difference_df)
-#
-# def get_cost_diff_by_type_panel_graph():
-#     # Select the required year
-#
-#     year_to_plot = sim_start_year
-#
-#     # Example: dictionary mapping draw numbers to display labels
+cost_by_category = input_costs.groupby(['draw', 'run', 'year', 'cost_category'])['cost'].sum()
+reformatted_cost_cat_df = (
+    cost_by_category
+    .reorder_levels(["year", "cost_category", "draw", "run"])
+    .unstack(["draw", "run"])
+    .sort_index()
+    .sort_index(axis=1)
+)
 
-#     year_df = summ_cost_cat_diff.xs(year_to_plot, level="year")
-#
-#     # Identify draws, excluding baseline draw 0
-#     draws = (
-#         year_df.columns
-#         .get_level_values("draw")
-#         .unique()
-#         .drop(0, errors="ignore")
-#     )
-#
-#     cost_categories = year_df.index
-#
-#     fig, axes = plt.subplots(
-#         2,
-#         2,
-#         figsize=(15, 10),
-#         sharex=True,
-#         sharey=False
-#     )
-#
-#     axes = axes.flatten()
-#
-#     for ax, cost_category in zip(axes, cost_categories):
-#
-#         category_df = year_df.loc[cost_category]
-#
-#         means = np.array([
-#             category_df.loc[(draw, "mean")]
-#             for draw in draws
-#         ])
-#
-#         lower = np.array([
-#             category_df.loc[(draw, "lower")]
-#             for draw in draws
-#         ])
-#
-#         upper = np.array([
-#             category_df.loc[(draw, "upper")]
-#             for draw in draws
-#         ])
-#
-#         # Matplotlib expects distances from the mean, not CI endpoints
-#         yerr = np.vstack([
-#             means - lower,
-#             upper - means
-#         ])
-#
-#         labels = [
-#             draw_labels.get(draw, str(draw))
-#             for draw in draws
-#         ]
-#
-#         colours = [
-#             "#D55E00" if value > 0 else "#0072B2"
-#             for value in means
-#         ]
-#
-#         ax.bar(
-#             labels,
-#             means,
-#             yerr=yerr,
-#             capsize=4,
-#             color=colours,
-#             width=0.75,
-#             edgecolor="black",
-#             linewidth=0.4,
-#             error_kw={
-#                 "elinewidth": 1,
-#                 "ecolor": "black"
-#             }
-#         )
-#
-#         ax.axhline(
-#             0,
-#             color="black",
-#             linewidth=0.8
-#         )
-#
-#         ax.set_title(
-#             str(cost_category).replace("_", " ").title()
-#         )
-#
-#         ax.set_ylabel("Difference from baseline")
-#
-#         ax.yaxis.set_major_formatter(
-#             mticker.FuncFormatter(
-#                 lambda value, _: f"£{value / 1e6:,.1f}m"
-#             )
-#         )
-#
-#         ax.tick_params(
-#             axis="x",
-#             rotation=45,
-#             labelbottom=True
-#         )
-#
-#     # Remove unused panels if there are fewer than four categories
-#     for ax in axes[len(cost_categories):]:
-#         ax.remove()
-#
-#     fig.suptitle(
-#         f"Difference in costs from baseline, {year_to_plot}",
-#         fontsize=15
-#     )
-#
-#     fig.tight_layout()
-#     plt.savefig(f'{g_path}/diff_costs_by_category.png', bbox_inches='tight')
-#
-#     plt.show()
-#
-# get_cost_diff_by_type_panel_graph()
-#
+baseline = reformatted_cost_cat_df.xs(0, level="draw", axis=1)
+difference_df = reformatted_cost_cat_df.subtract(
+    baseline,
+    axis="columns",
+    level="run"
+)
+
+summ_cost_cat_diff = summarize_confidence_intervals(difference_df)
+
+def get_cost_diff_by_type_panel_graph():
+    # Select the required year
+
+    year_to_plot = sim_start_year
+
+    # Example: dictionary mapping draw numbers to display labels
+
+    year_df = summ_cost_cat_diff.xs(year_to_plot, level="year")
+
+    # Identify draws, excluding baseline draw 0
+    draws = (
+        year_df.columns
+        .get_level_values("draw")
+        .unique()
+        .drop(0, errors="ignore")
+    )
+
+    cost_categories = year_df.index
+
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=(15, 10),
+        sharex=True,
+        sharey=False
+    )
+
+    axes = axes.flatten()
+
+    for ax, cost_category in zip(axes, cost_categories):
+
+        category_df = year_df.loc[cost_category]
+
+        means = np.array([
+            category_df.loc[(draw, "mean")]
+            for draw in draws
+        ])
+
+        lower = np.array([
+            category_df.loc[(draw, "lower")]
+            for draw in draws
+        ])
+
+        upper = np.array([
+            category_df.loc[(draw, "upper")]
+            for draw in draws
+        ])
+
+        # Matplotlib expects distances from the mean, not CI endpoints
+        yerr = np.vstack([
+            means - lower,
+            upper - means
+        ])
+
+        labels = [
+            draw_labels.get(draw, str(draw))
+            for draw in draws
+        ]
+
+        colours = [
+            "#D55E00" if value > 0 else "#0072B2"
+            for value in means
+        ]
+
+        ax.bar(
+            labels,
+            means,
+            yerr=yerr,
+            capsize=4,
+            color=colours,
+            width=0.75,
+            edgecolor="black",
+            linewidth=0.4,
+            error_kw={
+                "elinewidth": 1,
+                "ecolor": "black"
+            }
+        )
+
+        ax.axhline(
+            0,
+            color="black",
+            linewidth=0.8
+        )
+
+        ax.set_title(
+            str(cost_category).replace("_", " ").title()
+        )
+
+        ax.set_ylabel("Difference from baseline")
+
+        ax.yaxis.set_major_formatter(
+            mticker.FuncFormatter(
+                lambda value, _: f"£{value / 1e6:,.1f}m"
+            )
+        )
+
+        ax.tick_params(
+            axis="x",
+            rotation=45,
+            labelbottom=True
+        )
+
+    # Remove unused panels if there are fewer than four categories
+    for ax in axes[len(cost_categories):]:
+        ax.remove()
+
+    fig.suptitle(
+        f"Difference in costs from baseline, {year_to_plot}",
+        fontsize=15
+    )
+
+    fig.tight_layout()
+    plt.savefig(f'{g_path}/diff_costs_by_category.png', bbox_inches='tight')
+
+    plt.show()
+
+get_cost_diff_by_type_panel_graph()
+
 # cost_by_draw_and_year = input_costs.groupby(['draw', 'run', 'year'])['cost'].sum()
 # cost_by_draw_and_year_df = cost_by_draw_and_year.reset_index().pivot(index='year', columns=['draw','run'], values='cost')
 # #  todo: above service costs
