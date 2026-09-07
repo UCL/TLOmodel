@@ -50,7 +50,7 @@ from scripts.costing.cost_estimation import load_unit_cost_assumptions
 # is not meant to be kept in sync with that file. If you change the
 # simulated start/end dates in smac_scenario.py, update this value to
 # match THIS pipeline's own run, not the other script's.
-TARGET_PERIOD = (pd.Timestamp(2010, 1, 1), pd.Timestamp(2011, 1, 1))
+TARGET_PERIOD = (pd.Timestamp(2010, 1, 1), pd.Timestamp(2012, 1, 1))
 
 
 def postprocess_run(run_dir: Path) -> dict:
