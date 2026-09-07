@@ -52,19 +52,19 @@ numpy.random.seed(42)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    #"opd_attendance",
-    #"ipd_total_admissions",
-    #"fp_total_clients",
-    #"fp_subsequent_clients_total",
-    #"bcg_under1",
+    "opd_attendance",
+    "ipd_total_admissions",
+    "fp_total_clients",
+    "fp_subsequent_clients_total",
+    "bcg_under1",
     "penta3_under1",
     "measles1_under1",
     "fully_immunised_under1",
     "live_births_total",
-    #"htc_tests_new",
-    #"anc_total_visits",
-    #"cervical_screening_total",
-    #"pnc_within_2wks",
+    "htc_tests_new",
+    "anc_total_visits",
+    "cervical_screening_total",
+    "pnc_within_2wks",
 ]
 COMPOSITE_INDICATORS: dict[str, list[str]] = {
     "htc_tests_new": ["htc_results_new_negative", "htc_results_new_positive"],
@@ -94,10 +94,10 @@ INDICATOR_LABELS: dict[str, str] = {
 }
 
 HIGH_OVERDISPERSION_INDICATORS = [
-    "ipd_total_admissions",
-    "opd_attendance",
-    "anc_total_visits",
-    "cervical_screening_initial",
+     "ipd_total_admissions",
+    # "opd_attendance",
+    # "anc_total_visits",
+    # "cervical_screening_initial",
 ]
 
 MIN_YEAR_BY_INDICATOR: dict[str, int] = {
@@ -114,7 +114,7 @@ HARD_CEILINGS = { # based on visual inspection of data
     "anc4_coverage": 600,
     "anc_first_trimester_starts": 2000,
     "anc_new_attendees": 10000,
-    "anc_total_visits": 20000,
+    "anc_total_visits": 5000,
     "bcg_under1": 20000,
     "cataract_surgical_coverage": 300,
     "cervical_screening_30_44": 20,
@@ -167,23 +167,23 @@ def _apply_deficit_filter(df, base_col, wx_col):
 # when predicting under projection and counterfactual climates. This makes
 # out-of-support predictions flat rather than allowing the cr() basis +
 # linear lag terms to extrapolate. Historical fit is unaffected.
-CLIP_PROJECTION_TO_SUPPORT = False
-SUPPORT_LOW_PCTILE = 1.0
-SUPPORT_HIGH_PCTILE = 99.0
+CLIP_PROJECTION_TO_SUPPORT = True
+SUPPORT_LOW_PCTILE = 0.1
+SUPPORT_HIGH_PCTILE = 99.9
 
 
 # Model settings
 WBGT_VAR = "wbgt_day"
 SPLINE_DF = 3
 LAG_MONTHS = [1,2,3]
-SA_LAG = True
+SA_LAG = False
 if SA_LAG:
     LAG_SUFFIX = "_with_lags"
 else:
     LAG_SUFFIX = ""
 CENTER = True
 MIN_OBS = 24
-MIN_OBS_COVERAGE = 0.5
+MIN_OBS_COVERAGE = 0
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
 CLUSTER_COL = "Dist"
@@ -265,9 +265,9 @@ MIN_OBS_BY_INDICATOR: dict[str, int] = {
 def apply_hard_ceilings(df, indicator):
     ceiling = HARD_CEILINGS.get(indicator)
     if ceiling is not None:
-        n_before = len(df)
-        df = df[df[indicator] <= ceiling].copy()
-        n_dropped = n_before - len(df)
+        over = df[indicator] > ceiling
+        df.loc[over, indicator] = np.nan
+        n_dropped = int(over.sum())
         if n_dropped > 0:
             print(f"  [{indicator}] Dropped {n_dropped} rows exceeding ceiling {ceiling}")
     return df
@@ -510,7 +510,44 @@ def exposure_response_curve_fast(
     Br = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": np.array([ref]) - wbgt_shift})[0])
     contrast = Bg - Br
     beta = model.params.reindex(spline_cols).values
+    cov_full = model.cov_params()
+    print(f"[{WBGT_VAR_name}] type(cov_full): {type(cov_full)}")
+    print(
+        f"[{WBGT_VAR_name}] cov_full.index (first 10): {list(cov_full.index)[:10] if hasattr(cov_full, 'index') else 'no index'}"
+    )
+    print(f"[{WBGT_VAR_name}] Are spline_cols in cov_full.index? {[c in cov_full.index for c in spline_cols]}")
+    print(f"[{WBGT_VAR_name}] model.params.index (first 10): {list(model.params.index)[:10]}")
     V = model.cov_params().reindex(index=spline_cols, columns=spline_cols).values
+    print(f"\n[{WBGT_VAR_name}] spline_cols: {spline_cols}")
+    print(f"[{WBGT_VAR_name}] beta: {beta}")
+    print(f"[{WBGT_VAR_name}] V (spline cov):\n{V}")
+    print(f"[{WBGT_VAR_name}] V diagonal (SEs of coefs): {np.sqrt(np.diag(V))}")
+
+    X_check = model.model.exog  # statsmodels stores design matrix here
+    col_idx = [model.model.exog_names.index(c) for c in spline_cols + [f"{WBGT_VAR}_lag{k}_c" for k in [1, 2, 3]]]
+    X_sub = X_check[:, col_idx]
+    print(f"[{WBGT_VAR_name}] cond(X_spline+lag) = {np.linalg.cond(X_sub):.2e}")
+    print(f"[{WBGT_VAR_name}] corr matrix of spline+lag block:")
+    print(np.corrcoef(X_sub.T).round(3))
+    full_cov = model.cov_params()
+    full_diag = np.diag(full_cov.values)
+    print(
+        f"[{WBGT_VAR_name}] full cov diagonal — n_negative={int((full_diag < 0).sum())}, "
+        f"n_positive={int((full_diag > 0).sum())}, "
+        f"min={full_diag.min():.3e}, max={full_diag.max():.3e}"
+    )
+    # Show which params have negative variance
+    neg_names = full_cov.index[full_diag < 0].tolist()
+    print(f"[{WBGT_VAR_name}] Params with negative variance: {neg_names[:20]}")
+    print(f"[{WBGT_VAR_name}] converged: {model.mle_retvals.get('converged', 'unknown')}")
+    print(f"[{WBGT_VAR_name}] iterations: {model.mle_retvals.get('iterations', 'unknown')}")
+    print(f"[{WBGT_VAR_name}] mle_retvals: {model.mle_retvals}")
+    # Condition number of V — huge = near-singular = ill-conditioned CI
+    print(f"[{WBGT_VAR_name}] cond(V) = {np.linalg.cond(V):.2e}")
+    # Are any full model params NaN?
+    n_nan_params = model.params.isna().sum()
+    n_nan_cov = np.isnan(model.cov_params().values).sum()
+    print(f"[{WBGT_VAR_name}] NaN in params: {n_nan_params}, NaN in cov: {n_nan_cov}")
     log_irr = contrast @ beta
     var = np.einsum("ij,jk,ik->i", contrast, V, contrast)
     se = np.sqrt(np.clip(var, 0, None))
@@ -530,8 +567,8 @@ def mask_spike_and_revert(
     indicator: str,
     facility_col: str = "facility",
     date_col: str = "date",
-    oom: float = 10.0,
-    include_trough: bool = True,
+    oom: float = 30.0,
+    include_trough: bool = False,
     return_flags: bool = False,
 ) -> tuple[pd.DataFrame, dict]:
     """
@@ -650,10 +687,11 @@ def fit_indicator(indicator, panel_path):
 
     try:
         long = load_indicator_panel(indicator, PANEL_DIR)
+        long = apply_hard_ceilings(long, indicator)
         long, qa_report = mask_spike_and_revert(
             long,
             indicator=indicator,
-            oom=10,
+            oom=50,
             return_flags=False,
         )
         long = long.rename(columns={indicator: "y"})
@@ -690,12 +728,6 @@ def fit_indicator(indicator, panel_path):
         long = winsorize_indicator(long, indicator_col="y", facility_col="facility", upper_quantile=wq)
     diagnose_indicator(long, "y")
 
-    if indicator == "ipd_total_admissions":
-        scale_factor = 100
-        long["y"] = long["y"] / scale_factor
-        print(f"  [{indicator}] Scaling response by {scale_factor}")
-    else:
-        scale_factor = 1
 
     SHIFTS = {"year": long["year"].mean() if CENTER else 0.0}
     SHIFTS[WBGT_VAR] = long[WBGT_VAR].mean() if CENTER else 0.0
@@ -748,10 +780,6 @@ def fit_indicator(indicator, panel_path):
     except Exception as e:
         print(f"  [{indicator}] Model fitting failed: {e}")
         return None
-
-    if scale_factor > 1:
-        model_base.fittedvalues = model_base.fittedvalues * scale_factor
-        model_wx.fittedvalues = model_wx.fittedvalues * scale_factor
 
     missing_spline = [c for c in spline_cols if c not in model_wx.params.index]
     if missing_spline:
