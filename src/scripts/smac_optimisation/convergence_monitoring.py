@@ -99,17 +99,25 @@ def get_best_feasible_dalys(history: list[dict]) -> float | None:
     feasible has been observed yet - check_convergence() below treats
     that as "not converged" rather than triggering on an undefined
     comparison.
+
+    Constraint/violation column names are discovered DYNAMICALLY (any
+    key ending in "_violation"), rather than hardcoded - this file has
+    no import-time dependency on optimisation_pipeline.py's specific
+    constraint configuration (currently the period-bucketed
+    hiv_hrh_violation_p1..N / hiv_consumable_violation_p1..N plus
+    hr_violation/stock_violation, but this stays correct automatically
+    if that set changes again later, e.g. a different number of periods).
     """
     grouped: dict[tuple, list[dict]] = {}
     for h in history:
         grouped.setdefault(config_key(h["config_object"]), []).append(h)
 
+    violation_keys = [k for k in history[0] if k.endswith("_violation")] if history else []
+
     best = None
     for entries in grouped.values():
-        cost_v = np.mean([e["cost_violation"] for e in entries])
-        hr_v = np.mean([e["hr_violation"] for e in entries])
-        stock_v = np.mean([e["stock_violation"] for e in entries])
-        if cost_v == 0 and hr_v == 0 and stock_v == 0:
+        mean_violations = {k: np.mean([e[k] for e in entries]) for k in violation_keys}
+        if all(v == 0 for v in mean_violations.values()):
             dalys = float(np.mean([e["dalys"] for e in entries]))
             if best is None or dalys < best:
                 best = dalys

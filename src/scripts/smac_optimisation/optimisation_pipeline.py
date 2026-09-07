@@ -49,6 +49,7 @@ from pathlib import Path
 import logging
 logging.getLogger("azure").setLevel(logging.WARNING)
 import numpy as np
+import pandas as pd
 from git import Repo
 from azure.batch import models as batch_models
 
@@ -402,15 +403,32 @@ def download_run_outputs(job: AzureJobHandle) -> Path:
 
 
 def aggregate_postprocessed_results(draw_dir: Path) -> dict:
-    """Shared by fetch_azure_result (fresh download) and crash-recovery
-    (already-downloaded outputs from a prior process)."""
+    """
+    Shared by fetch_azure_result (fresh download) and crash-recovery
+    (already-downloaded outputs from a prior process). Averages both
+    by-year cost dicts (hiv_hrh_cost_by_year, hiv_consumable_cost_by_year)
+    across whatever runs exist per draw (currently always exactly 1,
+    given runs_per_draw=1 - see smac_scenario.py - but implemented
+    generally in case that ever changes), year by year rather than as
+    flat totals.
+    """
     per_run_results = [postprocess_run(run_dir) for run_dir in sorted(draw_dir.iterdir())]
+
+    def average_yearly(key: str) -> dict:
+        all_years = set()
+        for r in per_run_results:
+            all_years.update(r[key].keys())
+        return {
+            year: float(np.mean([r[key].get(year, 0.0) for r in per_run_results]))
+            for year in all_years
+        }
+
     return {
         "dalys": float(np.mean([r["dalys"] for r in per_run_results])),
-        "cost": float(np.mean([r["cost"] for r in per_run_results])),
-        "hr_used": float(np.mean([r["hr_used"] for r in per_run_results])),
-        "stock_used": float(np.mean([r["stock_used"] for r in per_run_results])),
+        "hiv_hrh_cost_by_year": average_yearly("hiv_hrh_cost_by_year"),
+        "hiv_consumable_cost_by_year": average_yearly("hiv_consumable_cost_by_year"),
     }
+
 
 def fetch_azure_result(job: AzureJobHandle) -> dict:
     draw_dir = download_run_outputs(job)
@@ -425,27 +443,35 @@ def fetch_azure_result(job: AzureJobHandle) -> dict:
 #    submit_azure_job() does setattr(scenario, key, value) for each one.
 # --------------------------------------------------------------------------
 
-configspace = ConfigurationSpace()
-configspace.add(Float("config_annual_testing_rate_adults",(0.,1.)))
-configspace.add(Float("annual_rate_selftest",(0.,1.)))
-configspace.add(Float("prob_hiv_test_at_anc_or_delivery",(0.,1.)))
-configspace.add(Float("prob_hiv_test_for_newborn_infant",(0.,1.)))
-configspace.add(Float("prob_prep_for_fsw_after_hiv_test",(0.,1.)))
-configspace.add(Float("prob_prep_for_agyw",(0.,1.)))
-configspace.add(Float("prob_injectable_prep_vs_oral",(0.,1.)))
-configspace.add(Float("prob_circ_after_hiv_test",(0.,1.)))
-configspace.add(Float("linked_to_care_after_selftest",(0.,1.)))
-configspace.add(Float("prob_receive_viral_load_test_result",(0.,1.)))
-configspace.add(Float("config_coverage_plhiv",(0.,1.)))
-configspace.add(Categorical("switch_vl_test_to_tdf",[True,False]))
+# --------------------------------------------------------------------------
+# Period-bucketed HIV-HRH and HIV-consumable cost constraints
+#
+# Rather than a year-by-year constraint (prohibitive across a 25-year
+# horizon - would need ~25 separate RF surrogates per cost type, with
+# the multiplied-probability problem discussed at length getting worse
+# with every added constraint), each cost type is bucketed into a small,
+# USER-DEFINABLE number of periods. Within each period, the CUMULATIVE
+# (mean-across-years, not max) violation is computed:
+#
+#     period_violation = mean( max(0, cost_year/limit_year - 1) for year in period )
+#
+# Mean-across-years (not max-across-years, and NOT an average restricted
+# to only the years that violate) so that an ADDITIONAL bad year can
+# only raise or maintain a period's score, never lower it - averaging
+# only the positive values would let a config with MORE violating years
+# score BETTER than one with fewer, which is the wrong direction.
+#
+# PERIOD_BOUNDARIES is user-definable (absolute calendar years,
+# inclusive on both ends) and MUST be the same list for HIV-HRH and
+# HIV-consumable costs - both are bucketed identically, not with
+# independently-chosen periods per cost type.
+# --------------------------------------------------------------------------
 
-# Problem-defined constraints, not algorithm hyperparameters - but kept
-# here as a reminder these are duplicated in constrained_ei.py's
-# standalone example_usage() too, and could drift out of sync if only
-# one copy gets updated.
-COST_LIMIT = 2_000_000
-HR_LIMIT = 500
-STOCK_LIMIT = 10_000
+from initialise import (
+    PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
+    bucket_cumulative_violation, HIV_HRH_CONSTRAINT_NAMES,
+    HIV_CONSUMABLE_CONSTRAINT_NAMES, CONSTRAINT_NAMES, PRIOR_RUNS,
+)
 
 history: list[dict] = []  # raw, disaggregated results - the source of truth
 
@@ -475,38 +501,54 @@ def record_result(
     merged into the on-disk history_log.jsonl record below, but
     deliberately kept OUT of `history` itself, so ConstrainedEI's
     surrogates never see them as if they were real features.
+
+    PERIOD_BOUNDARIES/budgets/bucket_cumulative_violation/constraint
+    names all live in initialise.py - see that file for the actual
+    constraint definitions and the cost-vs-budget terminology note.
     """
-    dalys, cost = result["dalys"], result["cost"]
-    hr_used, stock_used = result["hr_used"], result["stock_used"]
+    dalys = result["dalys"]
 
-    cost_violation = max(0.0, cost / COST_LIMIT - 1)
-    hr_violation = max(0.0, hr_used / HR_LIMIT - 1)
-    stock_violation = max(0.0, stock_used / STOCK_LIMIT - 1)
+    hrh_period_violations = bucket_cumulative_violation(
+        result["hiv_hrh_cost_by_year"], HIV_HRH_BUDGET_BY_YEAR
+    )
+    consumable_period_violations = bucket_cumulative_violation(
+        result["hiv_consumable_cost_by_year"], HIV_CONSUMABLE_BUDGET_BY_YEAR
+    )
 
-    history.append({
-        "config_object": config,
-        "seed": seed,
-        "dalys": dalys,
-        "cost_violation": cost_violation,
-        "hr_violation": hr_violation,
-        "stock_violation": stock_violation,
-    })
+    entry = {"config_object": config, "seed": seed, "dalys": dalys}
+    for name, v in zip(HIV_HRH_CONSTRAINT_NAMES, hrh_period_violations):
+        entry[name] = v
+    for name, v in zip(HIV_CONSUMABLE_CONSTRAINT_NAMES, consumable_period_violations):
+        entry[name] = v
+    history.append(entry)
 
     append_history_to_file({**history[-1], "job_id": job_id, "commit": commit})
 
     K = 3 * dalys  # HYPERPARAMETER: penalty coefficient - rough, not load-bearing
     # for search quality now that ConstrainedEI does the real steering,
     # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
-    penalty = K * (cost_violation + hr_violation + stock_violation)
+    penalty = K * sum(entry[name] for name in CONSTRAINT_NAMES)
     return TrialValue(cost=dalys + penalty)
 
 
 def recover_from_job_log() -> list[dict]:
     """
     Checks every previously-submitted job against the local outputs
-    directory. If a job's output was already downloaded (i.e. a prior
-    process got far enough to fetch it, but crashed before calling
-    smac.tell()), re-postprocess it and return it in PRIOR_RUNS shape.
+    directory. Two recovery paths, both re-postprocessing into
+    PRIOR_RUNS shape:
+
+    1. Already downloaded locally (a prior process got far enough to
+       fetch it, but crashed before calling smac.tell()) - just
+       re-postprocess what's already on disk.
+    2. NOT yet downloaded, but genuinely finished on Azure - checked via
+       azure_job_is_finished()/azure_task_succeeded() (the same
+       functions the live polling loop uses), downloaded now via
+       fetch_azure_result(), then treated the same as path 1. This
+       closes the gap flagged in earlier versions of this function:
+       previously, a job that completed remotely but was never
+       downloaded before a crash was silently unrecoverable - genuine
+       paid-for compute, lost. A failed/still-running job is correctly
+       left unrecovered either way.
 
     Only jobs submitted under the CURRENT commit are recovered - a run
     submitted under a different commit may have used a different
@@ -514,11 +556,6 @@ def recover_from_job_log() -> list[dict]:
     modules, etc.), so silently folding its DALYs/cost into history
     would risk mixing results that aren't actually comparable. Such
     jobs are skipped, with a warning, rather than loaded.
-
-    SCOPE: only recovers jobs whose outputs are already downloaded
-    locally. A job that finished on Azure but was never downloaded
-    before the crash is NOT recovered here - it's neither re-checked
-    against Azure nor re-downloaded.
     """
     if not JOB_LOG_FILE.exists():
         return []
@@ -541,8 +578,20 @@ def recover_from_job_log() -> list[dict]:
                 continue
 
             draw_dir = Path("outputs", username, record["job_id"], "0")
+
             if not draw_dir.exists() or not any(draw_dir.iterdir()):
-                continue  # not downloaded - out of scope, see docstring
+                # not downloaded yet - check whether it's actually
+                # finished on Azure before giving up on it
+                job = AzureJobHandle(
+                    job_id=record["job_id"], submitted_at=0.0, commit_hexsha=current_commit,
+                )
+                if not azure_job_is_finished(job):
+                    continue  # still running - genuinely not recoverable yet
+                if not azure_task_succeeded(job):
+                    print(f"[warning] recovered job {record['job_id']} failed on Azure - skipping.")
+                    continue
+                print(f"[recovering] job {record['job_id']} finished on Azure but was never downloaded - fetching now.")
+                draw_dir = download_run_outputs(job)
 
             result = aggregate_postprocessed_results(draw_dir)
             recovered.append({
@@ -564,8 +613,10 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
     raw config values that produced it:
 
         {
-            "config": {"intervention_coverage": 0.6, "consumable_stock_target": 0.9, ...},
-            "dalys": 41.2, "cost": 1_750_000.0, "hr_used": 470.0, "stock_used": 9100.0,
+            "config": {"config_annual_testing_rate_adults": 0.8, "annual_rate_selftest": 0.3, ...},
+            "dalys": 41.2,
+            "hiv_hrh_cost_by_year": {2025: 12000.0, 2026: 12500.0, ...},
+            "hiv_consumable_cost_by_year": {2025: 8000.0, 2026: 8100.0, ...},
         }
 
     Confirmed supported by SMAC3: previously-evaluated configs can be
@@ -615,9 +666,11 @@ intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_con
 acquisition_function = ConstrainedEI(
     configspace=configspace,
     objective_name="dalys",
-    constraint_names=["cost_violation", "hr_violation", "stock_violation"],
+    constraint_names=CONSTRAINT_NAMES,
     history_provider=lambda: history,
-    retrain_every=5,  # HYPERPARAMETER: refit every 5 new results
+    retrain_every=1,  # HYPERPARAMETER: refit on every new result - refitting is
+                       # cheap relative to simulation cost, so there's no reason
+                       # to tolerate any staleness (see earlier discussion)
 )
 
 smac = HyperparameterOptimizationFacade(
@@ -635,17 +688,9 @@ smac = HyperparameterOptimizationFacade(
 
 # --------------------------------------------------------------------------
 # 4. Warm-start with runs you've already completed, THEN start the loop.
-#    Replace this with however you're currently loading your existing
-#    completed runs (CSV, dataframe, pickle, whatever they're sitting in).
+#    PRIOR_RUNS itself lives in initialise.py (imported at the top of
+#    this file), alongside the constraint setup - edit it there.
 # --------------------------------------------------------------------------
-
-PRIOR_RUNS = [
-    #{
-    #    "config": {"year_mode_switch": 2019, "tclose_days_offset_overwrite": 5},
-    #    "dalys": 45.3, "cost": 1_680_000.0, "hr_used": 455.0, "stock_used": 8_900.0,
-    #},
-    # ... your other already-completed runs ...
-]
 
 recovered_runs = recover_from_job_log()
 all_prior_runs = PRIOR_RUNS + recovered_runs
@@ -771,19 +816,16 @@ for h in history:
 
 aggregated = []
 for entries in grouped.values():
-    aggregated.append({
+    agg = {
         "config_object": entries[0]["config_object"],
         "n_seeds_evaluated": len(entries),
         "dalys": float(np.mean([e["dalys"] for e in entries])),
-        "cost_violation": float(np.mean([e["cost_violation"] for e in entries])),
-        "hr_violation": float(np.mean([e["hr_violation"] for e in entries])),
-        "stock_violation": float(np.mean([e["stock_violation"] for e in entries])),
-    })
+    }
+    for name in CONSTRAINT_NAMES:
+        agg[name] = float(np.mean([e[name] for e in entries]))
+    aggregated.append(agg)
 
-feasible = [
-    a for a in aggregated
-    if a["cost_violation"] == 0 and a["hr_violation"] == 0 and a["stock_violation"] == 0
-]
+feasible = [a for a in aggregated if all(a[name] == 0 for name in CONSTRAINT_NAMES)]
 best = min(feasible, key=lambda a: a["dalys"])
 print(
     "Best feasible config:", dict(best["config_object"]),

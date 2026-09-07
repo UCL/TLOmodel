@@ -69,8 +69,18 @@ def _config_frame(records: list[dict]) -> pd.DataFrame:
     like multiple independent proposals and distort every trend check
     below. One row per distinct config, in the order each was first
     seen in the log (proposal_index), with:
-      - mean_dalys, mean violations, feasible (all violations <= 0)
+      - mean_dalys, mean of every violation column, feasible (all
+        violations <= 0)
       - n_seeds (how many times this config was evaluated)
+
+    Violation column names are discovered DYNAMICALLY (any column
+    ending in "_violation") rather than hardcoded - this file cannot
+    import optimisation_pipeline.py to get its current constraint list
+    (that module runs the live pipeline at import time), so it stays
+    correct automatically regardless of how many constraints exist or
+    what they're named (currently the period-bucketed
+    hiv_hrh_violation_p1..N / hiv_consumable_violation_p1..N plus
+    hr_violation/stock_violation).
 
     config_key() and get_best_feasible_dalys() are imported directly
     from convergence_monitoring.py - the same functions the live
@@ -84,20 +94,20 @@ def _config_frame(records: list[dict]) -> pd.DataFrame:
     df["cfg_key"] = df["config_object"].apply(config_key)
     df["order"] = range(len(df))  # file order = completion-order proxy
 
-    grouped = df.groupby("cfg_key").agg(
-        mean_dalys=("dalys", "mean"),
-        cost_violation=("cost_violation", "mean"),
-        hr_violation=("hr_violation", "mean"),
-        stock_violation=("stock_violation", "mean"),
-        n_seeds=("seed", "count"),
-        first_order=("order", "min"),
-    ).reset_index()
+    violation_cols = [c for c in df.columns if c.endswith("_violation")]
 
-    grouped["feasible"] = (
-        (grouped["cost_violation"] <= 0)
-        & (grouped["hr_violation"] <= 0)
-        & (grouped["stock_violation"] <= 0)
-    )
+    agg_kwargs = {"mean_dalys": ("dalys", "mean")}
+    for col in violation_cols:
+        agg_kwargs[col] = (col, "mean")
+    agg_kwargs["n_seeds"] = ("seed", "count")
+    agg_kwargs["first_order"] = ("order", "min")
+
+    grouped = df.groupby("cfg_key").agg(**agg_kwargs).reset_index()
+
+    grouped["feasible"] = True
+    for col in violation_cols:
+        grouped["feasible"] &= (grouped[col] <= 0)
+
     grouped = grouped.sort_values("first_order").reset_index(drop=True)
     grouped["proposal_index"] = range(len(grouped))
     return grouped
