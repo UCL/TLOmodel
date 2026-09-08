@@ -60,11 +60,11 @@ COUNT_INDICATORS = [
     "penta3_under1",
     "measles1_under1",
     "fully_immunised_under1",
-    "live_births_total",
+    #"live_births_total",
     "htc_tests_new",
     "anc_total_visits",
     "cervical_screening_total",
-    "pnc_within_2wks",
+    #"pnc_within_2wks",
 ]
 COMPOSITE_INDICATORS: dict[str, list[str]] = {
     "htc_tests_new": ["htc_results_new_negative", "htc_results_new_positive"],
@@ -110,31 +110,17 @@ MIN_YEAR_BY_INDICATOR: dict[str, int] = {
 }
 
 HARD_CEILINGS = { # based on visual inspection of data
-    "anc1_coverage": 2000,
-    "anc4_coverage": 600,
-    "anc_first_trimester_starts": 2000,
-    "anc_new_attendees": 10000,
+
     "anc_total_visits": 5000,
     "bcg_under1": 20000,
-    "cataract_surgical_coverage": 300,
-    "cervical_screening_30_44": 20,
-    "cervical_screening_total": 200000,
-    "diarrhoea_incidence_rate": 2000,
-    "fp_acceptors_condoms": 30,
-    "fp_acceptors_injectable": 100,
-    "fp_acceptors_pills": 20,
-    "fp_subsequent_clients_pct": 3000,
-    "fp_subsequent_clients_total": 50000,
-    "fp_total_clients": 120000,
-    "fully_immunised_outreach": 10000,
-    "fully_immunised_outreach_alt": 2000,
-    "fully_immunised_under1": 10000,
+    "cervical_screening_total": 5000,
+    "fp_subsequent_clients_total": 3000,
+    "fp_total_clients": 3000,
+    "fully_immunised_under1": 1000,
     "htc_results_new_negative": 15000,
     "htc_results_new_positive": 2000,
-    "institutional_delivery_rate": 10000,
     "ipd_total_admissions": 20000,
     "live_births_total": 6000,
-    "malaria_confirmed_cases": 20000,
     "measles1_under1": 2000,
     "opd_attendance": 70000,
     "penta3_under1": 2000,
@@ -143,9 +129,7 @@ HARD_CEILINGS = { # based on visual inspection of data
     "pnc_within_2wks": 5000,
     "pneumonia_incidence_u5": 5,
     "skilled_deliveries": 3000,
-    "tb_hh_referred_female": 10,
-    "tb_hh_referred_male": 10,
-    "vitA_postnatal_outreach": 12000,
+
     "vmmc_first_visits": 7000,
 }
 
@@ -176,14 +160,14 @@ SUPPORT_HIGH_PCTILE = 99.9
 WBGT_VAR = "wbgt_day"
 SPLINE_DF = 3
 LAG_MONTHS = [1,2,3]
-SA_LAG = False
+SA_LAG = True
 if SA_LAG:
     LAG_SUFFIX = "_with_lags"
 else:
     LAG_SUFFIX = ""
 CENTER = True
 MIN_OBS = 24
-MIN_OBS_COVERAGE = 0.5
+MIN_OBS_COVERAGE = 0
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
 CLUSTER_COL = "Dist"
@@ -234,7 +218,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 USE_PARALLEL = False
 N_WORKERS = min(cpu_count() - 1, 4)
 
-WINSORIZE = False
+WINSORIZE = True
 WINSORIZE_BY_INDICATOR: dict[str, float] = {
     # "opd_attendance": 0.999,
     # "ipd_total_admissions": 0.999,
@@ -333,7 +317,16 @@ def load_indicator_panel(indicator: str, panel_dir: str) -> pd.DataFrame:
     base[indicator] = y_sum
     base = base.drop(columns=[c for c in components if c in base.columns])
     return base
+import pyfixest as pf
 
+def fit_pois_absorbed(rhs_terms, fe_terms, data, cluster_col, y_col="y_int"):
+    """Poisson with absorbed FE and cluster-robust SEs.
+    rhs_terms: list of non-absorbed regressors (splines, lags, year_c, covid).
+    fe_terms:  list of FE to absorb, e.g. ['facility', 'month'].
+    """
+    fml = f"{y_col} ~ {' + '.join(rhs_terms)} | {' + '.join(fe_terms)}"
+    m = pf.fepois(fml, data=data, vcov={"CRV1": cluster_col})
+    return m
 # ===========================================================================
 # Jackknife CI helper (respects ONLY_DEFICITS via aggregator arg)
 # ===========================================================================
@@ -1224,6 +1217,7 @@ if __name__ == "__main__":
             clim = clim[clim["date"].dt.year.between(min_year_projection, max_year_projection)].copy()
             clim["year"] = clim["date"].dt.year
             clim["month"] = clim["date"].dt.month
+
             return clim, None
 
         all_proj_summary = []
@@ -1363,7 +1357,7 @@ if __name__ == "__main__":
                     )
                     dist_agg["indicator"], dist_agg["ssp"], dist_agg["tier"] = ind, ssp, tier
                     dist_agg.to_csv(
-                        f"{OUT_DIR}projection_district_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                        f"{OUT_DIR}projection_district_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1495,167 +1489,191 @@ if __name__ == "__main__":
     # ===========================================================================
     # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
     # ===========================================================================
-    COUNTERFACTUAL = True
-    CF_LABEL = "ERA5_periindustrial_1940_1948"
-    CF_WBGT_FILE = (
-        f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_extreme_indices_facility_{CF_LABEL}.csv"
-        if WBGT_VAR == "wbgt5x_day"
-        else f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_monthly_mean_facility_{CF_LABEL}.csv"
-    )
-    if COUNTERFACTUAL:
-        print(f"\nCounterfactual scenario: {CF_LABEL}")
-        cf_path = CF_WBGT_FILE
-        if not os.path.exists(cf_path):
-            print(f"  SKIP counterfactual: missing {cf_path}")
-        else:
-            cf = pd.read_csv(cf_path, parse_dates=["date"])
-            cf["facility"] = cf["facility"].astype(str).str.strip()
-            cf["date"] = cf["date"].dt.to_period("M").dt.to_timestamp()
-            for col in (WBGT_VAR, PRECIP_COL):
-                if col not in cf.columns:
-                    raise KeyError(f"{cf_path}: {col!r} missing (have {list(cf.columns)})")
-            cf = cf.sort_values(["facility", "date"]).reset_index(drop=True)
-            for k in LAG_MONTHS:
-                cf[f"{WBGT_VAR}_lag{k}"] = cf.groupby("facility")[WBGT_VAR].shift(k)
-            cf["year"], cf["month"] = cf["date"].dt.year, cf["date"].dt.month
-            print(
-                f"  {CF_LABEL}: {len(cf):,} rows, {cf['facility'].nunique()} facilities, "
-                f"{cf['year'].min()}–{cf['year'].max()}"
-            )
+        # ===========================================================================
+        COUNTERFACTUAL = True
+        CF_LABEL = "ERA5_periindustrial_1940_1948"
+        CF_WBGT_FILE = (
+            f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_extreme_indices_facility_{CF_LABEL}.csv"
+            if WBGT_VAR == "wbgt5x_day"
+            else f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_monthly_mean_facility_{CF_LABEL}.csv"
+        )
+        if COUNTERFACTUAL:
+            print(f"\nCounterfactual scenario: {CF_LABEL}")
+            cf_path = CF_WBGT_FILE
+            if not os.path.exists(cf_path):
+                print(f"  SKIP counterfactual: missing {cf_path}")
+            else:
+                cf = pd.read_csv(cf_path, parse_dates=["date"])
+                cf["facility"] = cf["facility"].astype(str).str.strip()
+                cf["date"] = cf["date"].dt.to_period("M").dt.to_timestamp()
+                for col in (WBGT_VAR, PRECIP_COL):
+                    if col not in cf.columns:
+                        raise KeyError(f"{cf_path}: {col!r} missing (have {list(cf.columns)})")
+                cf = cf.sort_values(["facility", "date"]).reset_index(drop=True)
 
-            cf_rows = []
-            for res in results:
-                ind = res["indicator"]
-                shifts = res["_shifts"]
-                design_map = res["_design_map"]
-                spline_cols = res["_spline_cols"]
-                train_facs = set(res["_train_facs"])
-                model_wx = res["_model_wx"]
-                model_base = res["_model_base"]
-                support = res["_wbgt_support"]
+                # Create lags if SA_LAG is True
+                if SA_LAG:
+                    for k in LAG_MONTHS:
+                        cf[f"{WBGT_VAR}_lag{k}"] = cf.groupby("facility")[WBGT_VAR].shift(k)
 
-                df = cf[cf["facility"].isin(train_facs)].copy()
-                wbgt_needed = [WBGT_VAR, PRECIP_COL] + [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
-                df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
-                if df.empty:
-                    print(f"    {ind}: no facility overlap in counterfactual — skipping")
-                    continue
+                cf["year"], cf["month"] = cf["date"].dt.year, cf["date"].dt.month
+                print(
+                    f"  {CF_LABEL}: {len(cf):,} rows, {cf['facility'].nunique()} facilities, "
+                    f"{cf['year'].min()}–{cf['year'].max()}"
+                )
 
-                # Diagnostic BEFORE clipping: how far is the CF from training support?
-                frac_below_raw = float((df[WBGT_VAR] < support["p_lo"]).mean())
-                frac_above_raw = float((df[WBGT_VAR] > support["p_hi"]).mean())
-                min_cf = float(df[WBGT_VAR].min())
-                max_cf = float(df[WBGT_VAR].max())
-                if frac_below_raw > 0.05 or frac_above_raw > 0.05:
-                    print(
-                        f"    {ind}: CF WBGT range [{min_cf:.2f}, {max_cf:.2f}] °C; "
-                        f"{100 * frac_below_raw:.1f}% below p{SUPPORT_LOW_PCTILE:g} "
-                        f"({support['p_lo']:.2f}), "
-                        f"{100 * frac_above_raw:.1f}% above p{SUPPORT_HIGH_PCTILE:g} "
-                        f"({support['p_hi']:.2f}) — will be clipped"
+                cf_rows = []
+                for res in results:
+                    ind = res["indicator"]
+                    shifts = res["_shifts"]
+                    design_map = res["_design_map"]
+                    spline_cols = res["_spline_cols"]
+                    train_facs = set(res["_train_facs"])
+                    model_wx = res["_model_wx"]
+                    model_base = res["_model_base"]
+                    support = res["_wbgt_support"]
+
+                    df = cf[cf["facility"].isin(train_facs)].copy()
+
+                    # Build required columns based on SA_LAG
+                    wbgt_needed = [WBGT_VAR, PRECIP_COL]
+                    if SA_LAG:
+                        wbgt_needed += [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
+
+                    df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
+                    if df.empty:
+                        print(f"    {ind}: no facility overlap in counterfactual — skipping")
+                        continue
+
+                    # Diagnostic BEFORE clipping
+                    frac_below_raw = float((df[WBGT_VAR] < support["p_lo"]).mean())
+                    frac_above_raw = float((df[WBGT_VAR] > support["p_hi"]).mean())
+                    min_cf = float(df[WBGT_VAR].min())
+                    max_cf = float(df[WBGT_VAR].max())
+                    if frac_below_raw > 0.05 or frac_above_raw > 0.05:
+                        print(
+                            f"    {ind}: CF WBGT range [{min_cf:.2f}, {max_cf:.2f}] °C; "
+                            f"{100 * frac_below_raw:.1f}% below p{SUPPORT_LOW_PCTILE:g} "
+                            f"({support['p_lo']:.2f}), "
+                            f"{100 * frac_above_raw:.1f}% above p{SUPPORT_HIGH_PCTILE:g} "
+                            f"({support['p_hi']:.2f}) — will be clipped"
+                        )
+
+                    # ----- Clip WBGT and lags to training support ---------------
+                    df, clip_diag = _clip_wbgt_to_support(df, support)
+
+                    df["covid"] = 0
+
+                    # --- FIX: Use the ACTUAL year from the counterfactual data ---
+                    # This mirrors the actual model where year_c = year - mean_year
+                    # The counterfactual data has years 1940-1948, so this gives
+                    # year_c = 1940 - mean_year, 1941 - mean_year, etc.
+                    # This is exactly what the actual model does with historical years
+                    df["year_c"] = df["year"] - shifts["year"]
+
+                    df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
+
+                    xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
+                    B = np.asarray(patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0], dtype=float)
+                    for i_col, c in enumerate(spline_cols):
+                        df[c] = B[:, i_col]
+
+                    if SA_LAG:
+                        for k in LAG_MONTHS:
+                            df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+
+                    # Build required columns based on SA_LAG
+                    need = ["covid", "year_c", "precip_c"] + list(spline_cols)
+                    if SA_LAG:
+                        need += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
+
+                    df = df.dropna(subset=need).reset_index(drop=True)
+                    if df.empty:
+                        continue
+
+                    mu_wx = np.asarray(model_wx.predict(df), dtype=float)
+                    mu_base = np.asarray(model_base.predict(df), dtype=float)
+                    ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
+                    df = df.loc[ok].reset_index(drop=True)
+                    mu_wx, mu_base = mu_wx[ok], mu_base[ok]
+                    if df.empty:
+                        continue
+
+                    df["mu_a"], df["mu_b"] = mu_wx, mu_base
+                    df = df.merge(res["_fac_district"], on="facility", how="left")
+                    df["indicator"] = ind
+
+                    df[
+                        [
+                            "indicator",
+                            "facility",
+                            CLUSTER_COL,
+                            "year",
+                            "month",
+                            "date",
+                            WBGT_VAR,
+                            PRECIP_COL,
+                            "mu_a",
+                            "mu_b",
+                        ]
+                    ].to_csv(
+                        f"{OUT_DIR}counterfactual_facility_{ind}_{CF_LABEL}_{WBGT_VAR}.csv",
+                        index=False,
                     )
 
-                # ----- Clip WBGT and lags to training support ---------------
-                df, clip_diag = _clip_wbgt_to_support(df, support)
+                    df_agg = _apply_deficit_filter(df, "mu_b", "mu_a")
+                    if df_agg.empty:
+                        continue
+                    tot_a, tot_b = float(df_agg["mu_a"].sum()), float(df_agg["mu_b"].sum())
+                    cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
 
-                df["covid"] = 0
-                df["year_c"] = LAST_HIST_YEAR - shifts["year"]
-                df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
+                    _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
+                        df_agg["mu_a"].values,
+                        df_agg["mu_b"].values,
+                        df_agg["facility"].values,
+                        sign="a_minus_b",
+                    )
 
-                xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
-                B = np.asarray(patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0], dtype=float)
-                for i_col, c in enumerate(spline_cols):
-                    df[c] = B[:, i_col]
-                for k in LAG_MONTHS:
-                    df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+                    hist_row = summary_df.loc[summary_df["indicator"] == ind]
+                    hist_deficit = float(hist_row["deficit_pct"].iloc[0]) if not hist_row.empty else np.nan
 
-                need = (
-                    ["covid", "year_c", "precip_c"] + list(spline_cols) + [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
-                )
-                df = df.dropna(subset=need).reset_index(drop=True)
-                if df.empty:
-                    continue
+                    cf_rows.append(
+                        {
+                            "indicator": ind,
+                            "scenario": CF_LABEL,
+                            "only_deficits": ONLY_DEFICITS,
+                            "n_facility_months": len(df_agg),
+                            "n_facilities": df_agg["facility"].nunique(),
+                            "mean_wbgt_cf": float(df_agg[WBGT_VAR].mean()),
+                            "mean_precip_cf": float(df_agg[PRECIP_COL].mean()),
+                            "deficit_pct_cf": cf_deficit,
+                            "cf_ci_lo": cf_lo,
+                            "cf_ci_hi": cf_hi,
+                            "deficit_pct_historical": hist_deficit,
+                            "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
+                            "wbgt_train_p_lo": support["p_lo"],
+                            "wbgt_train_p_hi": support["p_hi"],
+                            "frac_clipped_lo": clip_diag["frac_clipped_lo"],
+                            "frac_clipped_hi": clip_diag["frac_clipped_hi"],
+                            "n_clipped_lo": clip_diag["n_clipped_lo"],
+                            "n_clipped_hi": clip_diag["n_clipped_hi"],
+                            "cf_wbgt_min_raw": min_cf,
+                            "cf_wbgt_max_raw": max_cf,
+                            "sa_lag": SA_LAG,
+                        }
+                    )
+                    print(
+                        f"    {ind}: cf={cf_deficit:+.2f}%  hist={hist_deficit:+.2f}%  "
+                        f"excess={hist_deficit - cf_deficit:+.2f}pp"
+                    )
 
-                mu_wx = np.asarray(model_wx.predict(df), dtype=float)
-                mu_base = np.asarray(model_base.predict(df), dtype=float)
-                ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
-                df = df.loc[ok].reset_index(drop=True)
-                mu_wx, mu_base = mu_wx[ok], mu_base[ok]
-                if df.empty:
-                    continue
-
-                df["mu_a"], df["mu_b"] = mu_wx, mu_base
-                df = df.merge(res["_fac_district"], on="facility", how="left")
-                df["indicator"] = ind
-
-                df[
-                    [
-                        "indicator",
-                        "facility",
-                        CLUSTER_COL,
-                        "year",
-                        "month",
-                        "date",
-                        WBGT_VAR,
-                        PRECIP_COL,
-                        "mu_a",
-                        "mu_b",
-                    ]
-                ].to_csv(
-                    f"{OUT_DIR}counterfactual_facility_{ind}_{CF_LABEL}_{WBGT_VAR}.csv",
-                    index=False,
-                )
-
-                df_agg = _apply_deficit_filter(df, "mu_b", "mu_a")
-                if df_agg.empty:
-                    continue
-                tot_a, tot_b = float(df_agg["mu_a"].sum()), float(df_agg["mu_b"].sum())
-                cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
-
-                _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
-                    df_agg["mu_a"].values,
-                    df_agg["mu_b"].values,
-                    df_agg["facility"].values,
-                    sign="a_minus_b",
-                )
-
-                hist_row = summary_df.loc[summary_df["indicator"] == ind]
-                hist_deficit = float(hist_row["deficit_pct"].iloc[0]) if not hist_row.empty else np.nan
-
-                cf_rows.append(
-                    {
-                        "indicator": ind,
-                        "scenario": CF_LABEL,
-                        "only_deficits": ONLY_DEFICITS,
-                        "n_facility_months": len(df_agg),
-                        "n_facilities": df_agg["facility"].nunique(),
-                        "mean_wbgt_cf": float(df_agg[WBGT_VAR].mean()),
-                        "mean_precip_cf": float(df_agg[PRECIP_COL].mean()),
-                        "deficit_pct_cf": cf_deficit,
-                        "cf_ci_lo": cf_lo,
-                        "cf_ci_hi": cf_hi,
-                        "deficit_pct_historical": hist_deficit,
-                        "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
-                        "wbgt_train_p_lo": support["p_lo"],
-                        "wbgt_train_p_hi": support["p_hi"],
-                        "frac_clipped_lo": clip_diag["frac_clipped_lo"],
-                        "frac_clipped_hi": clip_diag["frac_clipped_hi"],
-                        "n_clipped_lo": clip_diag["n_clipped_lo"],
-                        "n_clipped_hi": clip_diag["n_clipped_hi"],
-                        "cf_wbgt_min_raw": min_cf,
-                        "cf_wbgt_max_raw": max_cf,
-                    }
-                )
-                print(
-                    f"    {ind}: cf={cf_deficit:+.2f}%  hist={hist_deficit:+.2f}%  "
-                    f"excess={hist_deficit - cf_deficit:+.2f}pp"
-                )
-
-            if cf_rows:
-                pd.DataFrame(cf_rows).to_csv(
-                    f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
-                    index=False,
-                )
-                print(f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv")
+                if cf_rows:
+                    pd.DataFrame(cf_rows).to_csv(
+                        f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                        index=False,
+                    )
+                    print(
+                        f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv"
+                    )
     print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
     print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())
