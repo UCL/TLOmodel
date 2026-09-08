@@ -68,6 +68,7 @@ from smac_scenario import TloOptimisationScenario  # imported directly - it's a
                                                        # not loaded from a file path
 from constrained_ei import ConstrainedEI  # the module built earlier
 from postprocess_output import postprocess_run
+from checkpoint_seeds import run_number_for_seed
 from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
     json_safe_config,
@@ -107,24 +108,24 @@ CONFIG_FILE = "tlo.conf"
 
 # --- Suspend/resume (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations) ---
 # When SUSPENDED_JOB_ID is set (not None), every submission resumes from
-# the SAME pre-recorded suspended simulation - i.e. every new SMAC trial
-# shares identical pre-resume history, and only parameters affecting
-# POST-resume behaviour can meaningfully differ between trials (confirmed
-# with the person building this pipeline: all their tunable parameters
-# are post-resume only, so this is a safe fit for their use case - see
-# the caveat in submit_azure_job()'s docstring for what would go wrong
-# if that weren't true).
+# a pre-resume checkpoint - but WHICH checkpoint (which run number under
+# SUSPENDED_JOB_ID) now depends on the trial's own SMAC-issued seed, via
+# checkpoint_seeds.run_number_for_seed(). This replaces the earlier
+# fixed-SUSPENDED_JOB_RUN design: since a config's own POST-resume
+# behaviour still needs to vary correctly by seed for SMAC's
+# seed-matched comparisons to mean anything (see
+# checkpoint_seeds.py's module docstring), every trial should resume
+# from the checkpoint that was generated under ITS OWN seed - not always
+# the same one - so post-resume stochasticity genuinely differs seed to
+# seed, matching what a non-suspended run would have produced.
 #
-# SUSPENDED_JOB_ID/DRAW/RUN together identify exactly ONE suspended
-# pickle - <job_id>/<draw>/<run>/suspended_simulation.pickle on the file
-# share - to resume from every time. Draw/run default to 0, matching
-# this pipeline's own convention (number_of_draws=1, runs_per_draw=1),
-# but are left overridable in case the suspended job being resumed from
-# was created outside this pipeline (e.g. a manually-run multi-draw
-# `tlo batch-submit ... --suspend-date ...`).
+# SUSPENDED_JOB_ID/DRAW identify the JOB the pool of checkpoints lives
+# under (<job_id>/<draw>/<run_number>/suspended_simulation.pickle on the
+# file share) - draw defaults to 0, matching this pipeline's own
+# convention (number_of_draws=1), but is left overridable in case the
+# checkpoint pool was generated outside this pipeline.
 SUSPENDED_JOB_ID: str | None = None   # e.g. "long_run_all_diseases-2025-08-12T133044Z"
 SUSPENDED_JOB_DRAW = 0
-SUSPENDED_JOB_RUN = 0
 
 _config = None  # lazily loaded, see _get_config()
 _commit_hexsha = None  # resolved once per process, see _get_commit()
@@ -278,15 +279,12 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
-    # If SUSPENDED_JOB_ID is set, every task resumes from the SAME
-    # suspended pickle rather than starting fresh. Path mirrors the
-    # structure documented on the wiki (<job_id>/<draw>/<run>/
-    # suspended_simulation.pickle), referenced via the SAME file-share
-    # mount every other path in this function already uses - since
-    # every job this pipeline submits copies its full working directory
-    # (including any suspended_simulation.pickle) back to the file
-    # share via the final `cp -r` below, an earlier suspended job's
-    # pickle is already sitting there to be referenced.
+    # If SUSPENDED_JOB_ID is set, this task resumes from the pre-resume
+    # checkpoint that was generated under THIS TRIAL'S OWN seed - looked
+    # up via run_number_for_seed(seed), not a fixed run number. Path
+    # mirrors the structure documented on the wiki (<job_id>/<draw>/
+    # <run>/suspended_simulation.pickle), referenced via the SAME
+    # file-share mount every other path in this function already uses.
     #
     # ASSUMPTION, not yet independently verified: this assumes
     # `tlo batch-run` itself accepts --resume-simulation <path> directly
@@ -297,12 +295,19 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # before invoking batch-run remotely). Worth confirming with a
     # cheap manual test (or `tlo batch-run --help`) before relying on
     # this for a real, costly run.
+    #
+    # run_number_for_seed() raises KeyError loudly if `seed` isn't one
+    # of the precomputed checkpoint seeds - deliberately NOT caught
+    # here, so a desynchronized/incomplete checkpoint pool fails this
+    # submission outright rather than silently resuming from the wrong
+    # (or a nonexistent) checkpoint.
     resume_arg = ""
     if SUSPENDED_JOB_ID is not None:
+        suspended_job_run = run_number_for_seed(seed)
         suspended_pickle_path = (
             "${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
             + f"{file_share_mount_point}/{tlo_config['DEFAULT']['USERNAME']}/"
-              f"{SUSPENDED_JOB_ID}/{SUSPENDED_JOB_DRAW}/{SUSPENDED_JOB_RUN}/suspended_simulation.pickle"
+              f"{SUSPENDED_JOB_ID}/{SUSPENDED_JOB_DRAW}/{suspended_job_run}/suspended_simulation.pickle"
         )
         resume_arg = f"--resume-simulation {suspended_pickle_path}"
 

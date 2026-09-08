@@ -468,6 +468,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "overwrite the annual testing rate for adults during optimisation"
         ),
+        "config_target_VL": Parameter(
+            Types.REAL,
+            "parameter to target VL testing, to be used during optimisation"
+        ),
+        "config_target_IPT": Parameter(
+            Types.REAL,
+            "parameter to target IPT testing, to be used during optimisation"
+        ),
         # ------------------ program-related parameters ------------------ #
         "interval_for_viral_load_measurement_months": Parameter(
             Types.REAL,
