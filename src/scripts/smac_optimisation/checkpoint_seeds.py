@@ -1,14 +1,13 @@
 """
-Maps a SMAC-issued seed (info.seed) to the run number its corresponding
-pre-resume checkpoint was generated and stored under - for use with
-TLOmodel's suspend/resume feature
+Deterministic, seed-derived naming for pre-resume checkpoints - for use
+with TLOmodel's suspend/resume feature
 (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations).
 
 Kept separate from optimisation_pipeline.py's submission/polling/ask-tell
 orchestration, same rationale as the other standalone modules in this
 project - this can be read, tested, or reused independently.
 
-BACKGROUND, for why this mapping exists at all:
+BACKGROUND, for why this file exists at all:
 SMAC's Intensifier compares a challenger against the incumbent using
 runhistory.average_cost() over the INTERSECTION of seeds each has been
 evaluated on (confirmed directly from smac/intensifier/abstract_intensifier.py's
@@ -33,20 +32,41 @@ generated ONCE, ahead of time, and referenced by every trial that later
 gets one of those same seeds - rather than recomputing the expensive
 pre-resume portion of the simulation on every single trial.
 
+WHY SEED-DERIVED NAMING, NOT job_id+run_number:
+TLO's resume feature does NOT accept a seed at load time
+(Simulation.load_from_pickle(pickle_path, log_config=None) - no seed
+parameter at all) - the pickled Simulation's RNG state is already
+whatever it was at suspend time. So the ONLY way a resumed trial's
+post-resume randomness can depend on its own seed is by resuming from
+the CHECKPOINT generated under that exact seed. And matching TLO's own
+low_bias_32(scenario_seed + sample_number) formula requires each
+checkpoint be generated as its OWN single-run submission
+(sample_number=0, scenario.seed set DIRECTLY to the target seed) - NOT
+batched as multiple runs under one shared scenario, which would instead
+vary sample_number under a fixed scenario_seed and produce entirely
+different (and wrong) low_bias_32 outputs.
+
+Since each checkpoint is therefore its own separate Azure job, Azure's
+usual per-job naming (filename+timestamp+uuid, see submit_azure_job) is
+deliberately UNPREDICTABLE, to avoid collisions - which means it can't
+be reconstructed later purely from a seed value without keeping a
+separate mapping around. Using a DETERMINISTIC, seed-derived job id
+instead sidesteps that: given a seed, the checkpoint's location can be
+computed directly, with no lookup table needed for path construction at
+all - CHECKPOINT_SEEDS is only needed to know WHICH seeds to generate
+checkpoints for in the first place, not to find them again afterwards.
+
 CONFIDENCE CAVEAT, worth keeping in mind: this replication is verified
 against only the first TWO real seeds observed so far, not against a
 full max_config_calls-length run. It also depends on scenario.seed
 staying 0 (unset) going forward - if that Scenario(...) call is ever
 changed to pass an explicit seed=, this whole mapping silently
-desynchronizes from what SMAC actually issues. run_number_for_seed()
-raises loudly (KeyError) rather than guessing, specifically to surface
-that kind of desync immediately if it ever happens, rather than
+desynchronizes from what SMAC actually issues. is_known_checkpoint_seed()
+exists specifically to surface that kind of desync loudly, rather than
 silently referencing the wrong (or no) checkpoint.
 """
 
 from __future__ import annotations
-
-from pathlib import Path
 
 import numpy as np
 
@@ -58,47 +78,44 @@ MAX_CONFIG_CALLS = 5  # must match max_config_calls used by the real SMAC intens
 
 # The exact, ordered sequence of seed values SMAC is expected to draw
 # from RandomState(scenario.seed). Computed ONCE, independently -
-# RandomState(0) is fully deterministic, so run_number is simply this
-# list's own index, not something read back from SMAC itself.
+# RandomState(0) is fully deterministic, so this doesn't need to be read
+# back from SMAC itself, only replicated ahead of time. Used by the
+# (separate) checkpoint-generation step to know which seeds to generate
+# checkpoints for - NOT used for path construction, which is derived
+# directly from a given seed instead (see checkpoint_job_id() below).
 CHECKPOINT_SEEDS = [
     int(s) for s in np.random.RandomState(0).randint(low=0, high=2**31 - 1, size=MAX_CONFIG_CALLS)
 ]
-
-# seed -> run_number. A plain lookup table, not a true inverse of
-# RandomState.randint (which has no closed form) - this works because
-# the forward set is small and fully known in advance (MAX_CONFIG_CALLS
-# values), so a table is both correct and trivially cheap to build.
-_RUN_NUMBER_BY_SEED = {seed: i for i, seed in enumerate(CHECKPOINT_SEEDS)}
+_CHECKPOINT_SEEDS_SET = set(CHECKPOINT_SEEDS)  # O(1) membership check, see is_known_checkpoint_seed()
 
 
-def run_number_for_seed(seed: int) -> int:
+def is_known_checkpoint_seed(seed: int) -> bool:
+    """True if `seed` is one of the MAX_CONFIG_CALLS precomputed values a
+    checkpoint should exist for."""
+    return seed in _CHECKPOINT_SEEDS_SET
+
+
+def checkpoint_job_id(seed: int) -> str:
     """
-    Maps a SMAC-issued seed (info.seed) to the run number its
-    corresponding pre-resume checkpoint was generated and stored under.
+    Deterministic, seed-derived Azure job id for this seed's pre-resume
+    checkpoint - deliberately NOT the usual filename+timestamp+uuid
+    scheme submit_azure_job() uses for real trials (that scheme is
+    intentionally unpredictable, to avoid collisions across many
+    concurrent submissions). This one needs to be predictable instead,
+    so a resuming trial can compute it directly from its own seed with
+    no lookup table involved. Only ~MAX_CONFIG_CALLS of these ever get
+    submitted, once, so collision risk is negligible in practice.
 
-    Raises KeyError loudly (not silently) if `seed` isn't one of the
-    MAX_CONFIG_CALLS precomputed values - this means either (a)
-    MAX_CONFIG_CALLS is set smaller than the intensifier's actual seed
-    pool size, or (b) the RandomState(0) replication has desynchronized
-    from SMAC's actual internal sequence (e.g. scenario.seed no longer
-    being 0). Both are worth surfacing immediately rather than silently
-    referencing a missing or mismatched checkpoint.
+    Raises ValueError if `seed` isn't a known checkpoint seed - same
+    "fail loudly on desync" reasoning as elsewhere in this file, applied
+    at the point a caller is about to construct a path/job id from an
+    unexpected seed value.
     """
-    if seed not in _RUN_NUMBER_BY_SEED:
-        raise KeyError(
+    if not is_known_checkpoint_seed(seed):
+        raise ValueError(
             f"seed {seed} is not among the {MAX_CONFIG_CALLS} precomputed checkpoint "
             f"seeds {CHECKPOINT_SEEDS}. Either MAX_CONFIG_CALLS needs increasing, or "
             f"the RandomState(0) replication has desynchronized from SMAC's actual "
             f"seed sequence for this run."
         )
-    return _RUN_NUMBER_BY_SEED[seed]
-
-
-def checkpoint_path_for_seed(checkpoint_root: str | Path, seed: int) -> Path:
-    """
-    Local/relative path to the pre-resume checkpoint for a given
-    SMAC-issued seed, following the <checkpoint_root>/0/<run_number>
-    convention (draw=0, matching this pipeline's number_of_draws=1).
-    """
-    run_number = run_number_for_seed(seed)
-    return Path(checkpoint_root) / "0" / str(run_number)
+    return f"checkpoint-seed{seed}"
