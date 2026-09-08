@@ -58,6 +58,7 @@ from smac import HyperparameterOptimizationFacade, Scenario
 from smac.runhistory.dataclasses import TrialInfo, TrialValue
 from smac.runhistory.enumerations import StatusType
 
+from tlo import Date
 from tlo.cli import (
     is_file_clean, load_config, get_batch_client,
     create_file_share, create_directory, upload_local_file,
@@ -66,9 +67,13 @@ from tlo.cli import (
 from smac_scenario import TloOptimisationScenario  # imported directly - it's a
                                                        # plain Python class now,
                                                        # not loaded from a file path
+from smac_scenario_suspend import TloCheckpointScenario  # used ONLY for checkpoint
+    # generation, never real trials - see generate_checkpoint_job(). Genuinely
+    # different class name from smac_scenario.py's own TloOptimisationScenario now,
+    # so no import alias is needed to avoid a collision.
 from constrained_ei import ConstrainedEI  # the module built earlier
 from postprocess_output import postprocess_run
-from checkpoint_seeds import run_number_for_seed
+from checkpoint_seeds import checkpoint_job_id, CHECKPOINT_SEEDS
 from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
     json_safe_config,
@@ -104,28 +109,35 @@ SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario.py"  # committed on
                                                                      # only used here
                                                                      # for the git-clean
                                                                      # check, not for loading
+CHECKPOINT_SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario_suspend.py"  # the
+    # scenario used ONLY for checkpoint generation (see
+    # generate_checkpoint_job()) - PATH ASSUMED to match SCENARIO_FILE's own
+    # convention (same directory); confirm this is actually where the file
+    # lives/will be committed.
 CONFIG_FILE = "tlo.conf"
 
 # --- Suspend/resume (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations) ---
-# When SUSPENDED_JOB_ID is set (not None), every submission resumes from
-# a pre-resume checkpoint - but WHICH checkpoint (which run number under
-# SUSPENDED_JOB_ID) now depends on the trial's own SMAC-issued seed, via
-# checkpoint_seeds.run_number_for_seed(). This replaces the earlier
-# fixed-SUSPENDED_JOB_RUN design: since a config's own POST-resume
-# behaviour still needs to vary correctly by seed for SMAC's
-# seed-matched comparisons to mean anything (see
-# checkpoint_seeds.py's module docstring), every trial should resume
-# from the checkpoint that was generated under ITS OWN seed - not always
-# the same one - so post-resume stochasticity genuinely differs seed to
-# seed, matching what a non-suspended run would have produced.
+# When USE_SUSPEND_RESUME is True, every submission resumes from a
+# pre-resume checkpoint whose location is derived DIRECTLY from the
+# trial's own SMAC-issued seed, via checkpoint_seeds.checkpoint_job_id().
 #
-# SUSPENDED_JOB_ID/DRAW identify the JOB the pool of checkpoints lives
-# under (<job_id>/<draw>/<run_number>/suspended_simulation.pickle on the
-# file share) - draw defaults to 0, matching this pipeline's own
-# convention (number_of_draws=1), but is left overridable in case the
-# checkpoint pool was generated outside this pipeline.
-SUSPENDED_JOB_ID: str | None = None   # e.g. "long_run_all_diseases-2025-08-12T133044Z"
-SUSPENDED_JOB_DRAW = 0
+# There is no longer a single shared "SUSPENDED_JOB_ID": each of the
+# MAX_CONFIG_CALLS checkpoints is its OWN separate Azure job. This is
+# required, not a style choice - each checkpoint must be submitted as a
+# single-run job (sample_number=0) with scenario.seed set DIRECTLY to
+# its target seed, since TLO computes
+# simulation_seed = low_bias_32(scenario_seed + sample_number), and a
+# real trial resuming later always has sample_number=0 too
+# (runs_per_draw=1). Batching multiple checkpoints under one shared
+# scenario.seed would instead vary sample_number, producing a
+# completely different (and wrong) low_bias_32 output that no real
+# trial would ever independently reproduce - see checkpoint_seeds.py's
+# module docstring for the full reasoning.
+#
+# Since each checkpoint job is single-run, its output always sits at
+# <checkpoint_job_id(seed)>/0/0/suspended_simulation.pickle - draw=0,
+# run=0, never a variable run number.
+USE_SUSPEND_RESUME = False
 
 _config = None  # lazily loaded, see _get_config()
 _commit_hexsha = None  # resolved once per process, see _get_commit()
@@ -279,12 +291,14 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
-    # If SUSPENDED_JOB_ID is set, this task resumes from the pre-resume
-    # checkpoint that was generated under THIS TRIAL'S OWN seed - looked
-    # up via run_number_for_seed(seed), not a fixed run number. Path
-    # mirrors the structure documented on the wiki (<job_id>/<draw>/
-    # <run>/suspended_simulation.pickle), referenced via the SAME
-    # file-share mount every other path in this function already uses.
+    # If USE_SUSPEND_RESUME is True, this task resumes from the
+    # pre-resume checkpoint generated under THIS TRIAL'S OWN seed - its
+    # job id computed directly via checkpoint_job_id(seed), not looked
+    # up via a shared job + run number (see the module-level comment
+    # above, and checkpoint_seeds.py's docstring, for why each
+    # checkpoint is its own separate job rather than one shared one).
+    # Since each checkpoint job is single-run, its output always sits at
+    # <checkpoint_job_id(seed)>/0/0/suspended_simulation.pickle.
     #
     # ASSUMPTION, not yet independently verified: this assumes
     # `tlo batch-run` itself accepts --resume-simulation <path> directly
@@ -296,18 +310,17 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # cheap manual test (or `tlo batch-run --help`) before relying on
     # this for a real, costly run.
     #
-    # run_number_for_seed() raises KeyError loudly if `seed` isn't one
+    # checkpoint_job_id() raises ValueError loudly if `seed` isn't one
     # of the precomputed checkpoint seeds - deliberately NOT caught
     # here, so a desynchronized/incomplete checkpoint pool fails this
     # submission outright rather than silently resuming from the wrong
     # (or a nonexistent) checkpoint.
     resume_arg = ""
-    if SUSPENDED_JOB_ID is not None:
-        suspended_job_run = run_number_for_seed(seed)
+    if USE_SUSPEND_RESUME:
         suspended_pickle_path = (
             "${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
             + f"{file_share_mount_point}/{tlo_config['DEFAULT']['USERNAME']}/"
-              f"{SUSPENDED_JOB_ID}/{SUSPENDED_JOB_DRAW}/{suspended_job_run}/suspended_simulation.pickle"
+              f"{checkpoint_job_id(seed)}/0/0/suspended_simulation.pickle"
         )
         resume_arg = f"--resume-simulation {suspended_pickle_path}"
 
@@ -341,6 +354,207 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     print(f"[submitted] job_id={job_id}")
 
     return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
+
+
+# --------------------------------------------------------------------------
+# Pre-resume checkpoint generation - the "first part" of suspend/resume.
+#
+# One standalone job per seed in CHECKPOINT_SEEDS, each running only up
+# to SUSPEND_DATE (before any config-dependent behaviour starts) and
+# saving a suspended_simulation.pickle - reused later by every real
+# trial that happens to get that same seed (see checkpoint_seeds.py's
+# module docstring for why each must be its OWN single-run submission,
+# not batched, for TLO's low_bias_32 formula to line up correctly).
+# --------------------------------------------------------------------------
+
+SUSPEND_DATE = Date(2027, 1, 1)  # HYPERPARAMETER: the date at which
+    # config-dependent behaviour starts - matches config_start_year='2027'
+    # in smac_scenario_suspend.py's _get_scenarios(). Everything before
+    # this is identical regardless of config, so it's safe to compute
+    # once per seed and reuse. Confirm this genuinely matches wherever
+    # your scale-up/scenario divergence begins - an early SUSPEND_DATE
+    # wastes the point of this feature (little pre-resume work saved)
+    # and a late one risks checkpointing PAST where config parameters
+    # should have started applying.
+
+
+def azure_job_exists(job_id: str) -> bool:
+    """
+    True if a job with this id already exists on Azure Batch, regardless
+    of its current state (running, completed, failed) - a lightweight
+    existence check, distinct from azure_job_is_finished()/
+    azure_task_succeeded() which check STATE of a job already known to
+    exist. Used by generate_checkpoint_if_needed() to decide whether a
+    submission is even necessary in the first place.
+    """
+    batch_client = _get_batch_client()
+    try:
+        batch_client.job.get(job_id=job_id)
+        return True
+    except Exception:
+        return False
+
+
+def generate_checkpoint_job(seed: int) -> AzureJobHandle:
+    """
+    Submits ONE standalone job that runs only up to SUSPEND_DATE and
+    saves a suspended_simulation.pickle - closely mirrors
+    submit_azure_job()'s own mechanics, with three deliberate
+    differences:
+
+    1. job_id is checkpoint_job_id(seed) - deterministic, not the usual
+       filename+timestamp+uuid scheme - so a later resuming trial can
+       compute this job's location directly from its own seed, with no
+       lookup table involved (see checkpoint_seeds.py).
+    2. scenario.seed is set DIRECTLY to `seed` (not SMAC's info.seed via
+       the normal ask-tell loop - this function is called ahead of the
+       main loop, not from within it), with number_of_draws=1,
+       runs_per_draw=1 (draw=0, run=0), so TLO's
+       low_bias_32(scenario_seed + sample_number=0) here matches exactly
+       what a real trial resuming with info.seed=seed will independently
+       compute for itself.
+    3. The remote command uses --suspend-date instead of running to
+       completion, and skips parse-log/gzip (meaningless for an
+       incomplete run) - just checkpoints and copies the working
+       directory back to the file share, same as normal jobs do for
+       their real outputs.
+
+    ASSUMPTION, not yet independently verified: this assumes
+    `tlo batch-run` accepts --suspend-date <date> directly (mirroring
+    --resume-simulation's documented syntax) - same caveat as
+    submit_azure_job()'s own --resume-simulation assumption, worth
+    confirming with a cheap manual test before relying on this for a
+    real, costly checkpoint-generation run.
+    """
+    commit_hexsha = _get_commit()
+    tlo_config = _get_config()
+
+    tlo_scenario = TloCheckpointScenario()  # smac_scenario_suspend.py's class -
+        # NOT smac_scenario.py's - see the module-level import comment
+    tlo_scenario.seed = seed
+    # number_of_draws/runs_per_draw already correctly 1/1 in
+    # TloCheckpointScenario's own __init__ (single hardcoded scenario) -
+    # set again here explicitly anyway, for defensiveness against that
+    # class's own defaults ever changing.
+    tlo_scenario.number_of_draws = 1
+    tlo_scenario.runs_per_draw = 1
+    tlo_scenario.scenario_path = Path(CHECKPOINT_SCENARIO_FILE)
+
+    run_json = tlo_scenario.save_draws(commit=commit_hexsha)
+
+    file_share_mount_point = "mnt"
+    job_id = checkpoint_job_id(seed)  # deterministic - see docstring point 1
+    azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
+
+    batch_client = _get_batch_client()
+    create_file_share(tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"])
+    for idx in range(len(os.path.split(azure_directory))):
+        create_directory(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
+            "/".join(os.path.split(azure_directory)[: idx + 1]),
+        )
+    upload_local_file(
+        tlo_config["STORAGE"]["CONNECTION_STRING"], run_json,
+        tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + os.path.basename(run_json),
+    )
+
+    pool_node_count = tlo_scenario.number_of_draws * tlo_scenario.runs_per_draw
+    auto_user = batch_models.AutoUserSpecification(
+        elevation_level=batch_models.ElevationLevel.admin, scope=batch_models.AutoUserScope.task,
+    )
+    user_identity = batch_models.UserIdentity(auto_user=auto_user)
+    azure_file_url = "https://{}.file.core.windows.net/{}".format(
+        tlo_config["STORAGE"]["NAME"], tlo_config["STORAGE"]["FILESHARE"],
+    )
+    container_registry = batch_models.ContainerRegistry(
+        registry_server=tlo_config["REGISTRY"]["SERVER"],
+        user_name=tlo_config["REGISTRY"]["NAME"], password=tlo_config["REGISTRY"]["KEY"],
+    )
+    image_name = f"{tlo_config['REGISTRY']['SERVER']}/{tlo_config['REGISTRY']['IMAGE']}:{tlo_config['REGISTRY']['DEFAULT_TAG']}"
+    container_conf = batch_models.ContainerConfiguration(
+        type="dockerCompatible", container_image_names=[image_name], container_registries=[container_registry],
+    )
+    azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
+        account_name=tlo_config["STORAGE"]["NAME"], azure_file_url=azure_file_url,
+        account_key=tlo_config["STORAGE"]["KEY"], relative_mount_path=file_share_mount_point,
+        mount_options="-o rw",
+    )
+    mount_configuration = batch_models.MountConfiguration(
+        azure_file_share_configuration=azure_file_share_configuration,
+    )
+
+    remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
+    azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
+    working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
+
+    command_template = Template("""
+    git fetch origin $commit_hexsha
+    git checkout $commit_hexsha
+    pip install -r requirements/base.txt
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number} --suspend-date $suspend_date
+    cp -r $working_dir/* $remote_azure_directory/.
+    """)
+    command = command_template.substitute(
+        commit_hexsha=commit_hexsha,
+        azure_run_json=azure_run_json,
+        working_dir=working_dir,
+        remote_azure_directory=remote_azure_directory,
+        suspend_date=SUSPEND_DATE.strftime("%Y-%m-%d"),
+    )
+    command = f"/bin/bash -c '{command}'"
+
+    create_job(
+        batch_client, tlo_config["BATCH"]["POOL_VM_SIZE"], pool_node_count, job_id,
+        container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
+    )
+    add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", tlo_scenario, command)
+
+    print(f"[checkpoint submitted] job_id={job_id} seed={seed}")
+    return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
+
+
+def generate_checkpoint_if_needed(seed: int) -> None:
+    """
+    Submits a checkpoint-generation job for `seed`, UNLESS one already
+    exists - checked via azure_job_exists(checkpoint_job_id(seed)), so
+    re-running checkpoint generation (e.g. after a restart) doesn't
+    waste compute regenerating checkpoints that already exist,
+    regardless of whether they're still running, finished successfully,
+    or failed:
+      - already exists and still running -> skip (let it finish)
+      - already exists and succeeded     -> skip (nothing to do)
+      - already exists and FAILED        -> skip, but WARN loudly -
+        deliberately not auto-resubmitted, since silently retrying a
+        failed job could mask a real, recurring problem (bad
+        SUSPEND_DATE, broken commit, etc.) rather than surfacing it.
+      - doesn't exist yet -> submit
+    """
+    job_id = checkpoint_job_id(seed)
+    if azure_job_exists(job_id):
+        handle = AzureJobHandle(job_id=job_id, submitted_at=0.0, commit_hexsha=_get_commit())
+        if not azure_job_is_finished(handle):
+            print(f"[checkpoint] {job_id} already exists and is still running - skipping.")
+        elif azure_task_succeeded(handle):
+            print(f"[checkpoint] {job_id} already exists and succeeded - skipping.")
+        else:
+            print(f"[checkpoint] WARNING: {job_id} already exists but FAILED - "
+                  f"not auto-resubmitting; investigate and delete/resubmit manually if needed.")
+        return
+
+    generate_checkpoint_job(seed)
+
+
+def generate_all_checkpoints() -> None:
+    """
+    Submits (or skips, per generate_checkpoint_if_needed) one checkpoint
+    job for every seed in CHECKPOINT_SEEDS. Call this ONCE, before the
+    main ask-tell loop, whenever USE_SUSPEND_RESUME is True - and wait
+    for all of them to finish (e.g. via azure_job_is_finished polling)
+    before letting the main loop submit any real trial that might
+    reference one of these checkpoints.
+    """
+    for seed in CHECKPOINT_SEEDS:
+        generate_checkpoint_if_needed(seed)
 
 
 def azure_job_is_finished(job: AzureJobHandle) -> bool:
@@ -461,8 +675,7 @@ configspace.add(Float("linked_to_care_after_selftest", (0., 1.)))
 configspace.add(Float("prob_receive_viral_load_test_result", (0., 1.)))
 configspace.add(Float("config_coverage_plhiv", (0., 1.)))
 configspace.add(Categorical("switch_vl_test_to_tdf", [True, False]))
-configspace.add(Categorical("config_target_VL", [True, False]))
-configspace.add(Categorical("config_target_IPT", [True, False]))
+
 # --------------------------------------------------------------------------
 # Period-bucketed HIV-HRH and HIV-consumable cost constraints
 #
