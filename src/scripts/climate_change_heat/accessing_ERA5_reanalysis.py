@@ -2,7 +2,7 @@ import os
 
 import cdsapi
 
-years = [str(year) for year in range(1940, 1949)]
+years = [str(year) for year in range(1940, 1950)]
 
 variables = [
     "2m_temperature",
