@@ -717,7 +717,7 @@ print(f"Warm-started with {n_seeded} run(s): {len(PRIOR_RUNS)} manual, {len(reco
 #    ask() for a replacement each time one completes and is told back.
 # --------------------------------------------------------------------------
 
-N_CONCURRENT = 3           # HYPERPARAMETER (operational): concurrent Azure jobs in flight -
+N_CONCURRENT = 1           # HYPERPARAMETER (operational): concurrent Azure jobs in flight -
                             # interacts with retrain_every; several jobs finishing in the
                             # same polling pass can mean refitting more often than intended
 POLL_INTERVAL_SECONDS = 10  # HYPERPARAMETER (operational): low-stakes, trades API call
