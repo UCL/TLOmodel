@@ -53,15 +53,15 @@ numpy.random.seed(42)
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
     "opd_attendance",
-    "ipd_total_admissions",
+    #"ipd_total_admissions",
     "fp_total_clients",
     "fp_subsequent_clients_total",
-    "bcg_under1",
-    "penta3_under1",
-    "measles1_under1",
-    "fully_immunised_under1",
+    #"bcg_under1",
+    #"penta3_under1",
+    #"measles1_under1",
+    #"fully_immunised_under1",
     #"live_births_total",
-    "htc_tests_new",
+    #"htc_tests_new",
     "anc_total_visits",
     "cervical_screening_total",
     #"pnc_within_2wks",
@@ -210,7 +210,7 @@ CURVE_REF_MODE = "mean"
 CURVE_N = 60
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/Short_paper/"
 PANEL_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
 INDICES_DIR = PANEL_DIR
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -911,7 +911,7 @@ def fit_indicator(indicator, panel_path):
         np.nan,
     )
     district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
-        f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+        f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
@@ -934,7 +934,7 @@ def fit_indicator(indicator, panel_path):
             }
         )
     pd.DataFrame(dist_rows).to_csv(
-        f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+        f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
@@ -988,7 +988,7 @@ def fit_indicator(indicator, panel_path):
                 "time_seconds": time.time() - t0,
             }
         ]
-    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}_{LAG_SUFFIX}.csv", index=False)
+    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}{LAG_SUFFIX}.csv", index=False)
 
     pred_cols = ["year", "month", "facility", "date", "y_int", "covid", "y_pred_base", "y_pred_wx", "difference"]
     nb_data[pred_cols].to_csv(f"{OUT_DIR}predictions_{indicator}.csv", index=False)
@@ -1128,11 +1128,11 @@ if __name__ == "__main__":
     summary_df = summary_df.sort_values("hot_deficit_pct", na_position="last")
 
     summary_df.to_csv(
-        f"{OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+        f"{OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
     summary_df.to_csv(
-        f"{OUT_DIR}summary_all_indicators_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+        f"{OUT_DIR}summary_all_indicators_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
@@ -1381,7 +1381,7 @@ if __name__ == "__main__":
                     mon_agg["Year_Month"] = mon_agg["year"].astype(str) + "-" + mon_agg["month"].astype(str)
                     mon_agg["indicator"], mon_agg["ssp"], mon_agg["tier"] = ind, ssp, tier
                     mon_agg.to_csv(
-                        f"{OUT_DIR}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                        f"{OUT_DIR}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1405,7 +1405,7 @@ if __name__ == "__main__":
                     ann_agg["Mean_Monthly_Disruption"] = ann_agg["Disruption"] / 12.0
                     ann_agg["indicator"], ann_agg["ssp"], ann_agg["tier"] = ind, ssp, tier
                     ann_agg.to_csv(
-                        f"{OUT_DIR}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                        f"{OUT_DIR}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                         index=False,
                     )
                     all_annual_pooled.append(ann_agg)
@@ -1428,7 +1428,7 @@ if __name__ == "__main__":
                     )
                     dist_ann["indicator"], dist_ann["ssp"], dist_ann["tier"] = ind, ssp, tier
                     dist_ann.to_csv(
-                        f"{OUT_DIR}projection_district_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                        f"{OUT_DIR}projection_district_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1472,33 +1472,46 @@ if __name__ == "__main__":
 
         if all_proj_summary:
             pd.DataFrame(all_proj_summary).to_csv(
-                f"{OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                f"{OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                 index=False,
             )
-            print(f"\nProjection summary → {OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv")
+            print(f"\nProjection summary → {OUT_DIR}projection_summary_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
         else:
             print("\nNo projections produced.")
 
         if all_annual_pooled:
             pd.concat(all_annual_pooled, ignore_index=True).to_csv(
-                f"{OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                f"{OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                 index=False,
             )
-            print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv")
+            print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
 
     # ===========================================================================
-    # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
+    # COUNTERFACTUAL: 1940-1949 ERA5 climate ("if warming hadn't continued")
     # ===========================================================================
         # ===========================================================================
+        # ===========================================================================
         COUNTERFACTUAL = True
-        CF_LABEL = "ERA5_periindustrial_1940_1948"
+        CF_LABEL = "ERA5_periindustrial_1940_1949"
         CF_WBGT_FILE = (
             f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_extreme_indices_facility_{CF_LABEL}.csv"
             if WBGT_VAR == "wbgt5x_day"
             else f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_monthly_mean_facility_{CF_LABEL}.csv"
         )
+
+        # CF year 1941 is relabelled to historical year 2016; 1940 → 2015 as lag buffer.
+        CF_ANALYSIS_START_ORIG = 1941
+        CF_ANALYSIS_START_NEW = 2016
+        YEAR_SHIFT = CF_ANALYSIS_START_NEW - CF_ANALYSIS_START_ORIG  # = 75
+
         if COUNTERFACTUAL:
             print(f"\nCounterfactual scenario: {CF_LABEL}")
+            print(
+                f"  Relabelling CF years by +{YEAR_SHIFT} "
+                f"({CF_ANALYSIS_START_ORIG}→{CF_ANALYSIS_START_NEW}), "
+                f"analysis window {CF_ANALYSIS_START_NEW}–{CF_ANALYSIS_START_NEW + 8}"
+            )
+
             cf_path = CF_WBGT_FILE
             if not os.path.exists(cf_path):
                 print(f"  SKIP counterfactual: missing {cf_path}")
@@ -1511,15 +1524,21 @@ if __name__ == "__main__":
                         raise KeyError(f"{cf_path}: {col!r} missing (have {list(cf.columns)})")
                 cf = cf.sort_values(["facility", "date"]).reset_index(drop=True)
 
-                # Create lags if SA_LAG is True
+                # ---- Build lags on the ORIGINAL calendar (so 1940 populates 1941 lags) ----
                 if SA_LAG:
                     for k in LAG_MONTHS:
                         cf[f"{WBGT_VAR}_lag{k}"] = cf.groupby("facility")[WBGT_VAR].shift(k)
 
-                cf["year"], cf["month"] = cf["date"].dt.year, cf["date"].dt.month
+                # ---- Relabel calendar: 1940→2015 (buffer), 1941–1949 → 2016–2024 --------
+                cf["year_cf_original"] = cf["date"].dt.year
+                cf["date"] = cf["date"] + pd.DateOffset(years=YEAR_SHIFT)
+                cf["year"] = cf["date"].dt.year
+                cf["month"] = cf["date"].dt.month
+
                 print(
                     f"  {CF_LABEL}: {len(cf):,} rows, {cf['facility'].nunique()} facilities, "
-                    f"{cf['year'].min()}–{cf['year'].max()}"
+                    f"original years {cf['year_cf_original'].min()}–{cf['year_cf_original'].max()}, "
+                    f"relabelled to {cf['year'].min()}–{cf['year'].max()}"
                 )
 
                 cf_rows = []
@@ -1533,19 +1552,33 @@ if __name__ == "__main__":
                     model_base = res["_model_base"]
                     support = res["_wbgt_support"]
 
+                    # Restrict to facilities that trained
                     df = cf[cf["facility"].isin(train_facs)].copy()
-
-                    # Build required columns based on SA_LAG
-                    wbgt_needed = [WBGT_VAR, PRECIP_COL]
-                    if SA_LAG:
-                        wbgt_needed += [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
-
-                    df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
                     if df.empty:
                         print(f"    {ind}: no facility overlap in counterfactual — skipping")
                         continue
 
-                    # Diagnostic BEFORE clipping
+                    # Drop rows missing WBGT / precip / lags — this alone removes Jan–Mar 1940
+                    # (lags reach into 1939), but Apr–Dec 1940 survive and must be filtered
+                    # by the analysis window below.
+                    wbgt_needed = [WBGT_VAR, PRECIP_COL]
+                    if SA_LAG:
+                        wbgt_needed += [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
+                    df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
+                    if df.empty:
+                        print(f"    {ind}: all rows dropped for missing climate inputs")
+                        continue
+
+                    # ---- Restrict to this indicator's historical training window --------
+                    # Now that years are relabelled, this drops the 1940 lag buffer (→2015)
+                    # and any indicator-specific late start (e.g. fp_total_clients: 2019).
+                    ind_min_year = MIN_YEAR_BY_INDICATOR.get(ind, min_year_historical)
+                    df = df[df["year"].between(ind_min_year, max_year_historical - 1)].reset_index(drop=True)
+                    if df.empty:
+                        print(f"    {ind}: no CF rows in training window {ind_min_year}–{max_year_historical - 1}")
+                        continue
+
+                    # ---- Support diagnostic before clipping ----------------------------
                     frac_below_raw = float((df[WBGT_VAR] < support["p_lo"]).mean())
                     frac_above_raw = float((df[WBGT_VAR] > support["p_hi"]).mean())
                     min_cf = float(df[WBGT_VAR].min())
@@ -1559,22 +1592,23 @@ if __name__ == "__main__":
                             f"({support['p_hi']:.2f}) — will be clipped"
                         )
 
-                    # ----- Clip WBGT and lags to training support ---------------
+                    # ---- Clip WBGT + lags to training support --------------------------
                     df, clip_diag = _clip_wbgt_to_support(df, support)
 
-                    df["covid"] = 0
-
-                    # --- FIX: Use the ACTUAL year from the counterfactual data ---
-                    # This mirrors the actual model where year_c = year - mean_year
-                    # The counterfactual data has years 1940-1948, so this gives
-                    # year_c = 1940 - mean_year, 1941 - mean_year, etc.
-                    # This is exactly what the actual model does with historical years
+                    # ---- Covariate build (same shifts as historical fit) ---------------
+                    # covid=0 by construction: the CF asks about climate alone, not
+                    # pandemic disruption. Note this differs from summary_df["deficit_pct"]
+                    # (which includes COVID months) — see comparator note below.
+                    lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
+                    df["covid"] = df["date"].between(lo, hi).astype(int)
                     df["year_c"] = df["year"] - shifts["year"]
-
                     df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
 
                     xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
-                    B = np.asarray(patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0], dtype=float)
+                    B = np.asarray(
+                        patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0],
+                        dtype=float,
+                    )
                     for i_col, c in enumerate(spline_cols):
                         df[c] = B[:, i_col]
 
@@ -1582,15 +1616,14 @@ if __name__ == "__main__":
                         for k in LAG_MONTHS:
                             df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
 
-                    # Build required columns based on SA_LAG
                     need = ["covid", "year_c", "precip_c"] + list(spline_cols)
                     if SA_LAG:
                         need += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
-
                     df = df.dropna(subset=need).reset_index(drop=True)
                     if df.empty:
                         continue
 
+                    # ---- Predict --------------------------------------------------------
                     mu_wx = np.asarray(model_wx.predict(df), dtype=float)
                     mu_base = np.asarray(model_base.predict(df), dtype=float)
                     ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
@@ -1609,6 +1642,7 @@ if __name__ == "__main__":
                             "facility",
                             CLUSTER_COL,
                             "year",
+                            "year_cf_original",
                             "month",
                             "date",
                             WBGT_VAR,
@@ -1621,10 +1655,12 @@ if __name__ == "__main__":
                         index=False,
                     )
 
+                    # ---- Aggregate deficit ---------------------------------------------
                     df_agg = _apply_deficit_filter(df, "mu_b", "mu_a")
                     if df_agg.empty:
                         continue
-                    tot_a, tot_b = float(df_agg["mu_a"].sum()), float(df_agg["mu_b"].sum())
+                    tot_a = float(df_agg["mu_a"].sum())
+                    tot_b = float(df_agg["mu_b"].sum())
                     cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
 
                     _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
@@ -1642,6 +1678,8 @@ if __name__ == "__main__":
                             "indicator": ind,
                             "scenario": CF_LABEL,
                             "only_deficits": ONLY_DEFICITS,
+                            "cf_years_original": f"{CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_START_ORIG + 8}",
+                            "cf_years_relabelled": f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_START_NEW + 8}",
                             "n_facility_months": len(df_agg),
                             "n_facilities": df_agg["facility"].nunique(),
                             "mean_wbgt_cf": float(df_agg[WBGT_VAR].mean()),
@@ -1664,16 +1702,18 @@ if __name__ == "__main__":
                     )
                     print(
                         f"    {ind}: cf={cf_deficit:+.2f}%  hist={hist_deficit:+.2f}%  "
-                        f"excess={hist_deficit - cf_deficit:+.2f}pp"
+                        f"excess={hist_deficit - cf_deficit:+.2f}pp  "
+                        f"(n={len(df_agg):,} fac-months)"
                     )
 
                 if cf_rows:
                     pd.DataFrame(cf_rows).to_csv(
-                        f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv",
+                        f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                         index=False,
                     )
                     print(
-                        f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}_{LAG_SUFFIX}.csv"
+                        f"\nCounterfactual summary → "
+                        f"counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
                     )
     print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
     print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())

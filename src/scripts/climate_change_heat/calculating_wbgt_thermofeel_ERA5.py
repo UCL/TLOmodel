@@ -56,7 +56,7 @@ CMIP6_DIR  = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBG
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 YEAR_START       = 1940
-YEAR_END         = 1948
+YEAR_END         = 1949
 TIME_CHUNK       = 2000
 DTYPE            = np.float32
 UTC_OFFSET       = 2          # Malawi UTC+2 (used to define the LOCAL calendar day)
@@ -68,7 +68,7 @@ REGRID_TO_CMIP6  = True       # also write *_cmip6grid.nc versions
 # Point this at a specific file if auto-discovery grabs the wrong one.
 CMIP6_REF_FILE   = None
 if YEAR_START < 2000:
-    PERIOD_LABEL = "periindustrial_1940_1948"
+    PERIOD_LABEL = "periindustrial_1940_1949"
     OUT_DIR = Path("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/ERA5/Periindustrial")
 
 else:
