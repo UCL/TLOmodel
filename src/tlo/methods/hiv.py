@@ -469,11 +469,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "overwrite the annual testing rate for adults during optimisation"
         ),
         "config_target_VL": Parameter(
-            Types.REAL,
+            Types.BOOL,
             "parameter to target VL testing, to be used during optimisation"
         ),
         "config_target_IPT": Parameter(
-            Types.REAL,
+            Types.BOOL,
             "parameter to target IPT testing, to be used during optimisation"
         ),
         # ------------------ program-related parameters ------------------ #
@@ -813,34 +813,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         """Set our property values for the initial population."""
-
-        # TO PRINT CONFIG ASSOCIATED WITH SCALE UP
-        config_parameters = [
-           # "hiv_testing_rates",
-            "annual_rate_selftest",
-           # "annual_testing_rate_adults",
-            "prob_hiv_test_at_anc_or_delivery",
-            "prob_hiv_test_for_newborn_infant",
-            "selftest_available",
-            "switch_vl_test_to_tdf",
-            "prob_prep_for_fsw_after_hiv_test",
-            "prob_prep_for_agyw",
-            "prob_injectable_prep_vs_oral",
-            "prob_circ_after_hiv_test",
-            "prob_circ_for_child_from_2020",
-            "beta",
-            #"reduction_in_hiv_beta",
-            "probability_of_being_retained_on_prep_every_3_months",
-            "probability_of_being_retained_on_art_every_3_months",
-            "prob_start_art_or_vs",
-            #"tb_ipt_coverage",
-            "virally_suppressed_on_art",
-            "consumable_availability_HIV_test",
-            "consumable_availability_VL_test",
-        ]
-        #self.save_scaleup_config(config_parameters)
-        #exit(-1)
-
 
         df = population.props
 
@@ -1349,50 +1321,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.vl_testing_available_by_year = {
             year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year + 1)
         }
-
-    def save_scaleup_config(
-        self,
-        config_parameters: list,
-        filepath: str = "scaleup_config_log.jsonl",
-    ) -> None:
-        """ 
-        Helper function to translate scale up scenario into configs
-        """
-        p = self.parameters
-        
-        scaleup_scenarios = [
-            "none",
-            "reduce_HIV_test",
-            "remove_VL",
-            "target_VL",
-            "replace_VL_with_TDF",
-            "remove_prep_fsw",
-            "remove_prep_agyw",
-            "switch_to_injectable_prep",
-            "remove_IPT",
-            "target_IPT",
-            "remove_vmmc",
-            "increase_6MMD",
-            "target_all",
-            "remove_all",
-            "target",
-        ]
-        
-        record = {}
-
-        for s in scaleup_scenarios:
-            print("At ", s)
-            p['type_of_scaleup'] = s
-            self.update_parameters_for_program_change()
-            record[s] = {}
-            for x in config_parameters:
-                try:
-                    record[p['type_of_scaleup']][x] = p[x]
-                except:
-                    record[p['type_of_scaleup']][x] = None
-        
-        with open(filepath, "a") as f:
-            f.write(json.dumps(record, default=str) + "\n")
         
 
     def update_config_parameters_for_optimisation(self):
@@ -3729,7 +3657,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         self.consider_tb(person_id)
 
         # Program simplification scenario: targeted IPT
-        if self.sim.modules['Hiv'].parameters['type_of_scaleup'] in ('target_IPT', 'target_all'):
+        if self.sim.modules['Hiv'].parameters['config_target_IPT']:
             # Check if CardioMetabolicDisorders module is loaded
             diabetes = False
             if "CardioMetabolicDisorders" in self.sim.modules:
@@ -3865,7 +3793,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if test_prob < 0.0: test_prob = 0.0
         if test_prob > 1.0: test_prob = 1.0
 
-        if p['type_of_scaleup'] in ('target_VL', 'target_all'):
+        if p['config_target_VL']:
             if person['age_years'] < 30 or person['is_pregnant']:
                 test_prob = test_prob
             else:

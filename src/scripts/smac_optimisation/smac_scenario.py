@@ -89,10 +89,8 @@ class TloOptimisationScenario(BaseScenario):
         self.prob_receive_viral_load_test_result = None
         self.config_coverage_plhiv = None
         self.switch_vl_test_to_tdf = None
-        #self.probability_of_being_retained_on_prep_every_3_months = None
-        #self.probability_of_being_retained_on_art_every_3_months = None
-        #self.prob_start_art_or_vs = None
-        #self.virally_suppressed_on_art = None
+        self.config_target_VL = None
+        self.config_target_IPT = None
 
 
     def log_configuration(self):
@@ -134,12 +132,8 @@ class TloOptimisationScenario(BaseScenario):
                 "prob_receive_viral_load_test_result": self.prob_receive_viral_load_test_result,
                 "config_coverage_plhiv": self.config_coverage_plhiv,
                 "switch_vl_test_to_tdf": self.switch_vl_test_to_tdf,
-               # "probability_of_being_retained_on_prep_every_3_months": self.probability_of_being_retained_on_prep_every_3_months,
-               # "probability_of_being_retained_on_art_every_3_months": self.probability_of_being_retained_on_art_every_3_months,
-               # "prob_start_art_or_vs": self.prob_start_art_or_vs,
-               # "virally_suppressed_on_art": self.virally_suppressed_on_art,
-               # "config_consumable_availability_VL_test": self.config_consumable_availability_VL_test,
-               # "config_consumable_availability_HIV_test": self.config_consumable_availability_HIV_test,
+                "config_target_VL": self.config_target_VL,
+                "config_target_IPT": self.config_target_IPT,
             },
             # map intervention_coverage / other config values onto
             # whichever module parameters they actually control in
@@ -150,7 +144,3 @@ if __name__ == '__main__':
     from tlo.cli import scenario_run
 
     scenario_run([__file__])
-
-"""
-
-"""
