@@ -10,14 +10,14 @@ class InterventionLongScenario(BaseScenario):
         super().__init__()
         self.seed = 7969672
         self.start_date = Date(2025, 1, 1)
-        self.end_date = Date(2041, 1, 2)
-        self.pop_size = 40_000
+        self.end_date = Date(2026, 1, 2)
+        self.pop_size = 150_000
         self.number_of_draws = 1
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'longer_cohort_run_stop_preg', 'directory': './outputs',
+            'filename': 'testing_bigger_pop', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,

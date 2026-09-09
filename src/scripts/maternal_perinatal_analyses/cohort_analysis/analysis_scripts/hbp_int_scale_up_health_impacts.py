@@ -23,7 +23,7 @@ from src.scripts.costing.cost_estimation import (do_stacked_bar_plot_of_cost_by_
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-scenario = 'testing_scenario_172156'
+scenario = 'testing_scenario_298398'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 sim_start_year = 2025
 
@@ -195,6 +195,7 @@ def produce_fig_1():
             "name": "Maternal haem. CM",
             "draw": 3,
             "items": [
+                ("amtsl", "AMTSL"),
                 ("haem_cm_ut", "Uterotonics"),
                 ("haem_cm_mrp", "MRRP"),
                 ("haem_cm_blood_pph", "Blood (PPH)"),

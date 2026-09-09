@@ -2451,8 +2451,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # inpatients until they can move to the labour model. Currently it is possible for women to go into
         # labour whilst as an inpatient - it is assumed they are delivered via the mode recommended here
         # (i.e induction/caesarean)
-        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('avd_future', 'caesarean_future',
-                                                                        'induction_future'):
+        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_future', 'induction_future'):
 
             # Here we calculate how many days this woman needs to remain on the antenatal ward before she can go
             # for delivery (assuming delivery is indicated to occur at 37 weeks)

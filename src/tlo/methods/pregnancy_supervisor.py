@@ -2458,7 +2458,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_neo_enceph = (c['mild_enceph'] + c['moderate_enceph'] + c['severe_enceph'] +
                             c['mild_enceph_pt'] + c['moderate_enceph_pt'] + c['severe_enceph_pt'])
         total_neo_resp_conds = (c['respiratory_distress_syndrome'] +
-                                c['not_breathing_at_birth'] + c['not_breathing_at_birth_pt'] +
+                                c['not_breathing_at_birth'] +
+                                c['not_breathing_at_birth_pt'] +
                                 total_neo_enceph)
         total_cba = (c['congenital_heart_anomaly'] + c['limb_or_musculoskeletal_anomaly'] +
                      c['urogenital_anomaly'] + c['digestive_anomaly'] + c['other_anomaly'])
@@ -2624,7 +2625,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp_deliv'],
                                                   pph_ua_need_blood + pph_mrp_need_blood),
 
-                          'n_sepsis_cm': met_need(c['neo_sepsis_treatment_all_deliv'],
+                          'n_sepsis_cm': met_need(c['neo_sepsis_treatment_all_deliv'] +
+                                                  c['neo_sepsis_treatment_preterm_deliv'],
                                                   total_neo_sepsis),
 
                           'ptb_cm_resus': met_need(c['neo_resus_preterm_deliv'],

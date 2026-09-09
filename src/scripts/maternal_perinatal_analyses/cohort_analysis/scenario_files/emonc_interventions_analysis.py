@@ -53,7 +53,8 @@ class EmoncScenario(BaseScenario):
                                            ["sepsis_treatment"],
 
                                            # Treatment of antepartum and postpartum hemorrhage
-                                           ["pph_treatment_uterotonics",
+                                           ["amtsl",
+                                            "pph_treatment_uterotonics",
                                             "pph_treatment_mrrp",
                                             "blood_transfusion_pph",
                                             "blood_transfusion_aph"],
