@@ -180,15 +180,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return X_unique
 
-    def get_patient_mix_total_period(_df, rescale_by_fac_level=True, keep_blank_footprint_hsi=False):
+    def get_patient_mix_total_period(_df,
+                                     rescale_by_fac_level=True,
+                                     keep_blank_footprint_hsi=False,
+                                     drop_did_not_run_hsi=False):
         # keep only months in TLM for comparison consistency
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
 
-        # keep HSIs that did run, those did not run are treated as unmet needs/patients did not successfully see the HRH
+        # keep HSIs that did run if those did not run are treated as unmet needs/patients did not see the HRH
         # in mode 1, only depression HSIs with MentOPD footprint did not run due to no mental health staff at multiple
-        # facilities at level 2
+        # facilities at level 2; in such case, we keep both HSIs did run and did not run;
+        # in practice, these patients would be seen either bypassing lower level facilities or by other staff;
+        # and our HRH data may have not correctly represent the mental health staff per district per level.
         # analyses that specifically look at HRH expansion impact on depression health outcomes should be cautious
-        _df = _df[_df["did_run"] == True].copy()
+        if drop_did_not_run_hsi:
+            _df = _df[_df["did_run"] == True].copy()
 
         # create columns for mapping: Appointment_Footprint, Facility_Level
         _df["Appointment_Footprint"] = (
@@ -1094,6 +1100,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             df,
             rescale_by_fac_level=True,
             keep_blank_footprint_hsi=True,
+            drop_did_not_run_hsi=False,
         ),
         do_scaling=False
     ).fillna(0)
