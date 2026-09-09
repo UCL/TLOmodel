@@ -656,6 +656,7 @@ def ensure_checkpoints_ready_and_downloaded() -> dict[int, Path]:
 
     Returns {seed: local_path_to_suspended_simulation.pickle}.
     """
+    print("Check suspend is present")
     local_paths: dict[int, Path] = {}
     for seed in CHECKPOINT_SEEDS:
         commit = find_checkpoint_commit_for_seed(seed)
