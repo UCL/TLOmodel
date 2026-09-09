@@ -119,8 +119,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df_staff
 
-    def get_patient_count_facility_id(_df):
+    def get_patient_count_facility_id(_df,
+                                      keep_blank_footprint_hsi=False,
+                                      drop_did_not_run_hsi=False
+                                      ):
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+
+        if drop_did_not_run_hsi:
+            _df = _df[_df["did_run"] == True].copy()
+
+        # create columns for mapping: Appointment_Footprint, Facility_Level
+        _df["Appointment_Footprint"] = (
+            _df["Number_By_Appt_Type_Code"]
+            .apply(lambda x: ",".join(sorted(map(str, x.keys()))))
+        )
+
+        # drop rows with no appointment footprint
+        # todo: need better understanding of what make blank footprint (consumables not available; what else)
+        if not keep_blank_footprint_hsi:
+            _df = _df.loc[_df["Appointment_Footprint"] != ""].copy()
 
         # count overall patient volume, dropping duplicated person_ids on the same day
         _daily_person_counts = _df.groupby(["date", "Facility_ID"])["Person_ID"].nunique().reset_index()
@@ -545,6 +562,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)].copy()
 
         # do not need to select did run HSIs as all HSI in the cons. logger did run
+        # the cons. logger has no did_run or appointment columns
 
         # merge in facility information from mfl and format
         _df.rename(columns={
@@ -899,7 +917,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             results_folder,
             module="tlo.methods.healthsystem",
             key="HSI_Event",
-            custom_generate_series=get_patient_count_facility_id,
+            custom_generate_series=lambda df: get_patient_count_facility_id(
+                df,
+                keep_blank_footprint_hsi=True,
+                drop_did_not_run_hsi=False,
+            ),
             do_scaling=True
         ).loc[:, [(0, run)]]  # draw=0, run=0
 
