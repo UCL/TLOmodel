@@ -13,7 +13,7 @@ END_THIRD_BOUNDARY = YEAR_END_DATE + 3
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TRIALS = 100              # total trial budget - not the same as "number of
+N_TRIALS = 10                # total trial budget - not the same as "number of
                              # distinct configs explored", given MAX_CONFIG_CALLS
 MAX_CONFIG_CALLS = 5         # caps how many seeds the intensifier will use to
                              # confirm any single config. SHARED with
@@ -40,7 +40,7 @@ PENALTY_COEFFICIENT_MULTIPLIER = 3  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys
 # --------------------------------------------------------------------------
 # Operational (Azure submission / polling) hyperparameters
 # --------------------------------------------------------------------------
-N_CONCURRENT = 1              # concurrent Azure jobs in flight - interacts
+N_CONCURRENT = 3              # concurrent Azure jobs in flight - interacts
                              # with RETRAIN_EVERY; several jobs finishing in
                              # the same polling pass can mean refitting more
                              # often than intended
