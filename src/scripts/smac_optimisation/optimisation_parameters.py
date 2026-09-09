@@ -65,7 +65,7 @@ USE_SUSPEND_RESUME = True   # whether REAL trials resume from a pre-resume
                              # every trial runs a full, fresh simulation,
                              # completely independent of SUBMIT_SUSPEND_PART
                              # below
-SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
+SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
                              # jobs (the "first part" of suspend/resume) THIS
                              # run - a plain user-controlled toggle, not
                              # derived from checking what's already present on
