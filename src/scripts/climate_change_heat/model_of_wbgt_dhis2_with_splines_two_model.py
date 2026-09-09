@@ -520,34 +520,8 @@ def exposure_response_curve_fast(
 
     log_irr = contrast @ beta
     var = np.einsum("ij,jk,ik->i", contrast, V, contrast)
-    beta_s = _pf_coef(model, spline_cols)
-    V_full_block = _pf_vcov(model, spline_cols)  # start with spline-only
-
-    # Include lag terms in the cumulative exposure-response
-    lag_cols = [f"{WBGT_VAR_name}_lag{k}_c" for k in LAG_MONTHS]
-    lag_cols_present = [c for c in lag_cols if c in model.coef().index]
-
-    if lag_cols_present:
-        # Each lag shifts by the same amount as the contemporaneous WBGT
-        lag_betas = _pf_coef(model, lag_cols_present)
-        cumulative_lag_slope = lag_betas.sum()  # total lag effect per °C
-
-        # Build the full contrast: spline basis change + linear lag change
-        lag_contrast = (grid - ref).reshape(-1, 1) * np.ones((1, len(lag_cols_present)))
-        # but for log_irr we just need the scalar sum
-        log_irr = contrast @ beta_s + (grid - ref) * cumulative_lag_slope
-
-        # Full vcov block for the CI band
-        all_cols = list(spline_cols) + lag_cols_present
-        V_all = _pf_vcov(model, all_cols)
-        # Full contrast matrix: [spline basis columns | lag columns]
-        full_contrast = np.hstack([contrast, lag_contrast])
-        var = np.einsum("ij,jk,ik->i", full_contrast, V_all, full_contrast)
-    else:
-        log_irr = contrast @ beta_s
-        var = np.einsum("ij,jk,ik->i", contrast, V_full_block, contrast)
-
-    se = np.sqrt(np.clip(var, 0, None))    return pd.DataFrame(
+    se = np.sqrt(np.clip(var, 0, None))
+    return pd.DataFrame(
         {
             "wbgt": grid,
             "wbgt_ref": ref,
