@@ -206,7 +206,7 @@ PRECIP_FILE_BY_TIER = {
     "median": "precip_monthly_total_facility_MIROC6_{ssp}.csv",
 }
 
-CURVE_REF_MODE = "mean"
+CURVE_REF_MODE = "p25"
 CURVE_N = 60
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -218,7 +218,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 USE_PARALLEL = False
 N_WORKERS = min(cpu_count() - 1, 4)
 
-WINSORIZE = True
+WINSORIZE = False
 WINSORIZE_BY_INDICATOR: dict[str, float] = {
     # "opd_attendance": 0.999,
     # "ipd_total_admissions": 0.999,
@@ -497,54 +497,57 @@ def exposure_response_curve_fast(
 ):
     wobs = np.asarray(wbgt_values).flatten()
     grid = np.linspace(np.percentile(wobs, 1), np.percentile(wobs, 99), n)
-    ref = wobs.mean() if ref_mode == "mean" else float(ref_mode)
-
+    if ref_mode == "mean":
+        ref = wobs.mean()
+    elif isinstance(ref_mode, str) and ref_mode.startswith("p"):
+        ref = float(np.percentile(wobs, float(ref_mode[1:])))
+    else:
+        ref = float(ref_mode)
     Bg = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": grid - wbgt_shift})[0])
     Br = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": np.array([ref]) - wbgt_shift})[0])
     contrast = Bg - Br
     beta = model.params.reindex(spline_cols).values
-    cov_full = model.cov_params()
-    print(f"[{WBGT_VAR_name}] type(cov_full): {type(cov_full)}")
-    print(
-        f"[{WBGT_VAR_name}] cov_full.index (first 10): {list(cov_full.index)[:10] if hasattr(cov_full, 'index') else 'no index'}"
-    )
-    print(f"[{WBGT_VAR_name}] Are spline_cols in cov_full.index? {[c in cov_full.index for c in spline_cols]}")
-    print(f"[{WBGT_VAR_name}] model.params.index (first 10): {list(model.params.index)[:10]}")
     V = model.cov_params().reindex(index=spline_cols, columns=spline_cols).values
-    print(f"\n[{WBGT_VAR_name}] spline_cols: {spline_cols}")
-    print(f"[{WBGT_VAR_name}] beta: {beta}")
-    print(f"[{WBGT_VAR_name}] V (spline cov):\n{V}")
-    print(f"[{WBGT_VAR_name}] V diagonal (SEs of coefs): {np.sqrt(np.diag(V))}")
 
-    X_check = model.model.exog  # statsmodels stores design matrix here
-    col_idx = [model.model.exog_names.index(c) for c in spline_cols + [f"{WBGT_VAR}_lag{k}_c" for k in [1, 2, 3]]]
-    X_sub = X_check[:, col_idx]
-    print(f"[{WBGT_VAR_name}] cond(X_spline+lag) = {np.linalg.cond(X_sub):.2e}")
-    print(f"[{WBGT_VAR_name}] corr matrix of spline+lag block:")
-    print(np.corrcoef(X_sub.T).round(3))
-    full_cov = model.cov_params()
-    full_diag = np.diag(full_cov.values)
-    print(
-        f"[{WBGT_VAR_name}] full cov diagonal — n_negative={int((full_diag < 0).sum())}, "
-        f"n_positive={int((full_diag > 0).sum())}, "
-        f"min={full_diag.min():.3e}, max={full_diag.max():.3e}"
-    )
-    # Show which params have negative variance
-    neg_names = full_cov.index[full_diag < 0].tolist()
-    print(f"[{WBGT_VAR_name}] Params with negative variance: {neg_names[:20]}")
-    print(f"[{WBGT_VAR_name}] converged: {model.mle_retvals.get('converged', 'unknown')}")
-    print(f"[{WBGT_VAR_name}] iterations: {model.mle_retvals.get('iterations', 'unknown')}")
-    print(f"[{WBGT_VAR_name}] mle_retvals: {model.mle_retvals}")
-    # Condition number of V — huge = near-singular = ill-conditioned CI
-    print(f"[{WBGT_VAR_name}] cond(V) = {np.linalg.cond(V):.2e}")
-    # Are any full model params NaN?
-    n_nan_params = model.params.isna().sum()
-    n_nan_cov = np.isnan(model.cov_params().values).sum()
-    print(f"[{WBGT_VAR_name}] NaN in params: {n_nan_params}, NaN in cov: {n_nan_cov}")
+    # Warn if the spline block of the sandwich covariance is not positive-definite
+    # (collinearity between current WBGT spline and lagged WBGT terms can do this).
+    neg_diag = np.diag(V) < 0
+    if neg_diag.any():
+        print(
+            f"  [{WBGT_VAR_name}] WARNING: {int(neg_diag.sum())}/{len(spline_cols)} "
+            f"spline coefs have negative sandwich variance — CI ribbon unreliable."
+        )
+
     log_irr = contrast @ beta
     var = np.einsum("ij,jk,ik->i", contrast, V, contrast)
-    se = np.sqrt(np.clip(var, 0, None))
-    return pd.DataFrame(
+    beta_s = _pf_coef(model, spline_cols)
+    V_full_block = _pf_vcov(model, spline_cols)  # start with spline-only
+
+    # Include lag terms in the cumulative exposure-response
+    lag_cols = [f"{WBGT_VAR_name}_lag{k}_c" for k in LAG_MONTHS]
+    lag_cols_present = [c for c in lag_cols if c in model.coef().index]
+
+    if lag_cols_present:
+        # Each lag shifts by the same amount as the contemporaneous WBGT
+        lag_betas = _pf_coef(model, lag_cols_present)
+        cumulative_lag_slope = lag_betas.sum()  # total lag effect per °C
+
+        # Build the full contrast: spline basis change + linear lag change
+        lag_contrast = (grid - ref).reshape(-1, 1) * np.ones((1, len(lag_cols_present)))
+        # but for log_irr we just need the scalar sum
+        log_irr = contrast @ beta_s + (grid - ref) * cumulative_lag_slope
+
+        # Full vcov block for the CI band
+        all_cols = list(spline_cols) + lag_cols_present
+        V_all = _pf_vcov(model, all_cols)
+        # Full contrast matrix: [spline basis columns | lag columns]
+        full_contrast = np.hstack([contrast, lag_contrast])
+        var = np.einsum("ij,jk,ik->i", full_contrast, V_all, full_contrast)
+    else:
+        log_irr = contrast @ beta_s
+        var = np.einsum("ij,jk,ik->i", contrast, V_full_block, contrast)
+
+    se = np.sqrt(np.clip(var, 0, None))    return pd.DataFrame(
         {
             "wbgt": grid,
             "wbgt_ref": ref,
