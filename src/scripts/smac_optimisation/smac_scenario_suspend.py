@@ -37,7 +37,7 @@ from typing import Dict
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
-
+from optimisation_parameters import YEAR_START_DATE, YEAR_END_DATE, CONFIG_YEAR_START_DATE, POP_SIZE
 
 class TloCheckpointScenario(BaseScenario):
     def __init__(self):
@@ -45,12 +45,12 @@ class TloCheckpointScenario(BaseScenario):
         self.seed = 0  # placeholder - overwritten with the target
                        # checkpoint seed by generate_checkpoint_job()
                        # before every real submission
-        self.start_date = Date(2010, 1, 1)  # MUST match smac_scenario.py - see module docstring
-        self.end_date = Date(2051, 1, 1)    # not functionally load-bearing (the remote
+        self.start_date = Date(YEAR_START_DATE, 1, 1)  # MUST match smac_scenario.py - see module docstring
+        self.end_date = Date(YEAR_END_DATE, 1, 1)    # not functionally load-bearing (the remote
                                               # command's --suspend-date interrupts the run
                                               # well before this regardless), kept aligned
                                               # with the real scenario's own horizon for clarity
-        self.pop_size = 1000  # MUST match smac_scenario.py - see module docstring
+        self.pop_size = POP_SIZE  # MUST match smac_scenario.py - see module docstring
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)  # always 1 - single, fixed scenario
         self.runs_per_draw = 1
@@ -90,11 +90,10 @@ class TloCheckpointScenario(BaseScenario):
             "Baseline": {
                 "Hiv": {
                     "type_of_scaleup": "none",
-                    "config_start_year": "2027",
+                    "config_start_year": CONFIG_YEAR_START_DATE,
                 }
             }
         }
-
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

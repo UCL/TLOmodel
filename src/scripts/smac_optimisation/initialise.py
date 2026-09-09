@@ -27,7 +27,9 @@ from __future__ import annotations
 import pandas as pd
 
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
+from optimisation_parameters import START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY, CONFIG_YEAR_START_DATE,YEAR_END_DATE
 
+POSTPROCESS_TARGET_PERIOD = (pd.Timestamp(CONFIG_YEAR_START_DATE, 1, 1), pd.Timestamp(YEAR_END_DATE, 1, 1))
 
 # --------------------------------------------------------------------------
 # 1. Period-bucketed HIV-HRH and HIV-consumable budget constraints
@@ -54,9 +56,9 @@ from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
 # --------------------------------------------------------------------------
 
 PERIOD_BOUNDARIES = [
-    (2010, 2029),  # period 1 - HYPERPARAMETER (user-definable): edit these
-    (2030, 2034),  # period 2   three (start_year, end_year) tuples to
-    (2035, 2049),  # period 3   whatever periods you actually want enforced.
+    (START_FIRST_BOUNDARY, START_SECOND_BOUNDARY-1),  # period 1 -  edit these
+    (START_SECOND_BOUNDARY, START_THIRD_BOUNDARY-1),  # period 2   three (start_year, end_year) tuples to
+    (START_THIRD_BOUNDARY, END_THIRD_BOUNDARY),  # period 3   whatever periods you actually want enforced.
 ]
 
 # Consistency check against postprocess_output.py: every YEAR ACTUALLY

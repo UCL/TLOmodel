@@ -55,16 +55,16 @@ from tlo import Date, logging
 from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsystem
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
-
+from optimisation_parameters import YEAR_START_DATE, YEAR_END_DATE, CONFIG_YEAR_START_DATE, POP_SIZE
 
 class TloOptimisationScenario(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0  # placeholder - overwritten with SMAC's info.seed
                        # by submit_azure_job() before every real submission
-        self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 1, 1)
-        self.pop_size = 1_000  # HYPERPARAMETER: simulation fidelity, not a BO
+        self.start_date = Date(YEAR_START_DATE, 1, 1)
+        self.end_date = Date(YEAR_END_DATE, 1, 1)
+        self.pop_size = POP_SIZE  # HYPERPARAMETER: simulation fidelity, not a BO
                                    # hyperparameter, but trades off noise level
                                    # against per-run cost - indirectly relevant
                                    # to min_samples_leaf and max_config_calls in
