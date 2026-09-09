@@ -81,7 +81,7 @@ from convergence_monitoring import (
 from optimisation_parameters import (
     N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, PENALTY_COEFFICIENT_MULTIPLIER,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
-    CONFIG_YEAR_START_DATE,
+    VALID_CHECKPOINT_COMMITS, CONFIG_YEAR_START_DATE,
 )
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
@@ -127,12 +127,21 @@ CONFIG_FILE = "tlo.conf"
 # pipeline hyperparameter, rather than being defined here.
 #
 # When USE_SUSPEND_RESUME is True, every submission resumes from a
-# pre-resume checkpoint whose location is derived DIRECTLY from the
-# trial's own SMAC-issued seed, via checkpoint_seeds.checkpoint_job_id().
+# pre-resume checkpoint - found via find_checkpoint_commit_for_seed()
+# (which commit's checkpoint to trust for this seed) and
+# checkpoint_seeds.checkpoint_job_id() (that commit's actual job id).
+# The checkpoint itself is DOWNLOADED LOCALLY, ONCE, up front, by
+# ensure_checkpoints_ready_and_downloaded() before the main loop starts
+# - then RE-UPLOADED into each individual trial's own directory by
+# submit_azure_job() when it actually needs it. --resume-simulation
+# needs a path to an already-downloaded local file; a checkpoint job's
+# own remote file-share directory isn't something a later, different
+# job's remote task can rely on referencing directly.
 #
 # There is no longer a single shared "SUSPENDED_JOB_ID": each of the
-# MAX_CONFIG_CALLS checkpoints is its OWN separate Azure job. This is
-# required, not a style choice - each checkpoint must be submitted as a
+# MAX_CONFIG_CALLS checkpoints is its OWN separate Azure job, now also
+# scoped by commit (see VALID_CHECKPOINT_COMMITS in
+# optimisation_parameters.py). Each checkpoint must be submitted as a
 # single-run job (sample_number=0) with scenario.seed set DIRECTLY to
 # its target seed, since TLO computes
 # simulation_seed = low_bias_32(scenario_seed + sample_number), and a
@@ -142,10 +151,6 @@ CONFIG_FILE = "tlo.conf"
 # completely different (and wrong) low_bias_32 output that no real
 # trial would ever independently reproduce - see checkpoint_seeds.py's
 # module docstring for the full reasoning.
-#
-# Since each checkpoint job is single-run, its output always sits at
-# <checkpoint_job_id(seed)>/0/0/suspended_simulation.pickle - draw=0,
-# run=0, never a variable run number.
 
 _config = None  # lazily loaded, see _get_config()
 _commit_hexsha = None  # resolved once per process, see _get_commit()
@@ -250,8 +255,9 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     generate_checkpoint_job(), which sets scenario.seed to
     CHECKPOINT_SEEDS[i] - THAT assignment is the one that actually
     matters) - this trial's own `seed` here only ever gets used LOCALLY,
-    to select which checkpoint file to resume from via
-    checkpoint_job_id(seed), never to seed anything on the remote node.
+    to look up which already-downloaded checkpoint file
+    (_CHECKPOINT_LOCAL_PATHS[seed]) to re-upload and resume from, never
+    to seed anything on the remote node.
     """
     commit_hexsha = _get_commit()
     tlo_config = _get_config()
@@ -322,14 +328,16 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
-    # If USE_SUSPEND_RESUME is True, this task resumes from the
-    # pre-resume checkpoint generated under THIS TRIAL'S OWN seed - its
-    # job id computed directly via checkpoint_job_id(seed), not looked
-    # up via a shared job + run number (see the module-level comment
-    # above, and checkpoint_seeds.py's docstring, for why each
-    # checkpoint is its own separate job rather than one shared one).
-    # Since each checkpoint job is single-run, its output always sits at
-    # <checkpoint_job_id(seed)>/0/0/suspended_simulation.pickle.
+    # If USE_SUSPEND_RESUME is True, this task resumes from a pre-resume
+    # checkpoint - but NOT by referencing the checkpoint job's own
+    # remote file-share directory directly (that was the bug:
+    # --resume-simulation needs a path to an already LOCALLY-DOWNLOADED
+    # checkpoint, and a different job's remote directory isn't something
+    # THIS job's remote task can rely on). Instead, the checkpoint
+    # (already downloaded locally, once, up front, by
+    # ensure_checkpoints_ready_and_downloaded() before the main loop
+    # started) gets RE-UPLOADED into THIS TRIAL'S OWN azure_directory,
+    # right alongside run_json, and referenced from there.
     #
     # ASSUMPTION, not yet independently verified: this assumes
     # `tlo batch-run` itself accepts --resume-simulation <path> directly
@@ -340,19 +348,19 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # before invoking batch-run remotely). Worth confirming with a
     # cheap manual test (or `tlo batch-run --help`) before relying on
     # this for a real, costly run.
-    #
-    # checkpoint_job_id() raises ValueError loudly if `seed` isn't one
-    # of the precomputed checkpoint seeds - deliberately NOT caught
-    # here, so a desynchronized/incomplete checkpoint pool fails this
-    # submission outright rather than silently resuming from the wrong
-    # (or a nonexistent) checkpoint.
     resume_arg = ""
     if USE_SUSPEND_RESUME:
-        suspended_pickle_path = (
-            "${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
-            + f"{file_share_mount_point}/{tlo_config['DEFAULT']['USERNAME']}/"
-              f"{checkpoint_job_id(seed)}/0/0/suspended_simulation.pickle"
+        local_checkpoint_path = _CHECKPOINT_LOCAL_PATHS[seed]  # populated once,
+            # before the main loop, by ensure_checkpoints_ready_and_downloaded()
+            # for every seed in CHECKPOINT_SEEDS - a KeyError here would mean
+            # `seed` genuinely isn't one of those, worth investigating directly.
+
+        checkpoint_remote_filename = f"suspended_simulation_seed{seed}.pickle"
+        upload_local_file(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], str(local_checkpoint_path),
+            tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + checkpoint_remote_filename,
         )
+        suspended_pickle_path = f"{remote_azure_directory}/{checkpoint_remote_filename}"
         resume_arg = f"--resume-simulation {suspended_pickle_path}"
 
     command_template = Template("""
@@ -425,10 +433,12 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     submit_azure_job()'s own mechanics, with three deliberate
     differences:
 
-    1. job_id is checkpoint_job_id(seed) - deterministic, not the usual
-       filename+timestamp+uuid scheme - so a later resuming trial can
-       compute this job's location directly from its own seed, with no
-       lookup table involved (see checkpoint_seeds.py).
+    1. job_id is checkpoint_job_id(seed, commit) - deterministic, not
+       the usual filename+timestamp+uuid scheme - so a later resuming
+       trial can compute this job's location directly from its own seed
+       (and whichever commit it's decided to trust - see
+       find_checkpoint_commit_for_seed()) with no lookup table involved
+       (see checkpoint_seeds.py).
     2. scenario.seed is set DIRECTLY to `seed` (not SMAC's info.seed via
        the normal ask-tell loop - this function is called ahead of the
        main loop, not from within it), with number_of_draws=1,
@@ -473,7 +483,7 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     run_json = tlo_scenario.save_draws(commit=commit_hexsha)
 
     file_share_mount_point = "mnt"
-    job_id = checkpoint_job_id(seed)  # deterministic - see docstring point 1
+    job_id = checkpoint_job_id(seed, commit_hexsha)  # deterministic, commit-scoped - see docstring point 1
     azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = _get_batch_client()
@@ -564,6 +574,127 @@ def generate_all_checkpoints() -> None:
     """
     for seed in CHECKPOINT_SEEDS:
         generate_checkpoint_job(seed)
+
+
+def azure_job_exists(job_id: str) -> bool:
+    """
+    True if a job with this id already exists on Azure Batch, regardless
+    of its current state. Used by find_checkpoint_commit_for_seed() to
+    search across candidate commits for an existing, reusable checkpoint
+    - a genuine LOOKUP, not (per the earlier design decision) something
+    used to silently skip a submission the user asked for.
+    generate_all_checkpoints()/generate_checkpoint_job() still submit
+    unconditionally, controlled purely by SUBMIT_SUSPEND_PART - see
+    that function's own docstring - this function is never called from
+    there.
+    """
+    batch_client = _get_batch_client()
+    try:
+        batch_client.job.get(job_id=job_id)
+        return True
+    except Exception:
+        return False
+
+
+def find_checkpoint_commit_for_seed(seed: int) -> str | None:
+    """
+    Searches, in order, the CURRENT commit first, then every commit
+    listed in VALID_CHECKPOINT_COMMITS (optimisation_parameters.py), for
+    one that has an EXISTING checkpoint job for `seed` - lets you reuse
+    a checkpoint generated under an older, manually-vetted commit (e.g.
+    a later commit changed something that doesn't affect the pre-resume
+    portion of the simulation at all) rather than being forced to
+    regenerate one every time the commit changes.
+
+    Returns the first matching commit, or None if none of the searched
+    commits has a checkpoint job for this seed at all.
+    """
+    current_commit = _get_commit()
+    candidate_commits = [current_commit] + [c for c in VALID_CHECKPOINT_COMMITS if c != current_commit]
+    for commit in candidate_commits:
+        if azure_job_exists(checkpoint_job_id(seed, commit)):
+            return commit
+    return None
+
+
+def ensure_checkpoints_ready_and_downloaded() -> dict[int, Path]:
+    """
+    Called ONCE, before the main ask-tell loop, whenever
+    USE_SUSPEND_RESUME is True. Fixes a real bug: checkpoint jobs were
+    previously only ever SUBMITTED, with nothing checking whether
+    they'd actually FINISHED, and nothing making their output available
+    to a resuming trial in a way tlo batch-run's --resume-simulation
+    argument can actually use - resuming trials were failing as a
+    result, since --resume-simulation needs a path to an already
+    LOCALLY-DOWNLOADED checkpoint (a different job's own remote
+    file-share directory isn't something a LATER job's remote task can
+    rely on referencing directly) - see submit_azure_job(), which
+    re-uploads whatever this function downloads into each real trial's
+    OWN directory.
+
+    Uses download_run_outputs() - the SAME function fetch_azure_result()
+    uses for real trial results - so checkpoints land in exactly the
+    same local convention every other downloaded output already uses:
+    outputs/<username>/<job_id>/0/0/... (e.g.
+    outputs/mm2908@ic.ac.uk/checkpoint-seed209652396-a1b2c3d4e5f6/0/0/
+    suspended_simulation.pickle) - username resolved dynamically from
+    tlo_config["DEFAULT"]["USERNAME"], not hardcoded.
+
+    For every seed in CHECKPOINT_SEEDS:
+      1. Finds which commit's checkpoint to use, via
+         find_checkpoint_commit_for_seed() - raises loudly if none of
+         the current commit or VALID_CHECKPOINT_COMMITS has ANY
+         checkpoint job for this seed at all, rather than letting this
+         surface later, more confusingly, the first time a real trial
+         tries to resume.
+      2. BLOCKS (polling every POLL_INTERVAL_SECONDS) until that
+         checkpoint job has actually finished on Azure, then confirms
+         it succeeded - raises loudly on failure, rather than silently
+         proceeding to download a failed/partial run's output.
+      3. Downloads it locally via download_run_outputs() - the SAME
+         function used for real trial results.
+
+    Returns {seed: local_path_to_suspended_simulation.pickle}.
+    """
+    local_paths: dict[int, Path] = {}
+    for seed in CHECKPOINT_SEEDS:
+        commit = find_checkpoint_commit_for_seed(seed)
+        if commit is None:
+            raise RuntimeError(
+                f"No checkpoint job found for seed {seed} under the current commit "
+                f"or any commit in VALID_CHECKPOINT_COMMITS (optimisation_parameters.py). "
+                f"Run with SUBMIT_SUSPEND_PART=True first, or add an appropriate "
+                f"commit to VALID_CHECKPOINT_COMMITS."
+            )
+
+        job = AzureJobHandle(job_id=checkpoint_job_id(seed, commit), submitted_at=0.0, commit_hexsha=commit)
+
+        print(f"[checkpoint] waiting for {job.job_id} (seed={seed}) to finish...")
+        while not azure_job_is_finished(job):
+            time.sleep(POLL_INTERVAL_SECONDS)
+
+        if not azure_task_succeeded(job):
+            raise RuntimeError(
+                f"Checkpoint job {job.job_id} (seed={seed}) finished but FAILED - "
+                f"cannot proceed with USE_SUSPEND_RESUME=True until this is resolved "
+                f"(regenerate it, or remove this commit from VALID_CHECKPOINT_COMMITS "
+                f"if it's no longer trusted)."
+            )
+
+        draw_dir = download_run_outputs(job)
+        local_pickle = draw_dir / "0" / "suspended_simulation.pickle"
+        if not local_pickle.exists():
+            raise RuntimeError(
+                f"Checkpoint job {job.job_id} (seed={seed}) succeeded but {local_pickle} "
+                f"wasn't found after downloading - check the remote command actually "
+                f"wrote suspended_simulation.pickle into the working directory it "
+                f"copies back."
+            )
+
+        print(f"[checkpoint] {job.job_id} ready - downloaded to {local_pickle}")
+        local_paths[seed] = local_pickle
+
+    return local_paths
 
 
 def azure_job_is_finished(job: AzureJobHandle) -> bool:
@@ -900,6 +1031,17 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
 
 if SUBMIT_SUSPEND_PART:
     generate_all_checkpoints()
+
+# Populated once, here, before ANYTHING submits a real trial -
+# submit_azure_job() reads from this dict when USE_SUSPEND_RESUME is
+# True. Left as an empty dict when USE_SUSPEND_RESUME is False, since
+# nothing ever reads it in that case. This call BLOCKS (polls until
+# every needed checkpoint has actually finished on Azure, then
+# downloads it) - see ensure_checkpoints_ready_and_downloaded()'s own
+# docstring for exactly what this fixes and why.
+_CHECKPOINT_LOCAL_PATHS: dict[int, Path] = {}
+if USE_SUSPEND_RESUME:
+    _CHECKPOINT_LOCAL_PATHS = ensure_checkpoints_ready_and_downloaded()
 
 # --------------------------------------------------------------------------
 # 3. Build SMAC in ask-tell mode (n_trials still needed for its budget

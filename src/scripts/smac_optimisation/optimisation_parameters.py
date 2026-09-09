@@ -65,7 +65,7 @@ USE_SUSPEND_RESUME = True   # whether REAL trials resume from a pre-resume
                              # every trial runs a full, fresh simulation,
                              # completely independent of SUBMIT_SUSPEND_PART
                              # below
-SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
+SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
                              # jobs (the "first part" of suspend/resume) THIS
                              # run - a plain user-controlled toggle, not
                              # derived from checking what's already present on
@@ -76,4 +76,15 @@ SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
                              # yet using them for real trials, or False/True
                              # to use already-generated checkpoints without
                              # regenerating them.
+VALID_CHECKPOINT_COMMITS: list[str] = [
+    # Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
+    # are still considered acceptable to reuse, even when the pipeline is
+    # currently running under a DIFFERENT (e.g. newer) commit - e.g. a
+    # later commit only changed something that doesn't affect the
+    # pre-resume portion of the simulation at all. The CURRENT commit is
+    # always checked FIRST, automatically - only list PAST commits here,
+    # in the order you'd prefer them tried if the current commit has no
+    # checkpoint of its own yet. See checkpoint_seeds.checkpoint_job_id()
+    # and optimisation_pipeline.find_checkpoint_commit_for_seed().
+]
 

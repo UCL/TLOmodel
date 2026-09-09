@@ -94,16 +94,34 @@ def is_known_checkpoint_seed(seed: int) -> bool:
     return seed in _CHECKPOINT_SEEDS_SET
 
 
-def checkpoint_job_id(seed: int) -> str:
+def checkpoint_job_id(seed: int, commit: str) -> str:
     """
-    Deterministic, seed-derived Azure job id for this seed's pre-resume
-    checkpoint - deliberately NOT the usual filename+timestamp+uuid
-    scheme submit_azure_job() uses for real trials (that scheme is
-    intentionally unpredictable, to avoid collisions across many
-    concurrent submissions). This one needs to be predictable instead,
-    so a resuming trial can compute it directly from its own seed with
-    no lookup table involved. Only ~MAX_CONFIG_CALLS of these ever get
-    submitted, once, so collision risk is negligible in practice.
+    Deterministic, seed+commit-derived Azure job id for this seed's
+    pre-resume checkpoint - deliberately NOT the usual
+    filename+timestamp+uuid scheme submit_azure_job() uses for real
+    trials (that scheme is intentionally unpredictable, to avoid
+    collisions across many concurrent submissions). This one needs to
+    be predictable instead, so a resuming trial can compute it directly
+    from its own seed with no lookup table involved.
+
+    COMMIT IS PART OF THE ID, not just a label. An earlier version of
+    this function used seed alone - which meant regenerating checkpoints
+    under a NEW commit collided with the OLD commit's already-existing
+    job of the same name (Azure jobs can't be recreated/overwritten
+    under an id already in use). Including the commit means different
+    commits naturally get different, non-colliding checkpoint jobs -
+    and lets optimisation_pipeline.py's checkpoint-selection logic
+    search across several ACCEPTED commits
+    (see VALID_CHECKPOINT_COMMITS in optimisation_parameters.py) to find
+    and reuse an existing checkpoint from an older, still-trusted
+    commit, rather than being forced to regenerate one every time the
+    commit changes.
+
+    Truncated to the first 12 hex characters (matching this project's
+    existing convention for displaying commit hashes elsewhere) - short
+    enough to keep the job id a reasonable length; a collision between
+    two genuinely different commits' first 12 hex characters isn't a
+    realistic concern.
 
     Raises ValueError if `seed` isn't a known checkpoint seed - same
     "fail loudly on desync" reasoning as elsewhere in this file, applied
@@ -117,4 +135,4 @@ def checkpoint_job_id(seed: int) -> str:
             f"the RandomState(0) replication has desynchronized from SMAC's actual "
             f"seed sequence for this run."
         )
-    return f"checkpoint-seed{seed}"
+    return f"checkpoint-seed{seed}-{commit[:12]}"
