@@ -70,11 +70,10 @@ from __future__ import annotations
 
 import numpy as np
 
-MAX_CONFIG_CALLS = 5  # must match max_config_calls used by the real SMAC intensifier
-                       # (see get_intensifier(scenario, max_config_calls=...) in
-                       # optimisation_pipeline.py) - this is the assumed upper
-                       # bound on how many distinct seeds SMAC's pool will ever
-                       # contain; not yet fully confirmed, see module docstring.
+from optimisation_parameters import MAX_CONFIG_CALLS  # SHARED with
+    # optimisation_pipeline.py's get_intensifier(max_config_calls=...) - both
+    # import this SAME value now, rather than being set independently (as
+    # this file used to do) and relying on a comment to keep them in sync.
 
 # The exact, ordered sequence of seed values SMAC is expected to draw
 # from RandomState(scenario.seed). Computed ONCE, independently -

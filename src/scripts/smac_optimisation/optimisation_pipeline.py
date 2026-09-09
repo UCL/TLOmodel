@@ -78,6 +78,11 @@ from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
     json_safe_config,
 )
+from optimisation_parameters import (
+    N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, PENALTY_COEFFICIENT_MULTIPLIER,
+    N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
+    CONFIG_YEAR_START_DATE,
+)
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
 
@@ -117,6 +122,10 @@ CHECKPOINT_SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario_suspend.
 CONFIG_FILE = "tlo.conf"
 
 # --- Suspend/resume (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations) ---
+# USE_SUSPEND_RESUME / SUBMIT_SUSPEND_PART now live in
+# optimisation_parameters.py (imported above), alongside every other
+# pipeline hyperparameter, rather than being defined here.
+#
 # When USE_SUSPEND_RESUME is True, every submission resumes from a
 # pre-resume checkpoint whose location is derived DIRECTLY from the
 # trial's own SMAC-issued seed, via checkpoint_seeds.checkpoint_job_id().
@@ -137,7 +146,6 @@ CONFIG_FILE = "tlo.conf"
 # Since each checkpoint job is single-run, its output always sits at
 # <checkpoint_job_id(seed)>/0/0/suspended_simulation.pickle - draw=0,
 # run=0, never a variable run number.
-USE_SUSPEND_RESUME = False
 
 _config = None  # lazily loaded, see _get_config()
 _commit_hexsha = None  # resolved once per process, see _get_commit()
@@ -227,6 +235,23 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     below - TLO's own multi-seed averaging is intentionally not used
     here, since SMAC is now the one deciding how many realisations a
     given config gets.
+
+    IMPORTANT, when USE_SUSPEND_RESUME is True: scenario.seed set here
+    is still serialised into this trial's own JSON exactly as usual, but
+    it has NO EFFECT on a resumed trial's actual randomness. Confirmed
+    directly from TLO's own docs - tlo.core: every module carries its
+    own numpy.random.RandomState, with its own internal state; tlo.
+    simulation: save_to_pickle()/load_from_pickle() serialise/restore
+    the ENTIRE Simulation object via dill, which necessarily captures
+    every module's RNG state exactly as it stood at suspend time.
+    Simulation.load_from_pickle() also takes no seed argument at all.
+    So a resumed run's randomness continues from whatever RNG state was
+    already baked into the checkpoint at generation time (see
+    generate_checkpoint_job(), which sets scenario.seed to
+    CHECKPOINT_SEEDS[i] - THAT assignment is the one that actually
+    matters) - this trial's own `seed` here only ever gets used LOCALLY,
+    to select which checkpoint file to resume from via
+    checkpoint_job_id(seed), never to seed anything on the remote node.
     """
     commit_hexsha = _get_commit()
     tlo_config = _get_config()
@@ -235,7 +260,13 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     tlo_scenario = TloOptimisationScenario()
     for key, value in json_safe_config(config).items():
         setattr(tlo_scenario, key, value)  # e.g. scenario.intervention_coverage = 0.73
-    tlo_scenario.seed = seed  # SMAC's seed drives this run's stochasticity directly
+    tlo_scenario.seed = seed  # drives this run's stochasticity ONLY when
+                               # USE_SUSPEND_RESUME is False (a fresh
+                               # Simulation genuinely gets seeded from this
+                               # value via low_bias_32). When resuming, this
+                               # is set/serialised for consistency but is
+                               # otherwise INERT - see this function's
+                               # docstring for why, confirmed from TLO's docs.
     tlo_scenario.number_of_draws = 1
     tlo_scenario.runs_per_draw = 1  # one physical realisation per submission
 
@@ -367,32 +398,24 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
 # not batched, for TLO's low_bias_32 formula to line up correctly).
 # --------------------------------------------------------------------------
 
-SUSPEND_DATE = Date(2027, 1, 1)  # HYPERPARAMETER: the date at which
-    # config-dependent behaviour starts - matches config_start_year='2027'
-    # in smac_scenario_suspend.py's _get_scenarios(). Everything before
-    # this is identical regardless of config, so it's safe to compute
-    # once per seed and reuse. Confirm this genuinely matches wherever
-    # your scale-up/scenario divergence begins - an early SUSPEND_DATE
-    # wastes the point of this feature (little pre-resume work saved)
-    # and a late one risks checkpointing PAST where config parameters
-    # should have started applying.
-
-
-def azure_job_exists(job_id: str) -> bool:
-    """
-    True if a job with this id already exists on Azure Batch, regardless
-    of its current state (running, completed, failed) - a lightweight
-    existence check, distinct from azure_job_is_finished()/
-    azure_task_succeeded() which check STATE of a job already known to
-    exist. Used by generate_checkpoint_if_needed() to decide whether a
-    submission is even necessary in the first place.
-    """
-    batch_client = _get_batch_client()
-    try:
-        batch_client.job.get(job_id=job_id)
-        return True
-    except Exception:
-        return False
+SUSPEND_DATE = Date(CONFIG_YEAR_START_DATE - 1, 12, 31)  # the LAST DAY BEFORE
+    # config-dependent behaviour starts, NOT CONFIG_YEAR_START_DATE itself.
+    # TLO's resume mechanism has no separate "resume date" argument -
+    # Simulation.load_from_pickle() just continues the simulation forward
+    # from wherever its internal clock/event queue stopped (confirmed from
+    # its signature - no date parameter at all). So suspending on
+    # (CONFIG_YEAR_START_DATE-1)-12-31 means the very next simulated day,
+    # once resumed, is naturally CONFIG_YEAR_START_DATE-01-01 - exactly
+    # the intended resume point - with no second constant needed.
+    # Suspending ON CONFIG_YEAR_START_DATE-01-01 itself (the previous,
+    # incorrect version of this line) would instead checkpoint one day
+    # too late - AFTER that first day had already been simulated under
+    # whatever fixed, no-scale-up behaviour the checkpoint scenario uses,
+    # rather than handing that day over to the real, resumed config.
+    #
+    # Derived directly from CONFIG_YEAR_START_DATE (optimisation_parameters.py),
+    # the SAME constant smac_scenario_suspend.py's config_start_year and
+    # initialise.py's PERIOD_BOUNDARIES both derive from.
 
 
 def generate_checkpoint_job(seed: int) -> AzureJobHandle:
@@ -412,7 +435,14 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
        runs_per_draw=1 (draw=0, run=0), so TLO's
        low_bias_32(scenario_seed + sample_number=0) here matches exactly
        what a real trial resuming with info.seed=seed will independently
-       compute for itself.
+       compute for itself. THIS is the assignment that actually
+       determines a resumed trial's randomness - confirmed from TLO's
+       own docs that save_to_pickle()/load_from_pickle() preserve every
+       module's RandomState exactly as it stood at suspend time, and
+       load_from_pickle() takes no seed argument at all. The seed set on
+       a RESUMING trial's own scenario (submit_azure_job(), when
+       USE_SUSPEND_RESUME is True) is genuinely inert by comparison -
+       see that function's docstring.
     3. The remote command uses --suspend-date instead of running to
        completion, and skips parse-log/gzip (meaningless for an
        incomplete run) - just checkpoints and copies the working
@@ -513,48 +543,27 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
 
 
-def generate_checkpoint_if_needed(seed: int) -> None:
-    """
-    Submits a checkpoint-generation job for `seed`, UNLESS one already
-    exists - checked via azure_job_exists(checkpoint_job_id(seed)), so
-    re-running checkpoint generation (e.g. after a restart) doesn't
-    waste compute regenerating checkpoints that already exist,
-    regardless of whether they're still running, finished successfully,
-    or failed:
-      - already exists and still running -> skip (let it finish)
-      - already exists and succeeded     -> skip (nothing to do)
-      - already exists and FAILED        -> skip, but WARN loudly -
-        deliberately not auto-resubmitted, since silently retrying a
-        failed job could mask a real, recurring problem (bad
-        SUSPEND_DATE, broken commit, etc.) rather than surfacing it.
-      - doesn't exist yet -> submit
-    """
-    job_id = checkpoint_job_id(seed)
-    if azure_job_exists(job_id):
-        handle = AzureJobHandle(job_id=job_id, submitted_at=0.0, commit_hexsha=_get_commit())
-        if not azure_job_is_finished(handle):
-            print(f"[checkpoint] {job_id} already exists and is still running - skipping.")
-        elif azure_task_succeeded(handle):
-            print(f"[checkpoint] {job_id} already exists and succeeded - skipping.")
-        else:
-            print(f"[checkpoint] WARNING: {job_id} already exists but FAILED - "
-                  f"not auto-resubmitting; investigate and delete/resubmit manually if needed.")
-        return
-
-    generate_checkpoint_job(seed)
-
-
 def generate_all_checkpoints() -> None:
     """
-    Submits (or skips, per generate_checkpoint_if_needed) one checkpoint
-    job for every seed in CHECKPOINT_SEEDS. Call this ONCE, before the
-    main ask-tell loop, whenever USE_SUSPEND_RESUME is True - and wait
-    for all of them to finish (e.g. via azure_job_is_finished polling)
-    before letting the main loop submit any real trial that might
-    reference one of these checkpoints.
+    Submits one checkpoint job for EVERY seed in CHECKPOINT_SEEDS,
+    unconditionally - controlled purely by the SUBMIT_SUSPEND_PART
+    hyperparameter (optimisation_parameters.py) at the call site, NOT by
+    checking Azure for what already exists. An earlier version of this
+    function checked whether a job already existed first and skipped
+    anything already present - deliberately removed: whether to
+    (re)generate checkpoints this run is now entirely a user decision
+    (set SUBMIT_SUSPEND_PART), not something inferred from Azure state.
+    If you don't want to regenerate existing checkpoints, set
+    SUBMIT_SUSPEND_PART = False.
+
+    Call this ONCE, before the main ask-tell loop, whenever
+    SUBMIT_SUSPEND_PART is True - and wait for all of them to finish
+    (e.g. via azure_job_is_finished polling) before letting the main
+    loop submit any real trial that might reference one of these
+    checkpoints.
     """
     for seed in CHECKPOINT_SEEDS:
-        generate_checkpoint_if_needed(seed)
+        generate_checkpoint_job(seed)
 
 
 def azure_job_is_finished(job: AzureJobHandle) -> bool:
@@ -757,7 +766,7 @@ def record_result(
 
     append_history_to_file({**history[-1], "job_id": job_id, "commit": commit})
 
-    K = 3 * dalys  # HYPERPARAMETER: penalty coefficient - rough, not load-bearing
+    K = PENALTY_COEFFICIENT_MULTIPLIER * dalys  # penalty coefficient - rough, not load-bearing
     # for search quality now that ConstrainedEI does the real steering,
     # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
     penalty = K * sum(entry[name] for name in CONSTRAINT_NAMES)
@@ -876,34 +885,55 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
 
 
 # --------------------------------------------------------------------------
+# 2b. Pre-resume checkpoint generation, if requested THIS run.
+#     SUBMIT_SUSPEND_PART is a plain user toggle (optimisation_parameters.py)
+#     - not derived from checking what's already on Azure (see
+#     generate_all_checkpoints()'s docstring). Independent of
+#     USE_SUSPEND_RESUME: you can generate checkpoints without yet using
+#     them for real trials, or use already-generated checkpoints without
+#     regenerating them this run. If both are True in the SAME run, note
+#     this doesn't block/wait for checkpoint completion before the main
+#     loop starts below - make sure checkpoints have actually finished
+#     (e.g. check manually, or poll azure_job_is_finished yourself)
+#     before relying on early real trials successfully resuming from them.
+# --------------------------------------------------------------------------
+
+if SUBMIT_SUSPEND_PART:
+    generate_all_checkpoints()
+
+# --------------------------------------------------------------------------
 # 3. Build SMAC in ask-tell mode (n_trials still needed for its budget
 #    bookkeeping, even though you're driving the loop yourself)
 # --------------------------------------------------------------------------
 
-scenario = Scenario(configspace, n_trials=100, deterministic=False)  # HYPERPARAMETER (n_trials):
-                                                                        # total trial budget - remember
-                                                                        # max_config_calls means this
-                                                                        # isn't the same as "number of
-                                                                        # distinct configs explored"
+scenario = Scenario(configspace, n_trials=N_TRIALS, deterministic=False)  # total trial budget -
+                                                                        # remember max_config_calls
+                                                                        # means this isn't the same
+                                                                        # as "number of distinct
+                                                                        # configs explored"
 
-# HYPERPARAMETER: max_config_calls caps how many seeds the intensifier
-# will use to confirm any single config (default is 3). Set to 5 to
-# match the "5 seeds for true convergence" threshold - a config can
-# still be discarded early on fewer seeds if it's clearly uncompetitive,
-# but nothing gets promoted to incumbent-quality trust on fewer than up
-# to 5 confirmations. Combined with the noisy-EI correction in
-# ConstrainedEI, this makes the adaptive sampling trustworthy rather
-# than just efficient.
-intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_config_calls=5)
+# max_config_calls caps how many seeds the intensifier will use to
+# confirm any single config (default is 3). Set (via
+# optimisation_parameters.MAX_CONFIG_CALLS) to match the "N seeds for
+# true convergence" threshold - a config can still be discarded early on
+# fewer seeds if it's clearly uncompetitive, but nothing gets promoted
+# to incumbent-quality trust on fewer than MAX_CONFIG_CALLS
+# confirmations. Combined with the noisy-EI correction in ConstrainedEI,
+# this makes the adaptive sampling trustworthy rather than just
+# efficient. SAME value checkpoint_seeds.py uses for CHECKPOINT_SEEDS -
+# see optimisation_parameters.py's own comment on why these must match.
+intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_config_calls=MAX_CONFIG_CALLS)
 
 acquisition_function = ConstrainedEI(
     configspace=configspace,
     objective_name="dalys",
     constraint_names=CONSTRAINT_NAMES,
     history_provider=lambda: history,
-    retrain_every=1,  # HYPERPARAMETER: refit on every new result - refitting is
-                       # cheap relative to simulation cost, so there's no reason
-                       # to tolerate any staleness (see earlier discussion)
+    xi=EI_XI,
+    retrain_every=RETRAIN_EVERY,  # refit on every new result by default -
+                       # refitting is cheap relative to simulation cost,
+                       # so there's no reason to tolerate staleness
+                       # (see earlier discussion)
 )
 
 smac = HyperparameterOptimizationFacade(
@@ -934,13 +964,9 @@ print(f"Warm-started with {n_seeded} run(s): {len(PRIOR_RUNS)} manual, {len(reco
 # --------------------------------------------------------------------------
 # 5. The ask-tell loop itself: keep N_CONCURRENT Azure jobs in flight,
 #    ask() for a replacement each time one completes and is told back.
+#    N_CONCURRENT / POLL_INTERVAL_SECONDS now live in
+#    optimisation_parameters.py (imported at the top of this file).
 # --------------------------------------------------------------------------
-
-N_CONCURRENT = 1           # HYPERPARAMETER (operational): concurrent Azure jobs in flight -
-                            # interacts with retrain_every; several jobs finishing in the
-                            # same polling pass can mean refitting more often than intended
-POLL_INTERVAL_SECONDS = 10  # HYPERPARAMETER (operational): low-stakes, trades API call
-                              # frequency against latency between job completion and SMAC seeing it
 
 pending: list[tuple[TrialInfo, AzureJobHandle]] = []
 

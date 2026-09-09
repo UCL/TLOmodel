@@ -27,9 +27,17 @@ from __future__ import annotations
 import pandas as pd
 
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
-from optimisation_parameters import START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY, CONFIG_YEAR_START_DATE,YEAR_END_DATE
+from optimisation_parameters import START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY
 
-POSTPROCESS_TARGET_PERIOD = (pd.Timestamp(CONFIG_YEAR_START_DATE, 1, 1), pd.Timestamp(YEAR_END_DATE, 1, 1))
+# NOTE: POSTPROCESS_TARGET_PERIOD is used EXACTLY as imported above, from
+# postprocess_output.py's own TARGET_PERIOD - it must NOT be recomputed
+# locally here (an earlier version of this file did, redundantly, from
+# the same underlying CONFIG_YEAR_START_DATE/YEAR_END_DATE constants -
+# this silently defeated the consistency check just below, since it
+# would then always compare PERIOD_BOUNDARIES against a value that no
+# longer reflected whatever postprocess_output.py's TARGET_PERIOD
+# actually was, e.g. if that file's TARGET_PERIOD were ever changed
+# independently. Always use the genuinely-imported value.
 
 # --------------------------------------------------------------------------
 # 1. Period-bucketed HIV-HRH and HIV-consumable budget constraints

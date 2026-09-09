@@ -24,6 +24,8 @@ import numpy as np
 
 from ConfigSpace import Configuration
 
+from optimisation_parameters import CONVERGENCE_WINDOW, CONVERGENCE_MIN_RELATIVE_IMPROVEMENT
+
 
 # --------------------------------------------------------------------------
 # 1. Live history logging
@@ -73,13 +75,10 @@ def append_history_to_file(entry: dict) -> None:
 
 # --------------------------------------------------------------------------
 # 2. Convergence tracking
+#    CONVERGENCE_WINDOW / CONVERGENCE_MIN_RELATIVE_IMPROVEMENT now live in
+#    optimisation_parameters.py (imported above) alongside every other
+#    pipeline hyperparameter, rather than being defined here.
 # --------------------------------------------------------------------------
-
-CONVERGENCE_WINDOW = 15                    # HYPERPARAMETER: how many completed
-                                             # trials back to compare against
-CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01 # HYPERPARAMETER: required fractional
-                                             # improvement over that window to
-                                             # keep going (0.01 = 1%)
 
 
 def config_key(config: Configuration) -> tuple:
