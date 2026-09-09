@@ -34,8 +34,8 @@ with what a fresh, non-resumed run would have used.
 from pathlib import Path
 from typing import Dict
 
-#import sys
-#sys.path.insert(0, str(Path(__file__).resolve().parent))  # ensures sibling
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # ensures sibling
     # modules in this same directory (optimisation_parameters.py, and
     # anything else this file imports directly) are importable regardless
     # of the working directory the process was actually launched from.
