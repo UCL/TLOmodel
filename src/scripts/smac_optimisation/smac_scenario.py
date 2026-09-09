@@ -43,13 +43,26 @@ locally before submitting to batch - but that CLI path is now purely
 optional and not what the SMAC loop itself uses.
 
 HYPERPARAMETERS: every tunable knob in this file is marked inline with a
-"HYPERPARAMETER" comment - grep for that tag across all three files
-(constrained_ei.py, smac_scenario.py, ask_tell_azure_example.py) to find
-the complete list in one pass.
+"HYPERPARAMETER" comment - grep for that tag across all files
+(constrained_ei.py, smac_scenario.py, convergence_monitoring.py,
+optimisation_pipeline.py) to find the complete list in one pass.
 """
 
 from pathlib import Path
 from typing import Dict
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # ensures sibling
+    # modules in this same directory (optimisation_parameters.py, and
+    # anything else this file imports directly) are importable regardless
+    # of the working directory the process was actually launched from.
+    # Needed specifically because TLO's own `tlo scenario-run`/
+    # `tlo batch-run` load this file dynamically, by path, from wherever
+    # they're invoked (typically the repo root) - unlike running this
+    # file directly (python's own automatic sys.path[0] behaviour, which
+    # is why optimisation_pipeline.py's own sibling imports never hit
+    # this problem), that dynamic loading does NOT automatically add this
+    # file's own directory to sys.path.
 
 from tlo import Date, logging
 from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsystem
@@ -76,7 +89,7 @@ class TloOptimisationScenario(BaseScenario):
                                        # config gets re-evaluated with a
                                        # different seed, not a fixed sweep
 
-        # Place holders
+        # Place holders
         self.config_annual_testing_rate_adults = None
         self.annual_rate_selftest = None
         self.prob_hiv_test_at_anc_or_delivery = None

@@ -34,6 +34,19 @@ with what a fresh, non-resumed run would have used.
 from pathlib import Path
 from typing import Dict
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # ensures sibling
+    # modules in this same directory (optimisation_parameters.py, and
+    # anything else this file imports directly) are importable regardless
+    # of the working directory the process was actually launched from.
+    # Needed specifically because TLO's own `tlo scenario-run`/
+    # `tlo batch-run` load this file dynamically, by path, from wherever
+    # they're invoked (typically the repo root) - unlike running
+    # optimisation_pipeline.py directly (python's own automatic
+    # sys.path[0] behaviour, which is why that file's own sibling imports
+    # never hit this problem), that dynamic loading does NOT automatically
+    # add this file's own directory to sys.path.
+
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
