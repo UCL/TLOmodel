@@ -258,6 +258,21 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     to look up which already-downloaded checkpoint file
     (_CHECKPOINT_LOCAL_PATHS[seed]) to re-upload and resume from, never
     to seed anything on the remote node.
+
+    RESUME MECHANISM, confirmed directly against TLO's current master
+    cli.py: `tlo batch-run` (what actually executes remotely) takes a
+    FIXED four positional arguments and nothing else - no
+    --resume-simulation, no catch-all for extra scenario args. Passing
+    --resume-simulation on the remote command line (an earlier version
+    of this function did) fails outright. The REAL mechanism, mirrored
+    from batch_submit's own body in cli.py: scenario.parse_arguments()
+    gets called LOCALLY, BEFORE scenario.save_draws() - so whatever
+    --resume-simulation sets gets baked directly into the run_json file
+    itself, and the remote `tlo batch-run` command never needs to see
+    any extra flags at all. That's why job_id/azure_directory and the
+    checkpoint re-upload now happen BEFORE save_draws() below, not
+    after - parse_arguments() needs the final remote path already
+    computed at the point it's called.
     """
     commit_hexsha = _get_commit()
     tlo_config = _get_config()
@@ -278,13 +293,14 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
 
     tlo_scenario.scenario_path = Path(SCENARIO_FILE)   # <-- add this line
 
-    run_json = tlo_scenario.save_draws(commit=commit_hexsha)
-
-    # --- from here down mirrors batch_submit's body in cli.py ---
+    # --- job identity / remote paths, needed BEFORE save_draws() now,
+    #     since parse_arguments() (for --resume-simulation) needs the
+    #     final remote checkpoint path already computed - see docstring ---
     file_share_mount_point = "mnt"
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
     job_id = tlo_scenario.get_log_config()["filename"] + "-" + timestamp + "-" + uuid.uuid4().hex[:8]
     azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
+    remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
 
     batch_client = _get_batch_client()
     create_file_share(tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"])
@@ -293,6 +309,31 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
             tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
             "/".join(os.path.split(azure_directory)[: idx + 1]),
         )
+
+    # If USE_SUSPEND_RESUME is True, this task resumes from a pre-resume
+    # checkpoint - the checkpoint (already downloaded locally, once, up
+    # front, by ensure_checkpoints_ready_and_downloaded() before the main
+    # loop started) gets RE-UPLOADED into THIS TRIAL'S OWN
+    # azure_directory, then --resume-simulation is set via
+    # parse_arguments() (NOT a remote CLI flag - see docstring for why),
+    # so the resume path gets baked into run_json itself before it's
+    # even saved.
+    if USE_SUSPEND_RESUME:
+        local_checkpoint_path = _CHECKPOINT_LOCAL_PATHS[seed]  # populated once,
+            # before the main loop, by ensure_checkpoints_ready_and_downloaded()
+            # for every seed in CHECKPOINT_SEEDS - a KeyError here would mean
+            # `seed` genuinely isn't one of those, worth investigating directly.
+
+        checkpoint_remote_filename = f"suspended_simulation_seed{seed}.pickle"
+        upload_local_file(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], str(local_checkpoint_path),
+            tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + checkpoint_remote_filename,
+        )
+        suspended_pickle_path = f"{remote_azure_directory}/{checkpoint_remote_filename}"
+        tlo_scenario.parse_arguments(["--resume-simulation", suspended_pickle_path])
+
+    run_json = tlo_scenario.save_draws(commit=commit_hexsha)
+
     upload_local_file(
         tlo_config["STORAGE"]["CONNECTION_STRING"], run_json,
         tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + os.path.basename(run_json),
@@ -323,51 +364,21 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
-    remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
-    # If USE_SUSPEND_RESUME is True, this task resumes from a pre-resume
-    # checkpoint - but NOT by referencing the checkpoint job's own
-    # remote file-share directory directly (that was the bug:
-    # --resume-simulation needs a path to an already LOCALLY-DOWNLOADED
-    # checkpoint, and a different job's remote directory isn't something
-    # THIS job's remote task can rely on). Instead, the checkpoint
-    # (already downloaded locally, once, up front, by
-    # ensure_checkpoints_ready_and_downloaded() before the main loop
-    # started) gets RE-UPLOADED into THIS TRIAL'S OWN azure_directory,
-    # right alongside run_json, and referenced from there.
-    #
-    # ASSUMPTION, not yet independently verified: this assumes
-    # `tlo batch-run` itself accepts --resume-simulation <path> directly
-    # (mirroring `tlo scenario-run`'s documented syntax), since this
-    # pipeline builds its own remote command rather than going through
-    # `tlo batch-submit`'s CLI layer (which is what the wiki's own
-    # examples use, and which may do its own path resolution/translation
-    # before invoking batch-run remotely). Worth confirming with a
-    # cheap manual test (or `tlo batch-run --help`) before relying on
-    # this for a real, costly run.
-    resume_arg = ""
-    if USE_SUSPEND_RESUME:
-        local_checkpoint_path = _CHECKPOINT_LOCAL_PATHS[seed]  # populated once,
-            # before the main loop, by ensure_checkpoints_ready_and_downloaded()
-            # for every seed in CHECKPOINT_SEEDS - a KeyError here would mean
-            # `seed` genuinely isn't one of those, worth investigating directly.
-
-        checkpoint_remote_filename = f"suspended_simulation_seed{seed}.pickle"
-        upload_local_file(
-            tlo_config["STORAGE"]["CONNECTION_STRING"], str(local_checkpoint_path),
-            tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + checkpoint_remote_filename,
-        )
-        suspended_pickle_path = f"{remote_azure_directory}/{checkpoint_remote_filename}"
-        resume_arg = f"--resume-simulation {suspended_pickle_path}"
-
+    # NOTE: no --resume-simulation (or anything else) appended to the
+    # remote command any more - `tlo batch-run` has a fixed 4-positional-
+    # argument signature in TLO's current master cli.py, with no
+    # mechanism to accept extra flags at all. Whatever resume behaviour
+    # this trial needs is already baked into run_json via
+    # parse_arguments() above.
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
-    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number} $resume_arg
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
     tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
     cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
     gzip $working_dir/{draw_number}/{run_number}/*.{{txt,log}}
@@ -379,7 +390,6 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         working_dir=working_dir,
         task_dir=task_dir,
         remote_azure_directory=remote_azure_directory,
-        resume_arg=resume_arg,
     )
     command = f"/bin/bash -c '{command}'"
 
@@ -453,18 +463,26 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
        a RESUMING trial's own scenario (submit_azure_job(), when
        USE_SUSPEND_RESUME is True) is genuinely inert by comparison -
        see that function's docstring.
-    3. The remote command uses --suspend-date instead of running to
-       completion, and skips parse-log/gzip (meaningless for an
-       incomplete run) - just checkpoints and copies the working
-       directory back to the file share, same as normal jobs do for
-       their real outputs.
+    3. The remote command runs a scenario that's already been configured,
+       via parse_arguments(), to suspend at SUSPEND_DATE - not by
+       passing --suspend-date to the remote `tlo batch-run` command
+       (an earlier version of this function did - confirmed against
+       TLO's current master cli.py that `batch_run` has a FIXED four-
+       positional-argument signature with no mechanism to accept extra
+       flags at all, so that always failed). Instead, mirroring
+       batch_submit's own body in cli.py: parse_arguments() is called
+       LOCALLY, BEFORE save_draws(), so the suspend-date gets baked
+       directly into run_json itself - the remote command becomes a
+       plain, unmodified `tlo batch-run`.
 
-    ASSUMPTION, not yet independently verified: this assumes
-    `tlo batch-run` accepts --suspend-date <date> directly (mirroring
-    --resume-simulation's documented syntax) - same caveat as
-    submit_azure_job()'s own --resume-simulation assumption, worth
-    confirming with a cheap manual test before relying on this for a
-    real, costly checkpoint-generation run.
+    ASSUMPTION, not yet independently verified: that scenario.
+    parse_arguments(["--suspend-date", "<date>"]) is genuinely how
+    TLO's own tlo/scenario.py expects this to be invoked, mirroring
+    --resume-simulation's confirmed handling in cli.py's batch_submit -
+    --suspend-date itself doesn't appear anywhere in cli.py, so its
+    exact parsing lives entirely in tlo/scenario.py, which hasn't been
+    directly inspected. Worth confirming with a cheap manual test
+    before relying on this for a real, costly checkpoint-generation run.
     """
     commit_hexsha = _get_commit()
     tlo_config = _get_config()
@@ -479,6 +497,11 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     tlo_scenario.number_of_draws = 1
     tlo_scenario.runs_per_draw = 1
     tlo_scenario.scenario_path = Path(CHECKPOINT_SCENARIO_FILE)
+
+    # Baked into run_json via parse_arguments(), BEFORE save_draws() -
+    # see docstring point 3 for why this replaced passing --suspend-date
+    # as a remote CLI argument.
+    tlo_scenario.parse_arguments(["--suspend-date", SUSPEND_DATE.strftime("%Y-%m-%d")])
 
     run_json = tlo_scenario.save_draws(commit=commit_hexsha)
 
@@ -527,11 +550,15 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
 
+    # NOTE: no --suspend-date (or anything else) appended to the remote
+    # command any more - see docstring point 3. Plain, unmodified
+    # `tlo batch-run` - the suspend behaviour is already baked into
+    # run_json via parse_arguments() above.
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
-    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number} --suspend-date $suspend_date
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
     cp -r $working_dir/* $remote_azure_directory/.
     """)
     command = command_template.substitute(
@@ -539,7 +566,6 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
         azure_run_json=azure_run_json,
         working_dir=working_dir,
         remote_azure_directory=remote_azure_directory,
-        suspend_date=SUSPEND_DATE.strftime("%Y-%m-%d"),
     )
     command = f"/bin/bash -c '{command}'"
 
@@ -656,7 +682,6 @@ def ensure_checkpoints_ready_and_downloaded() -> dict[int, Path]:
 
     Returns {seed: local_path_to_suspended_simulation.pickle}.
     """
-    print("Check suspend is present")
     local_paths: dict[int, Path] = {}
     for seed in CHECKPOINT_SEEDS:
         commit = find_checkpoint_commit_for_seed(seed)
