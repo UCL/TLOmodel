@@ -309,6 +309,20 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
             tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
             "/".join(os.path.split(azure_directory)[: idx + 1]),
         )
+    if USE_SUSPEND_RESUME:
+        # The above loop only creates azure_directory itself (username/
+        # job_id) - Azure File Share needs each nested parent directory
+        # to exist before uploading into it, and the checkpoint pickle
+        # now needs azure_directory/0/0/ (see below), two levels deeper
+        # than run_json's own flat upload location.
+        create_directory(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
+            azure_directory + "/0",
+        )
+        create_directory(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
+            azure_directory + "/0/0",
+        )
 
     # If USE_SUSPEND_RESUME is True, this task resumes from a pre-resume
     # checkpoint - the checkpoint (already downloaded locally, once, up
@@ -318,19 +332,32 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # parse_arguments() (NOT a remote CLI flag - see docstring for why),
     # so the resume path gets baked into run_json itself before it's
     # even saved.
+    #
+    # CONFIRMED from a real traceback (tlo/scenario.py's
+    # run_sample_by_number): --resume-simulation's value must be a JOB
+    # DIRECTORY reference, NOT a path to the pickle file itself -
+    # run_sample_by_number appends /{draw}/{sample}/suspended_simulation.pickle
+    # onto whatever value it's given, using a HARDCODED filename. An
+    # earlier version of this code passed the full file path directly,
+    # which produced a doubled, broken path
+    # (".../suspended_simulation_seedX.pickle/0/0/suspended_simulation.pickle")
+    # and a FileNotFoundError. Fixed by uploading to the exact location
+    # and filename TLO expects (<job_directory>/0/0/suspended_simulation.pickle -
+    # draw=0/run=0, matching this trial's own number_of_draws=1/
+    # runs_per_draw=1, and matching the SAME structure our own local
+    # download already uses), and passing just the job directory
+    # (remote_azure_directory) as --resume-simulation's value.
     if USE_SUSPEND_RESUME:
         local_checkpoint_path = _CHECKPOINT_LOCAL_PATHS[seed]  # populated once,
             # before the main loop, by ensure_checkpoints_ready_and_downloaded()
             # for every seed in CHECKPOINT_SEEDS - a KeyError here would mean
             # `seed` genuinely isn't one of those, worth investigating directly.
 
-        checkpoint_remote_filename = f"suspended_simulation_seed{seed}.pickle"
         upload_local_file(
             tlo_config["STORAGE"]["CONNECTION_STRING"], str(local_checkpoint_path),
-            tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + checkpoint_remote_filename,
+            tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/0/0/suspended_simulation.pickle",
         )
-        suspended_pickle_path = f"{remote_azure_directory}/{checkpoint_remote_filename}"
-        tlo_scenario.parse_arguments(["--resume-simulation", suspended_pickle_path])
+        tlo_scenario.parse_arguments(["--resume-simulation", remote_azure_directory])
 
     run_json = tlo_scenario.save_draws(commit=commit_hexsha)
 
