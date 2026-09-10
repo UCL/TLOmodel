@@ -25,6 +25,8 @@ below for exactly what each captures and where it was adapted from.
 """
 
 import ast
+import pickle
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -54,6 +56,81 @@ from optimisation_parameters import YEAR_END_DATE, CONFIG_YEAR_START_DATE
 TARGET_PERIOD = (pd.Timestamp(CONFIG_YEAR_START_DATE, 1, 1), pd.Timestamp(YEAR_END_DATE, 1, 1))
 
 
+def _extract_missing_path_from_error(exc: Exception) -> Path | None:
+    """
+    Parses "No such file or directory: '<path>'" out of an exception's
+    string representation. Fragile in general, but the specific error
+    format is consistent - confirmed against a real observed traceback
+    (dill's _create_filehandle raising exactly this pattern, wrapped in
+    an UnpicklingError). Returns None if the exception doesn't match
+    this pattern at all, so callers can tell "this is the known
+    resumed-trial issue" apart from "this is something else entirely".
+    """
+    match = re.search(r"No such file or directory: '([^']+)'", str(exc))
+    if match is None:
+        return None
+    return Path(match.group(1))
+
+
+def _load_pickled_dataframes_with_resume_workaround(job_root: Path, draw: int, run: int) -> dict:
+    """
+    Wraps load_pickled_dataframes() with a WORKAROUND for a confirmed
+    failure mode when postprocessing RESUMED (suspend/resume) trials.
+    This is a workaround for genuine TLO/dill behaviour, not a bug in
+    our own pipeline code, and not something fixable here beyond
+    catching and recovering from it.
+
+    ROOT CAUSE, confirmed directly from TLO's own source:
+    - tlo/simulation.py: Simulation._configure_logging() sets
+      self.output_file = logging.set_output_file(log_path) - a genuine
+      instance attribute.
+    - tlo/logging/core.py: set_output_file() returns a real Python
+      standard-library logging.FileHandler (opens a live file stream
+      immediately on construction, by default).
+    - Simulation.save_to_pickle() does dill.dump(self, ...) - the ENTIRE
+      object, including this live FileHandler bound to whatever path
+      was active at checkpoint-generation time.
+    - dill, once imported anywhere in a process, registers itself with
+      Python's global copyreg pickle-dispatch table for file-like
+      types - a PROCESS-WIDE effect, not scoped to calls made via
+      dill.load() specifically. So even load_pickled_dataframes's own
+      plain pickle.load() delegates reconstruction of any embedded
+      FileHandler to dill's logic, which tries to reopen the ORIGINAL
+      path - the checkpoint job's own working directory, on a
+      DIFFERENT Azure task, long gone by the time we load the resumed
+      trial's own output locally.
+
+    WORKAROUND: if load_pickled_dataframes fails with exactly this
+    pattern, extract the missing path from the exception, create an
+    EMPTY dummy file there (plus parent directories), and retry ONCE.
+    This assumes the missing file is a stale FileHandler needing SOME
+    path to reopen, not something whose actual CONTENT is needed to
+    reconstruct the DataFrame we actually care about - consistent with
+    the confirmed mechanism above, since the DALYs/cost data lives
+    entirely separately from this stale logging handle. If that
+    assumption is wrong, the retry fails again with a different, more
+    informative error, rather than silently producing incorrect data -
+    this does NOT swallow errors it doesn't recognise, or retry more
+    than once.
+    """
+    try:
+        return load_pickled_dataframes(job_root, draw=draw, run=run)
+    except (FileNotFoundError, pickle.UnpicklingError) as exc:
+        missing_path = _extract_missing_path_from_error(exc)
+        if missing_path is None:
+            raise  # not the pattern we know how to work around - fail loudly
+
+        print(
+            f"[postprocess] WORKAROUND: creating dummy file for a stale resumed-trial "
+            f"reference at {missing_path} - see _load_pickled_dataframes_with_resume_"
+            f"workaround()'s docstring for why this is a workaround, not a confirmed fix."
+        )
+        missing_path.parent.mkdir(parents=True, exist_ok=True)
+        missing_path.touch()
+
+        return load_pickled_dataframes(job_root, draw=draw, run=run)
+
+
 def postprocess_run(run_dir: Path) -> dict:
     """
     Turns a single completed run's raw output directory into what SMAC/
@@ -61,9 +138,9 @@ def postprocess_run(run_dir: Path) -> dict:
     HIV-consumable cost EACH BY YEAR (not summed into one flat total) -
     optimisation_pipeline.py buckets these into user-defined periods and
     enforces them as two SEPARATE constraint families. Uses
-    tlo.analysis.utils.load_pickled_dataframes rather than reading raw
-    pickle files directly - this is the officially supported way to
-    load a single run's log.
+    tlo.analysis.utils.load_pickled_dataframes (via the resume-workaround
+    wrapper above) rather than reading raw pickle files directly - this
+    is the officially supported way to load a single run's log.
 
     run_dir is expected to be .../<job_id>/0/<run_number> - i.e. what
     ask_tell_azure_example.py's download_run_outputs() returns entries
@@ -71,12 +148,11 @@ def postprocess_run(run_dir: Path) -> dict:
     """
     job_root = run_dir.parent.parent   # .../job_id/0/<run_number> -> .../job_id
     run_number = int(run_dir.name)
-    log = load_pickled_dataframes(job_root, draw=0, run=run_number)
+    log = _load_pickled_dataframes_with_resume_workaround(job_root, draw=0, run=run_number)
 
     dalys = _get_hiv_dalys(log)
     hiv_hrh_cost_by_year = _get_hiv_hrh_cost_by_year(log)
     hiv_consumable_cost_by_year = _get_hiv_consumable_cost_by_year(log)
-    print("I obtained from ", Path, ": dalys ",  dalys, ",  hiv_hrh_cost_by_year", hiv_hrh_cost_by_year)
     return {
         "dalys": dalys,
         "hiv_hrh_cost_by_year": hiv_hrh_cost_by_year,
