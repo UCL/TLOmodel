@@ -115,26 +115,39 @@ cons_scenarios = {
     25: "Perfect availability – Perfect health system",
 }
 
-main_analysis_subset = [
-    k for k, v in cons_scenarios.items()
-    if "Default health system" in v
+# Order in which scenarios should appear in every figure (applies uniformly across the manuscript).
+# Pairwise exchange kept Small-then-Large, matching the convention used throughout the redistribution
+# analysis in generating_consumable_scenarios/create_consumable_redistribution_scenarios.py.
+SCENARIO_ORDER = [
+    "Baseline availability",
+    "Non-therapeutic consumables (NTC)",
+    "NTC + Vital medicines (VM)",
+    "NTC + VM + Pharmacist-managed stocks",
+    "75th percentile facility",
+    "90th percentile facility",
+    "Best facility",
+    "Neighbourhood pooling",
+    "District pooling",
+    "National pooling",
+    "Pairwise exchange (Small radius)",
+    "Pairwise exchange (Large radius)",
+    "Perfect availability",
 ]
 
-perfect_analysis_subset = [
-    k for k, v in cons_scenarios.items()
-    if "Perfect health system" in v
-]
+def _ordered_subset(suffix: str) -> list:
+    """Draw numbers of scenarios ending in `suffix`, ordered to match SCENARIO_ORDER."""
+    label_to_draw = {v.replace(suffix, ""): k for k, v in cons_scenarios.items() if suffix in v}
+    return [label_to_draw[name] for name in SCENARIO_ORDER]
+
+main_analysis_subset = _ordered_subset(" – Default health system")
+perfect_analysis_subset = _ordered_subset(" – Perfect health system")
 
 cons_scenarios_main = {
-    k: v.replace(" – Default health system", "")
-    for k, v in cons_scenarios.items()
-    if k in main_analysis_subset
+    k: cons_scenarios[k].replace(" – Default health system", "") for k in main_analysis_subset
 }
 
 cons_scenarios_perfect = {
-    k: v.replace(" – Perfect health system", "")
-    for k, v in cons_scenarios.items()
-    if k in perfect_analysis_subset
+    k: cons_scenarios[k].replace(" – Perfect health system", "") for k in perfect_analysis_subset
 }
 
 # Dict to assign DALY causes to disease groups
@@ -638,7 +651,7 @@ def plot_percentage_change_with_ci(
     return fig, ax
 
 
-def plot_change_in_cons_unavailability_by_scenario(
+def plot_change_in_cons_availability_by_scenario(
     nat_mean,
     nat_lower,
     nat_upper,
@@ -679,7 +692,7 @@ def plot_change_in_cons_unavailability_by_scenario(
     ax.set_xticklabels(labels, rotation=90, ha="right")
 
     ax.set_ylabel(
-        "Change in consumable unavailability \n across consumables (percentage points)"
+        "Change in consumable availability \n across consumables (percentage points)"
     )
     ax.set_xlabel("Scenario")
 
@@ -688,21 +701,21 @@ def plot_change_in_cons_unavailability_by_scenario(
 
     fig.tight_layout()
 
-def plot_change_in_cons_unavailability_by_program(
+def plot_change_in_cons_availability_by_program(
     delta_mean,
     figsize=(14, 6),
     wrap_width=20,
 ):
     """
     Plot distribution of programme-specific change in consumable
-    unavailability across scenarios.
+    availability across scenarios.
 
     Parameters
     ----------
     delta_mean : pd.DataFrame
         Index = disease_group
         Columns = draw (scenarios)
-        Values = change in percentage points
+        Values = change in percentage points (positive = improvement)
     """
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -750,7 +763,7 @@ def plot_change_in_cons_unavailability_by_program(
     ax.axhline(0, linestyle="--", color="black", linewidth=1)
 
     ax.set_ylabel(
-        "Change in consumable unavailability \n across scenarios (percentage points)"
+        "Change in consumable availability \n across scenarios (percentage points)"
     )
     ax.set_xlabel("Disease programme")
 
@@ -758,6 +771,63 @@ def plot_change_in_cons_unavailability_by_program(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
+
+def plot_dalys_averted_vs_change_in_availability(
+    change_in_availability: pd.Series,
+    dalys_averted: pd.Series,
+    scenario_labels: dict,
+    title: str | None = None,
+    figsize=(9, 7),
+    label_fontsize=6,
+):
+    """
+    Scatter plot with one dot per scenario: average change in consumable availability across
+    consumables (x-axis) vs. DALYs averted (y-axis, %), with small-font scenario name labels.
+
+    Parameters
+    ----------
+    change_in_availability : pd.Series
+        Index = draw, values = average change in consumable availability vs. baseline
+        (percentage points; positive = improvement).
+    dalys_averted : pd.Series
+        Index = draw, values = DALYs averted vs. baseline (%).
+    scenario_labels : dict
+        Mapping {draw: scenario name}.
+    title : str, optional
+        Figure title (e.g. the consumables programme, when plotting one scatter per programme).
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+
+    draws = change_in_availability.index
+
+    for d in draws:
+        x = change_in_availability.loc[d]
+        y = dalys_averted.loc[d]
+        ax.scatter(x, y, s=45, color="#377eb8", zorder=3)
+        ax.annotate(
+            scenario_labels.get(d, str(d)),
+            (x, y),
+            textcoords="offset points",
+            xytext=(4, 4),
+            fontsize=label_fontsize,
+        )
+
+    ax.axhline(0, color="black", linewidth=0.8, linestyle="--", zorder=1)
+    ax.axvline(0, color="black", linewidth=0.8, linestyle="--", zorder=1)
+
+    ax.set_xlabel("Average change in consumable availability\nacross facilities and consumables (percentage points)")
+    ax.set_ylabel("DALYs averted (%, relative to baseline)")
+
+    if title:
+        ax.set_title(title, fontsize=10)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.grid(alpha=0.3)
+
+    fig.tight_layout()
+    return fig, ax
+
 
 def plot_heatmap_delta(delta_mean,
                        scenario_labels=None,
@@ -876,8 +946,11 @@ def summarize_aggregated_results_for_figure(
         df = df.copy()
         df.columns = df.columns.droplevel(0)
 
-    # Restrict to subset of draws
-    df = df[df.index.isin(main_analysis_subset)]
+    # Restrict to subset of draws, preserving the given order (not the original draw-number order).
+    # Some inputs (e.g. num_dalys_averted) have already had the comparator draw dropped by
+    # find_difference_relative_to_comparison -- only keep requested draws that are actually present.
+    present = [d for d in main_analysis_subset if d in df.index]
+    df = df.loc[present]
 
     # Summarize across runs
     summarized = summarize_cost_data(df, _metric=chosen_metric)
@@ -911,11 +984,13 @@ def summarize_disaggregated_results_for_figure(
     result = result.unstack()
     result.columns = result.columns.swaplevel("stat", "draw")
 
-    # Restrict draws
-    result = result.loc[
-        :,
-        result.columns.get_level_values("draw").isin(main_analysis_subset)
-    ]
+    # Restrict draws, preserving the given order (not the original draw-number order).
+    # `list(...)` normalizes both a plain list and a dict (whose keys are used, in insertion order).
+    # Only keep requested draws that are actually present (e.g. the comparator draw may have
+    # already been dropped upstream by find_difference_relative_to_comparison).
+    existing_draws = set(result.columns.get_level_values("draw"))
+    present = [d for d in list(main_analysis_subset) if d in existing_draws]
+    result = result.reindex(columns=present, level="draw")
 
     return result
 
@@ -1000,56 +1075,70 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
     monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year)
     return monetary_value_of_incremental_health
 
-def get_percentage_unavailable_by_program(_df):
+def make_pct_available_by_group_fn(item_to_group_map: dict):
     """
-    Compute percentage of times consumables were unavailable
-    by disease program within TARGET_PERIOD.
+    Build a `custom_generate_series` function (for `extract_results`) that computes the
+    percentage of times consumables WERE available within TARGET_PERIOD, aggregated per
+    `item_to_group_map` (item_code -> group name). Items not present in `item_to_group_map`
+    are excluded, so this can be used both for the full item-category "programs" and for a
+    coarser regrouping (e.g. collapsed to DALY disease groups) by passing a different map.
+
+    Availability (not unavailability) is computed directly here -- since available_prop is
+    already a positive figure throughout the rest of the pipeline, tracking "% available"
+    end-to-end avoids the confusion of mixing it with a mirrored "% unavailable" framing.
+
+    Note: takes the mapping as a parameter (rather than closing over a module-level global)
+    deliberately -- item_to_program_map used to only ever be assigned *inside*
+    generate_all_consumable_figures, which is a different scope to this module-level
+    function, so referencing it as a free variable raised NameError the first time this
+    was actually called.
     """
+    def _pct_available_by_group(_df):
+        # Restrict to target period
+        _df = _df.loc[
+            pd.to_datetime(_df.date).between(*TARGET_PERIOD),
+            ['Item_Available', 'Item_NotAvailable']
+        ]
 
-    # Restrict to target period
-    _df = _df.loc[
-        pd.to_datetime(_df.date).between(*TARGET_PERIOD),
-        ['Item_Available', 'Item_NotAvailable']
-    ]
+        # ---- Sum dictionaries across rows ----
+        available = (
+            _df['Item_Available']
+            .apply(pd.Series)
+            .sum()
+        )
 
-    # ---- Sum dictionaries across rows ----
-    available = (
-        _df['Item_Available']
-        .apply(pd.Series)
-        .sum()
-    )
+        not_available = (
+            _df['Item_NotAvailable']
+            .apply(pd.Series)
+            .sum()
+        )
 
-    not_available = (
-        _df['Item_NotAvailable']
-        .apply(pd.Series)
-        .sum()
-    )
+        # Align indices
+        total = available.add(not_available, fill_value=0)
 
-    # Align indices
-    total = available.add(not_available, fill_value=0)
+        # % available per item (positive framing: higher = better)
+        pct_available = (
+            available / total.replace(0, np.nan)
+        )
 
-    # % unavailable per item
-    pct_unavailable = (
-        not_available / total.replace(0, np.nan)
-    )
+        # Map items to group (dropping items with no mapping) and aggregate
+        pct_available.index = pct_available.index.astype(str)
+        pct_available = pct_available[pct_available.index.isin(item_to_group_map)]
+        pct_available = pct_available.rename(index=item_to_group_map)
+        pct_available = (
+            pct_available
+            .groupby(level=0)
+            .mean()
+        )
 
-    # Map items to program
-    pct_unavailable.index = pct_unavailable.index.astype(str)
-    pct_unavailable = pct_unavailable.rename(index=item_to_program_map)
+        return pct_available
 
-    # Aggregate to program level
-    pct_unavailable = (
-        pct_unavailable
-        .groupby(level=0)
-        .mean()
-    )
+    return _pct_available_by_group
 
-    return pct_unavailable
-
-def compute_delta_unavailability_from_baseline(summary_df, comparator_draw=0):
+def compute_delta_availability_from_baseline(summary_df, comparator_draw=0):
     """
-    Convert absolute % unavailable to change relative to baseline.
-    Negative = improvement.
+    Convert absolute % available to change relative to baseline.
+    Positive = improvement.
     """
     mean_df = summary_df.xs("mean", level="stat", axis=1)
     baseline = mean_df[comparator_draw]
@@ -1057,7 +1146,11 @@ def compute_delta_unavailability_from_baseline(summary_df, comparator_draw=0):
 
     return delta_mean
 
-def compute_national_unavailability_summary(summary_df, comparator_draw=0):
+def compute_national_availability_summary(summary_df, comparator_draw=0):
+    """
+    National (mean-across-programmes/groups) change in % available relative to baseline.
+    Positive = improvement.
+    """
 
     mean_df = summary_df.xs("mean", level="stat", axis=1)
     lower_df = summary_df.xs("lower", level="stat", axis=1)
@@ -1363,7 +1456,7 @@ def generate_all_consumable_figures(
 
 
     # --------------------------------------------------
-    # 6) CONSUMABLE UNAVAILABILITY
+    # 6) CONSUMABLE AVAILABILITY
     # --------------------------------------------------
     item_to_program_df = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
@@ -1376,23 +1469,16 @@ def generate_all_consumable_figures(
         )
     )
 
-    # Plot the proportion of instances that a consumable was not available when requested
-    item_to_program_map = item_to_program_map
-    pct_unavailable_by_program = extract_results(
+    # Plot the proportion of instances that a consumable was available when requested
+    pct_available_by_program = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
         key='Consumables',
-        custom_generate_series=get_percentage_unavailable_by_program,
+        custom_generate_series=make_pct_available_by_group_fn(item_to_program_map),
         do_scaling=False,
         suspended_results_folder=suspended_results_folder,
     )
-    pct_available_by_program = 1 - pct_unavailable_by_program
 
-    pct_unavailable_by_program_summarized = summarize_disaggregated_results_for_figure(
-        pct_unavailable_by_program,
-        scenario_dict,
-        chosen_metric
-    )
     pct_available_by_program_summarized = summarize_disaggregated_results_for_figure(
         pct_available_by_program,
         scenario_dict,
@@ -1400,50 +1486,137 @@ def generate_all_consumable_figures(
     )
 
     fig, ax = plot_percentage_change_with_ci(
-        summary_df=pct_unavailable_by_program_summarized,
+        summary_df=pct_available_by_program_summarized,
         colors=disease_colors,
         scenario_labels=scenario_dict,
-        ylabel="% instances of consumables being unavailable",
+        ylabel="% instances of consumables being available",
         title="",
         xticklabels_wrapped=True,
     )
-    fig.savefig(figurespath / "pct_unavailable_by_program.png",
+    fig.savefig(figurespath / "pct_available_by_program.png",
                 dpi=300, bbox_inches="tight")
 
-    delta_mean_unavailable = compute_delta_unavailability_from_baseline(pct_unavailable_by_program_summarized,
-                                                            comparator_draw = comparator_draw)
-    delta_mean_available = compute_delta_unavailability_from_baseline(pct_available_by_program_summarized,
-                                                                        comparator_draw=comparator_draw)
+    # ---- Same consumable-availability data, regrouped to match the DALYs disease groups ----
+    # (used in section 7 below, to plot each disease group's own change in consumable
+    # availability against its own change in DALYs averted). Multiple consumables "programs"
+    # collapse into RMNCH; programs with no corresponding DALYs disease group (general, ncds,
+    # tb, undernutrition) are dropped rather than guessed at.
+    CONS_PROGRAM_TO_DALY_GROUP = {
+        'cancer': 'Cancer',
+        'cardiometabolicdisorders': 'Cardiometabolic',
+        'hiv': 'HIV/AIDS',
+        'road_traffic_injuries': 'Injuries',
+        'malaria': 'Malaria',
+        'reproductive_health': 'RMNCH',
+        'epi': 'RMNCH',
+        'neonatal_health': 'RMNCH',
+        'other_childhood_illnesses': 'RMNCH',
+        'contraception': 'RMNCH',
+    }
+    item_to_daly_group_map = {
+        item: CONS_PROGRAM_TO_DALY_GROUP[prog]
+        for item, prog in item_to_program_map.items()
+        if prog in CONS_PROGRAM_TO_DALY_GROUP
+    }
 
-    plot_heatmap_delta(delta_mean_unavailable, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
-                       legend_label = "Change in % unavailable (vs baseline)")
-    plt.savefig(figurespath / "pct_change_in_unavailability_by_scenario_and_program_heatmap.png",
-                dpi=300, bbox_inches="tight")
+    pct_available_by_daly_group = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=make_pct_available_by_group_fn(item_to_daly_group_map),
+        do_scaling=False,
+        suspended_results_folder=suspended_results_folder,
+    )
+
+    pct_available_by_daly_group_summarized = summarize_disaggregated_results_for_figure(
+        pct_available_by_daly_group,
+        scenario_dict,
+        chosen_metric
+    )
+    delta_mean_available_by_daly_group = compute_delta_availability_from_baseline(
+        pct_available_by_daly_group_summarized,
+        comparator_draw=comparator_draw
+    )
+
+    delta_mean_available, nat_mean_available, nat_lower_available, nat_upper_available = compute_national_availability_summary(
+        pct_available_by_program_summarized,
+        comparator_draw = comparator_draw
+    )
 
     plot_heatmap_delta(delta_mean_available, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
                        legend_label = "Change in % available (vs baseline)")
     plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
                 dpi=300, bbox_inches="tight")
 
-    delta_mean_unavailable, nat_mean_unavailable, nat_lower_unavailable, nat_upper_unavailable = compute_national_unavailability_summary(
-        pct_unavailable_by_program_summarized,
-        comparator_draw = comparator_draw
+    plot_change_in_cons_availability_by_program(
+        delta_mean_available,
     )
-
-    plot_change_in_cons_unavailability_by_program(
-        delta_mean_unavailable,
-    )
-    plt.savefig(figurespath / "change_in_cons_unavailability_by_program.png",
+    plt.savefig(figurespath / "change_in_cons_availability_by_program.png",
                 dpi=300, bbox_inches="tight")
 
-    plot_change_in_cons_unavailability_by_scenario(
-        nat_mean_unavailable,
-        nat_lower_unavailable,
-        nat_upper_unavailable,
+    plot_change_in_cons_availability_by_scenario(
+        nat_mean_available,
+        nat_lower_available,
+        nat_upper_available,
         scenario_labels=scenario_dict
     )
-    plt.savefig(figurespath / "change_in_cons_unavailability_by_scenario.png",
+    plt.savefig(figurespath / "change_in_cons_availability_by_scenario.png",
                 dpi=300, bbox_inches="tight")
+
+    # --------------------------------------------------
+    # 7) DALYS AVERTED (%) vs. CHANGE IN CONSUMABLE AVAILABILITY (one dot per scenario)
+    # --------------------------------------------------
+    # num_dalys_averted_percent_summarized excludes the comparator draw (dropped upstream by
+    # find_difference_relative_to_comparison, since "DALYs averted vs. itself" is trivially 0);
+    # fill it back in as 0 so the comparator still shows up as the (0, 0) reference point.
+    dalys_averted_pct = (
+        (num_dalys_averted_percent_summarized[chosen_metric] * 100)
+        .reindex(scenario_subset)
+        .fillna(0.0)
+    )
+
+    change_in_availability_overall = (nat_mean_available).reindex(scenario_subset)
+
+    fig, ax = plot_dalys_averted_vs_change_in_availability(
+        change_in_availability=change_in_availability_overall,
+        dalys_averted=dalys_averted_pct,
+        scenario_labels=scenario_dict,
+    )
+    fig.savefig(figurespath / "dalys_averted_vs_change_in_cons_availability.png",
+                dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    # Same scatter, repeated once per DALYs disease group: BOTH axes now restricted to that
+    # group -- x-axis is that group's own change in consumable availability (from
+    # delta_mean_available_by_daly_group, computed above), y-axis is that group's own change in
+    # DALYs averted (from num_dalys_averted_by_group_summarized, section 2), so each panel shows
+    # a within-group relationship rather than mixing a group-specific x against an overall y.
+    by_program_figurespath = figurespath / "dalys_averted_vs_change_in_cons_availability_by_program"
+    by_program_figurespath.mkdir(parents=True, exist_ok=True)
+
+    for daly_group in delta_mean_available_by_daly_group.index:
+        change_in_availability_group = (
+            delta_mean_available_by_daly_group.loc[daly_group].reindex(scenario_subset)
+        )
+        dalys_averted_pct_group = (
+            (num_dalys_averted_by_group_summarized.loc[daly_group].xs("mean", level="stat") * 100)
+            .reindex(scenario_subset)
+            .fillna(0.0)
+        )
+
+        fig, ax = plot_dalys_averted_vs_change_in_availability(
+            change_in_availability=change_in_availability_group,
+            dalys_averted=dalys_averted_pct_group,
+            scenario_labels=scenario_dict,
+            title=daly_group,
+        )
+        ax.set_ylabel(f"DALYs averted within {daly_group} (%, relative to baseline)")
+        safe_name = daly_group.replace("/", "_").replace(" ", "_")
+        fig.savefig(
+            by_program_figurespath / f"dalys_averted_vs_change_in_cons_availability_{safe_name}.png",
+            dpi=300, bbox_inches="tight"
+        )
+        plt.close(fig)
 
     print("✓ All figures generated.")
 
