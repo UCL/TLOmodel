@@ -39,6 +39,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 # Create folders to store results
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/')
+scenariooutputs_filepath =  Path('./outputs/sakshi.mohan@york.ac.uk/')
 figurespath = Path('./outputs/consumables_impact_analysis/manuscript')
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
@@ -46,12 +47,13 @@ path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_impact-2026-08-15T070335Z.py', outputfilepath)[0] # Dec 2025 runs
-suspended_results_folder = get_scenario_outputs('consumables_impact-2026-08-14T132540Z.py', outputfilepath)[0]
-#create_pickles_locally(scenario_output_dir = "./outputs/consumables_impact-2026-08-14T132540Z") # from .log files
+results_folder = get_scenario_outputs('consumables_impact-2026-08-29T161006Z.py', scenariooutputs_filepath)[0] # Dec 2025 runs
+suspended_results_folder = get_scenario_outputs('consumables_impact-2026-08-28T153202Z.py', scenariooutputs_filepath)[0]
+#create_pickles_locally(scenario_output_dir = "./outputs/consumables_impact-2026-08-21T204253Z") # from .log files
 scaling_factor =  load_pickled_dataframes(
             suspended_results_folder, draw = 0, run = 0, name = 'tlo.methods.demography'
             )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+#scaling_factor = 145.39609000000002
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -61,11 +63,11 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2040, 12, 31))  # TODO change to 2040
+TARGET_PERIOD = (Date(2026, 1, 1), Date(2040, 12, 31))  # TODO change to 2025 to 2040
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2025, 2041))  # TODO change to 2025 onwards
-number_of_years_costed = relevant_period_for_costing[1] - 2025 + 1  # TODO change to 2025 onwards
+list_of_years_for_plot = list(range(2026, 2041))  # TODO change to 2025 onwards
+number_of_years_costed = relevant_period_for_costing[1] - 2026 + 1  # TODO change to 2025 onwards
 
 discount_rate_health = 0
 chosen_metric = 'mean'
@@ -762,7 +764,8 @@ def plot_heatmap_delta(delta_mean,
                        figsize=(12, 6),
                        baseline_draw=0,
                        wrap_xticks=True,
-                       wrap_width=20):
+                       wrap_width=20,
+                       legend_label = None):
 
     df = delta_mean.copy()
 
@@ -796,10 +799,10 @@ def plot_heatmap_delta(delta_mean,
 
     sns.heatmap(
         df,
-        cmap="RdBu_r",          # blue = reduction (good), red = increase (bad)
+        cmap="RdBu",          # blue = reduction (good), red = increase (bad)
         center=0,
         linewidths=0.5,
-        cbar_kws={"label": "Change in % unavailable (vs baseline)"},
+        cbar_kws={"label": legend_label},
         ax=ax
     )
 
@@ -815,7 +818,7 @@ def plot_heatmap_delta(delta_mean,
 
     ax.set_xlabel("Scenario")
     ax.set_ylabel("Disease group")
-    ax.set_title("Change in consumable unavailability relative to baseline")
+    ax.set_title("Change in consumable availability relative to baseline")
 
     plt.tight_layout()
     return fig, ax
@@ -1374,6 +1377,7 @@ def generate_all_consumable_figures(
     )
 
     # Plot the proportion of instances that a consumable was not available when requested
+    item_to_program_map = item_to_program_map
     pct_unavailable_by_program = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -1382,9 +1386,15 @@ def generate_all_consumable_figures(
         do_scaling=False,
         suspended_results_folder=suspended_results_folder,
     )
+    pct_available_by_program = 1 - pct_unavailable_by_program
 
     pct_unavailable_by_program_summarized = summarize_disaggregated_results_for_figure(
         pct_unavailable_by_program,
+        scenario_dict,
+        chosen_metric
+    )
+    pct_available_by_program_summarized = summarize_disaggregated_results_for_figure(
+        pct_available_by_program,
         scenario_dict,
         chosen_metric
     )
@@ -1400,28 +1410,36 @@ def generate_all_consumable_figures(
     fig.savefig(figurespath / "pct_unavailable_by_program.png",
                 dpi=300, bbox_inches="tight")
 
-    delta_mean = compute_delta_unavailability_from_baseline(pct_unavailable_by_program_summarized,
+    delta_mean_unavailable = compute_delta_unavailability_from_baseline(pct_unavailable_by_program_summarized,
                                                             comparator_draw = comparator_draw)
+    delta_mean_available = compute_delta_unavailability_from_baseline(pct_available_by_program_summarized,
+                                                                        comparator_draw=comparator_draw)
 
-    plot_heatmap_delta(delta_mean, scenario_labels=scenario_dict, baseline_draw=comparator_draw)
+    plot_heatmap_delta(delta_mean_unavailable, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
+                       legend_label = "Change in % unavailable (vs baseline)")
+    plt.savefig(figurespath / "pct_change_in_unavailability_by_scenario_and_program_heatmap.png",
+                dpi=300, bbox_inches="tight")
+
+    plot_heatmap_delta(delta_mean_available, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
+                       legend_label = "Change in % available (vs baseline)")
     plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
                 dpi=300, bbox_inches="tight")
 
-    delta_mean, nat_mean, nat_lower, nat_upper = compute_national_unavailability_summary(
+    delta_mean_unavailable, nat_mean_unavailable, nat_lower_unavailable, nat_upper_unavailable = compute_national_unavailability_summary(
         pct_unavailable_by_program_summarized,
         comparator_draw = comparator_draw
     )
 
     plot_change_in_cons_unavailability_by_program(
-        delta_mean,
+        delta_mean_unavailable,
     )
     plt.savefig(figurespath / "change_in_cons_unavailability_by_program.png",
                 dpi=300, bbox_inches="tight")
 
     plot_change_in_cons_unavailability_by_scenario(
-        nat_mean,
-        nat_lower,
-        nat_upper,
+        nat_mean_unavailable,
+        nat_lower_unavailable,
+        nat_upper_unavailable,
         scenario_labels=scenario_dict
     )
     plt.savefig(figurespath / "change_in_cons_unavailability_by_scenario.png",
@@ -1442,5 +1460,5 @@ generate_all_consumable_figures(
     results_folder=results_folder,
     suspended_results_folder=suspended_results_folder,
     figurespath=figurespath / "perfect",
-    comparator_draw=1,
+    comparator_draw=13,
 )
