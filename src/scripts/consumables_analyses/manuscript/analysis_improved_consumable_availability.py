@@ -134,6 +134,38 @@ def _ordered_subset(suffix: str) -> list:
     label_to_draw = {v.replace(suffix, ""): k for k, v in cons_scenarios.items() if suffix in v}
     return [label_to_draw[name] for name in SCENARIO_ORDER]
 
+# Colour grouping for bar-chart scenarios only (dalys_averted_total, incremental_services_
+# delivered_total, max_ability_to_pay). No legend is shown for these groups -- the grouping is
+# meant to be read visually, not looked up.
+SCENARIO_GROUPS = {
+    "Non-therapeutic consumables (NTC)": "modifiable factor",
+    "NTC + Vital medicines (VM)": "modifiable factor",
+    "NTC + VM + Pharmacist-managed stocks": "modifiable factor",
+    "75th percentile facility": "benchmark facility",
+    "90th percentile facility": "benchmark facility",
+    "Best facility": "benchmark facility",
+    "Neighbourhood pooling": "redistribution",
+    "District pooling": "redistribution",
+    "National pooling": "redistribution",
+    "Pairwise exchange (Small radius)": "redistribution",
+    "Pairwise exchange (Large radius)": "redistribution",
+    "Perfect availability": "perfect",
+}
+SCENARIO_GROUP_COLORS = {
+    "modifiable factor": "#1f78b4",   # blue
+    "benchmark facility": "#33a02c",  # green
+    "redistribution": "#ff7f00",      # orange
+    "perfect": "#6a3d9a",             # purple
+}
+
+def scenario_colors_by_draw(scenario_dict: dict) -> dict:
+    """Map draw -> colour for bar charts, via SCENARIO_GROUPS/SCENARIO_GROUP_COLORS. Scenarios
+    with no group (e.g. Baseline, if it ever appears) fall back to grey."""
+    return {
+        draw: SCENARIO_GROUP_COLORS.get(SCENARIO_GROUPS.get(name), "#999999")
+        for draw, name in scenario_dict.items()
+    }
+
 main_analysis_subset = _ordered_subset(" – Default health system")
 perfect_analysis_subset = _ordered_subset(" – Perfect health system")
 
@@ -947,8 +979,11 @@ def summarize_aggregated_results_for_figure(
     present = [d for d in main_analysis_subset if d in df.index]
     df = df.loc[present]
 
-    # Summarize across runs
+    # Summarize across runs. summarize_cost_data uses .groupby(level='draw'), which defaults to
+    # sort=True and silently re-sorts the result by draw number ascending -- undoing the order
+    # just applied above. Re-apply it here so the final output actually matches `present`.
     summarized = summarize_cost_data(df, _metric=chosen_metric)
+    summarized = summarized.loc[present]
 
     return summarized
 
@@ -1235,6 +1270,7 @@ def generate_all_consumable_figures(
     """
     figurespath.mkdir(parents=True, exist_ok=True)
     scenario_subset = list(scenario_dict.keys())
+    scenario_bar_colors = scenario_colors_by_draw(scenario_dict)
 
     # --------------------------------------------------
     # 1) TOTAL DALYs AVERTED
@@ -1294,7 +1330,8 @@ def generate_all_consumable_figures(
         xticklabels_wrapped=True,
         put_labels_in_legend=False,
         offset=0.05,
-        scenarios_dict=scenario_dict
+        scenarios_dict=scenario_dict,
+        set_colors=scenario_bar_colors,
     )
     ax.set_ylabel('DALYs (Millions)')
     ax.set_ylim(bottom=0)
@@ -1389,7 +1426,8 @@ def generate_all_consumable_figures(
         xticklabels_wrapped=True,
         put_labels_in_legend=False,
         offset=0.05,
-        scenarios_dict=scenario_dict
+        scenarios_dict=scenario_dict,
+        set_colors=scenario_bar_colors,
     )
     ax.set_ylabel('Additional services delivered (% relative to baseline)')
     ax.set_ylim(bottom=0)
@@ -1456,18 +1494,24 @@ def generate_all_consumable_figures(
         )
     )
 
-    max_ability_to_pay = max_ability_to_pay[
-        max_ability_to_pay.index.get_level_values('draw').isin(scenario_subset)
-    ]
+    # Restrict to the relevant draws (not .isin(), so this stays consistent with the explicit
+    # ordering applied below -- though summarize_cost_data's internal groupby re-sorts regardless
+    # of input order, so the real fix has to be applied after reformat, see below).
+    present = [d for d in scenario_subset if d in max_ability_to_pay.index.get_level_values('draw')]
+    max_ability_to_pay = max_ability_to_pay.loc[present]
 
     max_ability_to_pay_summarized = summarize_cost_data(
         max_ability_to_pay,
         _metric=chosen_metric
     ).clip(lower=0.0)
 
+    # summarize_cost_data's .groupby(level='draw') defaults to sort=True and silently re-sorts by
+    # draw number ascending; reformat_with_draw_as_index_and_stat_as_column then unstacks 'stat'
+    # out of the row MultiIndex, which preserves that same ascending-draw order. Re-apply the
+    # requested order here, once the index is back to plain draw numbers.
     max_ability_to_pay_summarized = reformat_with_draw_as_index_and_stat_as_column(
         max_ability_to_pay_summarized
-    )
+    ).loc[present]
 
     projected_health_spending = estimate_projected_health_spending(resourcefilepath,
                                                                    results_folder,
@@ -1491,7 +1535,8 @@ def generate_all_consumable_figures(
         max_ability_to_pay_billions,
         xticklabels_wrapped=True,
         put_labels_in_legend=False,
-        scenarios_dict=scenario_dict
+        scenarios_dict=scenario_dict,
+        set_colors=scenario_bar_colors,
     )
     ax.set_ylabel('Maximum ability to pay (USD billions)')
     ax.set_ylim(bottom=0)
