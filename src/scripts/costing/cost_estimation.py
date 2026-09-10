@@ -1282,6 +1282,7 @@ def summarize_cost_data(_df,
 ####################################################
 def estimate_projected_health_spending(resourcefilepath: Path,
                                        results_folder: Path,
+                                       suspended_results_folder: Path,
                                        _draws: Optional[list[int]] = None,
                                        _runs: Optional[list[int]] = None,
                                        _years: Optional[list[int]] = None,
@@ -1300,6 +1301,8 @@ def estimate_projected_health_spending(resourcefilepath: Path,
         Path to the folder containing the costing resource Excel files.
     results_folder : Path
         Path to the simulation results folder.
+    suspended_results_folder: Path
+        Path to suspended results folder when using suspend and resume functionality
     _draws : list or range, optional
         Draws to include. If None, all available draws are used.
     _runs : list or range, optional
@@ -1354,13 +1357,23 @@ def estimate_projected_health_spending(resourcefilepath: Path,
         assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
         return pd.Series(_df.loc[_df.year.between(*years_needed)].set_index('year')['total'])
 
-    total_population_by_year = extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='population',
-        custom_generate_series=get_total_population,
-        do_scaling=True
-    )
+    if suspended_results_folder is None:
+        total_population_by_year = extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=get_total_population,
+            do_scaling=True,
+        )
+    else:
+        total_population_by_year = extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=get_total_population,
+            do_scaling=True,
+            suspended_results_folder=suspended_results_folder,
+        )
     population_columns = total_population_by_year.columns
 
     # Estimate total health spending

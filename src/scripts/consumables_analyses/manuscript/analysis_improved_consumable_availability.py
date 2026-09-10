@@ -11,23 +11,18 @@ import pandas as pd
 import numpy as np
 
 from scripts.costing.cost_estimation import (
-    clean_consumable_name,
-    create_summary_treemap_by_cost_subgroup,
-    do_line_plot_of_cost,
-    do_stacked_bar_plot_of_cost_by_category,
-    estimate_input_cost_of_scenarios,
-    summarize_cost_data
+    summarize_cost_data,
+    estimate_projected_health_spending,
+    load_unit_cost_assumptions
 )
 from tlo import Date
 from tlo.analysis.utils import (
-    compute_summary_statistics,
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
     create_pickles_locally,
-    summarize,
 )
 
 # Define a timestamp for script outputs
@@ -1175,6 +1170,44 @@ def reformat_with_draw_as_index_and_stat_as_column(_df):
     formatted.columns = formatted.columns.droplevel(0)
     return formatted
 
+def get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing):
+    def get_total_population_by_year(_df):
+        years_needed = _relevant_period_for_costing  # Malaria scale-up period years
+        _df['year'] = pd.to_datetime(_df['date']).dt.year
+
+        # Validate that all necessary years are in the DataFrame
+        if not set(years_needed).issubset(_df['year'].unique()):
+            raise ValueError("Some years are not recorded in the dataset.")
+
+        # Filter for relevant years and return the total population as a Series
+        return \
+        _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+            'total']
+
+    # Get total population by year
+    total_population_by_year = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='population',
+        custom_generate_series=get_total_population_by_year,
+        do_scaling=True,
+        suspended_results_folder=suspended_results_folder,
+    ).unstack().reset_index().rename(columns={0: 'population'})
+    total_population_summary = total_population_by_year[total_population_by_year.draw == 0].groupby("year")[
+        "population"].agg(
+        population="median"
+    ).reset_index()
+    unit_costs = load_unit_cost_assumptions(resourcefilepath)
+    health_spending_per_capita = unit_costs["health_spending_projections"]
+    health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(
+        list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1)))]
+    health_spending_per_capita = health_spending_per_capita[['year', 'total_mean']].apply(
+        pd.to_numeric, errors='coerce')
+    health_spending_per_capita_table = health_spending_per_capita.merge(total_population_summary, on="year",
+                                                                        how="left", validate="1:1")
+    health_spending_per_capita_table["total_health_spending"] = health_spending_per_capita_table['total_mean'] * \
+                                                                health_spending_per_capita_table['population']
+    return health_spending_per_capita_table
 
 def generate_all_consumable_figures(
     scenario_dict: dict,
@@ -1436,20 +1469,56 @@ def generate_all_consumable_figures(
         max_ability_to_pay_summarized
     )
 
+    projected_health_spending = estimate_projected_health_spending(resourcefilepath,
+                                                                   results_folder,
+                                                                   _years=list_of_relevant_years_for_costing,
+                                                                   _discount_rate=0,
+                                                                   _summarize=True,
+                                                                   _metric=chosen_metric,
+                                                                   suspended_results_folder=suspended_results_folder,)
+    projected_health_spending_baseline = \
+        projected_health_spending[projected_health_spending.index.get_level_values(0) == 0][chosen_metric][0]
+
+    # Extract projected health spending table for appendix
+    health_spending_per_capita_table = get_manuscript_ready_table_of_projected_health_spending(
+        _relevant_period_for_costing=relevant_period_for_costing)
+    health_spending_per_capita_table.to_csv(figurespath / 'projected_health_spending.csv', index=False)
+
+    max_ability_to_pay_billions = max_ability_to_pay_summarized / 1e9
+    max_ability_to_pay_pct_of_spending = 100 * max_ability_to_pay_summarized / projected_health_spending_baseline
+
     fig, ax = do_standard_bar_plot_with_ci(
-        (max_ability_to_pay_summarized / 1e6),
-        annotations=[
-            f"{row[chosen_metric] / 1e6 :.2f} "
-            f"({row['lower'] / 1e6 :.2f}–{row['upper'] / 1e6:.2f})"
-            for _, row in max_ability_to_pay_summarized.iterrows()
-        ],
+        max_ability_to_pay_billions,
         xticklabels_wrapped=True,
         put_labels_in_legend=False,
-        offset=3,
         scenarios_dict=scenario_dict
     )
-    ax.set_ylabel('Maximum ability to pay (USD millions)')
+    ax.set_ylabel('Maximum ability to pay (USD billions)')
     ax.set_ylim(bottom=0)
+
+    # Two-part data label per bar: absolute value (black, USD billions) above, and that same
+    # value expressed as a % of projected health spending (blue) stacked directly beneath it.
+    # Anchored via va='bottom'/va='top' at a shared y0 so the two blocks sit flush against each
+    # other regardless of rendered font metrics.
+    label_offset = 0.3  # billions; gap between the bar's upper CI and the label block
+    label_gap = 0.04     # billions; gap between the black (value) and blue (%) blocks
+
+    for xpos, draw in zip(ax.get_xticks(), max_ability_to_pay_billions.index):
+        row = max_ability_to_pay_billions.loc[draw]
+        pct_row = max_ability_to_pay_pct_of_spending.loc[draw]
+
+        value_text = f"{row[chosen_metric]:.2f}\n[{row['lower']:.2f}–{row['upper']:.2f}]"
+        pct_text = f"{pct_row[chosen_metric]:.1f}%\n[{pct_row['lower']:.1f}%–{pct_row['upper']:.1f}%]"
+
+        y0 = row['upper'] + label_offset
+        ax.text(xpos, y0 + label_gap, value_text, ha='center', va='bottom',
+                fontsize='x-small', color='black')
+        ax.text(xpos, y0, pct_text, ha='center', va='top',
+                fontsize='x-small', color='tab:blue')
+
+    # Extend the y-limit so the (now taller, 4-line) label blocks aren't clipped.
+    ax.set_ylim(top=ax.get_ylim()[1] * 1.15)
+
     fig.savefig(figurespath / 'max_ability_to_pay.png',
                 dpi=300, bbox_inches="tight")
     plt.close(fig)
