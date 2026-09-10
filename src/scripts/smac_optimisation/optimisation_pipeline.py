@@ -333,20 +333,21 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # so the resume path gets baked into run_json itself before it's
     # even saved.
     #
-    # CONFIRMED from a real traceback (tlo/scenario.py's
-    # run_sample_by_number): --resume-simulation's value must be a JOB
-    # DIRECTORY reference, NOT a path to the pickle file itself -
-    # run_sample_by_number appends /{draw}/{sample}/suspended_simulation.pickle
-    # onto whatever value it's given, using a HARDCODED filename. An
-    # earlier version of this code passed the full file path directly,
-    # which produced a doubled, broken path
-    # (".../suspended_simulation_seedX.pickle/0/0/suspended_simulation.pickle")
-    # and a FileNotFoundError. Fixed by uploading to the exact location
-    # and filename TLO expects (<job_directory>/0/0/suspended_simulation.pickle -
-    # draw=0/run=0, matching this trial's own number_of_draws=1/
-    # runs_per_draw=1, and matching the SAME structure our own local
-    # download already uses), and passing just the job directory
-    # (remote_azure_directory) as --resume-simulation's value.
+    # CONFIRMED from a SECOND real traceback: bash-variable syntax
+    # (${AZ_BATCH_NODE_MOUNTS_DIR}) is USELESS for a value baked into
+    # run_json - the resulting JSON is read directly by Python
+    # (Simulation.load_from_pickle -> open(pickle_path, ...)), never by
+    # bash, so nothing ever expands it. remote_azure_directory's
+    # ${{AZ_BATCH_NODE_MOUNTS_DIR}} only resolves correctly for its OTHER
+    # uses below (azure_run_json, the final `cp -r`), which sit INSIDE
+    # the bash command string and genuinely get expanded by bash at
+    # runtime. For --resume-simulation specifically, use a distinct,
+    # unambiguous PLACEHOLDER instead (not bash syntax at all), patched
+    # to the real value by `sed` as the first step of the remote command
+    # below - the one point both the true env var and the uploaded file
+    # are simultaneously available. Per Microsoft's own docs, the actual
+    # resolved value of AZ_BATCH_NODE_MOUNTS_DIR is an implementation
+    # detail that varies by node OS - never hardcode a guessed value.
     if USE_SUSPEND_RESUME:
         local_checkpoint_path = _CHECKPOINT_LOCAL_PATHS[seed]  # populated once,
             # before the main loop, by ensure_checkpoints_ready_and_downloaded()
@@ -357,7 +358,8 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
             tlo_config["STORAGE"]["CONNECTION_STRING"], str(local_checkpoint_path),
             tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/0/0/suspended_simulation.pickle",
         )
-        tlo_scenario.parse_arguments(["--resume-simulation", remote_azure_directory])
+        resume_dir_for_json = f"__AZ_BATCH_NODE_MOUNTS_DIR__/{file_share_mount_point}/{azure_directory}"
+        tlo_scenario.parse_arguments(["--resume-simulation", resume_dir_for_json])
 
     run_json = tlo_scenario.save_draws(commit=commit_hexsha)
 
@@ -395,16 +397,28 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
+    # sed step ONLY needed when USE_SUSPEND_RESUME actually baked the
+    # __AZ_BATCH_NODE_MOUNTS_DIR__ placeholder into run_json above -
+    # patches it to the real, node-resolved value of
+    # $AZ_BATCH_NODE_MOUNTS_DIR, in place, on the uploaded JSON file
+    # (safe: each job has its own uniquely-named run_json, no cross-job
+    # collision risk), BEFORE `tlo batch-run` ever reads it.
+    patch_json_line = (
+        f"sed -i \"s|__AZ_BATCH_NODE_MOUNTS_DIR__|$AZ_BATCH_NODE_MOUNTS_DIR|g\" {{azure_run_json}}"
+        if USE_SUSPEND_RESUME else ""
+    )
+
     # NOTE: no --resume-simulation (or anything else) appended to the
     # remote command any more - `tlo batch-run` has a fixed 4-positional-
     # argument signature in TLO's current master cli.py, with no
     # mechanism to accept extra flags at all. Whatever resume behaviour
     # this trial needs is already baked into run_json via
-    # parse_arguments() above.
+    # parse_arguments() above (and, if needed, patched by sed just below).
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
+    $patch_json_line
     PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
     tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
     cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
@@ -417,6 +431,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         working_dir=working_dir,
         task_dir=task_dir,
         remote_azure_directory=remote_azure_directory,
+        patch_json_line=patch_json_line.format(azure_run_json=azure_run_json),
     )
     command = f"/bin/bash -c '{command}'"
 
