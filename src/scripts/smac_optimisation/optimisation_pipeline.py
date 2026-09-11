@@ -396,55 +396,30 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
 
-    # sed step ONLY needed when USE_SUSPEND_RESUME actually baked
-    # ${AZ_BATCH_NODE_MOUNTS_DIR} into run_json (via resume_reference,
-    # above). CONFIRMED EMPIRICALLY, twice, from real tracebacks: this
-    # bash-variable-reference text, once written into run_json, is NEVER
-    # expanded by anything before Simulation.load_from_pickle's
-    # open(pickle_path, ...) is reached - even using the exact value
-    # format confirmed against TLOmodel's own molaro/
-    # optimise_hiv_program_w_smac branch (batch_submit's own path_to_job
-    # construction). Whatever mechanism that branch relies on for this
-    # to work isn't something this pipeline's own remote-command
-    # construction goes through (it bypasses tlo batch-submit's CLI
-    # layer entirely) - patching the LITERAL text directly, here, at the
-    # one point the real env var value is actually available, sidesteps
-    # needing to know what that mechanism is. Safe: each job has its own
-    # uniquely-named run_json, no cross-job collision risk from editing
-    # it in place on the shared mount.
-    #
-    # BUILT AS A PLAIN STRING (no f-prefix), NOT an f-string, and
-    # azure_run_json concatenated directly rather than via a SEPARATE
-    # .format() call - an earlier version of this line used a genuine
-    # f-string with {{AZ_BATCH_NODE_MOUNTS_DIR}}, which collapses to
-    # single braces IMMEDIATELY (f-string escape behaviour) - too early,
-    # exposing bare {AZ_BATCH_NODE_MOUNTS_DIR} to add_tasks()'s own LATER
-    # .format(draw_number=..., run_number=...) call, which then tried to
-    # interpret it as a named field and raised KeyError. A plain string
-    # doesn't interpret {{/}} as escapes at all, so the double braces
-    # here survive untouched through Template.substitute() (doesn't
-    # touch braces in substituted values) and get correctly collapsed to
-    # single braces by add_tasks()'s .format() call - the SAME single
-    # collapse every other ${{AZ_BATCH_...}} value in this command
-    # already relies on. Verified end-to-end, including actually running
-    # the resulting sed command in real bash against a test file.
-    patch_json_line = (
-        'sed -i "s|\\${{AZ_BATCH_NODE_MOUNTS_DIR}}|$AZ_BATCH_NODE_MOUNTS_DIR|g" ' + azure_run_json
-        if USE_SUSPEND_RESUME else ""
-    )
-
     # NOTE: no --resume-simulation (or anything else) appended to the
     # remote command - `tlo batch-run` has a fixed 4-positional-argument
     # signature in TLO's current master cli.py, with no mechanism to
     # accept extra flags at all. Resume behaviour is baked into run_json
-    # via parse_arguments() above, referencing the checkpoint by job id
-    # through the shared file-share mount, patched to a real path by the
-    # sed step just below when needed.
+    # via parse_arguments() above.
+    #
+    # resume_reference (built above) is DELIBERATELY constructed to
+    # match batch_submit's own path_to_job exactly, byte for byte -
+    # confirmed correct on this project's own molaro/
+    # optimise_hiv_program_w_smac branch, where `tlo batch-submit ...
+    # --resume-simulation` is confirmed working on Azure. No local
+    # patching (an earlier version of this function added a sed step
+    # here, based on being unable to independently verify from source
+    # how the bash-variable-reference text gets resolved) - trusting the
+    # confirmed-working mechanism directly, rather than second-guessing
+    # it: this pipeline's only actual difference from batch_submit is
+    # WHERE the job-id-to-resume-from comes from (looked up here via
+    # find_checkpoint_commit_for_seed()/checkpoint_job_id(), matched to
+    # this trial's own seed, rather than taken from a user-supplied CLI
+    # argument) - the resulting value and how it's used are identical.
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
-    $patch_json_line
     PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
     tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
     cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
@@ -457,7 +432,6 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         working_dir=working_dir,
         task_dir=task_dir,
         remote_azure_directory=remote_azure_directory,
-        patch_json_line=patch_json_line,
     )
     command = f"/bin/bash -c '{command}'"
 
