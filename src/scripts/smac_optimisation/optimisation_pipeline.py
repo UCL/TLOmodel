@@ -310,18 +310,29 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # the SAME shared file-share mount every task already has) - NOT by
     # downloading anything locally or re-uploading a copy. Confirmed
     # directly against TLOmodel's own molaro/optimise_hiv_program_w_smac
-    # branch (batch_submit's own --resume-simulation rewriting) and the
-    # wiki's documented examples: the value is <job_id>/<draw> - DRAW,
-    # NOT run - prefixed with ${AZ_BATCH_NODE_MOUNTS_DIR}/<mount>/
-    # <username>/, mirroring path_to_job's own construction exactly
-    # (verified empirically: a genuine f-string with escaped double
-    # braces collapses to single braces immediately, matching
-    # path_to_job's own behaviour byte-for-byte). Earlier versions of
-    # this function downloaded the checkpoint locally and re-uploaded it
-    # into each trial's own directory, based on an incorrect
-    # understanding of how --resume-simulation is meant to be used -
-    # removed entirely; see ensure_checkpoints_ready() for the (much
-    # simpler) corresponding checkpoint-readiness check.
+    # branch (batch_submit's own --resume-simulation rewriting) - value
+    # prefixed with ${AZ_BATCH_NODE_MOUNTS_DIR}/<mount>/<username>/,
+    # mirroring path_to_job's own construction exactly (verified
+    # empirically: a genuine f-string with escaped double braces
+    # collapses to single braces immediately, matching path_to_job's own
+    # behaviour byte-for-byte).
+    #
+    # VALUE IS THE BARE JOB ID - confirmed from a real traceback:
+    # run_sample_by_number() itself appends /{draw}/{sample}/
+    # suspended_simulation.pickle to whatever --resume-simulation value
+    # it's given, REGARDLESS of what we pass - an earlier version of
+    # this line added a trailing /0 (misreading the wiki's <job_id>
+    # [/draw] syntax as something WE needed to supply), which produced
+    # a doubled draw component (job_id/0/0/0/... instead of
+    # job_id/0/0/...) and a second FileNotFoundError. Bare job_id + TLO's
+    # own appended /0/0 (our checkpoints are always single-draw,
+    # single-run) is exactly correct.
+    #
+    # Earlier versions of this function also downloaded the checkpoint
+    # locally and re-uploaded it into each trial's own directory, based
+    # on an incorrect understanding of how --resume-simulation is meant
+    # to be used - removed entirely; see ensure_checkpoints_ready() for
+    # the (much simpler) corresponding checkpoint-readiness check.
     if USE_SUSPEND_RESUME:
         commit_for_checkpoint = find_checkpoint_commit_for_seed(seed)
         if commit_for_checkpoint is None:
@@ -333,7 +344,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         resume_reference = (f"${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
                              f"{file_share_mount_point}/"
                              f"{tlo_config['DEFAULT']['USERNAME']}/"
-                             f"{checkpoint_job}/0")
+                             f"{checkpoint_job}")
         tlo_scenario.parse_arguments(["--resume-simulation", resume_reference])
 
     run_json = tlo_scenario.save_draws(commit=commit_hexsha)
