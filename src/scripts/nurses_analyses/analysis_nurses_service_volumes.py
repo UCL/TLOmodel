@@ -141,6 +141,107 @@ def extract_annual_treatment_volumes(results_folder):
     )
 
 
+def extract_annual_nurse_time_use(results_folder):
+    """
+    Extract annual nurse time used to deliver appointments.
+    Nurse time is calculated as:
+        number of appointments delivered
+        * nursing time requirement per appointment
+
+    Appointment counts are taken from: Number_By_Appt_Type_Code_And_Level
+
+    Calculation is performed separately by facility level and
+    appointment type so that the correct nursing time requirement
+    can be applied.
+    """
+    repo_root = Path(__file__).resolve().parents[3]
+
+    appt_time_file = (
+        repo_root
+        / "resources"
+        / "healthsystem"
+        / "human_resources"
+        / "definitions"
+        / "ResourceFile_Appt_Time_Table.csv"
+    )
+
+    appt_time_table = pd.read_csv(appt_time_file)
+
+    # Keep only time requirements for Nursing and Midwifery.
+    nurse_time_table = appt_time_table[
+        appt_time_table["Officer_Category"]
+        == "Nursing_and_Midwifery"
+    ].copy()
+
+    # Create a lookup: (appointment type, facility level) -> nurse minutes
+    nurse_time_lookup = dict(
+        zip(
+            zip(
+                nurse_time_table["Appt_Type_Code"],
+                nurse_time_table["Facility_Level"].astype(str),
+            ),
+            nurse_time_table["Time_Taken_Mins"],
+        )
+    )
+
+    def get_nurse_time_yearly(df: pd.DataFrame):
+        df = df.copy()
+        if "year" not in df.columns:
+            df["year"] = pd.to_datetime(df["date"]).dt.year
+
+        yearly_nurse_time = {}
+        for _, row in df.iterrows():
+            year = row["year"]
+            appointment_counts_by_level = (row["Number_By_Appt_Type_Code_And_Level"])
+            total_nurse_minutes = 0.0
+
+            if not isinstance(appointment_counts_by_level, dict,):
+                continue
+
+            for facility_level, appointment_counts in (
+                appointment_counts_by_level.items()
+            ):
+                if not isinstance(appointment_counts, dict):
+                    continue
+
+                facility_level = str(facility_level)
+                for appt_type, number_of_appointments in (
+                    appointment_counts.items()
+                ):
+                    nurse_minutes_per_appointment = (
+                        nurse_time_lookup.get(
+                            (
+                                appt_type,
+                                facility_level,
+                            ),
+                            0.0,
+                        )
+                    )
+
+                    total_nurse_minutes += (
+                        number_of_appointments
+                        * nurse_minutes_per_appointment
+                    )
+
+            yearly_nurse_time[year] = (
+                yearly_nurse_time.get(year, 0.0)
+                + total_nurse_minutes
+            )
+
+        return pd.Series(
+            yearly_nurse_time,
+            dtype=float,
+        )
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem.summary",
+        key="HSI_Event_non_blank_appt_footprint",
+        custom_generate_series=get_nurse_time_yearly,
+        do_scaling=True,
+    )
+
+
 def aggregate_treatment_volumes_by_service_area(
     annual_treatment_volumes,
     comparison_years=range(2027, 2035),
@@ -383,134 +484,41 @@ def calculate_service_area_volume_percent_change(
     return summarized
 
 
-# def add_service_area_to_treatment_results(treatment_results):
-#     # Adds service area based on the text before the first underscore in the treatment ID.
-#     results = treatment_results.copy()
-#
-#     results["service_area"] = (
-#         results.index.to_series()
-#         .str.split("_")
-#         .str[0]
-#     )
-#
-#     return results
-#
-#
-# def plot_treatment_volumes(
-#     treatment_volume_table,
-#     scenario,
-#     title,
-#     top_n=15,
-# ):
-#     """
-#     Plot total treatment volumes for a scenario.
-#     Only the top_n treatments by volume are shown.
-#     """
-#
-#     data = treatment_volume_table[scenario].sort_values(
-#         ascending=False
-#     ).head(top_n)
-#     fig, ax = plt.subplots(figsize=(12, 7))
-#     data.sort_values().plot(kind="barh", ax=ax)
-#     ax.set_xlabel("Number of treatments")
-#     ax.set_ylabel("Treatment")
-#     ax.set_title(title)
-#     fig.tight_layout()
-#     return fig
-#
-#
-# def plot_annual_treatment_volumes_by_service_area(
-#     annual_treatment_volumes,
-#     scenarios,
-#     service_area,
-#     title,
-# ):
-#     """
-#     Plot annual treatment volumes for one disease/service area
-#     across nurse staffing scenarios.
-#     """
-#
-#     # Select the requested service area
-#     data = annual_treatment_volumes[
-#         annual_treatment_volumes.index.get_level_values(
-#             "service_area"
-#         ) == service_area
-#     ]
-#
-#     # Remove service_area from index so that year is the index
-#     data = data.droplevel("service_area")
-#
-#     fig, ax = plt.subplots(figsize=(10, 6))
-#
-#     label_map = {
-#         "Baseline Nurses / Default Healthsystem Function":
-#             "Baseline",
-#         "Fewer Nurses / Default Healthsystem Function":
-#             "Fewer nurses",
-#         "More Nurses / Default Healthsystem Function":
-#             "More nurses",
-#         "More CNP staff / Default Healthsystem Function":
-#             "More CNP",
-#         "More Nurses by District / Default Healthsystem Function":
-#             "More nurses by district",
-#         "More CNP staff by District / Default Healthsystem Function":
-#             "More CNP by district",
-#
-#         "Baseline Nurses / Improved Healthsystem Function":
-#             "Baseline",
-#         "Fewer Nurses / Improved Healthsystem Function":
-#             "Fewer nurses",
-#         "More Nurses / Improved Healthsystem Function":
-#             "More nurses",
-#         "More CNP staff / Improved Healthsystem Function":
-#             "More CNP",
-#         "More Nurses by District / Improved Healthsystem Function":
-#             "More nurses by district",
-#         "More CNP staff by District / Improved Healthsystem Function":
-#             "More CNP by district",
-#     }
-#
-#     color_map = {
-#         "Baseline Nurses / Default Healthsystem Function": "black",
-#         "Fewer Nurses / Default Healthsystem Function": "indianred",
-#         "More Nurses / Default Healthsystem Function": "steelblue",
-#         "More CNP staff / Default Healthsystem Function": "darkgreen",
-#         "More Nurses by District / Default Healthsystem Function":
-#             "mediumpurple",
-#         "More CNP staff by District / Default Healthsystem Function":
-#             "orange",
-#
-#         "Baseline Nurses / Improved Healthsystem Function": "black",
-#         "Fewer Nurses / Improved Healthsystem Function": "indianred",
-#         "More Nurses / Improved Healthsystem Function": "steelblue",
-#         "More CNP staff / Improved Healthsystem Function": "darkgreen",
-#         "More Nurses by District / Improved Healthsystem Function":
-#             "mediumpurple",
-#         "More CNP staff by District / Improved Healthsystem Function":
-#             "orange",
-#     }
-#
-#     for scenario in scenarios:
-#         mean = data[scenario]["mean"]
-#         color = color_map.get(scenario, "gray")
-#         ax.plot(
-#             mean.index,
-#             mean.values,
-#             linewidth=2,
-#             color=color,
-#             label=label_map.get(
-#                 scenario,
-#                 scenario,
-#             ),
-#         )
-#
-#     ax.set_xlabel("Year")
-#     ax.set_ylabel("Number of treatments")
-#     ax.set_title(title)
-#     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3)
-#     ax.grid(True, alpha=0.3)
-#     fig.tight_layout()
-#     return fig
+
+def calculate_nurse_time_percent_change(
+    annual_nurse_time,
+    baseline_scenario,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Calculate percentage change in nurse time use relative to
+    the baseline scenario.
+    Nurse time is first summed over 2027-2034 for each
+    scenario and simulation run.
+    Percentage change is then calculated run-to-run:
+        ((alternative / baseline) - 1) * 100
+    """
+
+    # Select comparison years.
+    years = annual_nurse_time.index.astype(int)
+
+    year_mask = np.isin(years, list(comparison_years),)
+    selected = annual_nurse_time.loc[year_mask]
+
+    # Total nurse time over 2027-2034 for each scenario/run.
+    total_nurse_time = selected.sum(axis=0).to_frame().T
+
+    pct_diff = (
+        100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            total_nurse_time,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    summarized = summarize(pct_diff)
+    return summarized
 
 
 def plot_percent_service_volume_change(
@@ -758,6 +766,127 @@ def plot_percent_service_area_volume_change(
     return fig
 
 
+def plot_nurse_time_use_percent_change(
+    summarized_percent_change,
+    scenarios,
+    title,
+):
+    """
+    Plot percentage change in nurse time use relative to baseline.
+    """
+
+    label_map = {
+        "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
+        "More CNP staff / Default Healthsystem Function": "More CNP",
+        "More CNP staff by District / Default Healthsystem Function":
+            "More CNP by district",
+        "More Nurses / Default Healthsystem Function": "More nurses",
+        "More Nurses by District / Default Healthsystem Function":
+            "More nurses by district",
+
+        "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
+        "More CNP staff / Improved Healthsystem Function": "More CNP",
+        "More CNP staff by District / Improved Healthsystem Function":
+            "More CNP by district",
+        "More Nurses / Improved Healthsystem Function": "More nurses",
+        "More Nurses by District / Improved Healthsystem Function":
+            "More nurses by district",
+    }
+
+    color_map = {
+        "Fewer Nurses / Default Healthsystem Function":
+            "indianred",
+        "More Nurses / Default Healthsystem Function":
+            "steelblue",
+        "More CNP staff / Default Healthsystem Function":
+            "darkgreen",
+        "More Nurses by District / Default Healthsystem Function":
+            "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function":
+            "orange",
+        "Fewer Nurses / Improved Healthsystem Function":
+            "indianred",
+        "More Nurses / Improved Healthsystem Function":
+            "steelblue",
+        "More CNP staff / Improved Healthsystem Function":
+            "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function":
+            "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function":
+            "orange",
+    }
+
+    # Keep only scenarios requested for this plot.
+    scenarios = [
+        scenario
+        for scenario in scenarios
+        if scenario
+        in summarized_percent_change.columns
+        .get_level_values(0)
+        .unique()
+    ]
+
+    x = np.arange(len(scenarios))
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for i, scenario in enumerate(scenarios):
+        mean = float(summarized_percent_change[scenario]["mean"].iloc[0])
+        lower = float(summarized_percent_change[scenario]["lower"].iloc[0])
+        upper = float(summarized_percent_change[scenario]["upper"].iloc[0])
+
+        ax.bar(
+            x[i],
+            mean,
+            color=color_map.get(
+                scenario,
+                "gray",
+            ),
+            label=label_map.get(
+                scenario,
+                scenario,
+            ),
+        )
+
+        lower_error = mean - lower
+        upper_error = upper - mean
+
+        ax.errorbar(
+            x[i],
+            mean,
+            yerr=[
+                [lower_error],
+                [upper_error],
+            ],
+            fmt="none",
+            ecolor="black",
+            capsize=3,
+            lw=1,
+        )
+
+    # Baseline = 0% change.
+    ax.axhline(0, color="black", linestyle="--", linewidth=1,)
+    ax.set_xticks(x)
+
+    ax.set_xticklabels(
+        [
+            label_map.get(
+                scenario,
+                scenario,
+            )
+            for scenario in scenarios
+        ],
+        rotation=45,
+        ha="right",
+    )
+
+    ax.set_xlabel("Nurse staffing scenario")
+    ax.set_ylabel("Nurse time increase %\n" "(relative to baseline)")
+    ax.set_title(title)
+    ax.grid(axis="y", alpha=0.3,)
+    fig.tight_layout()
+    return fig
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Analyse service volume across nurse staffing scenarios"
@@ -821,13 +950,22 @@ if __name__ == "__main__":
     )
 
     # TREATMENT-SPECIFIC SERVICE VOLUMES
-
     annual_treatment_volumes = extract_annual_treatment_volumes(
         results_folder
     )
 
     annual_treatment_volumes = set_param_names_as_column_index_level_0(
         annual_treatment_volumes,
+        param_names,
+    )
+
+    # NURSE TIME USE
+    annual_nurse_time = extract_annual_nurse_time_use(
+        results_folder
+    )
+
+    annual_nurse_time = set_param_names_as_column_index_level_0(
+        annual_nurse_time,
         param_names,
     )
 
@@ -947,6 +1085,27 @@ if __name__ == "__main__":
         comparison_years=range(2027, 2035),
     )
 
+    # Nurse time use relative to baseline
+    nurse_time_change_default = (
+        calculate_nurse_time_percent_change(
+            annual_nurse_time[
+                default_hs_scenarios
+            ],
+            baseline_scenario=baseline_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+    nurse_time_change_improved = (
+        calculate_nurse_time_percent_change(
+            annual_nurse_time[
+                improved_hs_scenarios
+            ],
+            baseline_scenario=baseline_improved_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
     fig_default = plot_annual_service_volumes(
         summarized_annual_service_volumes,
         default_hs_scenarios,
@@ -988,6 +1147,24 @@ if __name__ == "__main__":
         )
     )
 
+    fig_nurse_time_default = (
+        plot_nurse_time_use_percent_change(
+            nurse_time_change_default,
+            default_hs_scenarios[1:],
+            "Nurse Time Use Relative to Baseline\n"
+            "(2027–2034, Default Healthsystem Function)",
+        )
+    )
+
+    fig_nurse_time_improved = (
+        plot_nurse_time_use_percent_change(
+            nurse_time_change_improved,
+            improved_hs_scenarios[1:],
+            "Nurse Time Use Relative to Baseline\n"
+            "(2027–2034, Improved Healthsystem Function)",
+        )
+    )
+
     if args.save_figures:
         output_folder = results_folder / "service_volume_plots"
 
@@ -1025,6 +1202,20 @@ if __name__ == "__main__":
 
         fig_service_area_improved.savefig(
             output_folder / "percent_change_service_volume_by_area_improved.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        fig_nurse_time_default.savefig(
+            output_folder
+            / "nurse_time_use_relative_to_baseline_default.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        fig_nurse_time_improved.savefig(
+            output_folder
+            / "nurse_time_use_relative_to_baseline_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
