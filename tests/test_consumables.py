@@ -666,7 +666,8 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
         if availability not in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
                                   'scenario5', 'scenario6', 'scenario7', 'scenario8',
                                   'scenario9', 'scenario10', 'scenario11', 'scenario12',
-                                  'scenario13', 'scenario14', 'scenario15'
+                                  'scenario13', 'scenario14', 'scenario15', 'scenario16', 'scenario17',
+                                  'scenario18', 'scenario19', 'scenario20'
                                   ):
 
             # Check that probabilities of availability are as expected:
