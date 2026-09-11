@@ -166,6 +166,22 @@ def scenario_colors_by_draw(scenario_dict: dict) -> dict:
         for draw, name in scenario_dict.items()
     }
 
+# Shared horizontal layout for the "total" bar plots (do_standard_bar_plot_with_ci, called with
+# put_labels_in_legend=False) and the "by disease group" dot plots (plot_percentage_change_with_ci).
+# These are combined as stacked panels in the manuscript LaTeX (e.g. dalys_averted_total.png above
+# dalys_averted_by_disease_group.png), so their PLOT AREAS -- not just the PNG canvases -- need to
+# occupy the same horizontal fraction of the figure, or the scenario columns won't line up once both
+# panels are scaled to the same \textwidth. We therefore pin every one of these figures to the same
+# width and the same left/right margins via plt.subplots_adjust (never tight_layout or
+# bbox_inches="tight" for the final save, since both of those produce a canvas size that depends on
+# the rendered content -- e.g. legend text length -- which varies panel to panel). The right margin
+# is sized to fit the by-disease-group legend, and is left as unused whitespace on panels (like the
+# plain bar plots) that don't have a legend, so the plot area itself stays pinned in place.
+PANEL_FIG_WIDTH = 12
+PANEL_LEFT_MARGIN = 0.09
+PANEL_RIGHT_MARGIN = 0.76
+PANEL_TOP_MARGIN = 0.88
+
 main_analysis_subset = _ordered_subset(" – Default health system")
 perfect_analysis_subset = _ordered_subset(" – Perfect health system")
 
@@ -351,7 +367,7 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
         rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
         colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(PANEL_FIG_WIDTH, 5) if not put_labels_in_legend else (10, 5))
     ax.bar(
         xticks.keys(),
         _df[chosen_metric].values,
@@ -417,8 +433,10 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
         # Leave space on right for legend
         plt.subplots_adjust(left=0.15, right=0.5, top=0.88)
     else:
-        # Use full width of figure
-        plt.subplots_adjust(left=0.15, right=0.95, top=0.88)
+        # Shared margins (see PANEL_* constants above) so this plot area lines up with the
+        # by-disease-group panels it is stacked with in the manuscript LaTeX, even though this
+        # panel itself has no legend using the reserved right-hand space.
+        plt.subplots_adjust(left=PANEL_LEFT_MARGIN, right=PANEL_RIGHT_MARGIN, top=PANEL_TOP_MARGIN)
 
     return fig, ax
 
@@ -566,7 +584,7 @@ def plot_percentage_change_with_ci(
     ylabel: str = "Percentage change relative to baseline",
     xlabel: str = "Scenario",
     title: str | None = None,
-    figsize=(12, 6),
+    figsize=(PANEL_FIG_WIDTH, 6),
     xticklabels_wrapped: bool = False,
     wrap_width: int = 20,
     markers: list | None = None,
@@ -667,6 +685,10 @@ def plot_percentage_change_with_ci(
 
     ax.grid(axis="y", alpha=0.3)
 
+    # Match do_standard_bar_plot_with_ci's open style (no box) rather than the default full frame.
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
     ax.legend(
         title="Disease group",
         bbox_to_anchor=(1.02, 1),
@@ -674,7 +696,15 @@ def plot_percentage_change_with_ci(
         frameon=False
     )
 
-    fig.tight_layout()
+    # tight_layout(pad=2.0) first, to auto-fit the bottom margin for the rotated/wrapped x tick
+    # labels; subplots_adjust then pins left/right/top to the SAME values used by
+    # do_standard_bar_plot_with_ci's "total" bar plots (see PANEL_* constants), so the plot area
+    # occupies the identical horizontal fraction of the canvas in both -- required for the
+    # scenario columns to align when the two are stacked as panels in the manuscript LaTeX. The
+    # right margin is sized to fit this legend; do NOT use bbox_inches="tight" when saving this
+    # figure, since that re-crops the canvas to content and undoes the alignment.
+    fig.tight_layout(pad=2.0)
+    plt.subplots_adjust(left=PANEL_LEFT_MARGIN, right=PANEL_RIGHT_MARGIN, top=PANEL_TOP_MARGIN)
     return fig, ax
 
 
@@ -842,8 +872,8 @@ def plot_dalys_averted_vs_change_in_availability(
     ax.axhline(0, color="black", linewidth=0.8, linestyle="--", zorder=1)
     ax.axvline(0, color="black", linewidth=0.8, linestyle="--", zorder=1)
 
-    ax.set_xlabel("Average change in consumable availability\nacross facilities and consumables (percentage points)")
-    ax.set_ylabel("DALYs averted (%, relative to baseline)")
+    ax.set_xlabel("Average change in consumable availability\nacross facilities and consumables (percentage points relative to Status Quo)")
+    ax.set_ylabel("DALYs averted (%, relative to Status Quo)")
 
     if title:
         ax.set_title(title, fontsize=10)
@@ -1335,7 +1365,7 @@ def generate_all_consumable_figures(
         scenarios_dict=scenario_dict,
         set_colors=scenario_bar_colors,
     )
-    ax.set_ylabel('DALYs (Millions)')
+    ax.set_ylabel('DALYs averted relative to Status Quo (millions)')
     ax.set_ylim(bottom=0)
     fig.savefig(figurespath / 'dalys_averted_total.png', dpi=600)
     plt.close(fig)
@@ -1382,11 +1412,13 @@ def generate_all_consumable_figures(
         summary_df=num_dalys_averted_by_group_summarized,
         colors=disease_colors,
         scenario_labels=scenario_dict,
-        ylabel="DALYs averted (% relative to baseline)",
+        ylabel="DALYs averted (% relative to Status Quo)",
         xticklabels_wrapped=True,
     )
-    fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
-                dpi=300, bbox_inches="tight")
+    # No bbox_inches="tight" here: that would re-crop the canvas to content and undo the fixed
+    # margins set in plot_percentage_change_with_ci, which this panel needs to align with
+    # dalys_averted_total.png when the two are stacked in the manuscript LaTeX.
+    fig.savefig(figurespath / "dalys_averted_by_disease_group.png", dpi=300)
     plt.close(fig)
 
 
@@ -1481,8 +1513,9 @@ def generate_all_consumable_figures(
         ylabel="Additional services (% relative to baseline)",
         xticklabels_wrapped=True,
     )
-    fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
-                dpi=300, bbox_inches="tight")
+    # No bbox_inches="tight": keeps the fixed panel margins intact so this aligns with
+    # incremental_services_delivered_total.png when stacked in the manuscript LaTeX.
+    fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png", dpi=300)
     plt.close(fig)
 
 
