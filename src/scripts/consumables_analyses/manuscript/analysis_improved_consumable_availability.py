@@ -6,6 +6,7 @@ import textwrap
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -588,9 +589,15 @@ def plot_percentage_change_with_ci(
     xticklabels_wrapped: bool = False,
     wrap_width: int = 20,
     markers: list | None = None,
+    y_as_percentage: bool = False,
 ):
     """
     Dot + 95% CI plot for percentage change outcomes (non-additive).
+
+    y_as_percentage : bool
+        If True, format y-axis tick labels as percentages (value x 100, with a "%" suffix),
+        for input data that is a proportion (0-1) rather than already being on a 0-100 scale.
+        Only the tick labels are affected -- the underlying data/plotted values are unchanged.
 
     Parameters
     ----------
@@ -679,6 +686,9 @@ def plot_percentage_change_with_ci(
 
     ax.set_ylabel(ylabel)
     ax.set_xlabel(xlabel)
+
+    if y_as_percentage:
+        ax.yaxis.set_major_formatter(PercentFormatter(xmax=1.0))
 
     if title:
         ax.set_title(title, pad=12)
@@ -892,7 +902,8 @@ def plot_heatmap_delta(delta_mean,
                        baseline_draw=0,
                        wrap_xticks=True,
                        wrap_width=20,
-                       legend_label = None):
+                       legend_label = None,
+                       average_row_label = None):
 
     df = delta_mean.copy()
 
@@ -913,7 +924,11 @@ def plot_heatmap_delta(delta_mean,
         'undernutrition': 'Undernutrition',
         'epi': 'Expanded programme on immunization'
     }
-    df.index = df.index.map(clean_category_names)
+    # Rows with no entry in clean_category_names (e.g. a trailing "average across all
+    # consumables" row, which isn't a programme) pass through unchanged rather than becoming
+    # NaN -- Index.map(dict) maps unmatched keys to NaN, so a lookup with a fallback is used
+    # instead.
+    df.index = df.index.map(lambda x: clean_category_names.get(x, x))
 
     # Drop baseline
     df = df.drop(columns=baseline_draw)
@@ -948,6 +963,14 @@ def plot_heatmap_delta(delta_mean,
     ax.set_xlabel("Scenario")
     ax.set_ylabel("Disease group")
     ax.set_title("Change in consumable availability relative to baseline")
+
+    # Visually separate a trailing "average across all consumables" row (if present) from the
+    # per-programme rows above it, since it's a different kind of summary (a direct mean across
+    # every individual consumable, not a mean of the programme rows shown above it).
+    if average_row_label is not None:
+        row_labels = list(df.index)
+        if average_row_label in row_labels:
+            ax.axhline(y=row_labels.index(average_row_label), color='black', linewidth=2)
 
     plt.tight_layout()
     return fig, ax
@@ -1197,6 +1220,38 @@ def make_pct_available_by_group_fn(item_to_group_map: dict):
 
     return _pct_available_by_group
 
+def make_pct_available_overall_fn(item_to_group_map: dict, label: str = "Average (all consumables)"):
+    """
+    Build a `custom_generate_series` function (for `extract_results`) that computes the
+    percentage of times consumables WERE available within TARGET_PERIOD, averaged directly
+    across every individual consumable item in `item_to_group_map` -- each item weighted
+    equally.
+
+    This is deliberately NOT the same as averaging the group-level (e.g. per-programme) output
+    of `make_pct_available_by_group_fn`: programmes contain very different numbers of
+    consumables, so a mean-of-programme-means implicitly up-weights consumables that happen to
+    sit in small programmes. Averaging item-level values directly, before any grouping, avoids
+    that.
+    """
+    def _pct_available_overall(_df):
+        _df = _df.loc[
+            pd.to_datetime(_df.date).between(*TARGET_PERIOD),
+            ['Item_Available', 'Item_NotAvailable']
+        ]
+
+        available = _df['Item_Available'].apply(pd.Series).sum()
+        not_available = _df['Item_NotAvailable'].apply(pd.Series).sum()
+        total = available.add(not_available, fill_value=0)
+        pct_available = available / total.replace(0, np.nan)
+
+        pct_available.index = pct_available.index.astype(str)
+        pct_available = pct_available[pct_available.index.isin(item_to_group_map)]
+
+        # Single-row result: mean across every individual consumable (equal weight per item).
+        return pd.Series({label: pct_available.mean()})
+
+    return _pct_available_overall
+
 def compute_delta_availability_from_baseline(summary_df, comparator_draw=0):
     """
     Convert absolute % available to change relative to baseline.
@@ -1414,6 +1469,7 @@ def generate_all_consumable_figures(
         scenario_labels=scenario_dict,
         ylabel="DALYs averted (% relative to Status Quo)",
         xticklabels_wrapped=True,
+        y_as_percentage=True,
     )
     # No bbox_inches="tight" here: that would re-crop the canvas to content and undo the fixed
     # margins set in plot_percentage_change_with_ci, which this panel needs to align with
@@ -1692,8 +1748,34 @@ def generate_all_consumable_figures(
         comparator_draw = comparator_draw
     )
 
-    plot_heatmap_delta(delta_mean_available, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
-                       legend_label = "Change in % available (vs baseline)")
+    # ---- "Average" row for the heatmap: mean across every individual consumable ----
+    # Deliberately computed from item-level availability (make_pct_available_overall_fn), NOT
+    # from delta_mean_available.mean(axis=0) -- the latter would average the already-aggregated
+    # per-programme rows above, which implicitly up-weights consumables in small programmes
+    # rather than giving each consumable equal weight.
+    AVERAGE_ROW_LABEL = "Average (all consumables)"
+    pct_available_overall = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=make_pct_available_overall_fn(item_to_program_map, label=AVERAGE_ROW_LABEL),
+        do_scaling=False,
+        suspended_results_folder=suspended_results_folder,
+    )
+    pct_available_overall_summarized = summarize_disaggregated_results_for_figure(
+        pct_available_overall,
+        scenario_dict,
+        chosen_metric
+    )
+    delta_mean_available_overall = compute_delta_availability_from_baseline(
+        pct_available_overall_summarized,
+        comparator_draw=comparator_draw
+    )
+    delta_mean_available_for_heatmap = pd.concat([delta_mean_available, delta_mean_available_overall])
+
+    plot_heatmap_delta(delta_mean_available_for_heatmap, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
+                       legend_label = "Change in % available (vs baseline)",
+                       average_row_label=AVERAGE_ROW_LABEL)
     plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
                 dpi=300, bbox_inches="tight")
 
