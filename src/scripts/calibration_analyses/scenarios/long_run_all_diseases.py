@@ -24,7 +24,7 @@ class LongRun(BaseScenario):
         self.end_date = Date(2013, 1, 1)  # The simulation will stop before reaching this date.
         self.pop_size = 1000
         self.number_of_draws = 1
-        self.runs_per_draw = 1
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
