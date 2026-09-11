@@ -116,7 +116,7 @@ def wrap_labels(labels, width=15):
 def generate_heatmap(
     df: pd.DataFrame,
     include_levels: Optional[List[str]] = None,
-    value_col: str = "Actual",
+    value_col: str = "Status Quo",
     row: str = "item_category",
     col: str = "Facility_Level",
     row_order: Optional[Sequence[str]] = None,
@@ -212,10 +212,13 @@ def generate_heatmap(
         fmt=".2f"
     )
 
-    # If percentage labels requested, overwrite text with % suffix
+    # Cell labels are left as plain numbers (no "%") when as_pct is True -- the colourbar ticks
+    # carry the "%" instead, so the unit is stated once rather than on every cell.
     if annot and as_pct:
-        for t in ax.texts:
-            t.set_text(f"{t.get_text()}%")
+        cbar = hm.collections[0].colorbar
+        ticks = cbar.get_ticks()
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels([f"{t:g}%" for t in ticks])
 
     # 5) Labels & ticks
     xlab = (xlabel or ("Scenario" if scenario_axis else col.replace("_", " ").title()))
@@ -352,7 +355,7 @@ def generate_detail_availability_table_by_scenario(
 # Import TLO model availability data
 tlo_availability_df = pd.read_csv(consumable_resourcefilepath / "ResourceFile_Consumables_availability_small_original.csv")
 scenario_names_dict={
-        'available_prop': 'Actual',
+        'available_prop': 'Status Quo',
         'available_prop_scenario1': 'Non-therapeutic consumables (NTC)',
         'available_prop_scenario2':  'NTC + Vital medicines (VM)',
         'available_prop_scenario3': 'NTC + VM + Pharmacist- managed',
@@ -371,12 +374,13 @@ scenario_names_dict={
         'available_prop_scenario16': 'District pooling',
         'available_prop_scenario17': 'Neighbourhood pooling',
         'available_prop_scenario18': 'Pairwise exchange (Large radius)',
-        'available_prop_scenario19': 'Redistribution (Small radius)'
+        'available_prop_scenario19': 'Redistribution (Small radius)',
+        'available_prop_scenario20': 'National pooling'
     }
 
 tlo_availability_df = prepare_availability_dataset_for_plots(
     _df=tlo_availability_df,
-    scenario_list=[1, 2, 3, 6, 7, 8, 16, 17, 18, 19],
+    scenario_list=[1, 2, 3, 6, 7, 8, 16, 17, 18, 19, 20],
     scenario_names_dict=scenario_names_dict,
     consumable_resourcefilepath=consumable_resourcefilepath,
     resourcefilepath=resourcefilepath
@@ -388,7 +392,7 @@ tlo_availability_df = prepare_availability_dataset_for_plots(
 # Figure 1: Average probability of consumable availability in public and CHAM health facilities in Malawi
 _ = generate_heatmap(
     df=tlo_availability_df,
-    value_col="Actual",
+    value_col="Status Quo",
     row="item_category",
     col="Facility_Level",
     figurespath = outputfilepath / 'manuscript',
@@ -402,16 +406,18 @@ _ = generate_heatmap(
 )
 
 # Figure 3: Comparison of consumable availability across modelled scenarios
-scenario_cols = ['Actual', 'Non-therapeutic consumables (NTC)', 'NTC + Vital medicines (VM)', 'NTC + VM + Pharmacist- managed',
+# Order matches SCENARIO_ORDER in analysis_improved_consumable_availability.py (Baseline is
+# "Actual" and Perfect availability is auto-appended by generate_heatmap, so both are omitted here).
+scenario_cols = ['Status Quo', 'Non-therapeutic consumables (NTC)', 'NTC + Vital medicines (VM)', 'NTC + VM + Pharmacist- managed',
                  '75th percentile facility', '90th percentile facility', 'Best facility',
-                 'District pooling', 'Neighbourhood pooling',
-                 'Pairwise exchange (Large radius)',
-                 'Redistribution (Small radius)',]
+                 'Neighbourhood pooling', 'District pooling', 'National pooling',
+                 'Redistribution (Small radius)',
+                 'Pairwise exchange (Large radius)']
 for level in ['1a', '1b']:
     _ = generate_heatmap(
         df=tlo_availability_df,
         include_levels = [level],
-        value_col="Actual",
+        value_col="Status Quo",
         row="item_category",
         col="Facility_Level",
         figurespath=outputfilepath / 'manuscript',
