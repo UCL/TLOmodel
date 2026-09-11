@@ -39,6 +39,7 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_age_and_time = None
         self.years_lived_with_disability = None
         self.multi_index_for_age_and_wealth_and_time_ur = None
+        self.multi_index_for_age_and_wealth_and_time_and_district = None
         self.years_life_lost_ur = None                      # create seperate dataframes to include wealth,
         self.years_life_lost_stacked_time_ur = None         # urban/rural  and region indexes
         self.years_life_lost_stacked_age_and_time_ur = None # _ur = addition of urban/rural and region
@@ -95,6 +96,7 @@ class HealthBurden(Module):
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         urban_index = [False, True]
         region_index = sim.modules['Demography'].PROPERTIES['region_of_residence'].categories
+        district_index = sim.modules['Demography'].PROPERTIES['district_of_residence'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
 
         # Multi-index with sex/age_range/wealth/year
@@ -102,10 +104,11 @@ class HealthBurden(Module):
             [sex_index, age_index, wealth_index, year_index],
             names=['sex', 'age_range', 'li_wealth', 'year'])
 
-        # Multi-index with sex/age_range/wealth/urban/region/year
+        # Multi-index with sex/age_range/wealth/urban/region/district/year
         self.multi_index_for_age_and_wealth_and_time_ur = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, urban_index, region_index, year_index],
-            names=['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence', 'year'])
+            names=['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence',
+                   'district_of_residence', 'year'])
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
         self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
@@ -113,7 +116,8 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
 
-        # Create the YLL and YLD storage data-frame (using sex/age_range/wealth/urban/region/year multi-index)
+        # Create the YLL and YLD storage data-frame (using sex/age_range/wealth/urban/region/
+        # district/year multi-index)
         self.years_life_lost_ur = (
             pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_ur))
         self.years_life_lost_stacked_time_ur = (
@@ -324,7 +328,8 @@ class HealthBurden(Module):
         return daly_wt
 
     def report_live_years_lost(self, sex=None, wealth=None, date_of_birth=None, age_range=None,
-                               cause_of_death=None, urban=None, region_of_residence=None):
+                               cause_of_death=None, urban=None, region_of_residence=None,
+                               district_of_residence=None):
         """
         Calculate and store the period for which there is 'years of lost life' when someone dies (assuming that the
         person has died on today's date in the simulation).
@@ -335,6 +340,7 @@ class HealthBurden(Module):
         :param cause_of_death: title for the column in YLL dataframe (of form <ModuleName>_<Cause>)
         :param urban: the value 'li_urban' for the person at the time of death
         :param region_of_residence: the value 'region_of_residence' for the person at the time of death
+        :param district_of_residence: the value 'district_of_residence' for the person at the time of death
         """
 
         def _format_for_multi_index(_yll: pd.Series):
@@ -349,12 +355,16 @@ class HealthBurden(Module):
         def _format_for_multi_index_ur(_yll: pd.Series):
             """Returns pd.Series which is the same as in the argument `_yll_ur` except that the multi-index has been
                   expanded to include sex, li_wealth, li_urban and region of residence and rearranged so that it matched
-                  the expected multi-index format (sex/age_range/li_wealth/li_urban/region_of_region/year)."""
+                  the expected multi-index format (sex/age_range/li_wealth/li_urban/region_of_residence/
+                  district_of_residence/year)."""
             return (
                 pd.DataFrame(_yll)
-                .assign(sex=sex, li_wealth=wealth, li_urban=urban, region_of_residence=region_of_residence)
-                .set_index(['sex', 'li_wealth', 'li_urban', 'region_of_residence'], append=True)
-                .reorder_levels(['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence', 'year'])[_yll.name]
+                .assign(sex=sex, li_wealth=wealth, li_urban=urban, region_of_residence=region_of_residence,
+                        district_of_residence=district_of_residence)
+                .set_index(['sex', 'li_wealth', 'li_urban', 'region_of_residence',
+                            'district_of_residence'], append=True)
+                .reorder_levels(['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence',
+                                 'district_of_residence', 'year'])[_yll.name]
             )
 
         assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
@@ -424,12 +434,12 @@ class HealthBurden(Module):
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
 
-        # Get the years of live lost "stacked by age and time", including wealth, urban/rural and region.
-        yll_stacked_by_age_and_time_ur = pd.DataFrame(yll_stacked_by_time_ur.groupby(level=[0, 2, 3, 4, 5]).sum())\
+        # Get the years of live lost "stacked by age and time", including wealth, urban/rural, region and district.
+        yll_stacked_by_age_and_time_ur = pd.DataFrame(yll_stacked_by_time_ur.groupby(level=[0, 2, 3, 4, 5, 6]).sum())\
                                         .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'li_urban',
-                                                         'region_of_residence','year'])
+                                                         'region_of_residence', 'district_of_residence', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause_of_death not in self.years_life_lost.columns:
@@ -524,9 +534,10 @@ class HealthBurden(Module):
         def summarise_results_for_this_year_ur(df, level=[0, 1]) -> pd.DataFrame:
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
             multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
-            summary of sex/age-group; level=[2] gives a summary only by wealth category, level=[3] gives a summary only
-            by urban/rural category and level=[4] gives a summary only region of residence."""
-            return df.loc[(slice(None), slice(None), slice(None), slice(None), slice(None), year)] \
+            summary of sex/age-group; level=[2] gives a summary only by wealth category; level=[3] gives a summary only
+            by urban/rural category; level=[4] gives a summary only region of residence and
+            level=[5] gives a summary only district of residence."""
+            return df.loc[(slice(None), slice(None), slice(None), slice(None), slice(None), slice(None), year)] \
                      .groupby(level=level) \
                      .sum() \
                      .reset_index() \
@@ -535,13 +546,13 @@ class HealthBurden(Module):
         def log_df_line_by_line(key, description, df, force_cols=None,
                                 logging_level: Literal['info', 'debug'] = 'info') -> None:
             """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
-            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
+            `force_cols` is the names of the columns that must be included in each logging line (As the parsing of the
             log requires the name of the format of each row to be uniform.)."""
             df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
             df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
             if logging_level == 'info':
                 for _, row in df.iterrows():
-                    logger.info(key=key, data=row.to_dict(),description=description)
+                    logger.info(key=key, data=row.to_dict(), description=description)
             elif logging_level == 'debug':
                 for _, row in df.iterrows():
                     logger.debug(key=key, data=row.to_dict(), description=description)
@@ -758,19 +769,21 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disease_specific_daly_values_this_month = base_daly.merge(
             df.loc[idx_alive, ['sex', 'li_wealth', 'age_range']], left_index=True, right_index=True, how='left')
 
-        # - merge in age/wealth/sex/urban/region information
+        # - merge in age/wealth/sex/urban/region/district information
         disease_specific_daly_values_this_month_ur = base_daly.merge(
-            df.loc[idx_alive, ['sex', 'li_wealth', 'age_range', 'li_urban', 'region_of_residence']], left_index=True,
+            df.loc[idx_alive, ['sex', 'li_wealth', 'age_range', 'li_urban', 'region_of_residence',
+                               'district_of_residence']], left_index=True,
             right_index=True, how='left')
 
         # - sum of daly_weight, by sex/age/wealth
         disability_monthly_summary = pd.DataFrame(
             disease_specific_daly_values_this_month.groupby(['sex', 'age_range', 'li_wealth']).sum().fillna(0))
 
-        # - sum of daly_weight, by sex/age/wealth/urban/region
+        # - sum of daly_weight, by sex/age/wealth/urban/region/district
         disability_monthly_summary_ur = pd.DataFrame(
             disease_specific_daly_values_this_month_ur.groupby(
-                ['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence']).sum().fillna(0))
+                ['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence',
+                 'district_of_residence']).sum().fillna(0))
 
         # - add the year into the multi-index
         disability_monthly_summary['year'] = self.sim.date.year
@@ -782,7 +795,8 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disability_monthly_summary_ur['year'] = self.sim.date.year
         disability_monthly_summary_ur.set_index('year', append=True, inplace=True)
         disability_monthly_summary_ur = disability_monthly_summary_ur.reorder_levels(
-            ['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence','year'])
+            ['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence',
+             'district_of_residence', 'year'])
 
         # 5) Add the monthly summary to the overall dataframe for YearsLivedWithDisability
         dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
