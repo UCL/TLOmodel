@@ -15,7 +15,7 @@ END_THIRD_BOUNDARY = YEAR_END_DATE + 3
 # --------------------------------------------------------------------------
 N_TRIALS = 10                # total trial budget - not the same as "number of
                              # distinct configs explored", given MAX_CONFIG_CALLS
-MAX_CONFIG_CALLS = 5         # caps how many seeds the intensifier will use to
+MAX_CONFIG_CALLS = 3         # caps how many seeds the intensifier will use to
                              # confirm any single config. SHARED with
                              # checkpoint_seeds.py's CHECKPOINT_SEEDS - both
                              # import this SAME value, so the size of the
@@ -77,6 +77,7 @@ SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
                              # to use already-generated checkpoints without
                              # regenerating them.
 VALID_CHECKPOINT_COMMITS: list[str] = [
+    '7ae880741589',
     # Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
     # are still considered acceptable to reuse, even when the pipeline is
     # currently running under a DIFFERENT (e.g. newer) commit - e.g. a
