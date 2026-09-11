@@ -3,6 +3,10 @@ model_of_wbgt_dhis2_two_model_splines_optimized.py
 
 Two-model Poisson QMLE (pyfixest fepois) WBGT–service analysis.
 
+Deficit convention (used consistently throughout historical, district, projection, and counterfactual outputs):
+  Deficit = 100 * (baseline - weather) / baseline
+  Positive = fewer services under weather/WBGT; negative = more services.
+
 New in this version: ONLY_DEFICITS toggle
   When True, aggregations only consider observations where the baseline
   (mu_b) exceeds the weather model (mu_a) — i.e. months where services
@@ -53,17 +57,17 @@ numpy.random.seed(42)
 # CONFIG
 # ---------------------------------------------------------------------------
 COUNT_INDICATORS = [
-    "opd_attendance",
-    "ipd_total_admissions",
-    "fp_total_clients",
-    "fp_subsequent_clients_total",
+    # "opd_attendance",
+    # "ipd_total_admissions",
+    # "fp_total_clients",
+    # "fp_subsequent_clients_total",
    # "bcg_under1",
     #"penta3_under1",
     #"measles1_under1",
     #"fully_immunised_under1",
     #"live_births_total",
     #"htc_tests_new",
-    "anc_total_visits",
+    # "anc_total_visits",
     "cervical_screening_total",
     "pnc_within_2wks",
 ]
@@ -100,7 +104,7 @@ MIN_YEAR_BY_INDICATOR: dict[str, int] = {
     "fp_total_clients": 2019,
     "vmmc_first_visits": 2019,
     "htc_results_new":   2019,
-    "cervical_screening_initial": 2020,
+    "cervical_screening_total": 2020,
     "fully_immunised_outreach":   2018,
     "fp_subsequent_clients_total": 2019
 }
@@ -109,7 +113,7 @@ HARD_CEILINGS = { # based on visual inspection of data
 
     "anc_total_visits": 5000,
     "bcg_under1": 20000,
-    "cervical_screening_total": 5000,
+    "cervical_screening_total": None,
     "fp_subsequent_clients_total": 3000,
     "fp_total_clients": 3000,
     "fully_immunised_under1": 1000,
@@ -132,6 +136,14 @@ HARD_CEILINGS = { # based on visual inspection of data
 # --- Only-deficits toggle --------------------------------------------------
 ONLY_DEFICITS = False
 SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
+
+# --- Spline df sensitivity sweep ------------------------------------------
+# If non-empty, before the main pipeline runs, fit_indicator is re-run at
+# each df in this list. One row per (indicator, df) is written to
+# df_sensitivity_{WBGT_VAR}.csv with deficit_pct, CIs, and pseudo-AIC for
+# both the weather and baseline models. The main pipeline (projections,
+# counterfactuals) still runs at SPLINE_DF. Set to [] to skip.
+SPLINE_DF_SWEEP: list[int] = [3, 4, 6, 8, 12, 20]
 
 
 def _apply_deficit_filter(df, base_col, wx_col):
@@ -163,7 +175,7 @@ else:
     LAG_SUFFIX = ""
 CENTER = True
 MIN_OBS = 24
-MIN_OBS_COVERAGE = 0
+MIN_OBS_COVERAGE = 0.5
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
 CLUSTER_COL = "Dist"
@@ -174,7 +186,7 @@ REFERENCE_WBGT_PERCENTILE = 95
 HOT_DEFICIT_CI_METHOD = "bootstrap"
 N_BOOTSTRAP = 1000
 
-IRR_LOW_PCTILE = 50
+IRR_LOW_PCTILE = 10
 IRR_HIGH = 32.0
 
 TLO_WBGT_GRID = np.linspace(20.0, 34.0, 57)
@@ -186,7 +198,7 @@ CLOSURES = [
 ]
 
 min_year_historical = 2016
-max_year_historical = 2026
+max_year_historical = 2025
 LAST_HIST_YEAR = max_year_historical - 1
 
 PROJECT = True
@@ -202,7 +214,8 @@ PRECIP_FILE_BY_TIER = {
     "median": "precip_monthly_total_facility_MIROC6_{ssp}.csv",
 }
 
-CURVE_REF_MODE = "p10"
+WBGT_REFERENCE_TEMP = 23.0
+CURVE_REF_MODE = WBGT_REFERENCE_TEMP#"p10"
 CURVE_N = 60
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -315,10 +328,14 @@ def load_indicator_panel(indicator: str, panel_dir: str) -> pd.DataFrame:
     return base
 
 # ===========================================================================
-# Jackknife CI helper (respects ONLY_DEFICITS via aggregator arg)
+# Jackknife CI helper — positive values always mean service deficits
 # ===========================================================================
-def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids, sign="b_minus_a"):
-    """Leave-one-facility-out 95% CI on deficit_pct."""
+def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids):
+    """Leave-one-facility-out 95% CI for service deficit percentage.
+
+    Convention: deficit_pct = 100 * (baseline - weather) / baseline.
+    Here mu_a = weather prediction and mu_b = baseline prediction.
+    """
     mu_a = np.asarray(mu_a, dtype=float)
     mu_b = np.asarray(mu_b, dtype=float)
     facility_ids = np.asarray(facility_ids)
@@ -328,7 +345,7 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids, sign="b_minus_a"):
         return np.nan, np.nan, np.nan
 
     def _stat(sa, sb):
-        return (100.0 * (sa - sb) / sb) if sign == "a_minus_b" else (100.0 * (sb - sa) / sb)
+        return 100.0 * (sb - sa) / sb
 
     pt = _stat(sum_a, sum_b)
     facs = np.unique(facility_ids)
@@ -345,7 +362,7 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids, sign="b_minus_a"):
     if len(jack) < 3:
         return pt, np.nan, np.nan
     jack = np.asarray(jack)
-    n = len(facs)
+    n = len(jack)
     se = np.sqrt((n - 1) / n * np.sum((jack - jack.mean()) ** 2))
     return pt, pt - 1.96 * se, pt + 1.96 * se
 
@@ -407,7 +424,7 @@ def diagnose_indicator(df, indicator):
 # ===========================================================================
 # Weather column construction
 # ===========================================================================
-def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG_MONTHS):
+def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG_MONTHS, spline_df=None):
     df = df.sort_values(["facility", "date"]).reset_index(drop=True)
     df["year"] = df["date"].dt.year
     df["month"] = df["date"].dt.month
@@ -427,7 +444,8 @@ def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG
     for v in [WBGT_VAR]:
         xc = df[v] - shifts[v]
         if spline_design is None:
-            B = patsy.dmatrix(f"bs(x, df={SPLINE_DF}) - 1", {"x": xc}, return_type="dataframe")
+            _df = spline_df if spline_df is not None else SPLINE_DF
+            B = patsy.dmatrix(f"bs(x, df={_df}) - 1", {"x": xc}, return_type="dataframe")
             design_map[v] = B.design_info
         else:
             B = patsy.build_design_matrices([design_map[v]], {"x": xc})[0]
@@ -493,7 +511,7 @@ def mask_spike_and_revert(
     indicator: str,
     facility_col: str = "facility",
     date_col: str = "date",
-    oom: float = 30.0,
+    oom: float = 100.0,
     include_trough: bool = False,
     return_flags: bool = False,
 ) -> tuple[pd.DataFrame, dict]:
@@ -602,24 +620,54 @@ def winsorize_indicator(df, indicator_col="y", facility_col="facility_id", upper
 
 
 # ===========================================================================
+# Pseudo-AIC for Poisson QMLE
+# ===========================================================================
+def _poisson_pseudo_aic(model, data, y_col="y_int"):
+    """Pseudo-AIC for Poisson QMLE: -2 * sum(y*log(mu) - mu) + 2*k.
+
+    Drops the log(y!) term (constant across models fit to the SAME y), so
+    values are only comparable across models on the same response vector.
+    Fixed effects are absorbed and not counted in k — fine when comparing
+    across spline df with identical FE structure. Returns NaN on error.
+    """
+    try:
+        mu = np.asarray(model.predict(newdata=data, type="response"), dtype=float)
+        y = np.asarray(data[y_col].values, dtype=float)
+        ok = np.isfinite(mu) & (mu > 0) & np.isfinite(y)
+        if not ok.any():
+            return np.nan
+        ll = float(np.sum(y[ok] * np.log(mu[ok]) - mu[ok]))
+        k = int(len(model.coef()))
+        return -2.0 * ll + 2.0 * k
+    except Exception:
+        return np.nan
+
+
+# ===========================================================================
 # Main fitting function
 # ===========================================================================
-def fit_indicator(indicator, panel_path):
+def fit_indicator(indicator, panel_path, spline_df=None):
     print(f"\n→ {indicator}")
     if ONLY_DEFICITS:
         print(f"  ONLY_DEFICITS = True — aggregations restricted to loss-of-service rows")
     t0 = time.time()
+    # Effective spline df for this fit. When called from the primary pipeline
+    # spline_df is None → falls back to module SPLINE_DF and per-indicator
+    # output filenames are untagged. When called from the sweep, spline_df is
+    # set and _df_tag disambiguates the per-indicator CSVs.
+    _df_used = spline_df if spline_df is not None else SPLINE_DF
+    _df_tag = f"_df{spline_df}" if spline_df is not None else ""
     min_obs = MIN_OBS_BY_INDICATOR.get(indicator, MIN_OBS)
 
     try:
         long = load_indicator_panel(indicator, PANEL_DIR)
         long = apply_hard_ceilings(long, indicator)
-        long, qa_report = mask_spike_and_revert(
-            long,
-            indicator=indicator,
-            oom=50,
-            return_flags=False,
-        )
+        # long, qa_report = mask_spike_and_revert(
+        #     long,
+        #     indicator=indicator,
+        #     oom=100,
+        #     return_flags=False,
+        # )
         long = long.rename(columns={indicator: "y"})
 
     except Exception as e:
@@ -661,7 +709,7 @@ def fit_indicator(indicator, panel_path):
     if USE_PRECIP:
         SHIFTS["precip"] = long[PRECIP_COL].mean() if CENTER else 0.0
 
-    long, weather_rhs, spline_cols, DESIGN = add_weather_columns_optimized(long, SHIFTS)
+    long, weather_rhs, spline_cols, DESIGN = add_weather_columns_optimized(long, SHIFTS, spline_df=spline_df)
 
     nb_cols = ["y", "facility", "month", CLUSTER_COL] + weather_rhs
     nb_data = long.dropna(subset=nb_cols).copy()
@@ -735,6 +783,7 @@ def fit_indicator(indicator, panel_path):
     if n_sep > 0:
         print(f"  [{indicator}] {n_sep} rows dropped (separation in Poisson FE)")
         nb_data = nb_data.dropna(subset=["y_pred_base", "y_pred_wx"]).reset_index(drop=True)
+    # Positive difference = services lost under weather/WBGT
     nb_data["difference"] = nb_data["y_pred_base"] - nb_data["y_pred_wx"]
 
     def aggregate_deficit_pct(df):
@@ -756,7 +805,7 @@ def fit_indicator(indicator, panel_path):
         deficit_ci = (np.nan, np.nan)
         se_jack = np.nan
 
-    print(f"  [{indicator}] Deficit: {deficit_pt:+.2f}% (CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
+    print(f"  [{indicator}] Service deficit: {deficit_pt:+.2f}% (CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
 
     hot_threshold = np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
     hot_mask = nb_data[WBGT_VAR] > hot_threshold
@@ -777,7 +826,7 @@ def fit_indicator(indicator, panel_path):
             hot_se_jack = np.nan
 
         print(
-            f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C): "
+            f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C), service deficit: "
             f"{hot_deficit_pt:+.2f}% "
             f"(CI: {hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f})"
         )
@@ -788,6 +837,7 @@ def fit_indicator(indicator, panel_path):
         print(f"  [{indicator}] Not enough hot months ({len(hot_data)} observations)")
 
     reference_wbgt = float(np.percentile(nb_data[WBGT_VAR], IRR_LOW_PCTILE))
+    reference_wbgt = WBGT_REFERENCE_TEMP
     try:
         design_info_wbgt = DESIGN[WBGT_VAR]
         retained = [c for c in spline_cols if c in model_wx.coef().index]
@@ -861,7 +911,6 @@ def fit_indicator(indicator, panel_path):
             sub["mu_a"].values,
             sub["mu_b"].values,
             sub["facility"].values,
-            sign="a_minus_b",
         )
         sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
         dist_rows.append(
@@ -877,24 +926,6 @@ def fit_indicator(indicator, panel_path):
         f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
-
-    try:
-        Bg = np.asarray(patsy.build_design_matrices([design_info_wbgt], {"x": TLO_WBGT_GRID - SHIFTS[WBGT_VAR]})[0])
-        Br = np.asarray(
-            patsy.build_design_matrices([design_info_wbgt], {"x": np.array([reference_wbgt]) - SHIFTS[WBGT_VAR]})[0]
-        )
-        rr_grid = np.exp((Bg - Br) @ beta_s)
-        tlo_rows = pd.DataFrame(
-            {
-                "indicator": indicator,
-                "wbgt": TLO_WBGT_GRID,
-                "rr_vs_ref": rr_grid,
-                "disruption_probability": np.clip(1.0 - rr_grid, 0.0, None),
-            }
-        )
-    except Exception as e:
-        print(f"  [{indicator}] TLO lookup rows failed: {e}")
-        tlo_rows = pd.DataFrame(columns=["indicator", "wbgt", "rr_vs_ref", "disruption_probability"])
 
     pd.DataFrame(
         [
@@ -928,16 +959,25 @@ def fit_indicator(indicator, panel_path):
                 "time_seconds": time.time() - t0,
             }
         ]
-    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}{LAG_SUFFIX}.csv", index=False)
+    ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}{LAG_SUFFIX}{_df_tag}.csv", index=False)
 
     pred_cols = ["year", "month", "facility", "date", "y_int", "covid", "y_pred_base", "y_pred_wx", "difference"]
-    nb_data[pred_cols].to_csv(f"{OUT_DIR}predictions_{indicator}.csv", index=False)
+    nb_data[pred_cols].to_csv(f"{OUT_DIR}predictions_{indicator}{_df_tag}.csv", index=False)
 
     print(f"  [{indicator}] Done in {time.time() - t0:.1f}s")
+
+    _aic_wx = _poisson_pseudo_aic(model_wx, nb_data)
+    _aic_base = _poisson_pseudo_aic(model_base, nb_data)
+    _n_retained = len([c for c in spline_cols if c in model_wx.coef().index])
 
     return {
         "indicator": indicator,
         "label": INDICATOR_LABELS.get(indicator, indicator),
+        "spline_df": _df_used,
+        "aic_wx": _aic_wx,
+        "aic_base": _aic_base,
+        "delta_aic_vs_base": _aic_base - _aic_wx,
+        "n_spline_cols_retained": _n_retained,
         "deficit_pct": deficit_pt,
         "ci_lo": deficit_ci[0],
         "ci_hi": deficit_ci[1],
@@ -963,7 +1003,6 @@ def fit_indicator(indicator, panel_path):
         "_model_wx": model_wx,
         "_model_base": model_base,
         "_fac_district": nb_data[["facility", CLUSTER_COL]].drop_duplicates().reset_index(drop=True),
-        "_tlo_rows": tlo_rows,
         "_wbgt_support": WBGT_SUPPORT,
     }
 
@@ -986,6 +1025,66 @@ if __name__ == "__main__":
     print("=" * 60)
 
     panel_paths = {ind: f"{PANEL_DIR}regression_panel_{ind}.csv" for ind in COUNT_INDICATORS}
+
+    # -----------------------------------------------------------------
+    # Spline df sensitivity sweep (runs before the primary pipeline)
+    # -----------------------------------------------------------------
+    if SPLINE_DF_SWEEP:
+        print(f"\n{'=' * 60}")
+        print(f"Spline df sensitivity sweep: {SPLINE_DF_SWEEP}")
+        print(f"{'=' * 60}")
+        sweep_rows = []
+        for k in SPLINE_DF_SWEEP:
+            print(f"\n--- df = {k} ---")
+            t_sweep = time.time()
+            if USE_PARALLEL and len(COUNT_INDICATORS) > 1:
+                with Pool(processes=N_WORKERS) as pool:
+                    sweep_results = pool.starmap(
+                        fit_indicator,
+                        [(ind, panel_paths[ind], k) for ind in COUNT_INDICATORS],
+                    )
+            else:
+                sweep_results = [
+                    fit_indicator(ind, panel_paths[ind], spline_df=k)
+                    for ind in COUNT_INDICATORS
+                ]
+            for r in sweep_results:
+                if r is None:
+                    continue
+                sweep_rows.append({
+                    "indicator": r["indicator"],
+                    "spline_df": k,
+                    "deficit_pct": r["deficit_pct"],
+                    "ci_lo": r["ci_lo"],
+                    "ci_hi": r["ci_hi"],
+                    "hot_deficit_pct": r["hot_deficit_pct"],
+                    "hot_ci_lo": r["hot_ci_lo"],
+                    "hot_ci_hi": r["hot_ci_hi"],
+                    "aic_wx": r["aic_wx"],
+                    "aic_base": r["aic_base"],
+                    "delta_aic_vs_base": r["delta_aic_vs_base"],
+                    "n_spline_cols_retained": r["n_spline_cols_retained"],
+                    "n_obs": r["n_obs"],
+                    "n_facilities": r["n_facilities"],
+                })
+            print(f"  df={k} finished in {time.time() - t_sweep:.1f}s")
+
+        sweep_df = pd.DataFrame(sweep_rows)
+        sweep_path = f"{OUT_DIR}df_sensitivity_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        sweep_df.to_csv(sweep_path, index=False)
+        print(f"\nSensitivity sweep written → {sweep_path}")
+
+        if not sweep_df.empty:
+            print("\ndeficit_pct by (indicator × df):")
+            print(sweep_df.pivot(index="indicator", columns="spline_df",
+                                 values="deficit_pct").round(2))
+            print("\nΔAIC vs baseline (higher = weather model improves more):")
+            print(sweep_df.pivot(index="indicator", columns="spline_df",
+                                 values="delta_aic_vs_base").round(1))
+            print("\nSpline cols retained (drops indicate collinearity):")
+            print(sweep_df.pivot(index="indicator", columns="spline_df",
+                                 values="n_spline_cols_retained").astype("Int64"))
+        print(f"\n{'=' * 60}\nSweep complete — resuming primary pipeline at df={SPLINE_DF}\n{'=' * 60}")
 
     t_start = time.time()
 
@@ -1091,15 +1190,6 @@ if __name__ == "__main__":
         ]
     )
     irr_df.to_csv(f"{OUT_DIR}irr_contrast_{WBGT_VAR}.csv", index=False)
-
-    tlo_frames = [
-        r["_tlo_rows"] for r in results if isinstance(r.get("_tlo_rows"), pd.DataFrame) and not r["_tlo_rows"].empty
-    ]
-    if tlo_frames:
-        pd.concat(tlo_frames, ignore_index=True).to_csv(f"{OUT_DIR}tlo_wbgt_lookup.csv", index=False)
-    else:
-        print("  no TLO rows to write")
-
     curve_paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
     if curve_paths:
         pd.concat([pd.read_csv(p) for p in curve_paths], ignore_index=True).to_csv(
@@ -1595,8 +1685,7 @@ if __name__ == "__main__":
                     df_agg["mu_a"].values,
                     df_agg["mu_b"].values,
                     df_agg["facility"].values,
-                    sign="a_minus_b",
-                )
+                        )
 
                 hist_row = summary_df.loc[summary_df["indicator"] == ind]
                 hist_deficit = float(hist_row["deficit_pct"].iloc[0]) if not hist_row.empty else np.nan
