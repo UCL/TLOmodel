@@ -900,7 +900,9 @@ def plot_heatmap_delta(delta_mean,
         center=0,
         linewidths=0.5,
         cbar_kws={"label": legend_label},
-        ax=ax
+        ax=ax,
+        annot = True,
+        fmt=".2f",
     )
 
     # Wrap x tick labels
