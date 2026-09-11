@@ -200,6 +200,10 @@ CLOSURES = [
 min_year_historical = 2016
 max_year_historical = 2025
 LAST_HIST_YEAR = max_year_historical - 1
+YEAR_FE_REFERENCE = LAST_HIST_YEAR
+YEAR_FE_YEARS = list(range(min_year_historical, YEAR_FE_REFERENCE))
+YEAR_FE_COLS = [f"year_fe_{y}" for y in YEAR_FE_YEARS]
+
 
 PROJECT = True
 PROJECT_HOLD_YEAR = True
@@ -251,6 +255,37 @@ def get_min_obs(indicator: str) -> int:
 MIN_OBS_BY_INDICATOR: dict[str, int] = {
     ind: get_min_obs(ind) for ind in COUNT_INDICATORS
 }
+
+# ===========================================================================
+# Year fixed effect
+# ===========================================================================
+
+def add_year_fixed_effects(df, use_reference_year=False):
+    """
+    Add historical year fixed-effect dummies.
+
+    2024 is the reference category, so all year-FE columns are zero
+    for 2024 and for future projections that are held at the 2024 level.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain a 'year' column.
+    use_reference_year : bool
+        If True, all rows are treated as 2024/reference year.
+        Used for forward projections.
+    """
+    df = df.copy()
+
+    if use_reference_year:
+        model_year = np.full(len(df), YEAR_FE_REFERENCE, dtype=int)
+    else:
+        model_year = df["year"].astype(int).values
+
+    for year, col in zip(YEAR_FE_YEARS, YEAR_FE_COLS):
+        df[col] = (model_year == year).astype(int)
+
+    return df
 # ===========================================================================
 # Predict-time clipping helper
 # ===========================================================================
@@ -428,12 +463,13 @@ def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG
     df = df.sort_values(["facility", "date"]).reset_index(drop=True)
     df["year"] = df["date"].dt.year
     df["month"] = df["date"].dt.month
-    df["year_c"] = df["year"] - shifts["year"]
+
+    df = add_year_fixed_effects(df, use_reference_year=False)
 
     lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
     df["covid"] = df["date"].between(lo, hi).astype(int)
 
-    rhs = ["year_c", "covid"]
+    rhs = YEAR_FE_COLS + ["covid"]
     if USE_PRECIP:
         df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
         rhs.append("precip_c")
@@ -703,9 +739,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         long = winsorize_indicator(long, indicator_col="y", facility_col="facility", upper_quantile=wq)
     diagnose_indicator(long, "y")
 
-
-    SHIFTS = {"year": long["year"].mean() if CENTER else 0.0}
-    SHIFTS[WBGT_VAR] = long[WBGT_VAR].mean() if CENTER else 0.0
+    SHIFTS = {WBGT_VAR: long[WBGT_VAR].mean() if CENTER else 0.0}
     if USE_PRECIP:
         SHIFTS["precip"] = long[PRECIP_COL].mean() if CENTER else 0.0
 
@@ -740,7 +774,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     )
 
     # Build RHS term lists (FE absorbed, not in the formula RHS)
-    ctrl_terms = ["year_c", "covid"]
+    ctrl_terms = YEAR_FE_COLS + ["covid"]
     if USE_PRECIP:
         ctrl_terms.append("precip_c")
     wx_terms = list(weather_rhs)  # splines + lags + ctrl already in weather_rhs
@@ -1295,9 +1329,8 @@ if __name__ == "__main__":
                         )
 
                     df["covid"] = 0
-                    df["year_c"] = (
-                        (LAST_HIST_YEAR - shifts["year"]) if PROJECT_HOLD_YEAR else (df["year"] - shifts["year"])
-                    )
+                    df = add_year_fixed_effects(df, use_reference_year=True)
+
                     df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
 
                     xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
@@ -1310,7 +1343,7 @@ if __name__ == "__main__":
                     for k in LAG_MONTHS:
                         df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
 
-                    need = ["covid", "year_c", "precip_c"] + list(spline_cols) + LAG_COLS
+                    need = YEAR_FE_COLS + ["covid", "precip_c"] + list(spline_cols) + LAG_COLS
                     n_before = len(df)
                     df = df.dropna(subset=need).reset_index(drop=True)
                     n_dropped = n_before - len(df) + n_dropped_wbgt
@@ -1619,7 +1652,7 @@ if __name__ == "__main__":
                 # covid=0 (CF asks about climate alone, not pandemic)
                 lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
                 df["covid"] = df["date"].between(lo, hi).astype(int)
-                df["year_c"] = df["year"] - shifts["year"]
+                df = add_year_fixed_effects(df, use_reference_year=False)
                 df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
 
                 xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
@@ -1634,7 +1667,7 @@ if __name__ == "__main__":
                     for k in LAG_MONTHS:
                         df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
 
-                need = ["covid", "year_c", "precip_c"] + list(spline_cols)
+                need = YEAR_FE_COLS + ["covid", "precip_c"] + list(spline_cols)
                 if SA_LAG:
                     need += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
                 df = df.dropna(subset=need).reset_index(drop=True)
