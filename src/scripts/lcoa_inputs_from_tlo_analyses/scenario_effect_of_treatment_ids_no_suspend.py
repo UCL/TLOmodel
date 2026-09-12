@@ -89,7 +89,7 @@ class EffectOfEachTreatment(BaseScenario):
         The sequences of scenarios systematically omits all but one TREATMENT_ID that is defined in the model."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
-        treatments = ["Epilepsy_Treatment_Start_*"]
+        treatments = ["Undernutrition_Feeding_*"]
         # Return 'Service_Availability' values, with scenarios for nothing, and ones for which all but one
         # treatment is omitted
         service_availability = dict()
