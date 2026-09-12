@@ -65,7 +65,7 @@ class HealthBurden(Module):
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
         p['DALY_Weight_Database'] = pd.read_csv(resourcefilepath / 'ResourceFile_DALY_Weights.csv')
-        p['Age_Limit_For_YLL'] = 90.0  # Frontier life expectancy at birth
+        p['Age_Limit_For_YLL'] = 53.0  # Frontier life expectancy at birth
         #                       https://cdn.who.int/media/docs/default-source/gho-documents/global-health-estimates/
         #                       ghe2019_daly-methods.pdf?sfvrsn=31b25009_7
         p['gbd_causes_of_disability'] = set(pd.read_csv(
