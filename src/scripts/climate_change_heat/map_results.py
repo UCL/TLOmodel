@@ -1,5 +1,3 @@
-
-
 """
 plot_all_figures.py
 
@@ -15,14 +13,18 @@ match the *writer* paths in the model script (WBGT_VAR-suffixed), which
 means the timeseries panel here reads the correct file — unlike the reader
 in the model script's own plotting block, which is missing the suffix.
 """
+
 import pandas as pd
 from pathlib import Path
-OUT_DIR  = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+import geopandas as gpd
+
+OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 WBGT_VAR = "wbgt_day"
 paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
-#assert paths, "no per-indicator curve files found"
+# assert paths, "no per-indicator curve files found"
 pd.concat([pd.read_csv(p) for p in paths], ignore_index=True).to_csv(
-    Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv", index=False)
+    Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv", index=False
+)
 print(f"wrote {len(paths)} indicators")
 import os
 import numpy as np
@@ -31,23 +33,38 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
 
-SHAPEFILE_PATH    = ("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
-                     "resources/mapping/"
-                     "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
+SHAPEFILE_PATH = (
+    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
+    "resources/mapping/"
+    "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
+)
+LAKES_SHAPEFILE_PATH = (
+    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
+    "resources/mapping/ne_50m_lakes.shp"
+)
 DISTRICT_NAME_COL = "ADM2_EN"
-CLUSTER_COL       = "Dist"
+CLUSTER_COL = "Dist"
 
-FDR_ALPHA     = 0.05
-IRR_HIGH      = 32.0   # IRR contrast upper bound; low is read from results_df
+FDR_ALPHA = 0.05
+IRR_HIGH = 34.0  # IRR contrast upper bound; low is read from results_df
 
 SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
-MODEL_TIERS   = ["lowest", "median", "highest"]
+MODEL_TIERS = ["lowest", "median", "highest"]
 
-MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+# Calendar-month approximation to the historical hot-month definition (which
+# uses per-indicator WBGT thresholds from results_df["hot_threshold"]). The
+# annual/monthly projection CSVs don't carry facility-month WBGT, so we can't
+# apply the WBGT-threshold definition here; edit the set below if the writer
+# is extended. Malawi hot season is roughly Oct-Mar.
+HOT_MONTHS = (10, 11, 12, 1, 2, 3)
+
 ONLY_DEFICITS = False
 SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
 
+SA_LAG = True
+LAG_SUFFIX = "_with_lags" if SA_LAG else ""
 # Subset + column order for the district × indicator heatmap (Fig. 11).
 # Deliberately narrower than the full indicator list — VMMC, skilled
 # deliveries, ANC 1st trimester, ANC new attendees, and PNC first-visit <2wks
@@ -57,12 +74,38 @@ SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
 # Rough Malawi north → south latitude order; cities placed last, separated by
 # a dashed rule in the heatmap.
 DISTRICT_ORDER = [
-    "Chitipa", "Karonga", "Likoma", "Rumphi", "Mzimba", "Nkhata Bay",
-    "Kasungu", "Nkhotakota", "Ntchisi", "Dowa", "Salima", "Lilongwe",
-    "Mchinji", "Dedza", "Ntcheu", "Mangochi", "Balaka", "Machinga",
-    "Zomba", "Chiradzulu", "Blantyre", "Mwanza", "Neno", "Phalombe",
-    "Mulanje", "Thyolo", "Chikwawa", "Nsanje",
-    "Mzuzu City", "Lilongwe City", "Blantyre City", "Zomba City",
+    "Chitipa",
+    "Karonga",
+    "Likoma",
+    "Rumphi",
+    "Mzimba",
+    "Nkhata Bay",
+    "Kasungu",
+    "Nkhotakota",
+    "Ntchisi",
+    "Dowa",
+    "Salima",
+    "Lilongwe",
+    "Mchinji",
+    "Dedza",
+    "Ntcheu",
+    "Mangochi",
+    "Balaka",
+    "Machinga",
+    "Zomba",
+    "Chiradzulu",
+    "Blantyre",
+    "Mwanza",
+    "Neno",
+    "Phalombe",
+    "Mulanje",
+    "Thyolo",
+    "Chikwawa",
+    "Nsanje",
+    "Mzuzu City",
+    "Lilongwe City",
+    "Blantyre City",
+    "Zomba City",
 ]
 
 INDICATOR_LABELS: dict[str, str] = {
@@ -89,7 +132,7 @@ INDICATOR_LABELS: dict[str, str] = {
     "cervical_screening_total": "Cervical Screening Total",
 }
 
-labels = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", "(K)", "(L)", "(M)", "(N)", "(O)"]
+PANEL_LABELS = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", "(K)", "(L)", "(M)", "(N)", "(O)"]
 
 
 # =====================================================================
@@ -98,20 +141,20 @@ labels = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)", 
 def bh_fdr(pvals, alpha=0.05):
     """Benjamini-Hochberg. Mirrors the model script exactly so re-running
     the plotting recovers the same significance flags."""
-    p   = np.asarray(pvals, dtype=float)
-    ok  = ~np.isnan(p)
-    q   = np.full_like(p, np.nan)
+    p = np.asarray(pvals, dtype=float)
+    ok = ~np.isnan(p)
+    q = np.full_like(p, np.nan)
     rej = np.zeros(p.shape, dtype=bool)
     if ok.sum() == 0:
         return q, rej
-    p_ok  = p[ok]
-    n     = len(p_ok)
+    p_ok = p[ok]
+    n = len(p_ok)
     order = np.argsort(p_ok)
-    adj   = p_ok[order] * n / np.arange(1, n + 1)
-    adj   = np.clip(np.minimum.accumulate(adj[::-1])[::-1], 0, 1)
-    q_ok        = np.empty(n)
+    adj = p_ok[order] * n / np.arange(1, n + 1)
+    adj = np.clip(np.minimum.accumulate(adj[::-1])[::-1], 0, 1)
+    q_ok = np.empty(n)
     q_ok[order] = adj
-    q[ok]  = q_ok
+    q[ok] = q_ok
     rej[ok] = q_ok <= alpha
     return q, rej
 
@@ -124,7 +167,7 @@ def _monthly_jackknife_ci(mu_a, mu_b, facility_ids):
         return np.nan, np.nan, np.nan
     deficit_pct = 100.0 * (sum_b - sum_a) / sum_b
     facs = np.unique(facility_ids)
-    n    = len(facs)
+    n = len(facs)
     if n < 3:
         return deficit_pct, np.nan, np.nan
     jack = []
@@ -145,10 +188,7 @@ def _monthly_jackknife_ci(mu_a, mu_b, facility_ids):
 def _require(path: str) -> str:
     """Loud failure if a required CSV is missing."""
     if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"Required input missing: {path}\n"
-            f"Run loop_all_indicators_two_model_NB.py first."
-        )
+        raise FileNotFoundError(f"Required input missing: {path}\nRun loop_all_indicators_two_model_NB.py first.")
     return path
 
 
@@ -159,24 +199,61 @@ def _label(ind: str) -> str:
 # =====================================================================
 # 1. PER-INDICATOR EXPOSURE-RESPONSE CURVE
 # =====================================================================
-def plot_exposure_response_curve(indicator: str, out_dir: str = OUT_DIR) -> str:
-    """Reads exposure_response_curve_{indicator}_{WBGT_VAR}.csv."""
-    csv_path = _require(
-        f"{out_dir}exposure_response_curve_{indicator}_{WBGT_VAR}{SUFFIX}.csv")
+def plot_exposure_response_curve(
+    indicator: str,
+    wbgt_obs: pd.Series | None = None,   # facility-month WBGT values
+    n_obs: int | None = None,
+    n_facilities: int | None = None,
+    ref_label: str = "median",           # or "ISO 7243 light-work threshold", etc.
+    out_dir: str = OUT_DIR,
+) -> str:
+    csv_path = _require(f"{out_dir}exposure_response_curve_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
     curve_df = pd.read_csv(csv_path)
     x_ref = float(curve_df["wbgt_ref"].iloc[0])
 
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
+
     if curve_df["rr_lo"].notna().any():
         ax.fill_between(
-            curve_df["wbgt"], 1/curve_df["rr_lo"], 1/curve_df["rr_hi"],
-            color="#2f5d80", alpha=0.2, linewidth=0)
-    ax.plot(curve_df["wbgt"], 1/curve_df["rr_vs_ref"], color="#2f5d80", lw=2)
+            curve_df["wbgt"], curve_df["rr_lo"], curve_df["rr_hi"],
+            color="#2f5d80", alpha=0.2, linewidth=0, label="95% CI",
+        )
+    ax.plot(curve_df["wbgt"], curve_df["rr_vs_ref"], color="#2f5d80", lw=2, label="IRR")
     ax.axhline(1.0, color="black", ls="--", lw=0.9)
     ax.axvline(x_ref, color="#888888", ls=":", lw=1.0)
+
+    # --- reference annotation ---
+    ax.annotate(
+        f"Ref: {x_ref:.1f} °C ({ref_label})",
+        xy=(x_ref, ax.get_ylim()[1]), xytext=(4, -8),
+        textcoords="offset points", ha="left", va="top",
+        fontsize=8, color="#555",
+    )
+
+    # --- rug of observed WBGT along the bottom ---
+    if wbgt_obs is not None:
+        # subsample to keep the rug legible on dense data
+        sample = wbgt_obs.dropna()
+        if len(sample) > 3000:
+            sample = sample.sample(3000, random_state=0)
+        trans = ax.get_xaxis_transform()  # x in data coords, y in axes coords
+        ax.vlines(sample, ymin=0, ymax=0.02, transform=trans,
+                  color="#2f5d80", alpha=0.15, lw=0.5)
+
+    # --- n annotation ---
+    if n_obs is not None or n_facilities is not None:
+        bits = []
+        if n_obs is not None:        bits.append(f"n = {n_obs:,} facility-months")
+        if n_facilities is not None: bits.append(f"{n_facilities} facilities")
+        ax.text(0.02, 0.97, "\n".join(bits),
+                transform=ax.transAxes, va="top", ha="left",
+                fontsize=8, color="#333",
+                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="none", alpha=0.7))
+
     ax.set_xlabel("WBGT (°C)")
     ax.set_ylabel("Relative rate vs reference WBGT")
     ax.grid(axis="both", ls=":", alpha=0.4)
+    ax.legend(loc="upper right" if indicator != "..." else "lower right", frameon=False, fontsize=8)
     plt.tight_layout()
     out_path = f"{out_dir}exposure_response_curve_{indicator}_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -188,82 +265,26 @@ def plot_exposure_response_curve(indicator: str, out_dir: str = OUT_DIR) -> str:
 # 2 + 3. MAIN FOREST PLOT (aggregate deficit) AND HOT MONTH FOREST PLOT
 # =====================================================================
 def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
-    from scipy.stats import norm
-
-    def _bh_from_jack(pt_col, se_col, lo_col, hi_col):
-        pt = results_df[pt_col].values
-        if se_col in results_df.columns:
-            se = results_df[se_col].values
-        else:
-            # Derive SE from the CI when the SE column isn't written by the
-            # model script: CI = pt ± 1.96 * SE  ⇒  SE = (hi - lo) / (2*1.96)
-            se = (results_df[hi_col].values - results_df[lo_col].values) / (2 * 1.96)
-        with np.errstate(divide="ignore", invalid="ignore"):
-            z = np.where(se > 0, np.abs(pt / se), np.nan)
-            p = 2 * (1 - norm.cdf(z))
-        _, rej = bh_fdr(p, alpha=FDR_ALPHA)
-        return p, rej
-
+    """Forest plot of hot-month service deficits with district-cluster
+    bootstrap 95% CIs. The pooled all-month deficit is not shown because
+    it is uninterpretable under the Poisson FE score identity. Significance
+    colouring uses the Wald spline p-value (BH-FDR across indicators),
+    which is the primary inferential quantity — the bootstrap CI carries
+    the effect-size uncertainty separately.
+    """
     results_df = results_df.copy()
-    p_all, rej_all = _bh_from_jack("deficit_pct", "se_jackknife", "ci_lo", "ci_hi")
-    results_df["p_bh"] = p_all
-    results_df["sig_bh"] = rej_all
-    p_hot, rej_hot = _bh_from_jack(
-        "hot_deficit_pct", "hot_se_jackknife", "hot_ci_lo", "hot_ci_hi"
-    )
-    results_df["p_hot_bh"] = p_hot
-    results_df["sig_hot_bh"] = rej_hot
 
-    plot_df = results_df.sort_values("hot_deficit_pct").reset_index(drop=True)
-    y_pos = np.arange(len(plot_df))
-    has_ci = plot_df["ci_lo"].notna().any()
-    colors = [
-        "#823038" if bool(r.get("sig_bh", False))
-        else ("#888888" if has_ci else "#4a7298")
-        for _, r in plot_df.iterrows()
-    ]
+    # Wald-p FDR flag comes pre-computed from the fit script's summary_df
+    # (column `sig`), which applies BH-FDR to the joint spline Wald test.
+    sig_flag = results_df["sig"].fillna(False).values
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, max(4, len(plot_df) * 0.55 + 1.5)))
-    axes = axes.flatten()
-
-    # ---- Panel A: aggregate deficit -------------------------------------
-    for i, row in plot_df.iterrows():
-        if pd.notna(row["ci_lo"]):
-            axes[0].plot(
-                [row["ci_lo"], row["ci_hi"]], [i, i],
-                color=colors[i], lw=1.4, zorder=1,
-            )
-    axes[0].scatter(plot_df["deficit_pct"], y_pos, color=colors, s=55, zorder=2)
-    axes[0].axvline(0, color="black", ls="--", lw=0.9)
-    axes[0].set_yticks(y_pos)
-    axes[0].set_yticklabels(plot_df["label"], fontsize=9)
-    axes[0].set_xlabel("% change in appointments associated with WBGT", fontsize=10)
-    axes[0].grid(axis="x", ls=":", alpha=0.5)
-    if has_ci:
-        axes[0].legend(
-            handles=[
-                mpatches.Patch(color="#823038", label=f"BH-FDR q≤{FDR_ALPHA}"),
-                mpatches.Patch(color="#888888", label="not significant"),
-            ],
-            loc="lower right", fontsize=9, frameon=False,
-        )
-    ax2 = axes[0].twinx()
-    ax2.set_ylim(axes[0].get_ylim())
-    ax2.set_yticks(y_pos)
-    ax2.set_yticklabels(
-        [f"θ={r['alpha']:.1f}" for _, r in plot_df.iterrows()],
-        fontsize=7, color="#666666",
-    )
-    ax2.tick_params(axis="y", length=0)
-
-    # ---- Panel B: hot-month deficit -------------------------------------
     ph = (
         results_df.dropna(subset=["hot_deficit_pct"])
         .sort_values("hot_deficit_pct")
         .reset_index(drop=True)
     )
     y_ph = np.arange(len(ph))
-    hot_colors = ["#823038" if bool(s) else "#888888" for s in ph["sig_hot_bh"]]
+    hot_colors = ["#823038" if bool(s) else "#888888" for s in ph["sig"].fillna(False)]
 
     hot_thresh_vals = ph["hot_threshold"].dropna()
     if hot_thresh_vals.empty:
@@ -273,47 +294,48 @@ def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     else:
         hot_thresh_label = f">{hot_thresh_vals.min():.1f}–{hot_thresh_vals.max():.1f}°C"
 
+    fig, ax = plt.subplots(figsize=(8, max(4, len(ph) * 0.55 + 1.5)))
+
     for i, (_, row) in enumerate(ph.iterrows()):
         pt = row["hot_deficit_pct"]
         lo = row["hot_ci_lo"]
         hi = row["hot_ci_hi"]
         if pd.notna(lo) and pd.notna(hi):
-            axes[1].errorbar(
+            ax.errorbar(
                 pt, i,
                 xerr=[[pt - lo], [hi - pt]],
-                fmt="o", markersize=7, capsize=4, capthick=1.4,
-                elinewidth=1.4, color=hot_colors[i], zorder=2,
+                fmt="o", markersize=7, capsize=4, capthick=1.4, elinewidth=1.4,
+                color=hot_colors[i], zorder=2,
             )
         else:
-            axes[1].scatter(pt, i, color=hot_colors[i], s=55, zorder=2)
+            ax.scatter(pt, i, color=hot_colors[i], s=55, zorder=2)
 
-    axes[1].axvline(0, color="black", ls="--", lw=0.9)
-    axes[1].set_yticks(y_ph)
-    axes[1].set_yticklabels(ph["label"], fontsize=9)
-    axes[1].set_xlabel(
-        f"% Deficit in appointments during hottest months ({hot_thresh_label})",
+    ax.axvline(0, color="black", ls="--", lw=0.9)
+    ax.set_yticks(y_ph)
+    ax.set_yticklabels(ph["label"], fontsize=9)
+    ax.set_xlabel(
+        f"% deficit in appointments during hottest months ({hot_thresh_label})",
         fontsize=10,
     )
-    axes[1].grid(axis="x", ls=":", alpha=0.5)
-    axes[1].legend(
+    ax.grid(axis="x", ls=":", alpha=0.5)
+    ax.legend(
         handles=[
-            mpatches.Patch(color="#823038", label=f"BH-FDR q ≤ {FDR_ALPHA}"),
-            mpatches.Patch(color="#888888", label="not significant"),
+            mpatches.Patch(color="#823038", label=f"WBGT Wald test BH-FDR q ≤ {FDR_ALPHA}"),
+            mpatches.Patch(color="#888888", label="Wald test not significant"),
         ],
-        loc="lower right", fontsize=9, frameon=False,
+        loc="lower right", fontsize=8, frameon=False,
+    )
+    ax.set_title(
+        "Effect sizes: district-cluster bootstrap 95% CIs (1,000 replicates).\n"
+        "Colour: joint Wald test on WBGT spline, BH-FDR across indicators.",
+        fontsize=8, color="#555", loc="left", pad=8,
     )
 
     plt.tight_layout()
-    axes[0].text(-0.1, 1.05, "(A)", transform=axes[0].transAxes,
-                 fontsize=18, va="top", ha="right")
-    axes[1].text(-0.1, 1.05, "(B)", transform=axes[1].transAxes,
-                 fontsize=18, va="top", ha="right")
-
     out_path = f"{out_dir}forest_plot_hot_deficit_NB_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
-
 
 # =====================================================================
 # 4. IRR FOREST PLOT (spline contrast)
@@ -333,25 +355,29 @@ def plot_irr_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     irr_low = float(irr_df["reference_wbgt"].median())
 
     irr_colors = [
-        "#823038" if (row["irr_hi"] < 1.0 or row["irr_lo"] > 1.0) else "#888888"
-        for _, row in irr_df.iterrows()
+        "#823038" if (row["irr_hi"] < 1.0 or row["irr_lo"] > 1.0) else "#888888" for _, row in irr_df.iterrows()
     ]
 
     fig, ax = plt.subplots(figsize=(7, max(4, len(irr_df) * 0.55 + 1.5)))
 
-    for i, (_, row) in enumerate(irr_df.iterrows()):   # enumerate gives correct y
+    for i, (_, row) in enumerate(irr_df.iterrows()):  # enumerate gives correct y
         ax.errorbar(
-            row["irr"], i,
-            xerr=[[row["irr"] - row["irr_lo"]],
-                  [row["irr_hi"] - row["irr"]]],
-            fmt="o", markersize=7, capsize=8, capthick=1.4,
-            elinewidth=1.4, color=irr_colors[i], zorder=2,
+            row["irr"],
+            i,
+            xerr=[[row["irr"] - row["irr_lo"]], [row["irr_hi"] - row["irr"]]],
+            fmt="o",
+            markersize=7,
+            capsize=8,
+            capthick=1.4,
+            elinewidth=1.4,
+            color=irr_colors[i],
+            zorder=2,
             ecolor="black",
         )
 
     ax.axvline(1.0, color="black", ls="--", lw=0.9)
     ax.set_yticks(range(len(irr_df)))
-    ax.set_yticklabels(irr_df["label"], fontsize=9)   # FIX 3: read from irr_df, not results_df
+    ax.set_yticklabels(irr_df["label"], fontsize=9)
     ax.set_xlabel(
         f"IRR: WBGT {IRR_HIGH:.0f}°C vs {irr_low:.0f}°C (25th pctile)",
         fontsize=10,
@@ -362,12 +388,12 @@ def plot_irr_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
             mpatches.Patch(color="#823038", label="CI excludes 1.0"),
             mpatches.Patch(color="#888888", label="CI includes 1.0"),
         ],
-        loc="lower right", fontsize=9, frameon=False,
+        loc="lower right",
+        fontsize=9,
+        frameon=False,
     )
     plt.tight_layout()
-    out_path = (
-        f"{out_dir}forest_plot_IRR_{irr_low:.0f}_{IRR_HIGH:.0f}_NB_{WBGT_VAR}.png"
-    )
+    out_path = f"{out_dir}forest_plot_IRR_{irr_low:.0f}_{IRR_HIGH:.0f}_NB_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
@@ -389,7 +415,8 @@ def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> s
 
     # Share x across all; y only among non-VMMC panels (added manually below).
     fig, axes = plt.subplots(
-        n_rows, n_cols,
+        n_rows,
+        n_cols,
         figsize=(4.5 * n_cols, 3 * n_rows),
         sharex=True,
         squeeze=False,
@@ -398,8 +425,12 @@ def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> s
 
     # Find the first non-VMMC axis and use it as the shared-y anchor.
     non_vmmc_idx = [i for i, ind in enumerate(inds) if ind != "vmmc_first_visits"]
-    anchor_idx = non_vmmc_idx[0] if non_vmmc_idx else 0
-    anchor_ax = axes_flat[anchor_idx]
+    if non_vmmc_idx:
+        anchor_idx = non_vmmc_idx[0]
+        anchor_ax = axes_flat[anchor_idx]
+    else:
+        # All indicators are VMMC (unlikely but safe fallback)
+        anchor_ax = axes_flat[0]
 
     for idx, ind in enumerate(inds):
         ax = axes_flat[idx]
@@ -409,9 +440,8 @@ def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> s
         sub = curves_df[curves_df["indicator"] == ind].sort_values("wbgt")
         ref_w = float(sub["wbgt_ref"].iloc[0])
 
-        ax.fill_between(sub["wbgt"], 1 / sub["rr_lo"], 1 / sub["rr_hi"],
-                        color="#B17776", alpha=0.25, linewidth=0)
-        ax.plot(sub["wbgt"], 1 / sub["rr_vs_ref"], color="#CEB5C8", lw=1.5)
+        ax.fill_between(sub["wbgt"], sub["rr_lo"],  sub["rr_hi"], color="#B17776", alpha=0.25, linewidth=0)
+        ax.plot(sub["wbgt"],  sub["rr_vs_ref"], color="#CEB5C8", lw=1.5)
         ax.axhline(1.0, color="black", lw=0.5, ls="--")
         ax.axvline(ref_w, color="grey", lw=0.5, ls=":")
         ax.set_title(_label(ind), fontsize=9, fontweight="bold")
@@ -425,7 +455,9 @@ def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> s
         # Force tick labels on VMMC since it's not on the shared scale.
         if ind == "vmmc_first_visits":
             ax.tick_params(labelleft=True)
-        ax.annotate(labels[idx], xy=(0.05, 1.05), xycoords="axes fraction", size = 14)
+        # Safely add panel label
+        if idx < len(PANEL_LABELS):
+            ax.annotate(PANEL_LABELS[idx], xy=(0.05, 1.05), xycoords="axes fraction", size=14)
 
     for idx in range(len(inds), len(axes_flat)):
         axes_flat[idx].set_visible(False)
@@ -436,6 +468,7 @@ def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> s
     plt.close()
     return out_path
 
+
 # =====================================================================
 # 6. MONTHLY DEFICIT PANEL (jackknife CI)
 # =====================================================================
@@ -444,15 +477,11 @@ def plot_monthly_deficit_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str
     n_cols = 3
     n_rows = int(np.ceil(n_ind / n_cols))
 
-    fig, axes = plt.subplots(
-        n_rows, n_cols, figsize=(4.5 * n_cols, 3 * n_rows), sharex=True, squeeze=False
-    )  # Force axes to always be a 2D array
-
-    # Now axes is guaranteed to be a 2D array, flatten it for easy iteration
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4.5 * n_cols, 3 * n_rows), sharex=True, squeeze=False)
     axes_flat = axes.flatten()
 
     for idx, ind in enumerate(fitted):
-        ax = axes_flat[idx]  # Get individual Axes object
+        ax = axes_flat[idx]
         csv_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}.csv"
         if not os.path.exists(csv_path):
             ax.set_visible(False)
@@ -480,17 +509,27 @@ def plot_monthly_deficit_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str
         pcts_a = np.asarray(pcts, dtype=float)
         los_a = np.asarray(los, dtype=float)
         his_a = np.asarray(his, dtype=float)
-        bar_c = ["#823038" if p > 0 else "#2a78d6" for p in pcts_a]
+
+        # Handle NaN values in pcts_a before creating yerr
+        pcts_a_clean = np.nan_to_num(pcts_a, nan=0.0)
+        los_a_clean = np.nan_to_num(los_a, nan=0.0)
+        his_a_clean = np.nan_to_num(his_a, nan=0.0)
+
+        bar_c = ["#823038" if p > 0 else "#2a78d6" for p in pcts_a_clean]
         yerr = np.array(
             [
-                np.nan_to_num(pcts_a - los_a, nan=0.0),
-                np.nan_to_num(his_a - pcts_a, nan=0.0),
+                np.maximum(pcts_a_clean - los_a_clean, 0),
+                np.maximum(his_a_clean - pcts_a_clean, 0),
             ]
         )
 
-        # Now ax is a proper Axes object, not an array
         ax.bar(
-            range(12), pcts_a, color=bar_c, alpha=0.8, yerr=yerr, error_kw={"lw": 0.7, "capsize": 1.5, "ecolor": "#333"}
+            range(12),
+            pcts_a_clean,
+            color=bar_c,
+            alpha=0.8,
+            yerr=yerr,
+            error_kw={"lw": 0.7, "capsize": 1.5, "ecolor": "#333"},
         )
         ax.set_xticks(range(12))
         ax.set_xticklabels(MONTH_NAMES, fontsize=6, rotation=45)
@@ -523,7 +562,7 @@ def plot_timeseries_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
     af = axes.flatten() if n_ind > 1 else [axes]
 
     for idx, ind in enumerate(fitted):
-        ax  = af[idx]
+        ax = af[idx]
         # NB: WBGT_VAR-suffixed path (writer path), unlike the model script's
         # own timeseries block which reads the unsuffixed path.
         csv_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}.csv"
@@ -531,17 +570,18 @@ def plot_timeseries_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
             ax.set_visible(False)
             continue
         df = pd.read_csv(csv_path, parse_dates=["date"])
-        m  = (df.groupby("date")
-              .agg(obs=("y_int", "sum"),
-                   mu_a=("mu_a", "sum"),
-                   mu_b=("mu_b", "sum"))
-              .sort_index())
-        ax.plot(m.index, m["mu_b"], color="#2a78d6", lw=1.0, ls="--",
-                alpha=0.8, label="Model B (no weather)")
-        ax.plot(m.index, m["obs"],  color="#333", lw=1.0, label="Observed")
-        ax.fill_between(m.index, m["mu_a"], m["mu_b"],
-                        where=m["mu_a"] < m["mu_b"],
-                        color="#823038", alpha=0.25, label="Heat deficit")
+        m = df.groupby("date").agg(obs=("y_int", "sum"), mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum")).sort_index()
+        ax.plot(m.index, m["mu_b"], color="#2a78d6", lw=1.0, ls="--", alpha=0.8, label="Model B (no weather)")
+        ax.plot(m.index, m["obs"], color="#333", lw=1.0, label="Observed")
+        ax.fill_between(
+            m.index,
+            m["mu_a"],
+            m["mu_b"],
+            where=m["mu_a"] < m["mu_b"],
+            color="#823038",
+            alpha=0.25,
+            label="Heat deficit",
+        )
         ax.set_title(_label(ind), fontsize=9, fontweight="bold")
         ax.tick_params(labelsize=7)
         if idx == 0:
@@ -559,33 +599,47 @@ def plot_timeseries_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
 # =====================================================================
 # 8. DISTRICT CHOROPLETH MAPS
 # =====================================================================
-def plot_district_maps(fitted: list[str], out_dir: str = OUT_DIR) -> list[str]:
-    try:
-        import geopandas as gpd
-    except ImportError:
-        print("geopandas not installed — skipping maps.")
-        return []
-    if not os.path.exists(SHAPEFILE_PATH):
-        print(f"Shapefile not found at {SHAPEFILE_PATH} — skipping maps.")
-        return []
+def plot_district_maps(
+    fitted: list[str],
+    variant: str = "national",
+    out_dir: str = OUT_DIR,
+) -> list[str]:
+    """District choropleth panel of heat-attributable service deficits.
+
+    variant='national'     — filtered to national p95 WBGT (main figure).
+    variant='per_district' — filtered to each district's own p95 (supplement).
+    """
+
+    prefix    = "district_burden"    if variant == "national" else "district_burden_per_district"
+    ci_prefix = "district_burden_ci" if variant == "national" else "district_burden_ci_per_district"
 
     shp = gpd.read_file(SHAPEFILE_PATH)
-    shp[DISTRICT_NAME_COL] = (
-        shp[DISTRICT_NAME_COL].astype(str).str.strip().str.title())
+    shp[DISTRICT_NAME_COL] = shp[DISTRICT_NAME_COL].astype(str).str.strip().str.title()
+    lakes = gpd.read_file(LAKES_SHAPEFILE_PATH)
 
-    # Load per-indicator district CSVs — including the CI file for sig.
+    # ---- Load per-indicator CSVs (point estimate + CI/sig) -----------------
     frames = []
     for ind in fitted:
-        p_def = f"{out_dir}district_burden_{ind}_{WBGT_VAR}{SUFFIX}.csv"
-        p_ci  = f"{out_dir}district_burden_ci_{ind}_{WBGT_VAR}{SUFFIX}.csv"
+        p_def = f"{out_dir}{prefix}_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        p_ci  = f"{out_dir}{ci_prefix}_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if not os.path.exists(p_def):
             print(f"  {ind}: district csv missing — skipping in maps")
             continue
         d = pd.read_csv(p_def)
         d["indicator"] = ind
         if os.path.exists(p_ci):
-            ci = pd.read_csv(p_ci)[["district", "sig"]].rename(
-                columns={"district": CLUSTER_COL})
+            ci_raw = pd.read_csv(p_ci)
+            # CI files use "district" in some variants and CLUSTER_COL in others;
+            # accept either and normalise to CLUSTER_COL for the merge.
+            if "district" in ci_raw.columns:
+                ci = ci_raw[["district", "sig"]].rename(columns={"district": CLUSTER_COL})
+            elif CLUSTER_COL in ci_raw.columns:
+                ci = ci_raw[[CLUSTER_COL, "sig"]]
+            else:
+                raise KeyError(
+                    f"{p_ci}: expected 'district' or {CLUSTER_COL!r} column, "
+                    f"got {list(ci_raw.columns)}"
+                )
             d = d.merge(ci, on=CLUSTER_COL, how="left")
         else:
             d["sig"] = False
@@ -593,125 +647,110 @@ def plot_district_maps(fitted: list[str], out_dir: str = OUT_DIR) -> list[str]:
     if not frames:
         return []
     dist_all = pd.concat(frames, ignore_index=True)
-    dist_all[CLUSTER_COL] = (
-        dist_all[CLUSTER_COL].astype(str).str.strip().str.title())
+    dist_all[CLUSTER_COL] = dist_all[CLUSTER_COL].astype(str).str.strip().str.title()
 
-    # Custom diverging colormap.
-    hex_colors = ['#4D7799', '#7FA4C4', '#C5C8D4', '#D48E95', '#B5515B']
-    custom_cmap = LinearSegmentedColormap.from_list('custom_diverging', hex_colors)
+    # ---- Shared symmetric colour scale across all panels -------------------
+    # p99 of the absolute deficits — robust to a single outlier district but
+    # still uses the full range of the signal.
+    global_vmax = max(float(dist_all["deficit_pct"].abs().quantile(0.99)), 0.5)
 
-    # Panel labels for individual maps.
-    labels = ["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)", "(H)", "(I)", "(J)"]
+    cmap = LinearSegmentedColormap.from_list(
+        "custom_diverging",
+        ["#4D7799", "#7FA4C4", "#C5C8D4", "#D48E95", "#B5515B"],
+    )
+    norm = plt.Normalize(vmin=-global_vmax, vmax=global_vmax)
 
-    out_paths = []
-
-    # ---- one map per indicator ----
-    for idx, ind in enumerate(fitted):
-        sub = dist_all[dist_all["indicator"] == ind].copy()
-        if sub.empty:
-            continue
-        merged = shp.merge(
-            sub[[CLUSTER_COL, "deficit_pct", "sig"]],
-            left_on=DISTRICT_NAME_COL,
-            right_on=CLUSTER_COL, how="left")
-        n_matched = merged["deficit_pct"].notna().sum()
-        n_sig = merged["sig"].fillna(False).sum()
-        print(f"  {ind}: {n_matched}/{len(merged)} districts matched, "
-              f"{n_sig} significant")
-
-        vmax = max(merged["deficit_pct"].abs().quantile(0.95), 0.01)
-        fig, ax = plt.subplots(1, 1, figsize=(6, 8))
-        ax.annotate(labels[idx] if idx < len(labels) else "",
-                    xy=(0.05, 1.05), xycoords="axes fraction", size=14)
-
-        merged.plot(
-            column="deficit_pct", ax=ax,
-            cmap=custom_cmap, vmin=-vmax, vmax=vmax,
-            edgecolor="white", linewidth=0.4,
-            missing_kwds={"color": "#cccccc", "label": "No data"},
-            legend=True,
-            legend_kwds={"label": "% deficit (Model A vs B)",
-                         "orientation": "horizontal",
-                         "shrink": 0.7, "pad": 0.02})
-
-        # Hatch NON-significant districts (fade them to highlight sig ones).
-        sig_mask = merged["sig"].fillna(False)
-        non_sig = merged[~sig_mask & merged["deficit_pct"].notna()]
-        if not non_sig.empty:
-            non_sig.plot(
-                ax=ax, facecolor="none", edgecolor="black",
-                linewidth=0.4, hatch="///")
-
-        ax.set_axis_off()
-        fig.text(0.5, 0.02,
-                 "Hatched: 95% jackknife CI includes zero (not significant)",
-                 ha="center", fontsize=9, style="italic")
-        plt.tight_layout()
-        out_path = f"{out_dir}map_district_deficit_{ind}_{WBGT_VAR}.png"
-        plt.savefig(out_path, dpi=180, bbox_inches="tight")
-        plt.close()
-        out_paths.append(out_path)
-
-    # ---- summary panel (per-map scales, with hatching) ----
+    # ---- Panel grid --------------------------------------------------------
     n_ind = len(fitted)
     n_cols = 3
     n_rows = int(np.ceil(n_ind / n_cols))
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 6 * n_rows))
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(4.2 * n_cols, 5.2 * n_rows),
+        constrained_layout=False,
+    )
     af = axes.flatten() if n_ind > 1 else [axes]
+    panel_labels = [f"({c})" for c in "ABCDEFGHIJ"]
 
     for idx, ind in enumerate(fitted):
         ax = af[idx]
-        sub = dist_all[dist_all["indicator"] == ind].copy()
+        sub = dist_all[dist_all["indicator"] == ind]
         if sub.empty:
             ax.set_visible(False)
             continue
+
         merged = shp.merge(
             sub[[CLUSTER_COL, "deficit_pct", "sig"]],
-            left_on=DISTRICT_NAME_COL,
-            right_on=CLUSTER_COL, how="left")
-        local_vmax = max(merged["deficit_pct"].abs().quantile(0.95), 0.01)
+            left_on=DISTRICT_NAME_COL, right_on=CLUSTER_COL, how="left",
+        )
 
+        # Base choropleth (no per-panel colourbar — shared bar below)
         merged.plot(
-            column="deficit_pct", ax=ax,
-            cmap=custom_cmap, vmin=-local_vmax, vmax=local_vmax,
+            column="deficit_pct",
+            ax=ax,
+            cmap=cmap, norm=norm,
             edgecolor="white", linewidth=0.3,
-            missing_kwds={"color": "#cccccc"},
-            legend=True,
-            legend_kwds={"shrink": 0.5, "orientation": "horizontal", "pad": 0.02})
+            missing_kwds={"color": "#e6e6e6"},
+            legend=False,
+        )
 
-        # Hatch NON-significant, excluding no-data cells.
-        sig_mask = merged["sig"].fillna(False)
-        non_sig = merged[~sig_mask & merged["deficit_pct"].notna()]
-        if not non_sig.empty:
-            non_sig.plot(
-                ax=ax, facecolor="none", edgecolor="black",
-                linewidth=0.3, hatch="///")
+        # Non-significant coloured districts: hatch overlay
+
+        lakes.plot(ax=ax, color="#cfe3f2", edgecolor="#a8c8dc", linewidth=0.2, zorder=3)
+        # Sample-size annotation in the frame
+        n_matched = int(merged["deficit_pct"].notna().sum())
+        ax.text(
+            0.02, 0.98,
+            transform=ax.transAxes, va="top", ha="left", fontsize=7, color="#333",
+            bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.75),
+        )
+
+        # Panel letter
+        if idx < len(panel_labels):
+            ax.annotate(
+                panel_labels[idx], xy=(0.0, 1.0), xycoords="axes fraction",
+                fontsize=12, fontweight="bold", va="bottom", ha="left",
+            )
 
         ax.set_axis_off()
-        ax.set_title(f"{_label(ind)}  (±{local_vmax:.2f}%)",
-                     fontsize=9, fontweight="bold")
+        ax.set_title(_label(ind), fontsize=9, fontweight="bold", pad=6)
 
+    # Hide unused axes
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
 
-    fig.text(0.5, 0.005,
-             "Hatched: 95% jackknife CI includes zero (not significant). "
-             "Grey: no data.",
-             ha="center", fontsize=10, style="italic")
+    # ---- Shared colourbar + footer -----------------------------------------
+    fig.subplots_adjust(hspace=0.08, wspace=0.02, bottom=0.10, top=0.96)
 
-    panel_path = f"{out_dir}map_district_deficit_panel_{WBGT_VAR}.png"
-    plt.savefig(panel_path, dpi=180, bbox_inches="tight")
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cax = fig.add_axes([0.30, 0.06, 0.40, 0.012])  # [left, bottom, width, height]
+    cbar = fig.colorbar(sm, cax=cax, orientation="horizontal")
+    cbar.set_label("Heat-attributable service deficit (%)", fontsize=9)
+    cbar.ax.tick_params(labelsize=8)
+
+    fig.text(
+        0.5, 0.03,
+        "Positive = services lost during hot months. "
+        "Hatched: 95% jackknife CI includes zero. Grey: insufficient data.",
+        ha="center", fontsize=8, style="italic", color="#333",
+    )
+
+    # ---- Save vector + raster ---------------------------------------------
+    stem = f"map_district_deficit_panel_{variant}_{WBGT_VAR}"
+    out_pdf = f"{out_dir}{stem}.pdf"
+    out_png = f"{out_dir}{stem}.png"
+    plt.savefig(out_pdf, bbox_inches="tight")
+    plt.savefig(out_png, dpi=300, bbox_inches="tight")
     plt.close()
-    out_paths.append(panel_path)
-    return out_paths
 
+    return [out_pdf, out_png]
 
 # =====================================================================
 # 9. PROJECTION HEATMAPS
 # =====================================================================
-def plot_projection_heatmaps(fitted: list[str],
-                              out_dir: str = OUT_DIR) -> list[str]:
-    csv_path = f"{out_dir}projection_summary_{WBGT_VAR}{SUFFIX}.csv"
+def plot_projection_heatmaps(fitted: list[str], out_dir: str = OUT_DIR) -> list[str]:
+    csv_path = f"{out_dir}projection_summary_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
     if not os.path.exists(csv_path):
         print(f"  projection summary missing at {csv_path} — skipping")
         return []
@@ -722,14 +761,12 @@ def plot_projection_heatmaps(fitted: list[str],
         sub = proj_df[proj_df["indicator"] == ind]
         if sub.empty:
             continue
-        grid = pd.DataFrame(
-            index=SSP_SCENARIOS, columns=MODEL_TIERS, dtype=float)
+        grid = pd.DataFrame(index=SSP_SCENARIOS, columns=MODEL_TIERS, dtype=float)
         for _, p in sub.iterrows():
             if p["ssp"] in SSP_SCENARIOS and p["tier"] in MODEL_TIERS:
                 grid.loc[p["ssp"], p["tier"]] = p["deficit_pct"]
         fig, ax = plt.subplots(figsize=(6, 4))
-        im = ax.imshow(grid.values.astype(float), cmap="RdBu_r",
-                       aspect="auto")
+        im = ax.imshow(grid.values.astype(float), cmap="RdBu_r", aspect="auto")
         ax.set_xticks(range(len(MODEL_TIERS)))
         ax.set_xticklabels(MODEL_TIERS, fontsize=9)
         ax.set_yticks(range(len(SSP_SCENARIOS)))
@@ -738,17 +775,17 @@ def plot_projection_heatmaps(fitted: list[str],
             for j in range(len(MODEL_TIERS)):
                 val = grid.iloc[i, j]
                 if pd.notna(val):
-                    ax.text(j, i, f"{val:+.2f}%",
-                            ha="center", va="center", fontsize=10)
-        plt.colorbar(im, ax=ax).set_label(
-            "Δ deficit (proj−hist, %)", fontsize=9)
+                    ax.text(j, i, f"{val:+.2f}%", ha="center", va="center", fontsize=10)
+        # Colorbar labels the value actually plotted (p["deficit_pct"]), not a
+        # projection-minus-historical delta. If the projection_summary CSV is
+        # ever changed to store a delta, update this label to match.
+        plt.colorbar(im, ax=ax).set_label("Projected deficit (%)", fontsize=9)
         plt.tight_layout()
         out_path = f"{out_dir}projection_heatmap_{ind}_{WBGT_VAR}.png"
         plt.savefig(out_path, dpi=180, bbox_inches="tight")
         plt.close()
         out_paths.append(out_path)
     return out_paths
-
 
 
 # =====================================================================
@@ -758,113 +795,123 @@ def plot_district_indicator_heatmap(
     out_dir: str = OUT_DIR,
     district_order: list[str] = DISTRICT_ORDER,
     vabs: float = 2.0,
-    indicator_order: list = None,  # Make this parameter optional
+    indicator_list: list = None,
 ) -> str:
-    """Reads district_burden_ci_{ind}_{WBGT_VAR}.csv per indicator and plots
-    a district × indicator heatmap of services-lost (%) with delta-method
-    significance flagged by a black border on each cell.
-    """
-    # If indicator_order is not provided, discover it from available files
-    if indicator_order is None:
-        # Discover available indicators from CSV files
-        pattern = f"{out_dir}district_burden_ci_*_{WBGT_VAR}{SUFFIX}.csv"
-        csv_files = list(Path(out_dir).glob(pattern))
+    """District × indicator heatmap of hot-month service deficits (%).
 
-        indicator_order = []
+    Cell fill: point estimate of hot-month deficit per district × indicator.
+    Column-level annotation: an X marks columns whose indicator failed the
+    joint Wald test on the WBGT spline (BH-FDR across indicators). No
+    cell-level significance is claimed — district-specific inference is not
+    supported by the current design.
+    """
+    # Discover indicators from CSV files if not supplied
+    if indicator_list is None:
+        pattern = f"{out_dir}district_burden_ci_*_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        csv_files = list(Path(out_dir).glob(pattern))
+        indicator_list = []
         for file_path in csv_files:
             filename = file_path.name
-            # Extract indicator name from filename
             prefix = "district_burden_ci_"
-            suffix = f"_{WBGT_VAR}{SUFFIX}.csv"
+            suffix = f"_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
             if filename.startswith(prefix) and filename.endswith(suffix):
-                indicator = filename[len(prefix) : -len(suffix)]
-                indicator_order.append(indicator)
+                indicator_list.append(filename[len(prefix):-len(suffix)])
+        indicator_list = sorted(indicator_list)
 
-        # Sort alphabetically for consistency
-        indicator_order = sorted(indicator_order)
+    # Load indicator-level Wald FDR from the summary CSV
+    summary_path = f"{out_dir}summary_all_indicators_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+    if os.path.exists(summary_path):
+        summary = pd.read_csv(summary_path)
+        indicator_sig = dict(zip(summary["indicator"], summary["sig"].fillna(False)))
+    else:
+        print(f"  heatmap: {summary_path} missing — no Wald-FDR annotation")
+        indicator_sig = {}
 
     rows = []
-    for ind in indicator_order:
-        # Writer path uses WBGT_VAR suffix; the standalone heatmap script
-        # was reading without the suffix and quietly getting nothing.
-        path = f"{out_dir}district_burden_ci_{ind}_{WBGT_VAR}{SUFFIX}.csv"
+    for ind in indicator_list:
+        path = f"{out_dir}district_burden_ci_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if not os.path.exists(path):
             print(f"  [{ind}] no district CI CSV — skipping")
             continue
         df = pd.read_csv(path)
         for _, r in df.iterrows():
-            rows.append(
-                {
-                    "district": r["district"],
-                    "indicator": ind,
-                    "services_lost_pct": -r["deficit_pct"],  # sign flip: see docstring
-                    "sig": bool(r["sig"]),
-                }
-            )
+            rows.append({
+                "district": r["district"],
+                "indicator": ind,
+                "services_lost_pct": r["deficit_pct"],
+            })
 
-    # Rest of the function remains the same...
     if not rows:
         print("  no district CI rows found — skipping heatmap")
         return ""
 
-    long_df  = pd.DataFrame(rows)
-    wide     = (long_df.pivot(index="district", columns="indicator",
-                              values="services_lost_pct")
-                .reindex(columns=indicator_order))
-    sig_wide = (long_df.pivot(index="district", columns="indicator",
-                              values="sig")
-                .reindex(index=wide.index, columns=wide.columns))
+    long_df = pd.DataFrame(rows)
+    wide = long_df.pivot(
+        index="district", columns="indicator", values="services_lost_pct"
+    ).reindex(columns=indicator_list)
 
-    # Reorder rows N → S, then cities; drop anything not in DISTRICT_ORDER.
     ordered_rows = [d for d in district_order if d in wide.index]
     missing = set(wide.index) - set(district_order)
     if missing:
-        print(f"  heatmap: {len(missing)} district(s) not in DISTRICT_ORDER "
-              f"— dropped: {sorted(missing)}")
-    wide     = wide.reindex(ordered_rows)
-    sig_wide = sig_wide.reindex(ordered_rows)
+        print(f"  heatmap: {len(missing)} district(s) not in DISTRICT_ORDER — dropped: {sorted(missing)}")
+    wide = wide.reindex(ordered_rows)
 
     fig, ax = plt.subplots(figsize=(11, max(6, 0.4 * len(wide) + 2)))
-    im = ax.imshow(wide.values, cmap="RdBu_r",
-                    vmin=-vabs, vmax=vabs, aspect="auto")
+    im = ax.imshow(wide.values, cmap="RdBu_r", vmin=-vabs, vmax=vabs, aspect="auto")
 
     ax.set_xticks(range(len(wide.columns)))
-    ax.set_xticklabels(
-        [_label(c) for c in wide.columns],
-        rotation=40, ha="right", fontsize=9)
+    # Mark Wald-non-significant indicators in the column label
+    x_labels = []
+    for c in wide.columns:
+        lbl = _label(c)
+        if not bool(indicator_sig.get(c, False)):
+            lbl = lbl + "  (n.s.)"
+        x_labels.append(lbl)
+    ax.set_xticklabels(x_labels, rotation=40, ha="right", fontsize=9)
     ax.set_yticks(range(len(wide.index)))
     ax.set_yticklabels(wide.index, fontsize=8)
 
-    # Numeric annotations (skip near-zero to reduce clutter).
+    # Numeric annotations (skip near-zero to reduce clutter)
     for i in range(len(wide.index)):
         for j in range(len(wide.columns)):
             v = wide.values[i, j]
             if pd.notna(v) and abs(v) >= 0.05:
-                ax.text(j, i, f"{v:+.1f}",
-                        ha="center", va="center", fontsize=6.5,
-                        color="black" if abs(v) < vabs * 0.7 else "white")
+                ax.text(
+                    j, i, f"{v:+.1f}",
+                    ha="center", va="center", fontsize=6.5,
+                    color="black" if abs(v) < vabs * 0.7 else "white",
+                )
 
-    # Bold outline on cells where the delta-method CI excludes 0.
-    for i in range(len(wide.index)):
-        for j in range(len(wide.columns)):
-            if sig_wide.values[i, j]:
-                ax.add_patch(plt.Rectangle(
-                    (j - 0.5, i - 0.5), 1, 1,
-                    fill=False, edgecolor="black", lw=1.5, zorder=3))
+    # Fade whole columns for indicators where the Wald test is non-significant
+    for j, ind in enumerate(wide.columns):
+        if not bool(indicator_sig.get(ind, False)):
+            ax.add_patch(plt.Rectangle(
+                (j - 0.5, -0.5), 1, len(wide.index),
+                fill=True, facecolor="white", alpha=0.35,
+                edgecolor="none", zorder=2,
+            ))
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, aspect=25, pad=0.02)
-    cbar.set_label("% services lost to heat", fontsize=9)
+    cbar.set_label("% services lost to WBGT (hot months, per district)", fontsize=9)
 
-    # Separator between rural districts and cities.
     n_rural = sum(1 for d in wide.index if "City" not in d)
     if 0 < n_rural < len(wide.index):
         ax.axhline(n_rural - 0.5, color="black", lw=1.2, linestyle="--")
+
+    ax.set_title(
+        "Faded columns / '(n.s.)' label: indicator not significant "
+        f"by joint Wald test (BH-FDR q > {FDR_ALPHA}).\n"
+        "Cell values are descriptive point estimates; no district-level "
+        "significance test is claimed.",
+        fontsize=8, color="#555", loc="left", pad=10,
+    )
 
     plt.tight_layout()
     out_path = f"{out_dir}district_indicator_heatmap_{WBGT_VAR}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
+
 
 SSP_COLOURS = {
     "ssp126": "#9BB29E",  # green: low emissions
@@ -886,6 +933,8 @@ def plot_projection_forest(
     out_dir: str = None,
     wbgt_var: str = None,
     window: tuple[int, int] = (2025, 2040),
+    hot_months: tuple[int, ...] | None = None,
+    results_df: pd.DataFrame | None = None,
 ) -> str:
     """End-of-period projection forest.
 
@@ -894,23 +943,39 @@ def plot_projection_forest(
     highest). This isn't a formal CI — it's the modelling uncertainty from
     the climate ensemble, which is what actually dominates on this horizon.
 
-    Reads projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv and averages
-    Deficit_Pct over `window` (calendar years, inclusive).
+    When `hot_months` is None, reads projection_annual_{ind}_{ssp}_{tier}...csv
+    and aggregates mu_a/mu_b over the window. When `hot_months` is a set of
+    calendar months, reads projection_monthly_{ind}_{ssp}_{tier}...csv instead
+    and restricts to those months before aggregating — this is the projection
+    analogue of the historical hot-month deficit. Note the historical version
+    uses a per-indicator WBGT threshold, not calendar months; see HOT_MONTHS.
+
+    If `results_df` is passed, the corresponding historical estimate (aggregate
+    or hot-month, depending on `hot_months`) is plotted as a grey anchor left
+    of the SSP points so the reader can see departure from the fitted baseline.
     """
 
     out_dir = out_dir or OUT_DIR
     wbgt_var = wbgt_var or WBGT_VAR
+    hot_set = set(hot_months) if hot_months else None
+    mode_suffix = "_hot" if hot_set else ""
+    mode_label = f"hot months {sorted(hot_set)}" if hot_set else "all months"
 
     rows = []
     for ind in fitted:
         for ssp in ["ssp126", "ssp245", "ssp585"]:
             tier_vals = {}
             for tier in ["lowest", "median", "highest"]:
-                p = f"{out_dir}projection_annual_{ind}_{ssp}_{tier}_{wbgt_var}{SUFFIX}.csv"
+                if hot_set:
+                    p = f"{out_dir}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+                else:
+                    p = f"{out_dir}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
                 if not os.path.exists(p):
                     continue
                 df = pd.read_csv(p)
                 sel = df[df["year"].between(*window)]
+                if hot_set:
+                    sel = sel[sel["month"].isin(hot_set)]
                 if sel.empty:
                     continue
                 # Volume-weighted mean deficit over the window: sum mu_a
@@ -957,24 +1022,55 @@ def plot_projection_forest(
         ax.plot([r["lo"], r["hi"]], [y, y], color=colour, lw=1.4, alpha=0.8)
         ax.scatter(pt, y, color=colour, s=45, zorder=3, edgecolor="white", linewidth=0.6)
 
+    # Historical anchor: plot the fitted-period estimate to the left as a grey
+    # point per indicator so the reader can see departure from baseline. Uses
+    # hot_deficit_pct/hot_ci_* when we're in hot-month mode, deficit_pct/ci_*
+    # otherwise.
+    hist_plotted = False
+    if results_df is not None:
+        pt_col = "hot_deficit_pct" if hot_set else "deficit_pct"
+        lo_col = "hot_ci_lo" if hot_set else "ci_lo"
+        hi_col = "hot_ci_hi" if hot_set else "ci_hi"
+        if pt_col in results_df.columns:
+            hist = results_df.set_index("indicator")
+            for ind in ind_order:
+                if ind not in hist.index:
+                    continue
+                y = y_pos[ind]
+                pt = hist.loc[ind, pt_col]
+                if pd.isna(pt):
+                    continue
+                lo = hist.loc[ind, lo_col] if lo_col in hist.columns else np.nan
+                hi = hist.loc[ind, hi_col] if hi_col in hist.columns else np.nan
+                if pd.notna(lo) and pd.notna(hi):
+                    ax.plot([lo, hi], [y, y], color="#444444", lw=1.0, alpha=0.6, zorder=1)
+                ax.scatter(pt, y, color="#444444", s=35, marker="D", zorder=3,
+                           edgecolor="white", linewidth=0.6)
+            hist_plotted = True
+
     ax.axvline(0, color="black", ls="--", lw=0.9)
     ax.set_yticks(list(y_pos.values()))
     ax.set_yticklabels([_label(i) for i in ind_order], fontsize=9)
     ax.set_xlabel(
-        f"Projected % difference, mean over {window[0]}–{window[1]}",
+        f"Projected % deficit, mean over {window[0]}–{window[1]} ({mode_label})",
         fontsize=10,
     )
     ax.grid(axis="x", ls=":", alpha=0.4)
+
+    legend_handles = [mpatches.Patch(color=SSP_COLOURS[s], label=SSP_LABELS[s])
+                      for s in ["ssp126", "ssp245", "ssp585"]]
+    if hist_plotted:
+        legend_handles.append(mpatches.Patch(color="#444444", label="Historical (fitted)"))
     ax.legend(
-        handles=[mpatches.Patch(color=SSP_COLOURS[s], label=SSP_LABELS[s]) for s in ["ssp126", "ssp245", "ssp585"]],
+        handles=legend_handles,
         loc="lower right",
         fontsize=9,
         frameon=False,
-        title="Error bars: GCM tier range",
+        title="Error bars: range across 3 curated GCM tiers (not full ensemble)",
         title_fontsize=8,
     )
     plt.tight_layout()
-    out_path = f"{out_dir}projection_forest_{window[0]}_{window[1]}_{wbgt_var}.png"
+    out_path = f"{out_dir}projection_forest_{window[0]}_{window[1]}_{wbgt_var}{mode_suffix}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
@@ -987,34 +1083,78 @@ def plot_projection_annual_panel(
     fitted: list[str],
     out_dir: str = None,
     wbgt_var: str = None,
+    hot_months: tuple[int, ...] | None = None,
+    results_df: pd.DataFrame | None = None,
 ) -> str:
     """Annual % deficit trajectory panel.
 
     One subplot per indicator. For each SSP: median-tier line, with a shaded
     ribbon spanning the lowest–highest tier range. This is the main
-    projection figure — the forest above is its end-of-period summary.
+    projection figure — the forest is its end-of-period summary.
+
+    When `hot_months` is set, reads projection_monthly_*.csv (per-indicator,
+    per-ssp, per-tier), filters to those calendar months, and aggregates
+    mu_a/mu_b to an annual hot-month deficit per (year, tier). See HOT_MONTHS
+    for the caveat about calendar-month vs WBGT-threshold definition.
+
+    If `results_df` is passed, draws a grey horizontal band at the historical
+    estimate ± CI (aggregate or hot, matching `hot_months`) per indicator.
     """
 
     out_dir = out_dir or OUT_DIR
     wbgt_var = wbgt_var or WBGT_VAR
+    hot_set = set(hot_months) if hot_months else None
+    mode_suffix = "_hot" if hot_set else ""
 
-    # Prefer the concatenated file; fall back to per-file glob.
-    concat_path = f"{out_dir}projection_annual_all_{wbgt_var}{SUFFIX}.csv"
-    if os.path.exists(concat_path):
-        big = pd.read_csv(concat_path)
-    else:
+    if hot_set:
+        # Build the analogue of the annual concat, on the fly, from monthly files.
         parts = []
-        for p in sorted(Path(out_dir).glob(f"projection_annual_*_{wbgt_var}{SUFFIX}.csv")):
-            parts.append(pd.read_csv(p))
+        for p in sorted(Path(out_dir).glob(
+            f"projection_monthly_*_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        )):
+            m = pd.read_csv(p)
+            m = m[m["month"].isin(hot_set)]
+            if m.empty:
+                continue
+            g = (m.groupby(["indicator", "ssp", "tier", "year"], as_index=False)
+                   .agg(mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum")))
+            g["Deficit_Pct"] = np.where(
+                g["mu_b"] > 0,
+                100.0 * (g["mu_b"] - g["mu_a"]) / g["mu_b"],
+                np.nan,
+            )
+            parts.append(g)
         if not parts:
-            print("  no annual projection files — skipping trajectory panel")
+            print("  no monthly projection files for hot-month panel — skipping")
             return ""
         big = pd.concat(parts, ignore_index=True)
+    else:
+        # Prefer the concatenated file; fall back to per-file glob.
+        concat_path = f"{out_dir}projection_annual_all_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        if os.path.exists(concat_path):
+            big = pd.read_csv(concat_path)
+        else:
+            parts = []
+            for p in sorted(Path(out_dir).glob(f"projection_annual_*_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")):
+                parts.append(pd.read_csv(p))
+            if not parts:
+                print("  no annual projection files — skipping trajectory panel")
+                return ""
+            big = pd.concat(parts, ignore_index=True)
 
     inds = [i for i in fitted if i in big["indicator"].unique()]
     if not inds:
         print("  no matching indicators in annual projection file")
         return ""
+
+    # Historical reference lookup: aggregate or hot, matching hot_months.
+    hist_lookup = None
+    if results_df is not None:
+        pt_col = "hot_deficit_pct" if hot_set else "deficit_pct"
+        lo_col = "hot_ci_lo" if hot_set else "ci_lo"
+        hi_col = "hot_ci_hi" if hot_set else "ci_hi"
+        if pt_col in results_df.columns:
+            hist_lookup = results_df.set_index("indicator")[[c for c in (pt_col, lo_col, hi_col) if c in results_df.columns]]
 
     n = len(inds)
     nc = min(3, n)
@@ -1025,6 +1165,19 @@ def plot_projection_annual_panel(
     for idx, ind in enumerate(inds):
         ax = axes_flat[idx]
         sub = big[big["indicator"] == ind]
+
+        # Historical reference band, drawn first so lines sit on top.
+        if hist_lookup is not None and ind in hist_lookup.index:
+            r = hist_lookup.loc[ind]
+            pt = r.get("hot_deficit_pct" if hot_set else "deficit_pct", np.nan)
+            lo = r.get("hot_ci_lo" if hot_set else "ci_lo", np.nan)
+            hi = r.get("hot_ci_hi" if hot_set else "ci_hi", np.nan)
+            if pd.notna(pt):
+                ax.axhline(pt, color="#444444", lw=1.0, ls="-", alpha=0.7,
+                           label="Historical (fitted)")
+                if pd.notna(lo) and pd.notna(hi):
+                    ax.axhspan(lo, hi, color="#444444", alpha=0.08, linewidth=0)
+
         for ssp in ["ssp126", "ssp245", "ssp585"]:
             ssp_sub = sub[sub["ssp"] == ssp]
             if ssp_sub.empty:
@@ -1041,11 +1194,15 @@ def plot_projection_annual_panel(
                     alpha=0.15,
                     linewidth=0,
                 )
-            if "median" in wide.columns:
-                ax.plot(years, wide["median"], color=colour, lw=1.6, label=SSP_LABELS[ssp])
-            else:
-                # No median tier — plot the row-wise mean of what we have.
-                ax.plot(years, wide.mean(axis=1), color=colour, lw=1.6, label=SSP_LABELS[ssp], ls=":")
+            if "median" not in wide.columns:
+                # Loud failure: median-tier absence is a pipeline problem, not
+                # something to paper over with a row-wise mean of other tiers.
+                raise ValueError(
+                    f"Median tier missing for {ind} / {ssp} — tiers present: "
+                    f"{sorted(wide.columns.tolist())}. Re-run the projection "
+                    f"writer for the median GCM before plotting."
+                )
+            ax.plot(years, wide["median"], color=colour, lw=1.6, label=SSP_LABELS[ssp])
         ax.axhline(0, color="black", lw=0.6)
         ax.set_title(_label(ind), fontsize=9, fontweight="bold")
         ax.tick_params(labelsize=7)
@@ -1060,8 +1217,14 @@ def plot_projection_annual_panel(
     for idx in range(n, len(axes_flat)):
         axes_flat[idx].set_visible(False)
 
+    if hot_set:
+        fig.suptitle(
+            f"Projected annual deficit — hot months {sorted(hot_set)}",
+            fontsize=10, y=1.00,
+        )
+
     plt.tight_layout()
-    out_path = f"{out_dir}projection_annual_panel_{wbgt_var}.png"
+    out_path = f"{out_dir}projection_annual_panel_{wbgt_var}{mode_suffix}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
@@ -1093,7 +1256,7 @@ def plot_seasonal_amplification(
 
     inds_present = []
     for ind in fitted:
-        p = f"{out_dir}projection_monthly_{ind}_{ssp}_{tier}_{wbgt_var}{SUFFIX}.csv"
+        p = f"{out_dir}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if os.path.exists(p):
             inds_present.append(ind)
     if not inds_present:
@@ -1109,7 +1272,7 @@ def plot_seasonal_amplification(
     x = np.arange(12)
     for idx, ind in enumerate(inds_present):
         ax = axes_flat[idx]
-        df = pd.read_csv(f"{out_dir}projection_monthly_{ind}_{ssp}_{tier}_{wbgt_var}{SUFFIX}.csv")
+        df = pd.read_csv(f"{out_dir}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
 
         # Volume-weighted per-month across each window.
         def _by_month(window):
@@ -1153,6 +1316,7 @@ def plot_seasonal_amplification(
     plt.close()
     return out_path
 
+
 # =====================================================================
 # 15/16. SUMMARY STATISTICS — respects ONLY_DEFICITS toggle
 # =====================================================================
@@ -1195,9 +1359,7 @@ def _jackknife_deficit_ci(df: pd.DataFrame) -> tuple[float, float, float]:
     return pct, pct - 1.96 * se, pct + 1.96 * se
 
 
-def calculate_summary_statistics_by_indicator(
-    fitted: list[str], out_dir: str = OUT_DIR
-) -> pd.DataFrame:
+def calculate_summary_statistics_by_indicator(fitted: list[str], out_dir: str = OUT_DIR) -> pd.DataFrame:
     ssp, tier, window = "ssp245", "median", (2036, 2040)
     rows = []
 
@@ -1210,12 +1372,21 @@ def calculate_summary_statistics_by_indicator(
             hist = pd.read_csv(hist_path, parse_dates=["date"])
             b, a, pct = _agg_deficit(hist)
             _, lo, hi = _jackknife_deficit_ci(hist)
-            row["hist_mu_b_sum"]     = b
-            row["hist_mu_a_sum"]     = a
-            row["hist_appts_missed"] = max(0.0, b - a)
-            row["hist_deficit_pct"]  = pct
-            row["hist_ci_lo"]        = lo
-            row["hist_ci_hi"]        = hi
+            row["hist_mu_b_sum"] = b
+            row["hist_mu_a_sum"] = a
+            # Two burden measures are retained explicitly:
+            #   * net change = sum(B - A), which can be negative if WBGT is
+            #     associated with a net increase in service use; and
+            #   * loss-only burden = sum(max(B - A, 0)), which counts only
+            #     facility-month service losses.
+            row["hist_net_service_change"] = b - a
+            row["hist_services_lost_loss_only"] = float(
+                np.maximum(hist["mu_b"].to_numpy() - hist["mu_a"].to_numpy(), 0).sum()
+            )
+            row["hist_appts_missed"] = max(0.0, b - a)  # backwards-compatible alias
+            row["hist_deficit_pct"] = pct
+            row["hist_ci_lo"] = lo
+            row["hist_ci_hi"] = hi
 
             hist = hist.copy()
             hist["row_pct"] = np.where(
@@ -1226,31 +1397,53 @@ def calculate_summary_statistics_by_indicator(
             loss = hist[hist["mu_b"] > hist["mu_a"]]
             if not loss.empty and loss["row_pct"].notna().any():
                 pk = loss["row_pct"].idxmax()
-                row["peak_row_pct"]      = hist.loc[pk, "row_pct"]
-                row["peak_row_date"]     = hist.loc[pk, "date"]
+                row["peak_row_pct"] = hist.loc[pk, "row_pct"]
+                row["peak_row_date"] = hist.loc[pk, "date"]
                 row["peak_row_district"] = hist.loc[pk, CLUSTER_COL]
                 row["peak_row_facility"] = hist.loc[pk, "facility"]
             else:
                 row["peak_row_pct"] = np.nan
                 row["peak_row_date"] = row["peak_row_district"] = row["peak_row_facility"] = None
 
-            dm = (hist.groupby([CLUSTER_COL, "date"])
-                       .agg(mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum"))
-                       .reset_index())
-            dm_loss = dm[dm["mu_b"] > dm["mu_a"]].copy()
+            dm = hist.groupby([CLUSTER_COL, "date"]).agg(
+                mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum")
+            ).reset_index()
+            dm["services_lost"] = np.maximum(dm["mu_b"] - dm["mu_a"], 0.0)
+            dm["pct"] = np.where(
+                dm["mu_b"] > 0,
+                100.0 * (dm["mu_b"] - dm["mu_a"]) / dm["mu_b"],
+                np.nan,
+            )
+            dm_loss = dm[dm["services_lost"] > 0].copy()
             if not dm_loss.empty:
-                dm_loss["pct"] = 100.0 * (dm_loss["mu_b"] - dm_loss["mu_a"]) / dm_loss["mu_b"]
-                pk = dm_loss["pct"].idxmax()
-                row["peak_district_pct"]  = dm_loss.loc[pk, "pct"]
-                row["peak_district_date"] = dm_loss.loc[pk, "date"]
-                row["peak_district_name"] = dm_loss.loc[pk, CLUSTER_COL]
+                # Peak relative impact and peak absolute burden are distinct.
+                pk_pct = dm_loss["pct"].idxmax()
+                pk_abs = dm_loss["services_lost"].idxmax()
+                row["peak_district_pct"] = dm_loss.loc[pk_pct, "pct"]
+                row["peak_district_date"] = dm_loss.loc[pk_pct, "date"]
+                row["peak_district_name"] = dm_loss.loc[pk_pct, CLUSTER_COL]
+                row["peak_district_services_lost"] = dm_loss.loc[pk_abs, "services_lost"]
+                row["peak_district_abs_date"] = dm_loss.loc[pk_abs, "date"]
+                row["peak_district_abs_name"] = dm_loss.loc[pk_abs, CLUSTER_COL]
             else:
                 row["peak_district_pct"] = np.nan
                 row["peak_district_date"] = row["peak_district_name"] = None
+                row["peak_district_services_lost"] = np.nan
+                row["peak_district_abs_date"] = row["peak_district_abs_name"] = None
         else:
-            for k in ["hist_mu_b_sum", "hist_mu_a_sum", "hist_appts_missed",
-                      "hist_deficit_pct", "hist_ci_lo", "hist_ci_hi",
-                      "peak_row_pct", "peak_district_pct"]:
+            for k in [
+                "hist_mu_b_sum",
+                "hist_mu_a_sum",
+                "hist_net_service_change",
+                "hist_services_lost_loss_only",
+                "hist_appts_missed",
+                "hist_deficit_pct",
+                "hist_ci_lo",
+                "hist_ci_hi",
+                "peak_row_pct",
+                "peak_district_pct",
+                "peak_district_services_lost",
+            ]:
                 row[k] = np.nan
 
         # ---- future (SSP245 / median, window) --------------------------
@@ -1266,9 +1459,9 @@ def calculate_summary_statistics_by_indicator(
                 _, lo_f, hi_f = _jackknife_deficit_ci(fut)
                 # Missed appts: use the point estimate of net loss over window.
                 sub = fut[_row_mask(fut)]
-                row["future_deficit_pct"]  = pct_f
-                row["future_ci_lo"]        = lo_f
-                row["future_ci_hi"]        = hi_f
+                row["future_deficit_pct"] = pct_f
+                row["future_ci_lo"] = lo_f
+                row["future_ci_hi"] = hi_f
                 row["future_appts_missed"] = max(0.0, float(sub["mu_b"].sum() - sub["mu_a"].sum()))
             else:
                 for k in ("future_deficit_pct", "future_ci_lo", "future_ci_hi"):
@@ -1276,13 +1469,14 @@ def calculate_summary_statistics_by_indicator(
                 row["future_appts_missed"] = 0.0
         else:
             # Fall back to the pooled annual file — no CI possible then.
-            fut_path = f"{out_dir}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}.csv"
+            fut_path = f"{out_dir}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
             if os.path.exists(fut_path):
                 fut = pd.read_csv(fut_path)
                 sel = fut[fut["year"].between(*window)]
                 if not sel.empty and sel["mu_b"].sum() > 0:
-                    b = float(sel["mu_b"].sum()); a = float(sel["mu_a"].sum())
-                    row["future_deficit_pct"]  = 100.0 * (b - a) / b
+                    b = float(sel["mu_b"].sum())
+                    a = float(sel["mu_a"].sum())
+                    row["future_deficit_pct"] = 100.0 * (b - a) / b
                     row["future_appts_missed"] = max(0.0, b - a)
                 else:
                     row["future_deficit_pct"] = np.nan
@@ -1296,7 +1490,7 @@ def calculate_summary_statistics_by_indicator(
         rows.append(row)
 
     df = pd.DataFrame(rows)
-    out_path = f"{out_dir}summary_stats_by_indicator_{WBGT_VAR}{SUFFIX}.csv"
+    out_path = f"{out_dir}summary_stats_by_indicator_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
     df.to_csv(out_path, index=False)
     return df
 
@@ -1335,17 +1529,39 @@ def calculate_summary_statistics(fitted: list[str], out_dir: str = OUT_DIR) -> d
         "overall_deficit_pct_volume_weighted": overall_pct,
         "overall_ci_lo": overall_lo,
         "overall_ci_hi": overall_hi,
-        "total_appts_missed": by_ind["hist_appts_missed"].sum(),
-        "peak_district_month_pct":  by_ind["peak_district_pct"].max(),
+        "total_net_service_change": by_ind["hist_net_service_change"].sum(),
+        "total_services_lost_loss_only": by_ind["hist_services_lost_loss_only"].sum(),
+        "total_appts_missed": by_ind["hist_appts_missed"].sum(),  # backwards-compatible alias
+        # Worst relative district-month.
+        "peak_district_month_pct": by_ind["peak_district_pct"].max(),
         "peak_district_month_name": (
             by_ind.loc[by_ind["peak_district_pct"].idxmax(), "peak_district_name"]
-            if by_ind["peak_district_pct"].notna().any() else None
+            if by_ind["peak_district_pct"].notna().any()
+            else None
+        ),
+        "peak_district_month_date": (
+            by_ind.loc[by_ind["peak_district_pct"].idxmax(), "peak_district_date"]
+            if by_ind["peak_district_pct"].notna().any()
+            else None
+        ),
+        # Worst absolute district-month.
+        "peak_district_month_services_lost": by_ind["peak_district_services_lost"].max(),
+        "peak_district_month_abs_name": (
+            by_ind.loc[by_ind["peak_district_services_lost"].idxmax(), "peak_district_abs_name"]
+            if by_ind["peak_district_services_lost"].notna().any()
+            else None
+        ),
+        "peak_district_month_abs_date": (
+            by_ind.loc[by_ind["peak_district_services_lost"].idxmax(), "peak_district_abs_date"]
+            if by_ind["peak_district_services_lost"].notna().any()
+            else None
         ),
         "future_mean_deficit_pct_across_indicators": by_ind["future_deficit_pct"].mean(),
         "future_total_appts_missed": by_ind["future_appts_missed"].sum(),
         "future_max_indicator": (
             by_ind.loc[by_ind["future_deficit_pct"].idxmax(), "indicator"]
-            if by_ind["future_deficit_pct"].notna().any() else None
+            if by_ind["future_deficit_pct"].notna().any()
+            else None
         ),
         "future_max_indicator_pct": by_ind["future_deficit_pct"].max(),
     }
@@ -1360,15 +1576,31 @@ def print_summary_statistics(stats: dict, by_ind: pd.DataFrame):
 
     print(f"\nHistorical, across {stats['n_indicators']} indicators:")
     print(f"  Mean deficit % (equal-weighted):    {stats['mean_deficit_pct_across_indicators']:+.2f}%")
-    print(f"  Overall deficit % (vol-weighted):   {stats['overall_deficit_pct_volume_weighted']:+.2f}% "
-          f"(95% CI {stats['overall_ci_lo']:+.2f}..{stats['overall_ci_hi']:+.2f})")
-    print(f"  Total appointments missed:          {stats['total_appts_missed']:,.0f}")
-    print(f"  Peak district-month:                {stats['peak_district_month_pct']:.2f}%  in  {stats['peak_district_month_name']}")
+    print(
+        f"  Overall deficit % (vol-weighted):   {stats['overall_deficit_pct_volume_weighted']:+.2f}% "
+        f"(95% CI {stats['overall_ci_lo']:+.2f}..{stats['overall_ci_hi']:+.2f})"
+    )
+    print(f"  Net service change:                 {stats['total_net_service_change']:,.0f}")
+    print(f"  Services lost (loss-only):          {stats['total_services_lost_loss_only']:,.0f}")
+    print(
+        f"  Peak district-month (relative):     {stats['peak_district_month_pct']:.2f}%  "
+        f"in {stats['peak_district_month_name']} ({stats['peak_district_month_date']:%Y-%m})"
+        if pd.notna(stats['peak_district_month_date']) else
+        f"  Peak district-month (relative):     {stats['peak_district_month_pct']:.2f}%  in {stats['peak_district_month_name']}"
+    )
+    print(
+        f"  Peak district-month (absolute):     {stats['peak_district_month_services_lost']:,.0f} services lost  "
+        f"in {stats['peak_district_month_abs_name']} ({stats['peak_district_month_abs_date']:%Y-%m})"
+        if pd.notna(stats['peak_district_month_abs_date']) else
+        f"  Peak district-month (absolute):     {stats['peak_district_month_services_lost']:,.0f} services lost  in {stats['peak_district_month_abs_name']}"
+    )
 
     print(f"\nFuture (SSP245 / median, 2036–2040):")
     print(f"  Mean deficit % across indicators:   {stats['future_mean_deficit_pct_across_indicators']:+.2f}%")
     print(f"  Total appointments missed:          {stats['future_total_appts_missed']:,.0f}")
-    print(f"  Worst indicator:                    {stats['future_max_indicator']} ({stats['future_max_indicator_pct']:+.2f}%)")
+    print(
+        f"  Worst indicator:                    {stats['future_max_indicator']} ({stats['future_max_indicator_pct']:+.2f}%)"
+    )
 
     def _fmt_ci(lo, hi):
         if pd.isna(lo) or pd.isna(hi):
@@ -1377,24 +1609,31 @@ def print_summary_statistics(stats: dict, by_ind: pd.DataFrame):
 
     print(f"\nBy indicator:")
     print("-" * 108)
-    print(f"{'Indicator':<28} {'Hist %':>8} {'Hist 95% CI':>18} "
-          f"{'Missed':>12} {'Peak D-M %':>11} {'Future %':>9} {'Future 95% CI':>18}")
+    print(
+        f"{'Indicator':<28} {'Hist %':>8} {'Hist 95% CI':>18} "
+        f"{'Net':>12} {'Lost':>12} {'Peak D-M %':>11} {'Future %':>9} {'Future 95% CI':>18}"
+    )
     print("-" * 108)
     for _, r in by_ind.iterrows():
-        print(f"{r['label']:<28} "
-              f"{r['hist_deficit_pct']:>+7.2f}% "
-              f"{_fmt_ci(r.get('hist_ci_lo'), r.get('hist_ci_hi')):>18} "
-              f"{r['hist_appts_missed']:>12,.0f} "
-              f"{r['peak_district_pct']:>+10.2f}% "
-              f"{r['future_deficit_pct']:>+8.2f}% "
-              f"{_fmt_ci(r.get('future_ci_lo'), r.get('future_ci_hi')):>18}")
+        print(
+            f"{r['label']:<28} "
+            f"{r['hist_deficit_pct']:>+7.2f}% "
+            f"{_fmt_ci(r.get('hist_ci_lo'), r.get('hist_ci_hi')):>18} "
+            f"{r['hist_net_service_change']:>12,.0f} "
+            f"{r['hist_services_lost_loss_only']:>12,.0f} "
+            f"{r['peak_district_pct']:>+10.2f}% "
+            f"{r['future_deficit_pct']:>+8.2f}% "
+            f"{_fmt_ci(r.get('future_ci_lo'), r.get('future_ci_hi')):>18}"
+        )
     print("-" * 108)
+
 
 # =====================================================================
 # 17. 1940s REFERENCE-PERIOD CONTRAST
 # =====================================================================
 CF_LABEL = "ERA5_periindustrial_1940_1948"
 CF_COLOURS = {"reference": "#4a7298", "observed": "#823038"}
+
 
 def plot_reference_period_contrast(
     fitted: list[str],
@@ -1408,13 +1647,13 @@ def plot_reference_period_contrast(
     services lose under recent climate than under 1940s climate", holding
     baseline demand, facilities and secular trend fixed at LAST_HIST_YEAR.
 
-    Reads counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}.csv written
+    Reads counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv written
     by the counterfactual block in the model script.
     """
-    out_dir  = out_dir  or OUT_DIR
+    out_dir = out_dir or OUT_DIR
     wbgt_var = wbgt_var or WBGT_VAR
 
-    csv_path = f"{out_dir}counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}.csv"
+    csv_path = f"{out_dir}counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
     if not os.path.exists(csv_path):
         print(f"  reference-period summary missing at {csv_path} — skipping")
         return ""
@@ -1425,10 +1664,19 @@ def plot_reference_period_contrast(
         print("  no matching indicators in reference-period summary")
         return ""
 
-    # Sort by the observed (recent) deficit so the most-affected indicators
-    # sit at the top, matching the main forest plot convention.
+    # The primary climate-change contrast is a percentage-point difference:
+    # recent observed deficit minus the 1940s reference-period deficit.
+    # This is NOT a percent change.
+    df["delta_deficit_pp"] = df["deficit_pct_historical"] - df["deficit_pct_cf"]
+
+    # Sort by the recent deficit so the most-affected indicators sit at the
+    # top, matching the main forest plot convention.
     df = df.sort_values("deficit_pct_historical").reset_index(drop=True)
     y_pos = np.arange(len(df))
+
+    # Save the numerical contrast as a separate, publication-friendly CSV.
+    contrast_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.csv"
+    df.to_csv(contrast_path, index=False)
 
     fig, ax = plt.subplots(figsize=(8, max(4, 0.55 * len(df) + 1.5)))
 
@@ -1436,61 +1684,203 @@ def plot_reference_period_contrast(
     for i, r in df.iterrows():
         lo, hi = r.get("cf_ci_lo"), r.get("cf_ci_hi")
         if pd.notna(lo) and pd.notna(hi):
-            ax.plot([lo, hi], [i, i],
-                    color=CF_COLOURS["reference"], lw=1.2, alpha=0.7, zorder=1)
-        ax.scatter(r["deficit_pct_cf"], i,
-                   color=CF_COLOURS["reference"], s=55, zorder=3,
-                   edgecolor="white", linewidth=0.6)
+            ax.plot([lo, hi], [i, i], color=CF_COLOURS["reference"], lw=1.2, alpha=0.7, zorder=1)
+        ax.scatter(
+            r["deficit_pct_cf"], i, color=CF_COLOURS["reference"], s=55, zorder=3, edgecolor="white", linewidth=0.6
+        )
 
     # 2016–24 observed dots (no CI here — that's on the main forest plot)
-    ax.scatter(df["deficit_pct_historical"], y_pos,
-               color=CF_COLOURS["observed"], s=55, zorder=3,
-               edgecolor="white", linewidth=0.6, marker="D")
+    ax.scatter(
+        df["deficit_pct_historical"],
+        y_pos,
+        color=CF_COLOURS["observed"],
+        s=55,
+        zorder=3,
+        edgecolor="white",
+        linewidth=0.6,
+        marker="D",
+    )
 
     # Connectors: thin grey line from reference to observed to make the
     # gap read as "the shift", not two unrelated points.
     for i, r in df.iterrows():
-        ax.plot([r["deficit_pct_cf"], r["deficit_pct_historical"]], [i, i],
-                color="#888888", lw=0.8, ls=":", alpha=0.6, zorder=2)
+        ax.plot(
+            [r["deficit_pct_cf"], r["deficit_pct_historical"]],
+            [i, i],
+            color="#888888",
+            lw=0.8,
+            ls=":",
+            alpha=0.6,
+            zorder=2,
+        )
 
     # Flag rows where the 1940s WBGT was materially outside the fit range;
     # these are extrapolation-dependent and shouldn't be over-interpreted.
     if "frac_wbgt_below_fit_range" in df.columns:
         flagged = df["frac_wbgt_below_fit_range"] > 0.05
         for i in y_pos[flagged]:
-            ax.text(ax.get_xlim()[1], i, "  †",
-                    va="center", ha="left", fontsize=9, color="#666")
+            ax.text(ax.get_xlim()[1], i, "  †", va="center", ha="left", fontsize=9, color="#666")
 
     ax.axvline(0, color="black", ls="--", lw=0.9)
     ax.set_yticks(y_pos)
     ax.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
-    ax.set_xlabel("% change in appointments associated with WBGT", fontsize=10)
+    ax.set_xlabel("WBGT-associated deficit (% of expected appointments)", fontsize=10)
     ax.grid(axis="x", ls=":", alpha=0.4)
+
+    # Label each connector with the period-to-period shift in percentage points.
+    xmax = ax.get_xlim()[1]
+    xmin = ax.get_xlim()[0]
+    span = xmax - xmin if xmax > xmin else 1.0
+    for i, r in df.iterrows():
+        x_mid = 0.5 * (r["deficit_pct_cf"] + r["deficit_pct_historical"])
+        ha = "left" if r["delta_deficit_pp"] >= 0 else "right"
+        dx = 0.015 * span * (1 if r["delta_deficit_pp"] >= 0 else -1)
+        ax.text(
+            x_mid + dx, i, f"Δ {r['delta_deficit_pp']:+.2f} pp",
+            va="bottom", ha=ha, fontsize=6.5, color="#555555"
+        )
 
     legend_handles = [
         mpatches.Patch(color=CF_COLOURS["reference"], label="1940–48 reference"),
-        mpatches.Patch(color=CF_COLOURS["observed"],  label="2016–24 observed"),
+        mpatches.Patch(color=CF_COLOURS["observed"], label="2016–24 observed"),
     ]
-    ax.legend(handles=legend_handles, loc="lower right",
-              fontsize=9, frameon=False)
+    ax.legend(handles=legend_handles, loc="lower right", fontsize=9, frameon=False)
 
     if "frac_wbgt_below_fit_range" in df.columns and (df["frac_wbgt_below_fit_range"] > 0.05).any():
-        fig.text(0.99, 0.01,
-                 "†  >5% of 1940s WBGT below fit range — spline extrapolation",
-                 ha="right", fontsize=7, style="italic", color="#666")
+        fig.text(
+            0.99,
+            0.01,
+            "†  >5% of 1940s WBGT below fit range — spline extrapolation",
+            ha="right",
+            fontsize=7,
+            style="italic",
+            color="#666",
+        )
 
     plt.tight_layout()
     out_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
+    print(f"  reference-period contrast table -> {contrast_path}")
     return out_path
 
+def plot_df_stability_panel(
+    fitted: list[str],
+    df_sweep: list[int] = (3, 4, 6, 8, 12, 20),
+    out_dir: str = OUT_DIR,
+    show_ci: bool = True,
+    ci_for_df: tuple[int, ...] = (3, 20),  # CI only for endpoints; rest are lines
+) -> str:
+    """Overlay exposure-response curves across spline df on shared axes,
+    one subplot per indicator. Reads exposure_response_curve_{ind}_{WBGT_VAR}_df{k}.csv
+    written by the SPLINE_DF_SWEEP block."""
+    import matplotlib.cm as cm
+    import glob
 
+    print("out_dir:", repr(out_dir))
+    print("WBGT_VAR:", repr(WBGT_VAR), "LAG_SUFFIX:", repr(LAG_SUFFIX))
+    print("fitted[:3]:", fitted[:3])
+    sample_expected = f"{out_dir}exposure_response_curve_{fitted[0]}_{WBGT_VAR}{LAG_SUFFIX}_df{df_sweep[0]}.csv"
+    print("expected:", sample_expected, "exists:", os.path.exists(sample_expected))
+    print("on disk:", glob.glob(f"{out_dir}exposure_response_curve_*_df*.csv")[:3])
+
+    # Perceptually ordered colours so df ordering reads off the plot.
+    cmap = cm.get_cmap("viridis")
+    df_colours = {k: cmap(i / max(len(df_sweep) - 1, 1)) for i, k in enumerate(df_sweep)}
+
+    n = len(fitted)
+    nc = min(3, n)
+    nr = int(np.ceil(n / nc))
+    fig, axes = plt.subplots(nr, nc, figsize=(5 * nc, 3.4 * nr), squeeze=False)
+    axes_flat = axes.flatten()
+
+    for idx, ind in enumerate(fitted):
+        ax = axes_flat[idx]
+        ref_w = None
+        curves_found = 0
+        for k in df_sweep:
+            path = f"{out_dir}exposure_response_curve_{ind}_{WBGT_VAR}{LAG_SUFFIX}_df{k}.csv"
+            if not os.path.exists(path):
+                continue
+            curve = pd.read_csv(path).sort_values("wbgt")
+            if curve.empty:
+                continue
+            ref_w = float(curve["wbgt_ref"].iloc[0])
+            colour = df_colours[k]
+            if show_ci and k in ci_for_df and curve["rr_lo"].notna().any():
+                ax.fill_between(
+                    curve["wbgt"], curve["rr_lo"], curve["rr_hi"],
+                    color=colour, alpha=0.12, linewidth=0,
+                )
+            ax.plot(curve["wbgt"], curve["rr_vs_ref"],
+                    color=colour, lw=1.5, label=f"df={k}")
+            curves_found += 1
+
+        if curves_found == 0:
+            ax.set_visible(False)
+            continue
+
+        ax.axhline(1.0, color="black", lw=0.5, ls="--")
+        if ref_w is not None:
+            ax.axvline(ref_w, color="grey", lw=0.5, ls=":")
+        ax.set_title(_label(ind), fontsize=9, fontweight="bold")
+        ax.tick_params(labelsize=7)
+        if idx % nc == 0:
+            ax.set_ylabel("IRR vs reference", fontsize=8)
+        if idx // nc == nr - 1:
+            ax.set_xlabel("WBGT (°C)", fontsize=8)
+        if idx == 0:
+            ax.legend(fontsize=6, frameon=False, ncol=2, loc="best")
+
+    for idx in range(n, len(axes_flat)):
+        axes_flat[idx].set_visible(False)
+
+    plt.tight_layout()
+    out_path = f"{out_dir}df_stability_panel_{WBGT_VAR}{LAG_SUFFIX}.png"
+    plt.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close()
+    return out_path
+
+def plot_facility_mean_wbgt(out_dir: str = OUT_DIR) -> str:
+    DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
+    FACILITY_REGISTRY = (
+        "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/mapping/facilities_with_lat_long_region.csv"
+    )
+    PANEL_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
+
+    # Pool WBGT across all indicators' panels (they share WBGT columns per facility-month)
+    # or just read one panel — WBGT is the same for a given facility-month.
+    COUNT_INDICATORS = list(INDICATOR_LABELS.keys())
+    any_panel = f"{PANEL_DIR}regression_panel_{COUNT_INDICATORS[0]}.csv"
+    p = pd.read_csv(any_panel, usecols=["facility", WBGT_VAR])
+    mean_wbgt = p.groupby("facility")[WBGT_VAR].mean().reset_index()
+
+    facs = pd.read_csv(FACILITY_REGISTRY)  # facilities_with_lat_long_region.csv
+    fac_geo = facs.merge(mean_wbgt, on="facility", how="inner").dropna(subset=["lat", "long", WBGT_VAR])
+
+    shp = gpd.read_file(SHAPEFILE_PATH)
+
+    fig, ax = plt.subplots(figsize=(6, 9))
+    shp.plot(ax=ax, color="#f0f0f0", edgecolor="white", linewidth=0.4)
+    sc = ax.scatter(
+        fac_geo["long"], fac_geo["lat"],
+        c=fac_geo[WBGT_VAR], cmap="RdYlBu_r",
+        s=12, edgecolor="black", linewidth=0.2,
+    )
+    cbar = fig.colorbar(sc, ax=ax, shrink=0.5, pad=0.02, orientation="horizontal")
+    cbar.set_label("Mean WBGT (°C), 2011–2024")
+    ax.set_axis_off()
+    ax.set_title(f"Facility-mean WBGT — {WBGT_VAR}", fontsize=10, fontweight="bold")
+
+    out_path = f"{out_dir}facility_mean_wbgt_{WBGT_VAR}.png"
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close()
+    return out_path
 # =====================================================================
 # MAIN — run everything
 # =====================================================================
 def load_results_df(out_dir: str = OUT_DIR) -> pd.DataFrame:
-    p = _require(f"{out_dir}summary_all_indicators_{WBGT_VAR}{SUFFIX}.csv")
+    p = _require(f"{out_dir}summary_all_indicators_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
     return pd.read_csv(p)
 
 
@@ -1525,33 +1915,47 @@ if __name__ == "__main__":
     print("  ->", plot_timeseries_panel(fitted))
 
     print("\n[8] district choropleth maps")
-    for p in plot_district_maps(fitted):
-        print("  ->", p)
+    plot_district_maps(fitted, variant="per_district")
+    plot_district_maps(fitted, variant="national")
+    print("  ->", plot_timeseries_panel(fitted))
+
 
     print("\n[9] projection heatmaps")
     for p in plot_projection_heatmaps(fitted):
         print("  ->", p)
 
-
     print("\n[11] district × indicator heatmap")
-    print("  ->", plot_district_indicator_heatmap(indicator_order=fitted))
+    print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
 
-    print("\\n[12] projection forest")
-    print("  ->", plot_projection_forest(fitted))
+    print("\n[12] projection forest — aggregate and hot-month, multiple windows")
+    for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
+        print(f"  aggregate {w[0]}-{w[1]}:",
+              plot_projection_forest(fitted, window=w, results_df=results_df))
+        print(f"  hot-months {w[0]}-{w[1]}:",
+              plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
+                                     results_df=results_df))
 
-    print("\\n[13] projection annual trajectory panel")
-    print("  ->", plot_projection_annual_panel(fitted))
+    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    print("  aggregate ->",
+          plot_projection_annual_panel(fitted, results_df=results_df))
+    print("  hot-months ->",
+          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+                                       results_df=results_df))
 
-    print("\\n[14] seasonal amplification (SSP245 / median)")
+    print("\n[14] seasonal amplification (SSP245 / median)")
     print("  ->", plot_seasonal_amplification(fitted))
 
-    print("\\n[15] ")
-    print("  ->", calculate_summary_statistics(fitted))
+    print("\n[15] Summary statistics by indicator")
+    by_ind = calculate_summary_statistics_by_indicator(fitted)
+    print("  ->", by_ind.shape, "rows written")
 
-    print("\\n[16] ")
-    print("  ->", calculate_summary_statistics_by_indicator(fitted))
+    print("\n[16] Summary statistics rollup")
+    stats = calculate_summary_statistics(fitted)
+    print_summary_statistics(stats, by_ind)
     print("\nDone.")
 
     print("\n[17] 1940s reference-period contrast")
     print("  ->", plot_reference_period_contrast(fitted))
 
+    print("\n[18] spline df stability panel")
+    print("  ->", plot_df_stability_panel(fitted))

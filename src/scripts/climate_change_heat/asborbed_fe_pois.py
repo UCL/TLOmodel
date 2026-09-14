@@ -183,8 +183,18 @@ USE_PRECIP = True
 PRECIP_COL = "precip_month"
 
 REFERENCE_WBGT_PERCENTILE = 95
-HOT_DEFICIT_CI_METHOD = "bootstrap"
+
+# Inference for the three headline results:
+#   1. Exposure-response curve: cluster-robust model covariance / delta method
+#   2. Hot-month deficit: district-cluster bootstrap with model refitting
+#   3. District map: descriptive point estimates only (no significance hatching)
+#
+# The facility jackknife is retained only as a sensitivity diagnostic for the
+# hot-month deficit; it is NOT used for the primary CI or district maps.
+HOT_DEFICIT_CI_METHOD = "district_bootstrap"
 N_BOOTSTRAP = 1000
+BOOTSTRAP_SEED = 42
+BOOTSTRAP_MIN_SUCCESS = 0.80
 
 IRR_LOW_PCTILE = 10
 IRR_HIGH = 32.0
@@ -363,17 +373,20 @@ def load_indicator_panel(indicator: str, panel_dir: str) -> pd.DataFrame:
     return base
 
 # ===========================================================================
-# Jackknife CI helper — positive values always mean service deficits
+# Jackknife sensitivity helper
 # ===========================================================================
 def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids):
-    """Leave-one-facility-out 95% CI for service deficit percentage.
+    """Leave-one-facility-out sensitivity interval for service deficit percentage.
 
+    This is retained as a sensitivity diagnostic only. It is not the primary
+    inferential CI because the fitted models use district-level clustered SEs.
     Convention: deficit_pct = 100 * (baseline - weather) / baseline.
     Here mu_a = weather prediction and mu_b = baseline prediction.
     """
     mu_a = np.asarray(mu_a, dtype=float)
     mu_b = np.asarray(mu_b, dtype=float)
     facility_ids = np.asarray(facility_ids)
+
     sum_a = float(mu_a.sum())
     sum_b = float(mu_b.sum())
     if sum_b <= 0:
@@ -386,6 +399,7 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids):
     facs = np.unique(facility_ids)
     if len(facs) < 3:
         return pt, np.nan, np.nan
+
     jack = []
     for fac in facs:
         keep = facility_ids != fac
@@ -394,12 +408,172 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids):
         if sb_j <= 0:
             continue
         jack.append(_stat(sa_j, sb_j))
+
     if len(jack) < 3:
         return pt, np.nan, np.nan
+
     jack = np.asarray(jack)
     n = len(jack)
     se = np.sqrt((n - 1) / n * np.sum((jack - jack.mean()) ** 2))
     return pt, pt - 1.96 * se, pt + 1.96 * se
+
+
+# ===========================================================================
+# District-cluster bootstrap for the hot-month deficit
+# ===========================================================================
+def bootstrap_hot_month_deficit(
+    nb_data,
+    weather_rhs,
+    ctrl_terms,
+    cluster_col=CLUSTER_COL,
+    wbgt_var=WBGT_VAR,
+    hot_threshold=None,
+    n_bootstrap=N_BOOTSTRAP,
+    seed=BOOTSTRAP_SEED,
+):
+    """Cluster bootstrap the hot-month service deficit, refitting both models.
+
+    Districts are resampled with replacement as the sampling clusters. All
+    facility-month observations within a sampled district are retained
+    together, preserving the facility/month panel structure.
+
+    Each replicate:
+      1. resamples districts with replacement;
+      2. refits the weather and baseline models;
+      3. selects hot facility-months using the fixed full-sample threshold;
+      5. calculates percentage and absolute service deficits.
+
+    Returns
+    -------
+    dict with percentile CIs, bootstrap draws, and diagnostics.
+    """
+    if ONLY_DEFICITS:
+        raise ValueError(
+            "District bootstrap inference is not supported with ONLY_DEFICITS=True: "
+            "conditioning on observed modelled losses changes the estimand."
+        )
+
+    districts = nb_data[cluster_col].dropna().unique()
+    n_clusters = len(districts)
+
+    if n_clusters < 3:
+        return {
+            "pct_ci": (np.nan, np.nan),
+            "absolute_ci": (np.nan, np.nan),
+            "draws_pct": np.array([]),
+            "draws_absolute": np.array([]),
+            "draws_threshold": np.array([]),
+            "n_success": 0,
+            "n_attempted": 0,
+            "success_fraction": 0.0,
+            "n_skipped_threshold": 0,
+        }
+
+    if hot_threshold is None or not np.isfinite(hot_threshold):
+        raise ValueError("bootstrap_hot_month_deficit requires a finite fixed hot_threshold")
+
+    rng = np.random.default_rng(seed)
+
+    draws_pct = []
+    draws_absolute = []
+    draws_threshold = []
+    n_skipped_threshold = 0
+
+    # Duplicate sampled districts intentionally: this implements cluster
+    # resampling weights while retaining the original facility/month FE labels.
+    cluster_rows = {
+        d: nb_data.loc[nb_data[cluster_col] == d].copy()
+        for d in districts
+    }
+
+    for b in range(n_bootstrap):
+        sampled_districts = rng.choice(districts, size=n_clusters, replace=True)
+
+        boot = pd.concat(
+            [cluster_rows[d] for d in sampled_districts],
+            ignore_index=True,
+        )
+
+        try:
+            model_base_b = fit_pois_absorbed(ctrl_terms, boot, cluster_col)
+            model_wx_b = fit_pois_absorbed(weather_rhs, boot, cluster_col)
+
+            mu_wx = np.asarray(
+                model_wx_b.predict(newdata=boot, type="response"),
+                dtype=float,
+            )
+            mu_base = np.asarray(
+                model_base_b.predict(newdata=boot, type="response"),
+                dtype=float,
+            )
+
+            ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
+            if ok.sum() < 10:
+                continue
+
+            boot = boot.loc[ok].copy()
+            boot["mu_a"] = mu_wx[ok]
+            boot["mu_b"] = mu_base[ok]
+
+            hot = boot[boot[wbgt_var] > hot_threshold]
+
+            if len(hot) < 10:
+                n_skipped_threshold += 1
+                continue
+
+            base_total = float(hot["mu_b"].sum())
+            weather_total = float(hot["mu_a"].sum())
+
+            if not np.isfinite(base_total) or base_total <= 0:
+                continue
+
+            absolute = base_total - weather_total
+            pct = 100.0 * absolute / base_total
+
+            if not np.isfinite(pct) or not np.isfinite(absolute):
+                continue
+
+            draws_pct.append(pct)
+            draws_absolute.append(absolute)
+            draws_threshold.append(float(hot_threshold))
+
+        except Exception:
+            # A small number of cluster-bootstrap samples may fail because of
+            # an unfavourable FE/design configuration. Failed replicates are
+            # discarded and reported below.
+            continue
+
+    draws_pct = np.asarray(draws_pct, dtype=float)
+    draws_absolute = np.asarray(draws_absolute, dtype=float)
+    draws_threshold = np.asarray(draws_threshold, dtype=float)
+
+    n_success = len(draws_pct)
+    success_fraction = n_success / max(n_bootstrap, 1)
+
+    if n_success >= 20 and success_fraction >= BOOTSTRAP_MIN_SUCCESS:
+        pct_ci = (
+            float(np.percentile(draws_pct, 2.5)),
+            float(np.percentile(draws_pct, 97.5)),
+        )
+        absolute_ci = (
+            float(np.percentile(draws_absolute, 2.5)),
+            float(np.percentile(draws_absolute, 97.5)),
+        )
+    else:
+        pct_ci = (np.nan, np.nan)
+        absolute_ci = (np.nan, np.nan)
+
+    return {
+        "pct_ci": pct_ci,
+        "absolute_ci": absolute_ci,
+        "draws_pct": draws_pct,
+        "draws_absolute": draws_absolute,
+        "draws_threshold": draws_threshold,
+        "n_success": n_success,
+        "n_attempted": n_bootstrap,
+        "success_fraction": success_fraction,
+        "n_skipped_threshold": n_skipped_threshold,
+    }
 
 
 # ===========================================================================
@@ -683,7 +857,7 @@ def _poisson_pseudo_aic(model, data, y_col="y_int"):
 # ===========================================================================
 # Main fitting function
 # ===========================================================================
-def fit_indicator(indicator, panel_path, spline_df=None):
+def fit_indicator(indicator, panel_path, spline_df=None, run_hot_bootstrap=True):
     print(f"\n→ {indicator}")
     if ONLY_DEFICITS:
         print(f"  ONLY_DEFICITS = True — aggregations restricted to loss-of-service rows")
@@ -807,50 +981,112 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         b, w = d["y_pred_base"].sum(), d["y_pred_wx"].sum()
         return 100.0 * (b - w) / b if b > 0 else np.nan
 
-    # Pooled deficit — mechanically ~0 under Poisson FE score identity; kept
-    # for continuity but not interpretable. The hot-months deficit below is
-    # the informative quantity because filtering breaks the FE identity.
+    # -----------------------------------------------------------------------
+    # Pooled all-month deficit
+    # -----------------------------------------------------------------------
+    # Under Poisson FE QMLE, the pooled fitted-value difference is mechanically
+    # close to zero by the score identity. Keep the point estimate as a
+    # diagnostic, but do NOT attach a CI or treat it as a substantive result.
     deficit_pt = aggregate_deficit_pct(nb_data)
-    facs = nb_data["facility"].unique()
-    jack = np.array([aggregate_deficit_pct(nb_data[nb_data["facility"] != f]) for f in facs])
-    jack = jack[np.isfinite(jack)]
-    n = len(jack)
-    if n > 1:
-        jbar = jack.mean()
-        se_jack = np.sqrt((n - 1) / n * np.sum((jack - jbar) ** 2))
-        deficit_ci = (deficit_pt - 1.96 * se_jack, deficit_pt + 1.96 * se_jack)
-    else:
-        deficit_ci = (np.nan, np.nan)
-        se_jack = np.nan
-    print(f"  [{indicator}] Pooled deficit (uninterpretable, FE identity): "
-          f"{deficit_pt:+.2f}% (CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
+    print(
+        f"  [{indicator}] Pooled deficit diagnostic (not inferential): "
+        f"{deficit_pt:+.2f}%"
+    )
 
-    hot_threshold = np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
+    # -----------------------------------------------------------------------
+    # Hot-month deficit — primary CI from district-cluster bootstrap
+    # -----------------------------------------------------------------------
+    hot_threshold = float(
+        np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
+    )
     hot_mask = nb_data[WBGT_VAR] > hot_threshold
     hot_data = nb_data[hot_mask].copy()
 
+    hot_deficit_pt = np.nan
+    hot_absolute_pt = np.nan
+    hot_deficit_ci = (np.nan, np.nan)
+    hot_absolute_ci = (np.nan, np.nan)
+    hot_jack_ci = (np.nan, np.nan)
+
+    bootstrap_n_success = 0
+    bootstrap_n_attempted = 0
+    bootstrap_success_fraction = np.nan
+    bootstrap_n_skipped_threshold = 0
+
     if len(hot_data) > 10:
         hot_deficit_pt = aggregate_deficit_pct(hot_data)
-        hot_facs = hot_data["facility"].unique()
-        hot_jack = np.array([aggregate_deficit_pct(hot_data[hot_data["facility"] != f]) for f in hot_facs])
-        hot_jack = hot_jack[np.isfinite(hot_jack)]
-        n_hot = len(hot_jack)
-        if n_hot > 1:
-            hot_jbar = hot_jack.mean()
-            hot_se_jack = np.sqrt((n_hot - 1) / n_hot * np.sum((hot_jack - hot_jbar) ** 2))
-            hot_deficit_ci = (hot_deficit_pt - 1.96 * hot_se_jack, hot_deficit_pt + 1.96 * hot_se_jack)
-        else:
-            hot_deficit_ci = (np.nan, np.nan)
-            hot_se_jack = np.nan
+        hot_absolute_pt = float(
+            hot_data["y_pred_base"].sum() - hot_data["y_pred_wx"].sum()
+        )
+
+        # Facility jackknife retained only as a sensitivity diagnostic.
+        _, hot_jack_lo, hot_jack_hi = _monthly_jackknife_ci_local(
+            hot_data["y_pred_wx"].values,
+            hot_data["y_pred_base"].values,
+            hot_data["facility"].values,
+        )
+        hot_jack_ci = (hot_jack_lo, hot_jack_hi)
+
+        # Do not bootstrap during the spline-df sensitivity sweep. Otherwise
+        # every df setting would trigger another 1000 model-refitting runs.
+        if run_hot_bootstrap and HOT_DEFICIT_CI_METHOD == "district_bootstrap":
+            print(
+                f"  [{indicator}] Bootstrapping hot-month deficit: "
+                f"{N_BOOTSTRAP} district-cluster replicates..."
+            )
+
+            boot = bootstrap_hot_month_deficit(
+                nb_data=nb_data,
+                weather_rhs=wx_terms,
+                ctrl_terms=ctrl_terms,
+                cluster_col=CLUSTER_COL,
+                wbgt_var=WBGT_VAR,
+                hot_threshold=hot_threshold,
+                n_bootstrap=N_BOOTSTRAP,
+                seed=BOOTSTRAP_SEED,
+            )
+
+            hot_deficit_ci = boot["pct_ci"]
+            hot_absolute_ci = boot["absolute_ci"]
+            bootstrap_n_success = boot["n_success"]
+            bootstrap_n_attempted = boot["n_attempted"]
+            bootstrap_success_fraction = boot.get("success_fraction", np.nan)
+            bootstrap_n_skipped_threshold = boot.get("n_skipped_threshold", 0)
+
+            # Save the bootstrap draws for auditability/reproducibility.
+            if bootstrap_n_success > 0:
+                pd.DataFrame(
+                    {
+                        "indicator": indicator,
+                        "replicate": np.arange(1, bootstrap_n_success + 1),
+                        "hot_deficit_pct": boot["draws_pct"],
+                        "hot_services_affected": boot["draws_absolute"],
+                        "hot_threshold": boot["draws_threshold"],
+                    }
+                ).to_csv(
+                    f"{OUT_DIR}hot_deficit_bootstrap_{indicator}_{WBGT_VAR}.csv",
+                    index=False,
+                )
+
         print(
-            f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C), service deficit: "
-            f"{hot_deficit_pt:+.2f}% (CI: {hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f})"
+            f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C): "
+            f"{hot_deficit_pt:+.2f}% deficit; "
+            f"{hot_absolute_pt:+.1f} services affected"
+        )
+        print(
+            f"  [{indicator}] Bootstrap 95% CI: "
+            f"{hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f}% "
+            f"({bootstrap_n_success}/{bootstrap_n_attempted} successful)"
+        )
+        print(
+            f"  [{indicator}] Jackknife sensitivity CI: "
+            f"{hot_jack_ci[0]:+.2f}..{hot_jack_ci[1]:+.2f}%"
         )
     else:
-        hot_deficit_pt = np.nan
-        hot_deficit_ci = (np.nan, np.nan)
-        hot_se_jack = np.nan
-        print(f"  [{indicator}] Not enough hot months ({len(hot_data)} observations)")
+        print(
+            f"  [{indicator}] Not enough hot months "
+            f"({len(hot_data)} observations)"
+        )
 
     reference_wbgt = float(np.percentile(nb_data[WBGT_VAR], IRR_LOW_PCTILE))
     reference_wbgt = WBGT_REFERENCE_TEMP
@@ -909,70 +1145,96 @@ def fit_indicator(indicator, panel_path, spline_df=None):
 
     hb_filtered = _apply_deficit_filter(hb, "mu_b", "mu_a")
 
-    # --- National p95 map (main figure) --------------------------------------
-    national_p95 = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))
+    # --- National p95 district map: descriptive point estimates only ----------
+    # The headline district map answers "where is the predicted burden
+    # concentrated?" It does not test district-specific null hypotheses.
+    national_p95 = float(
+        np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
+    )
     hb_natl = hb_filtered[hb_filtered[WBGT_VAR] > national_p95].copy()
-    if hb_natl.empty:
-        raise RuntimeError(f"[{indicator}] no facility-months above national p{REFERENCE_WBGT_PERCENTILE}")
 
-    district_agg_natl = hb_natl.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
+    if hb_natl.empty:
+        raise RuntimeError(
+            f"[{indicator}] no facility-months above "
+            f"national p{REFERENCE_WBGT_PERCENTILE}"
+        )
+
+    district_agg_natl = (
+        hb_natl.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
+    )
     district_agg_natl["deficit_pct"] = np.where(
         district_agg_natl["mu_b"] > 0,
-        100.0 * (district_agg_natl["mu_b"] - district_agg_natl["mu_a"]) / district_agg_natl["mu_b"],
+        100.0
+        * (district_agg_natl["mu_b"] - district_agg_natl["mu_a"])
+        / district_agg_natl["mu_b"],
         np.nan,
     )
-    district_agg_natl[[CLUSTER_COL, "deficit_pct"]].to_csv(
+    district_agg_natl["services_affected"] = (
+        district_agg_natl["mu_b"] - district_agg_natl["mu_a"]
+    )
+
+    district_agg_natl[
+        [CLUSTER_COL, "deficit_pct", "services_affected", "mu_a", "mu_b"]
+    ].to_csv(
         f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
-    # --- Per-district p95 map (supplementary figure) -------------------------
-    hb_perdist = hb_filtered.copy()
-    hb_perdist["_dist_p95"] = hb_perdist.groupby(CLUSTER_COL)[WBGT_VAR].transform(
-        lambda x: np.percentile(x, REFERENCE_WBGT_PERCENTILE)
-    )
-    hb_perdist = hb_perdist[hb_perdist[WBGT_VAR] > hb_perdist["_dist_p95"]].copy()
-
-    district_agg_perdist = hb_perdist.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
-    district_agg_perdist["deficit_pct"] = np.where(
-        district_agg_perdist["mu_b"] > 0,
-        100.0 * (district_agg_perdist["mu_b"] - district_agg_perdist["mu_a"]) / district_agg_perdist["mu_b"],
-        np.nan,
-    )
-    district_agg_perdist[[CLUSTER_COL, "deficit_pct"]].to_csv(
-        f"{OUT_DIR}district_burden_per_district_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
-        index=False,
-    )
-
-    # --- Jackknife CIs for national p95 map (main figure) --------------------
-    dist_rows = []
-    for dist, sub in hb_natl.groupby(CLUSTER_COL):
-        pt, lo, hi = _monthly_jackknife_ci_local(
-            sub["mu_a"].values,
-            sub["mu_b"].values,
-            sub["facility"].values,
-        )
-        sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
-        dist_rows.append({"district": dist, "deficit_pct": pt, "ci_lo": lo, "ci_hi": hi, "sig": sig})
-    pd.DataFrame(dist_rows).to_csv(
+    # Compatibility file for older map_results.py. It deliberately contains
+    # no inferential CI or significance flag. Updated map_results.py should
+    # ignore these placeholder fields and map the point estimates directly.
+    district_map_compat = district_agg_natl[
+        [CLUSTER_COL, "deficit_pct", "services_affected"]
+    ].copy()
+    district_map_compat["ci_lo"] = np.nan
+    district_map_compat["ci_hi"] = np.nan
+    district_map_compat["sig"] = False
+    district_map_compat.to_csv(
         f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
-    # --- Jackknife CIs for per-district p95 map (supplementary) --------------
-    dist_rows_pd = []
-    for dist, sub in hb_perdist.groupby(CLUSTER_COL):
-        pt, lo, hi = _monthly_jackknife_ci_local(
-            sub["mu_a"].values,
-            sub["mu_b"].values,
-            sub["facility"].values,
-        )
-        sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
-        dist_rows_pd.append({"district": dist, "deficit_pct": pt, "ci_lo": lo, "ci_hi": hi, "sig": sig})
-    pd.DataFrame(dist_rows_pd).to_csv(
+    # --- Per-district p95 map: supplementary descriptive output ---------------
+    hb_perdist = hb_filtered.copy()
+    hb_perdist["_dist_p95"] = hb_perdist.groupby(CLUSTER_COL)[WBGT_VAR].transform(
+        lambda x: np.percentile(x, REFERENCE_WBGT_PERCENTILE)
+    )
+    hb_perdist = hb_perdist[
+        hb_perdist[WBGT_VAR] > hb_perdist["_dist_p95"]
+    ].copy()
+
+    district_agg_perdist = (
+        hb_perdist.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
+    )
+    district_agg_perdist["deficit_pct"] = np.where(
+        district_agg_perdist["mu_b"] > 0,
+        100.0
+        * (district_agg_perdist["mu_b"] - district_agg_perdist["mu_a"])
+        / district_agg_perdist["mu_b"],
+        np.nan,
+    )
+    district_agg_perdist["services_affected"] = (
+        district_agg_perdist["mu_b"] - district_agg_perdist["mu_a"]
+    )
+
+    district_agg_perdist[
+        [CLUSTER_COL, "deficit_pct", "services_affected", "mu_a", "mu_b"]
+    ].to_csv(
+        f"{OUT_DIR}district_burden_per_district_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
+        index=False,
+    )
+
+    district_map_compat_pd = district_agg_perdist[
+        [CLUSTER_COL, "deficit_pct", "services_affected"]
+    ].copy()
+    district_map_compat_pd["ci_lo"] = np.nan
+    district_map_compat_pd["ci_hi"] = np.nan
+    district_map_compat_pd["sig"] = False
+    district_map_compat_pd.to_csv(
         f"{OUT_DIR}district_burden_ci_per_district_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
+
     pd.DataFrame(
         [
             {
@@ -980,13 +1242,18 @@ def fit_indicator(indicator, panel_path, spline_df=None):
                 "label": INDICATOR_LABELS.get(indicator, indicator),
                 "only_deficits": ONLY_DEFICITS,
                 "deficit_pct": deficit_pt,
-                "ci_lo": deficit_ci[0],
-                "ci_hi": deficit_ci[1],
-                "se_jackknife": se_jack,
-                "hot_deficit_pct": hot_deficit_pt,
+                                "hot_deficit_pct": hot_deficit_pt,
+                "hot_services_affected": hot_absolute_pt,
+                "hot_services_ci_lo": hot_absolute_ci[0],
+                "hot_services_ci_hi": hot_absolute_ci[1],
                 "hot_ci_lo": hot_deficit_ci[0],
                 "hot_ci_hi": hot_deficit_ci[1],
-                "hot_se_jackknife": hot_se_jack,
+                "hot_jackknife_ci_lo": hot_jack_ci[0],
+                "hot_jackknife_ci_hi": hot_jack_ci[1],
+                "bootstrap_n_success": bootstrap_n_success,
+                "bootstrap_n_attempted": bootstrap_n_attempted,
+                "bootstrap_success_fraction": bootstrap_success_fraction,
+                "bootstrap_n_skipped_threshold": bootstrap_n_skipped_threshold,
                 "hot_threshold": hot_threshold if len(hot_data) > 10 else np.nan,
                 "n_hot_obs": len(hot_data),
                 "n_facilities": len(FITTED_FACILITIES),
@@ -1025,13 +1292,18 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         "delta_aic_vs_base": _aic_base - _aic_wx,
         "n_spline_cols_retained": _n_retained,
         "deficit_pct": deficit_pt,
-        "ci_lo": deficit_ci[0],
-        "ci_hi": deficit_ci[1],
-        "se_jackknife": se_jack,
-        "hot_deficit_pct": hot_deficit_pt,
+                "hot_deficit_pct": hot_deficit_pt,
+        "hot_services_affected": hot_absolute_pt,
+        "hot_services_ci_lo": hot_absolute_ci[0],
+        "hot_services_ci_hi": hot_absolute_ci[1],
         "hot_ci_lo": hot_deficit_ci[0],
         "hot_ci_hi": hot_deficit_ci[1],
-        "hot_se_jackknife": hot_se_jack,
+        "hot_jackknife_ci_lo": hot_jack_ci[0],
+                "hot_jackknife_ci_hi": hot_jack_ci[1],
+        "bootstrap_n_success": bootstrap_n_success,
+        "bootstrap_n_attempted": bootstrap_n_attempted,
+        "bootstrap_success_fraction": bootstrap_success_fraction,
+        "bootstrap_n_skipped_threshold": bootstrap_n_skipped_threshold,
         "hot_threshold": hot_threshold if len(hot_data) > 10 else np.nan,
         "n_hot_obs": len(hot_data),
         "n_facilities": len(FITTED_FACILITIES),
@@ -1069,6 +1341,9 @@ if __name__ == "__main__":
         f"(p{SUPPORT_LOW_PCTILE:g}/p{SUPPORT_HIGH_PCTILE:g})"
     )
     print(f"Estimator: Poisson QMLE with CRV1 cluster-robust SEs (overdispersion-robust)")
+    print(f"Hot-month CI: district-cluster bootstrap with model refitting (B={N_BOOTSTRAP})")
+    print("District maps: descriptive point estimates; no significance hatching")
+    print("Facility jackknife: sensitivity analysis only")
     print("=" * 60)
 
     panel_paths = {ind: f"{PANEL_DIR}regression_panel_{ind}.csv" for ind in COUNT_INDICATORS}
@@ -1088,11 +1363,11 @@ if __name__ == "__main__":
                 with Pool(processes=N_WORKERS) as pool:
                     sweep_results = pool.starmap(
                         fit_indicator,
-                        [(ind, panel_paths[ind], k) for ind in COUNT_INDICATORS],
+                        [(ind, panel_paths[ind], k, False) for ind in COUNT_INDICATORS],
                     )
             else:
                 sweep_results = [
-                    fit_indicator(ind, panel_paths[ind], spline_df=k)
+                    fit_indicator(ind, panel_paths[ind], spline_df=k, run_hot_bootstrap=False)
                     for ind in COUNT_INDICATORS
                 ]
             for r in sweep_results:
@@ -1102,8 +1377,6 @@ if __name__ == "__main__":
                     "indicator": r["indicator"],
                     "spline_df": k,
                     "deficit_pct": r["deficit_pct"],
-                    "ci_lo": r["ci_lo"],
-                    "ci_hi": r["ci_hi"],
                     "hot_deficit_pct": r["hot_deficit_pct"],
                     "hot_ci_lo": r["hot_ci_lo"],
                     "hot_ci_hi": r["hot_ci_hi"],
@@ -1122,7 +1395,7 @@ if __name__ == "__main__":
         print(f"\nSensitivity sweep written → {sweep_path}")
 
         if not sweep_df.empty:
-            print("\ndeficit_pct by (indicator × df):")
+            print("\ndeficit_pct diagnostic by (indicator × df):")
             print(sweep_df.pivot(index="indicator", columns="spline_df",
                                  values="deficit_pct").round(2))
             print("\nΔAIC vs baseline (higher = weather model improves more):")
@@ -1169,14 +1442,15 @@ if __name__ == "__main__":
                 "label": r["label"],
                 "only_deficits": ONLY_DEFICITS,
                 "deficit_pct": r["deficit_pct"],
-                "ci_lo": r["ci_lo"],
-                "ci_hi": r["ci_hi"],
-                "se_jackknife": r.get("se_jackknife"),
                 "hot_deficit_pct": r["hot_deficit_pct"],
+                "hot_services_affected": r["hot_services_affected"],
+                "hot_services_ci_lo": r["hot_services_ci_lo"],
+                "hot_services_ci_hi": r["hot_services_ci_hi"],
                 "hot_ci_lo": r["hot_ci_lo"],
                 "hot_ci_hi": r["hot_ci_hi"],
                 "hot_threshold": r["hot_threshold"],
-                "hot_se_jackknife": r.get("hot_se_jackknife"),
+                "hot_jackknife_ci_lo": r.get("hot_jackknife_ci_lo"),
+                "hot_jackknife_ci_hi": r.get("hot_jackknife_ci_hi"),
                 "n_hot_obs": r["n_hot_obs"],
                 "n_facilities": r["n_facilities"],
                 "n_obs": r["n_obs"],
@@ -1727,11 +2001,15 @@ if __name__ == "__main__":
                 tot_a, tot_b = float(df_agg["mu_a"].sum()), float(df_agg["mu_b"].sum())
                 cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
 
+                # Counterfactual interval retained only as a facility-jackknife
+                # sensitivity diagnostic; it is not a primary inferential CI.
+                # The three headline historical results use the district bootstrap
+                # for hot-month burden.
                 _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
                     df_agg["mu_a"].values,
                     df_agg["mu_b"].values,
                     df_agg["facility"].values,
-                        )
+                )
 
                 hist_row = summary_df.loc[summary_df["indicator"] == ind]
                 hist_deficit = float(hist_row["deficit_pct"].iloc[0]) if not hist_row.empty else np.nan
@@ -1748,8 +2026,8 @@ if __name__ == "__main__":
                         "mean_wbgt_cf": float(df_agg[WBGT_VAR].mean()),
                         "mean_precip_cf": float(df_agg[PRECIP_COL].mean()),
                         "deficit_pct_cf": cf_deficit,
-                        "cf_ci_lo": cf_lo,
-                        "cf_ci_hi": cf_hi,
+                        "cf_jackknife_ci_lo": cf_lo,
+                        "cf_jackknife_ci_hi": cf_hi,
                         "deficit_pct_historical": hist_deficit,
                         "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
                         "wbgt_train_p_lo": support["p_lo"],
@@ -1777,4 +2055,17 @@ if __name__ == "__main__":
                 print(f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
     print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
 
-    print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())
+    print(
+        summary_df[
+            [
+                "indicator",
+                "hot_deficit_pct",
+                "hot_ci_lo",
+                "hot_ci_hi",
+                "hot_services_affected",
+                "hot_services_ci_lo",
+                "hot_services_ci_hi",
+                "n_hot_obs",
+            ]
+        ].to_string()
+    )
