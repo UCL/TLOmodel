@@ -688,10 +688,6 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     if ONLY_DEFICITS:
         print(f"  ONLY_DEFICITS = True — aggregations restricted to loss-of-service rows")
     t0 = time.time()
-    # Effective spline df for this fit. When called from the primary pipeline
-    # spline_df is None → falls back to module SPLINE_DF and per-indicator
-    # output filenames are untagged. When called from the sweep, spline_df is
-    # set and _df_tag disambiguates the per-indicator CSVs.
     _df_used = spline_df if spline_df is not None else SPLINE_DF
     _df_tag = f"_df{spline_df}" if spline_df is not None else ""
     min_obs = MIN_OBS_BY_INDICATOR.get(indicator, MIN_OBS)
@@ -699,14 +695,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     try:
         long = load_indicator_panel(indicator, PANEL_DIR)
         long = apply_hard_ceilings(long, indicator)
-        # long, qa_report = mask_spike_and_revert(
-        #     long,
-        #     indicator=indicator,
-        #     oom=100,
-        #     return_flags=False,
-        # )
         long = long.rename(columns={indicator: "y"})
-
     except Exception as e:
         print(f"  [{indicator}] Failed to load: {e}")
         return None
@@ -755,9 +744,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
 
     print(f"  [{indicator}] Sample: {len(nb_data):,} obs, {len(FITTED_FACILITIES)} facilities")
 
-    # -----------------------------------------------------------------------
     # Training-support summary for predict-time clipping
-    # -----------------------------------------------------------------------
     wbgt_train = nb_data[WBGT_VAR].values
     WBGT_SUPPORT = {
         "min":  float(np.min(wbgt_train)),
@@ -774,11 +761,10 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         f"[{WBGT_SUPPORT['p_lo']:.2f}, {WBGT_SUPPORT['p_hi']:.2f}] °C"
     )
 
-    # Build RHS term lists (FE absorbed, not in the formula RHS)
     ctrl_terms = YEAR_FE_COLS + ["covid"]
     if USE_PRECIP:
         ctrl_terms.append("precip_c")
-    wx_terms = list(weather_rhs)  # splines + lags + ctrl already in weather_rhs
+    wx_terms = list(weather_rhs)
 
     try:
         model_base = fit_pois_absorbed(ctrl_terms, nb_data, CLUSTER_COL)
@@ -787,7 +773,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         print(f"  [{indicator}] Model fitting failed: {e}")
         return None
 
-    alpha = np.nan  # Not estimated — overdispersion handled via clustered SEs
+    alpha = np.nan
 
     missing_spline = [c for c in spline_cols if c not in model_wx.coef().index]
     if missing_spline:
@@ -795,13 +781,8 @@ def fit_indicator(indicator, panel_path, spline_df=None):
 
     try:
         curve = exposure_response_curve_fast(
-            model_wx,
-            spline_cols,
-            DESIGN,
-            WBGT_VAR,
-            SHIFTS[WBGT_VAR],
-            CURVE_REF_MODE,
-            nb_data[WBGT_VAR].values,
+            model_wx, spline_cols, DESIGN, WBGT_VAR,
+            SHIFTS[WBGT_VAR], CURVE_REF_MODE, nb_data[WBGT_VAR].values,
         )
         curve.insert(0, "indicator", indicator)
         curve.insert(1, "label", INDICATOR_LABELS.get(indicator, indicator))
@@ -811,14 +792,14 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         )
     except Exception as e:
         print(f"  [{indicator}] Curve failed: {e}")
+
+    # Two-model fitted values on observed data
     nb_data["y_pred_base"] = model_base.predict(newdata=nb_data, type="response")
-    nb_data["y_pred_wx"] = model_wx.predict(newdata=nb_data, type="response")
-    # Drop rows where either model couldn't predict (separated facility-months)
+    nb_data["y_pred_wx"]   = model_wx.predict(newdata=nb_data, type="response")
     n_sep = nb_data[["y_pred_base", "y_pred_wx"]].isna().any(axis=1).sum()
     if n_sep > 0:
         print(f"  [{indicator}] {n_sep} rows dropped (separation in Poisson FE)")
         nb_data = nb_data.dropna(subset=["y_pred_base", "y_pred_wx"]).reset_index(drop=True)
-    # Positive difference = services lost under weather/WBGT
     nb_data["difference"] = nb_data["y_pred_base"] - nb_data["y_pred_wx"]
 
     def aggregate_deficit_pct(df):
@@ -826,8 +807,10 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         b, w = d["y_pred_base"].sum(), d["y_pred_wx"].sum()
         return 100.0 * (b - w) / b if b > 0 else np.nan
 
+    # Pooled deficit — mechanically ~0 under Poisson FE score identity; kept
+    # for continuity but not interpretable. The hot-months deficit below is
+    # the informative quantity because filtering breaks the FE identity.
     deficit_pt = aggregate_deficit_pct(nb_data)
-
     facs = nb_data["facility"].unique()
     jack = np.array([aggregate_deficit_pct(nb_data[nb_data["facility"] != f]) for f in facs])
     jack = jack[np.isfinite(jack)]
@@ -839,8 +822,8 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     else:
         deficit_ci = (np.nan, np.nan)
         se_jack = np.nan
-
-    print(f"  [{indicator}] Service deficit: {deficit_pt:+.2f}% (CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
+    print(f"  [{indicator}] Pooled deficit (uninterpretable, FE identity): "
+          f"{deficit_pt:+.2f}% (CI: {deficit_ci[0]:+.2f}..{deficit_ci[1]:+.2f})")
 
     hot_threshold = np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE)
     hot_mask = nb_data[WBGT_VAR] > hot_threshold
@@ -859,11 +842,9 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         else:
             hot_deficit_ci = (np.nan, np.nan)
             hot_se_jack = np.nan
-
         print(
             f"  [{indicator}] HOT months (>{hot_threshold:.1f}°C), service deficit: "
-            f"{hot_deficit_pt:+.2f}% "
-            f"(CI: {hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f})"
+            f"{hot_deficit_pt:+.2f}% (CI: {hot_deficit_ci[0]:+.2f}..{hot_deficit_ci[1]:+.2f})"
         )
     else:
         hot_deficit_pt = np.nan
@@ -914,51 +895,55 @@ def fit_indicator(indicator, panel_path, spline_df=None):
 
     hb = pd.DataFrame(
         {
-            "date": nb_data["date"].values,
-            "facility": nb_data["facility"].values,
-            "month": nb_data["month"].values,
-            CLUSTER_COL: nb_data[CLUSTER_COL].values,
-            "y_int": nb_data["y_int"].values,
-            "mu_a": nb_data["y_pred_wx"].values,
-            "mu_b": nb_data["y_pred_base"].values,
+            "date":       nb_data["date"].values,
+            "facility":   nb_data["facility"].values,
+            "month":      nb_data["month"].values,
+            CLUSTER_COL:  nb_data[CLUSTER_COL].values,
+            "y_int":      nb_data["y_int"].values,
+            WBGT_VAR:     nb_data[WBGT_VAR].values,
+            "mu_a":       nb_data["y_pred_wx"].values,   # weather model
+            "mu_b":       nb_data["y_pred_base"].values, # no-weather baseline
         }
     )
-    hb.to_csv(
-        f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}.csv",
-        index=False,
-    )
+    hb.to_csv(f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}.csv", index=False)
+
     hb_for_agg = _apply_deficit_filter(hb, "mu_b", "mu_a")
 
-    # NEW: keep only hot facility-months for the map
-    hot_threshold_map = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))  # 95
+    # Keep only hot facility-months for the district map — filtering breaks
+    # the FE score identity, so mu_a and mu_b differ meaningfully here.
+    hot_threshold_map = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))
     hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hot_threshold_map].copy()
     if hb_for_agg.empty:
         raise RuntimeError(f"[{indicator}] no facility-months above WBGT p{REFERENCE_WBGT_PERCENTILE}")
 
     district_agg = hb_for_agg.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
-
+    district_agg["deficit_pct"] = np.where(
+        district_agg["mu_b"] > 0,
+        100.0 * (district_agg["mu_b"] - district_agg["mu_a"]) / district_agg["mu_b"],
+        np.nan,
+    )
     district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
         f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
+        index=False,
+    )
+    hot_threshold_map = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))
+    hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hot_threshold_map].copy()
+    hb_for_agg["_dist_p95"] = hb_for_agg.groupby(CLUSTER_COL)[WBGT_VAR].transform(
+        lambda x: np.percentile(x, REFERENCE_WBGT_PERCENTILE)
+    )
+    hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hb_for_agg["_dist_p95"]].copy()
+    district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
+        f"{OUT_DIR}district_burden_per_district_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
     dist_rows = []
     for dist, sub in hb_for_agg.groupby(CLUSTER_COL):
         pt, lo, hi = _monthly_jackknife_ci_local(
-            sub["mu_a"].values,
-            sub["mu_b"].values,
-            sub["facility"].values,
+            sub["mu_a"].values, sub["mu_b"].values, sub["facility"].values,
         )
         sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
-        dist_rows.append(
-            {
-                "district": dist,
-                "deficit_pct": pt,
-                "ci_lo": lo,
-                "ci_hi": hi,
-                "sig": sig,
-            }
-        )
+        dist_rows.append({"district": dist, "deficit_pct": pt, "ci_lo": lo, "ci_hi": hi, "sig": sig})
     pd.DataFrame(dist_rows).to_csv(
         f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
@@ -1018,9 +1003,11 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         "deficit_pct": deficit_pt,
         "ci_lo": deficit_ci[0],
         "ci_hi": deficit_ci[1],
+        "se_jackknife": se_jack,
         "hot_deficit_pct": hot_deficit_pt,
         "hot_ci_lo": hot_deficit_ci[0],
         "hot_ci_hi": hot_deficit_ci[1],
+        "hot_se_jackknife": hot_se_jack,
         "hot_threshold": hot_threshold if len(hot_data) > 10 else np.nan,
         "n_hot_obs": len(hot_data),
         "n_facilities": len(FITTED_FACILITIES),
@@ -1042,7 +1029,6 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         "_fac_district": nb_data[["facility", CLUSTER_COL]].drop_duplicates().reset_index(drop=True),
         "_wbgt_support": WBGT_SUPPORT,
     }
-
 
 # ===========================================================================
 # MAIN
