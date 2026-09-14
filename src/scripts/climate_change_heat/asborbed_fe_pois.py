@@ -513,6 +513,7 @@ def exposure_response_curve_fast(
     elif isinstance(ref_mode, str) and ref_mode.startswith("p"):
         pct = float(ref_mode[1:])
         ref = np.percentile(wobs, pct)
+        print(ref)
     else:
         ref = float(ref_mode)  # absolute °C fallback
     # Only use spline cols that survived collinearity checks in fepois.
@@ -926,14 +927,16 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}.csv",
         index=False,
     )
-
     hb_for_agg = _apply_deficit_filter(hb, "mu_b", "mu_a")
+
+    # NEW: keep only hot facility-months for the map
+    hot_threshold_map = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))  # 95
+    hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hot_threshold_map].copy()
+    if hb_for_agg.empty:
+        raise RuntimeError(f"[{indicator}] no facility-months above WBGT p{REFERENCE_WBGT_PERCENTILE}")
+
     district_agg = hb_for_agg.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
-    district_agg["deficit_pct"] = np.where(
-        district_agg["mu_b"] > 0,
-        100.0 * (district_agg["mu_b"] - district_agg["mu_a"]) / district_agg["mu_b"],
-        np.nan,
-    )
+
     district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
         f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
