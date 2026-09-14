@@ -462,6 +462,35 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        #------------------Parameters linked to optimisation analysis, needed to overwrite existing params ----------------#
+        "config_start_year": Parameter(
+            Types.INT,
+            "the year when the config enforcement for optimisation will start (it will occur on 1st January of that year)"
+        ),
+        "config_coverage_plhiv": Parameter(
+            Types.REAL,
+            "overwrite coverage of plhiv during optimisation"
+        ),
+        "config_consumable_availability_VL_test": Parameter(
+            Types.REAL,
+            "overwrite cons. availability of viral load tests during optimisation"
+        ),
+        "config_consumable_availability_HIV_test": Parameter(
+            Types.REAL,
+            "overwrite cons. availability of HIV tests during optimisation"
+        ),
+        "config_annual_testing_rate_adults": Parameter(
+            Types.REAL,
+            "overwrite the annual testing rate for adults during optimisation"
+        ),
+        "config_target_VL": Parameter(
+            Types.BOOL,
+            "parameter to target VL testing, to be used during optimisation"
+        ),
+        "config_target_IPT": Parameter(
+            Types.BOOL,
+            "parameter to target IPT testing, to be used during optimisation"
+        ),
         # ------------------ program-related parameters ------------------ #
         "interval_for_viral_load_measurement_months": Parameter(
             Types.REAL,
@@ -1552,6 +1581,36 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.vl_testing_available_by_year = {
             year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year + 1)
         }
+        
+        # 9) Schedule event to change parameter configuration for optimisation analysis
+        config_start_date = Date(self.parameters["config_start_year"], 1, 1)
+        sim.schedule_event(HivParamConfigEvent(self),config_start_date)
+        
+        
+    def update_config_parameters_for_optimisation(self):
+        """
+        Change non-trivial parameters based on configuration suggested by optimisation pipeline.
+        All other parameters are modified directly by the smac scenario file upon resuming (this relies on use of 
+        suspend/resume specifically).
+        """
+        p = self.parameters
+        
+        print("I am updating params")
+        
+        # Over-ride probability of HIV test cons. availability
+        #self.sim.modules['HealthSystem'].override_availability_of_consumables({196: p['config_consumable_availability_HIV_test']})
+        # Over-ride probability of VL test cons. availability
+        #self.sim.modules['HealthSystem'].override_availability_of_consumables({190: p['config_consumable_availability_VL_test']})
+
+        # Over-ride coverage_plhiv'
+        self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = p['config_coverage_plhiv']
+        # Change adult testing rates
+        p['hiv_testing_rates']['annual_testing_rate_adults'] = p['config_annual_testing_rate_adults']
+        
+        # Set VL test availability to zero if using TDF instead
+        if['switch_vl_test_to_tdf']:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({190: 0})
+        
 
     def update_parameters_for_program_change(self):
         """
@@ -3050,6 +3109,19 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
 
         self.module.update_parameters_for_program_change()
+
+
+class HivParamConfigEvent(Event, PopulationScopeEventMixin):
+    """ This event exists to change parameters according to the configuration
+    suggested by the optimisation pipeline. Occurs once on the first of the year 
+    config_start_date.
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+            self.module.update_config_parameters_for_optimisation()
 
 
 # ---------------------------------------------------------------------------
