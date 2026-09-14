@@ -907,40 +907,50 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     )
     hb.to_csv(f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}.csv", index=False)
 
-    hb_for_agg = _apply_deficit_filter(hb, "mu_b", "mu_a")
+    hb_filtered = _apply_deficit_filter(hb, "mu_b", "mu_a")
 
-    # Keep only hot facility-months for the district map — filtering breaks
-    # the FE score identity, so mu_a and mu_b differ meaningfully here.
-    hot_threshold_map = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))
-    hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hot_threshold_map].copy()
-    if hb_for_agg.empty:
-        raise RuntimeError(f"[{indicator}] no facility-months above WBGT p{REFERENCE_WBGT_PERCENTILE}")
+    # --- National p95 map (main figure) --------------------------------------
+    national_p95 = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))
+    hb_natl = hb_filtered[hb_filtered[WBGT_VAR] > national_p95].copy()
+    if hb_natl.empty:
+        raise RuntimeError(f"[{indicator}] no facility-months above national p{REFERENCE_WBGT_PERCENTILE}")
 
-    district_agg = hb_for_agg.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
-    district_agg["deficit_pct"] = np.where(
-        district_agg["mu_b"] > 0,
-        100.0 * (district_agg["mu_b"] - district_agg["mu_a"]) / district_agg["mu_b"],
+    district_agg_natl = hb_natl.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
+    district_agg_natl["deficit_pct"] = np.where(
+        district_agg_natl["mu_b"] > 0,
+        100.0 * (district_agg_natl["mu_b"] - district_agg_natl["mu_a"]) / district_agg_natl["mu_b"],
         np.nan,
     )
-    district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
+    district_agg_natl[[CLUSTER_COL, "deficit_pct"]].to_csv(
         f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
-    hot_threshold_map = float(np.percentile(nb_data[WBGT_VAR], REFERENCE_WBGT_PERCENTILE))
-    hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hot_threshold_map].copy()
-    hb_for_agg["_dist_p95"] = hb_for_agg.groupby(CLUSTER_COL)[WBGT_VAR].transform(
+
+    # --- Per-district p95 map (supplementary figure) -------------------------
+    hb_perdist = hb_filtered.copy()
+    hb_perdist["_dist_p95"] = hb_perdist.groupby(CLUSTER_COL)[WBGT_VAR].transform(
         lambda x: np.percentile(x, REFERENCE_WBGT_PERCENTILE)
     )
-    hb_for_agg = hb_for_agg[hb_for_agg[WBGT_VAR] > hb_for_agg["_dist_p95"]].copy()
-    district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
+    hb_perdist = hb_perdist[hb_perdist[WBGT_VAR] > hb_perdist["_dist_p95"]].copy()
+
+    district_agg_perdist = hb_perdist.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
+    district_agg_perdist["deficit_pct"] = np.where(
+        district_agg_perdist["mu_b"] > 0,
+        100.0 * (district_agg_perdist["mu_b"] - district_agg_perdist["mu_a"]) / district_agg_perdist["mu_b"],
+        np.nan,
+    )
+    district_agg_perdist[[CLUSTER_COL, "deficit_pct"]].to_csv(
         f"{OUT_DIR}district_burden_per_district_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
 
+    # --- Jackknife CIs for national p95 map (main figure) --------------------
     dist_rows = []
-    for dist, sub in hb_for_agg.groupby(CLUSTER_COL):
+    for dist, sub in hb_natl.groupby(CLUSTER_COL):
         pt, lo, hi = _monthly_jackknife_ci_local(
-            sub["mu_a"].values, sub["mu_b"].values, sub["facility"].values,
+            sub["mu_a"].values,
+            sub["mu_b"].values,
+            sub["facility"].values,
         )
         sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
         dist_rows.append({"district": dist, "deficit_pct": pt, "ci_lo": lo, "ci_hi": hi, "sig": sig})
@@ -949,6 +959,20 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         index=False,
     )
 
+    # --- Jackknife CIs for per-district p95 map (supplementary) --------------
+    dist_rows_pd = []
+    for dist, sub in hb_perdist.groupby(CLUSTER_COL):
+        pt, lo, hi = _monthly_jackknife_ci_local(
+            sub["mu_a"].values,
+            sub["mu_b"].values,
+            sub["facility"].values,
+        )
+        sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
+        dist_rows_pd.append({"district": dist, "deficit_pct": pt, "ci_lo": lo, "ci_hi": hi, "sig": sig})
+    pd.DataFrame(dist_rows_pd).to_csv(
+        f"{OUT_DIR}district_burden_ci_per_district_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
+        index=False,
+    )
     pd.DataFrame(
         [
             {
