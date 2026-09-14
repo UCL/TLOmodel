@@ -1,3 +1,33 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4ec4a908a3f6a2fa3098e097dde706edd4d2a66a864a22636fd701dc688eb582
-size 1104
+District,Region,Frequency,Coverage PSAC,Coverage SAC,Coverage Adults
+Blantyre,Southern,12,0.5,0.8,0.5
+Chiradzulu,Southern,12,0.5,0.8,0.5
+Mulanje,Southern,12,0.5,0.8,0.5
+Nkhotakota,Central,12,0.5,0.8,0.5
+Nsanje,Southern,12,0.5,0.8,0.5
+Phalombe,Southern,12,0.5,0.8,0.5
+Balaka,Southern,0,0.0,0.8,0.5
+Blantyre City,Southern,0,0.0,0.8,0.5
+Chikwawa,Southern,0,0.0,0.8,0.5
+Chitipa,Northern,0,0.0,0.8,0.5
+Dedza,Central,0,0.0,0.8,0.5
+Dowa,Central,0,0.0,0.0,0.0
+Karonga,Northern,0,0.0,0.8,0.5
+Kasungu,Central,0,0.0,0.8,0.5
+Likoma,Northern,0,0.0,0.8,0.5
+Lilongwe,Central,0,0.0,0.8,0.5
+Lilongwe City,Central,0,0.0,0.8,0.5
+Machinga,Southern,0,0.0,0.8,0.5
+Mangochi,Southern,0,0.0,0.8,0.5
+Mchinji,Central,0,0.0,0.8,0.5
+Mwanza,Southern,0,0.0,0.8,0.5
+Mzimba,Northern,0,0.0,0.8,0.5
+Mzuzu City,Northern,0,0.0,0.8,0.5
+Neno,Southern,0,0.0,0.8,0.5
+Nkhata Bay,Northern,0,0.0,0.8,0.5
+Ntcheu,Central,0,0.0,0.8,0.5
+Ntchisi,Central,0,0.0,0.8,0.5
+Rumphi,Northern,0,0.0,0.0,0.0
+Salima,Central,0,0.0,0.8,0.5
+Thyolo,Southern,0,0.0,0.8,0.5
+Zomba,Southern,0,0.0,0.8,0.5
+Zomba City,Southern,0,0.0,0.8,0.5
