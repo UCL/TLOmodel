@@ -219,7 +219,7 @@ PRECIP_FILE_BY_TIER = {
 }
 
 WBGT_REFERENCE_TEMP = 23.0
-CURVE_REF_MODE = WBGT_REFERENCE_TEMP#"p10"
+CURVE_REF_MODE = "p50"
 CURVE_N = 60
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -805,7 +805,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         curve.insert(0, "indicator", indicator)
         curve.insert(1, "label", INDICATOR_LABELS.get(indicator, indicator))
         curve.to_csv(
-            f"{OUT_DIR}exposure_response_curve_{indicator}_{WBGT_VAR}{LAG_SUFFIX}.csv",
+            f"{OUT_DIR}exposure_response_curve_{indicator}_{WBGT_VAR}{LAG_SUFFIX}{_df_tag}.csv",
             index=False,
         )
     except Exception as e:
