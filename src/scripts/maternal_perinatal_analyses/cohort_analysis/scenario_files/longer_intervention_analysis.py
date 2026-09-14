@@ -31,7 +31,6 @@ class InterventionLongScenario(BaseScenario):
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
-                "tlo.methods.rti": logging.INFO,
             }
         }
 
