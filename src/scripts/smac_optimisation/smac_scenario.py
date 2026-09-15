@@ -101,9 +101,8 @@ class TloOptimisationScenario(BaseScenario):
         self.linked_to_care_after_selftest = None
         self.prob_receive_viral_load_test_result = None
         self.config_coverage_plhiv = None
-        self.switch_vl_test_to_tdf = None
-        self.config_target_VL = None
-        self.config_target_IPT = None
+        self.tdf_test_replace_vl_test = None
+        self.targeted_adherence_monitoring = None
 
 
     def log_configuration(self):
@@ -144,9 +143,8 @@ class TloOptimisationScenario(BaseScenario):
                 "linked_to_care_after_selftest": self.linked_to_care_after_selftest,
                 "prob_receive_viral_load_test_result": self.prob_receive_viral_load_test_result,
                 "config_coverage_plhiv": self.config_coverage_plhiv,
-                "switch_vl_test_to_tdf": self.switch_vl_test_to_tdf,
-                "config_target_VL": self.config_target_VL,
-                "config_target_IPT": self.config_target_IPT,
+                "tdf_test_replace_vl_test": self.tdf_test_replace_vl_test,
+                "targeted_adherence_monitoring": self.targeted_adherence_monitoring,
             },
             # map intervention_coverage / other config values onto
             # whichever module parameters they actually control in

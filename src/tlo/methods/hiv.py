@@ -556,7 +556,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
         ),
-        "switch_vl_test_to_tdf": Parameter(
+        "tdf_test_replace_vl_test": Parameter(
             Types.BOOL,
             "whether TDF urine test is being used in place of VL testing"
         ),
@@ -1608,7 +1608,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p['hiv_testing_rates']['annual_testing_rate_adults'] = p['config_annual_testing_rate_adults']
         
         # Set VL test availability to zero if using TDF instead
-        if['switch_vl_test_to_tdf']:
+        if['tdf_test_replace_vl_test']:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({190: 0})
         
 

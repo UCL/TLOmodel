@@ -872,7 +872,8 @@ configspace.add(Float("prob_circ_after_hiv_test", (0., 1.)))
 configspace.add(Float("linked_to_care_after_selftest", (0., 1.)))
 configspace.add(Float("prob_receive_viral_load_test_result", (0., 1.)))
 configspace.add(Float("config_coverage_plhiv", (0., 1.)))
-configspace.add(Categorical("switch_vl_test_to_tdf", [True, False]))
+configspace.add(Categorical("tdf_test_replace_vl_test", [True, False]))
+configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
 
 # --------------------------------------------------------------------------
 # Period-bucketed HIV-HRH and HIV-consumable cost constraints
