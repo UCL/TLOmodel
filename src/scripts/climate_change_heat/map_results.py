@@ -700,8 +700,14 @@ def plot_district_maps(
         # Sample-size annotation in the frame
         n_matched = int(merged["deficit_pct"].notna().sum())
         ax.text(
-            0.02, 0.98,
-            transform=ax.transAxes, va="top", ha="left", fontsize=7, color="#333",
+            0.02,
+            0.98,
+            f"n = {n_matched}/{len(merged)} districts",  # <-- missing
+            transform=ax.transAxes,
+            va="top",
+            ha="left",
+            fontsize=7,
+            color="#333",
             bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.75),
         )
 
