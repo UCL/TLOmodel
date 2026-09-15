@@ -42,6 +42,7 @@ LAKES_SHAPEFILE_PATH = (
     "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
     "resources/mapping/ne_50m_lakes.shp"
 )
+
 DISTRICT_NAME_COL = "ADM2_EN"
 CLUSTER_COL = "Dist"
 
@@ -614,10 +615,23 @@ def plot_district_maps(
     ci_prefix = "district_burden_ci" if variant == "national" else "district_burden_ci_per_district"
 
     shp = gpd.read_file(SHAPEFILE_PATH)
+    if shp.crs is None:
+        shp = shp.set_crs("EPSG:4326")
     shp[DISTRICT_NAME_COL] = shp[DISTRICT_NAME_COL].astype(str).str.strip().str.title()
-    lakes = gpd.read_file(LAKES_SHAPEFILE_PATH)
 
-    # ---- Load per-indicator CSVs (point estimate + CI/sig) -----------------
+    lakes = gpd.read_file(LAKES_SHAPEFILE_PATH)
+    if lakes.crs != shp.crs:
+        lakes = lakes.to_crs(shp.crs)
+
+    MALAWI_LAKES = {"Lake Malawi", "Lake Nyasa", "Lake Chilwa", "Lake Malombe", "Lake Chiuta"}
+    name_col = "name" if "name" in lakes.columns else "Name"
+    lakes = lakes[lakes[name_col].isin(MALAWI_LAKES)].copy()
+    if lakes.empty:
+        raise ValueError(
+            f"No Malawi lakes matched in {LAKES_SHAPEFILE_PATH}. "
+            f"Available names: {sorted(gpd.read_file(LAKES_SHAPEFILE_PATH)[name_col].dropna().unique())[:20]}"
+        )
+        # ---- Load per-indicator CSVs (point estimate + CI/sig) -----------------
     frames = []
     for ind in fitted:
         p_def = f"{out_dir}{prefix}_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
@@ -695,26 +709,23 @@ def plot_district_maps(
         )
 
         # Non-significant coloured districts: hatch overlay
-
+        if "sig" in merged.columns:
+            non_sig = merged[merged["sig"] == False]
+            if not non_sig.empty:
+                non_sig.plot(
+                    ax=ax,
+                    facecolor="none",
+                    edgecolor="none",
+                    hatch="////",
+                    zorder=2,
+                )
         lakes.plot(ax=ax, color="#cfe3f2", edgecolor="#a8c8dc", linewidth=0.2, zorder=3)
         # Sample-size annotation in the frame
         n_matched = int(merged["deficit_pct"].notna().sum())
-        ax.text(
-            0.02, 0.98,
-            "Hot-month deficit by district",
-            transform=ax.transAxes, va="top", ha="left", fontsize=7, color="#333",
-            bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.75),
-        )
-
         # Panel letter
-        if idx < len(panel_labels):
-            ax.annotate(
-                panel_labels[idx], xy=(0.0, 1.0), xycoords="axes fraction",
-                fontsize=12, fontweight="bold", va="bottom", ha="left",
-            )
-
         ax.set_axis_off()
-        ax.set_title(_label(ind), fontsize=9, fontweight="bold", pad=6)
+        letter = panel_labels[idx] if idx < len(panel_labels) else ""
+        ax.set_title(f"{letter} {_label(ind)}".strip(), fontsize=10, fontweight="bold", pad=8, loc="left")
 
     # Hide unused axes
     for idx in range(n_ind, len(af)):
