@@ -77,7 +77,7 @@ SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
                              # to use already-generated checkpoints without
                              # regenerating them.
 VALID_CHECKPOINT_COMMITS: list[str] = [
-    '7ae880741589',
+    '9cf56078ab9af015db0402af40a975686d67bd7e'
     # Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
     # are still considered acceptable to reuse, even when the pipeline is
     # currently running under a DIFFERENT (e.g. newer) commit - e.g. a
