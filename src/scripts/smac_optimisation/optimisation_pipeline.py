@@ -416,10 +416,40 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     # find_checkpoint_commit_for_seed()/checkpoint_job_id(), matched to
     # this trial's own seed, rather than taken from a user-supplied CLI
     # argument) - the resulting value and how it's used are identical.
+    # sed step is REQUIRED here, not optional - CONFIRMED from Microsoft's
+    # own Azure Batch documentation (Task runtime environment variables):
+    # "The command lines executed by tasks on compute nodes don't run
+    # under a shell... To use [environment variable expansion] you must
+    # invoke the shell in the command line." This bash script IS an
+    # explicitly-invoked shell (command = f"/bin/bash -c '{command}'"
+    # below) - which is exactly why $azure_run_json/$working_dir/
+    # $task_dir, USED WITHIN THIS SCRIPT, correctly expand. But
+    # --resume-simulation's value never appears on any command line at
+    # all - it's content INSIDE run_json, read directly by Python's
+    # Path()/open() (tlo/scenario.py's run_sample_by_number), with no
+    # shell ever invoked to process it. Confirmed also directly against
+    # tlo/scenario.py's own parse_arguments (type=str, no expansion
+    # anywhere) and run_sample_by_number (plain Path() construction).
+    # This is NOT a deviation from batch_submit's own cli.py logic (that
+    # file is confirmed byte-for-byte identical between master and this
+    # project's branch) - it's compensating for whatever differs in
+    # tlo/scenario.py between the two, since suspend/resume is confirmed
+    # working on master but not on this branch.
+    patch_json_line = (
+        'sed -i "s|\\${{AZ_BATCH_NODE_MOUNTS_DIR}}|$AZ_BATCH_NODE_MOUNTS_DIR|g" ' + azure_run_json
+        if USE_SUSPEND_RESUME else ""
+    )
+
+    # DIAGNOSTIC LINE (env | grep "^AZ_" ...) copied VERBATIM from
+    # batch_submit's own command construction in cli.py - prints every
+    # AZ_-prefixed environment variable actually present on this
+    # specific remote task, directly to stdout.
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
+    env | grep "^AZ_" | while read line; do echo "$$line"; done
+    $patch_json_line
     PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
     tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
     cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
@@ -432,6 +462,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         working_dir=working_dir,
         task_dir=task_dir,
         remote_azure_directory=remote_azure_directory,
+        patch_json_line=patch_json_line,
     )
     command = f"/bin/bash -c '{command}'"
 
@@ -596,10 +627,15 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     # command any more - see docstring point 3. Plain, unmodified
     # `tlo batch-run` - the suspend behaviour is already baked into
     # run_json via parse_arguments() above.
+    #
+    # DIAGNOSTIC LINE copied VERBATIM from batch_submit's own command
+    # construction in cli.py - see submit_azure_job()'s identical
+    # addition for why.
     command_template = Template("""
     git fetch origin $commit_hexsha
     git checkout $commit_hexsha
     pip install -r requirements/base.txt
+    env | grep "^AZ_" | while read line; do echo "$$line"; done
     PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
     cp -r $working_dir/* $remote_azure_directory/.
     """)
