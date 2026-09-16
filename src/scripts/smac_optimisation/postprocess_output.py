@@ -25,6 +25,7 @@ below for exactly what each captures and where it was adapted from.
 """
 
 import ast
+import json
 import pickle
 import re
 from collections import Counter
@@ -35,7 +36,9 @@ import pandas as pd
 
 from tlo.analysis.utils import load_pickled_dataframes
 from scripts.costing.cost_estimation import load_unit_cost_assumptions
-from optimisation_parameters import YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE
+from optimisation_parameters import (
+    YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
+)
 
 
 # TARGET_PERIOD: adjust to match the evaluation window your simulation
@@ -195,10 +198,13 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     consistent with "budget" meaning "the most this category should
     reasonably be allowed to cost", not "the average cost".
 
-    hiv_dalys is written as 0.0 for every year - loaded by initialise.py
-    but not currently used as a constraint (DALYs remains the
-    optimisation OBJECTIVE, not a budget) - see initialise.py's own
-    comment on this.
+    hiv_dalys is written as 0.0 for every year in COST_LIMITS_FILE - loaded
+    by initialise.py but not currently used as a constraint (DALYs
+    remains the optimisation OBJECTIVE, not a budget) - see
+    initialise.py's own comment on this. The baseline's ACTUAL DALYs
+    (mean across the 10 runs, over TARGET_PERIOD - the same period and
+    metric every real trial's own "dalys" field already is) gets
+    persisted separately, to BASELINE_SUMMARY_FILE - see below.
 
     Years in [first_year, last_year] outside what the baseline run
     actually simulated (TARGET_PERIOD, above) get a budget of 0.0 too -
@@ -249,6 +255,23 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
 
     pd.DataFrame(rows).to_csv(COST_LIMITS_FILE, index=False)
     print(f"[baseline] {COST_LIMITS_FILE} updated: {n_runs} run(s), years {first_year}-{last_year}.")
+
+    # Persisted separately from the CSV above - this is the baseline's
+    # own OBJECTIVE-side result (DALYs), not a budget/constraint value,
+    # and has nowhere else to live once this function returns. Read by
+    # evaluate_pipeline_run.py's plotting to draw the baseline
+    # comparison line, independently, from disk. MEDIAN, not mean, for
+    # consistency with the rest of this pipeline's own DALYs/cost
+    # aggregation - unlike upper_95_ci_by_year() above (the budget/
+    # constraint values themselves), which deliberately stays
+    # mean-centered, since a 95% confidence interval is conventionally
+    # defined around the sample mean, not the median - this is a
+    # genuinely different computation from a plain aggregate DALYs
+    # figure, not another instance of the same mean-vs-median choice.
+    median_dalys = float(np.median([r["dalys"] for r in per_run_results]))
+    with open(BASELINE_SUMMARY_FILE, "w") as f:
+        json.dump({"median_dalys": median_dalys, "n_runs": n_runs}, f, indent=2)
+    print(f"[baseline] {BASELINE_SUMMARY_FILE} updated: median DALYs = {median_dalys:.4f} ({n_runs} runs).")
 
 
 def _get_hiv_dalys(log: dict) -> float:

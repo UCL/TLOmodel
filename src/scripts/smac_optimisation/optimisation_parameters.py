@@ -65,7 +65,7 @@ USE_SUSPEND_RESUME = True   # whether REAL trials resume from a pre-resume
                              # every trial runs a full, fresh simulation,
                              # completely independent of SUBMIT_SUSPEND_PART
                              # below
-SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
+SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
                              # jobs (the "first part" of suspend/resume) THIS
                              # run - a plain user-controlled toggle, not
                              # derived from checking what's already present on
@@ -77,7 +77,6 @@ SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
                              # to use already-generated checkpoints without
                              # regenerating them.
 VALID_CHECKPOINT_COMMITS: list[str] = [
-    'fcd1124efaf72331a503e4427b2f9fe2e1fbb15f'
     # Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
     # are still considered acceptable to reuse, even when the pipeline is
     # currently running under a DIFFERENT (e.g. newer) commit - e.g. a
@@ -98,7 +97,17 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
 # postprocess_output.compute_and_save_baseline_budgets() and
 # optimisation_pipeline.submit_baseline_job().
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = False
+SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
+                             # SUBMIT_SUSPEND_PART - NOT derived from
+                             # checking what's already in COST_LIMITS_FILE.
+                             # Defaults to False (unlike SUBMIT_SUSPEND_PART)
+                             # since this is a genuinely costly step (10
+                             # full, non-resumed runs) you don't want
+                             # repeated every time you just want to re-run
+                             # the optimisation loop with an already-good
+                             # budget file already in place - set True only
+                             # when you actually want the budgets
+                             # (re)derived from a fresh baseline run.
 
 # --------------------------------------------------------------------------
 # Budgets file: one row per year, columns year,hiv_dalys,hiv_hrh_budget,
@@ -110,5 +119,17 @@ SUBMIT_BASELINE_RUN = False
 # postprocess_output.py).
 # --------------------------------------------------------------------------
 COST_LIMITS_FILE = "cost_limits_by_year.csv"
+
+# Small JSON summary of the baseline run's own results, written
+# alongside COST_LIMITS_FILE by compute_and_save_baseline_budgets() -
+# specifically the baseline's median HIV DALYs (same TARGET_PERIOD metric
+# every real trial's own "dalys" field already is), since that value
+# has no other persistent home otherwise - the baseline job's own
+# Azure output isn't kept around once postprocessed. Used by
+# evaluate_pipeline_run.py's plotting to draw the baseline comparison
+# line - read from disk, independently, matching that file's own
+# "never touches the live process" design.
+BASELINE_SUMMARY_FILE = "baseline_summary.json"
+
 
 

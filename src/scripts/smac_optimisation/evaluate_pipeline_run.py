@@ -8,7 +8,7 @@ Implements the four checks for confirming a run is actually optimising,
 not just running without crashing:
 
   1. Best-so-far, feasibility-respecting     -> check_best_so_far()
-  2. Per-config mean DALYs vs proposal order -> check_dalys_trend()
+  2. Per-config median DALYs vs proposal order -> check_dalys_trend()
   3. Feasible fraction vs proposal order     -> check_feasibility_trend()
   4. Intensified vs single-shot configs      -> check_intensification_effect()
 
@@ -30,6 +30,7 @@ from pathlib import Path
 import pandas as pd
 
 from convergence_monitoring import config_key, get_best_feasible_dalys
+from optimisation_parameters import BASELINE_SUMMARY_FILE
 
 
 # --------------------------------------------------------------------------
@@ -69,12 +70,16 @@ def _config_frame(records: list[dict]) -> pd.DataFrame:
     like multiple independent proposals and distort every trend check
     below. One row per distinct config, in the order each was first
     seen in the log (proposal_index), with:
-      - mean_dalys, mean of every violation column, feasible (all
+      - median_dalys, median of every violation column, feasible (all
         violations <= 0)
       - n_seeds (how many times this config was evaluated)
 
     Violation column names are discovered DYNAMICALLY (any column
-    ending in "_violation") rather than hardcoded - this file cannot
+    CONTAINING "_violation" - substring, not suffix, since real names
+    are period-bucketed, e.g. "hiv_hrh_violation_p1", which never ends
+    in the literal text "_violation" - an earlier version of this line
+    used .endswith("_violation"), which never matched any real
+    constraint name at all) rather than hardcoded - this file cannot
     import optimisation_pipeline.py to get its current constraint list
     (that module runs the live pipeline at import time), so it stays
     correct automatically regardless of how many constraints exist or
@@ -94,11 +99,11 @@ def _config_frame(records: list[dict]) -> pd.DataFrame:
     df["cfg_key"] = df["config_object"].apply(config_key)
     df["order"] = range(len(df))  # file order = completion-order proxy
 
-    violation_cols = [c for c in df.columns if c.endswith("_violation")]
+    violation_cols = [c for c in df.columns if "_violation" in c]
 
-    agg_kwargs = {"mean_dalys": ("dalys", "mean")}
+    agg_kwargs = {"median_dalys": ("dalys", "median")}
     for col in violation_cols:
-        agg_kwargs[col] = (col, "mean")
+        agg_kwargs[col] = (col, "median")
     agg_kwargs["n_seeds"] = ("seed", "count")
     agg_kwargs["first_order"] = ("order", "min")
 
@@ -144,15 +149,15 @@ def check_best_so_far(records: list[dict]) -> pd.Series:
 
 def check_dalys_trend(records: list[dict], window: int = 10) -> pd.DataFrame:
     """
-    Per-config mean DALYs vs proposal order, with a rolling median -
+    Per-config median DALYs vs proposal order, with a rolling median -
     checks whether the SPREAD/MEDIAN of proposed configs is trending
     down over the course of the run, not just the running minimum
     (which check_best_so_far already covers, and which improves even
     under random search).
     """
     cfg_df = _config_frame(records)
-    cfg_df["rolling_median_dalys"] = cfg_df["mean_dalys"].rolling(window, min_periods=1).median()
-    return cfg_df[["proposal_index", "cfg_key", "mean_dalys", "n_seeds", "feasible", "rolling_median_dalys"]]
+    cfg_df["rolling_median_dalys"] = cfg_df["median_dalys"].rolling(window, min_periods=1).median()
+    return cfg_df[["proposal_index", "cfg_key", "median_dalys", "n_seeds", "feasible", "rolling_median_dalys"]]
 
 
 # --------------------------------------------------------------------------
@@ -183,7 +188,7 @@ def check_intensification_effect(records: list[dict], intensified_threshold: int
     disproportionately GOOD ones, compared to single-shot configs
     (n_seeds == 1)? If the intensifier is discriminating correctly -
     spending extra seed-confirmations on genuinely promising configs -
-    intensified configs' mean DALYs (among feasible configs) should
+    intensified configs' median DALYs (among feasible configs) should
     skew better than single-shot ones. If the two groups look
     statistically indistinguishable, the intensifier isn't
     discriminating - it's just resampling arbitrarily.
@@ -194,19 +199,129 @@ def check_intensification_effect(records: list[dict], intensified_threshold: int
     intensified = feasible_df[feasible_df["n_seeds"] >= intensified_threshold]
     single_shot = feasible_df[feasible_df["n_seeds"] == 1]
 
-    intensified_mean = float(intensified["mean_dalys"].mean()) if len(intensified) else None
-    single_shot_mean = float(single_shot["mean_dalys"].mean()) if len(single_shot) else None
+    intensified_median = float(intensified["median_dalys"].median()) if len(intensified) else None
+    single_shot_median = float(single_shot["median_dalys"].median()) if len(single_shot) else None
 
     return {
         "n_intensified_configs": len(intensified),
         "n_single_shot_configs": len(single_shot),
-        "intensified_mean_dalys": intensified_mean,
-        "single_shot_mean_dalys": single_shot_mean,
+        "intensified_median_dalys": intensified_median,
+        "single_shot_median_dalys": single_shot_median,
         "intensified_better": (
-            intensified_mean < single_shot_mean
-            if intensified_mean is not None and single_shot_mean is not None else None
+            intensified_median < single_shot_median
+            if intensified_median is not None and single_shot_median is not None else None
         ),
     }
+
+
+# --------------------------------------------------------------------------
+# Check 5 (plot): HIV DALYs by completion order, new vs intensified,
+# feasible vs infeasible, against the baseline
+# --------------------------------------------------------------------------
+
+def load_baseline_summary(filepath: str = BASELINE_SUMMARY_FILE) -> dict | None:
+    """
+    Reads the baseline run's summary (median DALYs, n_runs), written by
+    postprocess_output.compute_and_save_baseline_budgets() the last time
+    SUBMIT_BASELINE_RUN was True. Returns None if the file doesn't exist
+    yet (no baseline run has ever been submitted) - callers should treat
+    that as "no baseline to compare against" rather than an error, since
+    SUBMIT_BASELINE_RUN is entirely optional.
+    """
+    path = Path(filepath)
+    if not path.exists():
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
+def plot_dalys_by_completion_order(
+    records: list[dict],
+    baseline_summary_path: str = BASELINE_SUMMARY_FILE,
+):
+    """
+    One point per COMPLETED TRIAL (i.e. one point per raw row in
+    history_log.jsonl - NOT grouped by config the way _config_frame()'s
+    other checks are, since intensified/new status is itself something
+    this plot needs to show per trial, not collapse away).
+
+    x = completion order (file order - same completion-order proxy
+        load_history_log()'s own docstring already documents).
+    y = that trial's own "dalys" field - already HIV-specific, already
+        summed over CONFIG_YEAR_START_DATE-YEAR_END_DATE via
+        postprocess_output.py's own TARGET_PERIOD, so no separate
+        re-computation is needed here; this is the exact same value
+        every other check in this file already reads directly.
+
+    COLOUR: red if this is the FIRST trial (in completion order) to
+    evaluate this exact config; blue if an EARLIER trial already
+    evaluated it (i.e. this one is SMAC's intensifier confirming an
+    already-proposed config with an additional seed). Determined via
+    config_key() - the same hashable config identity used everywhere
+    else in this pipeline, imported directly from convergence_monitoring.py
+    rather than reimplemented.
+
+    MARKER: circle if FEASIBLE (every *_violation column <= 0 for this
+    trial), x if INFEASIBLE (any violation > 0) - same feasibility
+    convention _config_frame()/get_best_feasible_dalys() already use.
+
+    DASHED LINE: the baseline run's own median DALYs (same metric, same
+    period), read from baseline_summary_path via load_baseline_summary()
+    - silently omitted (not an error) if no baseline summary is found.
+
+    Returns the matplotlib Figure - caller decides whether to show it
+    inline (e.g. in a notebook) or fig.savefig(...) it, rather than this
+    function making that choice itself. Requires matplotlib - imported
+    HERE, not at module level, so the other four checks in this file
+    (which don't need it at all) keep working even if matplotlib isn't
+    installed.
+    """
+    import matplotlib.pyplot as plt
+
+    violation_cols = [c for c in records[0] if "_violation" in c] if records else []
+
+    # One (xs, ys) list per (new/intensify, feasible/infeasible) bucket -
+    # matplotlib's scatter() takes one marker/colour per call, not per
+    # point, so points are grouped into (at most) four calls rather than
+    # plotted one at a time.
+    style = {
+        ("new", "feasible"):         dict(color="red",  marker="o", label="New config (feasible)"),
+        ("new", "infeasible"):       dict(color="red",  marker="x", label="New config (infeasible)"),
+        ("intensify", "feasible"):   dict(color="blue", marker="o", label="Intensified (feasible)"),
+        ("intensify", "infeasible"): dict(color="blue", marker="x", label="Intensified (infeasible)"),
+    }
+    points: dict[tuple, tuple[list, list]] = {bucket: ([], []) for bucket in style}
+
+    seen_configs = set()
+    for i, rec in enumerate(records):
+        key = config_key(rec["config_object"])
+        is_new = key not in seen_configs
+        seen_configs.add(key)
+
+        feasible = all(rec[c] <= 0 for c in violation_cols)
+
+        bucket = ("new" if is_new else "intensify", "feasible" if feasible else "infeasible")
+        xs, ys = points[bucket]
+        xs.append(i)
+        ys.append(rec["dalys"])
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for bucket, (xs, ys) in points.items():
+        if xs:
+            ax.scatter(xs, ys, **style[bucket])
+
+    baseline = load_baseline_summary(baseline_summary_path)
+    if baseline is not None:
+        ax.axhline(
+            baseline["median_dalys"], linestyle="--", color="black",
+            label=f"Baseline median DALYs ({baseline['n_runs']} runs)",
+        )
+
+    ax.set_xlabel("Run (completion order)")
+    ax.set_ylabel("HIV DALYs")
+    ax.set_title("HIV DALYs by completion order")
+    ax.legend()
+    return fig
 
 
 # --------------------------------------------------------------------------
@@ -261,8 +376,8 @@ def run_all_checks(
 
         half = max(1, n_configs // 2)
 
-        early_dalys = dalys_trend["mean_dalys"].iloc[:half].median()
-        late_dalys = dalys_trend["mean_dalys"].iloc[half:].median()
+        early_dalys = dalys_trend["median_dalys"].iloc[:half].median()
+        late_dalys = dalys_trend["median_dalys"].iloc[half:].median()
         print(f"[evaluate] median DALYs, first half of configs proposed:  {early_dalys:.4f}")
         print(f"[evaluate] median DALYs, second half of configs proposed: {late_dalys:.4f}")
         print("[evaluate]   -> trending down (good sign)" if late_dalys < early_dalys
@@ -276,9 +391,9 @@ def run_all_checks(
               else "[evaluate]   -> trending DOWN - worth investigating")
 
         print(f"[evaluate] intensified (n_seeds>={intensified_threshold}) feasible configs: "
-              f"{intens['n_intensified_configs']}, mean DALYs = {intens['intensified_mean_dalys']}")
+              f"{intens['n_intensified_configs']}, median DALYs = {intens['intensified_median_dalys']}")
         print(f"[evaluate] single-shot (n_seeds==1) feasible configs: "
-              f"{intens['n_single_shot_configs']}, mean DALYs = {intens['single_shot_mean_dalys']}")
+              f"{intens['n_single_shot_configs']}, median DALYs = {intens['single_shot_median_dalys']}")
         if intens["intensified_better"] is True:
             print("[evaluate]   -> intensified configs ARE better on average (good sign)")
         elif intens["intensified_better"] is False:

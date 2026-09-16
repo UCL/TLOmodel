@@ -997,28 +997,35 @@ def download_run_outputs(job: AzureJobHandle) -> Path:
 def aggregate_postprocessed_results(draw_dir: Path) -> dict:
     """
     Shared by fetch_azure_result (fresh download) and crash-recovery
-    (already-downloaded outputs from a prior process). Averages both
-    by-year cost dicts (hiv_hrh_cost_by_year, hiv_consumable_cost_by_year)
-    across whatever runs exist per draw (currently always exactly 1,
-    given runs_per_draw=1 - see smac_scenario.py - but implemented
-    generally in case that ever changes), year by year rather than as
-    flat totals.
+    (already-downloaded outputs from a prior process). Takes the MEDIAN
+    of both by-year cost dicts (hiv_hrh_cost_by_year,
+    hiv_consumable_cost_by_year) and of dalys, across whatever runs
+    exist per draw (currently always exactly 1, given runs_per_draw=1 -
+    see smac_scenario.py - but implemented generally in case that ever
+    changes), year by year rather than as flat totals. MEDIAN, not
+    mean, for consistency with the rest of the pipeline's own DALYs/cost
+    aggregation (see the final config-selection grouping and
+    convergence_monitoring.get_best_feasible_dalys) - this is
+    specifically the "single runs" side of that convention: this
+    function's OWN output is what gets compared against the baseline's
+    upper-95%-CI budget in bucket_cumulative_violation(), which is a
+    genuinely different (and unchanged) computation.
     """
     per_run_results = [postprocess_run(run_dir) for run_dir in sorted(draw_dir.iterdir())]
 
-    def average_yearly(key: str) -> dict:
+    def median_yearly(key: str) -> dict:
         all_years = set()
         for r in per_run_results:
             all_years.update(r[key].keys())
         return {
-            year: float(np.mean([r[key].get(year, 0.0) for r in per_run_results]))
+            year: float(np.median([r[key].get(year, 0.0) for r in per_run_results]))
             for year in all_years
         }
 
     return {
-        "dalys": float(np.mean([r["dalys"] for r in per_run_results])),
-        "hiv_hrh_cost_by_year": average_yearly("hiv_hrh_cost_by_year"),
-        "hiv_consumable_cost_by_year": average_yearly("hiv_consumable_cost_by_year"),
+        "dalys": float(np.median([r["dalys"] for r in per_run_results])),
+        "hiv_hrh_cost_by_year": median_yearly("hiv_hrh_cost_by_year"),
+        "hiv_consumable_cost_by_year": median_yearly("hiv_consumable_cost_by_year"),
     }
 
 
@@ -1467,11 +1474,15 @@ while pending or (n_completed < scenario.n_trials and not converged):
 
 
 # --------------------------------------------------------------------------
-# 6. Final answer: group history by config and average across whatever
-#    seeds SMAC ended up requesting for it, THEN filter+select - never
-#    trust smac.incumbent directly, and never trust a single noisy
+# 6. Final answer: group history by config and take the MEDIAN across
+#    whatever seeds SMAC ended up requesting for it, THEN filter+select -
+#    never trust smac.incumbent directly, and never trust a single noisy
 #    realisation's DALYs either, now that history holds individual
-#    (config, seed) results rather than pre-averaged bundles.
+#    (config, seed) results rather than pre-averaged bundles. MEDIAN, not
+#    mean, for consistency across this pipeline's own DALYs/cost
+#    aggregation - see aggregate_postprocessed_results() and
+#    convergence_monitoring.get_best_feasible_dalys() for the same
+#    convention applied elsewhere.
 # --------------------------------------------------------------------------
 
 grouped: dict[tuple, list[dict]] = {}
@@ -1483,10 +1494,10 @@ for entries in grouped.values():
     agg = {
         "config_object": entries[0]["config_object"],
         "n_seeds_evaluated": len(entries),
-        "dalys": float(np.mean([e["dalys"] for e in entries])),
+        "dalys": float(np.median([e["dalys"] for e in entries])),
     }
     for name in CONSTRAINT_NAMES:
-        agg[name] = float(np.mean([e[name] for e in entries]))
+        agg[name] = float(np.median([e[name] for e in entries]))
     aggregated.append(agg)
 
 feasible = [a for a in aggregated if all(a[name] == 0 for name in CONSTRAINT_NAMES)]

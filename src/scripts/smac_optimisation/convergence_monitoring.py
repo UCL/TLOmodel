@@ -92,15 +92,25 @@ def config_key(config: Configuration) -> tuple:
 
 def get_best_feasible_dalys(history: list[dict]) -> float | None:
     """
-    Groups history by config, averages across whatever seeds each config
-    has accumulated so far, and returns the lowest mean DALYs among
-    configs that are feasible ON AVERAGE. Returns None if nothing
-    feasible has been observed yet - check_convergence() below treats
-    that as "not converged" rather than triggering on an undefined
-    comparison.
+    Groups history by config, takes the MEDIAN across whatever seeds
+    each config has accumulated so far, and returns the lowest median
+    DALYs among configs that are feasible ON THAT MEDIAN. Returns None
+    if nothing feasible has been observed yet - check_convergence()
+    below treats that as "not converged" rather than triggering on an
+    undefined comparison. MEDIAN, not mean, for consistency across this
+    pipeline's own DALYs/cost aggregation - see
+    optimisation_pipeline.py's own final-selection grouping and
+    aggregate_postprocessed_results() for the same convention applied
+    elsewhere.
 
     Constraint/violation column names are discovered DYNAMICALLY (any
-    key ending in "_violation"), rather than hardcoded - this file has
+    key CONTAINING "_violation" - substring, not suffix, since the real
+    names are period-bucketed, e.g. "hiv_hrh_violation_p1", which never
+    ends in the literal text "_violation" - an earlier version of this
+    line used .endswith("_violation"), which never actually matched any
+    of this project's real constraint names, silently treating every
+    config as feasible for convergence-checking purposes regardless of
+    its true status), rather than hardcoded - this file has
     no import-time dependency on optimisation_pipeline.py's specific
     constraint configuration (currently the period-bucketed
     hiv_hrh_violation_p1..N / hiv_consumable_violation_p1..N plus
@@ -111,13 +121,13 @@ def get_best_feasible_dalys(history: list[dict]) -> float | None:
     for h in history:
         grouped.setdefault(config_key(h["config_object"]), []).append(h)
 
-    violation_keys = [k for k in history[0] if k.endswith("_violation")] if history else []
+    violation_keys = [k for k in history[0] if "_violation" in k] if history else []
 
     best = None
     for entries in grouped.values():
-        mean_violations = {k: np.mean([e[k] for e in entries]) for k in violation_keys}
-        if all(v == 0 for v in mean_violations.values()):
-            dalys = float(np.mean([e["dalys"] for e in entries]))
+        median_violations = {k: np.median([e[k] for e in entries]) for k in violation_keys}
+        if all(v == 0 for v in median_violations.values()):
+            dalys = float(np.median([e["dalys"] for e in entries]))
             if best is None or dalys < best:
                 best = dalys
     return best
