@@ -97,17 +97,7 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
 # postprocess_output.compute_and_save_baseline_budgets() and
 # optimisation_pipeline.submit_baseline_job().
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
-                             # SUBMIT_SUSPEND_PART - NOT derived from
-                             # checking what's already in COST_LIMITS_FILE.
-                             # Defaults to False (unlike SUBMIT_SUSPEND_PART)
-                             # since this is a genuinely costly step (10
-                             # full, non-resumed runs) you don't want
-                             # repeated every time you just want to re-run
-                             # the optimisation loop with an already-good
-                             # budget file already in place - set True only
-                             # when you actually want the budgets
-                             # (re)derived from a fresh baseline run.
+SUBMIT_BASELINE_RUN = True
 
 # --------------------------------------------------------------------------
 # Budgets file: one row per year, columns year,hiv_dalys,hiv_hrh_budget,
