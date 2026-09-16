@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from convergence_monitoring import config_key, get_best_feasible_dalys
+from convergence_monitoring import config_key, get_best_feasible_dalys, get_best_dalys_regardless_of_feasibility
 from optimisation_parameters import BASELINE_SUMMARY_FILE
 
 
@@ -122,25 +122,39 @@ def _config_frame(records: list[dict]) -> pd.DataFrame:
 # Check 1: best-so-far (plumbing / feasibility-gating check)
 # --------------------------------------------------------------------------
 
-def check_best_so_far(records: list[dict]) -> pd.Series:
+def check_best_so_far(records: list[dict]) -> pd.DataFrame:
     """
-    Best-feasible-DALYs-so-far, recomputed incrementally as if each
-    record were told to SMAC one at a time, in file order.
+    Best-DALYs-so-far, recomputed incrementally as if each record were
+    told to SMAC one at a time, in file order - TWO parallel running
+    minimums, "best_feasible_dalys_so_far" (feasibility-gated, via
+    get_best_feasible_dalys()) and "best_dalys_so_far_all" (regardless
+    of feasibility, via get_best_dalys_regardless_of_feasibility()). An
+    earlier version of this function only tracked the feasible one,
+    which stays None for as long as nothing has been found feasible
+    yet - harmless once something is, but genuinely uninformative
+    before that (e.g. early in a high-dimensional or
+    tightly-constrained run, where that's expected, not a sign of a
+    problem). The "all" column stays useful throughout, even then.
 
-    By construction this can only stay flat or improve - it's a running
-    minimum, so it will look "improving" even under pure random search.
-    This confirms the plumbing works end-to-end (submission ->
+    By construction each column can only stay flat or improve - it's a
+    running minimum, so it will look "improving" even under pure random
+    search. This confirms the plumbing works end-to-end (submission ->
     postprocessing -> ConstrainedEI -> selection) and that feasibility
     gating is never violated - it does NOT by itself confirm the search
     is smarter than chance. See check_dalys_trend()/
     check_feasibility_trend() for that.
     """
-    running_best = []
+    running_best_feasible = []
+    running_best_all = []
     partial_history: list[dict] = []
     for rec in records:
         partial_history.append(rec)
-        running_best.append(get_best_feasible_dalys(partial_history))
-    return pd.Series(running_best, name="best_feasible_dalys_so_far")
+        running_best_feasible.append(get_best_feasible_dalys(partial_history))
+        running_best_all.append(get_best_dalys_regardless_of_feasibility(partial_history))
+    return pd.DataFrame({
+        "best_feasible_dalys_so_far": running_best_feasible,
+        "best_dalys_so_far_all": running_best_all,
+    })
 
 
 # --------------------------------------------------------------------------
@@ -186,31 +200,55 @@ def check_intensification_effect(records: list[dict], intensified_threshold: int
     """
     Are heavily-intensified configs (n_seeds >= intensified_threshold)
     disproportionately GOOD ones, compared to single-shot configs
-    (n_seeds == 1)? If the intensifier is discriminating correctly -
-    spending extra seed-confirmations on genuinely promising configs -
-    intensified configs' median DALYs (among feasible configs) should
-    skew better than single-shot ones. If the two groups look
-    statistically indistinguishable, the intensifier isn't
-    discriminating - it's just resampling arbitrarily.
+    (n_seeds == 1)?
+
+    Computes this TWICE - once restricted to FEASIBLE configs only
+    (the "*_feasible" keys - the answer that actually matters once
+    something is feasible: is the intensifier spending extra
+    seed-confirmations on genuinely promising, USABLE configs), and
+    once across ALL configs regardless of feasibility (the "*_all"
+    keys). An earlier version of this function computed ONLY the
+    feasible-restricted version - harmless once the search has found
+    some feasible configs, but produces every count as 0 and every
+    DALYs figure as None early in a run (or in a high-dimensional,
+    tightly-constrained search) where nothing has been found feasible
+    yet, even though the intensified/single-shot split itself is
+    already meaningful across ALL proposed configs. The "*_all"
+    numbers stay useful throughout; the "*_feasible" ones are the ones
+    to trust once they're non-trivial.
     """
     cfg_df = _config_frame(records)
-    feasible_df = cfg_df[cfg_df["feasible"]]
 
-    intensified = feasible_df[feasible_df["n_seeds"] >= intensified_threshold]
-    single_shot = feasible_df[feasible_df["n_seeds"] == 1]
+    def _stats(df: pd.DataFrame) -> dict:
+        intensified = df[df["n_seeds"] >= intensified_threshold]
+        single_shot = df[df["n_seeds"] == 1]
+        intensified_median = float(intensified["median_dalys"].median()) if len(intensified) else None
+        single_shot_median = float(single_shot["median_dalys"].median()) if len(single_shot) else None
+        return {
+            "n_intensified": len(intensified),
+            "n_single_shot": len(single_shot),
+            "intensified_median_dalys": intensified_median,
+            "single_shot_median_dalys": single_shot_median,
+            "intensified_better": (
+                intensified_median < single_shot_median
+                if intensified_median is not None and single_shot_median is not None else None
+            ),
+        }
 
-    intensified_median = float(intensified["median_dalys"].median()) if len(intensified) else None
-    single_shot_median = float(single_shot["median_dalys"].median()) if len(single_shot) else None
+    feasible_stats = _stats(cfg_df[cfg_df["feasible"]])
+    all_stats = _stats(cfg_df)
 
     return {
-        "n_intensified_configs": len(intensified),
-        "n_single_shot_configs": len(single_shot),
-        "intensified_median_dalys": intensified_median,
-        "single_shot_median_dalys": single_shot_median,
-        "intensified_better": (
-            intensified_median < single_shot_median
-            if intensified_median is not None and single_shot_median is not None else None
-        ),
+        "n_intensified_configs_feasible": feasible_stats["n_intensified"],
+        "n_single_shot_configs_feasible": feasible_stats["n_single_shot"],
+        "intensified_median_dalys_feasible": feasible_stats["intensified_median_dalys"],
+        "single_shot_median_dalys_feasible": feasible_stats["single_shot_median_dalys"],
+        "intensified_better_feasible": feasible_stats["intensified_better"],
+        "n_intensified_configs_all": all_stats["n_intensified"],
+        "n_single_shot_configs_all": all_stats["n_single_shot"],
+        "intensified_median_dalys_all": all_stats["intensified_median_dalys"],
+        "single_shot_median_dalys_all": all_stats["single_shot_median_dalys"],
+        "intensified_better_all": all_stats["intensified_better"],
     }
 
 
@@ -351,15 +389,25 @@ def run_all_checks(
     n_trials = len(records)
     n_configs = len(cfg_df)
 
-    best_so_far = check_best_so_far(records)
+    best_so_far = check_best_so_far(records)  # now a DataFrame with two
+        # columns (best_feasible_dalys_so_far, best_dalys_so_far_all) -
+        # an earlier version returned a single Series, feasible-only.
     dalys_trend = check_dalys_trend(records, window=window)
     feas_trend = check_feasibility_trend(records, window=window)
     intens = check_intensification_effect(records, intensified_threshold=intensified_threshold)
+        # now returns both "*_feasible" and "*_all" keys - an earlier
+        # version only computed the feasible-restricted stats, which
+        # were silently all-zero/None for as long as nothing had been
+        # found feasible yet.
+
+    final_feasible = best_so_far["best_feasible_dalys_so_far"].iloc[-1] if len(best_so_far) else None
+    final_all = best_so_far["best_dalys_so_far_all"].iloc[-1] if len(best_so_far) else None
 
     results = {
         "n_trials": n_trials,
         "n_distinct_configs": n_configs,
-        "best_feasible_dalys_final": float(best_so_far.iloc[-1]) if best_so_far.iloc[-1] is not None else None,
+        "best_feasible_dalys_final": float(final_feasible) if final_feasible is not None else None,
+        "best_dalys_final_all": float(final_all) if final_all is not None else None,
         "best_so_far": best_so_far,
         "dalys_trend": dalys_trend,
         "feasibility_trend": feas_trend,
@@ -369,6 +417,7 @@ def run_all_checks(
     if verbose:
         print(f"[evaluate] {n_trials} trial(s) logged, {n_configs} distinct config(s)")
         print(f"[evaluate] best feasible DALYs so far: {results['best_feasible_dalys_final']}")
+        print(f"[evaluate] best DALYs so far (regardless of feasibility): {results['best_dalys_final_all']}")
 
         if n_configs < 2:
             print("[evaluate] fewer than 2 distinct configs so far - too early for trend checks.")
@@ -390,16 +439,27 @@ def run_all_checks(
         print("[evaluate]   -> trending up or stable (good sign)" if late_feas >= early_feas
               else "[evaluate]   -> trending DOWN - worth investigating")
 
-        print(f"[evaluate] intensified (n_seeds>={intensified_threshold}) feasible configs: "
-              f"{intens['n_intensified_configs']}, median DALYs = {intens['intensified_median_dalys']}")
-        print(f"[evaluate] single-shot (n_seeds==1) feasible configs: "
-              f"{intens['n_single_shot_configs']}, median DALYs = {intens['single_shot_median_dalys']}")
-        if intens["intensified_better"] is True:
-            print("[evaluate]   -> intensified configs ARE better on average (good sign)")
-        elif intens["intensified_better"] is False:
-            print("[evaluate]   -> intensified configs are NOT better on average - worth investigating")
+        print(f"[evaluate] intensified (n_seeds>={intensified_threshold}) configs, ALL: "
+              f"{intens['n_intensified_configs_all']}, median DALYs = {intens['intensified_median_dalys_all']}")
+        print(f"[evaluate] single-shot (n_seeds==1) configs, ALL: "
+              f"{intens['n_single_shot_configs_all']}, median DALYs = {intens['single_shot_median_dalys_all']}")
+        if intens["intensified_better_all"] is True:
+            print("[evaluate]   -> intensified configs ARE better on average, among ALL configs (good sign)")
+        elif intens["intensified_better_all"] is False:
+            print("[evaluate]   -> intensified configs are NOT better on average, among ALL configs - worth investigating")
         else:
-            print("[evaluate]   -> not enough data in one or both groups yet to compare")
+            print("[evaluate]   -> not enough data in one or both groups yet to compare (ALL configs)")
+
+        print(f"[evaluate] intensified (n_seeds>={intensified_threshold}) FEASIBLE configs: "
+              f"{intens['n_intensified_configs_feasible']}, median DALYs = {intens['intensified_median_dalys_feasible']}")
+        print(f"[evaluate] single-shot (n_seeds==1) FEASIBLE configs: "
+              f"{intens['n_single_shot_configs_feasible']}, median DALYs = {intens['single_shot_median_dalys_feasible']}")
+        if intens["intensified_better_feasible"] is True:
+            print("[evaluate]   -> intensified configs ARE better on average, among FEASIBLE configs (good sign)")
+        elif intens["intensified_better_feasible"] is False:
+            print("[evaluate]   -> intensified configs are NOT better on average, among FEASIBLE configs - worth investigating")
+        else:
+            print("[evaluate]   -> not enough FEASIBLE data in one or both groups yet to compare")
 
     return results
 

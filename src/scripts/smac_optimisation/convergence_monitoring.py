@@ -133,6 +133,34 @@ def get_best_feasible_dalys(history: list[dict]) -> float | None:
     return best
 
 
+def get_best_dalys_regardless_of_feasibility(history: list[dict]) -> float | None:
+    """
+    Same grouping/median logic as get_best_feasible_dalys() above,
+    WITHOUT the feasibility filter - the lowest median DALYs among ALL
+    configs seen so far, feasible or not. Not used by the live pipeline
+    itself (which only ever cares about feasible results) - exists for
+    evaluate_pipeline_run.py's own diagnostics, specifically so
+    check_best_so_far() can show a meaningful running best EVEN before
+    the search has found anything feasible (e.g. early in a
+    high-dimensional or tightly-constrained run, where every config
+    genuinely being infeasible for the first several trials is expected
+    behaviour, not a sign anything is broken - see get_best_feasible_dalys()'s
+    own None return in that situation, which check_convergence() treats
+    as "not converged" but which otherwise carries no diagnostic signal
+    on its own).
+    """
+    grouped: dict[tuple, list[dict]] = {}
+    for h in history:
+        grouped.setdefault(config_key(h["config_object"]), []).append(h)
+
+    best = None
+    for entries in grouped.values():
+        dalys = float(np.median([e["dalys"] for e in entries]))
+        if best is None or dalys < best:
+            best = dalys
+    return best
+
+
 def check_convergence(best_dalys_over_time: list[float]) -> bool:
     """
     Returns True if convergence has been detected: less than
