@@ -59,7 +59,7 @@ class TloCheckpointScenario(BaseScenario):
                        # checkpoint seed by generate_checkpoint_job()
                        # before every real submission
         self.start_date = Date(YEAR_START_DATE, 1, 1)  # MUST match smac_scenario.py - see module docstring
-        self.end_date = Date(YEAR_END_DATE, 1, 1)    # not functionally load-bearing (the remote
+        self.end_date = Date(YEAR_END_DATE+1, 1, 1)    # not functionally load-bearing (the remote
                                               # command's --suspend-date interrupts the run
                                               # well before this regardless), kept aligned
                                               # with the real scenario's own horizon for clarity

@@ -76,7 +76,7 @@ class TloOptimisationScenario(BaseScenario):
         self.seed = 0  # placeholder - overwritten with SMAC's info.seed
                        # by submit_azure_job() before every real submission
         self.start_date = Date(YEAR_START_DATE, 1, 1)
-        self.end_date = Date(YEAR_END_DATE, 1, 1)
+        self.end_date = Date(YEAR_END_DATE+1, 1, 1)
         self.pop_size = POP_SIZE  # HYPERPARAMETER: simulation fidelity, not a BO
                                    # hyperparameter, but trades off noise level
                                    # against per-run cost - indirectly relevant
