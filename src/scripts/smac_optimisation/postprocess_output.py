@@ -30,11 +30,12 @@ import re
 from collections import Counter
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import load_pickled_dataframes
 from scripts.costing.cost_estimation import load_unit_cost_assumptions
-from optimisation_parameters import YEAR_END_DATE, CONFIG_YEAR_START_DATE
+from optimisation_parameters import YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE
 
 
 # TARGET_PERIOD: adjust to match the evaluation window your simulation
@@ -158,6 +159,96 @@ def postprocess_run(run_dir: Path) -> dict:
         "hiv_hrh_cost_by_year": hiv_hrh_cost_by_year,
         "hiv_consumable_cost_by_year": hiv_consumable_cost_by_year,
     }
+
+
+def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, last_year: int) -> None:
+    """
+    Computes the upper 95% CI (across all runs found in baseline_draw_dir)
+    of HIV-HRH cost and HIV-consumable cost, YEAR BY YEAR, over
+    [first_year, last_year] inclusive, and OVERWRITES COST_LIMITS_FILE
+    with the result - this is what optimisation_pipeline.py's real
+    trials then get checked against as their budget constraint. Call
+    this ONCE, before initialise.py is ever imported (that file reads
+    COST_LIMITS_FILE at import time) - see
+    optimisation_pipeline.submit_baseline_job() for the submission this
+    is meant to be paired with.
+
+    baseline_draw_dir is expected to be draw 0 of a MULTI-RUN (10 runs,
+    differently seeded - see smac_scenario_baseline.py's own
+    runs_per_draw=10) baseline submission of a FULL, non-suspend/resume
+    scenario - i.e. exactly what download_run_outputs() returns for
+    such a job. Each run subdirectory gets postprocessed via the SAME
+    postprocess_run() every real trial's own output goes through, so
+    these cost figures are computed identically to how a real trial's
+    own costs are computed - just aggregated across 10 independent runs
+    instead of 1.
+
+    UPPER 95% CI: mean + 1.96 * (sample std / sqrt(n)) - the standard
+    normal-approximation confidence interval for a mean, the same
+    convention TLOmodel's own analysis scripts use (e.g.
+    tlo.analysis.utils.summarize()) rather than an empirical percentile
+    (unreliable with only ~10 samples). Deliberately the UPPER bound,
+    not the mean itself: using the upper 95% CI as the BUDGET means a
+    config only gets penalised for exceeding what the status-quo
+    scenario could plausibly cost even on an unusually expensive run,
+    not merely its average cost - a conservative (permissive) choice,
+    consistent with "budget" meaning "the most this category should
+    reasonably be allowed to cost", not "the average cost".
+
+    hiv_dalys is written as 0.0 for every year - loaded by initialise.py
+    but not currently used as a constraint (DALYs remains the
+    optimisation OBJECTIVE, not a budget) - see initialise.py's own
+    comment on this.
+
+    Years in [first_year, last_year] outside what the baseline run
+    actually simulated (TARGET_PERIOD, above) get a budget of 0.0 too -
+    confirmed SAFE, not a division-by-zero risk: initialise.py's own
+    bucket_cumulative_violation() only ever looks up a year's budget
+    for years that ALSO appear as keys in a real trial's own
+    cost_by_year dict, which is itself restricted to TARGET_PERIOD - so
+    a year outside that range is never actually divided into, on either
+    side (matches initialise.py's own documented "extra period-years
+    simply never accumulate any data, which is harmless" behaviour for
+    PERIOD_BOUNDARIES extending past TARGET_PERIOD).
+    """
+    run_dirs = sorted(baseline_draw_dir.iterdir(), key=lambda p: int(p.name))
+    if not run_dirs:
+        raise RuntimeError(f"{baseline_draw_dir} has no run subdirectories - nothing to compute CIs from.")
+
+    per_run_results = [postprocess_run(run_dir) for run_dir in run_dirs]
+    n_runs = len(per_run_results)
+
+    def upper_95_ci_by_year(key: str) -> dict[int, float]:
+        all_years = set()
+        for r in per_run_results:
+            all_years.update(r[key].keys())
+
+        out = {}
+        for year in all_years:
+            values = np.array([r[key].get(year, 0.0) for r in per_run_results], dtype=float)
+            mean = values.mean()
+            # ddof=1: SAMPLE std (n-1 denominator) - correct when
+            # estimating a CI for the population mean from a sample,
+            # rather than merely describing the sample itself.
+            std = values.std(ddof=1) if n_runs > 1 else 0.0
+            out[int(year)] = float(mean + 1.96 * std / np.sqrt(n_runs))
+        return out
+
+    hrh_upper = upper_95_ci_by_year("hiv_hrh_cost_by_year")
+    cons_upper = upper_95_ci_by_year("hiv_consumable_cost_by_year")
+
+    rows = [
+        {
+            "year": year,
+            "hiv_dalys": 0.0,  # loaded but unused as a constraint - see docstring
+            "hiv_hrh_budget": hrh_upper.get(year, 0.0),
+            "hiv_consumable_budget": cons_upper.get(year, 0.0),
+        }
+        for year in range(first_year, last_year + 1)
+    ]
+
+    pd.DataFrame(rows).to_csv(COST_LIMITS_FILE, index=False)
+    print(f"[baseline] {COST_LIMITS_FILE} updated: {n_runs} run(s), years {first_year}-{last_year}.")
 
 
 def _get_hiv_dalys(log: dict) -> float:

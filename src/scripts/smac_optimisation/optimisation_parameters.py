@@ -88,3 +88,36 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
     # and optimisation_pipeline.find_checkpoint_commit_for_seed().
 ]
 
+# --------------------------------------------------------------------------
+# Baseline run: a standard (non-suspend/resume), 10-differently-seeded-run
+# submission of smac_scenario_baseline.py, used ONLY to derive the budget
+# constraint values themselves (the upper 95% CI, across those 10 runs,
+# of HIV-HRH and HIV-consumable cost) - written into COST_LIMITS_FILE
+# before the real optimisation loop starts. See
+# postprocess_output.compute_and_save_baseline_budgets() and
+# optimisation_pipeline.submit_baseline_job().
+# --------------------------------------------------------------------------
+SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
+                             # SUBMIT_SUSPEND_PART - NOT derived from
+                             # checking what's already in COST_LIMITS_FILE.
+                             # Defaults to False (unlike SUBMIT_SUSPEND_PART)
+                             # since this is a genuinely costly step (10
+                             # full, non-resumed runs) you don't want
+                             # repeated every time you just want to re-run
+                             # the optimisation loop with an already-good
+                             # budget file already in place - set True only
+                             # when you actually want the budgets
+                             # (re)derived from a fresh baseline run.
+
+# --------------------------------------------------------------------------
+# Budgets file: one row per year, columns year,hiv_dalys,hiv_hrh_budget,
+# hiv_consumable_budget - read by initialise.py, WRITTEN by
+# postprocess_output.compute_and_save_baseline_budgets() when
+# SUBMIT_BASELINE_RUN is True. Lives here (not in initialise.py, where it
+# used to be defined) so postprocess_output.py can import it too, without
+# creating a circular import (initialise.py already imports FROM
+# postprocess_output.py).
+# --------------------------------------------------------------------------
+COST_LIMITS_FILE = "cost_limits_by_year.csv"
+
+

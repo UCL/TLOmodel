@@ -71,8 +71,15 @@ from smac_scenario_suspend import TloCheckpointScenario  # used ONLY for checkpo
     # generation, never real trials - see generate_checkpoint_job(). Genuinely
     # different class name from smac_scenario.py's own TloOptimisationScenario now,
     # so no import alias is needed to avoid a collision.
+from smac_scenario_baseline import TloCheckpointScenario as TloBaselineScenario  # ALIASED:
+    # smac_scenario_baseline.py's class is ALSO literally named
+    # TloCheckpointScenario (same name as smac_scenario_suspend.py's own class) -
+    # used ONLY for the one-off baseline run (see submit_baseline_job()), never
+    # for checkpoints or real trials. runs_per_draw=10 is hardcoded in that
+    # file's own __init__ - this scenario always produces 10 differently-seeded
+    # full (non-suspend/resume) runs per submission.
 from constrained_ei import ConstrainedEI  # the module built earlier
-from postprocess_output import postprocess_run
+from postprocess_output import postprocess_run, compute_and_save_baseline_budgets
 from checkpoint_seeds import checkpoint_job_id, CHECKPOINT_SEEDS
 from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
@@ -82,6 +89,7 @@ from optimisation_parameters import (
     N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, PENALTY_COEFFICIENT_MULTIPLIER,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, CONFIG_YEAR_START_DATE,
+    SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
 )
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
@@ -119,6 +127,16 @@ CHECKPOINT_SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario_suspend.
     # generate_checkpoint_job()) - PATH ASSUMED to match SCENARIO_FILE's own
     # convention (same directory); confirm this is actually where the file
     # lives/will be committed.
+BASELINE_SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario_baseline.py"  # the
+    # scenario used ONLY for the one-off baseline run (see
+    # submit_baseline_job()) - NOT the same file as CHECKPOINT_SCENARIO_FILE,
+    # despite both files' classes being literally named TloCheckpointScenario
+    # (see the aliased import above) - this one hardcodes runs_per_draw=10
+    # and never gets suspended, and its own module docstring currently
+    # says "Committed once at .../smac_scenario_suspend.py" (a leftover
+    # copy-paste from when this file was cloned from that one) - worth
+    # fixing in smac_scenario_baseline.py itself, though harmless here
+    # since we never actually read that docstring.
 CONFIG_FILE = "tlo.conf"
 
 # --- Suspend/resume (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations) ---
@@ -680,6 +698,127 @@ def generate_all_checkpoints() -> None:
         generate_checkpoint_job(seed)
 
 
+def submit_baseline_job() -> AzureJobHandle:
+    """
+    Submits ONE standard (non-suspend/resume) Azure job running
+    smac_scenario_baseline.py's TloBaselineScenario, which hardcodes
+    runs_per_draw=10 - i.e. this single submission produces 10 FULL,
+    INDEPENDENTLY-SEEDED, complete simulation runs (draw_0-run_0
+    through draw_0-run_9), each a genuine, unmodified end-to-end run -
+    no --suspend-date, no --resume-simulation, nothing baked into
+    run_json beyond the scenario's own fixed, no-scale-up parameters.
+
+    Deliberately does NOT use CHECKPOINT_SEEDS or any seed-matching
+    logic at all - unlike a real trial or a checkpoint, this run's own
+    seeds don't need to match anything else in the pipeline. TLO's own
+    scenario-execution machinery assigns each of the 10 runs its own
+    seed internally (via low_bias_32(scenario_seed + sample_number),
+    sample_number = 0..9) - we never need to know or control those
+    individual values, only that they're genuinely different from each
+    other, which runs_per_draw=10 alone guarantees.
+
+    Closely mirrors generate_checkpoint_job()'s general submission
+    mechanics (build scenario, save_draws, upload, create_job,
+    add_tasks) - see that function and submit_azure_job() for the fully
+    commented version of each step; comments here focus only on what's
+    different for the baseline case.
+    """
+    commit_hexsha = _get_commit()
+    tlo_config = _get_config()
+
+    tlo_scenario = TloBaselineScenario()  # smac_scenario_baseline.py's class -
+        # aliased on import to avoid colliding with smac_scenario_suspend.py's
+        # own, differently-behaved TloCheckpointScenario. number_of_draws=1/
+        # runs_per_draw=10 already correctly set in its own __init__ - NOT
+        # overridden here, unlike generate_checkpoint_job()'s defensive
+        # re-assignment, since 10 runs is the entire point of this submission.
+    tlo_scenario.scenario_path = Path(BASELINE_SCENARIO_FILE)
+
+    # No parse_arguments() call at all - this is a full, ordinary run,
+    # not suspend/resume, so there's nothing to bake into run_json beyond
+    # what TloBaselineScenario's own draw_parameters() already provides.
+    run_json = tlo_scenario.save_draws(commit=commit_hexsha)
+
+    file_share_mount_point = "mnt"
+    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
+    job_id = tlo_scenario.get_log_config()["filename"] + "-baseline-" + timestamp
+    azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
+
+    batch_client = _get_batch_client()
+    create_file_share(tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"])
+    for idx in range(len(os.path.split(azure_directory))):
+        create_directory(
+            tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
+            "/".join(os.path.split(azure_directory)[: idx + 1]),
+        )
+    upload_local_file(
+        tlo_config["STORAGE"]["CONNECTION_STRING"], run_json,
+        tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + os.path.basename(run_json),
+    )
+
+    pool_node_count = tlo_scenario.number_of_draws * tlo_scenario.runs_per_draw  # 1 * 10 = 10
+    auto_user = batch_models.AutoUserSpecification(
+        elevation_level=batch_models.ElevationLevel.admin, scope=batch_models.AutoUserScope.task,
+    )
+    user_identity = batch_models.UserIdentity(auto_user=auto_user)
+    azure_file_url = "https://{}.file.core.windows.net/{}".format(
+        tlo_config["STORAGE"]["NAME"], tlo_config["STORAGE"]["FILESHARE"],
+    )
+    container_registry = batch_models.ContainerRegistry(
+        registry_server=tlo_config["REGISTRY"]["SERVER"],
+        user_name=tlo_config["REGISTRY"]["NAME"], password=tlo_config["REGISTRY"]["KEY"],
+    )
+    image_name = f"{tlo_config['REGISTRY']['SERVER']}/{tlo_config['REGISTRY']['IMAGE']}:{tlo_config['REGISTRY']['DEFAULT_TAG']}"
+    container_conf = batch_models.ContainerConfiguration(
+        type="dockerCompatible", container_image_names=[image_name], container_registries=[container_registry],
+    )
+    azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
+        account_name=tlo_config["STORAGE"]["NAME"], azure_file_url=azure_file_url,
+        account_key=tlo_config["STORAGE"]["KEY"], relative_mount_path=file_share_mount_point,
+        mount_options="-o rw",
+    )
+    mount_configuration = batch_models.MountConfiguration(
+        azure_file_share_configuration=azure_file_share_configuration,
+    )
+
+    remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
+    azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
+    working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
+    task_dir = "${{AZ_BATCH_TASK_DIR}}"
+
+    # Standard command - no sed patch needed (nothing suspend/resume-related
+    # baked into run_json for this submission), diagnostic env line kept
+    # for consistency with the other two submission functions.
+    command_template = Template("""
+    git fetch origin $commit_hexsha
+    git checkout $commit_hexsha
+    pip install -r requirements/base.txt
+    env | grep "^AZ_" | while read line; do echo "$$line"; done
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
+    tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
+    cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
+    gzip $working_dir/{draw_number}/{run_number}/*.{{txt,log}}
+    cp -r $working_dir/* $remote_azure_directory/.
+    """)
+    command = command_template.substitute(
+        commit_hexsha=commit_hexsha,
+        azure_run_json=azure_run_json,
+        working_dir=working_dir,
+        task_dir=task_dir,
+        remote_azure_directory=remote_azure_directory,
+    )
+    command = f"/bin/bash -c '{command}'"
+
+    create_job(
+        batch_client, tlo_config["BATCH"]["POOL_VM_SIZE"], pool_node_count, job_id,
+        container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
+    )
+    add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", tlo_scenario, command)
+
+    print(f"[baseline submitted] job_id={job_id} (10 runs)")
+    return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
+
+
 def azure_job_exists(job_id: str) -> bool:
     """
     True if a job with this id already exists on Azure Batch, regardless
@@ -935,6 +1074,46 @@ configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
 # independently-chosen periods per cost type.
 # --------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------
+# 2b. Checkpoint-generation AND baseline-run SUBMISSION, kicked off
+#     together here (both fire-and-forget submissions, running
+#     concurrently on Azure) - BEFORE initialise.py gets imported below,
+#     since that import reads COST_LIMITS_FILE at MODULE IMPORT TIME, and
+#     the baseline run's whole purpose is to (re)derive that file's
+#     contents before the real constraint setup ever happens. Checkpoint
+#     generation doesn't strictly need to move this early too - it has
+#     no COST_LIMITS_FILE dependency at all - but is moved here anyway so
+#     both submissions genuinely overlap on Azure ("alongside"), rather
+#     than needlessly serialising checkpoint generation after the
+#     baseline run's own wait below.
+#
+#     SUBMIT_SUSPEND_PART / SUBMIT_BASELINE_RUN are both plain user
+#     toggles (optimisation_parameters.py) - NOT derived from checking
+#     what's already on Azure or already in COST_LIMITS_FILE. Checkpoint
+#     generation is NOT waited on here (see "2b (continued)" below,
+#     right before "3. Build SMAC" - unchanged from before) - only the
+#     baseline run is, since ITS result is needed before initialise.py's
+#     import, a few lines down, can safely proceed.
+# --------------------------------------------------------------------------
+
+if SUBMIT_SUSPEND_PART:
+    generate_all_checkpoints()
+
+if SUBMIT_BASELINE_RUN:
+    baseline_job = submit_baseline_job()
+    print(f"[baseline] waiting for {baseline_job.job_id} to finish (10 runs)...")
+    while not azure_job_is_finished(baseline_job):
+        time.sleep(POLL_INTERVAL_SECONDS)
+    if not azure_task_succeeded(baseline_job):
+        raise RuntimeError(
+            f"Baseline job {baseline_job.job_id} finished but FAILED - cannot "
+            f"derive budget constraints from it. Investigate and resubmit "
+            f"(SUBMIT_BASELINE_RUN=True) before proceeding."
+        )
+    print(f"[baseline] {baseline_job.job_id} confirmed ready - computing budget CIs.")
+    baseline_draw_dir = download_run_outputs(baseline_job)
+    compute_and_save_baseline_budgets(baseline_draw_dir, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY)
+
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
     bucket_cumulative_violation, HIV_HRH_CONSTRAINT_NAMES,
@@ -1111,21 +1290,13 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
 
 
 # --------------------------------------------------------------------------
-# 2b. Pre-resume checkpoint generation, if requested THIS run.
-#     SUBMIT_SUSPEND_PART is a plain user toggle (optimisation_parameters.py)
-#     - not derived from checking what's already on Azure (see
-#     generate_all_checkpoints()'s docstring). Independent of
-#     USE_SUSPEND_RESUME: you can generate checkpoints without yet using
-#     them for real trials, or use already-generated checkpoints without
-#     regenerating them this run. If both are True in the SAME run, note
-#     this doesn't block/wait for checkpoint completion before the main
-#     loop starts below - make sure checkpoints have actually finished
-#     (e.g. check manually, or poll azure_job_is_finished yourself)
-#     before relying on early real trials successfully resuming from them.
+# 2b. Checkpoint-generation and baseline-run SUBMISSION now happen much
+#     earlier (see right before the initialise.py import above) - baseline
+#     results must be available to update COST_LIMITS_FILE BEFORE
+#     initialise.py reads it at import time. This section now only WAITS
+#     for checkpoints (a wait has no such ordering constraint, since
+#     ensure_checkpoints_ready() doesn't touch COST_LIMITS_FILE at all).
 # --------------------------------------------------------------------------
-
-if SUBMIT_SUSPEND_PART:
-    generate_all_checkpoints()
 
 # Called once, here, before ANYTHING submits a real trial - blocks
 # (polls) until every needed checkpoint has actually finished on Azure

@@ -27,7 +27,10 @@ from __future__ import annotations
 import pandas as pd
 
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
-from optimisation_parameters import START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY
+from optimisation_parameters import (
+    START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY,
+    COST_LIMITS_FILE,
+)
 
 # NOTE: POSTPROCESS_TARGET_PERIOD is used EXACTLY as imported above, from
 # postprocess_output.py's own TARGET_PERIOD - it must NOT be recomputed
@@ -106,7 +109,10 @@ if not _postprocess_years.issubset(_period_years):
 # ConstrainedEI construction in optimisation_pipeline.py), not a
 # constraint; flagging this explicitly in case a year-specific DALYs
 # constraint is wanted later, which would need separate wiring.
-COST_LIMITS_FILE = "cost_limits_by_year.csv"
+# COST_LIMITS_FILE itself now lives in optimisation_parameters.py (not
+# defined here) - see that file's own comment for why, and
+# postprocess_output.compute_and_save_baseline_budgets() for how this
+# file gets WRITTEN, if SUBMIT_BASELINE_RUN is True.
 _limits_df = pd.read_csv(COST_LIMITS_FILE)
 HIV_HRH_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_hrh_budget"]))
 HIV_CONSUMABLE_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_consumable_budget"]))
