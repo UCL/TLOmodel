@@ -5,7 +5,7 @@ YEAR_START_DATE = 2010 # Year in which overall (from suspend) tlo sim starts
 YEAR_END_DATE = 2013 # Year in which overall (including resume) tlo sim ends.
 # Note: this is the last *full* year considered (i.e. TLO sim completes on YEAR_END_DATE+1/01/01
 CONFIG_YEAR_START_DATE = 2011 # Year in which configuration changes are enforced
-POP_SIZE = 1000 # Population size simulated
+POP_SIZE = 5000 # Population size simulated
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
 START_SECOND_BOUNDARY = 2012
 START_THIRD_BOUNDARY = 2013
@@ -14,7 +14,7 @@ END_THIRD_BOUNDARY = YEAR_END_DATE
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TRIALS = 5                 # total trial budget - not the same as "number of
+N_TRIALS = 20                 # total trial budget - not the same as "number of
                              # distinct configs explored", given MAX_CONFIG_CALLS
 MAX_CONFIG_CALLS = 3         # caps how many seeds the intensifier will use to
                              # confirm any single config. SHARED with
