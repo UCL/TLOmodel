@@ -122,6 +122,137 @@ def plot_dalys_by_cause_label_stacked_by_draw(
     return fig, ax
 
 
+def plot_cost_by_subcategory_over_time_for_draw(
+    input_costs: pd.DataFrame,
+    draw: str,
+):
+    """Plot run-level annual costs by cost subcategory for one draw."""
+    required_columns = {'draw', 'run', 'year', 'cost_subcategory', 'cost'}
+    missing_columns = required_columns.difference(input_costs.columns)
+    if missing_columns:
+        raise ValueError(f"input_costs is missing required columns: {sorted(missing_columns)}")
+
+    plot_data = (
+        input_costs.loc[input_costs['draw'].eq(draw)]
+        .groupby(['run', 'year', 'cost_subcategory'], as_index=False)['cost']
+        .sum(min_count=1)
+        .dropna(subset=['cost'])
+    )
+    if plot_data.empty:
+        raise ValueError(f"No input-cost data found for draw '{draw}'.")
+
+    subcategories = sorted(plot_data['cost_subcategory'].unique())
+    colors = plt.get_cmap('tab20')(np.linspace(0, 1, len(subcategories)))
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+    for subcategory, color in zip(subcategories, colors):
+        this_subcategory = plot_data.loc[
+            plot_data['cost_subcategory'].eq(subcategory)
+        ]
+        ax.scatter(
+            this_subcategory['year'],
+            this_subcategory['cost'],
+            color=color,
+            alpha=0.3,
+            s=18,
+            label=subcategory,
+        )
+
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Cost (USD)')
+    ax.grid(alpha=0.25)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.legend(
+        title='Cost subcategory',
+        loc='center left',
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        title_fontsize=9,
+    )
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_cost_subcategories_over_time_for_draw_pair(
+    input_costs: pd.DataFrame,
+    draws: tuple[str, str],
+    cost_subcategories: list[str],
+):
+    """Compare run-level annual costs for two draws in subcategory panels."""
+    required_columns = {'draw', 'run', 'year', 'cost_subcategory', 'cost'}
+    missing_columns = required_columns.difference(input_costs.columns)
+    if missing_columns:
+        raise ValueError(f"input_costs is missing required columns: {sorted(missing_columns)}")
+    if len(draws) != 2 or len(set(draws)) != 2:
+        raise ValueError("draws must contain exactly two distinct draw names.")
+    if not cost_subcategories:
+        raise ValueError("cost_subcategories must contain at least one subcategory.")
+
+    missing_draws = set(draws).difference(input_costs['draw'].dropna().unique())
+    if missing_draws:
+        raise ValueError(f"Draws not found in input_costs: {sorted(missing_draws)}")
+
+    plot_data = (
+        input_costs.loc[
+            input_costs['draw'].isin(draws)
+            & input_costs['cost_subcategory'].isin(cost_subcategories)
+        ]
+        .groupby(['draw', 'run', 'year', 'cost_subcategory'], as_index=False)['cost']
+        .sum(min_count=1)
+        .dropna(subset=['cost'])
+    )
+    available_subcategories = set(plot_data['cost_subcategory'].unique())
+    missing_subcategories = set(cost_subcategories).difference(available_subcategories)
+    if missing_subcategories:
+        raise ValueError(
+            f"Cost subcategories not found for the selected draws: {sorted(missing_subcategories)}"
+        )
+
+    n_columns = 3
+    n_rows = int(np.ceil(len(cost_subcategories) / n_columns))
+    fig, axes_array = plt.subplots(
+        n_rows,
+        n_columns,
+        figsize=(15, max(4, 3.5 * n_rows)),
+        sharex=True,
+        sharey=False,
+        squeeze=False,
+    )
+    axes = axes_array.ravel()
+    draw_colors = dict(zip(draws, plt.get_cmap('tab10')(np.arange(2))))
+
+    for ax, subcategory in zip(axes, cost_subcategories):
+        panel_data = plot_data.loc[plot_data['cost_subcategory'].eq(subcategory)]
+        for draw in draws:
+            draw_data = panel_data.loc[panel_data['draw'].eq(draw)]
+            ax.scatter(
+                draw_data['year'],
+                draw_data['cost'],
+                color=draw_colors[draw],
+                alpha=0.3,
+                s=18,
+                label=draw,
+            )
+
+        ax.set_title(subcategory)
+        ax.set_ylabel('Cost (USD)')
+        ax.grid(alpha=0.25)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+    for panel_number, ax in enumerate(axes):
+        if panel_number >= len(cost_subcategories):
+            ax.set_visible(False)
+        elif panel_number >= (n_rows - 1) * n_columns:
+            ax.set_xlabel('Year')
+
+    axes[0].legend(title='Draw', fontsize=8, title_fontsize=9)
+    fig.tight_layout()
+    return fig, axes
+
+
 def apply(
     results_files: list[Path],
     output_folder: Path,
@@ -147,6 +278,7 @@ def apply(
     discounted_dalys = primary_results.get('discounted_dalys')
     dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
     annual_cost_by_cadre = primary_results.get('annual_cost_by_cadre')
+    input_costs = primary_results.get('input_costs')
     counts_of_hsi = primary_results['counts_of_hsi_by_period']
     annual_capacity_used_by_cadre_and_level = primary_results.get("annual_capacity_used_by_cadre_and_level")
 
@@ -165,6 +297,39 @@ def apply(
     # as some draws have been excluded at the previous step.
     param_names = primary_results['total_population_by_year'].columns.get_level_values('draw').unique()
     print(f"Loaded parameter names: {len(param_names)}")
+
+    if input_costs is not None:
+        print("Plotting costs by subcategory over time (one figure per treatment ID).")
+        for draw in input_costs['draw'].dropna().unique():
+            try:
+                fig, ax = plot_cost_by_subcategory_over_time_for_draw(input_costs, draw)
+            except ValueError as exc:
+                print(f"Skipping cost-subcategory plot for draw '{draw}': {exc}")
+                continue
+
+            name_of_plot = f"Cost by Subcategory Over Time for {draw}"
+            ax.set_title(name_of_plot)
+            outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+            fig.savefig(outfile, bbox_inches='tight')
+            plt.close(fig)
+
+    draws = input_costs['draw'].unique()
+    cost_subcategories = list(input_costs['cost_subcategory'].unique())
+    for draw in draws:
+        if draw == "Nothing":
+            continue
+        print(f"Comparing costs by subcategory over time for Nothing and {draw}")
+        draw_pair = ('Nothing', draw)
+        fig, axes = plot_cost_subcategories_over_time_for_draw_pair(
+          input_costs,
+          draws=draw_pair,
+          cost_subcategories=cost_subcategories,)
+        name_of_plot = f"Cost by Subcategory Over Time for {draw_pair[0]} and {draw_pair[1]}"
+        fig.suptitle(name_of_plot)
+        fig.tight_layout(rect=(0, 0, 1, 0.98))
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile, bbox_inches='tight')
+        plt.close(fig)
 
     if isinstance(undiscounted_dalys, pd.DataFrame) and isinstance(discounted_dalys, pd.DataFrame):
         undiscounted_totals = undiscounted_dalys.sum(axis=0).unstack("stat")

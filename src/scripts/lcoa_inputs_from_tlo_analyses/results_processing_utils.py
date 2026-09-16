@@ -328,8 +328,6 @@ def make_get_counts_of_hsis_by_period(
     return _get_counts_of_hsis_by_period
 
 
-
-
 # Get available staff count for each year and draw
 def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
     """
@@ -398,9 +396,9 @@ def get_capacity_used_by_officer_type_and_facility_level(
 ) -> pd.Series:
     """
     Parse logging output and return a Series indexed by:
-        (year, OfficerType, FacilityLevel)
+        (year, Clinic, FacilityID, OfficerType, FacilityLevel)
 
-    Collapses (sums) across clinics.
+    Retains facility/clinic fractions so callers can weight by capacity before aggregating.
     Uses facility_id_levels_dict to map FacilityID → FacilityLevel.
     """
 
@@ -435,16 +433,13 @@ def get_capacity_used_by_officer_type_and_facility_level(
     # ---- 5. Map to FacilityLevel ----
     col_df["FacilityLevel"] = col_df["FacilityID"].map(facility_id_levels_dict)
 
-    # ---- 6. Rebuild MultiIndex (drop clinic level) ----
-    _df.columns = pd.MultiIndex.from_frame(
-        col_df[["OfficerType", "FacilityLevel"]]
-    )
-
-    # ---- 7. Collapse across clinics ----
-    _df = _df.groupby(level=["OfficerType", "FacilityLevel"], axis=1).sum()
-
-    # ---- 8. Return stacked format ----
-    return _df.stack(["OfficerType", "FacilityLevel"])
+    # Preserve the first (clinic) level regardless of its original capitalization.
+    col_df["Clinic"] = _df.columns.get_level_values(0)
+    levels = ["Clinic", "FacilityID", "OfficerType", "FacilityLevel"]
+    if col_df["FacilityLevel"].isna().any():
+        raise ValueError("Missing facility-level mapping in capacity logs")
+    _df.columns = pd.MultiIndex.from_frame(col_df[levels])
+    return _df.stack(levels)
 
 def melt_model_output_draws_and_runs(_df, id_vars):
     multi_index = pd.MultiIndex.from_tuples(_df.columns)
