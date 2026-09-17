@@ -31,6 +31,12 @@ import pandas as pd
 
 from convergence_monitoring import config_key, get_best_feasible_dalys, get_best_dalys_regardless_of_feasibility
 from optimisation_parameters import BASELINE_SUMMARY_FILE
+from postprocess_output import TARGET_PERIOD  # the SAME authoritative period
+    # every "dalys" value in history_log.jsonl is already computed over -
+    # imported directly (matching initialise.py's own convention) rather
+    # than reconstructed from CONFIG_YEAR_START_DATE/YEAR_END_DATE here,
+    # which would risk the exact kind of silent desync initialise.py's
+    # own comment on this warns about.
 
 
 # --------------------------------------------------------------------------
@@ -276,6 +282,7 @@ def load_baseline_summary(filepath: str = BASELINE_SUMMARY_FILE) -> dict | None:
 def plot_dalys_by_completion_order(
     records: list[dict],
     baseline_summary_path: str = BASELINE_SUMMARY_FILE,
+    color_by: str = "intensification",
 ):
     """
     One point per COMPLETED TRIAL (i.e. one point per raw row in
@@ -291,17 +298,26 @@ def plot_dalys_by_completion_order(
         re-computation is needed here; this is the exact same value
         every other check in this file already reads directly.
 
-    COLOUR: cornflowerblue if this is the FIRST trial (in completion order) to
-    evaluate this exact config; mediumblue if an EARLIER trial already
-    evaluated it (i.e. this one is SMAC's intensifier confirming an
-    already-proposed config with an additional seed). Determined via
-    config_key() - the same hashable config identity used everywhere
-    else in this pipeline, imported directly from convergence_monitoring.py
-    rather than reimplemented.
+    color_by="intensification" (default, unchanged from before):
+        COLOUR distinguishes new (cornflowerblue) vs intensified
+        (mediumblue) trials.
 
-    MARKER: circle if FEASIBLE (every *_violation column <= 0 for this
-    trial), x if INFEASIBLE (any violation > 0) - same feasibility
-    convention _config_frame()/get_best_feasible_dalys() already use.
+    color_by="config": each DISTINCT config gets its OWN colour (drawn
+        from a qualitative colormap, cycling if there are more than 20
+        distinct configs), so every occurrence of the same config -
+        including its intensified repeats - shares a colour. A thin
+        line also connects consecutive occurrences of the SAME config,
+        in that config's own colour, so which earlier point a given
+        intensification is confirming is directly traceable by eye,
+        not just inferable from closely-matching colours - the
+        motivating use case for this mode. No per-config legend (would
+        be unreadable with more than a handful of distinct configs) -
+        the colour/line pairing carries the grouping, not a legend key.
+
+    Either mode: MARKER is circle if FEASIBLE (every *_violation column
+    <= 0 for this trial), x if INFEASIBLE (any violation > 0) - same
+    feasibility convention _config_frame()/get_best_feasible_dalys()
+    already use.
 
     DASHED LINE: the baseline run's own median DALYs (same metric, same
     period), read from baseline_summary_path via load_baseline_summary()
@@ -317,37 +333,90 @@ def plot_dalys_by_completion_order(
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
 
+    if color_by not in ("intensification", "config"):
+        raise ValueError(f"color_by must be 'intensification' or 'config', got {color_by!r}")
+
     violation_cols = [c for c in records[0] if "_violation" in c] if records else []
 
-    # One (xs, ys) list per (new/intensify, feasible/infeasible) bucket -
-    # matplotlib's scatter() takes one marker/colour per call, not per
-    # point, so points are grouped into (at most) four calls rather than
-    # plotted one at a time.
-    style = {
-        ("new", "feasible"):         dict(color="cornflowerblue",  marker="o", label="New config (feasible)"),
-        ("new", "infeasible"):       dict(color="cornflowerblue",  marker="x", label="New config (infeasible)"),
-        ("intensify", "feasible"):   dict(color="mediumblue", marker="o", label="Intensified (feasible)"),
-        ("intensify", "infeasible"): dict(color="mediumblue", marker="x", label="Intensified (infeasible)"),
-    }
-    points: dict[tuple, tuple[list, list]] = {bucket: ([], []) for bucket in style}
-
-    seen_configs = set()
-    for i, rec in enumerate(records):
-        key = config_key(rec["config_object"])
-        is_new = key not in seen_configs
-        seen_configs.add(key)
-
-        feasible = all(rec[c] <= 0 for c in violation_cols)
-
-        bucket = ("new" if is_new else "intensify", "feasible" if feasible else "infeasible")
-        xs, ys = points[bucket]
-        xs.append(i)
-        ys.append(rec["dalys"])
-
     fig, ax = plt.subplots(figsize=(10, 6))
-    for bucket, (xs, ys) in points.items():
-        if xs:
-            ax.scatter(xs, ys, **style[bucket])
+
+    if color_by == "intensification":
+        # One (xs, ys) list per (new/intensify, feasible/infeasible)
+        # bucket - matplotlib's scatter() takes one marker/colour per
+        # call, not per point, so points are grouped into (at most)
+        # four calls rather than plotted one at a time.
+        style = {
+            ("new", "feasible"):         dict(color="cornflowerblue",  marker="o", label="New config (feasible)"),
+            ("new", "infeasible"):       dict(color="cornflowerblue",  marker="x", label="New config (infeasible)"),
+            ("intensify", "feasible"):   dict(color="mediumblue", marker="o", label="Intensified (feasible)"),
+            ("intensify", "infeasible"): dict(color="mediumblue", marker="x", label="Intensified (infeasible)"),
+        }
+        points: dict[tuple, tuple[list, list]] = {bucket: ([], []) for bucket in style}
+
+        seen_configs = set()
+        for i, rec in enumerate(records):
+            key = config_key(rec["config_object"])
+            is_new = key not in seen_configs
+            seen_configs.add(key)
+
+            feasible = all(rec[c] <= 0 for c in violation_cols)
+
+            bucket = ("new" if is_new else "intensify", "feasible" if feasible else "infeasible")
+            xs, ys = points[bucket]
+            xs.append(i)
+            ys.append(rec["dalys"])
+
+        for bucket, (xs, ys) in points.items():
+            if xs:
+                ax.scatter(xs, ys, **style[bucket])
+
+    else:  # color_by == "config"
+        # Assign each distinct config a colour, in the order it FIRST
+        # appears (so replotting the same history is stable), and
+        # collect every (x, y) occurrence of that config, IN completion
+        # order, so a line can be drawn connecting them.
+        #
+        # tab20 is structured as 10 hue-PAIRS (slots 0-1 are dark/light
+        # blue, 2-3 dark/light orange, etc.) - an earlier version of
+        # this indexed straight through (0, 1, 2, 3, ...), which meant
+        # the FIRST TWO distinct configs ever seen always landed on the
+        # SAME hue-pair (e.g. dark blue + light blue) purely by
+        # construction, regardless of whether those two configs are
+        # actually similar - easily misread as "these configs look
+        # alike" when it's really just colormap structure. Indexing
+        # through all 10 dark (even) slots FIRST, then all 10 light
+        # (odd) slots, means the first 10 distinct configs get 10
+        # genuinely different hues before any hue is ever reused.
+        cmap = plt.colormaps["tab20"]
+        color_order = list(range(0, cmap.N, 2)) + list(range(1, cmap.N, 2))
+        config_colors: dict[tuple, tuple] = {}
+        config_points: dict[tuple, tuple[list, list]] = {}
+
+        for i, rec in enumerate(records):
+            key = config_key(rec["config_object"])
+            if key not in config_colors:
+                config_colors[key] = cmap(color_order[len(config_colors) % cmap.N])
+                config_points[key] = ([], [])
+            config_points[key][0].append(i)
+            config_points[key][1].append(rec["dalys"])
+
+        for key, (xs, ys) in config_points.items():
+            color = config_colors[key]
+            # Connecting line FIRST (drawn underneath), thin and
+            # semi-transparent so it reads as a grouping cue rather
+            # than competing visually with the points themselves. Only
+            # draws anything for configs with 2+ occurrences - a
+            # single-point config has nothing to connect.
+            if len(xs) > 1:
+                ax.plot(xs, ys, color=color, linewidth=1, alpha=0.5, zorder=1)
+
+        for i, rec in enumerate(records):
+            key = config_key(rec["config_object"])
+            feasible = all(rec[c] <= 0 for c in violation_cols)
+            ax.scatter(
+                i, rec["dalys"], color=config_colors[key],
+                marker="o" if feasible else "x", zorder=2,
+            )
 
     # x-axis is a plain completion-order index (0, 1, 2, ...) - force
     # integer-only tick labels, since matplotlib's default locator can
@@ -356,17 +425,163 @@ def plot_dalys_by_completion_order(
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     baseline = load_baseline_summary(baseline_summary_path)
+    legend_handles = []
     if baseline is not None:
-        ax.axhline(
+        baseline_line = ax.axhline(
             baseline["median_dalys"], linestyle="--", color="black",
             label=f"Baseline median DALYs ({baseline['n_runs']} runs)",
         )
+        legend_handles.append(baseline_line)
+
+    if color_by == "config":
+        # color_by="config" deliberately has NO per-config legend entry
+        # (unreadable with more than a handful of distinct configs - see
+        # this function's own docstring) - but marker SHAPE still needs
+        # explaining somewhere, since nothing else on the plot says what
+        # a circle vs an x means. Generic grey proxy markers, not tied
+        # to any specific config's own colour.
+        from matplotlib.lines import Line2D
+        legend_handles += [
+            Line2D([0], [0], marker="o", color="none", markerfacecolor="grey",
+                   markeredgecolor="grey", label="Feasible"),
+            Line2D([0], [0], marker="x", color="none", markeredgecolor="grey",
+                   label="Infeasible"),
+        ]
 
     ax.set_xlabel("Run (completion order)")
-    ax.set_ylabel("HIV DALYs")
+    ax.set_ylabel(f"HIV DALYs ({TARGET_PERIOD[0].year}\u2013{TARGET_PERIOD[1].year})")
     ax.set_title("HIV DALYs by completion order")
-    ax.legend()
+    if color_by == "intensification":
+        # Plain ax.legend() with no handles= arg: auto-detects every
+        # labelled artist, which is the four scatter buckets (each with
+        # its own label=) PLUS the baseline line if present - explicitly
+        # passing handles=legend_handles here would DROP the four
+        # scatter labels, keeping only whatever was appended to
+        # legend_handles (the config-mode-only marker proxies never
+        # apply here, and legend_handles otherwise holds just the
+        # baseline line) - a real bug an earlier version of this
+        # function had.
+        ax.legend()
+    else:
+        # color_by="config": the scatter calls have no label= at all
+        # (avoiding a per-config legend entry), so auto-detection would
+        # show nothing useful here - pass the explicit marker-shape
+        # proxies (+ baseline line, if present) instead.
+        ax.legend(handles=legend_handles)
     return fig
+
+
+# --------------------------------------------------------------------------
+# Check 6: is between-config spread real signal, or just seed noise
+# --------------------------------------------------------------------------
+
+def check_between_vs_within_config_variance(records: list[dict]) -> dict:
+    """
+    One-way ANOVA on raw per-trial DALYs, grouped by config: is the
+    variation IN DALYS BETWEEN different configs meaningfully larger
+    than the variation WITHIN a single fixed config across its own
+    different seeds (pure simulation stochasticity)? If not, apparent
+    differences between configs' DALYs can't yet be trusted as real -
+    they may simply be within the noise floor, which is a genuinely
+    different situation from "the model isn't sensitive to these
+    parameters" (both would produce similar-looking DALYs across
+    configs, but only one is a search problem worth acting on - this
+    check alone can't distinguish the two, only confirm or rule out
+    that noise ALONE could plausibly explain what's observed).
+
+    Uses MEAN, not median, deliberately unlike this pipeline's own
+    convention elsewhere (median_dalys, get_best_feasible_dalys, etc.)
+    - variance/ANOVA are defined in terms of the mean; a "median-based
+    ANOVA" isn't the standard, well-understood statistical tool this
+    check is meant to be, so it intentionally breaks from the project's
+    usual median convention here specifically.
+
+    Requires at least one config with 2+ observed seeds (otherwise
+    every group is a singleton, and within-group variance - the
+    denominator - is undefined) - returns a dict with "insufficient_data":
+    True and no F-statistic if that's not yet the case, rather than
+    raising or dividing by zero.
+
+    Returns a dict with n_configs, n_trials, n_multi_seed_configs (how
+    many configs actually contributed to the within-group estimate),
+    ms_between/ms_within (the two mean-square terms an F-ratio is built
+    from), f_statistic, p_value (from scipy.stats.f's survival
+    function), and a plain-English "interpretation" string.
+    """
+    from scipy.stats import f as f_dist
+
+    grouped: dict[tuple, list[float]] = {}
+    for rec in records:
+        grouped.setdefault(config_key(rec["config_object"]), []).append(rec["dalys"])
+
+    n_configs = len(grouped)
+    n_trials = len(records)
+    multi_seed_groups = {k: v for k, v in grouped.items() if len(v) >= 2}
+    n_multi_seed_configs = len(multi_seed_groups)
+
+    if n_multi_seed_configs == 0 or n_configs < 2:
+        return {
+            "insufficient_data": True,
+            "n_configs": n_configs,
+            "n_trials": n_trials,
+            "n_multi_seed_configs": n_multi_seed_configs,
+            "interpretation": (
+                "Not enough data yet: need at least one config evaluated with 2+ seeds "
+                "AND at least 2 distinct configs overall, to estimate both within- and "
+                "between-config variance."
+            ),
+        }
+
+    grand_mean = sum(v for vals in grouped.values() for v in vals) / n_trials
+
+    ss_between = sum(len(vals) * (sum(vals) / len(vals) - grand_mean) ** 2 for vals in grouped.values())
+    ss_within = sum(
+        sum((v - sum(vals) / len(vals)) ** 2 for v in vals)
+        for vals in multi_seed_groups.values()
+    )
+
+    df_between = n_configs - 1
+    df_within = sum(len(vals) - 1 for vals in multi_seed_groups.values())
+
+    if df_within == 0 or ss_within == 0:
+        return {
+            "insufficient_data": True,
+            "n_configs": n_configs,
+            "n_trials": n_trials,
+            "n_multi_seed_configs": n_multi_seed_configs,
+            "interpretation": "Within-group variance is degenerate (zero degrees of freedom or zero spread) - can't compute a meaningful F-ratio yet.",
+        }
+
+    ms_between = ss_between / df_between
+    ms_within = ss_within / df_within
+    f_statistic = ms_between / ms_within
+    p_value = float(f_dist.sf(f_statistic, df_between, df_within))
+
+    if p_value < 0.05:
+        interpretation = (
+            f"Between-config spread (p={p_value:.4f}) is larger than seed noise alone would "
+            f"plausibly explain - apparent DALYs differences between configs likely reflect "
+            f"real signal, not just noise."
+        )
+    else:
+        interpretation = (
+            f"Between-config spread (p={p_value:.4f}) is NOT clearly distinguishable from "
+            f"seed noise yet - apparent differences between configs' DALYs may just be within "
+            f"the noise floor. More seeds per config (higher MAX_CONFIG_CALLS), a larger "
+            f"pop_size, or more distinct configs evaluated would all help resolve this either way."
+        )
+
+    return {
+        "insufficient_data": False,
+        "n_configs": n_configs,
+        "n_trials": n_trials,
+        "n_multi_seed_configs": n_multi_seed_configs,
+        "ms_between": ms_between,
+        "ms_within": ms_within,
+        "f_statistic": f_statistic,
+        "p_value": p_value,
+        "interpretation": interpretation,
+    }
 
 
 # --------------------------------------------------------------------------
@@ -380,6 +595,7 @@ def run_all_checks(
     verbose: bool = True,
     save_plot: bool = True,
     plot_path: str = "dalys_by_completion_order.png",
+    plot_color_by: str = "intensification",
 ) -> dict:
     """
     Runs all four checks against history_log.jsonl and returns a dict of
@@ -394,11 +610,14 @@ def run_all_checks(
     and saves it to plot_path - an earlier version of this file defined
     that function but never actually called it from here (or anywhere),
     so running the evaluation never produced the plot at all unless it
-    was called directly, separately, by name. Wrapped in try/except:
-    matplotlib is imported lazily, inside the plotting function itself,
-    specifically so a missing matplotlib install doesn't block the
-    other four (matplotlib-free) checks above - if it's missing, or the
-    plot fails for any other reason, this prints a warning and returns
+    was called directly, separately, by name. plot_color_by is passed
+    straight through to that function's own color_by parameter -
+    "intensification" (default) or "config", see its own docstring for
+    what each mode shows. Wrapped in try/except: matplotlib is imported
+    lazily, inside the plotting function itself, specifically so a
+    missing matplotlib install doesn't block the other four
+    (matplotlib-free) checks above - if it's missing, or the plot fails
+    for any other reason, this prints a warning and returns
     results["plot_path"] = None rather than crashing the whole
     evaluation over what's meant to be an additional, optional output.
 
@@ -420,6 +639,7 @@ def run_all_checks(
         # version only computed the feasible-restricted stats, which
         # were silently all-zero/None for as long as nothing had been
         # found feasible yet.
+    variance_check = check_between_vs_within_config_variance(records)
 
     final_feasible = best_so_far["best_feasible_dalys_so_far"].iloc[-1] if len(best_so_far) else None
     final_all = best_so_far["best_dalys_so_far_all"].iloc[-1] if len(best_so_far) else None
@@ -433,12 +653,13 @@ def run_all_checks(
         "dalys_trend": dalys_trend,
         "feasibility_trend": feas_trend,
         "intensification_effect": intens,
+        "variance_check": variance_check,
         "plot_path": None,
     }
 
     if save_plot:
         try:
-            fig = plot_dalys_by_completion_order(records)
+            fig = plot_dalys_by_completion_order(records, color_by=plot_color_by)
             fig.savefig(plot_path, dpi=150, bbox_inches="tight")
             results["plot_path"] = plot_path
             if verbose:
@@ -498,9 +719,19 @@ def run_all_checks(
         else:
             print("[evaluate]   -> not enough FEASIBLE data in one or both groups yet to compare")
 
+        if variance_check["insufficient_data"]:
+            print(f"[evaluate] between vs within-config DALYs variance: {variance_check['interpretation']}")
+        else:
+            print(
+                f"[evaluate] between vs within-config DALYs variance: F={variance_check['f_statistic']:.3f}, "
+                f"p={variance_check['p_value']:.4f} ({variance_check['n_multi_seed_configs']} multi-seed config(s) "
+                f"contributing to the within-group estimate)"
+            )
+            print(f"[evaluate]   -> {variance_check['interpretation']}")
+
     return results
 
 
 if __name__ == "__main__":
     log_path = sys.argv[1] if len(sys.argv) > 1 else "history_log.jsonl"
-    run_all_checks(log_path)
+    run_all_checks(log_path, plot_color_by="config")
