@@ -827,8 +827,10 @@ def fit_indicator(indicator, panel_path, spline_df=None):
 
     deficit_pt = aggregate_deficit_pct(nb_data)
 
-    facs = nb_data["facility"].unique()
-    jack = np.array([aggregate_deficit_pct(nb_data[nb_data["facility"] != f]) for f in facs])
+    #facs = nb_data["facility"].unique()
+    #jack = np.array([aggregate_deficit_pct(nb_data[nb_data["facility"] != f]) for f in facs])
+    clusters = nb_data[CLUSTER_COL].unique()
+    jack = np.array([aggregate_deficit_pct(nb_data[nb_data[CLUSTER_COL] != c]) for c in clusters])
     jack = jack[np.isfinite(jack)]
     n = len(jack)
     if n > 1:
@@ -847,8 +849,10 @@ def fit_indicator(indicator, panel_path, spline_df=None):
 
     if len(hot_data) > 10:
         hot_deficit_pt = aggregate_deficit_pct(hot_data)
-        hot_facs = hot_data["facility"].unique()
-        hot_jack = np.array([aggregate_deficit_pct(hot_data[hot_data["facility"] != f]) for f in hot_facs])
+        #hot_facs = hot_data["facility"].unique()
+        #hot_jack = np.array([aggregate_deficit_pct(hot_data[hot_data["facility"] != f]) for f in hot_facs])
+        clusters = hot_data[CLUSTER_COL].unique()
+        hot_jack = np.array([aggregate_deficit_pct(hot_data[hot_data[CLUSTER_COL] != c]) for c in clusters])
         hot_jack = hot_jack[np.isfinite(hot_jack)]
         n_hot = len(hot_jack)
         if n_hot > 1:
@@ -870,7 +874,6 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         hot_se_jack = np.nan
         print(f"  [{indicator}] Not enough hot months ({len(hot_data)} observations)")
 
-    reference_wbgt = float(np.percentile(nb_data[WBGT_VAR], IRR_LOW_PCTILE))
     reference_wbgt = WBGT_REFERENCE_TEMP
     try:
         design_info_wbgt = DESIGN[WBGT_VAR]
@@ -944,7 +947,8 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         pt, lo, hi = _monthly_jackknife_ci_local(
             sub["mu_a"].values,
             sub["mu_b"].values,
-            sub["facility"].values,
+            # sub["facility"].values,
+            sub[CLUSTER_COL].values,
         )
         sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
         dist_rows.append(
@@ -1728,7 +1732,8 @@ if __name__ == "__main__":
                 _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
                     df_hot_agg["mu_a"].values,
                     df_hot_agg["mu_b"].values,
-                    df_hot_agg["facility"].values,
+                    # df_hot_agg["facility"].values,
+                    df_hot_agg[CLUSTER_COL].values,
                 )
 
                 # Historical anchor: hot-month deficit from the summary (same p95
