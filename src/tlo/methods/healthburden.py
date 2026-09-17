@@ -106,7 +106,7 @@ class HealthBurden(Module):
 
         # Multi-index with sex/age_range/wealth/urban/region/district/year
         self.multi_index_for_age_and_wealth_and_time_ur = pd.MultiIndex.from_product(
-            [sex_index, age_index, wealth_index, urban_index, region_index, year_index],
+            [sex_index, age_index, wealth_index, urban_index, region_index, district_index, year_index],
             names=['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence',
                    'district_of_residence', 'year'])
 
@@ -651,22 +651,22 @@ class HealthBurden(Module):
             force_cols=self._causes_of_dalys,
         )
 
-        # 5) Log total DALYS (Stacked by Age and Time), broken down by sex/wealth/urban/region (with the YLL stacked by
-        # age and time)
-        yld_by_wealth_urban_region = summarise_results_for_this_year_ur(
-            self.years_lived_with_disability_ur, level=[0,2,3,4]
+        # 5) Log total DALYS (Stacked by Age and Time), broken down by sex/wealth/urban/region/district
+        # (with the YLL stacked by age and time)
+        yld_by_wealth_urban_region_district = summarise_results_for_this_year_ur(
+            self.years_lived_with_disability_ur, level=[0, 2, 3, 4, 5]
         )
-        yll_by_wealth_urban_region = summarise_results_for_this_year_ur(
-            self.years_life_lost_stacked_age_and_time_ur, level=[0,2,3,4]
+        yll_by_wealth_urban_region_district = summarise_results_for_this_year_ur(
+            self.years_life_lost_stacked_age_and_time_ur, level=[0, 2, 3, 4, 5]
         )
 
         log_df_line_by_line(
-            key='dalys_by_wealth_urban_region_stacked_by_age_and_time',
+            key='dalys_by_wealth_urban_region_district_stacked_by_age_and_time',
             description='DALYS, by the labels that are declared for each cause_of_death and cause_of_disability'
-                        ', broken down by year, wealth category, urban/rural status and region.'
+                        ', broken down by year, wealth category, urban/rural status, region and district.'
                         'Stacking by age and time: i.e., all the years of life lost '
                         'are ascribed to the age of the death and the year of the death.',
-            df=self.get_dalys(yld=yld_by_wealth_urban_region, yll=yll_by_wealth_urban_region),
+            df=self.get_dalys(yld=yld_by_wealth_urban_region_district, yll=yll_by_wealth_urban_region_district),
             force_cols=self._causes_of_dalys,
             logging_level='info',  # As this is a heavy table, put this out only for debug level
         )
