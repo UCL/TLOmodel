@@ -41,7 +41,7 @@ MIN_SAMPLES_LEAF = 3         # ConstrainedEI's underlying RandomForestRegressors
                              # POP_SIZE - a smaller pop_size means noisier
                              # per-seed results, which argues for a HIGHER
                              # min_samples_leaf to compensate, not a lower one).
-PENALTY_COEFFICIENT_MULTIPLIER = 3  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
+PENALTY_COEFFICIENT_MULTIPLIER = 500  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
                              # the penalty coefficient in record_result()'s
                              # TrialValue - rough, not load-bearing for search
                              # quality (ConstrainedEI does the real steering),
@@ -50,7 +50,7 @@ PENALTY_COEFFICIENT_MULTIPLIER = 3  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys
 # --------------------------------------------------------------------------
 # Operational (Azure submission / polling) hyperparameters
 # --------------------------------------------------------------------------
-N_CONCURRENT = 3              # concurrent Azure jobs in flight - interacts
+N_CONCURRENT = 8              # concurrent Azure jobs in flight - interacts
                              # with RETRAIN_EVERY; several jobs finishing in
                              # the same polling pass can mean refitting more
                              # often than intended
