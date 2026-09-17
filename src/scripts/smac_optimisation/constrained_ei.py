@@ -80,7 +80,14 @@ class MultiSurrogateModel:
                                           # more stable mean+std, linear compute cost
         min_samples_leaf: int = 3,     # HYPERPARAMETER: noise-smoothing strength -
                                           # see the grouped-CV + leave-one-seed-out
-                                          # validation approach discussed earlier
+                                          # validation approach discussed earlier.
+                                          # In real pipeline use this value comes
+                                          # from ConstrainedEI's own constructor
+                                          # (which sources it from
+                                          # optimisation_parameters.MIN_SAMPLES_LEAF),
+                                          # not this class's own default here - this
+                                          # default only matters if MultiSurrogateModel
+                                          # is constructed directly/standalone.
         random_state: int = 0,         # reproducibility seed, not a tunable hyperparameter
     ):
         self.target_names = list(target_names)
@@ -146,6 +153,16 @@ class ConstrainedEI(AbstractAcquisitionFunction):
                                     # accumulate before the surrogate refits -
                                     # see the earlier discussion on retrain
                                     # cadence and its interaction with N_CONCURRENT
+        min_samples_leaf: int = 3,  # HYPERPARAMETER: passed straight through to
+                                       # MultiSurrogateModel's own RandomForestRegressors
+                                       # (see that class's own docstring/comment) - an
+                                       # earlier version of this class never exposed
+                                       # this at all, silently relying on
+                                       # MultiSurrogateModel's own hardcoded default
+                                       # with no way to override it from the caller;
+                                       # now sourced from optimisation_parameters.py's
+                                       # own MIN_SAMPLES_LEAF, matching every other
+                                       # hyperparameter in this pipeline.
     ):
         super().__init__()
         self._configspace = configspace
@@ -158,7 +175,8 @@ class ConstrainedEI(AbstractAcquisitionFunction):
                                 # self._surrogate.n_fitted_points
 
         self._surrogate = MultiSurrogateModel(
-            target_names=[objective_name, *self._constraint_names]
+            target_names=[objective_name, *self._constraint_names],
+            min_samples_leaf=min_samples_leaf,
         )
         self._eta: float | None = None  # best feasible objective value seen so far
 

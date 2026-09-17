@@ -291,8 +291,8 @@ def plot_dalys_by_completion_order(
         re-computation is needed here; this is the exact same value
         every other check in this file already reads directly.
 
-    COLOUR: red if this is the FIRST trial (in completion order) to
-    evaluate this exact config; blue if an EARLIER trial already
+    COLOUR: cornflowerblue if this is the FIRST trial (in completion order) to
+    evaluate this exact config; mediumblue if an EARLIER trial already
     evaluated it (i.e. this one is SMAC's intensifier confirming an
     already-proposed config with an additional seed). Determined via
     config_key() - the same hashable config identity used everywhere
@@ -315,6 +315,7 @@ def plot_dalys_by_completion_order(
     installed.
     """
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
 
     violation_cols = [c for c in records[0] if "_violation" in c] if records else []
 
@@ -323,10 +324,10 @@ def plot_dalys_by_completion_order(
     # point, so points are grouped into (at most) four calls rather than
     # plotted one at a time.
     style = {
-        ("new", "feasible"):         dict(color="red",  marker="o", label="New config (feasible)"),
-        ("new", "infeasible"):       dict(color="red",  marker="x", label="New config (infeasible)"),
-        ("intensify", "feasible"):   dict(color="blue", marker="o", label="Intensified (feasible)"),
-        ("intensify", "infeasible"): dict(color="blue", marker="x", label="Intensified (infeasible)"),
+        ("new", "feasible"):         dict(color="cornflowerblue",  marker="o", label="New config (feasible)"),
+        ("new", "infeasible"):       dict(color="cornflowerblue",  marker="x", label="New config (infeasible)"),
+        ("intensify", "feasible"):   dict(color="mediumblue", marker="o", label="Intensified (feasible)"),
+        ("intensify", "infeasible"): dict(color="mediumblue", marker="x", label="Intensified (infeasible)"),
     }
     points: dict[tuple, tuple[list, list]] = {bucket: ([], []) for bucket in style}
 
@@ -347,6 +348,12 @@ def plot_dalys_by_completion_order(
     for bucket, (xs, ys) in points.items():
         if xs:
             ax.scatter(xs, ys, **style[bucket])
+
+    # x-axis is a plain completion-order index (0, 1, 2, ...) - force
+    # integer-only tick labels, since matplotlib's default locator can
+    # otherwise place fractional ticks (0.5, 1.5, ...) when there are
+    # few points, which don't correspond to any real run.
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     baseline = load_baseline_summary(baseline_summary_path)
     if baseline is not None:
@@ -371,6 +378,8 @@ def run_all_checks(
     window: int = 10,
     intensified_threshold: int = 3,
     verbose: bool = True,
+    save_plot: bool = True,
+    plot_path: str = "dalys_by_completion_order.png",
 ) -> dict:
     """
     Runs all four checks against history_log.jsonl and returns a dict of
@@ -380,6 +389,18 @@ def run_all_checks(
     this pipeline (optimisation_pipeline.py's [submitted]/[polling]/
     [convergence] markers), so this output is greppable/consistent with
     everything else the pipeline already prints - here tagged [evaluate].
+
+    If save_plot (default), also generates plot_dalys_by_completion_order()
+    and saves it to plot_path - an earlier version of this file defined
+    that function but never actually called it from here (or anywhere),
+    so running the evaluation never produced the plot at all unless it
+    was called directly, separately, by name. Wrapped in try/except:
+    matplotlib is imported lazily, inside the plotting function itself,
+    specifically so a missing matplotlib install doesn't block the
+    other four (matplotlib-free) checks above - if it's missing, or the
+    plot fails for any other reason, this prints a warning and returns
+    results["plot_path"] = None rather than crashing the whole
+    evaluation over what's meant to be an additional, optional output.
 
     Safe to call at ANY point in a run - this is purely a read of
     whatever's already on disk.
@@ -412,7 +433,23 @@ def run_all_checks(
         "dalys_trend": dalys_trend,
         "feasibility_trend": feas_trend,
         "intensification_effect": intens,
+        "plot_path": None,
     }
+
+    if save_plot:
+        try:
+            fig = plot_dalys_by_completion_order(records)
+            fig.savefig(plot_path, dpi=150, bbox_inches="tight")
+            results["plot_path"] = plot_path
+            if verbose:
+                print(f"[evaluate] DALYs-by-completion-order plot saved to {plot_path}")
+        except Exception as exc:
+            # Deliberately never lets a plotting failure (e.g. matplotlib
+            # not installed) take down the rest of the evaluation - the
+            # four checks above are the primary output; the plot is an
+            # additional, optional one.
+            print(f"[evaluate] WARNING: could not generate/save the DALYs plot ({exc!r}) - "
+                  f"skipping it, other checks unaffected.")
 
     if verbose:
         print(f"[evaluate] {n_trials} trial(s) logged, {n_configs} distinct config(s)")

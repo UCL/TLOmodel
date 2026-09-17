@@ -1,34 +1,45 @@
 """
-Committed once at src/scripts/smac_optimisation/smac_scenario_suspend.py
+Committed once at src/scripts/smac_optimisation/smac_scenario_baseline.py
 
-Used ONLY for pre-resume checkpoint generation (see
-generate_checkpoint_job() in optimisation_pipeline.py) - NEVER for real
-trials, which use smac_scenario.py's TloOptimisationScenario instead.
+Used ONLY for the one-off baseline run (see submit_baseline_job() in
+optimisation_pipeline.py) - NEVER for real trials (smac_scenario.py) or
+checkpoint generation (smac_scenario_suspend.py). Runs a single, fixed,
+no-scale-up scenario ('type_of_scaleup': 'none') as BASELINE_RUNS_PER_DRAW
+FULL, differently-seeded, COMPLETE runs (below) - NOT suspended/resumed
+at any point. end_date IS genuinely load-bearing here (unlike
+smac_scenario_suspend.py's own end_date, which the remote command's
+--suspend-date interrupts before it's ever reached) - the whole point
+of this scenario is to run status-quo behaviour all the way through to
+the end of YEAR_END_DATE's own calendar year, so its results are
+directly comparable to what a real trial's own full run would look
+like, for deriving the budget constraints those real trials get
+checked against (see postprocess_output.compute_and_save_baseline_budgets()).
+end_date is set one year PAST YEAR_END_DATE (not AT it) specifically so
+the simulation actually runs through YEAR_END_DATE's own full calendar
+year rather than stopping at its very first day - matches
+smac_scenario.py's own end_date for the identical reason.
 
-Runs the model with a single, fixed, no-scale-up scenario
-('type_of_scaleup': 'none') up to SUSPEND_DATE (see
-optimisation_pipeline.py), then gets suspended via `--suspend-date` on
-the remote task command. Since NO config parameters vary here (this
-scenario always represents the shared, config-independent "first part"
-of the simulation - see the whole suspend/resume design discussion),
+Since NO config parameters vary here (this scenario always represents
+a single, shared, config-independent "status quo" comparison point),
 there's no configspace-driven setattr loop needed the way
 smac_scenario.py's real-trial class has one - draw_parameters() always
 returns the same single, hardcoded parameter set.
 
-CLASS NAME deliberately differs from smac_scenario.py's own
-TloOptimisationScenario (that file's class is used for real trials -
-this one is checkpoint-generation only) so both can be imported directly
-into optimisation_pipeline.py without needing an import alias to avoid a
-collision.
+CLASS NAME is literally identical to smac_scenario_suspend.py's own
+TloCheckpointScenario (a leftover of this file originally being cloned
+from that one) - NOT a problem in practice, since optimisation_pipeline.py
+imports this one under an alias (TloBaselineScenario) specifically to
+avoid the collision - but worth knowing if this file is ever read in
+isolation.
 
-pop_size/start_date MUST match smac_scenario.py's own values exactly -
-once a real trial resumes from a checkpoint generated here, the
-simulation's population/state is already fixed from whatever was
-pickled; a resumed trial cannot retroactively change the population
-size or start date it was checkpointed under. If either file's
-pop_size/start_date is ever edited, the other must be updated to match,
-or resumed trials will silently be running a population inconsistent
-with what a fresh, non-resumed run would have used.
+pop_size/start_date are set from the SAME shared constants
+smac_scenario.py/smac_scenario_suspend.py use (optimisation_parameters.py) -
+not because a resumed trial's technical correctness depends on it (this
+scenario is never checkpointed or resumed at all, unlike
+smac_scenario_suspend.py's own pop_size/start_date, which genuinely
+does carry that hard requirement) but so the baseline's own results stay
+genuinely comparable to what a real trial's own full run represents,
+for the budget-deriving purpose above.
 """
 
 from pathlib import Path
@@ -48,23 +59,41 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # ensures sibling
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
-from optimisation_parameters import YEAR_START_DATE, YEAR_END_DATE, CONFIG_YEAR_START_DATE, POP_SIZE
+from optimisation_parameters import YEAR_START_DATE, YEAR_END_DATE, POP_SIZE
+
+BASELINE_RUNS_PER_DRAW = 10  # exported so callers outside this file (e.g.
+    # postprocess_output.compute_and_save_baseline_budgets()'s own
+    # sanity check that it actually received this many runs) can
+    # reference the SAME value, rather than duplicating the literal 10
+    # in a second place where it could silently drift out of sync with
+    # this class's own runs_per_draw below.
 
 class TloCheckpointScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0  # placeholder - overwritten with the target
-                       # checkpoint seed by generate_checkpoint_job()
-                       # before every real submission
-        self.start_date = Date(YEAR_START_DATE, 1, 1)  # MUST match smac_scenario.py - see module docstring
-        self.end_date = Date(YEAR_END_DATE+1, 1, 1)    # not functionally load-bearing (the remote
-                                              # command's --suspend-date interrupts the run
-                                              # well before this regardless), kept aligned
-                                              # with the real scenario's own horizon for clarity
-        self.pop_size = POP_SIZE  # MUST match smac_scenario.py - see module docstring
+        self.seed = 0  # NEVER overwritten - unlike smac_scenario.py/
+                       # smac_scenario_suspend.py's own placeholders,
+                       # submit_baseline_job() never sets this. Stays 0,
+                       # genuinely used: low_bias_32(0 + sample_number)
+                       # for sample_number=0..9 (runs_per_draw=10, below)
+                       # gives the 10 runs 10 genuinely different actual
+                       # seeds - matching each other isn't important
+                       # here, only that they genuinely differ.
+        self.start_date = Date(YEAR_START_DATE, 1, 1)  # from the SAME shared
+                                                          # constant as smac_scenario.py -
+                                                          # see module docstring for why
+        self.end_date = Date(YEAR_END_DATE+1, 1, 1)  # GENUINELY load-bearing here -
+                                                      # unlike smac_scenario_suspend.py's
+                                                      # own end_date, this scenario is
+                                                      # NEVER suspended, so this IS where
+                                                      # the simulation actually stops.
+                                                      # +1 so YEAR_END_DATE's own full
+                                                      # calendar year is actually
+                                                      # simulated, not just its first day.
+        self.pop_size = POP_SIZE  # from the SAME shared constant - see module docstring
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)  # always 1 - single, fixed scenario
-        self.runs_per_draw = 10
+        self.runs_per_draw = BASELINE_RUNS_PER_DRAW
 
     def log_configuration(self):
         return {

@@ -118,6 +118,11 @@ HIV_HRH_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_hrh_budget
 HIV_CONSUMABLE_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_consumable_budget"]))
 
 
+_warned_zero_budget_years: set[int] = set()  # tracks which years have
+    # already triggered bucket_cumulative_violation()'s zero-budget
+    # warning below, so it prints once per year, not once per trial
+
+
 def _year_to_period_index(year: int) -> int | None:
     """Returns the 0-based index into PERIOD_BOUNDARIES that `year` falls
     into, or None if it falls into none of the defined periods (in which
@@ -136,8 +141,22 @@ def bucket_cumulative_violation(cost_by_year: dict, budget_by_year: dict) -> lis
     max(0, cost_year/budget_year - 1) across every year in that period -
     see the module-level comment above for why mean-across-all-years
     (not max, not mean-of-positives-only). Years with no defined budget
-    are skipped (excluded from that period's denominator too, not
-    treated as a violation or as feasible).
+    ARE SKIPPED (excluded from that period's denominator too, not
+    treated as a violation or as feasible) - a budget of exactly 0 (or
+    negative) is treated the SAME as no budget at all: it almost always
+    means the baseline run never actually recorded any cost for this
+    year/category (compute_and_save_baseline_budgets() defaults a
+    year's budget to 0.0 if the baseline's own runs never produced data
+    for it), not that the true limit is genuinely zero. Dividing by a
+    real zero would raise ZeroDivisionError outright - caught by
+    optimisation_pipeline.py's own [postprocessing failed] handler, but
+    silently CRASHING EVERY trial that has any cost in that year, which
+    can empty out `history` entirely for the whole run (surfacing much
+    later as "min() arg is an empty sequence" at final selection,
+    genuinely confusing to trace back to this). Prints a warning the
+    first time a zero/negative budget is actually skipped, so a
+    systematically-broken baseline (e.g. most years ending up at 0.0)
+    doesn't go unnoticed.
     """
     period_sums = [0.0] * len(PERIOD_BOUNDARIES)
     period_counts = [0] * len(PERIOD_BOUNDARIES)
@@ -148,6 +167,16 @@ def bucket_cumulative_violation(cost_by_year: dict, budget_by_year: dict) -> lis
             continue
         budget = budget_by_year.get(year)
         if budget is None:
+            continue
+        if budget <= 0:
+            if year not in _warned_zero_budget_years:
+                print(
+                    f"[warning] budget for year {year} is {budget} (<= 0) - treating as "
+                    f"undefined and skipping, not dividing by it. Check cost_limits_by_year.csv - "
+                    f"this usually means the baseline run never recorded any cost for this "
+                    f"year/category (see compute_and_save_baseline_budgets())."
+                )
+                _warned_zero_budget_years.add(year)
             continue
         period_sums[idx] += max(0.0, cost / budget - 1)
         period_counts[idx] += 1

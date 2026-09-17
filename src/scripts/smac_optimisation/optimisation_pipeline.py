@@ -86,7 +86,7 @@ from convergence_monitoring import (
     json_safe_config,
 )
 from optimisation_parameters import (
-    N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, PENALTY_COEFFICIENT_MULTIPLIER,
+    N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, PENALTY_COEFFICIENT_MULTIPLIER,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
@@ -932,9 +932,23 @@ def ensure_checkpoints_ready() -> None:
 
 def azure_job_is_finished(job: AzureJobHandle) -> bool:
     """
-    True once the task has reached a terminal state (completed OR
-    failed) - i.e. it's no longer running and safe to stop polling.
-    Does NOT imply success: Batch's "completed" state means the task
+    True once EVERY task in the job has reached a terminal state
+    (completed OR failed) - i.e. none are still running, and it's safe
+    to stop polling.
+
+    For jobs with a single task (real trials, checkpoints -
+    pool_node_count is always 1 there) this is equivalent to checking
+    that one task. For MULTI-TASK jobs (the baseline run -
+    pool_node_count = number_of_draws * runs_per_draw = 10 there), an
+    earlier version of this function only ever checked tasks[0],
+    silently ignoring the other 9 - meaning the wait loop could return
+    True, and the caller would proceed straight to downloading/
+    postprocessing, the moment task 0 finished, even while several of
+    the other 9 were still running or had genuinely failed. Confirmed
+    as the actual cause of a real baseline run reporting only 8 of its
+    expected 10 runs.
+
+    Does NOT imply success: Batch's "completed" state means a task
     finished RUNNING, not that it finished successfully. A crashed TLO
     run (non-zero exit code) also reaches "completed" - see
     azure_task_succeeded() to distinguish a genuine result from that.
@@ -942,24 +956,28 @@ def azure_job_is_finished(job: AzureJobHandle) -> bool:
     batch_client = _get_batch_client()
     tasks = list(batch_client.task.list(job_id=job.job_id))
     if not tasks:
-        return False  # task not yet visible to the API
-    return tasks[0].state == "completed"
+        return False  # no tasks visible to the API yet
+    return all(t.state == "completed" for t in tasks)
 
 
 def azure_task_succeeded(job: AzureJobHandle) -> bool:
     """
-    Only meaningful once azure_job_is_finished(job) is True. Checks the
-    task's actual exit code - a completed-but-crashed TLO run (e.g. an
-    exception partway through the simulation) still reaches "completed"
-    task state, so exit code is what actually separates a real result
-    from a failure. exit_code == 0 is success; anything else, or a
-    missing execution_info entirely, is treated as failed.
+    Only meaningful once azure_job_is_finished(job) is True. Checks
+    EVERY task's actual exit code, not just the first (see
+    azure_job_is_finished()'s own docstring for why this matters
+    specifically for multi-task jobs - the baseline run) - a
+    completed-but-crashed TLO run (e.g. an exception partway through
+    the simulation) still reaches "completed" task state, so exit code
+    is what actually separates a real result from a failure. Every
+    task's exit_code == 0 is required for success; any task with a
+    different exit code, or missing execution_info entirely, makes
+    this False.
     """
     batch_client = _get_batch_client()
     tasks = list(batch_client.task.list(job_id=job.job_id))
-    if not tasks or tasks[0].execution_info is None:
+    if not tasks:
         return False
-    return tasks[0].execution_info.exit_code == 0
+    return all(t.execution_info is not None and t.execution_info.exit_code == 0 for t in tasks)
 
 
 def download_run_outputs(job: AzureJobHandle) -> Path:
@@ -1346,6 +1364,11 @@ acquisition_function = ConstrainedEI(
                        # refitting is cheap relative to simulation cost,
                        # so there's no reason to tolerate staleness
                        # (see earlier discussion)
+    min_samples_leaf=MIN_SAMPLES_LEAF,  # an earlier version of this
+                       # call never passed this at all, silently relying
+                       # on MultiSurrogateModel's own hardcoded default
+                       # deep inside constrained_ei.py, with no way to
+                       # actually tune it from here
 )
 
 smac = HyperparameterOptimizationFacade(

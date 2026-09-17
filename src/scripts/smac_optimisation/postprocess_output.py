@@ -39,6 +39,7 @@ from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from optimisation_parameters import (
     YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
 )
+from smac_scenario_baseline import BASELINE_RUNS_PER_DRAW
 
 
 # TARGET_PERIOD: adjust to match the evaluation window your simulation
@@ -220,6 +221,18 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     run_dirs = sorted(baseline_draw_dir.iterdir(), key=lambda p: int(p.name))
     if not run_dirs:
         raise RuntimeError(f"{baseline_draw_dir} has no run subdirectories - nothing to compute CIs from.")
+    if len(run_dirs) != BASELINE_RUNS_PER_DRAW:
+        print(
+            f"[warning] baseline run at {baseline_draw_dir} has {len(run_dirs)} run "
+            f"subdirector{'y' if len(run_dirs) == 1 else 'ies'}, not the expected "
+            f"{BASELINE_RUNS_PER_DRAW} (smac_scenario_baseline.py's own runs_per_draw). "
+            f"Proceeding anyway, but the resulting budgets are derived from fewer "
+            f"independent seeds than intended - CIs will be wider/less reliable than "
+            f"expected. This usually means some of the baseline job's tasks hadn't "
+            f"actually finished (or had failed) when this was called - confirm "
+            f"azure_job_is_finished()/azure_task_succeeded() in optimisation_pipeline.py "
+            f"are checking ALL of the job's tasks, not just the first."
+        )
 
     per_run_results = [postprocess_run(run_dir) for run_dir in run_dirs]
     n_runs = len(per_run_results)

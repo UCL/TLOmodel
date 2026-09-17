@@ -2,10 +2,9 @@
 # TLO / hyperparameters
 # --------------------------------------------------------------------------
 YEAR_START_DATE = 2010 # Year in which overall (from suspend) tlo sim starts
-YEAR_END_DATE = 2013 # Year in which overall (including resume) tlo sim ends.
-# Note: this is the last *full* year considered (i.e. TLO sim completes on YEAR_END_DATE+1/01/01
+YEAR_END_DATE = 2014 # Year in which overall (including resume) tlo sim ends
 CONFIG_YEAR_START_DATE = 2011 # Year in which configuration changes are enforced
-POP_SIZE = 5000 # Population size simulated
+POP_SIZE = 1000 # Population size simulated
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
 START_SECOND_BOUNDARY = 2012
 START_THIRD_BOUNDARY = 2013
@@ -14,7 +13,7 @@ END_THIRD_BOUNDARY = YEAR_END_DATE
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TRIALS = 20                 # total trial budget - not the same as "number of
+N_TRIALS = 10                # total trial budget - not the same as "number of
                              # distinct configs explored", given MAX_CONFIG_CALLS
 MAX_CONFIG_CALLS = 3         # caps how many seeds the intensifier will use to
                              # confirm any single config. SHARED with
@@ -32,7 +31,17 @@ EI_XI = 0.0                  # ConstrainedEI's exploration/exploitation
                              # trade-off - higher requires more expected
                              # improvement before a candidate is favoured; not
                              # yet tuned
-PENALTY_COEFFICIENT_MULTIPLIER = 3  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
+MIN_SAMPLES_LEAF = 3         # ConstrainedEI's underlying RandomForestRegressors'
+                             # (one per objective/constraint) own noise-smoothing
+                             # strength - higher requires more samples per leaf
+                             # before the surrogate will split further, trading
+                             # sensitivity to real signal for robustness against
+                             # per-seed simulation stochasticity (relevant
+                             # directly to how noisy DALYs/cost are at small
+                             # POP_SIZE - a smaller pop_size means noisier
+                             # per-seed results, which argues for a HIGHER
+                             # min_samples_leaf to compensate, not a lower one).
+PENALTY_COEFFICIENT_MULTIPLIER = 10  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
                              # the penalty coefficient in record_result()'s
                              # TrialValue - rough, not load-bearing for search
                              # quality (ConstrainedEI does the real steering),
@@ -45,7 +54,7 @@ N_CONCURRENT = 3              # concurrent Azure jobs in flight - interacts
                              # with RETRAIN_EVERY; several jobs finishing in
                              # the same polling pass can mean refitting more
                              # often than intended
-POLL_INTERVAL_SECONDS = 10   # trades API call frequency against latency
+POLL_INTERVAL_SECONDS = 20   # trades API call frequency against latency
                              # between job completion and SMAC seeing it
 
 # --------------------------------------------------------------------------
@@ -98,7 +107,7 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
 # postprocess_output.compute_and_save_baseline_budgets() and
 # optimisation_pipeline.submit_baseline_job().
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = True   # plain user toggle, same philosophy as
+SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
                              # SUBMIT_SUSPEND_PART - NOT derived from
                              # checking what's already in COST_LIMITS_FILE.
                              # Defaults to False (unlike SUBMIT_SUSPEND_PART)
