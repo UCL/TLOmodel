@@ -58,11 +58,11 @@ WBGT_LON_COORD  = "lon"
 # Reuses matched_facilities + facility_name_mapping from the historical pass:
 # facility coords don't change, only the WBGT time series does.
 CF_ENABLED           = True
-CF_LABEL             = "ERA5_periindustrial_1940_1948"
+CF_LABEL             = "ERA5_periindustrial_1940_1949"
 CF_WBGT_DIRECTORY    = ("/Users/rachelmurray-watson/Documents/Heat_data/"
                         "Thermofeel_WBGT/ERA5/Periindustrial/")
-CF_MONTHLY_FILE      = "wbgt_monthly_ERA5_periindustrial_1940_1948.nc"
-CF_EXTREME_FILE      = "wbgt_extreme_indices_ERA5_periindustrial_1940_1948.nc"
+CF_MONTHLY_FILE      = "wbgt_monthly_ERA5_periindustrial_1940_1949.nc"
+CF_EXTREME_FILE      = "wbgt_extreme_indices_ERA5_periindustrial_1940_1949.nc"
 # If you renamed the periindustrial precip file, update this. Filename only —
 # it's joined to CF_WBGT_DIRECTORY below.
 CF_PRECIP_FILE = "precip_monthly_ERA5_periindustrial_1940_1948.nc"
