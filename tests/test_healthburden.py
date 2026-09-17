@@ -47,6 +47,68 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+def check_district_dalys_sum_to_total_dalys(
+    district_dalys: pd.DataFrame,
+    total_dalys: pd.DataFrame,
+):
+    """
+    Check that summing the district-level DALYs across all subgroup
+    categories gives the same result as the corresponding aggregate
+    DALYs table.
+    """
+
+    district_dalys = district_dalys.drop(columns=['date'], errors='ignore')
+    total_dalys = total_dalys.drop(columns=['date'], errors='ignore')
+
+    district_metadata_columns = {
+        'sex',
+        'li_wealth',
+        'li_urban',
+        'region_of_residence',
+        'district_of_residence',
+        'year',
+    }
+
+    assert 'district_of_residence' in district_dalys.columns
+    assert 'district_of_residence' not in total_dalys.columns
+
+    district_cause_columns = [
+        column
+        for column in district_dalys.columns
+        if column not in district_metadata_columns
+        and column in total_dalys.columns
+        and pd.api.types.is_numeric_dtype(district_dalys[column])
+    ]
+
+    assert district_cause_columns, (
+        'No common numeric DALY cause columns were found. '
+        f'District columns: {list(district_dalys.columns)}; '
+        f'Total columns: {list(total_dalys.columns)}'
+    )
+
+    district_totals = (
+        district_dalys[district_cause_columns]
+        .sum(axis=0)
+        .sort_index()
+    )
+
+    total_totals = (
+        total_dalys[district_cause_columns]
+        .sum(axis=0)
+        .sort_index()
+    )
+
+    pd.testing.assert_series_equal(
+        district_totals,
+        total_totals,
+        check_dtype=False,
+        check_names=False,
+        atol=1e-8,
+        rtol=1e-8,
+        obj='District DALYs versus aggregate DALYs',
+    )
+
+
 def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected.
     """
@@ -75,6 +137,27 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     # Do the checks
     # correctly configured index (outputs on 31st december in each year of simulation for each age/sex group)
     dalys = output['tlo.methods.healthburden']['dalys']
+
+    # This captures national DALYs
+    dalys_stacked_by_age_and_time = output['tlo.methods.healthburden'][
+        'dalys_stacked_by_age_and_time'
+    ]
+
+    district_dalys = output['tlo.methods.healthburden'][
+        'dalys_by_wealth_urban_region_district_stacked_by_age_and_time'
+    ]
+
+    assert 'district_of_residence' in district_dalys.columns
+    assert 'region_of_residence' in district_dalys.columns
+    assert 'li_urban' in district_dalys.columns
+    assert 'li_wealth' in district_dalys.columns
+    assert 'year' in district_dalys.columns
+
+    check_district_dalys_sum_to_total_dalys(
+        district_dalys=district_dalys,
+        total_dalys=dalys_stacked_by_age_and_time,
+    )
+
     dalys = dalys.drop(columns=['date'])
 
     age_index = sim.modules['Demography'].AGE_RANGE_CATEGORIES

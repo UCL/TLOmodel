@@ -559,6 +559,8 @@ class Demography(Module):
                                                                     urban=person['li_urban'],
                                                                     region_of_residence=person[
                                                                         'region_of_residence'],
+                                                                    district_of_residence=person[
+                                                                        'district_of_residence'],
                                                                     )
 
         # Release any beds-days that would be used by this person:
