@@ -167,7 +167,7 @@ SUPPORT_HIGH_PCTILE = 99.9
 # Model settings
 WBGT_VAR = "wbgt_day"
 SPLINE_DF = 3
-LAG_MONTHS = [1,2,3]
+LAG_MONTHS = [1]
 SA_LAG = True
 if SA_LAG:
     LAG_SUFFIX = "_with_lags"
@@ -1686,76 +1686,93 @@ if __name__ == "__main__":
                     continue
 
                 df["mu_a"], df["mu_b"] = mu_wx, mu_base
-                df = df.merge(res["_fac_district"], on="facility", how="left")
-                df["indicator"] = ind
+                # ---- Hot-months filter using training-p95 threshold --------
+                # Apply the same absolute-temperature threshold as the historical
+                # hot-month deficit. Breaks the Poisson FE score identity on
+                # both arms of the comparison, and keeps CF WBGT inside training
+                # support so the extrapolation artifact is avoided.
+                hot_threshold = support["p95"]
+                df_hot = df[df[WBGT_VAR] > hot_threshold].copy()
+                n_hot_cf = len(df_hot)
 
-                df[
-                    [
-                        "indicator",
-                        "facility",
-                        CLUSTER_COL,
-                        "year",
-                        "year_cf_original",
-                        "month",
-                        "date",
-                        WBGT_VAR,
-                        PRECIP_COL,
-                        "mu_a",
-                        "mu_b",
-                    ]
-                ].to_csv(
-                    f"{OUT_DIR}counterfactual_facility_{ind}_{CF_LABEL}_{WBGT_VAR}.csv",
-                    index=False,
-                )
-
-                df_agg = _apply_deficit_filter(df, "mu_b", "mu_a")
-                if df_agg.empty:
-                    continue
-                tot_a, tot_b = float(df_agg["mu_a"].sum()), float(df_agg["mu_b"].sum())
-                cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
-
-                _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
-                    df_agg["mu_a"].values,
-                    df_agg["mu_b"].values,
-                    df_agg["facility"].values,
-                        )
-
-                hist_row = summary_df.loc[summary_df["indicator"] == ind]
-                hist_deficit = float(hist_row["deficit_pct"].iloc[0]) if not hist_row.empty else np.nan
-
-                cf_rows.append(
-                    {
+                if n_hot_cf < 10:
+                    print(
+                        f"    {ind}: only {n_hot_cf} CF facility-months above "
+                        f"training p95 ({hot_threshold:.2f}°C) — insufficient for "
+                        f"hot-month attribution (this is itself a finding)"
+                    )
+                    cf_rows.append({
                         "indicator": ind,
                         "scenario": CF_LABEL,
-                        "only_deficits": ONLY_DEFICITS,
-                        "cf_years_original": f"{CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_START_ORIG + 8}",
-                        "cf_years_relabelled": f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_START_NEW + 8}",
-                        "n_facility_months": len(df_agg),
-                        "n_facilities": df_agg["facility"].nunique(),
-                        "mean_wbgt_cf": float(df_agg[WBGT_VAR].mean()),
-                        "mean_precip_cf": float(df_agg[PRECIP_COL].mean()),
-                        "deficit_pct_cf": cf_deficit,
-                        "cf_ci_lo": cf_lo,
-                        "cf_ci_hi": cf_hi,
-                        "deficit_pct_historical": hist_deficit,
-                        "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
-                        "wbgt_train_p_lo": support["p_lo"],
-                        "wbgt_train_p_hi": support["p_hi"],
-                        "frac_clipped_lo": clip_diag["frac_clipped_lo"],
-                        "frac_clipped_hi": clip_diag["frac_clipped_hi"],
-                        "n_clipped_lo": clip_diag["n_clipped_lo"],
-                        "n_clipped_hi": clip_diag["n_clipped_hi"],
-                        "cf_wbgt_min_raw": min_cf,
-                        "cf_wbgt_max_raw": max_cf,
+                        "hot_threshold": hot_threshold,
+                        "n_cf_hot_months": n_hot_cf,
+                        "n_cf_all_months": len(df),
+                        "frac_cf_above_threshold": n_hot_cf / max(len(df), 1),
+                        "deficit_pct_cf": np.nan,
+                        "cf_ci_lo": np.nan,
+                        "cf_ci_hi": np.nan,
+                        "deficit_pct_historical": np.nan,
+                        "excess_deficit_attributable_to_warming_pp": np.nan,
                         "sa_lag": SA_LAG,
-                    }
-                )
-                print(
-                    f"    {ind}: cf={cf_deficit:+.2f}%  hist={hist_deficit:+.2f}%  "
-                    f"excess={hist_deficit - cf_deficit:+.2f}pp  "
-                    f"(n={len(df_agg):,} fac-months)"
+                    })
+                    continue
+
+                df_hot_agg = _apply_deficit_filter(df_hot, "mu_b", "mu_a")
+                tot_a = float(df_hot_agg["mu_a"].sum())
+                tot_b = float(df_hot_agg["mu_b"].sum())
+                cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
+
+                # Facility jackknife on CF fitted values — sensitivity diagnostic
+                # only (ignores coefficient uncertainty). Upgrade to cluster-
+                # jackknife-with-refit if you want a proper CI on this arm.
+                _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
+                    df_hot_agg["mu_a"].values,
+                    df_hot_agg["mu_b"].values,
+                    df_hot_agg["facility"].values,
                 )
 
+                # Historical anchor: hot-month deficit from the summary (same p95
+                # threshold, same estimator), NOT the pooled deficit_pct which
+                # is mechanically zero under the score identity.
+                hist_row = summary_df.loc[summary_df["indicator"] == ind]
+                if not hist_row.empty:
+                    hist_deficit = float(hist_row["hot_deficit_pct"].iloc[0])
+                    hist_ci_lo = float(hist_row["hot_ci_lo"].iloc[0])
+                    hist_ci_hi = float(hist_row["hot_ci_hi"].iloc[0])
+                else:
+                    hist_deficit = hist_ci_lo = hist_ci_hi = np.nan
+
+                cf_rows.append({
+                    "indicator": ind,
+                    "scenario": CF_LABEL,
+                    "only_deficits": ONLY_DEFICITS,
+                    "cf_years_original": f"{CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_START_ORIG + 8}",
+                    "cf_years_relabelled": f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_START_NEW + 8}",
+                    "hot_threshold": hot_threshold,
+                    "n_cf_hot_months": n_hot_cf,
+                    "n_cf_all_months": len(df),
+                    "frac_cf_above_threshold": n_hot_cf / max(len(df), 1),
+                    "n_facilities": df_hot_agg["facility"].nunique(),
+                    "mean_wbgt_cf_hot": float(df_hot_agg[WBGT_VAR].mean()),
+                    "mean_precip_cf": float(df_hot_agg[PRECIP_COL].mean()),
+                    "deficit_pct_cf": cf_deficit,
+                    "cf_ci_lo": cf_lo,
+                    "cf_ci_hi": cf_hi,
+                    "deficit_pct_historical": hist_deficit,
+                    "hist_ci_lo": hist_ci_lo,
+                    "hist_ci_hi": hist_ci_hi,
+                    "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
+                    "wbgt_train_p95": hot_threshold,
+                    "cf_wbgt_min_raw": min_cf,
+                    "cf_wbgt_max_raw": max_cf,
+                    "sa_lag": SA_LAG,
+                })
+                print(
+                    f"    {ind}: cf_hot={cf_deficit:+.2f}% [{cf_lo:+.2f}, {cf_hi:+.2f}]  "
+                    f"hist_hot={hist_deficit:+.2f}% [{hist_ci_lo:+.2f}, {hist_ci_hi:+.2f}]  "
+                    f"excess={hist_deficit - cf_deficit:+.2f}pp  "
+                    f"(n_cf_hot={n_hot_cf}/{len(df)} = {100 * n_hot_cf / max(len(df), 1):.1f}%)"
+                )
             if cf_rows:
                 pd.DataFrame(cf_rows).to_csv(
                     f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
