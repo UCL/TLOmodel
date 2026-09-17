@@ -8,7 +8,7 @@ POP_SIZE = 1000 # Population size simulated
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
 START_SECOND_BOUNDARY = 2012
 START_THIRD_BOUNDARY = 2013
-END_THIRD_BOUNDARY = 2013
+END_THIRD_BOUNDARY = 2014
 
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
