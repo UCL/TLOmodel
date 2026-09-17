@@ -101,7 +101,7 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
 ]
 
 VALID_PRIOR_RUN_COMMITS: list[str] = [
-    'bf455fdf83bb2803f7d43ab342c7d931470724d2'
+    'bf455fdf83bb2803f7d43ab342c7d931470724d2',
     '0784d356b276f6cc5a5c8837f74de148a768892f'
     # Full (or 12+ char) commit hashes whose ALREADY-SUBMITTED real trial
     # jobs (in submitted_jobs.jsonl) are still considered safe to recover
