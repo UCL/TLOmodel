@@ -315,22 +315,18 @@ def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
     ax.set_yticks(y_ph)
     ax.set_yticklabels(ph["label"], fontsize=9)
     ax.set_xlabel(
-        f"% deficit in appointments during hottest months ({hot_thresh_label})",
+        f"% deficit in appointments during hottest months (>29)",
         fontsize=10,
     )
     ax.grid(axis="x", ls=":", alpha=0.5)
     ax.legend(
         handles=[
-            mpatches.Patch(color="#823038", label=f"WBGT Wald test BH-FDR q ≤ {FDR_ALPHA}"),
-            mpatches.Patch(color="#888888", label="Wald test not significant"),
+            mpatches.Patch(color="#823038", label=f"Sig"),
+            mpatches.Patch(color="#888888", label="Not sign"),
         ],
         loc="lower right", fontsize=8, frameon=False,
     )
-    ax.set_title(
-        "Effect sizes: district-cluster bootstrap 95% CIs (1,000 replicates).\n"
-        "Colour: joint Wald test on WBGT spline, BH-FDR across indicators.",
-        fontsize=8, color="#555", loc="left", pad=8,
-    )
+
 
     plt.tight_layout()
     out_path = f"{out_dir}forest_plot_hot_deficit_NB_{WBGT_VAR}.png"
@@ -1633,8 +1629,11 @@ def print_summary_statistics(stats: dict, by_ind: pd.DataFrame):
 # =====================================================================
 # 17. 1940s REFERENCE-PERIOD CONTRAST
 # =====================================================================
-CF_LABEL = "ERA5_periindustrial_1940_1948"
+CF_LABEL = "ERA5_periindustrial_1941_1949"
 CF_COLOURS = {"reference": "#4a7298", "observed": "#823038"}
+
+CF_LABEL = "ERA5_periindustrial_1940_1949"
+CF_COLOURS = {"overall": "#4a7298", "hot": "#823038"}
 
 
 def plot_reference_period_contrast(
@@ -1643,19 +1642,25 @@ def plot_reference_period_contrast(
     wbgt_var: str = None,
     cf_label: str = CF_LABEL,
 ) -> str:
-    """Paired forest: 2016–24 observed deficit vs 1940–48 reference-period
-    deficit, one row per indicator. The horizontal gap between the two
-    points is the period-to-period contrast — read it as "how much more
-    services lose under recent climate than under 1940s climate", holding
-    baseline demand, facilities and secular trend fixed at LAST_HIST_YEAR.
+    """Two-panel forest of the warming attribution:
+      (a) Overall: fraction of expected services lost to the 1941-49 -> 2016-24
+          WBGT shift, holding exposure-response, baseline demand, facilities
+          and secular trend fixed.
+      (b) Hot months: same quantity restricted to rows where observed WBGT
+          exceeds the historical p95.
 
-    Reads counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv written
-    by the counterfactual block in the model script.
+    Both are within-sample: two predictions on the historical panel, one
+    with observed WBGT, one with CF WBGT. Positive = warming cost services.
+
+    A side panel shows the WBGT p95 shift (deg C) that drives the effect.
+
+    Reads counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv
+    written by the counterfactual block in the model script.
     """
     out_dir = out_dir or OUT_DIR
     wbgt_var = wbgt_var or WBGT_VAR
 
-    csv_path = f"{out_dir}counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+    csv_path = f"{out_dir}counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}{LAG_SUFFIX}.csv"
     if not os.path.exists(csv_path):
         print(f"  reference-period summary missing at {csv_path} — skipping")
         return ""
@@ -1666,99 +1671,90 @@ def plot_reference_period_contrast(
         print("  no matching indicators in reference-period summary")
         return ""
 
-    # The primary climate-change contrast is a percentage-point difference:
-    # recent observed deficit minus the 1940s reference-period deficit.
-    # This is NOT a percent change.
-    df["delta_deficit_pp"] = df["deficit_pct_historical"] - df["deficit_pct_cf"]
-
-    # Sort by the recent deficit so the most-affected indicators sit at the
-    # top, matching the main forest plot convention.
-    df = df.sort_values("deficit_pct_historical").reset_index(drop=True)
+    # Sort by overall attribution so the largest-affected indicator sits on top
+    df = df.sort_values("deficit_pct_overall").reset_index(drop=True)
     y_pos = np.arange(len(df))
 
-    # Save the numerical contrast as a separate, publication-friendly CSV.
+    # Save the numbers alongside the figure
     contrast_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.csv"
     df.to_csv(contrast_path, index=False)
 
-    fig, ax = plt.subplots(figsize=(8, max(4, 0.55 * len(df) + 1.5)))
-
-    # 1940s reference dots (with jackknife CI where available)
-    for i, r in df.iterrows():
-        lo, hi = r.get("cf_ci_lo"), r.get("cf_ci_hi")
-        if pd.notna(lo) and pd.notna(hi):
-            ax.plot([lo, hi], [i, i], color=CF_COLOURS["reference"], lw=1.2, alpha=0.7, zorder=1)
-        ax.scatter(
-            r["deficit_pct_cf"], i, color=CF_COLOURS["reference"], s=55, zorder=3, edgecolor="white", linewidth=0.6
-        )
-
-    # 2016–24 observed dots (no CI here — that's on the main forest plot)
-    ax.scatter(
-        df["deficit_pct_historical"],
-        y_pos,
-        color=CF_COLOURS["observed"],
-        s=55,
-        zorder=3,
-        edgecolor="white",
-        linewidth=0.6,
-        marker="D",
+    fig, (ax_overall, ax_hot, ax_shift) = plt.subplots(
+        1, 3, figsize=(13, max(4, 0.55 * len(df) + 1.5)),
+        gridspec_kw={"width_ratios": [4, 4, 2]},
+        sharey=True,
     )
 
-    # Connectors: thin grey line from reference to observed to make the
-    # gap read as "the shift", not two unrelated points.
+    # -------- (a) Overall attribution ------------------------------------
     for i, r in df.iterrows():
-        ax.plot(
-            [r["deficit_pct_cf"], r["deficit_pct_historical"]],
-            [i, i],
-            color="#888888",
-            lw=0.8,
-            ls=":",
-            alpha=0.6,
-            zorder=2,
-        )
+        lo, hi = r.get("overall_ci_lo"), r.get("overall_ci_hi")
+        if pd.notna(lo) and pd.notna(hi):
+            ax_overall.plot([lo, hi], [i, i], color=CF_COLOURS["overall"],
+                            lw=1.4, alpha=0.75, zorder=1)
+    ax_overall.scatter(
+        df["deficit_pct_overall"], y_pos,
+        color=CF_COLOURS["overall"], s=55, zorder=3,
+        edgecolor="white", linewidth=0.6,
+    )
+    ax_overall.axvline(0, color="black", ls="--", lw=0.9)
+    ax_overall.set_yticks(y_pos)
+    ax_overall.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
+    ax_overall.set_xlabel("Deficit attributable to warming\n"
+                          "(% of expected services)", fontsize=9)
+    ax_overall.set_title("Overall (all months)", fontsize=10, fontweight="bold")
+    ax_overall.grid(axis="x", ls=":", alpha=0.4)
 
-    # Flag rows where the 1940s WBGT was materially outside the fit range;
-    # these are extrapolation-dependent and shouldn't be over-interpreted.
-    if "frac_wbgt_below_fit_range" in df.columns:
-        flagged = df["frac_wbgt_below_fit_range"] > 0.05
-        for i in y_pos[flagged]:
-            ax.text(ax.get_xlim()[1], i, "  †", va="center", ha="left", fontsize=9, color="#666")
-
-    ax.axvline(0, color="black", ls="--", lw=0.9)
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
-    ax.set_xlabel("WBGT-associated deficit (% of expected appointments)", fontsize=10)
-    ax.grid(axis="x", ls=":", alpha=0.4)
-
-    # Label each connector with the period-to-period shift in percentage points.
-    xmax = ax.get_xlim()[1]
-    xmin = ax.get_xlim()[0]
-    span = xmax - xmin if xmax > xmin else 1.0
+    # -------- (b) Hot-month attribution ----------------------------------
     for i, r in df.iterrows():
-        x_mid = 0.5 * (r["deficit_pct_cf"] + r["deficit_pct_historical"])
-        ha = "left" if r["delta_deficit_pp"] >= 0 else "right"
-        dx = 0.015 * span * (1 if r["delta_deficit_pp"] >= 0 else -1)
-        ax.text(
-            x_mid + dx, i, f"Δ {r['delta_deficit_pp']:+.2f} pp",
-            va="bottom", ha=ha, fontsize=6.5, color="#555555"
-        )
+        lo, hi = r.get("hot_ci_lo"), r.get("hot_ci_hi")
+        if pd.notna(lo) and pd.notna(hi):
+            ax_hot.plot([lo, hi], [i, i], color=CF_COLOURS["hot"],
+                        lw=1.4, alpha=0.75, zorder=1)
+    ax_hot.scatter(
+        df["deficit_pct_hot"], y_pos,
+        color=CF_COLOURS["hot"], s=55, zorder=3,
+        edgecolor="white", linewidth=0.6, marker="D",
+    )
+    ax_hot.axvline(0, color="black", ls="--", lw=0.9)
+    ax_hot.set_xlabel("Deficit attributable to warming,\n"
+                      "hot months only (obs WBGT > hist p95)", fontsize=9)
+    ax_hot.set_title("Hot months (top 5% observed)", fontsize=10, fontweight="bold")
+    ax_hot.grid(axis="x", ls=":", alpha=0.4)
 
-    legend_handles = [
-        mpatches.Patch(color=CF_COLOURS["reference"], label="1940–48 reference"),
-        mpatches.Patch(color=CF_COLOURS["observed"], label="2016–24 observed"),
-    ]
-    ax.legend(handles=legend_handles, loc="lower right", fontsize=9, frameon=False)
+    # Flag rows with a small hot-month sample
+    if "n_hot_months" in df.columns:
+        for i, n_hot in enumerate(df["n_hot_months"]):
+            if pd.isna(n_hot) or n_hot < 30:
+                ax_hot.text(ax_hot.get_xlim()[1], i, "  †",
+                            va="center", ha="left", fontsize=9, color="#666")
 
-    if "frac_wbgt_below_fit_range" in df.columns and (df["frac_wbgt_below_fit_range"] > 0.05).any():
-        fig.text(
-            0.99,
-            0.01,
-            "†  >5% of 1940s WBGT below fit range — spline extrapolation",
-            ha="right",
-            fontsize=7,
-            style="italic",
-            color="#666",
-        )
+    # -------- (c) WBGT p95 shift (driver) --------------------------------
+    if "wbgt_p95_shift_c" in df.columns:
+        ax_shift.barh(y_pos, df["wbgt_p95_shift_c"],
+                      color="#666666", alpha=0.55, edgecolor="white")
+        ax_shift.axvline(0, color="black", ls="--", lw=0.9)
+        ax_shift.set_xlabel("Hist p95 − CF p95 (°C)", fontsize=9)
+        ax_shift.set_title("WBGT distribution shift\n(top 5%)",
+                           fontsize=10, fontweight="bold")
+        ax_shift.grid(axis="x", ls=":", alpha=0.4)
+    else:
+        ax_shift.set_visible(False)
 
+    # Clipping footnote — the one caveat that matters for attribution
+    if "frac_cf_clipped_lo" in df.columns:
+        max_clip = df[["frac_cf_clipped_lo", "frac_cf_clipped_hi"]].max().max()
+        if max_clip > 0.05:
+            fig.text(
+                0.99, 0.01,
+                "†  hot-month n<30; CF WBGT clipped to training support "
+                f"(max {100 * max_clip:.0f}% of rows in any indicator)",
+                ha="right", fontsize=7, style="italic", color="#666",
+            )
+
+    fig.suptitle(
+        f"Warming attribution: {cf_label.replace('_', ' ')} vs 2016–2024",
+        fontsize=11, fontweight="bold", y=1.005,
+    )
     plt.tight_layout()
     out_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -1878,6 +1874,79 @@ def plot_facility_mean_wbgt(out_dir: str = OUT_DIR) -> str:
     plt.savefig(out_path, dpi=200, bbox_inches="tight")
     plt.close()
     return out_path
+
+def plot_displacement_empirical_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
+    """Empirical displacement curve per indicator, one panel each.
+    Reads displacement_empirical_{ind}_{WBGT_VAR}{LAG_SUFFIX}.csv written
+    by fit_indicator (binned by actual WBGT, aggregated within bin).
+    """
+    disp_paths = sorted(
+        Path(out_dir).glob(f"displacement_empirical_*_{WBGT_VAR}{LAG_SUFFIX}.csv")
+    )
+    if not disp_paths:
+        print("  no empirical displacement curves found — skipping panel")
+        return ""
+
+    emp_all = pd.concat([pd.read_csv(p) for p in disp_paths], ignore_index=True)
+
+    inds = [i for i in fitted if i in emp_all["indicator"].unique()]
+    if not inds:
+        print("  no matching indicators — skipping")
+        return ""
+
+    n_ind = len(inds)
+    n_cols = 3
+    n_rows = int(np.ceil(n_ind / n_cols))
+
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(4.5 * n_cols, 3 * n_rows),
+        sharex=True, sharey=True, squeeze=False,
+    )
+    axes_flat = axes.flatten()
+
+    for idx, ind in enumerate(inds):
+        ax = axes_flat[idx]
+        sub = (
+            emp_all[emp_all["indicator"] == ind]
+            .sort_values("wbgt_bin_mid")
+            .reset_index(drop=True)
+        )
+
+        if sub.empty:
+            ax.set_visible(False)
+            continue
+
+        ax.fill_between(
+            sub["wbgt_bin_mid"],
+            sub["ci_lo"],
+            sub["ci_hi"],
+            color="#B17776",
+            alpha=0.25,
+            linewidth=0,
+        )
+        ax.plot(sub["wbgt_bin_mid"], sub["displacement_pct"], color="#823038", lw=1.5)
+        ax.axhline(0.0, color="black", lw=0.5, ls="--")
+        ax.axhline(0.0, color="black", lw=0.5, ls="--")
+        ax.set_title(_label(ind), fontsize=9, fontweight="bold")
+
+        if idx % n_cols == 0:
+            ax.set_ylabel("Displacement (%)", fontsize=8)
+        if idx // n_cols == n_rows - 1:
+            ax.set_xlabel("WBGT (°C)", fontsize=8)
+        ax.tick_params(labelsize=7)
+        if idx < len(PANEL_LABELS):
+            ax.annotate(PANEL_LABELS[idx], xy=(0.05, 1.05),
+                        xycoords="axes fraction", size=14)
+
+    for idx in range(len(inds), len(axes_flat)):
+        axes_flat[idx].set_visible(False)
+
+    plt.tight_layout()
+    out_path = f"{out_dir}displacement_empirical_panel_{WBGT_VAR}{LAG_SUFFIX}.png"
+    plt.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close()
+    return out_path
 # =====================================================================
 # MAIN — run everything
 # =====================================================================
@@ -1901,63 +1970,66 @@ if __name__ == "__main__":
         except FileNotFoundError as e:
             print(f"  skip {ind}: {e}")
 
-    print("\n[2] main forest plot")
-    print("  ->", plot_main_forest(results_df))
-
-    print("\n[4] IRR forest plot")
-    print("  ->", plot_irr_forest(results_df))
-
+    # print("\n[2] main forest plot")
+    # print("  ->", plot_main_forest(results_df))
+    #
+    # print("\n[4] IRR forest plot")
+    # print("  ->", plot_irr_forest(results_df))
+    #
     print("\n[5] exposure-response panel")
     print("  ->", plot_exposure_response_panel(fitted))
+    #
+    # print("\n[6] monthly deficit panel")
+    # print("  ->", plot_monthly_deficit_panel(fitted))
+    #
+    # print("\n[7] timeseries burden panel")
+    # print("  ->", plot_timeseries_panel(fitted))
+    #
+    # print("\n[8] district choropleth maps")
+    # plot_district_maps(fitted, variant="per_district")
+    # plot_district_maps(fitted, variant="national")
+    # print("  ->", plot_timeseries_panel(fitted))
+    #
+    #
+    # print("\n[9] projection heatmaps")
+    # for p in plot_projection_heatmaps(fitted):
+    #     print("  ->", p)
+    #
+    # print("\n[11] district × indicator heatmap")
+    # print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
+    #
+    # print("\n[12] projection forest — aggregate and hot-month, multiple windows")
+    # for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
+    #     print(f"  aggregate {w[0]}-{w[1]}:",
+    #           plot_projection_forest(fitted, window=w, results_df=results_df))
+    #     print(f"  hot-months {w[0]}-{w[1]}:",
+    #           plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
+    #                                  results_df=results_df))
+    #
+    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    # print("  aggregate ->",
+    #       plot_projection_annual_panel(fitted, results_df=results_df))
+    # print("  hot-months ->",
+    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+    #                                    results_df=results_df))
+    #
+    # print("\n[14] seasonal amplification (SSP245 / median)")
+    # print("  ->", plot_seasonal_amplification(fitted))
+    #
+    # print("\n[15] Summary statistics by indicator")
+    # by_ind = calculate_summary_statistics_by_indicator(fitted)
+    # print("  ->", by_ind.shape, "rows written")
+    #
+    # print("\n[16] Summary statistics rollup")
+    # stats = calculate_summary_statistics(fitted)
+    # print_summary_statistics(stats, by_ind)
+    # print("\nDone.")
+    #
+    # print("\n[17] 1940s reference-period contrast")
+    # print("  ->", plot_reference_period_contrast(fitted))
+    #
+    # print("\n[18] spline df stability panel")
+    # print("  ->", plot_df_stability_panel(fitted))
 
-    print("\n[6] monthly deficit panel")
-    print("  ->", plot_monthly_deficit_panel(fitted))
-
-    print("\n[7] timeseries burden panel")
-    print("  ->", plot_timeseries_panel(fitted))
-
-    print("\n[8] district choropleth maps")
-    plot_district_maps(fitted, variant="per_district")
-    plot_district_maps(fitted, variant="national")
-    print("  ->", plot_timeseries_panel(fitted))
-
-
-    print("\n[9] projection heatmaps")
-    for p in plot_projection_heatmaps(fitted):
-        print("  ->", p)
-
-    print("\n[11] district × indicator heatmap")
-    print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
-
-    print("\n[12] projection forest — aggregate and hot-month, multiple windows")
-    for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
-        print(f"  aggregate {w[0]}-{w[1]}:",
-              plot_projection_forest(fitted, window=w, results_df=results_df))
-        print(f"  hot-months {w[0]}-{w[1]}:",
-              plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
-                                     results_df=results_df))
-
-    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    print("  aggregate ->",
-          plot_projection_annual_panel(fitted, results_df=results_df))
-    print("  hot-months ->",
-          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-                                       results_df=results_df))
-
-    print("\n[14] seasonal amplification (SSP245 / median)")
-    print("  ->", plot_seasonal_amplification(fitted))
-
-    print("\n[15] Summary statistics by indicator")
-    by_ind = calculate_summary_statistics_by_indicator(fitted)
-    print("  ->", by_ind.shape, "rows written")
-
-    print("\n[16] Summary statistics rollup")
-    stats = calculate_summary_statistics(fitted)
-    print_summary_statistics(stats, by_ind)
-    print("\nDone.")
-
-    print("\n[17] 1940s reference-period contrast")
-    print("  ->", plot_reference_period_contrast(fitted))
-
-    print("\n[18] spline df stability panel")
-    print("  ->", plot_df_stability_panel(fitted))
+    print("\n[19] spline df stability panel")
+    print("  ->", plot_displacement_empirical_panel(fitted))

@@ -964,6 +964,71 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
     )
+    n_bins = 10
+    edges = np.linspace(
+        np.percentile(nb_data[WBGT_VAR], 1),
+        np.percentile(nb_data[WBGT_VAR], 99),
+        n_bins + 1,
+        )
+    nb_data["_wbgt_bin"] = pd.cut(nb_data[WBGT_VAR], bins=edges, include_lowest=True)
+
+    def _bin_disp(df_sub):
+        """Return dict of {bin_mid: displacement_pct} for df_sub."""
+        out = {}
+        for b, sub in df_sub.groupby("_wbgt_bin", observed=True):
+            sb = float(sub["y_pred_base"].sum())
+            sw = float(sub["y_pred_wx"].sum())
+            if sb > 0 and len(sub) > 0:
+                out[b.mid] = 100.0 * (sb - sw) / sb
+        return out
+
+    # Point estimate on full sample
+    pt = _bin_disp(nb_data)
+
+    # Leave-one-district-out replicates
+    u_dists = nb_data[CLUSTER_COL].unique()
+    jack_by_bin = {bin_mid: [] for bin_mid in pt.keys()}
+    for d in u_dists:
+        sub = nb_data[nb_data[CLUSTER_COL] != d]
+        dj = _bin_disp(sub)
+        for bin_mid in pt.keys():
+            if bin_mid in dj:
+                jack_by_bin[bin_mid].append(dj[bin_mid])
+
+    emp_rows = []
+    for b, sub in nb_data.groupby("_wbgt_bin", observed=True):
+        bin_mid = b.mid
+        if bin_mid not in pt or len(sub) < 30:
+            continue
+        disp_pt = pt[bin_mid]
+        jack_vals = np.array(jack_by_bin[bin_mid], dtype=float)
+        jack_vals = jack_vals[np.isfinite(jack_vals)]
+        if len(jack_vals) > 1:
+            n_j = len(jack_vals)
+            se = np.sqrt((n_j - 1) / n_j * np.sum((jack_vals - jack_vals.mean()) ** 2))
+            ci_lo = disp_pt - 1.96 * se
+            ci_hi = disp_pt + 1.96 * se
+        else:
+            se = ci_lo = ci_hi = np.nan
+        emp_rows.append({
+            "wbgt_bin_mid": bin_mid,
+            "wbgt_bin_lo": b.left,
+            "wbgt_bin_hi": b.right,
+            "displacement_pct": disp_pt,
+            "se_jackknife": se,
+            "ci_lo": ci_lo,
+            "ci_hi": ci_hi,
+            "n_rows": len(sub),
+            "n_districts": sub[CLUSTER_COL].nunique(),
+            "mean_wbgt": float(sub[WBGT_VAR].mean()),
+        })
+
+    emp_df = pd.DataFrame(emp_rows)
+    emp_df.insert(0, "indicator", indicator)
+    emp_df.to_csv(
+        f"{OUT_DIR}displacement_empirical_{indicator}_{WBGT_VAR}{LAG_SUFFIX}{_df_tag}.csv",
+        index=False,
+    )
 
     pd.DataFrame(
         [
@@ -1235,6 +1300,7 @@ if __name__ == "__main__":
             Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv",
             index=False,
         )
+
 
     # =======================================================================
     # FORWARD PROJECTIONS
