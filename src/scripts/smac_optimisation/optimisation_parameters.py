@@ -6,9 +6,9 @@ YEAR_END_DATE = 2014 # Year in which overall (including resume) tlo sim ends
 CONFIG_YEAR_START_DATE = 2011 # Year in which configuration changes are enforced
 POP_SIZE = 1000 # Population size simulated
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
-START_SECOND_BOUNDARY = 2012
-START_THIRD_BOUNDARY = 2013
-END_THIRD_BOUNDARY = YEAR_END_DATE
+START_SECOND_BOUNDARY = YEAR_END_DATE
+START_THIRD_BOUNDARY = YEAR_END_DATE + 2
+END_THIRD_BOUNDARY = YEAR_END_DATE + 3
 
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
@@ -41,7 +41,7 @@ MIN_SAMPLES_LEAF = 3         # ConstrainedEI's underlying RandomForestRegressors
                              # POP_SIZE - a smaller pop_size means noisier
                              # per-seed results, which argues for a HIGHER
                              # min_samples_leaf to compensate, not a lower one).
-PENALTY_COEFFICIENT_MULTIPLIER = 10  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
+PENALTY_COEFFICIENT_MULTIPLIER = 3  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
                              # the penalty coefficient in record_result()'s
                              # TrialValue - rough, not load-bearing for search
                              # quality (ConstrainedEI does the real steering),
@@ -54,7 +54,7 @@ N_CONCURRENT = 3              # concurrent Azure jobs in flight - interacts
                              # with RETRAIN_EVERY; several jobs finishing in
                              # the same polling pass can mean refitting more
                              # often than intended
-POLL_INTERVAL_SECONDS = 20   # trades API call frequency against latency
+POLL_INTERVAL_SECONDS = 10   # trades API call frequency against latency
                              # between job completion and SMAC seeing it
 
 # --------------------------------------------------------------------------
@@ -75,7 +75,7 @@ USE_SUSPEND_RESUME = True   # whether REAL trials resume from a pre-resume
                              # every trial runs a full, fresh simulation,
                              # completely independent of SUBMIT_SUSPEND_PART
                              # below
-SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
+SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
                              # jobs (the "first part" of suspend/resume) THIS
                              # run - a plain user-controlled toggle, not
                              # derived from checking what's already present on
@@ -87,6 +87,7 @@ SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
                              # to use already-generated checkpoints without
                              # regenerating them.
 VALID_CHECKPOINT_COMMITS: list[str] = [
+    'bf455fdf83bb2803f7d43ab342c7d931470724d2'
     # Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
     # are still considered acceptable to reuse, even when the pipeline is
     # currently running under a DIFFERENT (e.g. newer) commit - e.g. a
@@ -98,6 +99,28 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
     # and optimisation_pipeline.find_checkpoint_commit_for_seed().
 ]
 
+VALID_PRIOR_RUN_COMMITS: list[str] = [
+    'bf455fdf83bb2803f7d43ab342c7d931470724d2'
+    # Full (or 12+ char) commit hashes whose ALREADY-SUBMITTED real trial
+    # jobs (in submitted_jobs.jsonl) are still considered safe to recover
+    # into history, even when the pipeline is currently running under a
+    # DIFFERENT (e.g. newer) commit - see
+    # optimisation_pipeline.recover_from_job_log(). The CURRENT commit is
+    # always checked first, automatically - only list PAST commits here.
+    #
+    # DELIBERATELY SEPARATE from VALID_CHECKPOINT_COMMITS above, despite
+    # the identical structure/usage pattern - "safe to reuse a checkpoint
+    # generated under this commit" (only the pre-resume portion of the
+    # simulation needs to be unchanged) and "safe to recover a completed
+    # real trial's result from this commit" (the ENTIRE simulation logic,
+    # including draw_parameters()'s own config->module mapping, needs to
+    # be unchanged) are genuinely different claims about a commit - one
+    # holding doesn't imply the other. Point this at the same list as
+    # VALID_CHECKPOINT_COMMITS if you're confident both always hold
+    # together for your own commit history; kept separate here since
+    # that's not true in general.
+]
+
 # --------------------------------------------------------------------------
 # Baseline run: a standard (non-suspend/resume), 10-differently-seeded-run
 # submission of smac_scenario_baseline.py, used ONLY to derive the budget
@@ -107,7 +130,7 @@ VALID_CHECKPOINT_COMMITS: list[str] = [
 # postprocess_output.compute_and_save_baseline_budgets() and
 # optimisation_pipeline.submit_baseline_job().
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
+SUBMIT_BASELINE_RUN = True  # plain user toggle, same philosophy as
                              # SUBMIT_SUSPEND_PART - NOT derived from
                              # checking what's already in COST_LIMITS_FILE.
                              # Defaults to False (unlike SUBMIT_SUSPEND_PART)

@@ -88,7 +88,7 @@ from convergence_monitoring import (
 from optimisation_parameters import (
     N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, PENALTY_COEFFICIENT_MULTIPLIER,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
-    VALID_CHECKPOINT_COMMITS, CONFIG_YEAR_START_DATE,
+    VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
 )
 import json
@@ -1222,12 +1222,18 @@ def recover_from_job_log() -> list[dict]:
        paid-for compute, lost. A failed/still-running job is correctly
        left unrecovered either way.
 
-    Only jobs submitted under the CURRENT commit are recovered - a run
-    submitted under a different commit may have used a different
-    smac_scenario.py (different draw_parameters mapping, different
-    modules, etc.), so silently folding its DALYs/cost into history
-    would risk mixing results that aren't actually comparable. Such
-    jobs are skipped, with a warning, rather than loaded.
+    Jobs are recovered if they were submitted under EITHER the CURRENT
+    commit, or a commit listed in VALID_PRIOR_RUN_COMMITS
+    (optimisation_parameters.py) - mirroring exactly how
+    find_checkpoint_commit_for_seed() treats VALID_CHECKPOINT_COMMITS for
+    checkpoints. A run submitted under some OTHER, unlisted commit may
+    have used a different smac_scenario.py (different draw_parameters
+    mapping, different modules, etc.), so silently folding its
+    DALYs/cost into history would risk mixing results that aren't
+    actually comparable - such jobs are skipped, with a warning, rather
+    than loaded. An earlier version of this function only ever accepted
+    the current commit, with no way to explicitly vet and reuse results
+    from an older, still-trusted commit.
     """
     if not JOB_LOG_FILE.exists():
         return []
@@ -1235,17 +1241,20 @@ def recover_from_job_log() -> list[dict]:
     tlo_config = _get_config()
     username = tlo_config["DEFAULT"]["USERNAME"]
     current_commit = _get_commit()
+    candidate_commits = {current_commit, *VALID_PRIOR_RUN_COMMITS}
 
     recovered = []
     with open(JOB_LOG_FILE) as f:
         for line in f:
             record = json.loads(line)
+            job_commit = record.get("commit")
 
-            if record.get("commit") != current_commit:
+            if job_commit not in candidate_commits:
                 print(
                     f"[warning] skipping recovered job {record['job_id']} - "
-                    f"submitted under commit {record.get('commit', 'unknown')[:12]}, "
-                    f"current commit is {current_commit[:12]}"
+                    f"submitted under commit {(job_commit or 'unknown')[:12]}, which is "
+                    f"neither the current commit ({current_commit[:12]}) nor listed in "
+                    f"VALID_PRIOR_RUN_COMMITS"
                 )
                 continue
 
@@ -1255,7 +1264,14 @@ def recover_from_job_log() -> list[dict]:
                 # not downloaded yet - check whether it's actually
                 # finished on Azure before giving up on it
                 job = AzureJobHandle(
-                    job_id=record["job_id"], submitted_at=0.0, commit_hexsha=current_commit,
+                    job_id=record["job_id"], submitted_at=0.0, commit_hexsha=job_commit,
+                    # commit_hexsha is this JOB's OWN recorded commit, not
+                    # necessarily current_commit (an earlier version of
+                    # this line hardcoded current_commit here regardless
+                    # - harmless in practice, since nothing downstream of
+                    # this AzureJobHandle actually reads commit_hexsha
+                    # for API calls, only job_id, but factually wrong for
+                    # a job recovered under a VALID_PRIOR_RUN_COMMITS entry).
                 )
                 if not azure_job_is_finished(job):
                     continue  # still running - genuinely not recoverable yet

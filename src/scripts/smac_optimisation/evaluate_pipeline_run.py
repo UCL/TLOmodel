@@ -24,7 +24,9 @@ or import run_all_checks() / any individual check function elsewhere.
 from __future__ import annotations
 
 import json
+import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -263,6 +265,42 @@ def check_intensification_effect(records: list[dict], intensified_threshold: int
 # feasible vs infeasible, against the baseline
 # --------------------------------------------------------------------------
 
+def _submission_datetime_from_job_id(job_id) -> datetime | None:
+    """
+    Extracts the submission timestamp embedded directly in a real
+    trial's own job_id - submit_azure_job()'s own construction is
+    "<filename>-<timestamp>-<uuid>", where timestamp is
+    datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ") - genuinely the
+    moment of submission, not completion, and (being zero-padded,
+    most-significant-first) also lexicographically sortable as-is, were
+    that ever preferable to parsing.
+
+    Returns None if job_id is None/falsy, or doesn't contain a
+    substring matching that exact pattern - notably true for
+    PRIOR_RUNS entries warm-started via seed_history_with_prior_runs()
+    (job_id=run.get("job_id"), which is None unless the prior run dict
+    happened to include one) - callers should treat None as "no
+    reliable submission-order position available for this record",
+    not assume it means something else.
+
+    Uses re.search (not a fixed-position slice), so this also correctly
+    finds the timestamp regardless of where in the string it sits - the
+    baseline job's own id inserts "-baseline-" before its timestamp
+    rather than right after the filename, and checkpoint jobs use an
+    entirely different scheme (checkpoint_seeds.checkpoint_job_id())
+    with no timestamp at all, correctly returning None for those too.
+    """
+    if not job_id:
+        return None
+    match = re.search(r"(\d{4}-\d{2}-\d{2}T\d{6}Z)", job_id)
+    if match is None:
+        return None
+    try:
+        return datetime.strptime(match.group(1), "%Y-%m-%dT%H%M%SZ")
+    except ValueError:
+        return None
+
+
 def load_baseline_summary(filepath: str = BASELINE_SUMMARY_FILE) -> dict | None:
     """
     Reads the baseline run's summary (median DALYs, n_runs), written by
@@ -283,6 +321,7 @@ def plot_dalys_by_completion_order(
     records: list[dict],
     baseline_summary_path: str = BASELINE_SUMMARY_FILE,
     color_by: str = "intensification",
+    order_by: str = "completion",
 ):
     """
     One point per COMPLETED TRIAL (i.e. one point per raw row in
@@ -290,8 +329,19 @@ def plot_dalys_by_completion_order(
     other checks are, since intensified/new status is itself something
     this plot needs to show per trial, not collapse away).
 
-    x = completion order (file order - same completion-order proxy
-        load_history_log()'s own docstring already documents).
+    x = run order - "completion" (default, file order, the same
+        completion-order proxy load_history_log()'s own docstring
+        already documents) or "submission" (the order jobs were
+        actually SUBMITTED to Azure, not the order they happened to
+        finish in - meaningfully different under N_CONCURRENT, where a
+        fast job submitted later can complete before a slow job
+        submitted earlier). "submission" order is recovered from the
+        real timestamp embedded directly in each trial's own job_id
+        (see _submission_datetime_from_job_id()) - records with no
+        parseable timestamp (PRIOR_RUNS entries warm-started without a
+        recorded job_id, most commonly) are EXCLUDED from the plot in
+        this mode, with a printed warning naming how many - there's no
+        honest position to place them at.
     y = that trial's own "dalys" field - already HIV-specific, already
         summed over CONFIG_YEAR_START_DATE-YEAR_END_DATE via
         postprocess_output.py's own TARGET_PERIOD, so no separate
@@ -314,6 +364,14 @@ def plot_dalys_by_completion_order(
         be unreadable with more than a handful of distinct configs) -
         the colour/line pairing carries the grouping, not a legend key.
 
+    Note: "new"/"intensified" (color_by="intensification") and each
+    config's own point-connecting order (color_by="config") are BOTH
+    determined by iterating `records` in whatever order this function
+    is left in after the order_by step below - so under
+    order_by="submission", "new" correctly means "first SUBMITTED",
+    and a config's connecting line correctly traces submission order
+    too, not completion order silently leaking back in.
+
     Either mode: MARKER is circle if FEASIBLE (every *_violation column
     <= 0 for this trial), x if INFEASIBLE (any violation > 0) - same
     feasibility convention _config_frame()/get_best_feasible_dalys()
@@ -335,6 +393,22 @@ def plot_dalys_by_completion_order(
 
     if color_by not in ("intensification", "config"):
         raise ValueError(f"color_by must be 'intensification' or 'config', got {color_by!r}")
+    if order_by not in ("completion", "submission"):
+        raise ValueError(f"order_by must be 'completion' or 'submission', got {order_by!r}")
+
+    if order_by == "submission":
+        timestamped = [(rec, _submission_datetime_from_job_id(rec.get("job_id"))) for rec in records]
+        n_missing = sum(1 for _, ts in timestamped if ts is None)
+        if n_missing:
+            print(
+                f"[evaluate] WARNING: {n_missing} of {len(records)} record(s) have no parseable "
+                f"submission timestamp in their job_id (commonly warm-started PRIOR_RUNS entries) "
+                f"- excluded from this plot under order_by='submission'."
+            )
+        records = [rec for rec, ts in sorted(
+            ((rec, ts) for rec, ts in timestamped if ts is not None),
+            key=lambda pair: pair[1],
+        )]
 
     violation_cols = [c for c in records[0] if "_violation" in c] if records else []
 
@@ -448,9 +522,9 @@ def plot_dalys_by_completion_order(
                    label="Infeasible"),
         ]
 
-    ax.set_xlabel("Run (completion order)")
+    ax.set_xlabel(f"Run ({order_by} order)")
     ax.set_ylabel(f"HIV DALYs ({TARGET_PERIOD[0].year}\u2013{TARGET_PERIOD[1].year})")
-    ax.set_title("HIV DALYs by completion order")
+    ax.set_title(f"HIV DALYs by {order_by} order")
     if color_by == "intensification":
         # Plain ax.legend() with no handles= arg: auto-detects every
         # labelled artist, which is the four scatter buckets (each with
@@ -596,6 +670,7 @@ def run_all_checks(
     save_plot: bool = True,
     plot_path: str = "dalys_by_completion_order.png",
     plot_color_by: str = "intensification",
+    plot_order_by: str = "completion",
 ) -> dict:
     """
     Runs all four checks against history_log.jsonl and returns a dict of
@@ -610,10 +685,12 @@ def run_all_checks(
     and saves it to plot_path - an earlier version of this file defined
     that function but never actually called it from here (or anywhere),
     so running the evaluation never produced the plot at all unless it
-    was called directly, separately, by name. plot_color_by is passed
-    straight through to that function's own color_by parameter -
-    "intensification" (default) or "config", see its own docstring for
-    what each mode shows. Wrapped in try/except: matplotlib is imported
+    was called directly, separately, by name. plot_color_by/plot_order_by
+    are passed straight through to that function's own color_by/order_by
+    parameters - "intensification" (default) or "config" for the
+    former, "completion" (default) or "submission" for the latter - see
+    that function's own docstring for what each mode shows. Wrapped in
+    try/except: matplotlib is imported
     lazily, inside the plotting function itself, specifically so a
     missing matplotlib install doesn't block the other four
     (matplotlib-free) checks above - if it's missing, or the plot fails
@@ -659,7 +736,7 @@ def run_all_checks(
 
     if save_plot:
         try:
-            fig = plot_dalys_by_completion_order(records, color_by=plot_color_by)
+            fig = plot_dalys_by_completion_order(records, color_by=plot_color_by, order_by=plot_order_by)
             fig.savefig(plot_path, dpi=150, bbox_inches="tight")
             results["plot_path"] = plot_path
             if verbose:
@@ -734,4 +811,4 @@ def run_all_checks(
 
 if __name__ == "__main__":
     log_path = sys.argv[1] if len(sys.argv) > 1 else "history_log.jsonl"
-    run_all_checks(log_path, plot_color_by="config")
+    run_all_checks(log_path, plot_order_by='submission', plot_color_by='config')
