@@ -1560,25 +1560,36 @@ if __name__ == "__main__":
     # ===========================================================================
     # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
     # ===========================================================================
+    # ===========================================================================
+    # COUNTERFACTUAL: peri-industrial ERA5 climate ("warming attribution")
+    #
+    # Estimand: assuming the fitted 2016-2024 exposure-response holds, what
+    # would service delivery have been under peri-industrial (1941-1949) WBGT
+    # instead of observed WBGT, on the SAME set of facility-months?
+    #
+    # All comparisons are within-sample: two predictions on nb_data, one with
+    # observed WBGT, one with CF WBGT overlaid. mu_b (baseline) does not enter.
+    # ===========================================================================
     COUNTERFACTUAL = True
-    CF_LABEL = "ERA5_periindustrial_1940_1948"
+    CF_LABEL = "ERA5_periindustrial_1940_1949"
     CF_WBGT_FILE = (
         f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_extreme_indices_facility_{CF_LABEL}.csv"
         if WBGT_VAR == "wbgt5x_day"
         else f"/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices/wbgt_monthly_mean_facility_{CF_LABEL}.csv"
     )
 
-    # CF year 1941 → historical year 2016; 1940 → 2015 as lag buffer.
     CF_ANALYSIS_START_ORIG = 1941
+    CF_ANALYSIS_END_ORIG = 1949
     CF_ANALYSIS_START_NEW = 2016
     YEAR_SHIFT = CF_ANALYSIS_START_NEW - CF_ANALYSIS_START_ORIG
+    CF_ANALYSIS_END_NEW = CF_ANALYSIS_END_ORIG + YEAR_SHIFT
 
     if COUNTERFACTUAL:
         print(f"\nCounterfactual scenario: {CF_LABEL}")
         print(
             f"  Relabelling CF years by +{YEAR_SHIFT} "
-            f"({CF_ANALYSIS_START_ORIG}→{CF_ANALYSIS_START_NEW}), "
-            f"analysis window {CF_ANALYSIS_START_NEW}–{CF_ANALYSIS_START_NEW + 8}"
+            f"({CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_END_ORIG} -> "
+            f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_END_NEW})"
         )
         cf_path = CF_WBGT_FILE
         if not os.path.exists(cf_path):
@@ -1587,26 +1598,29 @@ if __name__ == "__main__":
             cf = pd.read_csv(cf_path, parse_dates=["date"])
             cf["facility"] = cf["facility"].astype(str).str.strip()
             cf["date"] = cf["date"].dt.to_period("M").dt.to_timestamp()
-            for col in (WBGT_VAR, PRECIP_COL):
+            for col in (WBGT_VAR,):
                 if col not in cf.columns:
                     raise KeyError(f"{cf_path}: {col!r} missing (have {list(cf.columns)})")
             cf = cf.sort_values(["facility", "date"]).reset_index(drop=True)
 
-            # Build lags on ORIGINAL calendar so 1940 populates 1941 lags
+            # Lags on ORIGINAL calendar so 1940 populates 1941 lag1
             if SA_LAG:
                 for k in LAG_MONTHS:
                     cf[f"{WBGT_VAR}_lag{k}"] = cf.groupby("facility")[WBGT_VAR].shift(k)
 
-            # Relabel calendar: 1940→2015 buffer, 1941–1948 → 2016–2023
+            # Relabel: 1941 -> 2016 ... 1949 -> 2024
             cf["year_cf_original"] = cf["date"].dt.year
             cf["date"] = cf["date"] + pd.DateOffset(years=YEAR_SHIFT)
             cf["year"] = cf["date"].dt.year
             cf["month"] = cf["date"].dt.month
 
+            # Keep only relabelled years inside the historical fitting window
+            cf = cf[cf["year"].between(CF_ANALYSIS_START_NEW, CF_ANALYSIS_END_NEW)].reset_index(drop=True)
+
             print(
                 f"  {CF_LABEL}: {len(cf):,} rows, {cf['facility'].nunique()} facilities, "
-                f"original years {cf['year_cf_original'].min()}–{cf['year_cf_original'].max()}, "
-                f"relabelled to {cf['year'].min()}–{cf['year'].max()}"
+                f"original {cf['year_cf_original'].min()}-{cf['year_cf_original'].max()}, "
+                f"relabelled {cf['year'].min()}-{cf['year'].max()}"
             )
 
             cf_rows = []
@@ -1617,173 +1631,215 @@ if __name__ == "__main__":
                 spline_cols = res["_spline_cols"]
                 train_facs = set(res["_train_facs"])
                 model_wx = res["_model_wx"]
-                model_base = res["_model_base"]
                 support = res["_wbgt_support"]
 
-                df = cf[cf["facility"].isin(train_facs)].copy()
-                if df.empty:
-                    print(f"    {ind}: no facility overlap in counterfactual — skipping")
-                    continue
-
-                wbgt_needed = [WBGT_VAR, PRECIP_COL]
-                if SA_LAG:
-                    wbgt_needed += [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
-                df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
-                if df.empty:
-                    print(f"    {ind}: all rows dropped for missing climate inputs")
-                    continue
-
-                # Restrict to indicator's historical training window
+                # -----------------------------------------------------------
+                # Rebuild the exact historical fit data for this indicator.
+                # We need the SAME rows the model was fit on, with observed
+                # WBGT predictions already computed. fit_indicator returned
+                # y_pred_wx as part of that predictions_ CSV, but we need it
+                # in-memory. Simplest: recompute mu_hist from model_wx on
+                # nb_data-equivalent rows.
+                # -----------------------------------------------------------
+                hist = load_indicator_panel(ind, PANEL_DIR)
+                hist = apply_hard_ceilings(hist, ind)
+                hist = hist.rename(columns={ind: "y"})
+                for fac, d0, d1 in CLOSURES:
+                    m = (hist["date"].between(d0, d1)) & (hist["facility"] == fac)
+                    if m.any():
+                        hist.loc[m, "y"] = 0
+                hist["year"] = hist["date"].dt.year
+                hist["month"] = hist["date"].dt.month
                 ind_min_year = MIN_YEAR_BY_INDICATOR.get(ind, min_year_historical)
-                df = df[df["year"].between(ind_min_year, max_year_historical - 1)].reset_index(drop=True)
-                if df.empty:
-                    print(f"    {ind}: no CF rows in training window {ind_min_year}–{max_year_historical - 1}")
+                hist = hist[hist["year"].between(ind_min_year, max_year_historical - 1)]
+                hist = hist[hist["facility"].isin(train_facs)].reset_index(drop=True)
+
+                # Merge CF WBGT + lag onto historical rows by (facility, year, month)
+                cf_cols = ["facility", "year", "month", WBGT_VAR]
+                if SA_LAG:
+                    cf_cols += [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
+                cf_slice = cf[cf_cols].rename(
+                    columns={
+                        WBGT_VAR: f"{WBGT_VAR}_cf",
+                        **{f"{WBGT_VAR}_lag{k}": f"{WBGT_VAR}_lag{k}_cf" for k in LAG_MONTHS},
+                    }
+                )
+                hist = hist.merge(cf_slice, on=["facility", "year", "month"], how="inner")
+                if hist.empty:
+                    print(f"    {ind}: no facility-month overlap between historical and CF panels")
                     continue
 
-                frac_below_raw = float((df[WBGT_VAR] < support["p_lo"]).mean())
-                frac_above_raw = float((df[WBGT_VAR] > support["p_hi"]).mean())
-                min_cf = float(df[WBGT_VAR].min())
-                max_cf = float(df[WBGT_VAR].max())
-                if frac_below_raw > 0.05 or frac_above_raw > 0.05:
-                    print(
-                        f"    {ind}: CF WBGT range [{min_cf:.2f}, {max_cf:.2f}] °C; "
-                        f"{100 * frac_below_raw:.1f}% below p{SUPPORT_LOW_PCTILE:g}, "
-                        f"{100 * frac_above_raw:.1f}% above p{SUPPORT_HIGH_PCTILE:g} — will be clipped"
-                    )
-
-                df, clip_diag = _clip_wbgt_to_support(df, support)
-
-                # covid=0 (CF asks about climate alone, not pandemic)
+                # ---- Build the HISTORICAL-WBGT prediction frame -----------
+                df_h = hist.copy()
+                df_h = add_year_fixed_effects(df_h, use_reference_year=False)
                 lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
-                df["covid"] = df["date"].between(lo, hi).astype(int)
-                df = add_year_fixed_effects(df, use_reference_year=False)
-                df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
-
-                xc = df[WBGT_VAR].values - shifts[WBGT_VAR]
-                B = np.asarray(
-                    patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc})[0],
+                df_h["covid"] = df_h["date"].between(lo, hi).astype(int)
+                df_h["precip_c"] = df_h[PRECIP_COL] - shifts.get("precip", 0.0)
+                xc_h = df_h[WBGT_VAR].values - shifts[WBGT_VAR]
+                B_h = np.asarray(
+                    patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc_h})[0],
                     dtype=float,
                 )
                 for i_col, c in enumerate(spline_cols):
-                    df[c] = B[:, i_col]
-
+                    df_h[c] = B_h[:, i_col]
                 if SA_LAG:
                     for k in LAG_MONTHS:
-                        df[f"{WBGT_VAR}_lag{k}_c"] = df[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+                        df_h[f"{WBGT_VAR}_lag{k}_c"] = df_h[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
 
-                need = YEAR_FE_COLS + ["covid", "precip_c"] + list(spline_cols)
+                need_h = YEAR_FE_COLS + ["covid", "precip_c"] + list(spline_cols) + [WBGT_VAR]
                 if SA_LAG:
-                    need += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
-                df = df.dropna(subset=need).reset_index(drop=True)
-                if df.empty:
+                    need_h += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
+                df_h = df_h.dropna(subset=need_h).reset_index(drop=True)
+                if df_h.empty:
+                    print(f"    {ind}: no historical rows with complete covariates")
                     continue
 
-                mu_wx = np.asarray(model_wx.predict(newdata=df, type="response"), dtype=float)
-                mu_base = np.asarray(model_base.predict(newdata=df, type="response"), dtype=float)
-                ok = np.isfinite(mu_wx) & np.isfinite(mu_base)
-                n_cf_nan = int((~ok).sum())
-                if n_cf_nan > 0:
-                    print(f"    {ind}: {n_cf_nan} NaN predictions in counterfactual")
-                df = df.loc[ok].reset_index(drop=True)
-                mu_wx, mu_base = mu_wx[ok], mu_base[ok]
-                if df.empty:
+                mu_hist = np.asarray(model_wx.predict(newdata=df_h, type="response"), dtype=float)
+
+                # ---- Build the CF-WBGT prediction frame (same rows) -------
+                df_c = df_h.copy()
+                # Clip CF WBGT to training support first, then recompute spline + lag_c
+                df_c[WBGT_VAR] = df_c[f"{WBGT_VAR}_cf"]
+                if SA_LAG:
+                    for k in LAG_MONTHS:
+                        df_c[f"{WBGT_VAR}_lag{k}"] = df_c[f"{WBGT_VAR}_lag{k}_cf"]
+                df_c, clip_diag = _clip_wbgt_to_support(df_c, support)
+
+                xc_c = df_c[WBGT_VAR].values - shifts[WBGT_VAR]
+                B_c = np.asarray(
+                    patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc_c})[0],
+                    dtype=float,
+                )
+                for i_col, c in enumerate(spline_cols):
+                    df_c[c] = B_c[:, i_col]
+                if SA_LAG:
+                    for k in LAG_MONTHS:
+                        df_c[f"{WBGT_VAR}_lag{k}_c"] = df_c[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+
+                df_c = df_c.dropna(subset=need_h).reset_index(drop=True)
+                if df_c.empty or len(df_c) != len(df_h):
+                    # Alignment guard: if CF lag is missing for some rows the two
+                    # frames desync. Take the intersection.
+                    keep_idx = df_c.index
+                    df_h = df_h.loc[keep_idx].reset_index(drop=True)
+                    mu_hist = mu_hist[keep_idx.values]
+
+                mu_cf = np.asarray(model_wx.predict(newdata=df_c, type="response"), dtype=float)
+                ok = np.isfinite(mu_hist) & np.isfinite(mu_cf)
+                df_h = df_h.loc[ok].reset_index(drop=True)
+                df_c = df_c.loc[ok].reset_index(drop=True)
+                mu_hist = mu_hist[ok]
+                mu_cf = mu_cf[ok]
+                if len(mu_hist) == 0:
                     continue
 
-                df["mu_a"], df["mu_b"] = mu_wx, mu_base
-                # ---- Hot-months filter using training-p95 threshold --------
-                # Apply the same absolute-temperature threshold as the historical
-                # hot-month deficit. Breaks the Poisson FE score identity on
-                # both arms of the comparison, and keeps CF WBGT inside training
-                # support so the extrapolation artifact is avoided.
-                hot_threshold = support["p95"]
-                df_hot = df[df[WBGT_VAR] > hot_threshold].copy()
-                n_hot_cf = len(df_hot)
+                # -----------------------------------------------------------
+                # (a) OVERALL: whole-sample deficit from the climate shift
+                # -----------------------------------------------------------
+                tot_hist = float(mu_hist.sum())
+                tot_cf = float(mu_cf.sum())
+                deficit_overall = 100.0 * (tot_hist - tot_cf) / tot_hist if tot_hist > 0 else np.nan
 
-                if n_hot_cf < 10:
-                    print(
-                        f"    {ind}: only {n_hot_cf} CF facility-months above "
-                        f"training p95 ({hot_threshold:.2f}°C) — insufficient for "
-                        f"hot-month attribution (this is itself a finding)"
-                    )
-                    cf_rows.append({
+                # District jackknife on the difference (shared beta cancels)
+                dists = df_h[CLUSTER_COL].values
+                u_dists = np.unique(dists)
+
+                def _stat(mh, mc):
+                    sh, sc = float(mh.sum()), float(mc.sum())
+                    return 100.0 * (sh - sc) / sh if sh > 0 else np.nan
+
+                jack = np.array([_stat(mu_hist[dists != d], mu_cf[dists != d]) for d in u_dists])
+                jack = jack[np.isfinite(jack)]
+                if len(jack) > 1:
+                    n = len(jack)
+                    se = np.sqrt((n - 1) / n * np.sum((jack - jack.mean()) ** 2))
+                    ci_lo_overall = deficit_overall - 1.96 * se
+                    ci_hi_overall = deficit_overall + 1.96 * se
+                else:
+                    ci_lo_overall = ci_hi_overall = np.nan
+
+                # -----------------------------------------------------------
+                # (b) HOT-MONTH: rows where OBSERVED WBGT > historical p95
+                # -----------------------------------------------------------
+                hist_p95 = support["p95"]
+                hot_mask = df_h[WBGT_VAR].values > hist_p95
+                n_hot = int(hot_mask.sum())
+
+                if n_hot >= 10:
+                    mh_hot = mu_hist[hot_mask]
+                    mc_hot = mu_cf[hot_mask]
+                    d_hot = dists[hot_mask]
+                    tot_h_hot = float(mh_hot.sum())
+                    tot_c_hot = float(mc_hot.sum())
+                    deficit_hot = 100.0 * (tot_h_hot - tot_c_hot) / tot_h_hot if tot_h_hot > 0 else np.nan
+
+                    u_d_hot = np.unique(d_hot)
+                    jack_hot = np.array([_stat(mh_hot[d_hot != d], mc_hot[d_hot != d]) for d in u_d_hot])
+                    jack_hot = jack_hot[np.isfinite(jack_hot)]
+                    if len(jack_hot) > 1:
+                        n = len(jack_hot)
+                        se = np.sqrt((n - 1) / n * np.sum((jack_hot - jack_hot.mean()) ** 2))
+                        ci_lo_hot = deficit_hot - 1.96 * se
+                        ci_hi_hot = deficit_hot + 1.96 * se
+                    else:
+                        ci_lo_hot = ci_hi_hot = np.nan
+                else:
+                    deficit_hot = ci_lo_hot = ci_hi_hot = np.nan
+                    print(f"    {ind}: only {n_hot} rows above historical p95 - skipping hot arm")
+
+                # -----------------------------------------------------------
+                # (c) Descriptive: how the top of the WBGT distribution shifted
+                # -----------------------------------------------------------
+                cf_p95 = float(np.percentile(df_c[WBGT_VAR].values, 95))  # note: post-clip
+                cf_p95_raw = float(np.percentile(df_h[f"{WBGT_VAR}_cf"].values, 95))
+                wbgt_p95_shift = hist_p95 - cf_p95_raw
+
+                cf_rows.append(
+                    {
                         "indicator": ind,
                         "scenario": CF_LABEL,
-                        "hot_threshold": hot_threshold,
-                        "n_cf_hot_months": n_hot_cf,
-                        "n_cf_all_months": len(df),
-                        "frac_cf_above_threshold": n_hot_cf / max(len(df), 1),
-                        "deficit_pct_cf": np.nan,
-                        "cf_ci_lo": np.nan,
-                        "cf_ci_hi": np.nan,
-                        "deficit_pct_historical": np.nan,
-                        "excess_deficit_attributable_to_warming_pp": np.nan,
+                        "cf_years_original": f"{CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_END_ORIG}",
+                        "cf_years_relabelled": f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_END_NEW}",
+                        "n_rows": len(mu_hist),
+                        "n_facilities": df_h["facility"].nunique(),
+                        "n_districts": df_h[CLUSTER_COL].nunique(),
+                        # (a) overall
+                        "deficit_pct_overall": deficit_overall,
+                        "overall_ci_lo": ci_lo_overall,
+                        "overall_ci_hi": ci_hi_overall,
+                        # (b) hot-month
+                        "hist_p95_wbgt": hist_p95,
+                        "n_hot_months": n_hot,
+                        "deficit_pct_hot": deficit_hot,
+                        "hot_ci_lo": ci_lo_hot,
+                        "hot_ci_hi": ci_hi_hot,
+                        # (c) distribution shift
+                        "cf_p95_wbgt_raw": cf_p95_raw,
+                        "cf_p95_wbgt_postclip": cf_p95,
+                        "wbgt_p95_shift_c": wbgt_p95_shift,
+                        "mean_wbgt_hist": float(df_h[WBGT_VAR].mean()),
+                        "mean_wbgt_cf_raw": float(df_h[f"{WBGT_VAR}_cf"].mean()),
+                        # clipping diagnostics
+                        "frac_cf_clipped_lo": clip_diag["frac_clipped_lo"],
+                        "frac_cf_clipped_hi": clip_diag["frac_clipped_hi"],
                         "sa_lag": SA_LAG,
-                    })
-                    continue
-
-                df_hot_agg = _apply_deficit_filter(df_hot, "mu_b", "mu_a")
-                tot_a = float(df_hot_agg["mu_a"].sum())
-                tot_b = float(df_hot_agg["mu_b"].sum())
-                cf_deficit = (100.0 * (tot_b - tot_a) / tot_b) if tot_b > 0 else np.nan
-
-                # Facility jackknife on CF fitted values — sensitivity diagnostic
-                # only (ignores coefficient uncertainty). Upgrade to cluster-
-                # jackknife-with-refit if you want a proper CI on this arm.
-                _, cf_lo, cf_hi = _monthly_jackknife_ci_local(
-                    df_hot_agg["mu_a"].values,
-                    df_hot_agg["mu_b"].values,
-                    # df_hot_agg["facility"].values,
-                    df_hot_agg[CLUSTER_COL].values,
+                        "only_deficits": ONLY_DEFICITS,
+                    }
                 )
-
-                # Historical anchor: hot-month deficit from the summary (same p95
-                # threshold, same estimator), NOT the pooled deficit_pct which
-                # is mechanically zero under the score identity.
-                hist_row = summary_df.loc[summary_df["indicator"] == ind]
-                if not hist_row.empty:
-                    hist_deficit = float(hist_row["hot_deficit_pct"].iloc[0])
-                    hist_ci_lo = float(hist_row["hot_ci_lo"].iloc[0])
-                    hist_ci_hi = float(hist_row["hot_ci_hi"].iloc[0])
-                else:
-                    hist_deficit = hist_ci_lo = hist_ci_hi = np.nan
-
-                cf_rows.append({
-                    "indicator": ind,
-                    "scenario": CF_LABEL,
-                    "only_deficits": ONLY_DEFICITS,
-                    "cf_years_original": f"{CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_START_ORIG + 8}",
-                    "cf_years_relabelled": f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_START_NEW + 8}",
-                    "hot_threshold": hot_threshold,
-                    "n_cf_hot_months": n_hot_cf,
-                    "n_cf_all_months": len(df),
-                    "frac_cf_above_threshold": n_hot_cf / max(len(df), 1),
-                    "n_facilities": df_hot_agg["facility"].nunique(),
-                    "mean_wbgt_cf_hot": float(df_hot_agg[WBGT_VAR].mean()),
-                    "mean_precip_cf": float(df_hot_agg[PRECIP_COL].mean()),
-                    "deficit_pct_cf": cf_deficit,
-                    "cf_ci_lo": cf_lo,
-                    "cf_ci_hi": cf_hi,
-                    "deficit_pct_historical": hist_deficit,
-                    "hist_ci_lo": hist_ci_lo,
-                    "hist_ci_hi": hist_ci_hi,
-                    "excess_deficit_attributable_to_warming_pp": hist_deficit - cf_deficit,
-                    "wbgt_train_p95": hot_threshold,
-                    "cf_wbgt_min_raw": min_cf,
-                    "cf_wbgt_max_raw": max_cf,
-                    "sa_lag": SA_LAG,
-                })
                 print(
-                    f"    {ind}: cf_hot={cf_deficit:+.2f}% [{cf_lo:+.2f}, {cf_hi:+.2f}]  "
-                    f"hist_hot={hist_deficit:+.2f}% [{hist_ci_lo:+.2f}, {hist_ci_hi:+.2f}]  "
-                    f"excess={hist_deficit - cf_deficit:+.2f}pp  "
-                    f"(n_cf_hot={n_hot_cf}/{len(df)} = {100 * n_hot_cf / max(len(df), 1):.1f}%)"
+                    f"    {ind}: overall={deficit_overall:+.2f}% [{ci_lo_overall:+.2f}, {ci_hi_overall:+.2f}]  "
+                    f"hot={deficit_hot:+.2f}% [{ci_lo_hot:+.2f}, {ci_hi_hot:+.2f}]  "
+                    f"p95 shift = {wbgt_p95_shift:+.2f}C (hist {hist_p95:.2f} vs cf {cf_p95_raw:.2f})"
                 )
+
             if cf_rows:
                 pd.DataFrame(cf_rows).to_csv(
                     f"{OUT_DIR}counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
                     index=False,
                 )
-                print(f"\nCounterfactual summary → counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
+                print(
+                    f"\nCounterfactual summary -> counterfactual_summary_{CF_LABEL}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+                )
     print(f"\nSummary (HOT MONTHS ONLY, ONLY_DEFICITS={ONLY_DEFICITS}):")
 
     print(summary_df[["indicator", "hot_deficit_pct", "hot_ci_lo", "hot_ci_hi", "n_hot_obs"]].to_string())
