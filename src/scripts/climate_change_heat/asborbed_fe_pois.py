@@ -1042,8 +1042,9 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         "_model_base": model_base,
         "_fac_district": nb_data[["facility", CLUSTER_COL]].drop_duplicates().reset_index(drop=True),
         "_wbgt_support": WBGT_SUPPORT,
+        "_nb_rows": nb_data[["facility", "date"]].copy(),
+        "_wbgt_support": WBGT_SUPPORT,
     }
-
 
 # ===========================================================================
 # MAIN
@@ -1653,6 +1654,11 @@ if __name__ == "__main__":
                 ind_min_year = MIN_YEAR_BY_INDICATOR.get(ind, min_year_historical)
                 hist = hist[hist["year"].between(ind_min_year, max_year_historical - 1)]
                 hist = hist[hist["facility"].isin(train_facs)].reset_index(drop=True)
+                hist = hist.sort_values(["facility", "date"]).reset_index(drop=True)
+                hist = hist.merge(res["_nb_rows"], on=["facility", "date"], how="inner")
+                if SA_LAG:
+                    for k in LAG_MONTHS:
+                        hist[f"{WBGT_VAR}_lag{k}"] = hist.groupby("facility")[WBGT_VAR].shift(k)
 
                 # Merge CF WBGT + lag onto historical rows by (facility, year, month)
                 cf_cols = ["facility", "year", "month", WBGT_VAR]
@@ -1814,11 +1820,11 @@ if __name__ == "__main__":
                         "hot_ci_lo": ci_lo_hot,
                         "hot_ci_hi": ci_hi_hot,
                         # (c) distribution shift
-                        "cf_p95_wbgt_raw": cf_p95_raw,
+                        "cf_p95_wbgt_obs": cf_p95_raw,
                         "cf_p95_wbgt_postclip": cf_p95,
                         "wbgt_p95_shift_c": wbgt_p95_shift,
                         "mean_wbgt_hist": float(df_h[WBGT_VAR].mean()),
-                        "mean_wbgt_cf_raw": float(df_h[f"{WBGT_VAR}_cf"].mean()),
+                        "mean_wbgt_cf_obs": float(df_h[f"{WBGT_VAR}_cf"].mean()),
                         # clipping diagnostics
                         "frac_cf_clipped_lo": clip_diag["frac_clipped_lo"],
                         "frac_cf_clipped_hi": clip_diag["frac_clipped_hi"],
