@@ -70,13 +70,12 @@ EXCLUDED_HSIs = [
     "FirstAttendance_NonEmergency",
     "Inpatient_Care"
 ]
-# Do not exclude FirstAttendance_SpuriousEmergencyCare as it has non-blank appointment footprint
-
+# Do not exclude FirstAttendance_SpuriousEmergencyCare as it has non-blank
+# appointment footprint
 
 def parse_iso_date(value: str) -> Date:
     parsed = date.fromisoformat(value)
     return Date(parsed.year, parsed.month, parsed.day)
-
 
 def parse_bool(value: str) -> bool:
     normalized = value.strip().lower()
@@ -87,7 +86,6 @@ def parse_bool(value: str) -> bool:
     raise argparse.ArgumentTypeError(
         f"Invalid boolean value '{value}'. Use True or False."
     )
-
 
 def remove_consumable_costs_generated_during_first_attendance(
     input_costs: pd.DataFrame,
@@ -186,16 +184,46 @@ def apply(
     facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
 
     param_names = get_parameter_names_from_scenario_file()
-    get_num_deaths_by_cause_label_and_period = make_get_num_deaths_by_cause_label_and_period(
-        target_period_tuple,
+
+    get_num_dalys_by_cause_label_and_period = (
+        make_get_num_dalys_by_cause_label_and_period(target_period_tuple,)
     )
-    get_num_dalys_by_cause_label_and_period = make_get_num_dalys_by_cause_label_and_period(
-        target_period_tuple,
-    )
-    get_num_hsi_by_period = make_get_counts_of_hsis_by_period(
-        target_period_tuple=target_period_tuple,
-    )
+
+    get_num_hsi_by_period = make_get_counts_of_hsis_by_period(target_period_tuple,)
+
     results = {}
+
+    print("Extracting DALYs by label...")
+
+    dalys = (
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="dalys_stacked_by_age_and_time",
+            custom_generate_series=get_num_dalys_by_cause_label_and_period,
+            do_scaling=True,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    )
+
+    cols_to_drop = [
+        col for col in dalys.columns
+        if col[0].strip().startswith(tuple(EXCLUDED_HSIs))
+    ]
+
+    dalys = dalys.drop(columns=cols_to_drop)
+
+    discount_rate_dalys = 0.03
+    dalys_years = dalys.index.get_level_values("period").astype(int)
+    discount_base_year = dalys_years.min()
+    discounted_dalys = dalys.div(
+        (1.0 + discount_rate_dalys) ** (dalys_years - discount_base_year),
+        axis=0,
+    )
+
+    results['discounted_dalys'] = (
+        compute_summary_statistics(discounted_dalys, central_measure='median'))
+
     # Costs calculation
     print("Calculating costs...")
     discount_rate_cost = 0.03
@@ -255,48 +283,6 @@ def apply(
     input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     input_costs = remove_consumable_costs_generated_during_first_attendance(input_costs)
     results['input_costs'] = input_costs
-    print(input_costs['draw'].unique())
-
-    # Get total population by year
-    print("Extracting population data...")
-    total_population_by_year = (
-        extract_results(
-            results_folder,
-            module='tlo.methods.demography',
-            key='population',
-            custom_generate_series=lambda _df: get_total_population_by_year(_df, target_period_tuple),
-            do_scaling=True,
-            autodiscover=True
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    )
-
-    cols_to_drop = [
-        col for col in total_population_by_year.columns
-        if col[0].strip().startswith(tuple(EXCLUDED_HSIs))
-    ]
-    print(f"Dropping columns from total_population_by_year: {cols_to_drop}")
-    total_population_by_year.drop(columns=cols_to_drop, inplace=True)
-
-    total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure='median')
-    results['total_population_by_year'] = total_population_by_year
-
-    counts_of_hsi_by_short_treatment_id = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.healthsystem.summary",
-            key="HSI_Event",
-            custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, target_period_tuple),
-            do_scaling=True,
-            autodiscover=True,
-        )
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-        .fillna(0.0)
-        .sort_index()
-    ).drop(EXCLUDED_HSIs, errors='ignore')
-
-    results['counts_of_hsi_by_short_treatment_id'] = (
-        compute_summary_statistics(counts_of_hsi_by_short_treatment_id, 'median')
-    )
 
     counts_of_hsi_by_period = (
         extract_results(
@@ -310,175 +296,116 @@ def apply(
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
         .sort_index()
-    ).drop(EXCLUDED_HSIs, level=0, errors='ignore')
+    ).drop(columns=cols_to_drop)
 
     # Preserve individual draw/run columns before computing summary statistics.
-    # Hardcoded AccidentsandEmerg footprint at facility level 1a, in minutes.
-    spurious_emergency_minutes_per_appointment = {
-        'Clinical': 33.5,
-        'Nursing_and_Midwifery': 30.5,
-        'Pharmacy': 5.0,
-    }
-    print("Calculating FirstAttendance_SpuriousEmergencyCare minutes by draw, run and year...")
+    print("Retaining spurious-emergency HSI counts by draw, run and year...")
     spurious_emergency_counts = counts_of_hsi_by_period.loc[
         counts_of_hsi_by_period.index.get_level_values('appt_type')
         == 'FirstAttendance_SpuriousEmergencyCare'
     ].droplevel('appt_type')
     spurious_emergency_counts.index = spurious_emergency_counts.index.astype(int).rename('year')
-    spurious_emergency_minutes = pd.concat(
-        {
-            (cadre, '1a'): spurious_emergency_counts * minutes
-            for cadre, minutes in spurious_emergency_minutes_per_appointment.items()
-        },
-        names=['OfficerType', 'FacilityLevel'],
-    ).reorder_levels(['year', 'OfficerType', 'FacilityLevel']).sort_index()
-    print(
-        f"Calculated spurious-emergency minutes for {len(spurious_emergency_counts)} years "
-        f"and {len(spurious_emergency_counts.columns)} draw/run combinations; "
-        f"total {spurious_emergency_minutes.sum().sum():,.2f} minutes (all extracted years)."
-    )
-    if spurious_emergency_counts.empty:
-        print("No FirstAttendance_SpuriousEmergencyCare appointments found; HRH adjustment will be zero.")
-
-    results['counts_of_hsi_by_period'] = counts_of_hsi_by_period = (
+    results['counts_of_hsi_by_period'] = (
         compute_summary_statistics(counts_of_hsi_by_period, 'median')
     )
 
-    print("Extracting total deaths and DALYs by label...")
-    num_deaths = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.demography",
-            key="death",
-            custom_generate_series=get_num_deaths_by_cause_label_and_period,
-            do_scaling=True,
-            autodiscover=True,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    ).drop(columns=cols_to_drop, errors='ignore')
-
-    if do_comparison:
-        num_deaths_averted = compute_summary_statistics(
-            -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T,
-            central_measure='median'
-        ).iloc[0].unstack()
-
-        pc_deaths_averted = 100.0 * compute_summary_statistics(
-            -1.0 * pd.DataFrame(
-                find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T,
-            central_measure='median'
-        ).iloc[0].unstack()
-    else:
-        num_deaths_averted = None
-        pc_deaths_averted = None
-
-    num_deaths = compute_summary_statistics(num_deaths, central_measure='median')
-
-    results['num_deaths'] = num_deaths
-    results['num_deaths_averted'] = num_deaths_averted
-    results['pc_deaths_averted'] = pc_deaths_averted
-
-    dalys = (
-        extract_results(
-            results_folder,
-            module="tlo.methods.healthburden",
-            key="dalys_stacked_by_age_and_time",
-            custom_generate_series=get_num_dalys_by_cause_label_and_period,
-            do_scaling=True,
-            autodiscover=True,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-    ).drop(columns=cols_to_drop, errors='ignore')
-
-    discount_rate_dalys = 0.03
-    dalys_years = dalys.index.get_level_values("period").astype(int)
-    discount_base_year = dalys_years.min()
-    discounted_dalys = dalys.div(
-        (1.0 + discount_rate_dalys) ** (dalys_years - discount_base_year),
-        axis=0,
-    )
-
-    results['discounted_dalys'] = compute_summary_statistics(discounted_dalys, central_measure='median')
-
-    # Capacity_By_FacID_and_Officer logs the fraction of time used per officer type; not the absolute time used.
+    # Capacity_By_FacID_and_Officer logs the fraction of time used per officer
+    # type.
     # To get the actual minutes, we need to multiply by the total available minutes.
     print("Extracting capacity fractions with clinic and facility identifiers...")
-    annual_capacity_used_by_clinic_and_facility = extract_results(
+    # Set do_scaling to False as this is a fraction calculated during runtime.
+    avg_frac_capacity_used_by_clinic_and_facility = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
         key='Capacity_By_FacID_and_Officer',
         custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
-        do_scaling=False, # Not scaling as this is a fraction calculated during runtime.
+        do_scaling=False,
         autodiscover=True,
-    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names).drop(columns=cols_to_drop)
 
     # Convert each facility's fraction using its own capacity before summing.
-    # This analysis currently assumes one clinic and the existing static actual staffing data.
     daily_capacity_by_cadre_and_level = pd.read_csv(
         resourcefilepath / "healthsystem" / "human_resources" / "actual" / "ResourceFile_Daily_Capabilities.csv"
     )
-    clinics = annual_capacity_used_by_clinic_and_facility.index.get_level_values('Clinic').unique()
-    if len(clinics) != 1:
-        raise ValueError(f"Expected one clinic; found {list(clinics)}. Clinic-specific capacities are required.")
-    print(f"Converting fractions for clinic {clinics[0]} using facility-specific actual staffing capacity.")
     annual_capacity_by_facility = (
         daily_capacity_by_cadre_and_level.groupby(['Facility_ID', 'Officer_Category'])['Total_Mins_Per_Day'].sum()
         * 365
     )
     annual_capacity_by_facility.index.names = ['FacilityID', 'OfficerType']
     facility_capacity = annual_capacity_by_facility.reindex(
-        annual_capacity_used_by_clinic_and_facility.index.droplevel(['year', 'Clinic', 'FacilityLevel'])
+        avg_frac_capacity_used_by_clinic_and_facility.index.droplevel(['year', 'FacilityLevel'])
     )
     if facility_capacity.isna().any():
         raise ValueError(f"Missing capacity for facility/cadre pairs: {list(facility_capacity[facility_capacity.isna()].index)}")
-    facility_capacity.index = annual_capacity_used_by_clinic_and_facility.index
-    actual_capacity_used_by_clinic_and_facility = annual_capacity_used_by_clinic_and_facility.mul(
+    facility_capacity.index = avg_frac_capacity_used_by_clinic_and_facility.index
+    actual_capacity_used_by_clinic_and_facility = avg_frac_capacity_used_by_clinic_and_facility.mul(
         facility_capacity, axis=0
     )
     actual_capacity_used_by_cadre_and_level = actual_capacity_used_by_clinic_and_facility.groupby(
         level=['year', 'OfficerType', 'FacilityLevel']
-    ).sum(min_count=1)
-    print("Converted facility fractions to minutes and aggregated by year, cadre and level (draw/run columns retained).")
+    ).sum()
+    print("Converted facility fractions to minutes and aggregated by year, cadre and level.")
 
-    annual_capacity_by_cadre_and_level = (
-        daily_capacity_by_cadre_and_level.groupby(['Officer_Category', 'Facility_Level'])['Total_Mins_Per_Day'].sum() * 365
+    # Reuse the Nothing baseline for both footprint adjustment and capacity scaling.
+    baseline_fractions_2025 = avg_frac_capacity_used_by_clinic_and_facility.xs(
+        'Nothing', level='draw', axis=1
+    ).xs(2025, level='year')
+    # Approximate appointment duration using mean utilisation across level-1a
+    # facilities, separately for each cadre/run. This is an analytical adjustment.
+    spurious_only_draw = 'FirstAttendance_SpuriousEmergencyCare_*'
+    nominal_spurious_emergency_footprint = pd.Series({
+        'Clinical': 33.5,
+        'Nursing_and_Midwifery': 30.5,
+        'Pharmacy': 5.0,
+    }, name='nominal_minutes')
+    mean_utilisation_2025 = baseline_fractions_2025.xs('1a', level='FacilityLevel').groupby(
+        level='OfficerType'
+    ).mean().reindex(nominal_spurious_emergency_footprint.index)
+    mean_utilisation_2025.index.name = 'OfficerType'
+    print("2025 Nothing mean utilisation across level-1a facilities, by cadre/run:")
+    print(mean_utilisation_2025.to_string())
+    below_one = mean_utilisation_2025 < 1.0
+    if below_one.any().any():
+        print("WARNING: mean utilisation below 1; these cadre/run footprints will exceed nominal durations:")
+        print(mean_utilisation_2025.where(below_one).to_string())
+    invalid_utilisation = (
+        mean_utilisation_2025.isna() | (mean_utilisation_2025 <= 0)
+        | mean_utilisation_2025.isin([float('inf'), float('-inf')])
     )
-    annual_capacity_by_cadre_and_level.index.names = ['OfficerType', 'FacilityLevel']
-    level_capacity = annual_capacity_by_cadre_and_level.reindex(
-        actual_capacity_used_by_cadre_and_level.index.droplevel('year')
+    if invalid_utilisation.any().any():
+        print("Invalid mean utilisation by cadre/run:")
+        print(invalid_utilisation.to_string())
+        raise ValueError("Cannot derive effective footprint from missing, non-positive or non-finite utilisation.")
+    spurious_emergency_minutes_per_appointment = mean_utilisation_2025.rdiv(
+        nominal_spurious_emergency_footprint, axis=0
     )
-    if level_capacity.isna().any():
-        raise ValueError("Missing cadre/level capacity for productivity calculation")
-    level_capacity.index = actual_capacity_used_by_cadre_and_level.index
-    # A zero-capacity category has zero productivity; retain NaNs for missing run data.
-    annual_capacity_used_by_cadre_and_level = actual_capacity_used_by_cadre_and_level.div(
-        level_capacity.where(level_capacity != 0, other=1.0), axis=0
-    )
-    results['annual_capacity_used_by_cadre_and_level'] = compute_summary_statistics(
-        annual_capacity_used_by_cadre_and_level, 'median'
-    )
-    baseline = results['annual_capacity_used_by_cadre_and_level'].xs('Nothing', level='draw', axis=1)
-    obs_productivity_in_2025 = baseline.xs(2025, level='year')
-    print("Calculated capacity-weighted productivity for the 2025 baseline.")
-
-    # Scale annual_capacity_by_cadre by the observed productivity in 2025
-    annual_capacity_by_cadre_and_level.index.names = ['OfficerType', 'FacilityLevel']
-    # If no fraction of available capacity is used, then the observed productivity in 2025 will be 0.
-    # In that case, we want to use a multiplier of 1.0
-    multiplier = obs_productivity_in_2025['central'].where(obs_productivity_in_2025['central'] != 0, other=1.0)
-    annual_capacity_by_cadre_and_level_scaled = annual_capacity_by_cadre_and_level * multiplier
-    annual_capacity_by_cadre = annual_capacity_by_cadre_and_level_scaled.groupby('OfficerType').sum()
-
-    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
-
-    staff_count_by_cadre = (
-        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
-    )
-    results['staff_count_by_cadre'] = staff_count_by_cadre
+    print("Effective footprint: nominal minutes divided by 2025 mean utilisation, by cadre/run:")
+    print(spurious_emergency_minutes_per_appointment.to_string())
+    count_runs = spurious_emergency_counts.columns.get_level_values('run')
+    missing_runs = count_runs.unique().difference(spurious_emergency_minutes_per_appointment.columns)
+    if len(missing_runs):
+        raise ValueError(f"Missing 2025 Nothing baseline footprint for runs: {list(missing_runs)}")
+    # Broadcast each run's baseline footprint across draws, retaining annual counts.
+    spurious_emergency_minutes = pd.concat(
+        {
+            (cadre, '1a'): spurious_emergency_counts.mul(
+                pd.Series(minutes.reindex(count_runs).to_numpy(), index=spurious_emergency_counts.columns),
+                axis=1,
+            )
+            for cadre, minutes in spurious_emergency_minutes_per_appointment.iterrows()
+        },
+        names=['OfficerType', 'FacilityLevel'],
+    ).reorder_levels(['year', 'OfficerType', 'FacilityLevel']).sort_index()
 
     print("Subtracting spurious-emergency minutes from actual HRH minutes from 2026 onward...")
     spurious_emergency_minutes_to_remove = spurious_emergency_minutes.loc[
         spurious_emergency_minutes.index.get_level_values('year') >= 2026
-    ]
+    ].copy()
+    exempt_draws = ['Nothing', spurious_only_draw]
+    spurious_emergency_minutes_to_remove.loc[
+        :, spurious_emergency_minutes_to_remove.columns.get_level_values('draw').isin(exempt_draws)
+    ] = 0.0
+    print(f"Leaving these draws unchanged: {exempt_draws}")
     missing_columns = spurious_emergency_minutes_to_remove.columns.difference(
         actual_capacity_used_by_cadre_and_level.columns
     )
@@ -500,7 +427,7 @@ def apply(
     )
     print(
         f"Removed {spurious_emergency_minutes_to_remove.sum().sum():,.2f} minutes "
-        "at level 1a across all draws/runs; years before 2026 are unchanged."
+        "at level 1a across eligible draws/runs; exempt draws and years before 2026 are unchanged."
     )
     print("Minutes removed by cadre (summed across years, draws and runs):")
     print(spurious_emergency_minutes_to_remove.groupby(level='OfficerType').sum().sum(axis=1))
@@ -508,6 +435,28 @@ def apply(
     if negative_cells:
         print(f"WARNING: {negative_cells} HRH values are negative after subtraction; retained for inspection.")
     results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
+
+    # Scale each facility/cadre directly using its logged 2025 baseline fraction.
+    # Retain runs until after aggregating facilities, since medians are not additive.
+    baseline_capacity_2025 = facility_capacity.xs(2025, level='year')
+    multiplier = baseline_fractions_2025.where(baseline_fractions_2025 != 0, other=1.0)
+    print("Scaling each facility/cadre's capacity by its 2025 Nothing-baseline fraction; zero fractions use 1.0.")
+    scaled_capacity_by_facility = multiplier.mul(baseline_capacity_2025, axis=0)
+    scaled_capacity_by_cadre_and_level = scaled_capacity_by_facility.groupby(
+        level=['OfficerType', 'FacilityLevel']
+    ).sum(min_count=1)
+    scaled_capacity_by_cadre = scaled_capacity_by_cadre_and_level.groupby(
+        level='OfficerType'
+    ).sum(min_count=1)
+    annual_capacity_by_cadre = scaled_capacity_by_cadre.median(axis=1)
+    results['annual_capacity_by_cadre'] = annual_capacity_by_cadre
+    print("Aggregated scaled capacity within each run, then calculated median annual capacity by cadre.")
+
+    staff_count_by_cadre = (
+        daily_capacity_by_cadre_and_level.groupby('Officer_Category')['Staff_Count'].sum()
+    )
+    results['staff_count_by_cadre'] = staff_count_by_cadre
+
     # We need the time used by cadre in 2026
     actual_capacity_used_by_cadre = (
         actual_capacity_used_by_cadre_and_level
@@ -533,21 +482,41 @@ def apply(
         .rename_axis(index={'Facility_Level': 'FacilityLevel', 'Officer_Type_Code': 'OfficerType'})
     ).reorder_levels(['OfficerType', 'FacilityLevel'])
 
-    # Scale down the costs by observed productivity in 2025.
-    print("Scaling down the salary costs by observed productivity in 2025")
-    salary_by_cadre_and_level = salary_by_cadre_and_level / multiplier
-
-    # Multiply actual minutes used by the salary per minute to get the total
-    # salary cost by cadre and facility level
-    series_reindexed = salary_by_cadre_and_level.reindex(
-        actual_capacity_used_by_cadre_and_level.index.droplevel('year')
+    # Salary costing remains at cadre/level. The capacity multiplier above is
+    # facility/run-specific, so derive a separate capacity-weighted multiplier
+    # from the already-scaled totals rather than dividing by that DataFrame.
+    print("Adjusting cadre/level salary rates using capacity-weighted 2025 productivity for each run...")
+    baseline_capacity_by_cadre_and_level = baseline_capacity_2025.groupby(
+        level=['OfficerType', 'FacilityLevel']
+    ).sum(min_count=1)
+    salary_productivity_by_cadre_and_level = scaled_capacity_by_cadre_and_level.div(
+        baseline_capacity_by_cadre_and_level.where(baseline_capacity_by_cadre_and_level != 0), axis=0
     )
+    # No available capacity means there is no productivity adjustment to apply.
+    salary_productivity_by_cadre_and_level.loc[baseline_capacity_by_cadre_and_level == 0, :] = 1.0
+    if (salary_productivity_by_cadre_and_level.isna()
+            | (salary_productivity_by_cadre_and_level <= 0)).any().any():
+        raise ValueError("Missing or non-positive 2025 productivity for salary adjustment")
+    salary_rates = salary_by_cadre_and_level.reindex(salary_productivity_by_cadre_and_level.index)
+    if salary_rates.isna().any():
+        raise ValueError("Missing salary rates for baseline cadre/level combinations")
+    adjusted_salary_by_cadre_and_level = salary_productivity_by_cadre_and_level.rdiv(salary_rates, axis=0)
 
-    series_reindexed.index = actual_capacity_used_by_cadre_and_level.index
-
-    actual_cost_by_cadre_and_level = (
-        actual_capacity_used_by_cadre_and_level.mul(series_reindexed, axis=0)
+    # Match both row keys and run labels; broadcast each baseline run across draws.
+    usage_runs = actual_capacity_used_by_cadre_and_level.columns.get_level_values('run')
+    missing_salary_runs = usage_runs.unique().difference(adjusted_salary_by_cadre_and_level.columns)
+    if len(missing_salary_runs):
+        raise ValueError(f"Missing baseline salary adjustments for runs: {list(missing_salary_runs)}")
+    salary_rates_for_usage = adjusted_salary_by_cadre_and_level.reindex(
+        index=actual_capacity_used_by_cadre_and_level.index.droplevel('year'),
+        columns=usage_runs,
     )
+    salary_rates_for_usage.index = actual_capacity_used_by_cadre_and_level.index
+    salary_rates_for_usage.columns = actual_capacity_used_by_cadre_and_level.columns
+    if salary_rates_for_usage.isna().any().any():
+        raise ValueError("Missing adjusted salary rates for HRH usage rows")
+    actual_cost_by_cadre_and_level = actual_capacity_used_by_cadre_and_level * salary_rates_for_usage
+    print("Calculated salary costs with cadre/level, year, draw and run aligned.")
 
     # The costing script calculates the HRH costs for the total cadre, not for the strength used.
     # We will remove the HRH costs from the input_costs; this includes other things besides salary

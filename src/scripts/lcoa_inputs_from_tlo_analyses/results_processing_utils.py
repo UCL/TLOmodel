@@ -398,7 +398,7 @@ def get_capacity_used_by_officer_type_and_facility_level(
     Parse logging output and return a Series indexed by:
         (year, Clinic, FacilityID, OfficerType, FacilityLevel)
 
-    Retains facility/clinic fractions so callers can weight by capacity before aggregating.
+    Retains facility fractions so callers can weight by capacity before aggregating.
     Uses facility_id_levels_dict to map FacilityID → FacilityLevel.
     """
 
@@ -432,10 +432,7 @@ def get_capacity_used_by_officer_type_and_facility_level(
 
     # ---- 5. Map to FacilityLevel ----
     col_df["FacilityLevel"] = col_df["FacilityID"].map(facility_id_levels_dict)
-
-    # Preserve the first (clinic) level regardless of its original capitalization.
-    col_df["Clinic"] = _df.columns.get_level_values(0)
-    levels = ["Clinic", "FacilityID", "OfficerType", "FacilityLevel"]
+    levels = ["FacilityID", "OfficerType", "FacilityLevel"]
     if col_df["FacilityLevel"].isna().any():
         raise ValueError("Missing facility-level mapping in capacity logs")
     _df.columns = pd.MultiIndex.from_frame(col_df[levels])
