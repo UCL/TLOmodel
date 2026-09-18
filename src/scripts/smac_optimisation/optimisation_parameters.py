@@ -49,7 +49,7 @@ SUBMIT_BASELINE_RUN = False
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
-VALID_PRIOR_RUN_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47']
+VALID_PRIOR_RUN_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47', '2d12ead5f49287557a4ee4c56060b1efe42dd4a5']
 SUBMIT_INITIAL_DESIGN = True
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2

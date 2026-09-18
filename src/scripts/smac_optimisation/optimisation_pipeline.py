@@ -1692,7 +1692,9 @@ for _ in range(N_CONCURRENT):
     info = smac.ask()
     pending.append((info, submit_azure_job(info.config, info.seed)))
 
-n_completed = n_seeded  # start counting from the warm-started runs, not zero
+n_completed = 0  # N_TRIALS is a budget for NEW trials only - warm-started
+    # runs (recovered, PRIOR_RUNS, N_INIT) don't count against it,
+    # regardless of n_seeded.
 best_dalys_over_time: list[float] = []
 converged = False
 
