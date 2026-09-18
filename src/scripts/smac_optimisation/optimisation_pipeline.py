@@ -54,6 +54,14 @@ from git import Repo
 from azure.batch import models as batch_models
 
 from ConfigSpace import Configuration, ConfigurationSpace, Float, Integer, Categorical
+from ConfigSpace.hyperparameters import CategoricalHyperparameter  # NOT the same as
+    # Categorical above - that's a convenience FUNCTION (confirmed directly from
+    # ConfigSpace's own docs: "Categorical is actually a function, please use the
+    # corresponding return types if doing an isinstance(param, type) check"), not a
+    # class - isinstance(hp, Categorical) raises TypeError ("arg 2 must be a type"),
+    # confirmed directly from a real traceback. CategoricalHyperparameter is the
+    # actual underlying class Categorical(...) constructs and returns - use THIS
+    # for any isinstance check (see sample_near_baseline_configs()).
 from smac import HyperparameterOptimizationFacade, Scenario
 from smac.runhistory.dataclasses import TrialInfo, TrialValue
 from smac.runhistory.enumerations import StatusType
@@ -876,7 +884,7 @@ def sample_near_baseline_configs(n: int) -> list[Configuration]:
         values = {}
         for name, baseline_value in BASELINE_CONFIG_VALUES.items():
             hp = configspace[name]
-            if isinstance(hp, Categorical):
+            if isinstance(hp, CategoricalHyperparameter):
                 values[name] = baseline_value
             else:
                 perturbed = np.random.normal(
