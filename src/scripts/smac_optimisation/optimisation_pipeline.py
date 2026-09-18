@@ -1710,72 +1710,129 @@ def _top_up_pending(still_pending: list) -> None:
         still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
 
 
-while pending or (n_completed < scenario.n_trials and not converged):
-    made_progress = False
-    still_pending = []
+def _drain_pending(pending: list) -> None:
+    """
+    Waits for every job still in `pending` to finish on Azure and
+    records each (record_result()/smac.tell(), or CRASHED on failure) -
+    same per-job handling as the main loop, but proposes NO new jobs.
+    Called from the loop's own except clause below, so an uncaught
+    exception or Ctrl+C still drains outstanding jobs into history_log
+    before the process actually exits, rather than abandoning them.
+    A failure resolving any individual job here is logged and skipped
+    (not retried indefinitely) - it remains recoverable on a future
+    restart via recover_from_job_log().
+    """
+    print(f"[shutdown] draining {len(pending)} still-pending job(s) before exiting...")
+    still_waiting = list(pending)
+    while still_waiting:
+        next_round = []
+        for info, job in still_waiting:
+            try:
+                if not azure_job_is_finished(job):
+                    next_round.append((info, job))
+                    continue
+                if not azure_task_succeeded(job):
+                    print(f"[shutdown] {job.job_id} failed - recording as CRASHED.")
+                    smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
+                    continue
+                result = fetch_azure_result(job)
+                value = record_result(info.config, info.seed, result, job_id=job.job_id, commit=job.commit_hexsha)
+                smac.tell(info, value)
+                print(f"[shutdown] {job.job_id} recorded.")
+            except Exception as e:
+                print(
+                    f"[shutdown] WARNING: could not resolve {job.job_id} ({e!r}) - "
+                    f"leaving it for a future restart's recover_from_job_log() to pick up."
+                )
+        if next_round:
+            still_waiting = next_round
+            time.sleep(POLL_INTERVAL_SECONDS)
+        else:
+            still_waiting = []
+    print("[shutdown] all pending jobs resolved.")
 
-    for info, job in pending:
-        if not azure_job_is_finished(job):
-            still_pending.append((info, job))
-            continue
 
-        # --- the Azure task itself failed (non-zero exit code) - this
-        # trial produced no usable result. Told to SMAC as CRASHED (not
-        # skipped entirely) so its runhistory/intensifier have an honest
-        # record that this (config, seed) was attempted and failed -
-        # SMAC's own runhistory encoder already knows to exclude crashed
-        # trials from surrogate training via considered_states, so this
-        # doesn't pollute the model, but it does stop SMAC from being
-        # blind to the fact that this specific combination was tried.
-        # Doesn't count toward n_trials or touch history/ConstrainedEI -
-        # a replacement config is still submitted so the failure doesn't
-        # shrink concurrency.
-        if not azure_task_succeeded(job):
-            print(
-                f"[failed] job_id={job.job_id} - Azure task exited non-zero. "
-                f"Skipping this trial."
-            )
-            smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
+try:
+    while pending or (n_completed < scenario.n_trials and not converged):
+        made_progress = False
+        still_pending = []
+
+        for info, job in pending:
+            if not azure_job_is_finished(job):
+                still_pending.append((info, job))
+                continue
+
+            # --- the Azure task itself failed (non-zero exit code) - this
+            # trial produced no usable result. Told to SMAC as CRASHED (not
+            # skipped entirely) so its runhistory/intensifier have an honest
+            # record that this (config, seed) was attempted and failed -
+            # SMAC's own runhistory encoder already knows to exclude crashed
+            # trials from surrogate training via considered_states, so this
+            # doesn't pollute the model, but it does stop SMAC from being
+            # blind to the fact that this specific combination was tried.
+            # Doesn't count toward n_trials or touch history/ConstrainedEI -
+            # a replacement config is still submitted so the failure doesn't
+            # shrink concurrency.
+            if not azure_task_succeeded(job):
+                print(
+                    f"[failed] job_id={job.job_id} - Azure task exited non-zero. "
+                    f"Skipping this trial."
+                )
+                smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
+                made_progress = True
+                _top_up_pending(still_pending)
+                continue
+
+            # --- the Azure task succeeded, but postprocessing can still
+            # fail (missing/malformed output files, the year-completeness
+            # assertion in postprocess_output.py, etc). Catching this
+            # separately from the exit-code check above means one bad run
+            # can't propagate up and kill the whole optimisation process -
+            # in particular, it can't wipe out SMAC's accumulated in-memory
+            # surrogate/incumbent state built up over potentially hours.
+            # Same CRASHED-status reasoning as above applies here too.
+            try:
+                result = fetch_azure_result(job)
+                value = record_result(info.config, info.seed, result, job_id=job.job_id, commit=job.commit_hexsha)
+                smac.tell(info, value)          # <-- the actual "notify SMAC" step
+            except Exception as e:
+                print(f"[postprocessing failed] job_id={job.job_id} - {e!r}. Skipping this trial.")
+                smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
+                made_progress = True
+                _top_up_pending(still_pending)
+                continue
+
+            n_completed += 1
             made_progress = True
+
+            # --- convergence check (logic lives in convergence_monitoring.py) ---
+            current_best = get_best_feasible_dalys(history)
+            if current_best is not None:
+                best_dalys_over_time.append(current_best)
+
+            if not converged and check_convergence(best_dalys_over_time):
+                converged = True
+                print(f"Stopping new submissions; draining {len(pending) - 1} pending job(s).")
+
             _top_up_pending(still_pending)
-            continue
 
-        # --- the Azure task succeeded, but postprocessing can still
-        # fail (missing/malformed output files, the year-completeness
-        # assertion in postprocess_output.py, etc). Catching this
-        # separately from the exit-code check above means one bad run
-        # can't propagate up and kill the whole optimisation process -
-        # in particular, it can't wipe out SMAC's accumulated in-memory
-        # surrogate/incumbent state built up over potentially hours.
-        # Same CRASHED-status reasoning as above applies here too.
-        try:
-            result = fetch_azure_result(job)
-            value = record_result(info.config, info.seed, result, job_id=job.job_id, commit=job.commit_hexsha)
-            smac.tell(info, value)          # <-- the actual "notify SMAC" step
-        except Exception as e:
-            print(f"[postprocessing failed] job_id={job.job_id} - {e!r}. Skipping this trial.")
-            smac.tell(info, TrialValue(cost=np.inf, status=StatusType.CRASHED))
-            made_progress = True
-            _top_up_pending(still_pending)
-            continue
+        pending = still_pending
+        if not made_progress:
+            time.sleep(POLL_INTERVAL_SECONDS)
+except (Exception, KeyboardInterrupt) as e:
+    # Covers BOTH an uncaught exception from a call this loop doesn't
+    # already wrap (azure_job_is_finished/azure_task_succeeded/smac.ask/
+    # smac.tell itself - none of these are retried, unlike the
+    # postprocessing try/except above) AND a manual Ctrl+C - either way,
+    # `pending` may still hold jobs genuinely running on Azure right now.
+    # Without this, the process would exit immediately, leaving them
+    # untracked by THIS run (still recoverable later, but only via a
+    # future restart - not what was actually asked for: this run should
+    # itself wait for them).
+    print(f"[shutdown] main loop stopped ({e!r}) - {len(pending)} job(s) still pending.")
+    _drain_pending(pending)
+    raise
 
-        n_completed += 1
-        made_progress = True
-
-        # --- convergence check (logic lives in convergence_monitoring.py) ---
-        current_best = get_best_feasible_dalys(history)
-        if current_best is not None:
-            best_dalys_over_time.append(current_best)
-
-        if not converged and check_convergence(best_dalys_over_time):
-            converged = True
-            print(f"Stopping new submissions; draining {len(pending) - 1} pending job(s).")
-
-        _top_up_pending(still_pending)
-
-    pending = still_pending
-    if not made_progress:
-        time.sleep(POLL_INTERVAL_SECONDS)
 
 
 # --------------------------------------------------------------------------
