@@ -146,4 +146,3 @@ config_coverage_plhiv,0.5,scenario,0.0,1.0,optimise over
 config_consumable_availability_VL_test,0.5,scenario,0.0,1.0,optimise over,,
 config_consumable_availability_HIV_test,0.5,scenario,0.0,1.0,optimise over,,
 config_annual_testing_rate_adults,0.5,scenario,0.0,1.0,optimise over,,
-targeted_adherence_monitoring,FALSE,scenario,FALSE,TRUE,optimise over,,
