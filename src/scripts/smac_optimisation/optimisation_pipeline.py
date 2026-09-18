@@ -1249,8 +1249,27 @@ configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
 #     import, a few lines down, can safely proceed.
 # --------------------------------------------------------------------------
 
+# Called once, here, before ANYTHING submits a real trial - blocks
+# (polls) until every needed checkpoint has actually finished on Azure
+# and succeeded. No local download involved - see ensure_checkpoints_
+# ready()'s own docstring for why, and submit_azure_job() for where the
+# actual --resume-simulation job-id reference gets constructed.
+#
+# MUST happen here, right after generate_all_checkpoints() itself, and
+# BEFORE submit_initial_design_jobs() below - an earlier version of
+# this file left this call much later (see the "2b." section comment
+# further down, which still explains the reasoning for WHY it can
+# safely live outside the COST_LIMITS_FILE/initialise.py ordering
+# constraint) on the assumption that nothing would submit a real trial
+# before that later point - true until submit_initial_design_jobs()
+# was added, which DOES submit real, suspend/resume-using trials, via
+# the exact same submit_azure_job() every real trial uses. If the
+# checkpoint for CHECKPOINT_SEEDS[0] isn't actually finished and
+# confirmed ready yet, those jobs have nothing to resume from.
 if SUBMIT_SUSPEND_PART:
     generate_all_checkpoints()
+if USE_SUSPEND_RESUME:
+    ensure_checkpoints_ready()
 
 if SUBMIT_BASELINE_RUN:
     baseline_job = submit_baseline_job()
@@ -1510,18 +1529,13 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
 # 2b. Checkpoint-generation and baseline-run SUBMISSION now happen much
 #     earlier (see right before the initialise.py import above) - baseline
 #     results must be available to update COST_LIMITS_FILE BEFORE
-#     initialise.py reads it at import time. This section now only WAITS
-#     for checkpoints (a wait has no such ordering constraint, since
-#     ensure_checkpoints_ready() doesn't touch COST_LIMITS_FILE at all).
+#     initialise.py reads it at import time. Checkpoint WAITING
+#     (ensure_checkpoints_ready()) has moved up there too now, right after
+#     generate_all_checkpoints() itself - it has no COST_LIMITS_FILE
+#     ordering constraint of its own (it never touches that file), but DOES
+#     need to happen before submit_initial_design_jobs() (also up there),
+#     which submits real, suspend/resume-using trials of its own.
 # --------------------------------------------------------------------------
-
-# Called once, here, before ANYTHING submits a real trial - blocks
-# (polls) until every needed checkpoint has actually finished on Azure
-# and succeeded. No local download involved - see ensure_checkpoints_
-# ready()'s own docstring for why, and submit_azure_job() for where the
-# actual --resume-simulation job-id reference gets constructed.
-if USE_SUSPEND_RESUME:
-    ensure_checkpoints_ready()
 
 # --------------------------------------------------------------------------
 # 3. Build SMAC in ask-tell mode (n_trials still needed for its budget
