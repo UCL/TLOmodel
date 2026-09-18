@@ -6,9 +6,9 @@ YEAR_END_DATE = 2014 # Year in which overall (including resume) tlo sim ends
 CONFIG_YEAR_START_DATE = 2011 # Year in which configuration changes are enforced
 POP_SIZE = 1000 # Population size simulated
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
-START_SECOND_BOUNDARY = 2012
-START_THIRD_BOUNDARY = 2013
-END_THIRD_BOUNDARY = 2014
+START_SECOND_BOUNDARY = YEAR_END_DATE
+START_THIRD_BOUNDARY = YEAR_END_DATE + 2
+END_THIRD_BOUNDARY = YEAR_END_DATE + 3
 
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
@@ -41,20 +41,52 @@ MIN_SAMPLES_LEAF = 3         # ConstrainedEI's underlying RandomForestRegressors
                              # POP_SIZE - a smaller pop_size means noisier
                              # per-seed results, which argues for a HIGHER
                              # min_samples_leaf to compensate, not a lower one).
-PENALTY_COEFFICIENT_MULTIPLIER = 300  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
+PENALTY_COEFFICIENT_MULTIPLIER = 3  # K = PENALTY_COEFFICIENT_MULTIPLIER * dalys,
                              # the penalty coefficient in record_result()'s
                              # TrialValue - rough, not load-bearing for search
                              # quality (ConstrainedEI does the real steering),
                              # just keeps smac.incumbent/logging sane
+INFEASIBILITY_FLOOR_MULTIPLIER = 100  # ANY infeasibility (total violation > 0,
+                             # however small) adds a FLAT
+                             # INFEASIBILITY_FLOOR_MULTIPLIER * dalys on top of
+                             # the existing proportional K * total_violation
+                             # penalty above - confirmed necessary directly
+                             # from a real case: with a small enough total
+                             # violation, K * total_violation barely moves
+                             # cost above the trial's own raw dalys, meaning a
+                             # trivially-infeasible config can still look
+                             # "better" (lower cost) than a genuinely feasible
+                             # config with higher dalys - and SMAC's OWN
+                             # intensifier (deciding whether to confirm an
+                             # already-proposed challenger with another seed,
+                             # and whether it beats the incumbent) has NO
+                             # separate awareness of feasibility at all,
+                             # unlike ConstrainedEI (used only for choosing
+                             # NEW candidates) - it relies purely on this
+                             # scalar, so without this floor it can end up
+                             # spending extra seeds confirming an infeasible
+                             # config. Self-scaling (multiplies THIS trial's
+                             # own dalys, not a fixed constant) so it stays
+                             # proportionate regardless of the objective's
+                             # actual scale. Deliberately NOT np.inf (used
+                             # elsewhere for genuinely CRASHED trials, which
+                             # SMAC's own runhistory encoder explicitly
+                             # excludes from surrogate training via
+                             # considered_states) - a SUCCESSFUL-but-infeasible
+                             # trial gets no such exclusion, so a literally
+                             # infinite cost here would flow straight into
+                             # SMAC's own RF surrogate, risking the exact
+                             # "Input y contains NaN" crash seen earlier in
+                             # this project.
 
 # --------------------------------------------------------------------------
 # Operational (Azure submission / polling) hyperparameters
 # --------------------------------------------------------------------------
-N_CONCURRENT = 8              # concurrent Azure jobs in flight - interacts
+N_CONCURRENT = 3              # concurrent Azure jobs in flight - interacts
                              # with RETRAIN_EVERY; several jobs finishing in
                              # the same polling pass can mean refitting more
                              # often than intended
-POLL_INTERVAL_SECONDS = 10   # trades API call frequency against latency
+POLL_INTERVAL_SECONDS = 20   # trades API call frequency against latency
                              # between job completion and SMAC seeing it
 
 # --------------------------------------------------------------------------
@@ -75,7 +107,7 @@ USE_SUSPEND_RESUME = True   # whether REAL trials resume from a pre-resume
                              # every trial runs a full, fresh simulation,
                              # completely independent of SUBMIT_SUSPEND_PART
                              # below
-SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
+SUBMIT_SUSPEND_PART = True  # whether to submit the checkpoint-generation
                              # jobs (the "first part" of suspend/resume) THIS
                              # run - a plain user-controlled toggle, not
                              # derived from checking what's already present on
@@ -87,8 +119,6 @@ SUBMIT_SUSPEND_PART = False  # whether to submit the checkpoint-generation
                              # to use already-generated checkpoints without
                              # regenerating them.
 VALID_CHECKPOINT_COMMITS: list[str] = [
-    'bf455fdf83bb2803f7d43ab342c7d931470724d2',
-     '0784d356b276f6cc5a5c8837f74de148a768892f'
     # Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
     # are still considered acceptable to reuse, even when the pipeline is
     # currently running under a DIFFERENT (e.g. newer) commit - e.g. a
@@ -129,6 +159,14 @@ VALID_PRIOR_RUN_COMMITS: list[str] = [
 # before the real optimisation loop starts. See
 # postprocess_output.compute_and_save_baseline_budgets() and
 # optimisation_pipeline.submit_baseline_job().
+#
+# TODO / KNOWN AWKWARDNESS, worth consolidating later: this is one of TWO
+# genuinely separate "baseline" mechanisms this project currently has,
+# which don't share any code or data with each other despite both
+# representing the same underlying status-quo scenario - see the OTHER
+# one, SUBMIT_INITIAL_DESIGN below, and submit_baseline_job()'s own
+# docstring in optimisation_pipeline.py for the full picture. Kept
+# deliberately separate for now.
 # --------------------------------------------------------------------------
 SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
                              # SUBMIT_SUSPEND_PART - NOT derived from
@@ -141,6 +179,45 @@ SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
                              # budget file already in place - set True only
                              # when you actually want the budgets
                              # (re)derived from a fresh baseline run.
+
+# --------------------------------------------------------------------------
+# Initial design: N_INIT jobs (N_INIT-1 randomly-sampled configs, plus the
+# baseline itself, ONE seed each) submitted and waited on BEFORE the main
+# ask-tell loop starts, when SUBMIT_INITIAL_DESIGN is True - giving
+# ConstrainedEI's surrogates and SMAC's own runhistory real, diverse data
+# to work with from trial one, rather than starting from nothing. See
+# optimisation_pipeline.submit_initial_design_jobs() - these jobs are
+# submitted, waited on, then picked up by the EXISTING
+# recover_from_job_log() mechanism, exactly like any other previously-
+# submitted job (same commit-matching, same restart-deduplication) -
+# no separate loading path.
+#
+# TODO / KNOWN AWKWARDNESS, worth consolidating later: this function's own
+# baseline point (BASELINE_CONFIG_VALUES, initialise.py) is submitted
+# through the STANDARD smac_scenario.py path (suspend/resume, single
+# seed) - a SEPARATE mechanism from SUBMIT_BASELINE_RUN above (10-run,
+# non-suspend/resume, used only to derive the budget). Both represent
+# the same underlying status-quo scenario, but currently share no code
+# or data. Kept deliberately separate for now.
+# --------------------------------------------------------------------------
+SUBMIT_INITIAL_DESIGN = True  # plain user toggle, same philosophy as
+                             # SUBMIT_SUSPEND_PART/SUBMIT_BASELINE_RUN -
+                             # set True when you want this step to actually
+                             # run, False to skip it (e.g. once it's
+                             # already been done and its results are
+                             # already recoverable from JOB_LOG_FILE under
+                             # an acceptable commit).
+N_INIT = 5  # total initial-design jobs, INCLUDING the baseline - so
+                             # N_INIT-1 are randomly sampled from
+                             # configspace. Must be <= MAX_CONFIG_CALLS + 1:
+                             # seeds are drawn from CHECKPOINT_SEEDS (so
+                             # each job can genuinely use suspend/resume,
+                             # and stays comparable to anything SMAC's own
+                             # intensifier later draws the same seed for),
+                             # a pool of exactly MAX_CONFIG_CALLS distinct
+                             # values - N_INIT random configs need N_INIT-1
+                             # of those seeds (one each, the baseline takes
+                             # the last slot).
 
 # --------------------------------------------------------------------------
 # Budgets file: one row per year, columns year,hiv_dalys,hiv_hrh_budget,

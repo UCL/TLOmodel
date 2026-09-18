@@ -212,3 +212,43 @@ PRIOR_RUNS = [
     #},
     # ... your other already-completed runs ...
 ]
+
+
+# --------------------------------------------------------------------------
+# 3. The baseline's own, genuine values for the 13 parameters
+#    smac_scenario.py's configspace actually tunes - NOT set explicitly in
+#    smac_scenario_baseline.py's own draw_parameters() (which only ever
+#    sets 'type_of_scaleup': 'none', leaving these 13 to whatever the Hiv
+#    module's own resource files default to), but a real, well-defined
+#    point nonetheless - status-quo/current-programme values, supplied
+#    directly rather than guessed at or fabricated.
+#
+#    Lives HERE, alongside PRIOR_RUNS (not in smac_scenario_baseline.py,
+#    which defines TLO scenario/simulation behaviour, not SMAC/pipeline
+#    bookkeeping) - conceptually the baseline is itself just another
+#    config worth SMAC knowing about early, same spirit as PRIOR_RUNS'
+#    own entries. Used by optimisation_pipeline.submit_initial_design_jobs()
+#    (SUBMIT_INITIAL_DESIGN toggle) - submitted through the STANDARD
+#    smac_scenario.py path (suspend/resume, single seed), NOT through
+#    smac_scenario_baseline.py's own separate, 10-run submission
+#    (submit_baseline_job(), SUBMIT_BASELINE_RUN toggle, used only to
+#    derive the budget) - see that function's own docstring for the
+#    known, deliberately-not-yet-unified overlap between the two.
+# --------------------------------------------------------------------------
+
+BASELINE_CONFIG_VALUES = {
+    "config_annual_testing_rate_adults": 0.248765,
+    "annual_rate_selftest": 0.07,
+    "prob_hiv_test_at_anc_or_delivery": 0.95,
+    "prob_hiv_test_for_newborn_infant": 0.95,
+    "prob_prep_for_fsw_after_hiv_test": 0.11,
+    "prob_prep_for_agyw": 0.01,
+    "prob_injectable_prep_vs_oral": 0.7,
+    "prob_circ_after_hiv_test": 0.05,
+    "linked_to_care_after_selftest": 0.563,
+    "prob_receive_viral_load_test_result": 0.6,
+    "config_coverage_plhiv": 0.30,
+    "tdf_test_replace_vl_test": False,
+    "targeted_adherence_monitoring": False,
+}
+

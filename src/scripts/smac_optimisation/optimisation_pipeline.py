@@ -77,7 +77,15 @@ from smac_scenario_baseline import TloCheckpointScenario as TloBaselineScenario 
     # used ONLY for the one-off baseline run (see submit_baseline_job()), never
     # for checkpoints or real trials. runs_per_draw=10 is hardcoded in that
     # file's own __init__ - this scenario always produces 10 differently-seeded
-    # full (non-suspend/resume) runs per submission.
+    # full (non-suspend/resume) runs per submission. BASELINE_CONFIG_VALUES
+    # (the baseline's own genuine values for the 13 configspace parameters)
+    # is imported from initialise.py further down instead, NOT from here -
+    # it must NOT be imported at module top-level: initialise.py's own
+    # module-level code reads COST_LIMITS_FILE at import time, which the
+    # baseline-run block below is what actually WRITES, so importing
+    # initialise.py (for ANY name) any earlier than that block already
+    # runs would reintroduce the exact ordering bug this project's
+    # baseline-run submission was specifically restructured to avoid.
 from constrained_ei import ConstrainedEI  # the module built earlier
 from postprocess_output import postprocess_run, compute_and_save_baseline_budgets
 from checkpoint_seeds import checkpoint_job_id, CHECKPOINT_SEEDS
@@ -87,9 +95,11 @@ from convergence_monitoring import (
 )
 from optimisation_parameters import (
     N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, PENALTY_COEFFICIENT_MULTIPLIER,
+    INFEASIBILITY_FLOOR_MULTIPLIER,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
+    SUBMIT_INITIAL_DESIGN, N_INIT,
 )
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
@@ -700,6 +710,22 @@ def generate_all_checkpoints() -> None:
 
 def submit_baseline_job() -> AzureJobHandle:
     """
+    TODO / KNOWN AWKWARDNESS, worth consolidating later: this is one of
+    TWO genuinely separate "baseline" mechanisms in this file, which
+    currently don't share any code or data with each other, despite
+    both representing the same underlying status-quo scenario:
+      1. THIS function - smac_scenario_baseline.py's own scenario
+         ('type_of_scaleup': 'none'), 10 non-suspend/resume runs, used
+         ONLY to derive the budget (compute_and_save_baseline_budgets()).
+      2. submit_initial_design_jobs() below - BASELINE_CONFIG_VALUES
+         (initialise.py) submitted through the STANDARD smac_scenario.py
+         path instead (suspend/resume, single seed), as one of the
+         initial-design points SMAC's own search gets warm-started with.
+    Kept deliberately separate for now (simpler to reason about while
+    this is still being iterated on) rather than unifying them into one
+    submission path - a reasonable thing to revisit once both have
+    proven out, not before.
+
     Submits ONE standard (non-suspend/resume) Azure job running
     smac_scenario_baseline.py's TloBaselineScenario, which hardcodes
     runs_per_draw=10 - i.e. this single submission produces 10 FULL,
@@ -817,6 +843,103 @@ def submit_baseline_job() -> AzureJobHandle:
 
     print(f"[baseline submitted] job_id={job_id} (10 runs)")
     return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
+
+
+def submit_initial_design_jobs() -> None:
+    """
+    TODO / KNOWN AWKWARDNESS, worth consolidating later - see
+    submit_baseline_job()'s own docstring above: this function's own
+    use of BASELINE_CONFIG_VALUES (submitted through the standard
+    smac_scenario.py path, suspend/resume, single seed) is a SEPARATE
+    mechanism from submit_baseline_job()'s own 10-run, non-suspend/
+    resume smac_scenario_baseline.py submission - both represent the
+    same underlying status-quo scenario, but currently share no code or
+    data. Kept deliberately separate for now.
+
+    Submits N_INIT jobs (optimisation_parameters.py) BEFORE the main
+    ask-tell loop starts - N_INIT-1 configs randomly sampled from
+    configspace itself (configspace.sample_configuration()), plus the
+    baseline's own config (BASELINE_CONFIG_VALUES, imported from
+    initialise.py alongside PRIOR_RUNS) - each submitted with exactly
+    ONE seed (no intensification at this stage; that's SMAC's own
+    intensifier's job, later, once the main loop is running).
+
+    Waits here for every one of these jobs to actually finish (blocking,
+    polling all of them concurrently - same pattern as
+    ensure_checkpoints_ready()) - but does NOT itself load anything into
+    history/SMAC, and does NOT call record_result()/smac.tell() at all.
+    Once these jobs are genuinely finished, they get picked up entirely
+    by the EXISTING recover_from_job_log() mechanism (called right after
+    this function, in this file's own module-level flow) - since
+    submit_azure_job() already logs every submission to JOB_LOG_FILE
+    internally (via _log_submitted_job()), under the SAME commit every
+    other submission this run uses, these jobs need no separate loading
+    path at all: the same commit-matching, the same restart-
+    deduplication (append_history_to_file()'s own job_id-keyed check)
+    that already apply to every other recovered job apply here too,
+    automatically.
+
+    Seeds come from CHECKPOINT_SEEDS (checkpoint_seeds.py), not
+    arbitrary/random seeds - specifically so each job can genuinely use
+    suspend/resume if USE_SUSPEND_RESUME is True (submit_azure_job()
+    requires a seed with an actual checkpoint already generated for it),
+    and so these seeds stay directly comparable to anything SMAC's own
+    intensifier later happens to draw the same seed for. Requires
+    N_INIT - 1 <= len(CHECKPOINT_SEEDS) (== MAX_CONFIG_CALLS) - raises
+    clearly if N_INIT is set higher than that pool can actually supply,
+    rather than silently reusing a seed across two different random
+    configs.
+
+    A failed initial-design job is WARNED about, not raised on - unlike
+    the baseline's own submission (which the real budget derivation
+    depends on), these are exploratory warm-start jobs the pipeline can
+    perfectly well proceed without; a failure here just means one fewer
+    initial-design point gets picked up by recover_from_job_log() below.
+    """
+    n_random = N_INIT - 1
+    if n_random > len(CHECKPOINT_SEEDS):
+        raise ValueError(
+            f"N_INIT={N_INIT} needs {n_random} random configs, each requiring its own "
+            f"seed from CHECKPOINT_SEEDS (len={len(CHECKPOINT_SEEDS)}, == MAX_CONFIG_CALLS) - "
+            f"reduce N_INIT, or increase MAX_CONFIG_CALLS, to proceed."
+        )
+
+    configs_and_seeds: list[tuple[Configuration, int]] = []
+
+    if n_random > 0:
+        sampled = configspace.sample_configuration(size=n_random)
+        # ConfigSpace's own API quirk: sample_configuration(size=1) can
+        # return a bare Configuration rather than a length-1 list,
+        # depending on version - normalise defensively either way.
+        if not isinstance(sampled, list):
+            sampled = [sampled]
+        for config, seed in zip(sampled, CHECKPOINT_SEEDS):
+            configs_and_seeds.append((config, seed))
+
+    baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
+    baseline_seed = CHECKPOINT_SEEDS[n_random] if n_random < len(CHECKPOINT_SEEDS) else CHECKPOINT_SEEDS[0]
+    configs_and_seeds.append((baseline_config, baseline_seed))
+
+    jobs: list[AzureJobHandle] = []
+    for config, seed in configs_and_seeds:
+        jobs.append(submit_azure_job(config, seed))
+    print(f"[initial design] submitted {len(jobs)} job(s) ({n_random} random + 1 baseline).")
+
+    still_waiting = set(range(len(jobs)))
+    while still_waiting:
+        made_progress = False
+        for i in list(still_waiting):
+            job = jobs[i]
+            if not azure_job_is_finished(job):
+                continue
+            made_progress = True
+            still_waiting.discard(i)
+            if azure_task_succeeded(job):
+                print(f"[initial design] {job.job_id} confirmed ready.")
+            else:
+                print(f"[initial design] WARNING: {job.job_id} finished but FAILED - skipping it.")
+        if still_waiting and not made_progress:
+            time.sleep(POLL_INTERVAL_SECONDS)
 
 
 def azure_job_exists(job_id: str) -> bool:
@@ -1142,8 +1265,19 @@ if SUBMIT_BASELINE_RUN:
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
     bucket_cumulative_violation, HIV_HRH_CONSTRAINT_NAMES,
-    HIV_CONSUMABLE_CONSTRAINT_NAMES, CONSTRAINT_NAMES, PRIOR_RUNS,
+    HIV_CONSUMABLE_CONSTRAINT_NAMES, CONSTRAINT_NAMES, PRIOR_RUNS, BASELINE_CONFIG_VALUES,
 )
+
+# Initial design: N_INIT-1 random configs + the baseline, ONE seed each,
+# submitted and waited on BEFORE recover_from_job_log() runs below - so
+# that mechanism picks them up naturally, the same way it already
+# handles any other previously-submitted job. See
+# submit_initial_design_jobs()'s own docstring for the full picture -
+# no separate loading step is needed here; recover_from_job_log() (a
+# few lines down) already does that, for these jobs exactly as it
+# already does for every other one.
+if SUBMIT_INITIAL_DESIGN:
+    submit_initial_design_jobs()
 
 history: list[dict] = []  # raw, disaggregated results - the source of truth
 
@@ -1199,7 +1333,18 @@ def record_result(
     K = PENALTY_COEFFICIENT_MULTIPLIER * dalys  # penalty coefficient - rough, not load-bearing
     # for search quality now that ConstrainedEI does the real steering,
     # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
-    penalty = K * sum(entry[name] for name in CONSTRAINT_NAMES)
+    total_violation = sum(entry[name] for name in CONSTRAINT_NAMES)
+    penalty = K * total_violation
+    if total_violation > 0:
+        # See optimisation_parameters.INFEASIBILITY_FLOOR_MULTIPLIER's own
+        # comment for why this floor is necessary - without it, a trial
+        # with a small enough total_violation barely moves cost above its
+        # own raw dalys, letting it look "better" than a genuinely
+        # feasible config with higher dalys to SMAC's OWN intensifier
+        # (which, unlike ConstrainedEI, has no separate awareness of
+        # feasibility at all) - confirmed as the actual cause of a real
+        # observed case where an infeasible config got intensified.
+        penalty += INFEASIBILITY_FLOOR_MULTIPLIER * dalys
     return TrialValue(cost=dalys + penalty)
 
 
@@ -1234,6 +1379,30 @@ def recover_from_job_log() -> list[dict]:
     than loaded. An earlier version of this function only ever accepted
     the current commit, with no way to explicitly vet and reuse results
     from an older, still-trusted commit.
+
+    DELIBERATELY recovers EVERY previously-submitted, still-valid-commit
+    job on EVERY call, with NO check against what's already in
+    HISTORY_LOG_FILE - even jobs that were already successfully
+    recorded in a PREVIOUS run of this process, before some restart.
+    This looks like it should cause duplication, but doesn't: `history`
+    (in-memory) and SMAC's own runhistory are both PROCESS-LOCAL state
+    with no persistence of their own - recover_from_job_log() ->
+    seed_history_with_prior_runs() -> smac.tell() is the ONLY way a
+    previously-completed trial ever reaches a FRESH process's SMAC
+    instance again after a restart, so skipping already-recorded jobs
+    HERE would leave a freshly-restarted SMAC with no memory of them at
+    all, free to re-propose the same or similar configs it had already
+    tried before the restart - genuine wasted compute, not just a
+    cosmetic issue. An earlier version of this function DID skip
+    already-recorded jobs here, based on a real observation (duplicate
+    entries in a real history_log.jsonl) - but that fix was applied at
+    the wrong layer: it stopped the FILE duplicating, at the cost of
+    also stopping SMAC from being told about those trials again. The
+    correct fix lives in convergence_monitoring.append_history_to_file()
+    instead - deduplicating the FILE WRITE specifically, which has no
+    effect on whether smac.tell() gets called, letting this function
+    freely re-process everything on every restart exactly as before
+    that history_log.jsonl-duplication bug was ever found.
     """
     if not JOB_LOG_FILE.exists():
         return []
@@ -1247,6 +1416,7 @@ def recover_from_job_log() -> list[dict]:
     with open(JOB_LOG_FILE) as f:
         for line in f:
             record = json.loads(line)
+
             job_commit = record.get("commit")
 
             if job_commit not in candidate_commits:
@@ -1287,6 +1457,7 @@ def recover_from_job_log() -> list[dict]:
                 "job_id": record["job_id"], "commit": record["commit"],
                 **result,
             })
+
     return recovered
 
 
