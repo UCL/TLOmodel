@@ -32,7 +32,7 @@ from pathlib import Path
 import pandas as pd
 
 from convergence_monitoring import config_key, get_best_feasible_dalys, get_best_dalys_regardless_of_feasibility
-from optimisation_parameters import BASELINE_SUMMARY_FILE
+from optimisation_parameters import BASELINE_SUMMARY_FILE, VALID_PRIOR_RUN_COMMITS
 from postprocess_output import TARGET_PERIOD  # the SAME authoritative period
     # every "dalys" value in history_log.jsonl is already computed over -
     # imported directly (matching initialise.py's own convention) rather
@@ -45,7 +45,53 @@ from postprocess_output import TARGET_PERIOD  # the SAME authoritative period
 # Loading
 # --------------------------------------------------------------------------
 
-def load_history_log(filepath: str = "history_log.jsonl") -> list[dict]:
+def _get_current_commit_for_filtering() -> str | None:
+    """
+    Lightweight, independent commit lookup for this file's own
+    commit-filtering purposes - deliberately NOT
+    optimisation_pipeline._get_commit() (which requires the repo to be
+    clean AND pushed, via is_file_clean() - appropriate for submission-
+    time reproducibility guarantees, not for a read-only diagnostic
+    someone might run against a repo with uncommitted local changes).
+    Also deliberately does NOT import optimisation_pipeline.py at all -
+    that module's own top-level code submits jobs and runs the live
+    ask-tell loop at import time, so importing it here (just to reuse
+    one function) would accidentally start a second, unwanted
+    optimisation run - directly contradicting this file's own "never
+    touches the live process" design.
+
+    search_parent_directories=True is REQUIRED here, not optional -
+    GitPython's Repo() constructor defaults to False, meaning it only
+    checks the EXACT given path for a .git directory, with no upward
+    search through parent directories at all. Without this, running
+    this file from anywhere other than the repo root itself (a very
+    real possibility - this is a standalone diagnostic script, plausibly
+    run from src/scripts/smac_optimisation/, where it actually lives)
+    raises InvalidGitRepositoryError - silently caught below, returning
+    None, which callers correctly treat as "can't filter" - but this
+    meant commit filtering was effectively NEVER running for anyone not
+    invoking this from the exact repo root, with only an easy-to-miss
+    printed warning as the only sign anything was wrong. Confirmed as
+    the actual cause of a real "filtering doesn't seem to be excluding
+    anything" report.
+
+    Returns None (not raises) if this isn't run from inside a git repo
+    at all (even searching upward), or git itself isn't available -
+    callers should treat that as "commit filtering isn't possible right
+    now" and either skip it or warn, not crash the whole evaluation
+    over it.
+    """
+    try:
+        from git import Repo
+        return Repo(".", search_parent_directories=True).head.commit.hexsha
+    except Exception:
+        return None
+
+
+def load_history_log(
+    filepath: str = "history_log.jsonl",
+    filter_by_commit: bool = True,
+) -> list[dict]:
     """
     Reads history_log.jsonl from disk, in file order - a proxy for
     completion order (not necessarily identical to proposal order under
@@ -54,6 +100,29 @@ def load_history_log(filepath: str = "history_log.jsonl") -> list[dict]:
 
     Safe to call while the pipeline is still running: history_log.jsonl
     is append-only, and this only reads whatever's been flushed so far.
+
+    filter_by_commit=True (default): keeps only records whose own
+    "commit" field is EITHER the current commit or listed in
+    VALID_PRIOR_RUN_COMMITS (optimisation_parameters.py) - the SAME
+    criteria optimisation_pipeline.recover_from_job_log() applies when
+    deciding which completed jobs to recover into the live run, applied
+    here too so the evaluation/plotting checks in this file are
+    consistent with what the live pipeline itself would actually trust.
+    An earlier version of this function read every record unconditionally,
+    with no commit awareness at all - meaning a run submitted under an
+    untrusted, unrelated commit (different smac_scenario.py,
+    incomparable results) could silently appear in the plot/evaluation
+    even though the live pipeline would never have recovered it as a
+    prior run. Records missing a "commit" field entirely are treated
+    the same as an unrecognised commit (excluded) - matching
+    recover_from_job_log()'s own "don't silently trust unknown
+    provenance" behaviour, not a special case.
+
+    If the current commit can't be determined (not run from inside a
+    git repo, or git unavailable), filtering is skipped entirely, with
+    a printed warning - every record is kept rather than raising,
+    since this file is meant to be usable defensively/diagnostically
+    even outside a fully-set-up environment.
     """
     path = Path(filepath)
     if not path.exists():
@@ -68,6 +137,34 @@ def load_history_log(filepath: str = "history_log.jsonl") -> list[dict]:
 
     if not records:
         raise ValueError(f"{path} exists but is empty - no results logged yet.")
+
+    if filter_by_commit:
+        current_commit = _get_current_commit_for_filtering()
+        if current_commit is None:
+            print(
+                "[evaluate] WARNING: could not determine the current git commit "
+                "(not run from inside a git repo, or git unavailable) - skipping "
+                "commit filtering, keeping all records as-is."
+            )
+        else:
+            candidate_commits = {current_commit, *VALID_PRIOR_RUN_COMMITS}
+            n_before = len(records)
+            records = [r for r in records if r.get("commit") in candidate_commits]
+            n_excluded = n_before - len(records)
+            if n_excluded:
+                print(
+                    f"[evaluate] excluded {n_excluded} of {n_before} record(s) - submitted "
+                    f"under a commit that's neither the current commit ({current_commit[:12]}) "
+                    f"nor listed in VALID_PRIOR_RUN_COMMITS."
+                )
+            if not records:
+                raise ValueError(
+                    f"{path} has {n_before} record(s), but none match the current commit "
+                    f"or VALID_PRIOR_RUN_COMMITS - nothing left to evaluate. Pass "
+                    f"filter_by_commit=False to bypass this (e.g. to inspect old results "
+                    f"regardless of commit provenance)."
+                )
+
     return records
 
 
@@ -299,6 +396,46 @@ def _submission_datetime_from_job_id(job_id) -> datetime | None:
         return datetime.strptime(match.group(1), "%Y-%m-%dT%H%M%SZ")
     except ValueError:
         return None
+
+
+def print_config_group_details(records: list[dict], only_multi: bool = True) -> None:
+    """
+    Diagnostic: prints every group of records sharing the same
+    config_key() (i.e. everything the rest of this file, and the live
+    pipeline's own final selection, treats as "the same config") -
+    each group showing its member index (completion order), seed, and
+    the FULL config_object dict, so you can directly eyeball whether
+    grouped records genuinely have identical hyperparameter values, or
+    whether something's wrong with the grouping itself.
+
+    only_multi=True (default): only prints groups with 2+ members - the
+    ones actually worth checking (a group of 1 has nothing to compare
+    against). Set False to also see every single-member group.
+
+    This exists specifically because "two points are shown with the
+    same colour/connected by a line in plot_dalys_by_completion_order()"
+    is a MECHANICAL CONSEQUENCE of config_key() computing the same key
+    for them - confirming that visually doesn't tell you whether the
+    grouping is CORRECT (genuinely the same config, e.g. SMAC's own
+    intensifier asking for the same challenger twice, concurrently,
+    before either result is known) or a BUG (config_key(), or the
+    underlying config_object data itself, incorrectly treating
+    different configs as identical) - only looking at the actual
+    parameter values settles that.
+    """
+    grouped: dict[tuple, list[int]] = {}
+    for i, rec in enumerate(records):
+        grouped.setdefault(config_key(rec["config_object"]), []).append(i)
+
+    for key, indices in grouped.items():
+        if only_multi and len(indices) < 2:
+            continue
+        print(f"=== config_key group ({len(indices)} member(s)) ===")
+        for i in indices:
+            rec = records[i]
+            print(f"  [{i}] seed={rec.get('seed')} dalys={rec.get('dalys')}")
+            print(f"      config_object={rec['config_object']}")
+        print()
 
 
 def load_baseline_summary(filepath: str = BASELINE_SUMMARY_FILE) -> dict | None:
@@ -671,6 +808,7 @@ def run_all_checks(
     plot_path: str = "dalys_by_completion_order.png",
     plot_color_by: str = "intensification",
     plot_order_by: str = "completion",
+    filter_by_commit: bool = True,
 ) -> dict:
     """
     Runs all four checks against history_log.jsonl and returns a dict of
@@ -701,7 +839,7 @@ def run_all_checks(
     Safe to call at ANY point in a run - this is purely a read of
     whatever's already on disk.
     """
-    records = load_history_log(filepath)
+    records = load_history_log(filepath, filter_by_commit=filter_by_commit)
     cfg_df = _config_frame(records)
     n_trials = len(records)
     n_configs = len(cfg_df)
@@ -811,4 +949,4 @@ def run_all_checks(
 
 if __name__ == "__main__":
     log_path = sys.argv[1] if len(sys.argv) > 1 else "history_log.jsonl"
-    run_all_checks(log_path, plot_order_by='submission', plot_color_by='config')
+    run_all_checks(log_path)

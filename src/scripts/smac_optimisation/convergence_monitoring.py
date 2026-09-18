@@ -55,6 +55,14 @@ def json_safe_config(config) -> dict:
     }
 
 
+_job_ids_already_on_disk: set[str] | None = None  # lazily populated on first
+    # call, from whatever's ALREADY in HISTORY_LOG_FILE at that point (e.g.
+    # left over from a previous run of the process, before a restart) - None
+    # specifically distinguishes "not yet checked" from "checked, file was
+    # empty/missing" (an empty set), so the file is only ever read once per
+    # process, not on every single call.
+
+
 def append_history_to_file(entry: dict) -> None:
     """
     Mirrors a single history entry to disk, immediately after it's
@@ -67,10 +75,62 @@ def append_history_to_file(entry: dict) -> None:
     to a plain dict first via json_safe_config() - a bare dict(config)
     would leave numpy scalar values (numpy.bool_, numpy.int64, ...)
     behind, which json.dumps then can't serialise.
+
+    Skips the actual FILE WRITE (but nothing else - this function has
+    no control over, and doesn't affect, the in-memory `history` append
+    or the smac.tell() call that happen around it in the caller) if
+    entry's own job_id is already present in HISTORY_LOG_FILE from a
+    previous run of the process, before some restart.
+
+    This distinction matters, and an earlier version of this project
+    got it wrong at the wrong layer: `history` and SMAC's own
+    runhistory are both process-local, in-memory state that genuinely
+    needs REBUILDING on every restart (recover_from_job_log() -> smac.
+    tell() is the only way previously-completed trials ever reach a
+    FRESH process's SMAC instance at all - it has no persistent memory
+    of its own). The on-disk file is the opposite: already-persistent,
+    so re-appending an already-present job_id there is pure duplication
+    with no benefit. An earlier fix made recover_from_job_log() skip
+    already-recorded jobs ENTIRELY - correctly stopping the file
+    duplicating, but as a direct side effect also stopping SMAC from
+    ever being told about those trials again after a restart, risking
+    it re-proposing the same or similar configs it had already tried
+    in a previous process. Deduplicating HERE instead - the file write
+    specifically - fixes the file without that side effect: recovery
+    can freely re-process every previously-submitted job on every
+    restart (rebuilding `history`/SMAC's runhistory correctly), while
+    this function alone ensures the FILE itself never sees a given
+    job_id twice.
+
+    Entries with no job_id at all (e.g. manually-curated PRIOR_RUNS
+    entries in initialise.py, which aren't tied to any real Azure job)
+    are never deduplicated - there's no reliable identifier to
+    deduplicate them by, and initialise.py's own PRIOR_RUNS is re-read
+    fresh on every restart anyway, so this matches how those entries
+    already behave.
     """
+    global _job_ids_already_on_disk
+    if _job_ids_already_on_disk is None:
+        _job_ids_already_on_disk = set()
+        if HISTORY_LOG_FILE.exists():
+            with open(HISTORY_LOG_FILE) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    existing_job_id = json.loads(line).get("job_id")
+                    if existing_job_id:
+                        _job_ids_already_on_disk.add(existing_job_id)
+
+    job_id = entry.get("job_id")
+    if job_id and job_id in _job_ids_already_on_disk:
+        return
+
     record = {**entry, "config_object": json_safe_config(entry["config_object"])}
     with open(HISTORY_LOG_FILE, "a") as f:
         f.write(json.dumps(record) + "\n")
+    if job_id:
+        _job_ids_already_on_disk.add(job_id)
 
 
 # --------------------------------------------------------------------------

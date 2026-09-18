@@ -879,16 +879,27 @@ def submit_initial_design_jobs() -> None:
     that already apply to every other recovered job apply here too,
     automatically.
 
-    Seeds come from CHECKPOINT_SEEDS (checkpoint_seeds.py), not
-    arbitrary/random seeds - specifically so each job can genuinely use
-    suspend/resume if USE_SUSPEND_RESUME is True (submit_azure_job()
-    requires a seed with an actual checkpoint already generated for it),
-    and so these seeds stay directly comparable to anything SMAC's own
-    intensifier later happens to draw the same seed for. Requires
-    N_INIT - 1 <= len(CHECKPOINT_SEEDS) (== MAX_CONFIG_CALLS) - raises
-    clearly if N_INIT is set higher than that pool can actually supply,
-    rather than silently reusing a seed across two different random
-    configs.
+    ALL jobs here - every random config AND the baseline - share the
+    SAME SINGLE seed: CHECKPOINT_SEEDS[0]. An earlier version of this
+    function gave each job its OWN, distinct seed, on the assumption
+    that seed diversity was needed for these jobs to be meaningfully
+    different from each other - WRONG: this genuinely replicates how
+    the live pipeline's OWN early behaviour actually works. Confirmed
+    directly from a real history_log.jsonl earlier in this project:
+    SMAC's own intensifier submits its FIRST several challengers - each
+    a genuinely different, newly-proposed config - all under the SAME
+    seed, only drawing a DIFFERENT seed later, when it decides to
+    INTENSIFY (confirm) one specific, already-promising config with an
+    additional seed. The diversity across these N_INIT jobs is meant to
+    come entirely from the CONFIGS themselves (genuinely different
+    parameter values), not from seed variation - matching that same
+    convention keeps these jobs directly, honestly comparable to
+    whatever SMAC's own intensifier does with CHECKPOINT_SEEDS[0] once
+    the main loop actually starts, and removes any need to worry about
+    N_INIT exceeding CHECKPOINT_SEEDS' own pool size (an earlier
+    version of this function raised ValueError over exactly that,
+    unnecessarily, given every job now shares the one seed regardless
+    of how large N_INIT is).
 
     A failed initial-design job is WARNED about, not raised on - unlike
     the baseline's own submission (which the real budget derivation
@@ -897,12 +908,7 @@ def submit_initial_design_jobs() -> None:
     initial-design point gets picked up by recover_from_job_log() below.
     """
     n_random = N_INIT - 1
-    if n_random > len(CHECKPOINT_SEEDS):
-        raise ValueError(
-            f"N_INIT={N_INIT} needs {n_random} random configs, each requiring its own "
-            f"seed from CHECKPOINT_SEEDS (len={len(CHECKPOINT_SEEDS)}, == MAX_CONFIG_CALLS) - "
-            f"reduce N_INIT, or increase MAX_CONFIG_CALLS, to proceed."
-        )
+    shared_seed = CHECKPOINT_SEEDS[0]
 
     configs_and_seeds: list[tuple[Configuration, int]] = []
 
@@ -913,17 +919,16 @@ def submit_initial_design_jobs() -> None:
         # depending on version - normalise defensively either way.
         if not isinstance(sampled, list):
             sampled = [sampled]
-        for config, seed in zip(sampled, CHECKPOINT_SEEDS):
-            configs_and_seeds.append((config, seed))
+        for config in sampled:
+            configs_and_seeds.append((config, shared_seed))
 
     baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
-    baseline_seed = CHECKPOINT_SEEDS[n_random] if n_random < len(CHECKPOINT_SEEDS) else CHECKPOINT_SEEDS[0]
-    configs_and_seeds.append((baseline_config, baseline_seed))
+    configs_and_seeds.append((baseline_config, shared_seed))
 
     jobs: list[AzureJobHandle] = []
     for config, seed in configs_and_seeds:
         jobs.append(submit_azure_job(config, seed))
-    print(f"[initial design] submitted {len(jobs)} job(s) ({n_random} random + 1 baseline).")
+    print(f"[initial design] submitted {len(jobs)} job(s) ({n_random} random + 1 baseline), all under seed {shared_seed}.")
 
     still_waiting = set(range(len(jobs)))
     while still_waiting:

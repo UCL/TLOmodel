@@ -86,7 +86,7 @@ N_CONCURRENT = 3              # concurrent Azure jobs in flight - interacts
                              # with RETRAIN_EVERY; several jobs finishing in
                              # the same polling pass can mean refitting more
                              # often than intended
-POLL_INTERVAL_SECONDS = 20   # trades API call frequency against latency
+POLL_INTERVAL_SECONDS = 10   # trades API call frequency against latency
                              # between job completion and SMAC seeing it
 
 # --------------------------------------------------------------------------
@@ -200,7 +200,7 @@ SUBMIT_BASELINE_RUN = False  # plain user toggle, same philosophy as
 # the same underlying status-quo scenario, but currently share no code
 # or data. Kept deliberately separate for now.
 # --------------------------------------------------------------------------
-SUBMIT_INITIAL_DESIGN = True  # plain user toggle, same philosophy as
+SUBMIT_INITIAL_DESIGN = False  # plain user toggle, same philosophy as
                              # SUBMIT_SUSPEND_PART/SUBMIT_BASELINE_RUN -
                              # set True when you want this step to actually
                              # run, False to skip it (e.g. once it's

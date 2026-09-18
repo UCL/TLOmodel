@@ -136,6 +136,45 @@ def _load_pickled_dataframes_with_resume_workaround(job_root: Path, draw: int, r
         return load_pickled_dataframes(job_root, draw=draw, run=run)
 
 
+def _get_scaling_factor(log: dict) -> float:
+    """
+    Returns the ratio of true (real-world) population to this run's own
+    SIMULATED population (POP_SIZE) - TLO's own standard mechanism for
+    rescaling simulated-population-scale outputs (raw counts, sums) up
+    to real-population magnitudes. Read directly from the log, matching
+    tlo.analysis.utils.extract_results()'s own get_multiplier() and
+    compare_number_of_deaths()'s own scaling-factor lookup:
+    log["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0]
+
+    Defensive fallback to 1.0 if the key is genuinely absent (matching
+    compare_number_of_deaths()'s own "if 'scaling_factor' in
+    output['tlo.methods.population']: ... else: sf = 1.0" pattern) -
+    rather than raising, since a missing key here most likely means the
+    population module simply isn't logging at INFO level in this
+    particular scenario, not that scaling should silently be skipped.
+
+    CONFIRMED against the reference script (process_outputs.py,
+    tara_hiv_program_simplification) directly: every absolute
+    count/total it extracts (DALYs - both get_num_dalys() and
+    num_dalys_by_cause(), the function THIS project's own _get_hiv_dalys
+    is explicitly adapted from - deaths, HIV test counts, person-years
+    on PrEP, VMMC counts) is extracted with do_scaling=True. The one
+    counterexample shown (art_coverage_adult) is a RATE/fraction, not a
+    count, and correctly omits scaling - multiplying a fraction by a
+    population scaling factor wouldn't make sense. HIV-HRH cost and
+    HIV-consumable cost are both absolute $ totals (additive quantities,
+    like DALYs and deaths), not rates - genuinely need the same
+    treatment for consistency, though the reference script's own cost
+    functions weren't directly confirmed (further down that same file,
+    not reachable when this was checked - github.com's raw file URL
+    returned robots-disallowed, and no accessible mirror was found).
+    """
+    try:
+        return float(log["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0])
+    except (KeyError, IndexError):
+        return 1.0
+
+
 def postprocess_run(run_dir: Path) -> dict:
     """
     Turns a single completed run's raw output directory into what SMAC/
@@ -147,6 +186,20 @@ def postprocess_run(run_dir: Path) -> dict:
     wrapper above) rather than reading raw pickle files directly - this
     is the officially supported way to load a single run's log.
 
+    ALL THREE returned quantities are rescaled by this run's own
+    _get_scaling_factor(log) (true population ÷ simulated POP_SIZE) -
+    an earlier version of this function returned these figures at raw,
+    simulated-population scale, unscaled, for every path (real trials,
+    resumed trials, AND the baseline all funnel through this same
+    function - there was never a separate code path for any of them,
+    so a bug here would have affected all three identically, not
+    selectively). See _get_scaling_factor()'s own docstring for the
+    confirmed source of this convention. Applying the multiplication
+    HERE, once, rather than inside each of the three extraction
+    functions individually, since all three need the identical
+    treatment and this avoids three separate (and potentially
+    inconsistent) lookups of the same value from the same log.
+
     run_dir is expected to be .../<job_id>/0/<run_number> - i.e. what
     ask_tell_azure_example.py's download_run_outputs() returns entries
     of when iterating draw_dir.
@@ -155,9 +208,15 @@ def postprocess_run(run_dir: Path) -> dict:
     run_number = int(run_dir.name)
     log = _load_pickled_dataframes_with_resume_workaround(job_root, draw=0, run=run_number)
 
-    dalys = _get_hiv_dalys(log)
-    hiv_hrh_cost_by_year = _get_hiv_hrh_cost_by_year(log)
-    hiv_consumable_cost_by_year = _get_hiv_consumable_cost_by_year(log)
+    scaling_factor = _get_scaling_factor(log)
+
+    dalys = _get_hiv_dalys(log) * scaling_factor
+    hiv_hrh_cost_by_year = {
+        year: cost * scaling_factor for year, cost in _get_hiv_hrh_cost_by_year(log).items()
+    }
+    hiv_consumable_cost_by_year = {
+        year: cost * scaling_factor for year, cost in _get_hiv_consumable_cost_by_year(log).items()
+    }
     return {
         "dalys": dalys,
         "hiv_hrh_cost_by_year": hiv_hrh_cost_by_year,
