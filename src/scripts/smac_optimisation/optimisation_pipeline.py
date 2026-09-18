@@ -99,7 +99,7 @@ from optimisation_parameters import (
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
-    SUBMIT_INITIAL_DESIGN, N_INIT,
+    SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
 )
 import json
 JOB_LOG_FILE = Path("submitted_jobs.jsonl")
@@ -845,6 +845,48 @@ def submit_baseline_job() -> AzureJobHandle:
     return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
 
 
+def sample_near_baseline_configs(n: int) -> list[Configuration]:
+    """
+    Generates n Configuration objects as LOCAL PERTURBATIONS of the
+    baseline's own values (BASELINE_CONFIG_VALUES) - see
+    optimisation_parameters.INITIAL_DESIGN_NEAR_BASELINE_FRACTION's own
+    docstring for the full motivation (uniform sampling across a
+    13-dimensional space rarely lands near any single reference point by
+    chance; the baseline is presumably already a reasonable, near-feasible
+    operating point, and the whole point of the search is to find
+    something that BEATS it).
+
+    Each FLOAT parameter is perturbed via Normal(baseline_value,
+    INITIAL_DESIGN_PERTURBATION_STD * (upper - lower)), then clipped back
+    into [lower, upper] - scaled by each parameter's OWN range (not an
+    absolute value) so the same std setting means the same relative
+    "closeness" regardless of a parameter's own scale. Each CATEGORICAL
+    parameter (tdf_test_replace_vl_test, targeted_adherence_monitoring)
+    keeps the baseline's own value UNCHANGED, every time - no perturbation
+    at all, since there's no natural notion of "slightly different" for a
+    binary switch (see that same docstring for the reasoning, and where
+    to change this if you'd rather they still vary with some probability).
+
+    Bounds are read directly from each hyperparameter's own object in
+    configspace (hp.lower/hp.upper) rather than hardcoded, so this stays
+    correct if configspace's own (0., 1.) ranges are ever changed.
+    """
+    configs = []
+    for _ in range(n):
+        values = {}
+        for name, baseline_value in BASELINE_CONFIG_VALUES.items():
+            hp = configspace[name]
+            if isinstance(hp, Categorical):
+                values[name] = baseline_value
+            else:
+                perturbed = np.random.normal(
+                    baseline_value, INITIAL_DESIGN_PERTURBATION_STD * (hp.upper - hp.lower)
+                )
+                values[name] = float(np.clip(perturbed, hp.lower, hp.upper))
+        configs.append(Configuration(configspace, values=values))
+    return configs
+
+
 def submit_initial_design_jobs() -> None:
     """
     TODO / KNOWN AWKWARDNESS, worth consolidating later - see
@@ -857,12 +899,26 @@ def submit_initial_design_jobs() -> None:
     data. Kept deliberately separate for now.
 
     Submits N_INIT jobs (optimisation_parameters.py) BEFORE the main
-    ask-tell loop starts - N_INIT-1 configs randomly sampled from
-    configspace itself (configspace.sample_configuration()), plus the
-    baseline's own config (BASELINE_CONFIG_VALUES, imported from
-    initialise.py alongside PRIOR_RUNS) - each submitted with exactly
-    ONE seed (no intensification at this stage; that's SMAC's own
-    intensifier's job, later, once the main loop is running).
+    ask-tell loop starts - N_INIT-1 configs, plus the baseline's own
+    config (BASELINE_CONFIG_VALUES, imported from initialise.py alongside
+    PRIOR_RUNS) - each submitted with exactly ONE seed (no intensification
+    at this stage; that's SMAC's own intensifier's job, later, once the
+    main loop is running).
+
+    Of the N_INIT-1 configs, a fraction (INITIAL_DESIGN_NEAR_BASELINE_
+    FRACTION) are sampled as LOCAL PERTURBATIONS of the baseline itself
+    (sample_near_baseline_configs(), above) rather than uniformly across
+    the whole search space (configspace.sample_configuration()) - see
+    that function's own docstring, and INITIAL_DESIGN_NEAR_BASELINE_
+    FRACTION's own comment in optimisation_parameters.py, for the full
+    motivation: uniform sampling rarely lands near a specific reference
+    point by chance in a 13-dimensional space, but the baseline is
+    presumably already reasonable/near-feasible, and the search's whole
+    goal is to find something that BEATS it - so giving the initial
+    design a real chance at feasible, competitive neighbours of the
+    baseline, not just wildly different global samples, is a more
+    targeted use of these first few trials. The rest are still sampled
+    globally, uniformly, so broad exploration isn't lost either.
 
     Waits here for every one of these jobs to actually finish (blocking,
     polling all of them concurrently - same pattern as
@@ -912,14 +968,23 @@ def submit_initial_design_jobs() -> None:
 
     configs_and_seeds: list[tuple[Configuration, int]] = []
 
+    n_near = round(n_random * INITIAL_DESIGN_NEAR_BASELINE_FRACTION) if n_random > 0 else 0
+    n_global = n_random - n_near
+
     if n_random > 0:
-        sampled = configspace.sample_configuration(size=n_random)
-        # ConfigSpace's own API quirk: sample_configuration(size=1) can
-        # return a bare Configuration rather than a length-1 list,
-        # depending on version - normalise defensively either way.
-        if not isinstance(sampled, list):
-            sampled = [sampled]
-        for config in sampled:
+        near_configs = sample_near_baseline_configs(n_near) if n_near > 0 else []
+
+        global_configs = []
+        if n_global > 0:
+            sampled = configspace.sample_configuration(size=n_global)
+            # ConfigSpace's own API quirk: sample_configuration(size=1) can
+            # return a bare Configuration rather than a length-1 list,
+            # depending on version - normalise defensively either way.
+            if not isinstance(sampled, list):
+                sampled = [sampled]
+            global_configs = sampled
+
+        for config in near_configs + global_configs:
             configs_and_seeds.append((config, shared_seed))
 
     baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
@@ -928,7 +993,10 @@ def submit_initial_design_jobs() -> None:
     jobs: list[AzureJobHandle] = []
     for config, seed in configs_and_seeds:
         jobs.append(submit_azure_job(config, seed))
-    print(f"[initial design] submitted {len(jobs)} job(s) ({n_random} random + 1 baseline), all under seed {shared_seed}.")
+    print(
+        f"[initial design] submitted {len(jobs)} job(s) ({n_near} near-baseline + "
+        f"{n_global} global random + 1 baseline), all under seed {shared_seed}."
+    )
 
     still_waiting = set(range(len(jobs)))
     while still_waiting:

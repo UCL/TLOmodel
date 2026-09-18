@@ -949,4 +949,4 @@ def run_all_checks(
 
 if __name__ == "__main__":
     log_path = sys.argv[1] if len(sys.argv) > 1 else "history_log.jsonl"
-    run_all_checks(log_path)
+    run_all_checks(log_path, plot_color_by="config", plot_order_by="submission")
