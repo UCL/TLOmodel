@@ -268,8 +268,6 @@ def apply(
     primary_results = all_results[results_files[0]]
     print(f"Using primary results from: {results_files[0]}")
 
-    num_deaths_averted = primary_results.get('num_deaths_averted')
-    pc_deaths_averted = primary_results.get('pc_deaths_averted')
     dalys_averted = primary_results.get('dalys_averted')
     pc_dalys_averted = primary_results.get('pc_dalys_averted')
     net_health = primary_results.get('net_health')
@@ -285,8 +283,6 @@ def apply(
     comparison_metrics_available = all(
         metric is not None
         for metric in (
-            num_deaths_averted,
-            pc_deaths_averted,
             dalys_averted,
             pc_dalys_averted,
             incremental_scenario_cost
@@ -295,7 +291,7 @@ def apply(
     print(f"Comparison metrics available: {comparison_metrics_available}")
     # Get the list of draws directly from the results and not from scenario files
     # as some draws have been excluded at the previous step.
-    param_names = primary_results['total_population_by_year'].columns.get_level_values('draw').unique()
+    param_names = discounted_dalys.columns.get_level_values('draw').unique()
     print(f"Loaded parameter names: {len(param_names)}")
 
     if input_costs is not None:
@@ -490,23 +486,11 @@ def apply(
             fig.savefig(outfile)
             plt.close(fig)
 
-    # Plot population growth
-    total_population_in_implementation = primary_results['total_population_by_year']
-    print("Plotting population size by year.")
-    fig, ax = plot_population_by_year(total_population_in_implementation / 1e6)
-    name_of_plot = "Population size by year"
-    ax.set_title(name_of_plot)
-    ax.set_ylabel("Population size (millions)")
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.savefig(outfile)
-    plt.close(fig)
 
     # Plot number of deaths and DALYS by cause for each parameter, with
     # confidence intervals, for the target period
     num_dalys_by_cause_label_implementation = primary_results['dalys']
 
-    num_deaths_by_cause_label_implementation = primary_results['num_deaths']
-    print("Prepared deaths and DALYs by cause for plotting.")
 
     daly_draw_labels = param_names
     print("Plotting stacked DALYs by cause label for each draw.")
@@ -520,45 +504,6 @@ def apply(
     fig.savefig(outfile, bbox_inches="tight")
     plt.close(fig)
     print("Saved: DALYs by Cause Label for Each Draw")
-
-    for param in param_names:
-        draw = param
-        print(f"Plotting deaths over time by cause for draw: {draw}")
-        fig, ax = plot_deaths_by_period_for_draw(
-            num_deaths_by_cause_label_implementation / 1e3,
-            draw,
-        )
-        name_of_plot = f"Deaths Over Time by Cause for {draw}"
-        ax.set_title(name_of_plot)
-        ax.set_ylabel("Number of deaths (/1000)")
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile)
-        plt.close(fig)
-
-    cause_labels = num_deaths_by_cause_label_implementation.index.get_level_values("label").unique()
-    for cause_label in cause_labels:
-        print(f"Plotting cause-specific time series for: {cause_label}")
-        fig, ax = plot_deaths_by_period_for_cause(
-            num_deaths_by_cause_label_implementation / 1e3,
-            cause_label=cause_label,
-        )
-        name_of_plot = f"Deaths Over Time for {cause_label}"
-        ax.set_title(name_of_plot)
-        ax.set_ylabel("Number of deaths (/1000)")
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile)
-        plt.close(fig)
-
-        fig, ax = plot_deaths_by_period_for_cause(
-            num_dalys_by_cause_label_implementation / 1e3,
-            cause_label=cause_label,
-        )
-        name_of_plot = f"DALYs Over Time for {cause_label}"
-        ax.set_title(name_of_plot)
-        ax.set_ylabel("Number of DALYs (/1000)")
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile)
-        plt.close(fig)
 
     if comparison_metrics_available:
         print("Plotting comparison metrics: deaths/DALYs averted, percentages, and net health.")
@@ -578,38 +523,6 @@ def apply(
         fig.savefig(outfile)
         plt.close(fig)
         print("Saved: DALYS Averted by Each Treatment ID")
-
-        deaths_averted_sorted = (num_deaths_averted / 1e3).reindex(dalys_order)
-        fig_height = max(6, min(0.28 * len(deaths_averted_sorted.index) + 4, 18))
-        fig, ax = plt.subplots(figsize=(10, fig_height))
-        name_of_plot = "Deaths Averted by Each Treatment ID"
-        do_barh_plot_with_ci(deaths_averted_sorted, ax)
-        ax.set_title(name_of_plot)
-        ax.set_xlabel("Number of deaths averted (/1000)")
-        ax.grid(axis="x")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.tight_layout()
-        fig.savefig(outfile)
-        plt.close(fig)
-        print("Saved: Deaths Averted by Each Treatment ID")
-
-        pc_deaths_averted_sorted = (pc_deaths_averted.sort_values(by="central", ascending=True))
-        fig_height = max(6, min(0.28 * len(pc_deaths_averted_sorted.index) + 4, 18))
-        fig, ax = plt.subplots(figsize=(10, fig_height))
-        name_of_plot = "Percentage Deaths Averted by Each Treatment ID"
-        do_barh_plot_with_ci(pc_deaths_averted_sorted, ax)
-        ax.set_title(name_of_plot)
-        ax.set_xlabel("Percentage of deaths averted")
-        ax.grid(axis="x")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.tight_layout()
-        fig.savefig(outfile)
-        plt.close(fig)
-        print("Saved: Percentage Deaths Averted by Each Treatment ID")
 
         pc_dalys_averted_sorted = (pc_dalys_averted.sort_values(by="central", ascending=True))
         fig_height = max(6, min(0.28 * len(pc_dalys_averted_sorted.index) + 4, 18))

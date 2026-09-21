@@ -60,7 +60,6 @@ from tlo.analysis.utils import (
 )
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined --target-start=2010-01-01 --target-end=2041-01-01
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2026-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
 # python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=10runstest --load-input-costs-from-checkpoint=True
@@ -482,40 +481,10 @@ def apply(
         .rename_axis(index={'Facility_Level': 'FacilityLevel', 'Officer_Type_Code': 'OfficerType'})
     ).reorder_levels(['OfficerType', 'FacilityLevel'])
 
-    # Salary costing remains at cadre/level. The capacity multiplier above is
-    # facility/run-specific, so derive a separate capacity-weighted multiplier
-    # from the already-scaled totals rather than dividing by that DataFrame.
-    print("Adjusting cadre/level salary rates using capacity-weighted 2025 productivity for each run...")
-    baseline_capacity_by_cadre_and_level = baseline_capacity_2025.groupby(
-        level=['OfficerType', 'FacilityLevel']
-    ).sum(min_count=1)
-    salary_productivity_by_cadre_and_level = scaled_capacity_by_cadre_and_level.div(
-        baseline_capacity_by_cadre_and_level.where(baseline_capacity_by_cadre_and_level != 0), axis=0
+    salary_aligned = (
+        salary_by_cadre_and_level.reindex(actual_capacity_used_by_cadre_and_level.index.droplevel("year"))
     )
-    # No available capacity means there is no productivity adjustment to apply.
-    salary_productivity_by_cadre_and_level.loc[baseline_capacity_by_cadre_and_level == 0, :] = 1.0
-    if (salary_productivity_by_cadre_and_level.isna()
-            | (salary_productivity_by_cadre_and_level <= 0)).any().any():
-        raise ValueError("Missing or non-positive 2025 productivity for salary adjustment")
-    salary_rates = salary_by_cadre_and_level.reindex(salary_productivity_by_cadre_and_level.index)
-    if salary_rates.isna().any():
-        raise ValueError("Missing salary rates for baseline cadre/level combinations")
-    adjusted_salary_by_cadre_and_level = salary_productivity_by_cadre_and_level.rdiv(salary_rates, axis=0)
-
-    # Match both row keys and run labels; broadcast each baseline run across draws.
-    usage_runs = actual_capacity_used_by_cadre_and_level.columns.get_level_values('run')
-    missing_salary_runs = usage_runs.unique().difference(adjusted_salary_by_cadre_and_level.columns)
-    if len(missing_salary_runs):
-        raise ValueError(f"Missing baseline salary adjustments for runs: {list(missing_salary_runs)}")
-    salary_rates_for_usage = adjusted_salary_by_cadre_and_level.reindex(
-        index=actual_capacity_used_by_cadre_and_level.index.droplevel('year'),
-        columns=usage_runs,
-    )
-    salary_rates_for_usage.index = actual_capacity_used_by_cadre_and_level.index
-    salary_rates_for_usage.columns = actual_capacity_used_by_cadre_and_level.columns
-    if salary_rates_for_usage.isna().any().any():
-        raise ValueError("Missing adjusted salary rates for HRH usage rows")
-    actual_cost_by_cadre_and_level = actual_capacity_used_by_cadre_and_level * salary_rates_for_usage
+    actual_cost_by_cadre_and_level = actual_capacity_used_by_cadre_and_level.mul(salary_aligned, axis=0)
     print("Calculated salary costs with cadre/level, year, draw and run aligned.")
 
     # The costing script calculates the HRH costs for the total cadre, not for the strength used.
