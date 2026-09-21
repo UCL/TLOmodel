@@ -45,6 +45,8 @@ VALID_CHECKPOINT_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
 SUBMIT_BASELINE_RUN = False
+COST_LIMITS_FILE = "cost_limits_by_year.csv"
+BASELINE_SUMMARY_FILE = "baseline_summary.json"
 
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
@@ -54,13 +56,6 @@ SUBMIT_INITIAL_DESIGN = False
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
 INITIAL_DESIGN_PERTURBATION_STD = 0.1
-
-# --------------------------------------------------------------------------
-# Budget/baseline output files
-# --------------------------------------------------------------------------
-COST_LIMITS_FILE = "cost_limits_by_year.csv"
-BASELINE_SUMMARY_FILE = "baseline_summary.json"
-
 
 # ============================================================================
 # PARAMETER DESCRIPTIONS
@@ -218,6 +213,27 @@ BASELINE_SUMMARY_FILE = "baseline_summary.json"
 #     every time you just want to re-run the optimisation loop with an
 #     already-good budget file already in place - set True only when you
 #     actually want the budgets (re)derived from a fresh baseline run.
+#
+# COST_LIMITS_FILE
+#     One row per year, columns year,hiv_dalys,hiv_hrh_budget,
+#     hiv_consumable_budget - read by initialise.py, WRITTEN by
+#     postprocess_output.compute_and_save_baseline_budgets() when
+#     SUBMIT_BASELINE_RUN is True. Lives here (not in initialise.py, where
+#     it used to be defined) so postprocess_output.py can import it too,
+#     without creating a circular import (initialise.py already imports
+#     FROM postprocess_output.py).
+#
+# BASELINE_SUMMARY_FILE
+#     Small JSON summary of the baseline run's own results, written
+#     alongside COST_LIMITS_FILE by compute_and_save_baseline_budgets() -
+#     specifically the baseline's median HIV DALYs (same TARGET_PERIOD
+#     metric every real trial's own "dalys" field already is), since that
+#     value has no other persistent home otherwise - the baseline job's
+#     own Azure output isn't kept around once postprocessed. Used by
+#     evaluate_pipeline_run.py's plotting to draw the baseline comparison
+#     line - read from disk, independently, matching that file's own
+#     "never touches the live process" design.
+
 
 # --- Initial design ----------------------------------------------------------
 # N_INIT jobs (N_INIT-1 randomly-sampled configs, plus the baseline
@@ -308,25 +324,3 @@ BASELINE_SUMMARY_FILE = "baseline_summary.json"
 #     there's no natural notion of a "small" change to a binary switch,
 #     so near-baseline samples keep the baseline's own value for both,
 #     unchanged, every time.
-
-# --- Budgets / baseline output files -----------------------------------------
-#
-# COST_LIMITS_FILE
-#     One row per year, columns year,hiv_dalys,hiv_hrh_budget,
-#     hiv_consumable_budget - read by initialise.py, WRITTEN by
-#     postprocess_output.compute_and_save_baseline_budgets() when
-#     SUBMIT_BASELINE_RUN is True. Lives here (not in initialise.py, where
-#     it used to be defined) so postprocess_output.py can import it too,
-#     without creating a circular import (initialise.py already imports
-#     FROM postprocess_output.py).
-#
-# BASELINE_SUMMARY_FILE
-#     Small JSON summary of the baseline run's own results, written
-#     alongside COST_LIMITS_FILE by compute_and_save_baseline_budgets() -
-#     specifically the baseline's median HIV DALYs (same TARGET_PERIOD
-#     metric every real trial's own "dalys" field already is), since that
-#     value has no other persistent home otherwise - the baseline job's
-#     own Azure output isn't kept around once postprocessed. Used by
-#     evaluate_pipeline_run.py's plotting to draw the baseline comparison
-#     line - read from disk, independently, matching that file's own
-#     "never touches the live process" design.
