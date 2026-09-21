@@ -527,10 +527,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
         ),
-        "switch_vl_test_to_tdf": Parameter(
-            Types.BOOL,
-            "whether TDF urine test is being used in place of VL testing"
-        ),
         "injectable_prep_allowed": Parameter(
             Types.BOOL,
             "whether injectable prep is allowed"
