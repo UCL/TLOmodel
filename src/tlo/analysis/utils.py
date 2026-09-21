@@ -203,13 +203,29 @@ def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     return folders
 
 
-def get_scenario_info(scenario_output_dir: Path) -> dict:
+def get_scenario_info(scenario_output_dir: Path, autodiscover: bool = False) -> dict:
     """Utility function to get the the number draws and the number of runs in a batch set.
 
     TODO: read the JSON file to get further information
     """
     info = dict()
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
+
+    if autodiscover:
+        draw_ids = sorted(int(f.name) for f in draw_folders)
+        runs_by_draw = {
+            draw: sorted(
+                int(f.name)
+                for f in os.scandir(scenario_output_dir / str(draw))
+                if f.is_dir()
+            )
+            for draw in draw_ids
+        }
+        info['draws'] = draw_ids
+        info['runs_by_draw'] = runs_by_draw
+        info['number_of_draws'] = len(draw_ids)
+        info['runs_per_draw'] = len(runs_by_draw[draw_ids[0]]) if draw_ids else 0
+        return info
 
     info['number_of_draws'] = len(draw_folders)
 
@@ -295,6 +311,9 @@ def extract_results(results_folder: Path,
                     index: str = None,
                     custom_generate_series=None,
                     do_scaling: bool = False,
+                    suspended_results_folder: Path = None,
+                    draw_runs: Optional[List[Tuple[int, int]]] = None,
+                    autodiscover: bool = False,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -307,16 +326,19 @@ def extract_results(results_folder: Path,
      `custom_generate_series`.
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log
+    of the suspended run are stored.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
 
-    def get_multiplier(_draw, _run):
+
+    def get_multiplier(results_folder, _draw, _run):
         """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
         return load_pickled_dataframes(
-            results_folder, _draw, _run, 'tlo.methods.population'
-        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            results_folder, _draw, _run, 'tlo.methods.demography'
+    )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
@@ -335,30 +357,46 @@ def extract_results(results_folder: Path,
         else:
             return custom_generate_series(dataframe)
 
-    # get number of draws and numbers of runs
-    info = get_scenario_info(results_folder)
+    if draw_runs is not None:
+        selected_draw_runs = draw_runs
+    elif autodiscover:
+        # get number of draws and numbers of runs
+        info = get_scenario_info(results_folder, autodiscover)
+        selected_draw_runs = [
+            (draw, run)
+            for draw in info['draws']
+            for run in info['runs_by_draw'][draw]
+        ]
+    else:
+        # Legacy default behaviour: infer ranges from scenario info.
+        info = get_scenario_info(results_folder)
+        selected_draw_runs = [
+            (draw, run)
+            for draw in range(info['number_of_draws'])
+            for run in range(info['runs_per_draw'])
+        ]
 
     # Collect results from each draw/run
     res = dict()
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
-
-            draw_run = (draw, run)
-
-            try:
-                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval: pd.Series = generate_series(df)
-                assert isinstance(output_from_eval, pd.Series), (
-                    'Custom command does not generate a pd.Series'
-                )
-                if do_scaling:
-                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
+    for draw, run in selected_draw_runs:
+        draw_run = (draw, run)
+        try:
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+            output_from_eval: pd.Series = generate_series(df)
+            assert isinstance(output_from_eval, pd.Series), (
+                'Custom command does not generate a pd.Series'
+            )
+            if do_scaling:
+                if suspended_results_folder is not None:
+                    res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
                 else:
-                    res[draw_run] = output_from_eval
+                    res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
+            else:
+                res[draw_run] = output_from_eval
 
-            except KeyError:
-                # Some logs could not be found - probably because this run failed.
-                res[draw_run] = None
+        except KeyError:
+            # Some logs could not be found - probably because this run failed.
+            res[draw_run] = None
 
     # Use pd.concat to compile results (skips dict items where the values is None)
     _concat = pd.concat(res, axis=1)
@@ -386,7 +424,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-    
+
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 
@@ -430,8 +468,8 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-        
-    
+
+
 
     return df_final
 
