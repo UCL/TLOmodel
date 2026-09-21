@@ -1685,11 +1685,71 @@ print(f"Warm-started with {n_seeded} run(s): {len(PRIOR_RUNS)} manual, {len(reco
 #    optimisation_parameters.py (imported at the top of this file).
 # --------------------------------------------------------------------------
 
+def _safe_ask(max_retries: int = 3, retry_delay_seconds: float = 5.0) -> TrialInfo:
+    """
+    Wraps smac.ask() so a failure INSIDE SMAC's own internals doesn't
+    take down the whole process the way a bare smac.ask() call does.
+
+    BACKGROUND: a real, repeated crash chain was observed where a
+    postprocessing failure (missing 'tlo.methods.healthburden' logger,
+    or a stale-FileHandler dill UnpicklingError - see
+    postprocess_output.py) is correctly caught and told to SMAC as
+    TrialValue(cost=np.inf, status=StatusType.CRASHED) - but the VERY
+    NEXT smac.ask() call then crashes with
+    "ValueError: Input y contains NaN" deep inside SMAC's own default
+    surrogate model (built internally by HyperparameterOptimizationFacade
+    since no explicit model=/runhistory_encoder= override is passed
+    here - separate from, and unrelated to, ConstrainedEI's own RF
+    surrogate, which is never involved: record_result(), the only thing
+    that appends to `history`/feeds ConstrainedEI, is never called on
+    the CRASHED path). Confirmed by direct tracing that this is NOT a
+    ConstrainedEI/history problem - the exact internal SMAC mechanism
+    (most likely objective-bound normalization degenerating when too
+    few SUCCESS-status trials exist in runhistory at that moment) has
+    NOT been independently verified against the installed SMAC version,
+    so this is a defensive wrapper, not a real fix for the root cause.
+
+    Strategy: retry a few times with a short delay first (in case the
+    failure is transient - e.g. another in-flight tell() lands and
+    gives the encoder enough SUCCESS data to recover) - then, if it's
+    still failing, fall back to a MANUALLY sampled config (uniform from
+    configspace, exactly like configspace.sample_configuration()) with
+    a hand-built TrialInfo, bypassing SMAC's ask() entirely for this one
+    trial. This keeps the pipeline (and any jobs already in flight)
+    alive rather than losing the whole run to one bad trial - the
+    manually-sampled trial is still submitted, postprocessed, and
+    told back to SMAC exactly like any other, so SMAC's own runhistory
+    stays complete; it just wasn't SMAC's own acquisition function that
+    chose it this one time. Uses CHECKPOINT_SEEDS[0] as the fallback
+    seed - the same convention submit_initial_design_jobs() uses - so a
+    fallback trial can still genuinely use suspend/resume and stays
+    comparable to anything else sharing that seed.
+    """
+    last_exception: Exception | None = None
+    for attempt in range(max_retries):
+        try:
+            return smac.ask()
+        except Exception as e:
+            last_exception = e
+            print(
+                f"[ask failed] smac.ask() raised {e!r} (attempt {attempt + 1}/{max_retries}) - "
+                f"retrying in {retry_delay_seconds}s."
+            )
+            time.sleep(retry_delay_seconds)
+    print(
+        f"[ask failed] smac.ask() still failing after {max_retries} attempts "
+        f"({last_exception!r}) - falling back to a manually-sampled config for "
+        f"this one trial rather than crashing the whole pipeline."
+    )
+    fallback_config = configspace.sample_configuration()
+    return TrialInfo(config=fallback_config, seed=CHECKPOINT_SEEDS[0])
+
+
 pending: list[tuple[TrialInfo, AzureJobHandle]] = []
 
 # prime the pipeline
 for _ in range(N_CONCURRENT):
-    info = smac.ask()
+    info = _safe_ask()
     pending.append((info, submit_azure_job(info.config, info.seed)))
 
 n_completed = 0  # N_TRIALS is a budget for NEW trials only - warm-started
@@ -1708,7 +1768,7 @@ def _top_up_pending(still_pending: list) -> None:
     jobs are in flight.
     """
     if n_completed < scenario.n_trials and not converged:
-        new_info = smac.ask()
+        new_info = _safe_ask()
         still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
 
 

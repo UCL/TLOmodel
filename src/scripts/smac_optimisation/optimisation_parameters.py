@@ -309,7 +309,8 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     samples) is a more targeted use of these first few trials. The
 #     remaining (1 - this fraction) are still sampled globally, uniformly
 #     - so this never fully replaces broad exploration, just supplements
-#     it. 0.5 = balanced half-and-half split.
+#     it. Currently set to 0.2 above (i.e. a fifth of the random configs
+#     are near-baseline perturbations, the rest globally uniform).
 #
 # INITIAL_DESIGN_PERTURBATION_STD
 #     Standard deviation of the Gaussian perturbation applied to each

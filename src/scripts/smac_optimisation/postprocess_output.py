@@ -172,6 +172,28 @@ def _get_scaling_factor(log: dict) -> float:
     try:
         return float(log["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0])
     except (KeyError, IndexError):
+        # LOUD on purpose (previously silent) - this fallback means
+        # dalys/cost for THIS run come back UNSCALED, which is silently
+        # wrong (not merely "unavailable") whenever the population
+        # logger is missing but healthburden/other loggers this run
+        # depends on are still present - the same class of missing-
+        # logger problem that _get_hiv_dalys() (below) raises loudly
+        # on, and gets excluded as CRASHED, for. Without this print,
+        # such a run would instead be silently recorded as SUCCESSFUL
+        # with a wrong-scale dalys/cost value, feeding straight into
+        # ConstrainedEI's surrogate and the budget-feasibility check
+        # with no visible trace anywhere. Kept as a fallback rather than
+        # raising (matching compare_number_of_deaths()'s own convention
+        # - see this function's docstring), but now at least visible in
+        # the run's own logs so a suspiciously-scaled result can be
+        # traced back to this cause instead of being invisible.
+        print(
+            "[scaling_factor] WARNING: 'tlo.methods.population' scaling_factor "
+            "missing from this run's log - falling back to 1.0 (UNSCALED). "
+            "dalys/cost for this run may be wrong by orders of magnitude if "
+            "the real population logger was simply missing rather than "
+            "genuinely reporting scale=1."
+        )
         return 1.0
 
 
