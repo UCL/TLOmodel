@@ -35,6 +35,6 @@ age_mixing_adjacent,0.23,undetermined,0,1,calibration,"Reed DM. Age-disparate an
 "
 age_mixing_distant,0.07,undetermined,0,1,calibration,"Reed DM. Age-disparate and intergenerational sex partnerships and HIV: the role of gender norms among adolescent girls and young women in Malawi. BMC Public Health. 2024 Feb 22;24(1):575. doi: 10.1186/s12889-024-17868-5. 
 "
-hpv_event_frequency_months,6,undetermined,0,1,calibration,N/A
+hpv_event_frequency_months,1,undetermined,0,1,calibration,N/A
 hpv_logging_frequency_months,6,undetermined,0,1,calibration,N/A
 persistent_threshold_months,12,undetermined,0,1,calibration,N/A
