@@ -197,6 +197,90 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return X_unique
 
+    def get_hsi_with_blank_appt_footprint(_df):
+        X = _df.loc[
+            pd.to_datetime(_df["date"]).between(*TARGET_PERIOD),
+            ["Event_Name", "Number_By_Appt_Type_Code", "TREATMENT_ID"]
+        ].copy()
+
+        X = X[X["Number_By_Appt_Type_Code"].apply(len) == 0]
+
+        X["loc_cat"] = pd.MultiIndex.from_frame(
+            X[
+                [
+                    "Event_Name",
+                    "TREATMENT_ID",
+                ]
+            ]
+        ).map(hsi_loc_cat_map)
+
+        X = X.dropna(subset=["loc_cat"]).copy()
+
+        return X.groupby(["Event_Name", "TREATMENT_ID", "loc_cat"]).size()
+
+    def get_patient_mix_from_hsi_with_blank_appt_footprint(_df):
+        # keep relevant date
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+        # keep HSI with blank appt footprint
+        _df = _df[_df["Number_By_Appt_Type_Code"].apply(len) == 0]
+        # merge in loc_cat and keep HSI with non-nan service area
+        _df["loc_cat"] = pd.MultiIndex.from_frame(
+            _df[
+                [
+                    "Event_Name",
+                    "TREATMENT_ID",
+                ]
+            ]
+        ).map(hsi_loc_cat_map)
+
+        _df = _df.dropna(subset=["loc_cat"]).copy()
+
+        # merge in district and keep relevant district
+        # merge info from mfl and format
+        _df = merge_info_from_mfl(_df)
+        # drop HQ/Facility_Level= 5 and Community Level/Facility_Level=0
+        _df.drop(index=_df[_df["Facility_Level"].isin(["0", "5"])].index, inplace=True)
+        # fill NANs
+        _df.loc[
+            _df["Facility_Level"] == "4", ["patient_count", "District", "Region"]
+        ] = [0, "Central Hospitals (Southern)", "Southern"]  # ZMH
+        _df.loc[
+            _df["Facility_ID"] == 128, "District"
+        ] = "Central Hospitals (Southern)"
+        _df.loc[
+            _df["Facility_ID"] == 129, "District"
+        ] = "Central Hospitals (Northern)"
+        _df.loc[
+            _df["Facility_ID"] == 130, "District"
+        ] = "Central Hospitals (Central)"
+        # keep only districts in TLM
+        _df = _df.loc[_df["District"].isin(common_districts)]
+
+        # drop duplicated patients per day per facility id per loc_cat
+        _df = _df.drop_duplicates(subset=["date", "Person_ID", "Facility_ID", "loc_cat"])
+
+        # get patient mix by attributes
+        _df = _df.groupby(
+            ["Sex", "Age_Range", "Wealth", "Education", "loc_cat"]
+        )["Person_ID"].count().reset_index().rename(columns={"Person_ID": "patient_count", "Wealth": "Wealth_Quintile"})
+
+        group_list = ["Age_Range", "Wealth_Quintile", "Sex", "Education", "loc_cat"]
+        _df_mix = pd.DataFrame(columns=["category", "subgroup", "patient_proportion"])
+        for sg in group_list:
+            _df_sg = _df.groupby(sg)["patient_count"].sum().reset_index()
+            _df_sg.rename(columns={sg: "subgroup"}, inplace=True)
+            _df_sg["patient_proportion"] = _df_sg["patient_count"] / _df_sg["patient_count"].sum()
+            assert np.isclose(_df_sg["patient_proportion"].sum(), 1.0)
+            # format
+            _df_sg["category"] = sg
+            # concat df for different categories
+            _df_mix = pd.concat([_df_mix, _df_sg], ignore_index=True)
+
+        # create series
+        _df_mix = _df_mix.set_index(["category", "subgroup"])["patient_proportion"]
+
+        return _df_mix
+
     def get_patient_mix_total_period(_df,
                                      rescale_by_fac_level=True,
                                      keep_blank_footprint_hsi=False,
@@ -901,6 +985,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                  "Treatment": "TREATMENT_ID",
                  "TLM service area": "loc_cat"}
     ).set_index(["Event_Name", "TREATMENT_ID"])["loc_cat"]
+
+    # HSIs with blank appt footprint
+    blank_hsi = extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=get_hsi_with_blank_appt_footprint,
+        do_scaling=True
+    ).reset_index()
+
+    blank_hsi_summary = summarize(
+        blank_hsi.set_index(["Event_Name", "TREATMENT_ID", "loc_cat"]), only_mean=True
+    ).reset_index()
+    blank_hsi_summary["Proportion in %"] = blank_hsi_summary.iloc[:, 3] * 100 / blank_hsi_summary.iloc[:, 3].sum()
 
     # get medicines list
     path_to_cons_folder = (
