@@ -72,6 +72,14 @@ class HPV(Module, GenericFirstAppointmentsMixin):
     Xpert_GROUPS = {'P1': ['hr1'], 'P2': ['hr2', 'hr3'], 'P3': ['hr4', 'hr5'], 'P4': ['hr6']}
     HIV_LOG_GROUPS = ['HIVneg', 'HIVpos_unknown', 'HIVpos_noART', 'HIVpos_unsupp', 'HIVpos_supp']
     CALIBRATION_AGE_RANGES = {
+        "25_29": (25, 30),
+        "30_34": (30, 35),
+        "35_39": (35, 40),
+        "40_44": (40, 45),
+        "45_49": (45, 50),
+
+        "25_49": (25, 50),
+
         "25_50": (25, 51),
         '25_59': (25, 60),
     }
@@ -269,17 +277,17 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         'hp_duration_all_clear': Property(
             Types.REAL, 'Duration for current all HPV infection'),
         'hp_persistent_hr1': Property(
-            Types.BOOL, 'Persistent hr1 infection, duration >= 12 months'),
+            Types.BOOL, 'Persistent hr1 infection'),
         'hp_persistent_hr2': Property(
-            Types.BOOL, 'Persistent hr2 infection, duration >= 12 months'),
+            Types.BOOL, 'Persistent hr2 infection'),
         'hp_persistent_hr3': Property(
-            Types.BOOL, 'Persistent hr3 infection, duration >= 12 months'),
+            Types.BOOL, 'Persistent hr3 infection'),
         'hp_persistent_hr4': Property(
-            Types.BOOL, 'Persistent hr4 infection, duration >= 12 months'),
+            Types.BOOL, 'Persistent hr4 infection'),
         'hp_persistent_hr5': Property(
-            Types.BOOL, 'Persistent hr5 infection, duration >= 12 months'),
+            Types.BOOL, 'Persistent hr5 infection'),
         'hp_persistent_hr6': Property(
-            Types.BOOL, 'Persistent hr6 infection, duration >= 12 months'),
+            Types.BOOL, 'Persistent hr6 infection'),
     }
 
     def __init__(self, name=None):
@@ -291,6 +299,56 @@ class HPV(Module, GenericFirstAppointmentsMixin):
             read_csv_files(Path(resourcefilepath) / "ResourceFile_HPV",
                            files="parameter_values")
         )
+
+    def _normalise_query_index(self, index=None):
+        df = self.sim.population.props
+        if index is None:
+            return df.index
+        if np.isscalar(index):
+            return pd.Index([index])
+        return pd.Index(index)
+
+    def get_current_hpv_matrix(self, index=None):
+        """Return current hrHPV infection status by HPV group."""
+        df = self.sim.population.props
+        idx = self._normalise_query_index(index)
+        date_cols = [f'hp_date_infected_{group}' for group in self.HPV_GROUPS]
+        current = df.loc[idx, date_cols].notna().copy()
+        current.columns = list(self.HPV_GROUPS)
+        return current.astype(bool)
+
+    def get_any_current_hpv(self, index=None):
+        return self.get_current_hpv_matrix(index=index).any(axis=1).astype(bool)
+
+    def get_persistent_hpv_matrix(self, index=None):
+        df = self.sim.population.props
+        idx = self._normalise_query_index(index)
+        threshold_months = float(self.parameters['persistent_threshold_months'])
+        if not np.isfinite(threshold_months) or threshold_months < 0.0:
+            raise ValueError('persistent_threshold_months must be finite and non-negative.')
+
+        persistent = pd.DataFrame(False, index=idx, columns=self.HPV_GROUPS, dtype=bool)
+        eligible = (
+            df.loc[idx, 'is_alive'].fillna(False).astype(bool)
+            & (df.loc[idx, 'age_years'] >= 15)
+        )
+        current_date = pd.Timestamp(self.sim.date)
+
+        for group in self.HPV_GROUPS:
+            date_col = f'hp_date_infected_{group}'
+            infection_dates = pd.to_datetime(df.loc[idx, date_col], errors='coerce')
+            duration_months = ((current_date - infection_dates).dt.days / 30.5).clip(lower=0.0)
+            persistent[group] = (
+                eligible
+                & infection_dates.notna()
+                & duration_months.ge(threshold_months)
+            )
+
+        return persistent.fillna(False).astype(bool)
+
+    def get_any_persistent_hpv(self, index=None):
+        return self.get_persistent_hpv_matrix(index=index).any(axis=1).astype(bool)
+
 
     def _get_group_infected_series(self, group, index=None):
         df = self.sim.population.props
@@ -640,6 +698,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         self._pre_logged_prev = {}
 
         self._last_event_counts = {}
+        self._event_counts_since_log = {}
 
         event = HpvInfectionEvent(
             self,
@@ -694,7 +753,7 @@ class HPV(Module, GenericFirstAppointmentsMixin):
         return summary
 
 class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
-    """This event is occurring regularly at one 6 months intervals and controls the infection process of HPV."""
+    """Regular HPV natural-history event controlling acquisition, clearance, and persistence."""
 
     def __init__(self, module, frequency_months):
         self.frequency_months = int(frequency_months)
@@ -734,7 +793,7 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
             return
 
         interval_months = float(self.frequency_months)
-        interval_years = self.frequency_months / 12.0
+        interval_years = interval_months / 12.0
 
         # 2. self-clearance
         infected_any = module._get_hpv_any_infected_series()
@@ -758,7 +817,7 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                     group=group,
                     person_id=person_id,
                     duration_months=duration_months,
-                    interval_months=float(self.frequency_months)
+                    interval_months=interval_months
                 )
 
                 if module.rng.random() < p_clear:
@@ -861,6 +920,11 @@ class HpvInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         module._update_persistence_status()
         module._last_event_counts = event_counts
+
+        accumulator = getattr(module, '_event_counts_since_log', {})
+        for key, value in event_counts.items():
+            accumulator[key] = int(accumulator.get(key, 0)) + int(value)
+        module._event_counts_since_log = accumulator
 
 class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module, frequency_months):
@@ -1280,10 +1344,12 @@ class HpvLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     log_data[f'{hpv_group}_Persistent12_{age_group}_Prev'] = math.nan
 
         # 7. Incidence and clearance counts from the latest HPV infection event
-        last_event_counts = getattr(module, '_last_event_counts', {})
+        event_counts_since_log = getattr(module, '_event_counts_since_log', {})
 
-        for key, value in last_event_counts.items():
+        for key, value in event_counts_since_log.items():
             log_data[key] = value
+
+        module._event_counts_since_log = {}
 
         logger.info(key='summary', data=log_data)
 
