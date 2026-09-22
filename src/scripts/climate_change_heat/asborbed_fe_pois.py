@@ -160,12 +160,12 @@ def _apply_deficit_filter(df, base_col, wx_col):
 # out-of-support predictions flat rather than allowing the cr() basis +
 # linear lag terms to extrapolate. Historical fit is unaffected.
 CLIP_PROJECTION_TO_SUPPORT = True
-SUPPORT_LOW_PCTILE = 0.1
-SUPPORT_HIGH_PCTILE = 99.9
+SUPPORT_LOW_PCTILE = 0.01
+SUPPORT_HIGH_PCTILE = 99.99
 
 
 # Model settings
-WBGT_VAR = "wbgt_day"
+WBGT_VAR = "wbgt_day"#"wbgt5x_day"
 SPLINE_DF = 3
 LAG_MONTHS = [1]
 SA_LAG = True
@@ -205,7 +205,7 @@ YEAR_FE_YEARS = list(range(min_year_historical, YEAR_FE_REFERENCE))
 YEAR_FE_COLS = [f"year_fe_{y}" for y in YEAR_FE_YEARS]
 
 
-PROJECT = True
+PROJECT = False
 PROJECT_HOLD_YEAR = True
 SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 WBGT_MODELS = ["lowest", "median", "highest"]
@@ -1337,15 +1337,38 @@ if __name__ == "__main__":
             wbgt_path = os.path.join(PROJECTION_DIR, WBGT_PROJ_FILE_TPL.format(ssp=ssp, tier=tier))
             if not os.path.exists(wbgt_path):
                 return None, [wbgt_path]
+
             clim = pd.read_csv(wbgt_path, parse_dates=["date"])
+
+            # Extreme-indices producer names it facility_id
+            if "facility" not in clim.columns and "facility_id" in clim.columns:
+                clim = clim.rename(columns={"facility_id": "facility"})
             clim["facility"] = clim["facility"].astype(str).str.strip()
             clim["date"] = clim["date"].dt.to_period("M").dt.to_timestamp()
-            for col in (WBGT_VAR, PRECIP_COL):
-                if col not in clim.columns:
-                    raise KeyError(
-                        f"{wbgt_path}: {col!r} missing (have {list(clim.columns)}). "
-                        f"Re-run the panel producer to include it."
-                    )
+
+            if WBGT_VAR not in clim.columns:
+                raise KeyError(f"{wbgt_path}: {WBGT_VAR!r} missing (have {list(clim.columns)})")
+
+            # Drop pre-computed lags (we rebuild below) and unrelated indices/tags
+            drop = [c for c in clim.columns if (c.startswith(("wbgtx_", "wbgt5x_")) and c != WBGT_VAR) or c == "model"]
+            if drop:
+                clim = clim.drop(columns=drop)
+
+            # Precip lives in a separate producer output — merge it in
+            precip_path = os.path.join(PROJECTION_DIR, PRECIP_FILE_BY_TIER[tier].format(ssp=ssp))
+            if not os.path.exists(precip_path):
+                return None, [precip_path]
+            precip_long = _load_precip_wide(precip_path, PRECIP_COL)
+            if precip_long is None:
+                return None, [precip_path]
+            precip_long["facility"] = precip_long["facility"].astype(str).str.strip()
+            clim = clim.merge(precip_long, on=["facility", "date"], how="left")
+            if clim[PRECIP_COL].isna().all():
+                raise ValueError(
+                    f"Precip merge for {ssp}/{tier} all-NaN — check facility name conventions "
+                    f"between {wbgt_path} and {precip_path}"
+                )
+
             clim = clim.sort_values(["facility", "date"]).reset_index(drop=True)
             for k in LAG_MONTHS:
                 clim[f"{WBGT_VAR}_lag{k}"] = clim.groupby("facility")[WBGT_VAR].shift(k)
@@ -1353,7 +1376,6 @@ if __name__ == "__main__":
             clim["year"] = clim["date"].dt.year
             clim["month"] = clim["date"].dt.month
             return clim, None
-
         all_proj_summary = []
         all_annual_pooled = []
 
