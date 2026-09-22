@@ -77,14 +77,17 @@ def generate_mnh_outcome_counter():
                 "gdm_treatment_orals", "gdm_treatment_insulin", "post_abortion_care_core",
                 "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd_ol", "avd_spe_ec",
                 "avd_other", "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
-                "caesarean_section_oth_surg_ip", "caesarean_section_oth_surg_pp", "fistula_treatment", "neo_resus_all",
-                "neo_resus_preterm", "kmc", "neo_sepsis_treatment_preterm", "neo_sepsis_treatment_all"]
+                "caesarean_section_oth_surg_ip", "caesarean_section_oth_surg_pp", "fistula_treatment", "neo_resus_term",
+                "neo_resus_preterm", "kmc", "neo_sepsis_treatment_preterm", "neo_sepsis_treatment_term"]
 
     interventions = []
 
     for i in all_ints:
         interventions.append(f'{i}_req')
+        interventions.append(f'{i}_need')
+
         interventions.append(f'{i}_deliv')
+        interventions.append(f'{i}_need_met')
 
     outcome_list.extend(interventions)
     mnh_outcome_counter = {k: 0 for k in outcome_list}
@@ -765,3 +768,23 @@ def update_mni_dictionary(self, individual_id):
         mni[individual_id]['an_placental_abruption'] = df.at[individual_id, 'ps_placental_abruption']
 
 
+def log_need(self, int_name):
+    """Log one new clinical indication for an intervention."""
+    counter = self.sim.modules["PregnancySupervisor"].mnh_outcome_counter
+    counter[f"{int_name}_need"] += 1
+
+
+def log_met_need(module, int_name):
+    """Log that one clinical indication has been successfully treated."""
+    logger = logging.getLogger("tlo.methods.pregnancy_supervisor")
+    counter = module.sim.modules["PregnancySupervisor"].mnh_outcome_counter
+    counter[f"{int_name}_need_met"] += 1
+
+    print('need')
+    print(counter[f"{int_name}_need"])
+    print('need_met')
+    print(counter[f"{int_name}_need_met"])
+
+    if int_name not in ('caesarean_section_oth_surg_ip', 'blood_transfusion_pph', 'caesarean_section_oth_surg_pp'):
+        if counter[f"{int_name}_need_met"] > counter[f"{int_name}_need"]:
+            logger.info(key='error', data=f'met need for {int_name} exceeds need')

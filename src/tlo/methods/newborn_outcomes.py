@@ -596,6 +596,11 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
 
+            if comp == 'early_onset_sepsis_pt':
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_preterm')
+            else:
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_term')
+
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
         This function determines if a neonate will develop neonatal encephalopathy on birth or after birth
@@ -674,6 +679,7 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         params = self.current_parameters
+        is_preterm = df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']
 
         # We assume all newborns with encephalopathy and respiratory distress syndrome will require some form of
         # resuscitation and will not be effectively breathing at birth
@@ -685,11 +691,16 @@ class NewbornOutcomes(Module):
         elif self.rng.random_sample() < params['prob_failure_to_transition']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
 
-            if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
+            if is_preterm:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth_pt'] += 1
             else:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
 
+        if df.at[child_id, 'nb_not_breathing_at_birth']:
+            if is_preterm:
+                pregnancy_helper_functions.log_need(self, 'neo_resus_preterm')
+            else:
+                pregnancy_helper_functions.log_need(self, 'neo_resus_term')
 
     def scheduled_week_one_postnatal_event(self, individual_id):
         """
@@ -966,6 +977,7 @@ class NewbornOutcomes(Module):
             if kmc_delivered:
                 # Store treatment as a property of the newborn used to apply treatment effect
                 df.at[person_id, 'nb_kangaroo_mother_care'] = True
+                pregnancy_helper_functions.log_met_need(self, 'kmc')
 
     def hiv_screening_for_at_risk_newborns(self, child_id):
         """
@@ -1000,13 +1012,14 @@ class NewbornOutcomes(Module):
                                           f'mother delivering at home')
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
-            int_name = "neo_resus_preterm" if is_preterm else "neo_resus_all"
+            int_name = "neo_resus_preterm" if is_preterm else "neo_resus_term"
 
             if (mni[mother_id]['neo_will_receive_resus_if_needed'] or
                 (is_preterm and ("neo_resus_preterm" in analysis_ints)) or
-                "neo_resus_all" in analysis_ints):
+                (not is_preterm and ("neo_resus_term" in analysis_ints))):
 
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
+                pregnancy_helper_functions.log_met_need(self, int_name)
 
                 cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id, int_name=int_name)
 
@@ -1032,7 +1045,7 @@ class NewbornOutcomes(Module):
         pnc_location = 'hc' if facility_type == '1a' else 'hp'
 
         int_name = "neo_sepsis_treatment_preterm" if (df.at[person_id, 'nb_early_preterm'] or
-                                                      df.at[person_id, 'nb_late_preterm']) else "neo_sepsis_treatment_all"
+                                                      df.at[person_id, 'nb_late_preterm']) else "neo_sepsis_treatment_term"
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
@@ -1052,6 +1065,7 @@ class NewbornOutcomes(Module):
 
                 if neo_sepsis_treatment_delivered:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, int_name)
 
             # The same pattern is then followed for health centre care
             else:
@@ -1064,6 +1078,7 @@ class NewbornOutcomes(Module):
 
                 if neo_sepsis_treatment_delivered:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, int_name)
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1222,6 +1237,7 @@ class NewbornOutcomes(Module):
             (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
            (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['low_birth_weight'] += 1
+            pregnancy_helper_functions.log_need(self, 'kmc')
 
         elif df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['macrosomia'] += 1

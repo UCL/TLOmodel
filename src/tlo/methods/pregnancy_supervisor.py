@@ -110,7 +110,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                               'test_run': False,  # used by labour module when running some model tests
                               'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
                               'new_onset_spe': False,
-                              'cs_indication': 'none'
+                              'cs_indication': 'none',
+                              'ec_treatment_an': False,
                               }
         self.default_labour_values = {'labour_state': None,
                             # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
@@ -1195,6 +1196,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         if self.rng.random_sample() < risk_of_complications:
             self.mnh_outcome_counter[f'complicated_{type_abortion}'] += 1
+            pregnancy_helper_functions.log_need(self, 'post_abortion_care_core')
 
             self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
 
@@ -1381,6 +1383,12 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
                         if disease == 'severe_pre_eclamp':
                             self.mother_and_newborn_info[person]['new_onset_spe'] = True
+                            pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                            pregnancy_helper_functions.log_need(self, 'mgso4_spe')
+
+                        elif disease == 'eclampsia':
+                            pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                            pregnancy_helper_functions.log_need(self, 'mgso4_ec')
 
             for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                 log_new_progressed_cases(disease)
@@ -1505,6 +1513,14 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         self.mnh_outcome_counter['mild_mod_antepartum_haemorrhage'] += len(non_severe_women.loc[non_severe_women].index)
 
+        for person in non_severe_women.loc[non_severe_women].index:
+            pregnancy_helper_functions.log_need(self, 'blood_transfusion_aph')
+            pregnancy_helper_functions.log_need(self, 'caesarean_section_oth_surg_ip')
+
+        for person in severe_women.loc[severe_women].index:
+            pregnancy_helper_functions.log_need(self, 'blood_transfusion_aph')
+            pregnancy_helper_functions.log_need(self, 'caesarean_section_oth_surg_ip')
+
     def apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis(self, gestation_of_interest):
         """
         This function applies risk of premature rupture of membranes to a slice of the dataframe. It is called by
@@ -1541,6 +1557,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         for person in infection.loc[infection].index:
             self.mother_and_newborn_info[person]['chorio_in_preg'] = True
             self.mnh_outcome_counter['clinical_chorioamnionitis'] += 1
+            pregnancy_helper_functions.log_need(self, 'sepsis_treatment')
 
     def apply_risk_of_preterm_labour(self, gestation_of_interest):
         """
@@ -1942,6 +1959,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # (this simulates time period prior to which symptoms onset- and may trigger care seeking)
         for person in ectopic_risk.loc[ectopic_risk].index:
             self.module.mnh_outcome_counter['ectopic_unruptured'] += 1
+            pregnancy_helper_functions.log_need(self, 'ectopic_pregnancy_treatment')
 
             week_length = 7
 
@@ -2575,74 +2593,71 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             return (treatments / cases) * 100
 
-        pph_ua_need_blood = c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])
+        pph_ua_need_blood_surg = c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])
 
-        pph_mrp_need_blood = ((c['pph_retained_placenta'] * (1 - la_params['prob_successful_manual_removal_placenta']))
+        pph_mrp_need_blood_surg = ((c['pph_retained_placenta'] *
+                                    (1 - la_params['prob_successful_manual_removal_placenta']))
                               +  (c['secondary_postpartum_haemorrhage'] *
                                   (1 - la_params['prob_successful_manual_removal_placenta'])))
 
+        est_other_cs_indications = (c['uterine_rupture'] + total_aph + c['eclampsia'] + (c['severe_pre_eclamp'] * 0.9)
+                                    + c['obstruction_cpd'])
+
         logger.info(key="met_need",
-                    data={'pac_ep': met_need((c['post_abortion_care_core_deliv'] +
-                                              c['ectopic_pregnancy_treatment_deliv']),
-                                             (c['ectopic_unruptured'] + c['complicated_spontaneous_abortion'] +
-                                              c['complicated_induced_abortion'])),
+                    data={'pac_ep': met_need((c['post_abortion_care_core_need_met'] +
+                                              c['ectopic_pregnancy_treatment_need_met']),
+                                             (c['ectopic_pregnancy_treatment_need'] +
+                                              c['post_abortion_care_core_need'])),
 
-                          'm_sepsis_cm': met_need(c['sepsis_treatment_deliv'],
-                                                  total_sepsis),
+                          'm_sepsis_cm': met_need(c['sepsis_treatment_need_met'],
+                                                  c['sepsis_treatment_need']),
 
-                          'haem_cm_ut': met_need(c['pph_treatment_uterotonics_deliv'],
-                                                 c['pph_uterine_atony']),
+                          'haem_cm_ut': met_need(c['pph_treatment_uterotonics_need_met'],
+                                                 c['pph_treatment_uterotonics_need']),
 
-                          'haem_cm_mrp': met_need(c['pph_treatment_mrrp_deliv'],
-                                                  c['pph_retained_placenta'] + c['secondary_postpartum_haemorrhage']),
+                          'haem_cm_mrp': met_need(c['pph_treatment_mrrp_need_met'],
+                                                  c['pph_treatment_mrrp_need']),
 
-                          'haem_cm_blood_pph': met_need(c['blood_transfusion_pph_deliv'],
-                                                        pph_ua_need_blood + pph_mrp_need_blood),
+                          'haem_cm_blood_pph': met_need(c['blood_transfusion_pph_need_met'],
+                                                        pph_ua_need_blood_surg + pph_mrp_need_blood_surg),
 
-                          'heam_cm_blood_aph': met_need(c['blood_transfusion_aph_deliv'],
-                                                        total_aph + c['uterine_rupture']),
+                          'heam_cm_blood_aph': met_need(c['blood_transfusion_aph_need_met'],
+                                                        c['blood_transfusion_aph_need']),
 
-                          'ol_cm': met_need(c['avd_ol_deliv'],
-                                            (c['obstruction_malpos_malpres'] + c['obstruction_other'])),
+                          'ol_cm': met_need(c['avd_ol_need_met'],
+                                            (c['avd_ol_need'])),
 
-                          'spe_ec_cm_htns': met_need(c['iv_anti_htns_ec_deliv'],
-                                                     c['severe_pre_eclamp'] + c['eclampsia']),
+                          'spe_ec_cm_htns': met_need(c['iv_anti_htns_ec_need_met'],
+                                                     c['iv_anti_htns_ec_need']),
 
-                          'spe_cm_mgso4': met_need(c['mgso4_spe_deliv'],
-                                                      c['severe_pre_eclamp']),
+                          'spe_cm_mgso4': met_need(c['mgso4_spe_need_met'],
+                                                    c['mgso4_spe_need']),
 
-                          'ec_cm_mgso4': met_need(c['mgso4_ec_deliv'],
-                                              c['eclampsia']),
+                          'ec_cm_mgso4': met_need(c['mgso4_ec_need_met'],
+                                                  c['mgso4_ec_need']),
 
-                          'cs_surg_aph': met_need(c['caesarean_section_oth_surg_ip_deliv'],
-                                                  (c['uterine_rupture'] +
-                                                  total_aph +
-                                                   c['cs_spe_ec'] +
-                                                   c['cs_ol'] +
-                                                   c['cs_previous_scar'] +
-                                                   c['cs_other'])),
+                          'cs_surg_aph': met_need(c['caesarean_section_oth_surg_ip_need_met'],
+                                                  est_other_cs_indications),
 
-                          'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp_deliv'],
-                                                  pph_ua_need_blood + pph_mrp_need_blood),
+                          'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp_need_met'],
+                                                  pph_ua_need_blood_surg + pph_mrp_need_blood_surg),
 
-                          'n_sepsis_cm': met_need(c['neo_sepsis_treatment_all_deliv'] +
-                                                  c['neo_sepsis_treatment_preterm_deliv'],
-                                                  total_neo_sepsis),
+                          'n_sepsis_cm': met_need(c['neo_sepsis_treatment_term_need_met'] +
+                                                  c['neo_sepsis_treatment_preterm_need_met'],
+                                                  c['neo_sepsis_treatment_term_need'] +
+                                                  c['neo_sepsis_treatment_preterm_need']),
 
-                          'ptb_cm_resus': met_need(c['neo_resus_preterm_deliv'],
-                                                   (c['respiratory_distress_syndrome'] +
-                                                   (c['mild_enceph_pt'] + c['moderate_enceph_pt'] +
-                                                    c['severe_enceph_pt'])) + c['not_breathing_at_birth_pt']
-                                                    - c['rds_enceph_dc']),
+                          'ptb_cm_resus': met_need(c['neo_resus_preterm_need_met'],
+                                                   c['neo_resus_preterm_need']),
 
-                          'ptb_cm_sepsis': met_need(c['neo_sepsis_treatment_preterm_deliv'],
-                                                    (c['early_onset_sepsis_pt'] + c['late_onset_sepsis_pt'])),
+                          'ptb_cm_sepsis': met_need(c['neo_sepsis_treatment_preterm_need_met'],
+                                                    (c['neo_sepsis_treatment_preterm_need'])),
 
-                          'ptb_cm_kmc': met_need(c['kmc_deliv'],
-                                                 c['low_birth_weight']),
+                          'ptb_cm_kmc': met_need(c['kmc_need_met'],
+                                                 c['kmc_need']),
 
-                          'neo_resus': met_need(c['neo_resus_all_deliv'] + c['neo_resus_preterm_deliv'],
-                                                total_neo_resp_conds)
+                          'neo_resus': met_need(c['neo_resus_term_need_met'] + c['neo_resus_preterm_need_met'],
+                                                c['neo_resus_term_need'] + c['neo_resus_preterm_need'])
                           })
 
         # Intervention met need for those seeking care

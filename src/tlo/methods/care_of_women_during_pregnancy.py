@@ -1371,6 +1371,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                                            'ps_htn_disorders'] ==
                                                                                      'eclampsia'):
                 df.at[individual_id, 'ac_iv_anti_htn_treatment'] = True
+                pregnancy_helper_functions.log_met_need(self, "iv_anti_htns_ec")
 
     def treatment_for_severe_pre_eclampsia_or_eclampsia(self, individual_id, hsi_event):
         """
@@ -1382,6 +1383,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         l_params = self.sim.modules['Labour'].current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         int = 'mgso4_spe' if df.at[individual_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
 
@@ -1394,6 +1396,10 @@ class CareOfWomenDuringPregnancy(Module):
 
         if mag_sulph_delivered:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
+            pregnancy_helper_functions.log_met_need(self, int)
+
+            if int == 'mgso4_ec':
+                mni[individual_id]['ec_treatment_an'] = True
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
         """
@@ -2364,6 +2370,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_now', 'caesarean_future'):
                 mni[person_id]['cs_indication'] = 'spe_ec'
 
+
         # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
         # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
         # etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or
@@ -2684,6 +2691,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         if pac_delivered:
             df.at[person_id, 'ac_received_post_abortion_care'] = True
+            pregnancy_helper_functions.log_met_need(self, 'post_abortion_care_core')
 
 
     def did_not_run(self):

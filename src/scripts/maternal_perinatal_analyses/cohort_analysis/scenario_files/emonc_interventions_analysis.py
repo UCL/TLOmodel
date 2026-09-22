@@ -8,11 +8,11 @@ class EmoncScenario(BaseScenario):
     """Scenario for cohort model"""
     def __init__(self):
         super().__init__()
-        self.seed = 7969672
+        self.seed = 120589
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 10
+        self.number_of_draws = 13
         self.runs_per_draw = 20
 
     def log_configuration(self):
@@ -73,7 +73,9 @@ class EmoncScenario(BaseScenario):
                                             "caesarean_section_oth_surg_pp"],
 
                                            # Newborn sepsis case management
-                                           ["neo_sepsis_treatment_all"],
+                                           ["neo_sepsis_treatment_term",
+                                            "neo_sepsis_treatment_preterm",
+                                            ],
 
                                            # Essential care of preterm of sick newborn including KMC
                                            ["kmc",
@@ -81,7 +83,54 @@ class EmoncScenario(BaseScenario):
                                             "neo_sepsis_treatment_preterm"],
 
                                            # Newborn resuscitation
-                                           ["neo_resus_all"]]
+                                           ["neo_resus_term",
+                                            "neo_resus_preterm"],
+
+                                            # All maternal interventions
+                                             ["ectopic_pregnancy_treatment",
+                                              "post_abortion_care_core",
+                                              "sepsis_treatment",
+                                              "amtsl",
+                                              "pph_treatment_uterotonics",
+                                              "pph_treatment_mrrp",
+                                              "blood_transfusion_pph",
+                                              "blood_transfusion_aph",
+                                              "avd_ol",
+                                              "iv_anti_htns_ec",
+                                              "mgso4_spe",
+                                              "mgso4_ec",
+                                              "avd_spe_ec",
+                                              "caesarean_section_oth_surg_ip",
+                                              "caesarean_section_oth_surg_pp"],
+
+                                            # All newborn interventions
+                                            ["neo_sepsis_treatment_term",
+                                            "neo_sepsis_treatment_preterm",
+                                             "kmc",
+                                             "neo_resus_term",
+                                             "neo_resus_preterm"],
+
+                                            # All interventions
+                                            ["ectopic_pregnancy_treatment",
+                                              "post_abortion_care_core",
+                                              "sepsis_treatment",
+                                              "amtsl",
+                                              "pph_treatment_uterotonics",
+                                              "pph_treatment_mrrp",
+                                              "blood_transfusion_pph",
+                                              "blood_transfusion_aph",
+                                              "avd_ol",
+                                              "iv_anti_htns_ec",
+                                              "mgso4_spe",
+                                              "mgso4_ec",
+                                              "avd_spe_ec",
+                                              "caesarean_section_oth_surg_ip",
+                                              "caesarean_section_oth_surg_pp",
+                                              "neo_sepsis_treatment_term",
+                                              "neo_sepsis_treatment_preterm",
+                                              "kmc",
+                                              "neo_resus_term",
+                                              "neo_resus_preterm"]]
 
 
              return {'PregnancySupervisor': {
