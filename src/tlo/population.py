@@ -123,6 +123,7 @@ class Population:
             # approximation based on runs to increase capacity of dataframe ~twice a year
             # TODO: profile adjustment of this and more clever calculation
             # append_size = math.ceil(initial_size * 0.02)
+            # TODO: : replace with above/declare externally
             append_size = math.ceil(initial_size * 2)
         assert (
             append_size > 0
