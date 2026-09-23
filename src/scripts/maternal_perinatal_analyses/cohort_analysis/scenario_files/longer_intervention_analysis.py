@@ -11,13 +11,13 @@ class InterventionLongScenario(BaseScenario):
         self.seed = 120598
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
-        self.pop_size = 80_000
+        self.pop_size = 90_000
         self.number_of_draws = 2
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'testing_bigger_pop_80K', 'directory': './outputs',
+            'filename': 'testing_bigger_pop_90K', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
