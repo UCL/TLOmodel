@@ -23,7 +23,7 @@ from src.scripts.costing.cost_estimation import (do_stacked_bar_plot_of_cost_by_
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-scenario = 'testing_scenario_298398'
+scenario = 'testing_scenario_172156'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 sim_start_year = 2025
 
@@ -172,30 +172,26 @@ met_need_df = results['met_need']['summarised']
 df = met_need_df
 
 def produce_fig_1():
-    # Define each scenario:
-    # - name: package/scenario name
-    # - draw: draw in which coverage was increased
-    # - items: (DataFrame row ID, readable component label)
+
     scenarios = [
         {
-            "name": "Abortion/Ectopic CM",
+            "name": "Abortion/Ectopic \nCM",
             "draw": 1,
             "items": [
                 ("pac_ep", "Post-abortion care")
             ]
         },
         {
-            "name": "Maternal sepsis CM",
+            "name": "Maternal sepsis \nCM",
             "draw": 2,
             "items": [
                 ("m_sepsis_cm", "Sepsis management")
             ]
         },
         {
-            "name": "Maternal haem. CM",
+            "name": "Maternal haem.\nCM",
             "draw": 3,
             "items": [
-                ("amtsl", "AMTSL"),
                 ("haem_cm_ut", "Uterotonics"),
                 ("haem_cm_mrp", "MRRP"),
                 ("haem_cm_blood_pph", "Blood (PPH)"),
@@ -203,7 +199,7 @@ def produce_fig_1():
             ]
         },
         {
-            "name": "Obstructed labour CM",
+            "name": "Obstructed labour\nCM",
             "draw": 4,
             "items": [
                 ("ol_cm", "AVD"),
@@ -219,7 +215,7 @@ def produce_fig_1():
             ]
         },
         {
-            "name": "CS & Obstetric surgery",
+            "name": "CS & Obstetric\nsurgery",
             "draw": 6,
             "items": [
                 ("cs_surg_aph", "CS and IP surgery"),
@@ -251,24 +247,34 @@ def produce_fig_1():
         }
     ]
 
+    # ---------------------------------------------------------
     # Plot settings
+    # ---------------------------------------------------------
+
     baseline_colour = "#BDBDBD"
     increased_colour = "#377EB8"
 
     bar_width = 0.36
     component_spacing = 1.0
-    package_gap = 0.8
 
-    # Hatching distinguishes components within packages
-    hatches = ["", "..", "//", "xx", "\\\\", "++", "oo"]
+    # Slightly increase spacing between packages
+    package_gap = 1.05
 
     # Validate DataFrame structure
     required_stats = {"lower", "mean", "upper"}
-    available_draws = set(df.columns.get_level_values("draw"))
-    available_stats = set(df.columns.get_level_values("stat"))
+
+    available_draws = set(
+        df.columns.get_level_values("draw")
+    )
+
+    available_stats = set(
+        df.columns.get_level_values("stat")
+    )
 
     if 0 not in available_draws:
-        raise KeyError("Baseline draw 0 is not present in the DataFrame.")
+        raise KeyError(
+            "Baseline draw 0 is not present in the DataFrame."
+        )
 
     if not required_stats.issubset(available_stats):
         raise ValueError(
@@ -276,7 +282,10 @@ def produce_fig_1():
             f"{required_stats - available_stats}"
         )
 
+    # ---------------------------------------------------------
     # Extract results and calculate positions
+    # ---------------------------------------------------------
+
     plot_data = []
     package_centres = []
     package_boundaries = []
@@ -304,10 +313,12 @@ def produce_fig_1():
                     f"is not present in the DataFrame."
                 )
 
+            # Baseline
             baseline_mean = df.loc[row_id, (0, "mean")]
             baseline_lower = df.loc[row_id, (0, "lower")]
             baseline_upper = df.loc[row_id, (0, "upper")]
 
+            # Increased coverage
             increased_mean = df.loc[row_id, (draw, "mean")]
             increased_lower = df.loc[row_id, (draw, "lower")]
             increased_upper = df.loc[row_id, (draw, "upper")]
@@ -316,51 +327,66 @@ def produce_fig_1():
                 "package": scenario["name"],
                 "component": item_label,
                 "x": current_x,
-                "hatch": hatches[
-                    component_number % len(hatches)
-                ],
+
                 "baseline_mean": baseline_mean,
-                "baseline_lower_error": (
-                    baseline_mean - baseline_lower
-                ),
-                "baseline_upper_error": (
-                    baseline_upper - baseline_mean
-                ),
+                "baseline_lower_error":
+                    baseline_mean - baseline_lower,
+                "baseline_upper_error":
+                    baseline_upper - baseline_mean,
+
                 "increased_mean": increased_mean,
-                "increased_lower_error": (
-                    increased_mean - increased_lower
-                ),
-                "increased_upper_error": (
+                "increased_lower_error":
+                    increased_mean - increased_lower,
+                "increased_upper_error":
                     increased_upper - increased_mean
-                )
             })
 
             package_positions.append(current_x)
+
             current_x += component_spacing
 
+        # Centre package title beneath all its components
         package_centres.append({
             "name": scenario["name"],
             "x": np.mean(package_positions)
         })
 
-        # Position immediately after the final component in this package
+        # Boundary between packages
         if scenario_number < len(scenarios) - 1:
             package_boundaries.append(
-                current_x - component_spacing / 2 + package_gap / 2
+                current_x
+                - component_spacing / 2
+                + package_gap / 2
             )
 
         current_x += package_gap
 
+    # ---------------------------------------------------------
     # Create plot
-    fig_width = max(16, len(plot_data) * 1.25)
-    fig, ax = plt.subplots(figsize=(fig_width, 8))
+    # ---------------------------------------------------------
+
+    fig_width = max(
+        16,
+        len(plot_data) * 1.25
+    )
+
+    fig, ax = plt.subplots(
+        figsize=(fig_width, 8)
+    )
 
     upper_limits = []
 
-    # Plot each package component separately
+    # ---------------------------------------------------------
+    # Plot bars
+    # ---------------------------------------------------------
+
     for item in plot_data:
 
         x_position = item["x"]
+
+        # -------------------------
+        # Baseline: no hatch
+        # -------------------------
 
         baseline_bar = ax.bar(
             x_position - bar_width / 2,
@@ -374,9 +400,15 @@ def produce_fig_1():
             color=baseline_colour,
             edgecolor="black",
             linewidth=0.6,
-            hatch=item["hatch"],
-            error_kw={"elinewidth": 1}
+            error_kw={
+                "elinewidth": 1
+            }
         )
+
+        # -------------------------
+        # Increased coverage:
+        # dot hatch only
+        # -------------------------
 
         increased_bar = ax.bar(
             x_position + bar_width / 2,
@@ -390,14 +422,18 @@ def produce_fig_1():
             color=increased_colour,
             edgecolor="black",
             linewidth=0.6,
-            hatch=item["hatch"],
-            error_kw={"elinewidth": 1}
+            hatch="..",
+            error_kw={
+                "elinewidth": 1
+            }
         )
 
         # Percentage labels
         ax.bar_label(
             baseline_bar,
-            labels=[f'{item["baseline_mean"]:.1f}%'],
+            labels=[
+                f'{item["baseline_mean"]:.1f}%'
+            ],
             padding=7,
             fontsize=8,
             rotation=90
@@ -405,48 +441,76 @@ def produce_fig_1():
 
         ax.bar_label(
             increased_bar,
-            labels=[f'{item["increased_mean"]:.1f}%'],
+            labels=[
+                f'{item["increased_mean"]:.1f}%'
+            ],
             padding=7,
             fontsize=8,
             rotation=90
         )
 
         upper_limits.extend([
-            item["baseline_mean"] +
-            item["baseline_upper_error"],
+            item["baseline_mean"]
+            + item["baseline_upper_error"],
 
-            item["increased_mean"] +
-            item["increased_upper_error"]
+            item["increased_mean"]
+            + item["increased_upper_error"]
         ])
 
-    # Component labels beneath each baseline/increased pair
+    # ---------------------------------------------------------
+    # Component labels
+    # ---------------------------------------------------------
+
     ax.set_xticks([
-        item["x"] for item in plot_data
+        item["x"]
+        for item in plot_data
     ])
 
     ax.set_xticklabels(
-        [item["component"] for item in plot_data],
+        [
+            item["component"]
+            for item in plot_data
+        ],
         rotation=45,
         ha="right",
         fontsize=9
     )
 
-    # Package names centred beneath their components
+    # Add some space between axis and component labels
+    ax.tick_params(
+        axis="x",
+        pad=4
+    )
+
+    # ---------------------------------------------------------
+    # Package/group titles
+    # ---------------------------------------------------------
+
+    # Move titles further down so they don't overlap
+    # the rotated component labels.
+    package_label_y = -0.34
+
     for package in package_centres:
+
         ax.text(
             package["x"],
-            -0.28,
+            package_label_y,
             package["name"],
             transform=ax.get_xaxis_transform(),
             ha="center",
             va="top",
-            fontsize=10,
+            fontsize=9.5,
             fontweight="bold",
+            linespacing=1.1,
             clip_on=False
         )
 
-    # Separators between packages
+    # ---------------------------------------------------------
+    # Package separators
+    # ---------------------------------------------------------
+
     for boundary in package_boundaries:
+
         ax.axvline(
             boundary,
             color="0.82",
@@ -455,7 +519,10 @@ def produce_fig_1():
             zorder=0
         )
 
-    # Coverage legend
+    # ---------------------------------------------------------
+    # Legend
+    # ---------------------------------------------------------
+
     legend_handles = [
         Patch(
             facecolor=baseline_colour,
@@ -465,6 +532,7 @@ def produce_fig_1():
         Patch(
             facecolor=increased_colour,
             edgecolor="black",
+            hatch="..",
             label="Increased coverage"
         )
     ]
@@ -474,6 +542,10 @@ def produce_fig_1():
         frameon=False,
         loc="upper right"
     )
+
+    # ---------------------------------------------------------
+    # General formatting
+    # ---------------------------------------------------------
 
     ax.set_ylabel("Coverage (%)")
     ax.set_xlabel("")
@@ -486,14 +558,24 @@ def produce_fig_1():
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    # Make space for component and package labels
+    # More room underneath for both label levels
     fig.subplots_adjust(
         left=0.07,
         right=0.98,
         top=0.96,
-        bottom=0.32
+        bottom=0.40
     )
-    plt.savefig(f'{g_path}/figure1_met_need.png', bbox_inches='tight')
+
+    # ---------------------------------------------------------
+    # Save
+    # ---------------------------------------------------------
+
+    plt.savefig(
+        f"{g_path}/figure1_met_need.png",
+        bbox_inches="tight",
+        dpi=300
+    )
+
     plt.show()
 
 produce_fig_1()
@@ -510,6 +592,7 @@ def get_num_deaths_by_cause_label(_df):
         .groupby(_df['label']) \
         .size()
 
+# 1.) Maternal deaths (direct)
 num_deaths_by_cause_label = extract_results(
             results_folder,
             module='tlo.methods.demography',
@@ -615,7 +698,7 @@ direct_mat_deaths_averted_df.rename(index={sim_start_year: "mat_direct_deaths_av
 #
 # all_mat_deaths_averted_df.rename(index={sim_start_year: "all_mat_deaths_averted"}, inplace=True)
 
-# 2.) MATERNAL DALYS AVERTED
+# 2.) Maternal DALYs (direct)
 dalys_by_cause = extract_results(
             results_folder,
             module="tlo.methods.healthburden",
@@ -636,7 +719,7 @@ mat_dalys_averted_df = baseline.sub(
 mat_dalys_averted_df = mat_dalys_averted_df.droplevel(0, axis=0)
 mat_dalys_averted_df.rename(index={'Maternal Disorders': "mat_dalys_averted"}, inplace=True)
 
-# 3.) NEONATAL DEATHS AVERTED
+# 3.) Neonatal deaths (direct)
 direct_neo_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -678,7 +761,7 @@ direct_neo_deaths_averted_df.rename(index={sim_start_year: "direct_neo_deaths_av
 # ).drop(columns=0, level="draw")
 # all_neo_deaths_averted_df.rename(index={sim_start_year: "all_neo_deaths_averted"}, inplace=True)
 
-# 4.) NEONATAL DALYS AVERTED
+# 4.) Neonatal DALYs (direct)
 neo_dalys = dalys_by_cause.loc[sim_start_year, 'Neonatal Disorders'].reindex(dalys_by_cause.columns).to_frame().T
 baseline = neo_dalys.xs(0, axis=1, level="draw")
 neo_dalys_averted_df = baseline.sub(
@@ -689,7 +772,7 @@ neo_dalys_averted_df = baseline.sub(
 neo_dalys_averted_df = neo_dalys_averted_df.droplevel(0, axis=0)
 neo_dalys_averted_df.rename(index={'Neonatal Disorders': "neo_dalys_averted"}, inplace=True)
 
-# 5.) STILLBIRTHS AVERTED
+# 5.) Stillbirths
 stillbirths = results['deaths_and_stillbirths']['crude'].loc['total_stillbirths'].reindex(
     dalys_by_cause.columns).to_frame().T
 # stillbirths = stillbirths * p_scaling_factor
@@ -701,124 +784,7 @@ stillbirths_averted_df = baseline.sub(
 ).drop(columns=0, level="draw")
 stillbirths_averted_df.rename(index={'total_stillbirths': "stillbirths_averted"}, inplace=True)
 
-# combine data frames
-health_outcomes_df = pd.concat(
-    [direct_mat_deaths_averted_df,
-          mat_dalys_averted_df,
-          direct_neo_deaths_averted_df,
-          neo_dalys_averted_df,
-          # stillbirths_averted_df,
-     ],
-    axis=0
-)
-health_outcomes_df_summ = summarize_confidence_intervals(health_outcomes_df)
-
-health_outcome_labels = {
-        "direct_mat_deaths_averted": "Direct Maternal deaths averted",
-        "mat_dalys_averted": "Maternal Disorders DALYs averted",
-        "direct_neo_deaths_averted": "Direct Neonatal deaths averted",
-        "neo_dalys_averted": "Neonatal Disorders DALYs averted",
-        # "stillbirths_averted": "Stillbirths averted",
-    }
-
-def produce_fig_2(data, outcome_labels, save_title):
-    plot_df = data
-
-    # Ensure the index has a usable name
-    plot_df.index.name = "outcome"
-    plot_df.columns.names = ["draw", "stat"]
-
-    long_df = (
-        plot_df
-        .stack(level="draw")
-        .reset_index()
-    )
-
-    # Expected columns:
-    # outcome | draw | lower | mean | upper
-
-    # Optional readable labels
-    scenario_labels = draw_labels
-
-    long_df["scenario"] = long_df["draw"].map(
-        lambda x: scenario_labels.get(x, f"Scenario {x}")
-    )
-
-    outcomes = plot_df.index.tolist()
-    ncols = 2
-    nrows = int(np.ceil(len(outcomes) / ncols))
-
-    fig, axes = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
-        figsize=(13, 2.8 * nrows),
-        constrained_layout=True
-    )
-
-    axes = np.asarray(axes).flatten()
-
-    for ax, outcome in zip(axes, outcomes):
-        data = (
-            long_df.loc[long_df["outcome"].eq(outcome)]
-            .sort_values("draw")
-            .reset_index(drop=True)
-        )
-
-        y = np.arange(len(data))
-
-        # Asymmetric confidence intervals
-        xerr = np.vstack([
-            data["mean"] - data["lower"],
-            data["upper"] - data["mean"]
-        ])
-
-        ax.errorbar(
-            data["mean"],
-            y,
-            xerr=xerr,
-            fmt="o",
-            color="#2166AC",
-            ecolor="#7F8C8D",
-            elinewidth=1.5,
-            capsize=3,
-            markersize=6
-        )
-
-        ax.axvline(0, color="black", linestyle="--", linewidth=0.8)
-
-        ax.set_yticks(y)
-        ax.set_yticklabels(data["scenario"])
-        ax.invert_yaxis()
-
-        ax.set_title(
-            outcome_labels.get(
-                outcome,
-                outcome.replace("_", " ").title()
-            ),
-            loc="left",
-            fontweight="bold"
-        )
-
-        ax.set_xlabel("Mean (95% CI)")
-        ax.spines[["top", "right", "left"]].set_visible(False)
-        ax.grid(axis="x", alpha=0.2)
-
-    # Remove any unused panels
-    for ax in axes[len(outcomes):]:
-        ax.remove()
-
-    # fig.suptitle(
-    #     "Estimated outcomes by scenario",
-    #     fontsize=15,
-    #     fontweight="bold"
-    # )
-    plt.savefig(f'{g_path}/{save_title}.png', bbox_inches='tight')
-    plt.show()
-
-produce_fig_2(health_outcomes_df_summ, health_outcome_labels, 'figure2_health_outcomes')
-
-#  ==================================== FIGURE 2a - ALL-CAUSE DALYS IMPACTS  ==========================================
-# 1.) All cause DALYs averted
+# 6.) All cause DALYs averted
 total_dalys = dalys_by_cause.groupby(['year']).sum()
 
 baseline = total_dalys.xs(0, axis=1, level="draw")
@@ -830,7 +796,7 @@ total_dalys_averted_df = baseline.sub(
 
 total_dalys_averted_df.rename(index={sim_start_year: "total_dalys_averted"}, inplace=True)
 
-# 2.) All cause DALYs averted (inc. stillbirths)
+# 7.) All cause DALYs averted (inc. stillbirths)
 #  TODO: determine GA that whill be included
 preg_loss = extract_results(
     results_folder,
@@ -853,7 +819,7 @@ adj_dalys_averted_df = baseline.sub(
 
 adj_dalys_averted_df.rename(index={sim_start_year: "adj_dalys_averted"}, inplace=True)
 
-# 3.) Maternal + newborn + stillbirths DALYs averted
+# 8.) Maternal + newborn + stillbirths DALYs averted
 mat_neo_dalys_averted = mat_dalys_averted_df.copy()
 
 baseline = preg_loss_yll.xs(0, axis=1, level="draw")
@@ -868,152 +834,237 @@ mat_neo_dalys_averted.iloc[:, :] = (mat_dalys_averted_df.to_numpy() +
                                     preg_loss_averted_averted_df.to_numpy())
 mat_neo_dalys_averted.rename(index={'mat_dalys_averted': "mat_neo_dalys_averted"}, inplace=True)
 
-dalys_outcomes_df = pd.concat(
-    [total_dalys_averted_df,
-          adj_dalys_averted_df,
-          mat_neo_dalys_averted,
-     ],
+# ---------------------------------------------------------
+# Prepare data
+# ---------------------------------------------------------
+
+death_plot_df = pd.concat(
+    [
+        direct_mat_deaths_averted_df,
+        direct_neo_deaths_averted_df,
+        stillbirths_averted_df,
+    ],
     axis=0
 )
+
+death_plot_df_summ = summarize_confidence_intervals(death_plot_df)
+
+death_outcome_labels = {
+    "mat_direct_deaths_averted": "Direct maternal deaths averted",
+    "neo_direct_deaths_averted": "Direct neonatal deaths averted",
+    "stillbirths_averted": "Stillbirths averted",
+}
+
+
+dalys_outcomes_df = pd.concat(
+    [
+        total_dalys_averted_df,
+        adj_dalys_averted_df,
+        mat_neo_dalys_averted,
+    ],
+    axis=0
+)
+
 dalys_outcomes_df_summ = summarize_confidence_intervals(dalys_outcomes_df)
 
 dalys_outcome_labels = {
-        "direct_mat_deaths_averted": "All-cause DALYs averted",
-        "mat_dalys_averted": "All-cause DALYs averted (inc. preg loss)",
-        "direct_neo_deaths_averted": "Maternal and Perinatal DALYs averted",
-    }
+    "total_dalys_averted": "All-cause DALYs averted",
+    "adj_dalys_averted": "All-cause DALYs averted (inc. pregnancy loss)",
+    "mat_neo_dalys_averted": "Maternal and perinatal DALYs averted",
+}
 
-def produce_fig_2a(data, outcome_labels, save_title):
-    plot_df = data.copy()
+panel_colours = [
+    [
+        "#4C6A92",  # muted blue
+        "#8A6F8F",  # muted purple
+        "#6F8F7A",  # muted green
+    ],
+    [
+        "#B07A6A",  # muted terracotta
+        "#C09A5B",  # muted ochre
+        "#6F858F",  # muted slate
+    ]
+]
 
-    # Ensure index / column names
-    plot_df.index.name = "outcome"
-    plot_df.columns.names = ["draw", "stat"]
+def produce_fig_2(
+    death_data,
+    daly_data,
+    death_labels,
+    daly_labels,
+    save_title
+):
 
-    # Convert to long format:
-    # outcome | draw | lower | mean | upper
-    long_df = (
-        plot_df
-        .stack(level="draw")
-        .reset_index()
+    datasets = [
+        (death_data, death_labels, "Deaths averted"),
+        (daly_data, daly_labels, "DALYs averted"),
+    ]
+
+    # Scenario ordering
+    draws = sorted(
+        death_data.columns.get_level_values("draw").unique()
     )
-
-    # Add readable intervention/scenario labels
-    long_df["scenario"] = long_df["draw"].map(
-        lambda x: draw_labels.get(x, f"Scenario {x}")
-    )
-
-    # Add readable outcome labels
-    long_df["outcome_label"] = long_df["outcome"].map(
-        lambda x: outcome_labels.get(
-            x,
-            x.replace("_", " ").title()
-        )
-    )
-
-    # Preserve desired ordering
-    draws = sorted(long_df["draw"].unique())
-    outcomes = plot_df.index.tolist()
 
     scenario_labels = [
         draw_labels.get(draw, f"Scenario {draw}")
         for draw in draws
     ]
 
-    outcome_names = [
-        outcome_labels.get(
-            outcome,
-            outcome.replace("_", " ").title()
-        )
-        for outcome in outcomes
-    ]
+    x = np.arange(len(draws))
 
     # ---------------------------------------------------------
-    # Plot positioning
+    # Create two vertically stacked panels with shared x-axis
     # ---------------------------------------------------------
 
-    n_scenarios = len(draws)
-    n_outcomes = len(outcomes)
-
-    x = np.arange(n_scenarios)
-
-    # Total width occupied by bars within each intervention group
-    group_width = 0.8
-    bar_width = group_width / n_outcomes
-
-    fig, ax = plt.subplots(
-        figsize=(max(12, n_scenarios * 1.5), 7)
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=1,
+        sharex=True,
+        figsize=(max(14, len(draws) * 1.2), 11)
     )
 
     # ---------------------------------------------------------
-    # Plot one set of bars for each outcome
+    # Plot each panel
     # ---------------------------------------------------------
 
-    for i, outcome in enumerate(outcomes):
-        outcome_df = (
-            long_df
-            .loc[long_df["outcome"].eq(outcome)]
-            .set_index("draw")
-            .reindex(draws)
+    for panel_i, (ax, (data, outcome_labels, ylabel)) in enumerate(
+        zip(axes, datasets)
+    ):
+
+        plot_df = data.copy()
+
+        plot_df.index.name = "outcome"
+        plot_df.columns.names = ["draw", "stat"]
+
+        # Convert to long format
+        long_df = (
+            plot_df
+            .stack(level="draw")
+            .reset_index()
         )
 
-        means = outcome_df["mean"].to_numpy()
-        lower = outcome_df["lower"].to_numpy()
-        upper = outcome_df["upper"].to_numpy()
+        outcomes = plot_df.index.tolist()
+        n_outcomes = len(outcomes)
 
-        # Asymmetric confidence intervals
-        yerr = np.vstack([
-            means - lower,
-            upper - means
-        ])
+        # Width occupied by bars within each intervention
+        group_width = 0.8
+        bar_width = group_width / n_outcomes
 
-        # Centre all outcome bars around the scenario x position
-        offset = (
-                     i - (n_outcomes - 1) / 2
-                 ) * bar_width
+        # -----------------------------------------------------
+        # Plot each outcome
+        # -----------------------------------------------------
 
-        ax.bar(
-            x + offset,
-            means,
-            width=bar_width * 0.9,
-            yerr=yerr,
-            capsize=3,
-            label=outcome_names[i]
+        for i, outcome in enumerate(outcomes):
+
+            outcome_df = (
+                long_df
+                .loc[long_df["outcome"].eq(outcome)]
+                .set_index("draw")
+                .reindex(draws)
+            )
+
+            means = outcome_df["mean"].to_numpy()
+            lower = outcome_df["lower"].to_numpy()
+            upper = outcome_df["upper"].to_numpy()
+
+            # Asymmetric 95% confidence intervals
+            yerr = np.vstack([
+                means - lower,
+                upper - means
+            ])
+
+            # Centre bars around intervention position
+            offset = (
+                i - (n_outcomes - 1) / 2
+            ) * bar_width
+
+            ax.bar(
+                x + offset,
+                means,
+                width=bar_width * 0.9,
+                yerr=yerr,
+                capsize=2.5,
+                color=panel_colours[panel_i][i],
+                error_kw={
+                    "elinewidth": 0.8,
+                    "capthick": 0.8,
+                },
+                label=outcome_labels.get(
+                    outcome,
+                    outcome.replace("_", " ").title()
+                )
+            )
+
+        # -----------------------------------------------------
+        # Panel formatting
+        # -----------------------------------------------------
+
+        ax.axhline(
+            0,
+            color="black",
+            linestyle="--",
+            linewidth=0.8
+        )
+
+        ax.set_ylabel(ylabel)
+
+        ax.spines[["top", "right"]].set_visible(False)
+
+        ax.grid(
+            axis="y",
+            alpha=0.2
+        )
+
+        ax.legend(
+            title="Outcome",
+            frameon=False,
+            loc="upper right"
         )
 
     # ---------------------------------------------------------
-    # Formatting
+    # Panel titles
     # ---------------------------------------------------------
 
-    ax.axhline(
-        0,
-        color="black",
-        linestyle="--",
-        linewidth=0.8
+    axes[0].set_title(
+        "A. Mortality outcomes",
+        loc="left",
+        fontweight="bold"
     )
 
-    ax.set_xticks(x)
-    ax.set_xticklabels(
+    axes[1].set_title(
+        "B. DALY outcomes",
+        loc="left",
+        fontweight="bold"
+    )
+
+    # ---------------------------------------------------------
+    # Shared x-axis
+    # ---------------------------------------------------------
+
+    axes[1].set_xticks(x)
+
+    axes[1].set_xticklabels(
         scenario_labels,
         rotation=45,
         ha="right"
     )
 
-    ax.set_ylabel("Mean (95% CI)")
-    ax.set_xlabel("Intervention")
+    axes[1].set_xlabel("Intervention")
 
-    ax.spines[["top", "right"]].set_visible(False)
-
-    ax.grid(
-        axis="y",
-        alpha=0.2
+    # Remove x tick marks/labels from upper panel
+    axes[0].tick_params(
+        axis="x",
+        which="both",
+        bottom=False,
+        labelbottom=False
     )
 
-    ax.legend(
-        title="Outcome",
-        frameon=False,
-        bbox_to_anchor=(1.02, 1),
-        loc="upper left"
+    # ---------------------------------------------------------
+    # Final formatting
+    # ---------------------------------------------------------
+
+    # Small gap between panels
+    fig.subplots_adjust(
+        hspace=0.15
     )
 
     fig.tight_layout()
@@ -1026,4 +1077,32 @@ def produce_fig_2a(data, outcome_labels, save_title):
 
     plt.show()
 
-produce_fig_2a(dalys_outcomes_df_summ, dalys_outcome_labels, 'figure2a_dalys_averted')
+produce_fig_2(
+    death_plot_df_summ,
+    dalys_outcomes_df_summ,
+    death_outcome_labels,
+    dalys_outcome_labels,
+    "fig_2_health_outcomes"
+)
+
+# Table 1/Figure 3 - Estimating costs
+
+# list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
+#
+# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+#                                      resourcefilepath=resourcefilepath,
+#                                      suspended_results_folder=results_folder,
+#                                      _draws=draws,
+#                                      _years=list_of_relevant_years_for_costing,
+#                                      cost_only_used_staff= True,
+#                                      _discount_rate=0.03)
+#
+# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+#
+#  TODO: COST RESULTS ARE SCALED TO POPULATION...
+input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
+input_costs = input_costs.set_index('Unnamed: 0')
+
+# 1.) CONSUMABLES
+# 2.) HRH
+# 3.) SENSITIVITY/ABOVE SERVICE COSTS
