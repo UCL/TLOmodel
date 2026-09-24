@@ -40,13 +40,13 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations)
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
-SUBMIT_SUSPEND_PART = True
+SUBMIT_SUSPEND_PART = False
 VALID_CHECKPOINT_COMMITS: list[str] = ['8bd3208531e26a36a303ddbf618ea8539301a5e9']
 
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = True
+SUBMIT_BASELINE_RUN = False
 COST_LIMITS_FILE = "cost_limits_by_year.csv"
 BASELINE_SUMMARY_FILE = "baseline_summary.json"
 
