@@ -2,30 +2,127 @@
 Multi-surrogate constrained Bayesian optimization for SMAC3.
 
 Fits a SEPARATE random-forest surrogate for the objective (DALYs) and for
-each constraint (returned as a non-negative "violation" amount, 0 = feasible),
-then combines them into a single acquisition value:
+each constraint (a non-negative "violation" amount, 0 = feasible), then
+combines them into a single acquisition value:
 
-    acquisition(x) = EI(x; dalys model)  *  prod_j P(feasible_j(x))
+    acquisition(x) = EI(x; dalys model)  -  alpha * sum_j pi_j(x)
 
-This lets the optimizer reason about each constraint's probability of being
-satisfied independently, rather than folding everything into one penalized
-scalar before the model ever sees it.
+where pi_j(x) is a per-constraint "expected exceedance" merit term (defined
+below) rather than a probability. This file explains what each piece is and
+why it's built that way; MOTIVATION.md-style history is intentionally left
+out - see the companion rationale document for the full derivation and the
+alternatives that were considered.
+
+WHY EACH CONSTRAINT'S PROBABILITY IS READ FROM TREE VOTES, NOT MEAN/STD
+-------------------------------------------------------------------------
+A RandomForestRegressor's per-tree predictions give an ensemble mean and
+std at any point, and it's tempting to plug those into a Gaussian CDF to
+get P(violation <= 0). That construction is degenerate wherever the
+ensemble mean sits at or near the training floor (violation = 0, which is
+common - most configs violate no constraint most years): mean ~= 0 and std
+still > 0 pushes P(violation <= 0) toward a hard ceiling of 0.5, regardless
+of how confidently "feasible" the forest's trees actually are. The read
+used here instead treats each tree as a binary voter: tree b "votes"
+infeasible at x iff its own prediction is > 0. The fraction of trees voting
+infeasible,
+
+    p_hat_j(x) = (1/B) * sum_b  1[ tree_b(x) > 0 ],                    (1)
+
+is a direct, non-degenerate estimate of P(constraint j violated | x) - it
+isn't capped at 0.5 by construction, and it reflects genuine tree-to-tree
+disagreement rather than continuous-prediction noise around a floor.
+
+Uncertainty in that vote fraction is estimated with the infinitesimal
+jackknife (IJ) for random forests (Wager, Hastie & Efron, 2014), rather
+than treated as a fixed or heuristic quantity. Every tree is grown on its
+own bootstrap resample of the training rows; if a training point i happens
+to be over- or under-represented in the bootstrap draws behind the trees
+that vote "infeasible" at x, the IJ estimator picks that up as genuine
+sampling variance of p_hat_j(x), not just noise. Writing N_{b,i} for how
+many times row i appears in tree b's bootstrap sample and v_b(x) for tree
+b's vote at x,
+
+    Cov_i(x) = (1/B) * sum_b (N_{b,i} - 1) * (v_b(x) - p_hat_j(x)),      (2)
+
+    Var_IJ_j(x) = sum_i Cov_i(x)^2  -  (n/B^2) * sum_b (v_b(x) - p_hat_j(x))^2,   (3)
+
+with the second term the standard finite-B bias correction (Wager et al.
+2014). This is exactly the "spread from consensus among retraining" signal:
+points where the trees' bootstrap composition would have to look very
+different to flip the vote get a small Var_IJ_j(x); points where a handful
+of resampled rows would swing the vote get a large one - which is what
+should steer the search to explore harder in genuinely uncertain regions,
+not merely uncertain-looking ones.
+
+WHY THE CONSTRAINTS ARE COMBINED ADDITIVELY, NOT MULTIPLIED
+-------------------------------------------------------------------------
+The most direct read of "P(all constraints satisfied)" is the product of
+each P(constraint_j satisfied). Two things make that the wrong choice here.
+First, the product assumes the constraints are independent, which there's
+no reason to expect (the HIV-HRH and HIV-consumable constraints across
+periods all derive from the same simulated trajectory, and the direction of
+any correlation between them is genuinely mixed rather than reliably
+positive - e.g. excess deaths can raise near-term palliative-care cost
+while lowering later long-term-care cost). An independence-assuming product
+of correlated probabilities is systematically biased relative to the true
+joint probability, and the bias's sign depends on a correlation structure
+that isn't known and would have to be estimated separately per constraint
+pair. Second, with m constraints all held to a shared feasibility standard,
+the product compounds geometrically: six constraints each independently
+"90% probably fine" multiply to a joint feasibility read of about 53%, which
+crushes the acquisition value even when no single constraint is a real
+concern, and does so more aggressively as m grows regardless of whether
+that reflects a genuine joint risk.
+
+The additive merit term below avoids both problems. Each constraint
+contributes its own bounded "expected exceedance beyond a tolerance
+threshold tau" term,
+
+    pi_j(x) = E[ max(P_j(x) - tau, 0) ],   P_j(x) ~ Normal(p_hat_j(x), Var_IJ_j(x)),   (4)
+
+computed with the same rectified-normal integral used for EI itself:
+
+    pi_j(x) = (p_hat_j(x) - tau) * Phi(z) + sigma_j(x) * phi(z),   z = (p_hat_j(x) - tau) / sigma_j(x).   (5)
+
+tau (MERIT_VIOLATION_THRESHOLD) is a tolerance on the predicted violation
+PROBABILITY axis (in [0, 1]) - below it, an elevated-but-small chance of
+violating constraint j contributes nothing; above it, the merit term grows
+smoothly. Summing pi_j(x) across constraints, rather than multiplying
+probabilities, means each constraint's own risk is judged on its own terms
+- a single genuinely risky constraint moves the total by roughly its own
+pi_j(x), rather than every constraint's read being multiplicatively
+entangled with every other's. The full acquisition value is
+
+    acquisition(x) = EI(x; dalys) - alpha * sum_j pi_j(x),      alpha = MERIT_PENALTY_ALPHA.   (6)
+
+alpha converts the merit term's probability-scale units into the
+objective's own DALYs-scale units, so the two terms are comparable when
+added; see optimisation_parameters.py's own description of
+MERIT_PENALTY_ALPHA/MERIT_VIOLATION_THRESHOLD for how to calibrate it.
 
 NOTE ON VERSION SENSITIVITY
 ----------------------------
-SMAC3's `AbstractAcquisitionFunction` internals (exact `_compute` array shape,
-how `self.model` / `self.eta` get set via `update()`) have changed across 2.x
-releases. This is written against the general v2 architecture. If wiring this
-into your installed version raises an AttributeError or shape mismatch, open
-`smac/acquisition/function/expected_improvement.py` in your installed package
-and match this class's `_compute` signature/shape to that file - the maths
-below (predict -> EI * prod(P(feasible))) will still be correct, only the
-plumbing around it might need a one-line tweak.
+SMAC3's `AbstractAcquisitionFunction` internals (exact `_compute` array
+shape, how `self.model` / `self.eta` get set via `update()`) have changed
+across 2.x releases. This is written against the general v2 architecture.
+If wiring this into your installed version raises an AttributeError or
+shape mismatch, open `smac/acquisition/function/expected_improvement.py` in
+your installed package and match this class's `_compute` signature/shape
+to that file - the maths above will still be correct, only the plumbing
+around it might need a one-line tweak.
+
+sklearn's `_generate_sample_indices`/`_get_n_samples_bootstrap` are private
+APIs (`sklearn.ensemble._forest`) used here to reconstruct each tree's own
+bootstrap composition for the IJ variance. They've been stable across
+recent sklearn releases but aren't a public contract - if an upgrade moves
+or renames them, `MultiSurrogateModel._bootstrap_counts_for_forest` is the
+only place that needs updating.
 
 HYPERPARAMETERS: every tunable knob in this file is marked inline with a
-"HYPERPARAMETER" comment - grep for that tag across all three files
-(constrained_ei.py, smac_scenario.py, ask_tell_azure_example.py) to find
-the complete list in one pass.
+"HYPERPARAMETER" comment - grep for that tag across all files
+(constrained_ei.py, smac_scenario.py, convergence_monitoring.py,
+optimisation_pipeline.py, optimisation_parameters.py) to find the complete
+list in one pass.
 """
 
 from __future__ import annotations
@@ -35,6 +132,7 @@ from typing import Callable, Sequence
 import numpy as np
 from scipy.stats import norm
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble._forest import _generate_sample_indices, _get_n_samples_bootstrap
 
 from ConfigSpace import Configuration, ConfigurationSpace
 from smac.acquisition.function.abstract_acquisition_function import (
@@ -62,22 +160,32 @@ def configs_to_array(configs: Sequence[Configuration]) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------
-# 2. Multi-surrogate manager: one RF per target, with ensemble-based std
+# 2. Multi-surrogate manager: one RF per target, with ensemble-based
+#    mean/std for continuous targets, and vote-fraction + infinitesimal-
+#    jackknife estimates of P(target > 0) for targets registered as
+#    "IJ targets" (the constraints).
 # --------------------------------------------------------------------------
 
 class MultiSurrogateModel:
     """
     Holds one RandomForestRegressor per target (the objective and each
-    constraint), and exposes predictive mean + std for each, estimated
-    from the spread of per-tree predictions (this is what stands in for
-    a GP's posterior variance when using random forests).
+    constraint).
+
+    For every target, `predict()` exposes the usual ensemble mean + std
+    (std from the spread of per-tree predictions - what stands in for a
+    GP's posterior variance when using random forests). For targets passed
+    to `fit()` as `ij_targets` (the constraints), `predict_violation_
+    probability()` additionally exposes the vote-fraction estimate of
+    P(target > 0) and its infinitesimal-jackknife standard deviation - see
+    the module docstring for the derivation.
     """
 
     def __init__(
         self,
         target_names: Sequence[str],
         n_estimators: int = 100,       # HYPERPARAMETER: more trees = smoother/
-                                          # more stable mean+std, linear compute cost
+                                          # more stable mean+std and vote-fraction
+                                          # estimates, linear compute cost
         min_samples_leaf: int = 3,     # HYPERPARAMETER: noise-smoothing strength -
                                           # see the grouped-CV + leave-one-seed-out
                                           # validation approach discussed earlier.
@@ -99,19 +207,62 @@ class MultiSurrogateModel:
         self.models: dict[str, RandomForestRegressor] = {}
         self.n_fitted_points: int = 0
 
-    def fit(self, X: np.ndarray, targets: dict[str, np.ndarray]) -> None:
-        """targets: dict mapping target name -> 1D array, same length as X."""
+        # Populated only for targets passed as `ij_targets` to fit():
+        # shape (n_estimators, n_fitted_points), bootstrap draw count of
+        # each training row in each tree - the raw material for the IJ
+        # variance (see predict_violation_probability()).
+        self._bootstrap_counts: dict[str, np.ndarray] = {}
+
+    def fit(
+        self,
+        X: np.ndarray,
+        targets: dict[str, np.ndarray],
+        ij_targets: Sequence[str] = (),
+    ) -> None:
+        """
+        targets: dict mapping target name -> 1D array, same length as X.
+        ij_targets: subset of target_names (typically the constraints) for
+            which predict_violation_probability() will later be called -
+            for these, each tree's bootstrap composition is reconstructed
+            and cached here so it doesn't need recomputing on every predict
+            call.
+        """
+        self._bootstrap_counts = {}
         for name in self.target_names:
             y = targets[name]
             rf = RandomForestRegressor(**self._rf_kwargs)
             rf.fit(X, y)
             self.models[name] = rf
+            if name in ij_targets:
+                self._bootstrap_counts[name] = self._bootstrap_counts_for_forest(rf, X.shape[0])
         self.n_fitted_points = X.shape[0]
+
+    @staticmethod
+    def _bootstrap_counts_for_forest(rf: RandomForestRegressor, n_samples: int) -> np.ndarray:
+        """
+        For every tree in `rf`, reconstructs how many times each of the
+        `n_samples` training rows was drawn into that tree's own bootstrap
+        sample, using the same private sklearn helpers the forest itself
+        used at fit time (each tree's `random_state` was fixed by the
+        forest, so this reconstruction is exact, not approximate).
+
+        Returns an (n_estimators, n_samples) integer array: row b, column i
+        is N_{b,i} in the module docstring's notation.
+        """
+        n_samples_bootstrap = _get_n_samples_bootstrap(n_samples, rf.max_samples)
+        counts = np.zeros((len(rf.estimators_), n_samples), dtype=float)
+        for b, tree in enumerate(rf.estimators_):
+            sample_indices = _generate_sample_indices(tree.random_state, n_samples, n_samples_bootstrap)
+            counts[b] = np.bincount(sample_indices, minlength=n_samples)
+        return counts
 
     def predict(self, X: np.ndarray) -> dict[str, tuple[np.ndarray, np.ndarray]]:
         """
         Returns dict: target name -> (mean, std), each shape (n_points,).
         Std is the std-dev across individual trees' predictions at each point.
+        Used for the objective (EI needs a continuous mean/std), and
+        available for any target even when predict_violation_probability()
+        is also used for it.
         """
         out = {}
         for name, rf in self.models.items():
@@ -123,6 +274,43 @@ class MultiSurrogateModel:
             out[name] = (mean, std)
         return out
 
+    def predict_violation_probability(self, X: np.ndarray, name: str) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Vote-fraction estimate of P(target `name` > 0 | x) plus its
+        infinitesimal-jackknife standard deviation, for every point in X.
+        `name` must have been included in `ij_targets` at the last fit()
+        call. Returns (p_hat, sigma), each shape (n_points,).
+        """
+        if name not in self._bootstrap_counts:
+            raise ValueError(
+                f"'{name}' has no cached bootstrap composition - pass it in "
+                f"ij_targets= when calling fit() before requesting its "
+                f"violation probability."
+            )
+        rf = self.models[name]
+        counts = self._bootstrap_counts[name]  # (B, n_train)
+        B, n_train = counts.shape
+
+        # shape: (n_estimators, n_points)
+        tree_preds = np.stack([tree.predict(X) for tree in rf.estimators_], axis=0)
+        votes = (tree_preds > 0.0).astype(float)  # per-tree binary vote, Eq. (1)'s summand
+        p_hat = votes.mean(axis=0)  # Eq. (1)
+
+        # Eq. (2): covariance, per training row, between that row's
+        # bootstrap draw count and the tree's vote, vectorized across every
+        # candidate point at once.
+        n_centered = counts - 1.0  # bootstrap draw count centered on its expectation of 1
+        v_centered = votes - p_hat[np.newaxis, :]  # (B, n_points)
+        cov = (n_centered.T @ v_centered) / B  # (n_train, n_points)
+
+        # Eq. (3): sum of squared covariances, bias-corrected for finite B.
+        var_ij = np.sum(cov ** 2, axis=0)
+        bias_correction = (n_train / B ** 2) * np.sum(v_centered ** 2, axis=0)
+        var_ij = var_ij - bias_correction
+        var_ij = np.maximum(var_ij, 1e-8)  # the correction can push slightly negative; floor it
+
+        return p_hat, np.sqrt(var_ij)
+
 
 # --------------------------------------------------------------------------
 # 3. The constrained EI acquisition function
@@ -130,13 +318,17 @@ class MultiSurrogateModel:
 
 class ConstrainedEI(AbstractAcquisitionFunction):
     """
-    acquisition(x) = EI(x; objective) * prod_j P(constraint_j(x) <= 0)
+    acquisition(x) = EI(x; objective) - alpha * sum_j pi_j(x)
+
+    See the module docstring for what pi_j(x) is and why the constraints
+    are combined this way rather than as a probability product.
 
     `history_provider` is a zero-arg callable returning your own log of
-    dicts (the `history` list built up in target_function), each with a
-    "config" key plus one key per target_name (objective + constraints).
-    Re-fitting only happens when new points have arrived since the last
-    fit, so this is safe to call every iteration without wasted work.
+    dicts (the `history` list built up by record_result() in
+    optimisation_pipeline.py), each with a "config_object" key plus one key
+    per target_name (objective + constraints). Re-fitting only happens when
+    new points have arrived since the last fit, so this is safe to call
+    every iteration without wasted work.
     """
 
     def __init__(
@@ -155,14 +347,21 @@ class ConstrainedEI(AbstractAcquisitionFunction):
                                     # cadence and its interaction with N_CONCURRENT
         min_samples_leaf: int = 3,  # HYPERPARAMETER: passed straight through to
                                        # MultiSurrogateModel's own RandomForestRegressors
-                                       # (see that class's own docstring/comment) - an
-                                       # earlier version of this class never exposed
-                                       # this at all, silently relying on
-                                       # MultiSurrogateModel's own hardcoded default
-                                       # with no way to override it from the caller;
-                                       # now sourced from optimisation_parameters.py's
+                                       # (see that class's own docstring/comment) -
+                                       # sourced from optimisation_parameters.py's
                                        # own MIN_SAMPLES_LEAF, matching every other
                                        # hyperparameter in this pipeline.
+        alpha: float = 1.0,  # HYPERPARAMETER: MERIT_PENALTY_ALPHA - converts the
+                                # probability-scale merit term sum_j pi_j(x) into
+                                # the objective's own DALYs-scale units; see
+                                # optimisation_parameters.py's own description of
+                                # MERIT_PENALTY_ALPHA for how to calibrate it.
+        tau: float = 0.5,  # HYPERPARAMETER: MERIT_VIOLATION_THRESHOLD - tolerance,
+                             # on the predicted violation-probability axis [0, 1],
+                             # below which an elevated-but-small violation
+                             # probability contributes nothing to the merit term;
+                             # see optimisation_parameters.py's own description of
+                             # MERIT_VIOLATION_THRESHOLD.
     ):
         super().__init__()
         self._configspace = configspace
@@ -171,6 +370,8 @@ class ConstrainedEI(AbstractAcquisitionFunction):
         self._history_provider = history_provider
         self._xi = xi
         self._retrain_every = retrain_every
+        self._alpha = alpha
+        self._tau = tau
         self._last_fit_n = 0  # history length at last fit, distinct from
                                 # self._surrogate.n_fitted_points
 
@@ -197,7 +398,7 @@ class ConstrainedEI(AbstractAcquisitionFunction):
             name: np.array([h[name] for h in history], dtype=float)
             for name in self._surrogate.target_names
         }
-        self._surrogate.fit(X, targets)
+        self._surrogate.fit(X, targets, ij_targets=self._constraint_names)
         self._last_fit_n = len(history)
 
         # NOISY-EI CORRECTION: eta is the best-so-far target that EI tries
@@ -255,14 +456,19 @@ class ConstrainedEI(AbstractAcquisitionFunction):
             ei = improvement * norm.cdf(z) + std_obj * norm.pdf(z)
             ei = np.maximum(ei, 0.0)
 
-        # --- Probability of feasibility, per constraint, multiplied ---
-        prob_feasible = np.ones(X.shape[0])
+        # --- Per-constraint merit term, vote-fraction + IJ, summed ---
+        # (module docstring Eqs. 1-5) - replaces the multiplicative
+        # prod_j P(feasible_j(x)) read.
+        merit_penalty = np.zeros(X.shape[0])
         for name in self._constraint_names:
-            mean_c, std_c = preds[name]
-            # P(violation <= 0) under a Gaussian approx of the RF ensemble
-            prob_feasible *= norm.cdf((0.0 - mean_c) / std_c)
+            p_hat, sigma = self._surrogate.predict_violation_probability(X, name)
+            sigma = np.maximum(sigma, 1e-6)
+            z = (p_hat - self._tau) / sigma
+            pi_j = (p_hat - self._tau) * norm.cdf(z) + sigma * norm.pdf(z)
+            pi_j = np.maximum(pi_j, 0.0)
+            merit_penalty += pi_j
 
-        acquisition_value = ei * prob_feasible
+        acquisition_value = ei - self._alpha * merit_penalty
         return acquisition_value.reshape(-1, 1)
 
 
@@ -274,17 +480,17 @@ class ConstrainedEI(AbstractAcquisitionFunction):
 # in isolation - the acquisition function itself doesn't care how it's
 # driven. For the real TLOmodel/Azure Batch integration, which uses the
 # ask-tell interface instead of optimize() (since simulations run as
-# async remote jobs, not local blocking calls), see
-# ask_tell_azure_example.py and smac_scenario.py - those are the current,
-# up-to-date wiring; this function is a minimal standalone sanity-check
-# only, e.g. for testing ConstrainedEI against a toy local objective.
+# async remote jobs, not local blocking calls), see optimisation_pipeline.py
+# and smac_scenario.py - those are the current, up-to-date wiring; this
+# function is a minimal standalone sanity-check only, e.g. for testing
+# ConstrainedEI against a toy local objective.
 # --------------------------------------------------------------------------
 
 def example_usage():
     """
     Minimal synchronous sketch, for testing ConstrainedEI in isolation
     with a cheap local objective. NOT the pattern used for the real
-    Azure-based simulation - see ask_tell_azure_example.py for that.
+    Azure-based simulation - see optimisation_pipeline.py for that.
     """
     from smac import HyperparameterOptimizationFacade, Scenario
 
@@ -332,6 +538,8 @@ def example_usage():
         objective_name="dalys",
         constraint_names=["cost_violation", "hr_violation", "stock_violation"],
         history_provider=lambda: history,
+        alpha=1.0,
+        tau=0.5,
     )
 
     scenario = Scenario(configspace, n_trials=400, deterministic=False)

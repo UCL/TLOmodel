@@ -20,6 +20,8 @@ EI_XI = 0.0
 MIN_SAMPLES_LEAF = 3
 PENALTY_COEFFICIENT_MULTIPLIER = 3
 INFEASIBILITY_FLOOR_MULTIPLIER = 100
+MERIT_VIOLATION_THRESHOLD = 0.5
+MERIT_PENALTY_ALPHA = 50.0
 
 # --------------------------------------------------------------------------
 # Operational (Azure submission / polling) hyperparameters
@@ -105,6 +107,35 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     are at small POP_SIZE - a smaller pop_size means noisier per-seed
 #     results, which argues for a HIGHER min_samples_leaf to compensate,
 #     not a lower one).
+#
+# MERIT_VIOLATION_THRESHOLD
+#     (tau in ConstrainedEI's own docstring/comments.) Tolerance, on the
+#     predicted violation-PROBABILITY axis (in [0, 1], not on the
+#     violation amount itself), below which a constraint's predicted
+#     P(violated) contributes nothing to the acquisition function's merit
+#     term - only the exceedance above this threshold is penalised. Has
+#     nothing to do with a constraint's own fixed violation<=0 feasibility
+#     boundary, which is unaffected by this value. A lower threshold makes
+#     the search more risk-averse (penalises even a small predicted
+#     violation probability); 0.5 (a coin-flip) is a reasonable starting
+#     point when nothing more specific is known.
+#
+# MERIT_PENALTY_ALPHA
+#     (alpha/lambda in ConstrainedEI's own docstring/comments.) Scales the
+#     summed per-constraint merit term (unitless, each term in [0, 1])
+#     into the objective's own DALYs units before it's subtracted from EI
+#     - i.e. acquisition(x) = EI(x) - MERIT_PENALTY_ALPHA * sum_j pi_j(x).
+#     Needs calibrating against the actual DALYs scale this pipeline
+#     produces, not left at a placeholder: a reasonable starting point is
+#     to match MERIT_PENALTY_ALPHA * (1 - MERIT_VIOLATION_THRESHOLD) *
+#     (number of constraints) to a fraction of the observed spread in EI
+#     values (e.g. the std or IQR of DALYs across the initial design) -
+#     then sanity-check on the realistic case of one borderline
+#     constraint (not the worst case of every constraint maximally
+#     violated), and revisit if the search seems to either ignore
+#     constraints it shouldn't, or refuse to explore anything with any
+#     nonzero predicted violation probability at all. The default here
+#     (50.0) is an untuned placeholder.
 #
 # PENALTY_COEFFICIENT_MULTIPLIER
 #     K = PENALTY_COEFFICIENT_MULTIPLIER * dalys, the penalty coefficient

@@ -103,7 +103,7 @@ from convergence_monitoring import (
 )
 from optimisation_parameters import (
     N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, PENALTY_COEFFICIENT_MULTIPLIER,
-    INFEASIBILITY_FLOOR_MULTIPLIER,
+    INFEASIBILITY_FLOOR_MULTIPLIER, MERIT_VIOLATION_THRESHOLD, MERIT_PENALTY_ALPHA,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
@@ -1651,6 +1651,14 @@ acquisition_function = ConstrainedEI(
                        # on MultiSurrogateModel's own hardcoded default
                        # deep inside constrained_ei.py, with no way to
                        # actually tune it from here
+    alpha=MERIT_PENALTY_ALPHA,      # scales the additive merit term
+                       # (sum_j pi_j(x)) into the objective's own DALYs
+                       # units - see optimisation_parameters.py's own
+                       # description of MERIT_PENALTY_ALPHA
+    tau=MERIT_VIOLATION_THRESHOLD,  # tolerance on each constraint's
+                       # predicted violation probability - see
+                       # optimisation_parameters.py's own description of
+                       # MERIT_VIOLATION_THRESHOLD
 )
 
 smac = HyperparameterOptimizationFacade(
