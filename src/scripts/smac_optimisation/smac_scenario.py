@@ -103,6 +103,7 @@ class TloOptimisationScenario(BaseScenario):
         self.config_coverage_plhiv = None
         self.tdf_test_replace_vl_test = None
         self.targeted_adherence_monitoring = None
+        self.config_target_IPT = None
 
 
     def log_configuration(self):
@@ -145,6 +146,8 @@ class TloOptimisationScenario(BaseScenario):
                 "config_coverage_plhiv": self.config_coverage_plhiv,
                 "tdf_test_replace_vl_test": self.tdf_test_replace_vl_test,
                 "targeted_adherence_monitoring": self.targeted_adherence_monitoring,
+                "config_target_IPT": self.config_target_IPT,
+
             },
             # map intervention_coverage / other config values onto
             # whichever module parameters they actually control in

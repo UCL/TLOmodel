@@ -3777,7 +3777,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         self.consider_tb(person_id)
         
         # Program simplification scenario: targeted IPT
-        if self.sim.modules['Hiv'].parameters['config_target_IPT']:
+        if self.module.parameters['config_target_IPT']:
             # Check if CardioMetabolicDisorders module is loaded
             diabetes = False
             if "CardioMetabolicDisorders" in self.sim.modules:
