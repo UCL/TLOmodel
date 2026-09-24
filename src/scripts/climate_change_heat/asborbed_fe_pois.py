@@ -166,9 +166,9 @@ SUPPORT_HIGH_PCTILE = 99.99
 
 # Model settings
 WBGT_VAR = "wbgt5x_day" #"wbgt_day"#"wbgt5x_day"
-SPLINE_DF = 2
+SPLINE_DF = 3
 LAG_MONTHS = [1]
-SA_LAG = True
+SA_LAG = False
 if SA_LAG:
     LAG_SUFFIX = "_with_lags"
 else:
@@ -178,7 +178,7 @@ MIN_OBS = 24
 MIN_OBS_COVERAGE = 0.5
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
-CLUSTER_COL = "Dist"
+CLUSTER_COL = "grid_id"
 USE_PRECIP = True
 PRECIP_COL = "precip_month"
 
@@ -209,7 +209,7 @@ YEAR_FE_YEARS = list(range(min_year_historical, YEAR_FE_REFERENCE))
 YEAR_FE_COLS = [f"year_fe_{y}" for y in YEAR_FE_YEARS]
 
 
-PROJECT = False
+PROJECT = True
 PROJECT_HOLD_YEAR = True
 SSP_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 WBGT_MODELS = ["lowest", "median", "highest"]
@@ -223,7 +223,7 @@ PRECIP_FILE_BY_TIER = {
 }
 
 WBGT_REFERENCE_TEMP = 23.0
-CURVE_REF_MODE = "p50"
+CURVE_REF_MODE = "p25"
 CURVE_N = 60
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -768,7 +768,6 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     long, weather_rhs, spline_cols, DESIGN = add_weather_columns_optimized(long, SHIFTS, spline_df=spline_df)
 
     nb_cols = ["y", "facility", "month", CLUSTER_COL] + weather_rhs
-    nb_cols = ["y", "facility", "month", CLUSTER_COL] + weather_rhs
     if USE_ZONE_YEAR_FE:
         nb_cols.append("zone_year")
     nb_data = long.dropna(subset=nb_cols).copy()
@@ -1086,7 +1085,6 @@ def fit_indicator(indicator, panel_path, spline_df=None):
                 "wbgt_train_p_lo": WBGT_SUPPORT["p_lo"],
                 "wbgt_train_p_hi": WBGT_SUPPORT["p_hi"],
                 "time_seconds": time.time() - t0,
-                "_fac_meta": nb_data[["facility", CLUSTER_COL, ZONE_COL]].drop_duplicates().reset_index(drop=True),
             }
         ]
     ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}{LAG_SUFFIX}{_df_tag}.csv", index=False)
@@ -1129,10 +1127,12 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         "_shifts": SHIFTS,
         "_design_map": DESIGN,
         "_spline_cols": spline_cols,
-        "_train_facs": list(FITTED_FACILITIES),
+        "_train_facs": list(nb_data["facility"].unique()),
         "_model_wx": model_wx,
         "_model_base": model_base,
-        "_fac_district": nb_data[["facility", CLUSTER_COL]].drop_duplicates().reset_index(drop=True),
+        "_fac_meta": (
+            nb_data[list(dict.fromkeys(["facility", CLUSTER_COL, ZONE_COL]))].drop_duplicates().reset_index(drop=True)
+        ),
         "_wbgt_support": WBGT_SUPPORT,
         "_nb_rows": nb_data[["facility", "date"]].copy(),
         "_wbgt_support": WBGT_SUPPORT,
@@ -1430,7 +1430,19 @@ if __name__ == "__main__":
                         continue
 
                     # Merge zone metadata onto the projection frame
+                    print(f"    {ind}: df cols = {list(df.columns)}")
+                    print(f"    {ind}: _fac_meta cols = {list(res['_fac_meta'].columns)}")
                     df = df.merge(res["_fac_meta"], on="facility", how="left")
+
+                    missing_fac = df.loc[df[ZONE_COL].isna(), "facility"].drop_duplicates().tolist()
+                    if missing_fac:
+                        in_meta = set(res["_fac_meta"]["facility"])
+                        in_df = set(df["facility"])
+                        print(f"    {ind}: _fac_meta has {len(in_meta)} facilities, "
+                              f"df has {len(in_df)} facilities after isin filter")
+                        print(f"    {ind}: {len(missing_fac)} in df but missing from _fac_meta:")
+                        for f in missing_fac[:20]:
+                            print(f"      {f!r}")
                     if df[ZONE_COL].isna().any():
                         n_missing = int(df[ZONE_COL].isna().sum())
                         raise RuntimeError(
@@ -1508,7 +1520,6 @@ if __name__ == "__main__":
                         100.0 * df["Disruption"] / df["mu_b"],
                         np.nan,
                     )
-                    df = df.merge(res["_fac_district"], on="facility", how="left")
                     df["indicator"], df["ssp"], df["tier"] = ind, ssp, tier
 
                     df[
