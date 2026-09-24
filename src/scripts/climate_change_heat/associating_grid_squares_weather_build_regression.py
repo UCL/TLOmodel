@@ -218,6 +218,7 @@ def get_special_case_wbgt(district):
 
 
 wbgt_data_by_facility = {var: {} for var in WBGT_VARS}
+facility_grid_id = {}
 matched_facilities = []            # matched, in first-seen order
 facility_name_mapping = {}         # reporting name -> registry name (or itself)
 unmatched_facilities = []
@@ -228,18 +229,28 @@ print("MATCHING FACILITIES (once, for all indicators)")
 print("=" * 80)
 
 for reporting_facility in all_reporting_facilities:
-
     if reporting_facility in SPECIAL_CASES:
         district = SPECIAL_CASES[reporting_facility]
         grid_wbgt = get_special_case_wbgt(district)
         for var in WBGT_VARS:
             wbgt_data_by_facility[var][reporting_facility] = grid_wbgt[var].tolist()
+        # Special cases share their district's Grid_Index; derive iy/ix from
+        # the malawi_grid polygon the same way get_special_case_wbgt does.
+        import geopandas as gpd
+
+        _gen_fac, _wbgt_by_grid = get_special_case_wbgt._cache
+        _polygon = gpd.read_file(MALAWI_GRID_SHP).iloc[
+            _gen_fac[_gen_fac["District"] == district]["Grid_Index"].iloc[0]
+        ]["geometry"]
+        _minx, _miny, _maxx, _maxy = _polygon.bounds
+        _ix = int(((long_data - _minx) ** 2).argmin())
+        _iy = int(((lat_data - _miny) ** 2).argmin())
+        facility_grid_id[reporting_facility] = f"{_iy}_{_ix}"
         matched_facilities.append(reporting_facility)
         facility_name_mapping[reporting_facility] = reporting_facility
         match_stats["special_case"] += 1
         print(f"★ SPECIAL: '{reporting_facility}' -> grid rule ({district})")
         continue
-
     reporting_clean = clean_name(reporting_facility)
     original_facility_name = None
 
@@ -274,9 +285,9 @@ for reporting_facility in all_reporting_facilities:
 
     index_for_x = ((long_data - long_for_facility) ** 2).argmin()
     index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
+    facility_grid_id[reporting_facility] = f"{int(index_for_y)}_{int(index_for_x)}"  # NEW
     for var in WBGT_VARS:
-        wbgt_data_by_facility[var][reporting_facility] = \
-            wbgt_data[var][:, index_for_y, index_for_x].tolist()
+        wbgt_data_by_facility[var][reporting_facility] = wbgt_data[var][:, index_for_y, index_for_x].tolist()
 
 print(f"\nMatched {len(matched_facilities)}/{len(all_reporting_facilities)} "
       f"(exact {match_stats['exact']}, fuzzy {match_stats['fuzzy']}, "
@@ -322,6 +333,7 @@ facility_info_full["Dist"] = facility_info_full["Dist"].replace(
 coords = facility_info_full[
     ["A109__Latitude", "A109__Longitude"]].astype(float).values
 dmat = cdist(coords, coords, metric="euclidean")
+facility_info_full["grid_id"] = facility_info_full.index.map(facility_grid_id)
 np.fill_diagonal(dmat, np.inf)
 dmat[np.isnan(dmat)] = np.inf
 min_dist = dmat.min(axis=1)
@@ -386,7 +398,7 @@ for indicator in indicator_cols:
     panel = pd.merge(wbgt_long, indicator_long,
                      on=["facility", "date"], how="left")
 
-    static_cols = COVARIATE_COLS + ["minimum_distance"]
+    static_cols = COVARIATE_COLS + ["minimum_distance", "grid_id"]
     panel = pd.merge(
         panel,
         facility_info_full[static_cols].reset_index(),   # index = facility
