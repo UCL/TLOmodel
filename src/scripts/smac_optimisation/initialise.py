@@ -250,5 +250,6 @@ BASELINE_CONFIG_VALUES = {
     "config_coverage_plhiv": 0.30,
     "tdf_test_replace_vl_test": False,
     "targeted_adherence_monitoring": False,
+    "config_target_IPT": False,
 }
 
