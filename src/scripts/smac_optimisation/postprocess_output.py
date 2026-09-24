@@ -37,8 +37,15 @@ import pandas as pd
 from tlo.analysis.utils import load_pickled_dataframes
 from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from optimisation_parameters import (
-    YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
+    YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE, POP_SIZE,
 )
+
+# Malawi's real population, used as the numerator of the scaling-factor
+# fallback below (_get_scaling_factor()) when the run's own log doesn't
+# report one - i.e. the fallback assumes a "true population / POP_SIZE"
+# scaling factor of MALAWI_REAL_POPULATION / POP_SIZE, rather than
+# silently leaving the run unscaled (scale factor 1.0).
+MALAWI_REAL_POPULATION = 14_539_609
 from smac_scenario_baseline import BASELINE_RUNS_PER_DRAW
 
 
@@ -146,12 +153,19 @@ def _get_scaling_factor(log: dict) -> float:
     compare_number_of_deaths()'s own scaling-factor lookup:
     log["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0]
 
-    Defensive fallback to 1.0 if the key is genuinely absent (matching
-    compare_number_of_deaths()'s own "if 'scaling_factor' in
-    output['tlo.methods.population']: ... else: sf = 1.0" pattern) -
-    rather than raising, since a missing key here most likely means the
-    population module simply isn't logging at INFO level in this
-    particular scenario, not that scaling should silently be skipped.
+    Defensive fallback if the key is genuinely absent: rather than
+    leaving the run unscaled (raw simulated-population-scale numbers,
+    which is silently wrong for every downstream use - see below),
+    this assumes the standard TLO population-scaling relationship,
+    MALAWI_REAL_POPULATION / POP_SIZE, i.e. exactly what the missing
+    "tlo.methods.population" scaling_factor entry would itself have
+    reported for a run at this same POP_SIZE. This is an approximation
+    (the real logger's own value can differ slightly run to run,
+    depending on the simulation's actual init population draw), not a
+    confirmed substitute - kept as a fallback rather than raising,
+    since a missing key here most likely means the population module
+    simply isn't logging at INFO level in this particular scenario, not
+    that scaling should silently be skipped.
 
     CONFIRMED against the reference script (process_outputs.py,
     tara_hiv_program_simplification) directly: every absolute
@@ -173,28 +187,33 @@ def _get_scaling_factor(log: dict) -> float:
         return float(log["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0])
     except (KeyError, IndexError):
         # LOUD on purpose (previously silent) - this fallback means
-        # dalys/cost for THIS run come back UNSCALED, which is silently
-        # wrong (not merely "unavailable") whenever the population
-        # logger is missing but healthburden/other loggers this run
-        # depends on are still present - the same class of missing-
-        # logger problem that _get_hiv_dalys() (below) raises loudly
-        # on, and gets excluded as CRASHED, for. Without this print,
-        # such a run would instead be silently recorded as SUCCESSFUL
-        # with a wrong-scale dalys/cost value, feeding straight into
-        # ConstrainedEI's surrogate and the budget-feasibility check
-        # with no visible trace anywhere. Kept as a fallback rather than
-        # raising (matching compare_number_of_deaths()'s own convention
-        # - see this function's docstring), but now at least visible in
-        # the run's own logs so a suspiciously-scaled result can be
-        # traced back to this cause instead of being invisible.
+        # dalys/cost for THIS run come back scaled by an ASSUMED factor
+        # rather than the run's own actually-logged one, which is worth
+        # knowing about (not merely "unavailable") whenever the
+        # population logger is missing but healthburden/other loggers
+        # this run depends on are still present - the same class of
+        # missing-logger problem that _get_hiv_dalys() (below) raises
+        # loudly on, and gets excluded as CRASHED, for. Without this
+        # print, such a run would instead be silently recorded as
+        # SUCCESSFUL with an assumed-not-measured dalys/cost scale,
+        # feeding straight into ConstrainedEI's surrogate and the
+        # budget-feasibility check with no visible trace anywhere. Kept
+        # as a fallback rather than raising (matching
+        # compare_number_of_deaths()'s own convention of not raising on
+        # a missing scaling_factor - see this function's docstring), but
+        # now at least visible in the run's own logs so a suspiciously-
+        # scaled result can be traced back to this cause instead of
+        # being invisible.
+        fallback = MALAWI_REAL_POPULATION / POP_SIZE
         print(
             "[scaling_factor] WARNING: 'tlo.methods.population' scaling_factor "
-            "missing from this run's log - falling back to 1.0 (UNSCALED). "
-            "dalys/cost for this run may be wrong by orders of magnitude if "
-            "the real population logger was simply missing rather than "
-            "genuinely reporting scale=1."
+            f"missing from this run's log - falling back to an ASSUMED "
+            f"MALAWI_REAL_POPULATION / POP_SIZE = {fallback:,.2f} rather than the "
+            f"run's own actually-logged value. dalys/cost for this run may be "
+            f"wrong if this run's own true scaling factor genuinely differed "
+            f"from that assumption."
         )
-        return 1.0
+        return fallback
 
 
 def postprocess_run(run_dir: Path) -> dict:

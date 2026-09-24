@@ -2,7 +2,7 @@
 # TLO / hyperparameters
 # --------------------------------------------------------------------------
 YEAR_START_DATE = 2010
-YEAR_END_DATE = 2014
+YEAR_END_DATE = 2014 # inclusive, from a TLO perspective
 CONFIG_YEAR_START_DATE = 2011
 POP_SIZE = 1000
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
@@ -41,7 +41,7 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
 SUBMIT_SUSPEND_PART = True
-VALID_CHECKPOINT_COMMITS: list[str] = []
+VALID_CHECKPOINT_COMMITS: list[str] = ['8bd3208531e26a36a303ddbf618ea8539301a5e9']
 
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
@@ -53,7 +53,7 @@ BASELINE_SUMMARY_FILE = "baseline_summary.json"
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
-VALID_PRIOR_RUN_COMMITS: list[str] = []
+VALID_PRIOR_RUN_COMMITS: list[str] = ['8bd3208531e26a36a303ddbf618ea8539301a5e9']
 SUBMIT_INITIAL_DESIGN = False
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
