@@ -165,8 +165,8 @@ SUPPORT_HIGH_PCTILE = 99.99
 
 
 # Model settings
-WBGT_VAR = "wbgt_day"#"wbgt5x_day"
-SPLINE_DF = 3
+WBGT_VAR = "wbgt5x_day" #"wbgt_day"#"wbgt5x_day"
+SPLINE_DF = 2
 LAG_MONTHS = [1]
 SA_LAG = True
 if SA_LAG:
@@ -191,6 +191,10 @@ IRR_HIGH = 32.0
 
 TLO_WBGT_GRID = np.linspace(20.0, 34.0, 57)
 FDR_ALPHA = 0.05
+
+RAINY_MONTHS = [11, 12, 1, 2, 3, 4]
+USE_ZONE_YEAR_FE = True
+ZONE_COL = "Zonename"
 
 CLOSURES = [
     ("Phalombe Health Centre", "2023-04-01", "2024-06-01"),
@@ -285,6 +289,27 @@ def add_year_fixed_effects(df, use_reference_year=False):
     for year, col in zip(YEAR_FE_YEARS, YEAR_FE_COLS):
         df[col] = (model_year == year).astype(int)
 
+    return df
+# ===========================================================================
+# Seasonality covariate
+# ===========================================================================
+def add_seasonality_covariates(df, hold_year_at_reference=False):
+    """Add rainy indicator and zone_year interaction to df in place.
+
+    `hold_year_at_reference=True` freezes zone_year at the reference year
+    (2024) — use for forward projections where all non-climate effects
+    are held at the 2024 level. Counterfactual/historical fits leave it
+    False so zone_year varies year-by-year.
+    """
+    df["rainy"] = df["month"].isin(RAINY_MONTHS).astype(int)
+    if USE_ZONE_YEAR_FE:
+        if ZONE_COL not in df.columns:
+            raise KeyError(
+                f"add_seasonality_covariates: {ZONE_COL!r} missing — merge "
+                f"from the facility registry before calling."
+            )
+        yr = YEAR_FE_REFERENCE if hold_year_at_reference else df["year"].astype(int)
+        df["zone_year"] = df[ZONE_COL].astype(str) + "_" + pd.Series(yr, index=df.index).astype(str)
     return df
 # ===========================================================================
 # Predict-time clipping helper
@@ -406,15 +431,11 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids):
 # Poisson QMLE with absorbed fixed effects (pyfixest)
 # ===========================================================================
 def fit_pois_absorbed(rhs_terms, data, cluster_col, y_col="y_int"):
-    """Poisson with absorbed facility + month FE and cluster-robust SEs.
-
-    Overdispersion is handled entirely by the clustered standard errors
-    (Wooldridge 1999; Cameron & Trivedi 2005).  No alpha parameter needed.
-    """
-    fml = f"{y_col} ~ {' + '.join(rhs_terms)} | facility + month"
-    m = pf.fepois(fml, data=data, vcov={"CRV1": cluster_col})
-    return m
-
+    fe = "facility + month"
+    if USE_ZONE_YEAR_FE:
+        fe += " + zone_year"
+    fml = f"{y_col} ~ {' + '.join(rhs_terms)} | {fe}"
+    return pf.fepois(fml, data=data, vcov={"CRV1": cluster_col})
 
 # ---------------------------------------------------------------------------
 # Helpers to extract coef / vcov from a pyfixest model in the same format
@@ -468,6 +489,7 @@ def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG
 
     lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
     df["covid"] = df["date"].between(lo, hi).astype(int)
+    df = add_seasonality_covariates(df, hold_year_at_reference=False)
 
     rhs = YEAR_FE_COLS + ["covid"]
     if USE_PRECIP:
@@ -746,6 +768,10 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     long, weather_rhs, spline_cols, DESIGN = add_weather_columns_optimized(long, SHIFTS, spline_df=spline_df)
 
     nb_cols = ["y", "facility", "month", CLUSTER_COL] + weather_rhs
+    nb_cols = ["y", "facility", "month", CLUSTER_COL] + weather_rhs
+    if USE_ZONE_YEAR_FE:
+        nb_cols.append("zone_year")
+    nb_data = long.dropna(subset=nb_cols).copy()
     nb_data = long.dropna(subset=nb_cols).copy()
     nb_data["y_int"] = nb_data["y"].round().clip(lower=0).astype(int)
     obs_nb = nb_data.groupby("facility").size()
@@ -1060,6 +1086,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
                 "wbgt_train_p_lo": WBGT_SUPPORT["p_lo"],
                 "wbgt_train_p_hi": WBGT_SUPPORT["p_hi"],
                 "time_seconds": time.time() - t0,
+                "_fac_meta": nb_data[["facility", CLUSTER_COL, ZONE_COL]].drop_duplicates().reset_index(drop=True),
             }
         ]
     ).to_csv(f"{OUT_DIR}deficit_{indicator}{SUFFIX}{LAG_SUFFIX}{_df_tag}.csv", index=False)
@@ -1402,6 +1429,18 @@ if __name__ == "__main__":
                         print(f"    {ind}: no overlap — skipping")
                         continue
 
+                    # Merge zone metadata onto the projection frame
+                    df = df.merge(res["_fac_meta"], on="facility", how="left")
+                    if df[ZONE_COL].isna().any():
+                        n_missing = int(df[ZONE_COL].isna().sum())
+                        raise RuntimeError(
+                            f"{ind}: {n_missing} projection rows missing {ZONE_COL} after "
+                            f"merge from _fac_meta — facility registry incomplete."
+                        )
+                    if df.empty:
+                        print(f"    {ind}: no overlap — skipping")
+                        continue
+
                     wbgt_needed = [WBGT_VAR, PRECIP_COL] + [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
                     n_before_wbgt = len(df)
                     df = df.dropna(subset=wbgt_needed).reset_index(drop=True)
@@ -1421,7 +1460,11 @@ if __name__ == "__main__":
                             f"({support['p_hi']:.2f}°C)"
                         )
 
+
                     df["covid"] = 0
+                    df = add_seasonality_covariates(df, hold_year_at_reference=True)   # holds zone_year at 2024
+                    df = add_year_fixed_effects(df, use_reference_year=True)
+                    df = add_year_fixed_effects(df, use_reference_year=True)
                     df = add_year_fixed_effects(df, use_reference_year=True)
 
                     df["precip_c"] = df[PRECIP_COL] - shifts.get("precip", 0.0)
@@ -1673,6 +1716,10 @@ if __name__ == "__main__":
     YEAR_SHIFT = CF_ANALYSIS_START_NEW - CF_ANALYSIS_START_ORIG
     CF_ANALYSIS_END_NEW = CF_ANALYSIS_END_ORIG + YEAR_SHIFT
 
+    # COVID window bounds (used in df_h construction below). Locally defined
+    # here because add_weather_columns_optimized keeps its lo/hi private.
+    lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
+
     if COUNTERFACTUAL:
         print(f"\nCounterfactual scenario: {CF_LABEL}")
         print(
@@ -1724,11 +1771,6 @@ if __name__ == "__main__":
 
                 # -----------------------------------------------------------
                 # Rebuild the exact historical fit data for this indicator.
-                # We need the SAME rows the model was fit on, with observed
-                # WBGT predictions already computed. fit_indicator returned
-                # y_pred_wx as part of that predictions_ CSV, but we need it
-                # in-memory. Simplest: recompute mu_hist from model_wx on
-                # nb_data-equivalent rows.
                 # -----------------------------------------------------------
                 hist = load_indicator_panel(ind, PANEL_DIR)
                 hist = apply_hard_ceilings(hist, ind)
@@ -1744,6 +1786,17 @@ if __name__ == "__main__":
                 hist = hist[hist["facility"].isin(train_facs)].reset_index(drop=True)
                 hist = hist.sort_values(["facility", "date"]).reset_index(drop=True)
                 hist = hist.merge(res["_nb_rows"], on=["facility", "date"], how="inner")
+
+                # Loud failure: if the zone control is on, every training row
+                # must have a Zonename — otherwise zone_year silently becomes
+                # 'nan_2020' etc. and pollutes the FE.
+                if USE_ZONE_YEAR_FE and hist[ZONE_COL].isna().any():
+                    n_null = int(hist[ZONE_COL].isna().sum())
+                    raise RuntimeError(
+                        f"  [{ind}] counterfactual: {n_null} historical rows "
+                        f"have null {ZONE_COL} — cannot build zone_year FE."
+                    )
+
                 if SA_LAG:
                     for k in LAG_MONTHS:
                         hist[f"{WBGT_VAR}_lag{k}"] = hist.groupby("facility")[WBGT_VAR].shift(k)
@@ -1766,8 +1819,8 @@ if __name__ == "__main__":
                 # ---- Build the HISTORICAL-WBGT prediction frame -----------
                 df_h = hist.copy()
                 df_h = add_year_fixed_effects(df_h, use_reference_year=False)
-                lo, hi = pd.Timestamp(COVID_WINDOW[0]), pd.Timestamp(COVID_WINDOW[1])
                 df_h["covid"] = df_h["date"].between(lo, hi).astype(int)
+                df_h = add_seasonality_covariates(df_h, hold_year_at_reference=False)
                 df_h["precip_c"] = df_h[PRECIP_COL] - shifts.get("precip", 0.0)
                 xc_h = df_h[WBGT_VAR].values - shifts[WBGT_VAR]
                 B_h = np.asarray(
@@ -1781,6 +1834,10 @@ if __name__ == "__main__":
                         df_h[f"{WBGT_VAR}_lag{k}_c"] = df_h[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
 
                 need_h = YEAR_FE_COLS + ["covid", "precip_c"] + list(spline_cols) + [WBGT_VAR]
+                if "rainy" in df_h.columns:
+                    need_h.append("rainy")
+                if USE_ZONE_YEAR_FE:
+                    need_h.append("zone_year")
                 if SA_LAG:
                     need_h += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
                 df_h = df_h.dropna(subset=need_h).reset_index(drop=True)
@@ -1826,7 +1883,6 @@ if __name__ == "__main__":
                 mu_cf = mu_cf[ok]
                 if len(mu_hist) == 0:
                     continue
-
                 # -----------------------------------------------------------
                 # (a) OVERALL: whole-sample deficit from the climate shift
                 # -----------------------------------------------------------
