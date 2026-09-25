@@ -7,7 +7,7 @@ from tlo.scenario import BaseScenario
 class FullModelRunForCohort(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562661
+        self.seed = 120589
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2028, 1, 1)
         self.pop_size = 200_000
