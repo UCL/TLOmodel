@@ -126,7 +126,8 @@ class DiabeticRetinopathy(Module):
         ),
         "prob_laser_prc_success_proliferative": Parameter(
             Types.REAL,
-            "Probability that pan-retinal laser coagulation successfully treats proliferative DR"
+            "Probability that pan-retinal laser coagulation successfully preserves the "
+            "person's current vision by preventing further vision deterioration from proliferative DR"
         ),
         "rr_progression_after_treatment": Parameter(
             Types.REAL,
@@ -206,6 +207,11 @@ class DiabeticRetinopathy(Module):
         ),
         "on_laser_pan_retinal_coagulation_treatment": Property(
             Types.BOOL, "Whether this person is on Laser Pan Retinal Coagulation treatment",
+        ),
+        "dr_prp_vision_preserved": Property(
+            Types.BOOL,
+            "Whether successful laser pan-retinal photocoagulation treatment is "
+            "preserving the person's current vision status",
         ),
         "vision_status": Property(
             Types.CATEGORICAL,
@@ -299,6 +305,7 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "total_laser_pan_retinal_coagulation_sessions"] = 0
         df.loc[list(alive_diabetes_idx), "on_laser_pan_retinal_coagulation_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_prc_treatment"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "dr_prc_vision_preserved"] = False
         df.loc[list(alive_diabetes_idx), "vision_status"] = "normal"
         df.loc[list(alive_diabetes_idx), "vision_loss_due_to_dr"] = False
 
@@ -490,6 +497,7 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, "total_laser_pan_retinal_coagulation_sessions"] = 0
         self.sim.population.props.at[child_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_prc_treatment'] = pd.NaT
+        self.sim.population.props.at[child_id, 'dr_prc_vision_preserved'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -591,7 +599,11 @@ class DiabeticRetinopathy(Module):
                 df.at[person_id, 'vision_loss_due_to_dr'] = False
 
     def do_treatment_success_proliferative(self, person_id: int) -> None:
-        """Apply treatment success for proliferative DR"""
+        """Apply treatment success for proliferative DR
+        Successful PRC does not improve existing vision impairment.
+        Instead, it preserves the person's current vision status and
+        prevents further vision deterioration due to proliferative DR.
+        """
         df = self.sim.population.props
         p = self.parameters
 
@@ -601,11 +613,9 @@ class DiabeticRetinopathy(Module):
         success_prob = p['prob_laser_prc_success_proliferative']
 
         if self.rng.random_sample() < success_prob:
-            # If treatment successful, then regress vision status
-            vs = df.at[person_id, 'vision_status']
-
-            if vs not in ['normal', 'blindness']:
-                self.improve_vision(person_id)
+            # Successful PRP preserves vision status the individual has
+            # at the time of successful treatment.
+            df.at[person_id, 'dr_prc_vision_preserved'] = True
 
     def update_dmo_status(self):
         """Update DMO status for people with diabetic retinopathy.
@@ -675,6 +685,12 @@ class DiabeticRetinopathy(Module):
                 (df.dmo_status != "none")
             )
         )
+
+        vision_preserved = (
+            df.dr_status.eq('proliferative') &
+            df.dr_prp_vision_preserved
+        )
+
         if not alive_diabetes.any():
             return
 
@@ -687,11 +703,12 @@ class DiabeticRetinopathy(Module):
         on_treatment = df.dr_on_treatment | df.dmo_on_treatment
 
         for idx, base_matrix in [
-            (alive_diabetes & ~sight_threatening, p['vision_transition_matrix_no_dr']),
-            (alive_diabetes & sight_threatening & ~on_treatment,
-             p['vision_transition_matrix_sight_threatening']),
-            (alive_diabetes & sight_threatening & on_treatment,
-             p['vision_transition_matrix_treated_sight_threatening'])
+            (alive_diabetes & ~vision_preserved & ~sight_threatening,
+                p['vision_transition_matrix_no_dr']),
+            (alive_diabetes & ~vision_preserved & sight_threatening & ~on_treatment,
+                p['vision_transition_matrix_sight_threatening']),
+            (alive_diabetes & ~vision_preserved & sight_threatening & on_treatment,
+                p['vision_transition_matrix_treated_sight_threatening'])
         ]:
             if not idx.any():
                 continue
