@@ -1,0 +1,251 @@
+"""
+Convergence tracking and history-to-disk logging, kept separate from
+optimisation_pipeline.py's submission/polling/ask-tell orchestration -
+same rationale as constrained_ei.py, smac_scenario.py, and
+postprocess_output.py: this can be read, tested, or reused independently
+of the orchestration logic that calls it.
+
+Two responsibilities live here:
+1. Mirroring every history entry to a local JSONL file as it's produced,
+   so progress can be inspected live (tail -f history_log.jsonl) without
+   touching the running process.
+2. Deciding whether the search has converged - i.e. whether the best
+   feasible DALYs found has stopped meaningfully improving over the last
+   CONVERGENCE_WINDOW completed trials - so optimisation_pipeline.py can
+   stop proposing new configs while still draining whatever's pending.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import numpy as np
+
+from ConfigSpace import Configuration
+
+from optimisation_parameters import CONVERGENCE_WINDOW, CONVERGENCE_MIN_RELATIVE_IMPROVEMENT
+
+
+# --------------------------------------------------------------------------
+# 1. Live history logging
+# --------------------------------------------------------------------------
+
+HISTORY_LOG_FILE = Path("history_log.jsonl")  # append-only, one line per
+                                                # result - tail -f this file
+                                                # to inspect progress live
+
+
+def json_safe_config(config) -> dict:
+    """
+    ConfigSpace hands back numpy scalar types (numpy.bool_, numpy.int64,
+    numpy.float64, ...) for sampled hyperparameter values - these look
+    identical to their Python equivalents but aren't JSON-serialisable,
+    which surfaces as a `TypeError: Object of type bool_/int64/... is
+    not JSON serializable` the first time any config touches
+    json.dumps. Use this everywhere a config gets written to disk,
+    instead of a bare dict(config). Lives here (not in
+    optimisation_pipeline.py) so both files can use it without a
+    circular import - optimisation_pipeline.py already imports several
+    things from this module.
+    """
+    return {
+        k: (v.item() if isinstance(v, np.generic) else v)
+        for k, v in dict(config).items()
+    }
+
+
+_job_ids_already_on_disk: set[str] | None = None  # lazily populated on first
+    # call, from whatever's ALREADY in HISTORY_LOG_FILE at that point (e.g.
+    # left over from a previous run of the process, before a restart) - None
+    # specifically distinguishes "not yet checked" from "checked, file was
+    # empty/missing" (an empty set), so the file is only ever read once per
+    # process, not on every single call.
+
+
+def append_history_to_file(entry: dict) -> None:
+    """
+    Mirrors a single history entry to disk, immediately after it's
+    appended to the in-memory `history` list in optimisation_pipeline.py.
+    JSON Lines (one complete record per line) so the file is
+    readable/tailable while the run is still in progress, and so a
+    crash mid-write only corrupts the last line rather than the whole
+    file - same convention as JOB_LOG_FILE. config_object (a ConfigSpace
+    Configuration) isn't JSON-serialisable directly, so it's converted
+    to a plain dict first via json_safe_config() - a bare dict(config)
+    would leave numpy scalar values (numpy.bool_, numpy.int64, ...)
+    behind, which json.dumps then can't serialise.
+
+    Skips the actual FILE WRITE (but nothing else - this function has
+    no control over, and doesn't affect, the in-memory `history` append
+    or the smac.tell() call that happen around it in the caller) if
+    entry's own job_id is already present in HISTORY_LOG_FILE from a
+    previous run of the process, before some restart.
+
+    This distinction matters, and an earlier version of this project
+    got it wrong at the wrong layer: `history` and SMAC's own
+    runhistory are both process-local, in-memory state that genuinely
+    needs REBUILDING on every restart (recover_from_job_log() -> smac.
+    tell() is the only way previously-completed trials ever reach a
+    FRESH process's SMAC instance at all - it has no persistent memory
+    of its own). The on-disk file is the opposite: already-persistent,
+    so re-appending an already-present job_id there is pure duplication
+    with no benefit. An earlier fix made recover_from_job_log() skip
+    already-recorded jobs ENTIRELY - correctly stopping the file
+    duplicating, but as a direct side effect also stopping SMAC from
+    ever being told about those trials again after a restart, risking
+    it re-proposing the same or similar configs it had already tried
+    in a previous process. Deduplicating HERE instead - the file write
+    specifically - fixes the file without that side effect: recovery
+    can freely re-process every previously-submitted job on every
+    restart (rebuilding `history`/SMAC's runhistory correctly), while
+    this function alone ensures the FILE itself never sees a given
+    job_id twice.
+
+    Entries with no job_id at all (e.g. manually-curated PRIOR_RUNS
+    entries in initialise.py, which aren't tied to any real Azure job)
+    are never deduplicated - there's no reliable identifier to
+    deduplicate them by, and initialise.py's own PRIOR_RUNS is re-read
+    fresh on every restart anyway, so this matches how those entries
+    already behave.
+    """
+    global _job_ids_already_on_disk
+    if _job_ids_already_on_disk is None:
+        _job_ids_already_on_disk = set()
+        if HISTORY_LOG_FILE.exists():
+            with open(HISTORY_LOG_FILE) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    existing_job_id = json.loads(line).get("job_id")
+                    if existing_job_id:
+                        _job_ids_already_on_disk.add(existing_job_id)
+
+    job_id = entry.get("job_id")
+    if job_id and job_id in _job_ids_already_on_disk:
+        return
+
+    record = {**entry, "config_object": json_safe_config(entry["config_object"])}
+    with open(HISTORY_LOG_FILE, "a") as f:
+        f.write(json.dumps(record) + "\n")
+    if job_id:
+        _job_ids_already_on_disk.add(job_id)
+
+
+# --------------------------------------------------------------------------
+# 2. Convergence tracking
+#    CONVERGENCE_WINDOW / CONVERGENCE_MIN_RELATIVE_IMPROVEMENT now live in
+#    optimisation_parameters.py (imported above) alongside every other
+#    pipeline hyperparameter, rather than being defined here.
+# --------------------------------------------------------------------------
+
+
+def config_key(config: Configuration) -> tuple:
+    """
+    Hashable, order-independent identity for grouping history by config.
+    Not underscore-prefixed since it's a shared utility used both here
+    and in optimisation_pipeline.py's final-selection grouping.
+    """
+    return tuple(sorted(dict(config).items()))
+
+
+def get_best_feasible_dalys(history: list[dict]) -> float | None:
+    """
+    Groups history by config, takes the MEDIAN across whatever seeds
+    each config has accumulated so far, and returns the lowest median
+    DALYs among configs that are feasible ON THAT MEDIAN. Returns None
+    if nothing feasible has been observed yet - check_convergence()
+    below treats that as "not converged" rather than triggering on an
+    undefined comparison. MEDIAN, not mean, for consistency across this
+    pipeline's own DALYs/cost aggregation - see
+    optimisation_pipeline.py's own final-selection grouping and
+    aggregate_postprocessed_results() for the same convention applied
+    elsewhere.
+
+    Constraint/violation column names are discovered DYNAMICALLY (any
+    key CONTAINING "_violation" - substring, not suffix, since the real
+    names are period-bucketed, e.g. "hiv_hrh_violation_p1", which never
+    ends in the literal text "_violation" - an earlier version of this
+    line used .endswith("_violation"), which never actually matched any
+    of this project's real constraint names, silently treating every
+    config as feasible for convergence-checking purposes regardless of
+    its true status), rather than hardcoded - this file has
+    no import-time dependency on optimisation_pipeline.py's specific
+    constraint configuration (currently the period-bucketed
+    hiv_hrh_violation_p1..N / hiv_consumable_violation_p1..N plus
+    hr_violation/stock_violation, but this stays correct automatically
+    if that set changes again later, e.g. a different number of periods).
+    """
+    grouped: dict[tuple, list[dict]] = {}
+    for h in history:
+        grouped.setdefault(config_key(h["config_object"]), []).append(h)
+
+    violation_keys = [k for k in history[0] if "_violation" in k] if history else []
+
+    best = None
+    for entries in grouped.values():
+        median_violations = {k: np.median([e[k] for e in entries]) for k in violation_keys}
+        if all(v == 0 for v in median_violations.values()):
+            dalys = float(np.median([e["dalys"] for e in entries]))
+            if best is None or dalys < best:
+                best = dalys
+    return best
+
+
+def get_best_dalys_regardless_of_feasibility(history: list[dict]) -> float | None:
+    """
+    Same grouping/median logic as get_best_feasible_dalys() above,
+    WITHOUT the feasibility filter - the lowest median DALYs among ALL
+    configs seen so far, feasible or not. Not used by the live pipeline
+    itself (which only ever cares about feasible results) - exists for
+    evaluate_pipeline_run.py's own diagnostics, specifically so
+    check_best_so_far() can show a meaningful running best EVEN before
+    the search has found anything feasible (e.g. early in a
+    high-dimensional or tightly-constrained run, where every config
+    genuinely being infeasible for the first several trials is expected
+    behaviour, not a sign anything is broken - see get_best_feasible_dalys()'s
+    own None return in that situation, which check_convergence() treats
+    as "not converged" but which otherwise carries no diagnostic signal
+    on its own).
+    """
+    grouped: dict[tuple, list[dict]] = {}
+    for h in history:
+        grouped.setdefault(config_key(h["config_object"]), []).append(h)
+
+    best = None
+    for entries in grouped.values():
+        dalys = float(np.median([e["dalys"] for e in entries]))
+        if best is None or dalys < best:
+            best = dalys
+    return best
+
+
+def check_convergence(best_dalys_over_time: list[float]) -> bool:
+    """
+    Returns True if convergence has been detected: less than
+    CONVERGENCE_MIN_RELATIVE_IMPROVEMENT relative improvement over the
+    last CONVERGENCE_WINDOW completed trials. Prints a message (with the
+    actual before/after values) when it triggers. Call this once per
+    completed trial, immediately after appending that trial's current
+    best-feasible-DALYs value via get_best_feasible_dalys().
+
+    Only reports the stall itself - optimisation_pipeline.py adds its
+    own follow-up line about how many pending jobs are being drained,
+    since that count isn't something this function has visibility into.
+    """
+    if len(best_dalys_over_time) <= CONVERGENCE_WINDOW:
+        return False
+
+    old_best = best_dalys_over_time[-1 - CONVERGENCE_WINDOW]
+    new_best = best_dalys_over_time[-1]
+    relative_improvement = (old_best - new_best) / abs(old_best)
+
+    if relative_improvement < CONVERGENCE_MIN_RELATIVE_IMPROVEMENT:
+        print(
+            f"[convergence] no improvement >= {CONVERGENCE_MIN_RELATIVE_IMPROVEMENT:.1%} "
+            f"over the last {CONVERGENCE_WINDOW} completed trials "
+            f"({old_best:.4f} -> {new_best:.4f})."
+        )
+        return True
+    return False

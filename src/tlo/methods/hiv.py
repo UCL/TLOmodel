@@ -462,6 +462,35 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        #------------------Parameters linked to optimisation analysis, needed to overwrite existing params ----------------#
+        "config_start_year": Parameter(
+            Types.INT,
+            "the year when the config enforcement for optimisation will start (it will occur on 1st January of that year)"
+        ),
+        "config_coverage_plhiv": Parameter(
+            Types.REAL,
+            "overwrite coverage of plhiv during optimisation"
+        ),
+        "config_consumable_availability_VL_test": Parameter(
+            Types.REAL,
+            "overwrite cons. availability of viral load tests during optimisation"
+        ),
+        "config_consumable_availability_HIV_test": Parameter(
+            Types.REAL,
+            "overwrite cons. availability of HIV tests during optimisation"
+        ),
+        "config_annual_testing_rate_adults": Parameter(
+            Types.REAL,
+            "overwrite the annual testing rate for adults during optimisation"
+        ),
+        "config_target_VL": Parameter(
+            Types.BOOL,
+            "parameter to target VL testing, to be used during optimisation"
+        ),
+        "config_target_IPT": Parameter(
+            Types.BOOL,
+            "parameter to target IPT testing, to be used during optimisation"
+        ),
         # ------------------ program-related parameters ------------------ #
         "interval_for_viral_load_measurement_months": Parameter(
             Types.REAL,
@@ -527,7 +556,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
         ),
-        "switch_vl_test_to_tdf": Parameter(
+        "tdf_test_replace_vl_test": Parameter(
             Types.BOOL,
             "whether TDF urine test is being used in place of VL testing"
         ),
@@ -1552,6 +1581,36 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.vl_testing_available_by_year = {
             year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year + 1)
         }
+        
+        # 9) Schedule event to change parameter configuration for optimisation analysis
+        config_start_date = Date(self.parameters["config_start_year"], 1, 1)
+        sim.schedule_event(HivParamConfigEvent(self),config_start_date)
+        
+        
+    def update_config_parameters_for_optimisation(self):
+        """
+        Change non-trivial parameters based on configuration suggested by optimisation pipeline.
+        All other parameters are modified directly by the smac scenario file upon resuming (this relies on use of 
+        suspend/resume specifically).
+        """
+        p = self.parameters
+        
+        print("I am updating params")
+        
+        # Over-ride probability of HIV test cons. availability
+        #self.sim.modules['HealthSystem'].override_availability_of_consumables({196: p['config_consumable_availability_HIV_test']})
+        # Over-ride probability of VL test cons. availability
+        #self.sim.modules['HealthSystem'].override_availability_of_consumables({190: p['config_consumable_availability_VL_test']})
+
+        # Over-ride coverage_plhiv'
+        self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = p['config_coverage_plhiv']
+        # Change adult testing rates
+        p['hiv_testing_rates']['annual_testing_rate_adults'] = p['config_annual_testing_rate_adults']
+        
+        # Set VL test availability to zero if using TDF instead
+        if['tdf_test_replace_vl_test']:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({190: 0})
+        
 
     def update_parameters_for_program_change(self):
         """
@@ -3052,6 +3111,19 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
         self.module.update_parameters_for_program_change()
 
 
+class HivParamConfigEvent(Event, PopulationScopeEventMixin):
+    """ This event exists to change parameters according to the configuration
+    suggested by the optimisation pipeline. Occurs once on the first of the year 
+    config_start_date.
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+            self.module.update_config_parameters_for_optimisation()
+
+
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
@@ -3480,10 +3552,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
-        # 90 days supply oral tablets, injection lasts 8 weeks
+        # 90 days supply oral tablets, injection lasts 6 months (LEN)
         else:
             days_on_prep = self.module.parameters[
-                               'initial_dispensation_period_months'] * 90 if self.type_of_prep == 'oral' else 56
+                               'initial_dispensation_period_months'] * 90 if self.type_of_prep == 'oral' else 182
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
@@ -3703,6 +3775,27 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Consider if TB preventive therapy should start
         self.consider_tb(person_id)
+        
+        # Program simplification scenario: targeted IPT
+        if self.module.parameters['config_target_IPT']:
+            # Check if CardioMetabolicDisorders module is loaded
+            diabetes = False
+            if "CardioMetabolicDisorders" in self.sim.modules:
+                diabetes = df.at[person_id, "nc_diabetes"] is True
+
+            # Now apply the IPT condition
+            if (
+                (df.at[person_id, "li_ex_alc"] is True) or
+                (df.at[person_id, "li_tob"] is True) or
+                df.at[person_id, "sy_aids_symptoms"] > 0 or
+                diabetes
+            ):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    tb.HSI_Tb_Start_or_Continue_Ipt(self.sim.modules["Tb"], person_id=person_id),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
 
         return drugs_available
 
