@@ -70,7 +70,11 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
         for line in log_file:
             # only parse lines that are json log lines (old-style logging is not supported)
             if line.startswith('{'):
-                log_data_json = json.loads(line)
+                try:
+                    log_data_json = json.loads(line)
+                except json.JSONDecodeError:
+                    # Skip malformed or partial JSON log lines
+                    continue
                 uuid = log_data_json['uuid']
                 # if this is a header line (only header lines have a `type` key)
                 if 'type' in log_data_json:
@@ -295,6 +299,7 @@ def extract_results(results_folder: Path,
                     index: str = None,
                     custom_generate_series=None,
                     do_scaling: bool = False,
+                    suspended_results_folder: Path = None,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -307,16 +312,18 @@ def extract_results(results_folder: Path,
      `custom_generate_series`.
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log of the suspended run are stored.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
 
-    def get_multiplier(_draw, _run):
+
+    def get_multiplier(results_folder, _draw, _run):
         """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
         return load_pickled_dataframes(
-            results_folder, _draw, _run, 'tlo.methods.population'
-        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            results_folder, _draw, _run, 'tlo.methods.demography'
+    )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
@@ -352,7 +359,10 @@ def extract_results(results_folder: Path,
                     'Custom command does not generate a pd.Series'
                 )
                 if do_scaling:
-                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                    if suspended_results_folder is not None:
+                        res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
+                    else:
+                        res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
                 else:
                     res[draw_run] = output_from_eval
 
@@ -386,7 +396,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-    
+
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 
@@ -430,8 +440,8 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-        
-    
+
+
 
     return df_final
 
@@ -643,10 +653,9 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         print(f"Opening {logfile}")
         outputs = parse_log_file(logfile)
         for key, output in outputs.items():
-            if key.startswith("tlo."):
-                print(f" - Writing {key}.pickle")
-                with open(logfile.parent / f"{key}.pickle", "wb") as f:
-                    pickle.dump(output, f)
+            print(f" - Writing {key}.pickle")
+            with open(logfile.parent / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
 
     def uncompress_and_save_logfile(compressed_file) -> Path:
         """Uncompress and save a log file and return its path."""
@@ -662,13 +671,21 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         for run_folder in run_folders:
             # Find the original log-file written by the simulation
             if compressed_file_name_prefix is None:
-                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+                logfile = [Path(run_folder) / x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
-                compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
-                ][0]
-                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+                logfiles = [
+                    Path(run_folder) / x
+                    for x in os.listdir(run_folder)
+                    if x.endswith(".log.gz")
+                    and not x.startswith("stdout")
+                    and not x.startswith("stderr")
+                ]
 
+                for compressed_log in logfiles:
+                    logfile = uncompress_and_save_logfile(compressed_log)
+                    turn_log_into_pickles(logfile)
+
+            logfile = Path(logfile).resolve()
             turn_log_into_pickles(logfile)
 
 

@@ -60,7 +60,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
-        
+
         self.default_mni_values = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
                               'didnt_seek_care': False,
                               'cons_not_avail': False,
@@ -110,7 +110,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                               'test_run': False,  # used by labour module when running some model tests
                               'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
                               'new_onset_spe': False,
-                              'cs_indication': 'none'
+                              'cs_indication': 'none',
+                              'ec_treatment_an': False,
                               }
         self.default_labour_values = {'labour_state': None,
                             # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
@@ -147,7 +148,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                             'single_twin_still_birth': False,  # True (T) or False (F)
                             'will_receive_pnc': 'none',
                             'passed_through_week_one': False}
-                            
+
         self.default_all_mni_values = self.default_mni_values
         self.default_all_mni_values.update(self.default_labour_values)
 
@@ -1167,6 +1168,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # Log the pregnancy loss
         self.mnh_outcome_counter[type_abortion] += 1
 
+        pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, type_abortion)
+
         # This function officially ends a pregnancy through the contraception module (updates 'is_pregnant' and
         # determines post pregnancy contraception)
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
@@ -1193,6 +1196,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         if self.rng.random_sample() < risk_of_complications:
             self.mnh_outcome_counter[f'complicated_{type_abortion}'] += 1
+            pregnancy_helper_functions.log_need(self, 'post_abortion_care_core')
 
             self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
 
@@ -1379,6 +1383,12 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
                         if disease == 'severe_pre_eclamp':
                             self.mother_and_newborn_info[person]['new_onset_spe'] = True
+                            pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                            pregnancy_helper_functions.log_need(self, 'mgso4_spe')
+
+                        elif disease == 'eclampsia':
+                            pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                            pregnancy_helper_functions.log_need(self, 'mgso4_ec')
 
             for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                 log_new_progressed_cases(disease)
@@ -1430,6 +1440,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
                 self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
                 self.mnh_outcome_counter['direct_mat_death'] += 1
+
+                if df.at[person, 'ps_gestational_age_in_weeks'] >= 28:
+                    self.mnh_outcome_counter['antenatal_stillbirth'] += 1
 
                 self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
@@ -1500,6 +1513,14 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         self.mnh_outcome_counter['mild_mod_antepartum_haemorrhage'] += len(non_severe_women.loc[non_severe_women].index)
 
+        for person in non_severe_women.loc[non_severe_women].index:
+            pregnancy_helper_functions.log_need(self, 'blood_transfusion_aph')
+            pregnancy_helper_functions.log_need(self, 'caesarean_section_oth_surg_ip')
+
+        for person in severe_women.loc[severe_women].index:
+            pregnancy_helper_functions.log_need(self, 'blood_transfusion_aph')
+            pregnancy_helper_functions.log_need(self, 'caesarean_section_oth_surg_ip')
+
     def apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis(self, gestation_of_interest):
         """
         This function applies risk of premature rupture of membranes to a slice of the dataframe. It is called by
@@ -1536,6 +1557,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         for person in infection.loc[infection].index:
             self.mother_and_newborn_info[person]['chorio_in_preg'] = True
             self.mnh_outcome_counter['clinical_chorioamnionitis'] += 1
+            pregnancy_helper_functions.log_need(self, 'sepsis_treatment')
 
     def apply_risk_of_preterm_labour(self, gestation_of_interest):
         """
@@ -1608,6 +1630,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted, and reset
         # pregnancy status and update contraceptive status
         for person in women.index:
+            pregnancy_helper_functions.log_pregnancy_loss(self, person, "antenatal_stillbirth")
             self.sim.modules['Contraception'].end_pregnancy(person)
             mni[person]['delete_mni'] = True
             self.mnh_outcome_counter['antenatal_stillbirth'] += 1
@@ -1619,31 +1642,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
             id_or_index=women.index)
-
-    def update_variables_post_still_birth_for_individual(self, individual_id):
-        """
-        This function is called to reset all the relevant pregnancy and treatment variables for a woman who undergoes
-        stillbirth outside of the PregnancySupervisor polling event.
-        :param individual_id: individual_id
-        """
-        df = self.sim.population.props
-        mni = self.mother_and_newborn_info
-
-        df.at[individual_id, 'ps_prev_stillbirth'] = True
-        mni[individual_id]['delete_mni'] = True
-
-        self.mnh_outcome_counter['antenatal_stillbirth'] += 1
-
-        # Reset pregnancy and schedule possible update of contraception
-        self.sim.modules['Contraception'].end_pregnancy(individual_id)
-
-        self.sim.modules['Labour'].reset_due_date(
-            id_or_index=individual_id, new_due_date=pd.NaT)
-
-        self.pregnancy_supervisor_property_reset(id_or_index=individual_id)
-
-        self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
-            id_or_index=individual_id)
 
     def apply_risk_of_still_birth(self, gestation_of_interest):
         """
@@ -1768,6 +1766,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
             self.mnh_outcome_counter['direct_mat_death'] += 1
+
+            if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 28:
+                self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+
             del mni[individual_id]
 
         # If not we reset variables and the woman survives
@@ -1957,6 +1959,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # (this simulates time period prior to which symptoms onset- and may trigger care seeking)
         for person in ectopic_risk.loc[ectopic_risk].index:
             self.module.mnh_outcome_counter['ectopic_unruptured'] += 1
+            pregnancy_helper_functions.log_need(self, 'ectopic_pregnancy_treatment')
 
             week_length = 7
 
@@ -2151,6 +2154,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             return
 
         # Reset pregnancy variables and store onset for daly calculation
+        pregnancy_helper_functions.log_pregnancy_loss(self.module, individual_id, "ectopic_pregnancy")
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
         pregnancy_helper_functions.store_dalys_in_mni(individual_id, self.module.mother_and_newborn_info,
                                                       'ectopic_onset', self.sim.date)
@@ -2436,6 +2440,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
         c = self.module.mnh_outcome_counter
+        la_params = self.sim.modules['Labour'].current_parameters
 
         # DENOMINATORS
         # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
@@ -2466,9 +2471,14 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_sepsis = c['clinical_chorioamnionitis'] + c['sepsis_intrapartum'] + c['sepsis_postnatal']
         total_pph = c['primary_postpartum_haemorrhage'] + c['secondary_postpartum_haemorrhage']
         total_fistula = c['vesicovaginal_fistula'] + c['rectovaginal_fistula']
-        total_neo_sepsis = c['early_onset_sepsis'] + c['late_onset_sepsis']
-        total_neo_enceph = c['mild_enceph'] + c['moderate_enceph'] + c['severe_enceph']
-        total_neo_resp_conds = c['respiratory_distress_syndrome'] + c['not_breathing_at_birth'] + total_neo_enceph
+        total_neo_sepsis = (c['early_onset_sepsis'] + c['late_onset_sepsis'] + c['early_onset_sepsis_pt'] +
+                            c['late_onset_sepsis_pt'])
+        total_neo_enceph = (c['mild_enceph'] + c['moderate_enceph'] + c['severe_enceph'] +
+                            c['mild_enceph_pt'] + c['moderate_enceph_pt'] + c['severe_enceph_pt'])
+        total_neo_resp_conds = (c['respiratory_distress_syndrome'] +
+                                c['not_breathing_at_birth'] +
+                                c['not_breathing_at_birth_pt'] +
+                                total_neo_enceph)
         total_cba = (c['congenital_heart_anomaly'] + c['limb_or_musculoskeletal_anomaly'] +
                      c['urogenital_anomaly'] + c['digestive_anomaly'] + c['other_anomaly'])
 
@@ -2494,11 +2504,14 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'fistula': rate(total_fistula, live_births, 1000),
                           'pn_anaemia': rate(total_pn_anaemia_cases, c['six_week_survivors'], 100)})
 
+
         # NEWBORN COMPLICATIONS
         logger.info(key='nb_comp_incidence',
                     data={'twin_birth': rate(c['twin_birth'], deliveries, 100),
                           'nb_sepsis': rate(total_neo_sepsis, live_births, 1000),
                           'nb_enceph': rate(total_neo_enceph, live_births, 1000),
+                          'enceph_timing_on_birth': c['enceph_timing_on_birth'],
+                          'enceph_timing_after_birth': c['enceph_timing_after_birth'],
                           'nb_resp_diff': rate(total_neo_resp_conds, live_births, 100),
                           'nb_cba': rate(total_cba, live_births, 1000),
                           'nb_rds': rate(c['respiratory_distress_syndrome'], total_preterm_birth, 1000),
@@ -2513,6 +2526,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         general_death_data = {'antenatal_sbr': rate(c['antenatal_stillbirth'], total_births, 1000),
                               'intrapartum_sbr': rate(c['intrapartum_stillbirth'], total_births, 1000),
+                              'antenatal_stillbirths': c['antenatal_stillbirth'],
+                              'intrapartum_stillbirths': c['intrapartum_stillbirth'],
                               'total_stillbirths': stillbirths,
                               'sbr': rate(stillbirths, total_births, 1000),
                               'neonatal_deaths': neonatal_deaths,
@@ -2523,6 +2538,29 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         cause_specific_mmrs = {k: rate(c[k], total_births, 100_000) for k in c if 'm_death' in k}
         cause_specific_nmrs = {k: rate(c[k], total_births, 1000) for k in c if 'n_death' in k}
         general_death_data.update({**cause_specific_mmrs, **cause_specific_nmrs})
+
+        combined_rates = {'abortion_mmr':rate(c['induced_abortion_m_death'] +
+                                              c['spontaneous_abortion_m_death'],
+                                              live_births, 100_000),
+                          'spe_ec_mmr': rate(c['severe_pre_eclampsia_m_death'] +
+                                              c['eclampsia_m_death'],
+                                             live_births, 100_000),
+                          'pph_mmr':rate(c['postpartum_haemorrhage_m_death'] +
+                                              c['secondary_postpartum_haemorrhage_m_death']
+                                              , live_births, 100_000),
+                          'sepsis_mmr': rate(c['antenatal_sepsis_m_death'] +
+                                              c['intrapartum_sepsis_m_death'] +
+                                              c['postpartum_sepsis_m_death']
+                                              , live_births, 100_000),
+                          'ptb_nmr': rate(c['respiratory_distress_syndrome_n_death'] +
+                                             c['preterm_other_n_death'],
+                                          live_births, 1000),
+                          'n_sepsis_nmr': rate(c['early_onset_sepsis_n_death'] +
+                                             c['late_onset_sepsis_n_death'],
+                                               live_births, 1000),
+                          }
+
+        general_death_data.update(combined_rates)
 
         logger.info(key='deaths_and_stillbirths', data=general_death_data)
 
@@ -2547,6 +2585,92 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
                           'm_pnc1+': rate(m_pnc1, total_births, 100),
                           'n_pnc1+': rate(n_pnc1, total_births, 100)})
+
+        # Intervention met need
+        def met_need(treatments, cases):
+            if cases == 0:
+                return 0
+
+            return (treatments / cases) * 100
+
+        pph_ua_need_blood_surg = c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])
+
+        pph_mrp_need_blood_surg = ((c['pph_retained_placenta'] *
+                                    (1 - la_params['prob_successful_manual_removal_placenta']))
+                              +  (c['secondary_postpartum_haemorrhage'] *
+                                  (1 - la_params['prob_successful_manual_removal_placenta'])))
+
+        est_other_cs_indications = (c['uterine_rupture'] + total_aph + c['eclampsia'] + (c['severe_pre_eclamp'] * 0.9)
+                                    + c['obstruction_cpd'])
+
+        logger.info(key="met_need",
+                    data={'pac_ep': met_need((c['post_abortion_care_core_need_met'] +
+                                              c['ectopic_pregnancy_treatment_need_met']),
+                                             (c['ectopic_pregnancy_treatment_need'] +
+                                              c['post_abortion_care_core_need'])),
+
+                          'm_sepsis_cm': met_need(c['sepsis_treatment_need_met'],
+                                                  c['sepsis_treatment_need']),
+
+                          'haem_cm_ut': met_need(c['pph_treatment_uterotonics_need_met'],
+                                                 c['pph_treatment_uterotonics_need']),
+
+                          'haem_cm_mrp': met_need(c['pph_treatment_mrrp_need_met'],
+                                                  c['pph_treatment_mrrp_need']),
+
+                          'haem_cm_blood_pph': met_need(c['blood_transfusion_pph_need_met'],
+                                                        pph_ua_need_blood_surg + pph_mrp_need_blood_surg),
+
+                          'heam_cm_blood_aph': met_need(c['blood_transfusion_aph_need_met'],
+                                                        c['blood_transfusion_aph_need']),
+
+                          'ol_cm': met_need(c['avd_ol_need_met'],
+                                            (c['avd_ol_need'])),
+
+                          'spe_ec_cm_htns': met_need(c['iv_anti_htns_ec_need_met'],
+                                                     c['iv_anti_htns_ec_need']),
+
+                          'spe_cm_mgso4': met_need(c['mgso4_spe_need_met'],
+                                                    c['mgso4_spe_need']),
+
+                          'ec_cm_mgso4': met_need(c['mgso4_ec_need_met'],
+                                                  c['mgso4_ec_need']),
+
+                          'cs_surg_aph': met_need(c['caesarean_section_oth_surg_ip_need_met'],
+                                                  est_other_cs_indications),
+
+                          'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp_need_met'],
+                                                  pph_ua_need_blood_surg + pph_mrp_need_blood_surg),
+
+                          'n_sepsis_cm': met_need(c['neo_sepsis_treatment_term_need_met'] +
+                                                  c['neo_sepsis_treatment_preterm_need_met'],
+                                                  c['neo_sepsis_treatment_term_need'] +
+                                                  c['neo_sepsis_treatment_preterm_need']),
+
+                          'ptb_cm_resus': met_need(c['neo_resus_preterm_need_met'],
+                                                   c['neo_resus_preterm_need']),
+
+                          'ptb_cm_sepsis': met_need(c['neo_sepsis_treatment_preterm_need_met'],
+                                                    (c['neo_sepsis_treatment_preterm_need'])),
+
+                          'ptb_cm_kmc': met_need(c['kmc_need_met'],
+                                                 c['kmc_need']),
+
+                          'neo_resus': met_need(c['neo_resus_term_need_met'] + c['neo_resus_preterm_need_met'],
+                                                c['neo_resus_term_need'] + c['neo_resus_preterm_need'])
+                          })
+
+        # Intervention met need for those seeking care
+        int_data = {}
+        for int in self.module.current_parameters['all_interventions']:
+            assert c[f'{int}_deliv'] <= c[f'{int}_req']
+
+            if c[f'{int}_req'] == 0:
+                int_data.update({f'{int}_coverage': None})
+            else:
+                int_data.update({f'{int}_coverage': round(rate(c[f'{int}_deliv'], c[f'{int}_req'], 100), 1)})
+
+        logger.info(key='intervention_coverage', data=int_data)
 
         # Reset the dictionary so all values = 0
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()

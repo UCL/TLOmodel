@@ -328,6 +328,7 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
     assert date_event == sim.date
 
     # Run the caesarean HSI
+    mni[updated_id]['cs_indication'] = 'other'
     cs_hsi = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
         person_id=updated_id, module=sim.modules['Labour'], timing='intrapartum', facility_level_of_this_hsi='1b')
     cs_hsi.apply(person_id=updated_id, squeeze_factor=0.0)
@@ -683,6 +684,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     params['success_rate_uterine_repair'] = 1.0
 
     # Run the surgery and check the treatment has been delivered
+    mni[mother_id]['cs_indication'] = 'ur'
     ip_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
     assert df.at[mother_id, 'la_uterine_rupture_treatment']
     assert not df.at[mother_id, 'la_has_had_hysterectomy']
