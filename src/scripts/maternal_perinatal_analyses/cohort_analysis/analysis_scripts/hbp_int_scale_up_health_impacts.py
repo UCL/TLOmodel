@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import matplotlib.ticker as mticker
+from collections import Counter, defaultdict
 
 import os
 from scipy.stats import t
@@ -14,7 +15,7 @@ from tableone import TableOne
 # from scripts.comparison_of_horizontal_and_vertical_programs.economic_analysis_for_manuscript.roi_analysis_horizontal_vs_vertical import \
 #     icers_summarized
 from tlo import Date
-from tlo.analysis.utils import extract_results, get_scenario_outputs, get_scenario_info, parse_log_file
+from tlo.analysis.utils import bin_hsi_event_details, extract_results, get_scenario_outputs, get_scenario_info, parse_log_file, compute_summary_statistics
 from src.scripts.costing.cost_estimation import (do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios, summarize_cost_data
 )
@@ -1087,22 +1088,131 @@ produce_fig_2(
 
 # Table 1/Figure 3 - Estimating costs
 
+# Extract initial system level cost data
 # list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
-#
 # input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
 #                                      resourcefilepath=resourcefilepath,
 #                                      suspended_results_folder=results_folder,
 #                                      _draws=draws,
 #                                      _years=list_of_relevant_years_for_costing,
 #                                      cost_only_used_staff= True,
-#                                      _discount_rate=0.03)
+#                                      alt_scaling_factor=p_scaling_factor)
 #
 # input_costs_df.to_csv(f'{g_path}/input_costs.csv')
-#
-#  TODO: COST RESULTS ARE SCALED TO POPULATION...
+
 input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
 input_costs = input_costs.set_index('Unnamed: 0')
+input_cost_unadjusted = input_costs
+
+# Adjust costs as required...
+
+# 1.) HRH
+def get_ratios():
+
+    appointment_time_table = pd.read_csv(
+        resourcefilepath
+        / 'healthsystem'
+        / 'human_resources'
+        / 'definitions'
+        / 'ResourceFile_Appt_Time_Table.csv',
+        index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
+    )
+
+    appt_type_facility_level_officer_category_to_appt_time = (
+        appointment_time_table.Time_Taken_Mins.to_dict()
+    )
+
+    officer_categories = appointment_time_table.index.levels[
+        appointment_time_table.index.names.index("Officer_Category")
+    ].to_list()
+
+    hcw_time_by_treatment_id = bin_hsi_event_details(
+        results_folder,
+        lambda event_details, count: sum(
+            [
+                Counter({
+                    (
+                        officer_category,
+                        event_details["treatment_id"]
+                    ):
+                        count
+                        * appt_number
+                        * appt_type_facility_level_officer_category_to_appt_time.get(
+                            (
+                                appt_type,
+                                event_details["facility_level"],
+                                officer_category
+                            ),
+                            0
+                        )
+                    for officer_category in officer_categories
+                })
+                for appt_type, appt_number in event_details["appt_footprint"]
+            ],
+            Counter()
+        ),
+        *TARGET_PERIOD,
+        True
+    )
+
+    # Next we calculate the total HCW time use
+    hcw_time_by_treatment_id_df = pd.DataFrame.from_dict(hcw_time_by_treatment_id)
+    hcw_time_by_treatment_id_df = hcw_time_by_treatment_id_df.fillna(0)
+    hcw_time_by_treatment_id_df.index.names = ['first', 'second']
+    hcw_time_by_cadre = hcw_time_by_treatment_id_df.groupby(level='first').sum()
+
+    # Read in capabilities data and sum across facility levels etc.
+    daily_cap = pd.read_csv('./resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv')
+    daily_mins = daily_cap.set_index('Officer_Category')[['Total_Mins_Per_Day']]
+    daily_mins = daily_mins.drop('Dental')
+    daily_mins = daily_mins.drop('Nutrition')
+    daily_mins = daily_mins.groupby(daily_mins.index).sum()
+
+    # Next we calculate the average HCW capabilities assuming capabilities increase yearly in line with population growth
+    yrly_hcw_time_cap = daily_mins * 365.25
+
+    # Now we calculate the ratio of time use to time available (by cadre) and summarise it
+    hcw_time_ratio_by_cadre = hcw_time_by_cadre.div(yrly_hcw_time_cap.iloc[:, 0], axis=0)
+    hcw_time_ratio_by_cadre.columns.names = ['draw', 'run']
+
+    hcw_time_ratio_by_cadre_summ = compute_summary_statistics(hcw_time_ratio_by_cadre, use_standard_error=True)
+
+    return hcw_time_ratio_by_cadre_summ
+
+hcw_ratios = get_ratios()
+
+def return_cost_adjusted_for_hcw_growth(cost_data, hcw_ratios):
+    # Multiply the HCW cost estimates by ratios
+    central_df = hcw_ratios.xs('central', axis=1, level=1)
+
+    # Function to safely get multiplier
+    def get_multiplier(row):
+        subgroup = row['cost_subgroup']
+        draw = row['draw']
+        if subgroup in central_df.index and draw in central_df.columns:
+            return central_df.loc[subgroup, draw]
+        else:
+            return 1.0  # or np.nan, or row['cost'] unmodified depending on your logic
+
+    cost_data['cost'] = cost_data.apply(lambda row: row['cost'] * get_multiplier(row), axis=1)
+    total_input_cost = cost_data.groupby(['draw', 'run'])['cost'].sum()
+
+    return total_input_cost
+
+input_cost_unadj = input_cost_unadjusted.groupby(['draw', 'run'])['cost'].sum()
+
+input_costs_adjusted_hcw = return_cost_adjusted_for_hcw_growth(input_costs, hcw_ratios)
+
+
+# QUESTIONS:
+# 1.) Do we need to discount costs/DALYs if time horizon is 1 year
+# 2.) Are we only costing HRH that were used OR are do we cost all given we're then going to calculate additional costs
 
 # 1.) CONSUMABLES
+
 # 2.) HRH
+# (we can cost only those cadres used in the simulation or not)
+
+# We want different in HCW time use between scenarios
+
 # 3.) SENSITIVITY/ABOVE SERVICE COSTS

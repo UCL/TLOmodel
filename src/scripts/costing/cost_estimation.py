@@ -291,7 +291,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                      _metric: Literal['mean', 'median'] = 'mean',
                                      _years: Optional[list[int]] = None,
                                      cost_only_used_staff: bool = True,
-                                     _discount_rate: Union[float, dict[int, float]] = 0) -> pd.DataFrame:
+                                     _discount_rate: Union[float, dict[int, float]] = 0,
+                                     alt_scaling_factor:Optional[float] = None) -> pd.DataFrame:
     """
     Estimate health system input costs for a given simulation.
 
@@ -549,8 +550,11 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
-        do_scaling=True,
+        do_scaling=alt_scaling_factor is None,
     )
+
+    if alt_scaling_factor is not None:
+        available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype * alt_scaling_factor
 
     # Update above series to get staff count by Facility_Level
     available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(
@@ -843,7 +847,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
             custom_generate_series=get_counts_of_items_requested,
-            do_scaling=True)
+            do_scaling=alt_scaling_factor is None)
+
+        if alt_scaling_factor is not None:
+            cons_req = cons_req * alt_scaling_factor
 
         cons_dispensed = cons_req.xs("Used", level=2)  # only keep actual dispensed amount, i.e. when available
         return cons_dispensed
