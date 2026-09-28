@@ -1391,7 +1391,8 @@ if __name__ == "__main__":
                 raise KeyError(f"{wbgt_path}: {WBGT_VAR!r} missing (have {list(clim.columns)})")
 
             # Drop pre-computed lags (we rebuild below) and unrelated indices/tags
-            drop = [c for c in clim.columns if (c.startswith(("wbgtx_", "wbgt5x_")) and c != WBGT_VAR) or c == "model"]
+            drop = [c for c in clim.columns
+                    if (c.startswith(("wbgtx_", "wbgt5x_")) and c != WBGT_VAR) or c == "model"]
             if drop:
                 clim = clim.drop(columns=drop)
 
