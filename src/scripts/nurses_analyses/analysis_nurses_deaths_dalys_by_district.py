@@ -706,234 +706,151 @@ def plot_district_maps(gdf, scenario_names, title, colorbar_label):
     return fig
 
 
-def plot_percent_dalys_averted_by_district(default_df, improved_df, top_n=30):
-    # Default Healthsystem
-    default_more = default_df[
-        "More Nurses / Default Healthsystem Function"
+def plot_percent_dalys_averted_by_district(df, healthsystem_label, top_n=30):
+    # Extract scenarios for the selected healthsystem
+    if healthsystem_label == "Default Healthsystem":
+        more = df["More Nurses / Default Healthsystem Function"]
+        cnp = df["More CNP staff / Default Healthsystem Function"]
+        more_district = df["More Nurses by District / Default Healthsystem Function"]
+        cnp_district = df["More CNP staff by District / Default Healthsystem Function"]
+        fewer = df["Fewer Nurses / Default Healthsystem Function"]
+
+    elif healthsystem_label == "Improved Healthsystem":
+        more = df["More Nurses / Improved Healthsystem Function"]
+        cnp = df["More CNP staff / Improved Healthsystem Function"]
+        more_district = df["More Nurses by District / Improved Healthsystem Function"]
+        cnp_district = df["More CNP staff by District / Improved Healthsystem Function"]
+        fewer = df["Fewer Nurses / Improved Healthsystem Function"]
+
+    else:
+        raise ValueError(
+            f"Unknown healthsystem_label: {healthsystem_label}"
+        )
+
+    # Reindex districts
+    more = more.reindex(district_order)
+    cnp = cnp.reindex(district_order)
+    more_district = more_district.reindex(district_order)
+    cnp_district = cnp_district.reindex(district_order)
+    fewer = fewer.reindex(district_order)
+
+    # Scenario order
+    scenarios = [
+        ("More nurses", more, "steelblue"),
+        ("More CNP", cnp, "darkgreen"),
+        ("More nurses by district", more_district, "mediumpurple"),
+        ("More CNP by district", cnp_district, "orange"),
+        ("Fewer nurses", fewer, "indianred"),
     ]
 
-    default_cnp = default_df[
-        "More CNP staff / Default Healthsystem Function"
-    ]
-
-    default_more_district = default_df[
-        "More Nurses by District / Default Healthsystem Function"
-    ]
-
-    default_cnp_district = default_df[
-        "More CNP staff by District / Default Healthsystem Function"
-    ]
-
-    default_fewer = default_df[
-        "Fewer Nurses / Default Healthsystem Function"
-    ]
-
-    # Improved Healthsystem
-    improved_more = improved_df[
-        "More Nurses / Improved Healthsystem Function"
-    ]
-
-    improved_cnp = improved_df[
-        "More CNP staff / Improved Healthsystem Function"
-    ]
-
-    improved_more_district = improved_df[
-        "More Nurses by District / Improved Healthsystem Function"
-    ]
-
-    improved_cnp_district = improved_df[
-        "More CNP staff by District / Improved Healthsystem Function"
-    ]
-
-    improved_fewer = improved_df[
-        "Fewer Nurses / Improved Healthsystem Function"
-    ]
-
-    default_more = default_more.reindex(district_order)
-    default_cnp = default_cnp.reindex(district_order)
-    default_more_district = default_more_district.reindex(district_order)
-    default_cnp_district = default_cnp_district.reindex(district_order)
-    default_fewer = default_fewer.reindex(district_order)
-
-    improved_more = improved_more.reindex(district_order)
-    improved_cnp = improved_cnp.reindex(district_order)
-    improved_more_district = improved_more_district.reindex(district_order)
-    improved_cnp_district = improved_cnp_district.reindex(district_order)
-    improved_fewer = improved_fewer.reindex(district_order)
-
-    # Plot
-    fig, axes = plt.subplots(ncols=2, figsize=(15, 13), sharey=True)
-
-    panel_data = [
-        (
-            axes[0],
-            [
-                ("More nurses", default_more, "steelblue"),
-                ("More CNP", default_cnp, "darkgreen"),
-                ("More nurses by district", default_more_district, "mediumpurple"),
-                ("More CNP by district", default_cnp_district, "orange"),
-                ("Fewer nurses", default_fewer, "indianred"),
-            ],
-            "Default Healthsystem",
-        ),
-        (
-            axes[1],
-            [
-                ("More nurses", improved_more, "steelblue"),
-                ("More CNP", improved_cnp, "darkgreen"),
-                ("More nurses by district", improved_more_district, "mediumpurple"),
-                ("More CNP by district", improved_cnp_district, "orange"),
-                ("Fewer nurses", improved_fewer, "indianred"),
-            ],
-            "Improved Healthsystem",
-        ),
-    ]
+    # One figure for one healthsystem
+    fig, ax = plt.subplots(figsize=(10, 13))
 
     offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    y = np.arange(len(scenarios[0][1]))
 
-    for ax, scenarios, title in panel_data:
-        y = np.arange(len(scenarios[0][1]))
-        for offset, (label, df, color) in zip(offsets, scenarios):
-            ax.barh(
-                y + offset,
-                df["mean"],
-                height=0.12,
-                color=color,
-                label=label,
-            )
+    for offset, (label, scenario_df, color) in zip(offsets, scenarios):
+        ax.barh(y + offset, scenario_df["mean"], height=0.12, color=color, label=label, )
 
-            ax.errorbar(df["mean"], y + offset, xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"],],
-                        fmt="none", elinewidth=1, capsize=1.5, color="black", alpha=0.4,)
+        ax.errorbar(
+            scenario_df["mean"],
+            y + offset,
+            xerr=[
+                scenario_df["mean"] - scenario_df["lower"],
+                scenario_df["upper"] - scenario_df["mean"],
+            ],
+            fmt="none",
+            elinewidth=1,
+            capsize=1.5,
+            color="black",
+            alpha=0.4,
+        )
 
-        ax.axvline(0, color="black")
-        ax.set_yticks(y)
-        ax.set_yticklabels(scenarios[0][1].index)
-        ax.set_xlabel("% DALYs averted")
-        ax.set_title(title)
-        ax.grid(axis="x", alpha=0.3)
-
-    handles, labels = axes[0].get_legend_handles_labels()
-
-    fig.legend(handles, labels, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.08),)
-
-    fig.suptitle("% DALYs averted by district \n(2027–2034)")
+    ax.axvline(0, color="black")
+    ax.set_yticks(y)
+    ax.set_yticklabels(scenarios[0][1].index)
+    ax.set_xlabel("% DALYs averted")
+    ax.set_title(
+        f"% DALYs averted by district - {healthsystem_label}\n"
+        "(2027–2034)"
+    )
+    ax.grid(axis="x", alpha=0.3)
+    ax.legend(loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.12),)
     fig.tight_layout()
-    return fig, axes
+    return fig, ax
 
 
-def plot_percent_deaths_averted_by_district(default_df, improved_df, top_n=30):
-    # Default Healthsystem
-    default_more = default_df[
-        "More Nurses / Default Healthsystem Function"
+def plot_percent_deaths_averted_by_district(df, healthsystem_label, top_n=30):
+    if healthsystem_label == "Default Healthsystem":
+        more = df["More Nurses / Default Healthsystem Function"]
+        cnp = df["More CNP staff / Default Healthsystem Function"]
+        more_district = df["More Nurses by District / Default Healthsystem Function"]
+        cnp_district = df["More CNP staff by District / Default Healthsystem Function"]
+        fewer = df["Fewer Nurses / Default Healthsystem Function"]
+
+    elif healthsystem_label == "Improved Healthsystem":
+        more = df["More Nurses / Improved Healthsystem Function"]
+        cnp = df["More CNP staff / Improved Healthsystem Function"]
+        more_district = df["More Nurses by District / Improved Healthsystem Function"]
+        cnp_district = df["More CNP staff by District / Improved Healthsystem Function"]
+        fewer = df["Fewer Nurses / Improved Healthsystem Function"]
+
+    else:
+        raise ValueError(
+            f"Unknown healthsystem_label: {healthsystem_label}"
+        )
+
+    # Reindex districts
+    more = more.reindex(district_order)
+    cnp = cnp.reindex(district_order)
+    more_district = more_district.reindex(district_order)
+    cnp_district = cnp_district.reindex(district_order)
+    fewer = fewer.reindex(district_order)
+
+    # Scenario order
+    scenarios = [
+        ("More nurses", more, "steelblue"),
+        ("More CNP", cnp, "darkgreen"),
+        ("More nurses by district", more_district, "mediumpurple"),
+        ("More CNP by district", cnp_district, "orange"),
+        ("Fewer nurses", fewer, "indianred"),
     ]
 
-    default_cnp = default_df[
-        "More CNP staff / Default Healthsystem Function"
-    ]
-
-    default_more_district = default_df[
-        "More Nurses by District / Default Healthsystem Function"
-    ]
-
-    default_cnp_district = default_df[
-        "More CNP staff by District / Default Healthsystem Function"
-    ]
-
-    default_fewer = default_df[
-        "Fewer Nurses / Default Healthsystem Function"
-    ]
-
-    # Improved Healthsystem
-    improved_more = improved_df[
-        "More Nurses / Improved Healthsystem Function"
-    ]
-
-    improved_cnp = improved_df[
-        "More CNP staff / Improved Healthsystem Function"
-    ]
-
-    improved_more_district = improved_df[
-        "More Nurses by District / Improved Healthsystem Function"
-    ]
-
-    improved_cnp_district = improved_df[
-        "More CNP staff by District / Improved Healthsystem Function"
-    ]
-
-    improved_fewer = improved_df[
-        "Fewer Nurses / Improved Healthsystem Function"
-    ]
-
-    default_more = default_more.reindex(district_order)
-    default_cnp = default_cnp.reindex(district_order)
-    default_more_district = default_more_district.reindex(district_order)
-    default_cnp_district = default_cnp_district.reindex(district_order)
-    default_fewer = default_fewer.reindex(district_order)
-
-    improved_more = improved_more.reindex(district_order)
-    improved_cnp = improved_cnp.reindex(district_order)
-    improved_more_district = improved_more_district.reindex(district_order)
-    improved_cnp_district = improved_cnp_district.reindex(district_order)
-    improved_fewer = improved_fewer.reindex(district_order)
-
-    # Plot
-    fig, axes = plt.subplots(ncols=2, figsize=(15, 13), sharey=True)
-
-    panel_data = [
-        (
-            axes[0],
-            [
-                ("More nurses", default_more, "steelblue"),
-                ("More CNP", default_cnp, "darkgreen"),
-                ("More nurses by district", default_more_district, "mediumpurple"),
-                ("More CNP by district", default_cnp_district, "orange"),
-                ("Fewer nurses", default_fewer, "indianred"),
-            ],
-            "Default Healthsystem",
-        ),
-        (
-            axes[1],
-            [
-                ("More nurses", improved_more, "steelblue"),
-                ("More CNP", improved_cnp, "darkgreen"),
-                ("More nurses by district", improved_more_district, "mediumpurple"),
-                ("More CNP by district", improved_cnp_district, "orange"),
-                ("Fewer nurses", improved_fewer, "indianred"),
-            ],
-            "Improved Healthsystem",
-        ),
-    ]
+    # One figure for one healthsystem
+    fig, ax = plt.subplots(figsize=(10, 13))
 
     offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    y = np.arange(len(scenarios[0][1]))
 
-    for ax, scenarios, title in panel_data:
-        y = np.arange(len(scenarios[0][1]))
-        for offset, (label, df, color) in zip(offsets, scenarios):
-            ax.barh(
-                y + offset,
-                df["mean"],
-                height=0.12,
-                color=color,
-                label=label,
-            )
+    for offset, (label, scenario_df, color) in zip(offsets, scenarios):
+        ax.barh(y + offset, scenario_df["mean"], height=0.12, color=color, label=label,)
 
-            ax.errorbar(df["mean"], y + offset, xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"],],
-                        fmt="none", elinewidth=1, capsize=1.5, color="black", alpha=0.4,)
+        ax.errorbar(
+            scenario_df["mean"],
+            y + offset,
+            xerr=[
+                scenario_df["mean"] - scenario_df["lower"],
+                scenario_df["upper"] - scenario_df["mean"],
+            ],
+            fmt="none",
+            elinewidth=1,
+            capsize=1.5,
+            color="black",
+            alpha=0.4,
+        )
 
-        ax.axvline(0, color="black")
-        ax.set_yticks(y)
-        ax.set_yticklabels(scenarios[0][1].index)
-        ax.set_xlabel("% Deaths averted")
-        ax.set_title(title)
-        ax.grid(axis="x", alpha=0.3)
-
-    handles, labels = axes[0].get_legend_handles_labels()
-
-    fig.legend(handles, labels, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.08),)
-
-    fig.suptitle("% Deaths averted by district \n(2027–2034)")
+    ax.axvline(0, color="black")
+    ax.set_yticks(y)
+    ax.set_yticklabels(scenarios[0][1].index)
+    ax.set_xlabel("% Deaths averted")
+    ax.set_title(
+        f"% Deaths averted by district - {healthsystem_label}\n"
+        "(2027–2034)"
+    )
+    ax.grid(axis="x", alpha=0.3)
+    ax.legend(loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.12),)
     fig.tight_layout()
-    return fig, axes
+    return fig, ax
 
 
 def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
@@ -1537,10 +1454,17 @@ if __name__ == "__main__":
         "DALYs averted in percentage",
     )
 
-    fig_dalys_bar, ax_dalys_bar = (
+    fig_dalys_bar_default, ax_dalys_bar_default = (
         plot_percent_dalys_averted_by_district(
             percent_dalys_default,
+            "Default Healthsystem",
+        )
+    )
+
+    fig_dalys_bar_improved, ax_dalys_bar_improved = (
+        plot_percent_dalys_averted_by_district(
             percent_dalys_improved,
+            "Improved Healthsystem",
         )
     )
 
@@ -1709,10 +1633,17 @@ if __name__ == "__main__":
         "Deaths averted in percentage",
     )
 
-    fig_deaths_bar, ax_deaths_bar = (
+    fig_deaths_bar_default, ax_deaths_bar_default = (
         plot_percent_deaths_averted_by_district(
             percent_deaths_default,
+            "Default Healthsystem",
+        )
+    )
+
+    fig_deaths_bar_improved, ax_deaths_bar_improved = (
+        plot_percent_deaths_averted_by_district(
             percent_deaths_improved,
+            "Improved Healthsystem",
         )
     )
 
@@ -1741,15 +1672,30 @@ if __name__ == "__main__":
             dpi=300,
             bbox_inches="tight",
         )
-        fig_dalys_bar.savefig(
+        fig_dalys_bar_default.savefig(
             results_folder /
-            "district_dalys_barplots.pdf",
+            "district_dalys_barplots_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
-        fig_deaths_bar.savefig(
+
+        fig_dalys_bar_improved.savefig(
             results_folder /
-            "district_deaths_barplots.pdf",
+            "district_dalys_barplots_improved.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        fig_deaths_bar_default.savefig(
+            results_folder /
+            "district_deaths_barplots_default.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
+        fig_deaths_bar_improved.savefig(
+            results_folder /
+            "district_deaths_barplots_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
