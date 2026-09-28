@@ -48,7 +48,7 @@ from shapely.geometry import Point
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-WBGT_SCENARIO = "ssp245"
+WBGT_SCENARIO = "ssp585" #ssp245, ssp126
 
 WBGT_BASE_DIR = Path(
     "/Users/rachelmurray-watson/Documents/Heat_data/"
