@@ -39,8 +39,8 @@ INDICES_DIR = Path(
 # Panel prefixes to materialise role copies for. Comment out either line if you
 # only use one quantity.
 PANEL_PREFIXES = [
-    #"wbgt_extreme_indices_facility_",   # WBGTx / WBGT5x panels
-    "wbgt_monthly_mean_facility_",      # monthly-mean wbgt_day/night panels
+    "wbgt_extreme_indices_facility_",   # WBGTx / WBGT5x panels
+    #"wbgt_monthly_mean_facility_",      # monthly-mean wbgt_day/night panels
 ]
 
 # One ranking applied to ALL prefixes, so low/median/high are the same models
