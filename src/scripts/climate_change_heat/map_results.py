@@ -23,6 +23,7 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as gridspec
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.cm import ScalarMappable
+import matplotlib.gridspec as gridspec
 
 OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 WBGT_VAR = "wbgt5x_day"
@@ -825,24 +826,55 @@ def plot_district_maps(
     # p99 of the absolute deficits — robust to a single outlier district but
     # still uses the full range of the signal.
     global_vmax = max(float(dist_all["deficit_pct"].abs().quantile(0.99)), 0.5)
-
     cmap = LinearSegmentedColormap.from_list(
         "custom_diverging",
-        ["#4D7799", "#7FA4C4", "#C5C8D4", "#D48E95", "#B5515B"],
+        ["#4D7799", "#7FA4C4", "#FFFFFF", "#D48E95", "#B5515B"],
     )
     norm = plt.Normalize(vmin=-global_vmax, vmax=global_vmax)
 
-    # ---- Panel grid --------------------------------------------------------
+    # ---- Panel grid ---------
     n_ind = len(fitted)
-    n_cols = 3
-    n_rows = int(np.ceil(n_ind / n_cols))
-    fig, axes = plt.subplots(
-        n_rows, n_cols,
-        figsize=(4.2 * n_cols, 5.2 * n_rows),
-        constrained_layout=False,
-    )
-    af = axes.flatten() if n_ind > 1 else [axes]
     panel_labels = [f"({c})" for c in "ABCDEFGHIJ"]
+
+    if n_ind == 7:
+        fig = plt.figure(figsize=(4.2 * 4, 5.2 * 2))
+        # 2 rows x 3 cols for A-F, leaving right side for G
+        # Use gridspec occupying only left 3/4 of figure
+        import matplotlib.gridspec as gridspec
+        gs = gridspec.GridSpec(
+            2, 3,
+            left=0.02, right=0.75,   # left 75% of figure for A-F
+            bottom=0.14, top=0.96,
+            hspace=0.15, wspace=0.02,
+        )
+        axes = []
+        axes.append(fig.add_subplot(gs[0, 0]))  # A
+        axes.append(fig.add_subplot(gs[0, 1]))  # B
+        axes.append(fig.add_subplot(gs[0, 2]))  # C
+        axes.append(fig.add_subplot(gs[1, 0]))  # D
+        axes.append(fig.add_subplot(gs[1, 1]))  # E
+        axes.append(fig.add_subplot(gs[1, 2]))  # F
+
+        # G placed manually — same size as row-1 panels, centred vertically
+        # A row-1 panel spans y from ~0.55 to ~0.96, so its height is ~0.41
+        # Place G at the vertical midpoint of the whole figure
+        # [left, bottom, width, height] in figure coords
+        panel_w = (0.75 - 0.02) / 3 * 0.95  # match panel width, minus spacing
+        panel_h = (0.96 - 0.14 - 0.15) / 2  # match panel height
+        g_left = 0.70
+        g_bottom = 0.14 + panel_h / 2 + 0.075  # centre between the two rows
+        ax_g = fig.add_axes([g_left, g_bottom, panel_w, panel_h])
+        axes.append(ax_g)
+        af = axes
+    else:
+        n_cols = 3
+        n_rows = int(np.ceil(n_ind / n_cols))
+        fig, axes = plt.subplots(
+            n_rows, n_cols,
+            figsize=(4.2 * n_cols, 5.2 * n_rows),
+            constrained_layout=False,
+        )
+        af = axes.flatten() if n_ind > 1 else [axes]
 
     for idx, ind in enumerate(fitted):
         ax = af[idx]
@@ -856,65 +888,55 @@ def plot_district_maps(
             left_on=DISTRICT_NAME_COL, right_on=CLUSTER_COL, how="left",
         )
 
-        # Base choropleth (no per-panel colourbar — shared bar below)
         merged.plot(
             column="deficit_pct",
-            ax=ax,
-            cmap=cmap, norm=norm,
+            ax=ax, cmap=cmap, norm=norm,
             edgecolor="white", linewidth=0.3,
-            missing_kwds={"color": "#e6e6e6"},
+            missing_kwds={"color": "none"},
             legend=False,
         )
 
-        # Non-significant coloured districts: hatch overlay
-        if "sig" in merged.columns:
-            non_sig = merged[merged["sig"] == False]
-            if not non_sig.empty:
-                non_sig.plot(
-                    ax=ax,
-                    facecolor="none",
-                    edgecolor="none",
-                    hatch="////",
-                    zorder=2,
-                )
+        missing_data = merged[merged["deficit_pct"].isna()]
+        if not missing_data.empty:
+            missing_data.plot(
+                ax=ax, facecolor="#e8e8e8", edgecolor="#bbbbbb",
+                linewidth=0.3, zorder=2,
+            )
+
         lakes.plot(ax=ax, color="#cfe3f2", edgecolor="#a8c8dc", linewidth=0.2, zorder=3)
-        # Sample-size annotation in the frame
-        n_matched = int(merged["deficit_pct"].notna().sum())
-        # Panel letter
+
         ax.set_axis_off()
         letter = panel_labels[idx] if idx < len(panel_labels) else ""
-        ax.set_title(f"{letter} {_label(ind)}".strip(), fontsize=10, fontweight="bold", pad=8, loc="left")
+        ax.set_title(f"{letter} {_label(ind)}".strip(),
+                     fontsize=10, fontweight="bold", pad=8, loc="left")
 
-    # Hide unused axes
     for idx in range(n_ind, len(af)):
         af[idx].set_visible(False)
 
-    # ---- Shared colourbar + footer -----------------------------------------
-    fig.subplots_adjust(hspace=0.08, wspace=0.02, bottom=0.10, top=0.96)
+    # ---- Shared colourbar + footer with proper spacing --------------------
+    fig.subplots_adjust(hspace=0.15, wspace=0.02,
+                        bottom=0.12, top=0.96, left=0.02, right=0.98)
 
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = fig.add_axes([0.30, 0.06, 0.40, 0.012])  # [left, bottom, width, height]
+    cax = fig.add_axes([0.30, 0.07, 0.40, 0.015])
     cbar = fig.colorbar(sm, cax=cax, orientation="horizontal")
     cbar.set_label("Heat-attributable service deficit (%)", fontsize=9)
     cbar.ax.tick_params(labelsize=8)
 
     fig.text(
-        0.5, 0.03,
-        "Positive = services lost during hot months. "
-        "Hatched: 95% jackknife CI includes zero. Grey: insufficient data.",
+        0.5, 0.025,
+        "Positive = services lost during hot months. Grey: insufficient data.",
         ha="center", fontsize=8, style="italic", color="#333",
     )
-
     # ---- Save vector + raster ---------------------------------------------
     stem = f"map_district_deficit_panel_{variant}_{WBGT_VAR}"
-    out_pdf = f"{out_dir}{stem}.pdf"
     out_png = f"{out_dir}{stem}.png"
-    plt.savefig(out_pdf, bbox_inches="tight")
+    plt.tight_layout()
     plt.savefig(out_png, dpi=300, bbox_inches="tight")
     plt.close()
 
-    return [out_pdf, out_png]
+    return [out_png]
 
 # =====================================================================
 # 9. PROJECTION HEATMAPS
@@ -2125,69 +2147,69 @@ if __name__ == "__main__":
     results_df = load_results_df()
     fitted = list(results_df["indicator"])
 
-    print("\n[0] time-series + ER two-panel per indicator")
-    plot_ts_overlay_with_wbgt_rug(fitted)
-
-
-    print("\n[2] main forest plot")
-    print("  ->", plot_main_forest(results_df))
-
-    print("\n[4] IRR forest plot")
-    print("  ->", plot_irr_forest(results_df))
-
-    print("\n[5] exposure-response panel")
-    print("  ->", plot_exposure_response_panel(fitted))
-
-    print("\n[6] monthly deficit panel")
-    print("  ->", plot_monthly_deficit_panel(fitted))
-
-    print("\n[7] timeseries burden panel")
-    print("  ->", plot_timeseries_panel(fitted))
+    # print("\n[0] time-series + ER two-panel per indicator")
+    # plot_ts_overlay_with_wbgt_rug(fitted)
+    #
+    #
+    # print("\n[2] main forest plot")
+    # print("  ->", plot_main_forest(results_df))
+    #
+    # print("\n[4] IRR forest plot")
+    # print("  ->", plot_irr_forest(results_df))
+    #
+    # print("\n[5] exposure-response panel")
+    # print("  ->", plot_exposure_response_panel(fitted))
+    #
+    # print("\n[6] monthly deficit panel")
+    # print("  ->", plot_monthly_deficit_panel(fitted))
+    #
+    # print("\n[7] timeseries burden panel")
+    # print("  ->", plot_timeseries_panel(fitted))
 
     print("\n[8] district choropleth maps")
     print("  ->", plot_district_maps(fitted, variant="per_district"))
     print("  ->", plot_district_maps(fitted, variant="national"))
 
-
-    print("\n[9] projection heatmaps")
-    for p in plot_projection_heatmaps(fitted):
-        print("  ->", p)
-
-    print("\n[11] district × indicator heatmap")
-    print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
-
-    print("\n[12] projection forest — aggregate and hot-month, multiple windows")
-    for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
-        print(f"  aggregate {w[0]}-{w[1]}:",
-              plot_projection_forest(fitted, window=w, results_df=results_df))
-        print(f"  hot-months {w[0]}-{w[1]}:",
-              plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
-                                     results_df=results_df))
-
-    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    print("  aggregate ->",
-          plot_projection_annual_panel(fitted, results_df=results_df))
-    print("  hot-months ->",
-          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-                                       results_df=results_df))
-
-    print("\n[14] seasonal amplification (SSP245 / median)")
-    print("  ->", plot_seasonal_amplification(fitted))
-
-    print("\n[15] Summary statistics by indicator")
-    by_ind = calculate_summary_statistics_by_indicator(fitted)
-    print("  ->", by_ind.shape, "rows written")
-
-    print("\n[16] Summary statistics rollup")
-    stats = calculate_summary_statistics(fitted)
-    print_summary_statistics(stats, by_ind)
-    print("\nDone.")
-
-    print("\n[17] 1940s reference-period contrast")
-    print("  ->", plot_reference_period_contrast(fitted))
-
-    print("\n[18] spline df stability panel")
-    print("  ->", plot_df_stability_panel(fitted))
-
-    print("\n[19] spline df stability panel")
-    print("  ->", plot_displacement_empirical_panel(fitted))
+    #
+    # print("\n[9] projection heatmaps")
+    # for p in plot_projection_heatmaps(fitted):
+    #     print("  ->", p)
+    #
+    # print("\n[11] district × indicator heatmap")
+    # print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
+    #
+    # print("\n[12] projection forest — aggregate and hot-month, multiple windows")
+    # for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
+    #     print(f"  aggregate {w[0]}-{w[1]}:",
+    #           plot_projection_forest(fitted, window=w, results_df=results_df))
+    #     print(f"  hot-months {w[0]}-{w[1]}:",
+    #           plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
+    #                                  results_df=results_df))
+    #
+    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    # print("  aggregate ->",
+    #       plot_projection_annual_panel(fitted, results_df=results_df))
+    # print("  hot-months ->",
+    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+    #                                    results_df=results_df))
+    #
+    # print("\n[14] seasonal amplification (SSP245 / median)")
+    # print("  ->", plot_seasonal_amplification(fitted))
+    #
+    # print("\n[15] Summary statistics by indicator")
+    # by_ind = calculate_summary_statistics_by_indicator(fitted)
+    # print("  ->", by_ind.shape, "rows written")
+    #
+    # print("\n[16] Summary statistics rollup")
+    # stats = calculate_summary_statistics(fitted)
+    # print_summary_statistics(stats, by_ind)
+    # print("\nDone.")
+    #
+    # print("\n[17] 1940s reference-period contrast")
+    # print("  ->", plot_reference_period_contrast(fitted))
+    #
+    # print("\n[18] spline df stability panel")
+    # print("  ->", plot_df_stability_panel(fitted))
+    #
+    # print("\n[19] spline df stability panel")
+    # print("  ->", plot_displacement_empirical_panel(fitted))
