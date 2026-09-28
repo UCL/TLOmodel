@@ -17,10 +17,17 @@ in the model script's own plotting block, which is missing the suffix.
 import pandas as pd
 from pathlib import Path
 import geopandas as gpd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.patches as mpatches
+import matplotlib.gridspec as gridspec
+from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.cm import ScalarMappable
 
 OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
-WBGT_VAR = "wbgt_day"
-paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
+WBGT_VAR = "wbgt5x_day"
+LAG_SUFFIX = "_with_lags"
+paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}{LAG_SUFFIX}.csv"))
 # assert paths, "no per-indicator curve files found"
 pd.concat([pd.read_csv(p) for p in paths], ignore_index=True).to_csv(
     Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv", index=False
@@ -44,7 +51,7 @@ LAKES_SHAPEFILE_PATH = (
 )
 
 DISTRICT_NAME_COL = "ADM2_EN"
-CLUSTER_COL = "Dist"
+CLUSTER_COL = "Dist" # this is for reporting results, not the statistics model clustering
 
 FDR_ALPHA = 0.05
 IRR_HIGH = 34.0  # IRR contrast upper bound; low is read from results_df
@@ -197,6 +204,172 @@ def _label(ind: str) -> str:
     return INDICATOR_LABELS.get(ind, ind)
 
 
+def _normalise_district_col(df: pd.DataFrame, path: str) -> pd.DataFrame:
+    """District files use 'district' in some writers and CLUSTER_COL in
+    others; normalise to CLUSTER_COL so merges key on the same column."""
+    if CLUSTER_COL in df.columns:
+        return df
+    if "district" in df.columns:
+        return df.rename(columns={"district": CLUSTER_COL})
+    raise KeyError(f"{path}: expected 'district' or {CLUSTER_COL!r} column, got {list(df.columns)}")
+# =====================================================================
+# 0. Service and WBGT
+# =====================================================================
+def plot_ts_overlay_with_wbgt_rug(
+    fitted: list[str],
+    out_dir: str = OUT_DIR,
+    panel_dir: str = None,
+    normalise: str = "facility_mean",  # or "index100"
+) -> str:
+    """One panel: monthly time series for every indicator on shared axes,
+    with a WBGT-intensity rug beneath. Series are normalised so their shapes
+    are comparable — otherwise OPD (millions) swamps everything else.
+
+    normalise:
+      'facility_mean' : each series scaled to (national monthly count) /
+                        (mean facilities reporting that month) — services per
+                        facility. Comparable across indicators with different
+                        n_facilities.
+      'index100'      : each series scaled so its own long-run mean = 100.
+                        Pure shape comparison; y-axis is unitless.
+    """
+    from matplotlib.colors import LinearSegmentedColormap, Normalize
+    from matplotlib.cm import ScalarMappable
+
+    panel_dir = panel_dir or f"{'/'.join(OUT_DIR.rstrip('/').split('/')[:-1])}/Thermofeel_WBGT/Indices/"
+
+    # WBGT colour scale for the rug
+    wbgt_cmap = LinearSegmentedColormap.from_list(
+        "wbgt_intensity", ["#f0f4fa", "#7fa4c4", "#4a7298", "#823038"]
+    )
+
+    # Distinct line colour per indicator
+    ind_cmap = plt.get_cmap("tab10")
+    ind_colours = {ind: ind_cmap(i % 10) for i, ind in enumerate(fitted)}
+
+    # ---- Build the national monthly series per indicator ------------------
+    series = {}
+    all_wbgt = []
+    for ind in fitted:
+        hist_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        panel_path = f"{panel_dir}regression_panel_{ind}.csv"
+        if not os.path.exists(hist_path) or not os.path.exists(panel_path):
+            print(f"  {ind}: skipping (missing input)")
+            continue
+
+        hist = pd.read_csv(hist_path, parse_dates=["date"])
+        ts = (
+            hist.groupby("date", as_index=False)
+            .agg(obs=("y_int", "sum"), n_fac=("facility", "nunique"))
+            .sort_values("date")
+        )
+
+        if normalise == "facility_mean":
+            ts["y_plot"] = ts["obs"] / ts["n_fac"]
+            y_label = "Services per facility per month"
+        elif normalise == "index100":
+            mean_obs = ts["obs"].mean()
+            ts["y_plot"] = 100.0 * ts["obs"] / mean_obs if mean_obs > 0 else np.nan
+            y_label = "Monthly count (index, series mean = 100)"
+        else:
+            raise ValueError(f"Unknown normalise: {normalise}")
+
+        series[ind] = ts
+
+        # WBGT rug: use the panel WBGT for rows in the fitted sample
+        panel = pd.read_csv(
+            panel_path, parse_dates=["date"], usecols=["facility", "date", WBGT_VAR]
+        )
+        panel = panel.merge(
+            hist[["facility", "date"]].drop_duplicates(), on=["facility", "date"], how="inner"
+        )
+        wbgt_ts = panel.groupby("date", as_index=False)[WBGT_VAR].mean()
+        all_wbgt.append(wbgt_ts)
+
+    if not series:
+        print("  no series to plot")
+        return ""
+
+    # Pool WBGT across indicators — take the union of months and average
+    # (they'll almost all agree because WBGT is a facility-month attribute
+    # shared across indicators, only the sample of facilities differs).
+    wbgt_all = (
+        pd.concat(all_wbgt, ignore_index=True)
+        .groupby("date", as_index=False)[WBGT_VAR]
+        .mean()
+        .sort_values("date")
+    )
+
+    # ---- Figure -----------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(11, 5))
+
+    for ind, ts in series.items():
+        ax.plot(
+            ts["date"], ts["y_plot"],
+            color=ind_colours[ind], lw=1.3, label=_label(ind), alpha=0.85,
+        )
+
+    ax.set_ylabel(y_label, fontsize=10)
+    ax.set_xlabel("")
+    ax.tick_params(labelsize=8)
+    ax.margins(x=0.005)
+    ax.grid(axis="y", ls=":", alpha=0.4)
+
+    # Legend to the right of the plot
+    ax.legend(
+        loc="center left", bbox_to_anchor=(1.02, 0.5),
+        fontsize=8, frameon=False, title="Indicator", title_fontsize=9,
+    )
+
+    # ---- Rug beneath the axes --------------------------------------------
+    wnorm = Normalize(
+        vmin=float(np.nanpercentile(wbgt_all[WBGT_VAR], 5)),
+        vmax=float(np.nanpercentile(wbgt_all[WBGT_VAR], 99)),
+    )
+    ymin, ymax = ax.get_ylim()
+    yrange = ymax - ymin
+    rug_top = ymin - yrange * 0.02
+    rug_bot = ymin - yrange * 0.08
+
+    for _, r in wbgt_all.iterrows():
+        if pd.notna(r[WBGT_VAR]):
+            ax.add_patch(plt.Rectangle(
+                (mdates.date2num(r["date"]) - 15, rug_bot),
+                30, rug_top - rug_bot,
+                color=wbgt_cmap(wnorm(r[WBGT_VAR])),
+                linewidth=0, clip_on=False,
+            ))
+    ax.set_ylim(rug_bot - yrange * 0.02, ymax)
+
+    # Rug label
+    ax.text(
+        1.005, (rug_top + rug_bot) / 2 / (ymax - (rug_bot - yrange * 0.02)),
+        "WBGT", transform=ax.get_yaxis_transform(),
+        va="center", ha="left", fontsize=8, color="#555",
+    )
+
+    # Compact WBGT colourbar in the top-right corner of the axes
+    cax = fig.add_axes([0.905, 0.78, 0.012, 0.15])
+    sm = ScalarMappable(norm=wnorm, cmap=wbgt_cmap)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cax, orientation="vertical")
+    cbar.set_label("WBGT (°C)", fontsize=8)
+    cbar.ax.tick_params(labelsize=7)
+
+    # Date axis
+    ax.xaxis.set_major_locator(mdates.YearLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+
+    fig.suptitle(
+        "Service delivery over time, with WBGT context",
+        fontsize=11, fontweight="bold", y=0.98,
+    )
+
+    plt.tight_layout(rect=[0, 0, 0.88, 0.96])
+    out_path = f"{out_dir}ts_overlay_with_wbgt_rug_{WBGT_VAR}{LAG_SUFFIX}.png"
+    plt.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close()
+    return out_path
 # =====================================================================
 # 1. PER-INDICATOR EXPOSURE-RESPONSE CURVE
 # =====================================================================
@@ -338,7 +511,7 @@ def plot_main_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
 # 4. IRR FOREST PLOT (spline contrast)
 # =====================================================================
 def plot_irr_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
-    irr_df = pd.read_csv(_require(f"{out_dir}irr_contrast_{WBGT_VAR}.csv"))
+    irr_df = pd.read_csv(_require(f"{out_dir}irr_contrast_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"))
     if irr_df.empty:
         print("  IRR csv empty — skipping IRR forest plot")
         return ""
@@ -479,7 +652,7 @@ def plot_monthly_deficit_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str
 
     for idx, ind in enumerate(fitted):
         ax = axes_flat[idx]
-        csv_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}.csv"
+        csv_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if not os.path.exists(csv_path):
             ax.set_visible(False)
             continue
@@ -562,7 +735,7 @@ def plot_timeseries_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
         ax = af[idx]
         # NB: WBGT_VAR-suffixed path (writer path), unlike the model script's
         # own timeseries block which reads the unsuffixed path.
-        csv_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}.csv"
+        csv_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if not os.path.exists(csv_path):
             ax.set_visible(False)
             continue
@@ -628,34 +801,23 @@ def plot_district_maps(
             f"Available names: {sorted(gpd.read_file(LAKES_SHAPEFILE_PATH)[name_col].dropna().unique())[:20]}"
         )
         # ---- Load per-indicator CSVs (point estimate + CI/sig) -----------------
-    frames = []
+    frames, missing = [], []
     for ind in fitted:
-        p_def = f"{out_dir}{prefix}_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
-        p_ci  = f"{out_dir}{ci_prefix}_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
-        if not os.path.exists(p_def):
-            print(f"  {ind}: district csv missing — skipping in maps")
+        p_ci = f"{out_dir}{ci_prefix}_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        if not os.path.exists(p_ci):
+            missing.append(ind)
             continue
-        d = pd.read_csv(p_def)
+        ci = _normalise_district_col(pd.read_csv(p_ci), p_ci)
+        need = {CLUSTER_COL, "deficit_pct", "sig"}
+        if not need.issubset(ci.columns):
+            raise KeyError(f"{p_ci}: need {sorted(need)}, got {list(ci.columns)}")
+        d = ci[[CLUSTER_COL, "deficit_pct", "sig"]].copy()
         d["indicator"] = ind
-        if os.path.exists(p_ci):
-            ci_raw = pd.read_csv(p_ci)
-            # CI files use "district" in some variants and CLUSTER_COL in others;
-            # accept either and normalise to CLUSTER_COL for the merge.
-            if "district" in ci_raw.columns:
-                ci = ci_raw[["district", "sig"]].rename(columns={"district": CLUSTER_COL})
-            elif CLUSTER_COL in ci_raw.columns:
-                ci = ci_raw[[CLUSTER_COL, "sig"]]
-            else:
-                raise KeyError(
-                    f"{p_ci}: expected 'district' or {CLUSTER_COL!r} column, "
-                    f"got {list(ci_raw.columns)}"
-                )
-            d = d.merge(ci, on=CLUSTER_COL, how="left")
-        else:
-            d["sig"] = False
         frames.append(d)
+    if missing:
+        print(f"  [{variant}] no district CI csv for: {missing}")
     if not frames:
-        return []
+        raise FileNotFoundError(f"[{variant}] no {ci_prefix}_*_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv files in {out_dir}")
     dist_all = pd.concat(frames, ignore_index=True)
     dist_all[CLUSTER_COL] = dist_all[CLUSTER_COL].astype(str).str.strip().str.title()
 
@@ -1365,7 +1527,7 @@ def calculate_summary_statistics_by_indicator(fitted: list[str], out_dir: str = 
         row = {"indicator": ind, "label": _label(ind), "only_deficits": ONLY_DEFICITS}
 
         # ---- historical -------------------------------------------------
-        hist_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}.csv"
+        hist_path = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if os.path.exists(hist_path):
             hist = pd.read_csv(hist_path, parse_dates=["date"])
             b, a, pct = _agg_deficit(hist)
@@ -1448,7 +1610,7 @@ def calculate_summary_statistics_by_indicator(fitted: list[str], out_dir: str = 
         # For the CI we need the facility-level projection file (the
         # annual file is pre-pooled). It's written WITHOUT SUFFIX, so
         # apply the mask on read.
-        fac_path = f"{out_dir}projection_facility_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv"
+        fac_path = f"{out_dir}projection_facility_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if os.path.exists(fac_path):
             fut = pd.read_csv(fac_path)
             fut = fut[fut["year"].between(*window)]
@@ -1505,7 +1667,7 @@ def calculate_summary_statistics(fitted: list[str], out_dir: str = OUT_DIR) -> d
     # ---- pooled overall CI --------------------------------------------
     pool = []
     for ind in by_ind["indicator"]:
-        p = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}.csv"
+        p = f"{out_dir}historical_burden_{ind}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
         if os.path.exists(p):
             d = pd.read_csv(p, usecols=["facility", "mu_a", "mu_b"])
             d["indicator"] = ind
@@ -1963,73 +2125,69 @@ if __name__ == "__main__":
     results_df = load_results_df()
     fitted = list(results_df["indicator"])
 
-    print("\n[1] per-indicator exposure-response curves")
-    for ind in fitted:
-        try:
-            plot_exposure_response_curve(ind)
-        except FileNotFoundError as e:
-            print(f"  skip {ind}: {e}")
+    print("\n[0] time-series + ER two-panel per indicator")
+    plot_ts_overlay_with_wbgt_rug(fitted)
 
-    # print("\n[2] main forest plot")
-    # print("  ->", plot_main_forest(results_df))
-    #
-    # print("\n[4] IRR forest plot")
-    # print("  ->", plot_irr_forest(results_df))
-    #
+
+    print("\n[2] main forest plot")
+    print("  ->", plot_main_forest(results_df))
+
+    print("\n[4] IRR forest plot")
+    print("  ->", plot_irr_forest(results_df))
+
     print("\n[5] exposure-response panel")
     print("  ->", plot_exposure_response_panel(fitted))
-    #
-    # print("\n[6] monthly deficit panel")
-    # print("  ->", plot_monthly_deficit_panel(fitted))
-    #
-    # print("\n[7] timeseries burden panel")
-    # print("  ->", plot_timeseries_panel(fitted))
-    #
-    # print("\n[8] district choropleth maps")
-    # plot_district_maps(fitted, variant="per_district")
-    # plot_district_maps(fitted, variant="national")
-    # print("  ->", plot_timeseries_panel(fitted))
-    #
-    #
-    # print("\n[9] projection heatmaps")
-    # for p in plot_projection_heatmaps(fitted):
-    #     print("  ->", p)
-    #
-    # print("\n[11] district × indicator heatmap")
-    # print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
-    #
-    # print("\n[12] projection forest — aggregate and hot-month, multiple windows")
-    # for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
-    #     print(f"  aggregate {w[0]}-{w[1]}:",
-    #           plot_projection_forest(fitted, window=w, results_df=results_df))
-    #     print(f"  hot-months {w[0]}-{w[1]}:",
-    #           plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
-    #                                  results_df=results_df))
-    #
-    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    # print("  aggregate ->",
-    #       plot_projection_annual_panel(fitted, results_df=results_df))
-    # print("  hot-months ->",
-    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-    #                                    results_df=results_df))
-    #
-    # print("\n[14] seasonal amplification (SSP245 / median)")
-    # print("  ->", plot_seasonal_amplification(fitted))
-    #
-    # print("\n[15] Summary statistics by indicator")
-    # by_ind = calculate_summary_statistics_by_indicator(fitted)
-    # print("  ->", by_ind.shape, "rows written")
-    #
-    # print("\n[16] Summary statistics rollup")
-    # stats = calculate_summary_statistics(fitted)
-    # print_summary_statistics(stats, by_ind)
-    # print("\nDone.")
-    #
-    # print("\n[17] 1940s reference-period contrast")
-    # print("  ->", plot_reference_period_contrast(fitted))
-    #
-    # print("\n[18] spline df stability panel")
-    # print("  ->", plot_df_stability_panel(fitted))
+
+    print("\n[6] monthly deficit panel")
+    print("  ->", plot_monthly_deficit_panel(fitted))
+
+    print("\n[7] timeseries burden panel")
+    print("  ->", plot_timeseries_panel(fitted))
+
+    print("\n[8] district choropleth maps")
+    print("  ->", plot_district_maps(fitted, variant="per_district"))
+    print("  ->", plot_district_maps(fitted, variant="national"))
+
+
+    print("\n[9] projection heatmaps")
+    for p in plot_projection_heatmaps(fitted):
+        print("  ->", p)
+
+    print("\n[11] district × indicator heatmap")
+    print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
+
+    print("\n[12] projection forest — aggregate and hot-month, multiple windows")
+    for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
+        print(f"  aggregate {w[0]}-{w[1]}:",
+              plot_projection_forest(fitted, window=w, results_df=results_df))
+        print(f"  hot-months {w[0]}-{w[1]}:",
+              plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
+                                     results_df=results_df))
+
+    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    print("  aggregate ->",
+          plot_projection_annual_panel(fitted, results_df=results_df))
+    print("  hot-months ->",
+          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+                                       results_df=results_df))
+
+    print("\n[14] seasonal amplification (SSP245 / median)")
+    print("  ->", plot_seasonal_amplification(fitted))
+
+    print("\n[15] Summary statistics by indicator")
+    by_ind = calculate_summary_statistics_by_indicator(fitted)
+    print("  ->", by_ind.shape, "rows written")
+
+    print("\n[16] Summary statistics rollup")
+    stats = calculate_summary_statistics(fitted)
+    print_summary_statistics(stats, by_ind)
+    print("\nDone.")
+
+    print("\n[17] 1940s reference-period contrast")
+    print("  ->", plot_reference_period_contrast(fitted))
+
+    print("\n[18] spline df stability panel")
+    print("  ->", plot_df_stability_panel(fitted))
 
     print("\n[19] spline df stability panel")
     print("  ->", plot_displacement_empirical_panel(fitted))
