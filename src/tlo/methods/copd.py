@@ -271,11 +271,18 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         * Otherwise --> just give inhaler.
         """
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-            # Give inhaler if patient does not already have one
+            # Schedule an HSI event to Give inhaler if patient does not already have one
             if not individual_properties["ch_has_inhaler"] and consumables_checker(
                 {self.item_codes["bronchodilater_inhaler"]: 1}
             ):
-                individual_properties["ch_has_inhaler"] = True
+                event = HSI_Copd_InhalerDispensation(
+                    module=self, person_id=person_id
+                )
+                schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+
+                #individual_properties["ch_has_inhaler"] = True
 
             # Schedule moderate COPD treatment for moderate cases (to handle equipment)
             if "breathless_moderate" in symptoms:
@@ -617,6 +624,24 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 cause=f'COPD_cat{person.ch_lungfunction}',
                 originating_module=self.module,
             )
+
+class HSI_Copd_InhalerDispensation(HSI_Event, IndividualScopeEventMixin):
+    """HSI event for dispensing inhalers to indivduals without one
+    Inhaler availability has been checked before scheduling this event"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "Copd_Treatment"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+
+    def apply(self, person_id, squeeze_factor):
+        with self.sim.population.individual_properties(person_id, read_only=False) as individual_properties:
+            if not individual_properties['is_alive']:
+                return self.make_appt_footprint({})
+            else:
+                individual_properties["ch_has_inhaler"] = True
+
 
 
 class HSI_Copd_TreatmentOnModerateExacerbation(HSI_Event, IndividualScopeEventMixin):
