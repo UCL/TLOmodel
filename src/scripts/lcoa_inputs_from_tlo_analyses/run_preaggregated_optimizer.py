@@ -94,6 +94,7 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
 
     return opt_df
 
+
 def _build_hr_constraints_from_results(results: dict[str, Any]) -> pd.DataFrame:
 
     capacity_constraints = _rename_hrh_map(results['annual_capacity_by_cadre'])

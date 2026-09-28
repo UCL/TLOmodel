@@ -517,10 +517,40 @@ def apply(
     ]]
 
     actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.reset_index(drop=True)
-    mask = actual_cost_by_cadre_and_level['year'] > 2025
+    # Excluding 2026 as some inpatient care extends into this year.
+    mask = actual_cost_by_cadre_and_level['year'] > 2026
     # Now combine with input_costs
     input_costs = input_costs[input_costs['cost_category'] != 'human resources for health']
     input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level[mask]])
+
+    # Eligibility is shared across runs: any non-first-attendance activity in
+    # any run disqualifies the entire draw/year. Require some delivered activity.
+    print("Checking draw/year combinations with only FirstAttendance_* activity from 2027 onward...")
+    nonzero_hsis_by_draw = counts_of_hsi_by_period.ne(0).T.groupby(level='draw').any().T
+    first_attendance_rows = nonzero_hsis_by_draw.index.get_level_values('appt_type').str.startswith(
+        'FirstAttendance_'
+    )
+    any_activity = nonzero_hsis_by_draw.groupby(level='period').any()
+    other_activity = nonzero_hsis_by_draw.loc[~first_attendance_rows].groupby(level='period').any()
+    other_activity = other_activity.reindex(index=any_activity.index, columns=any_activity.columns, fill_value=False)
+    eligible_draw_years = any_activity & ~other_activity
+    eligible_draw_years.index = eligible_draw_years.index.astype(int).rename('year')
+    eligible_draw_years = eligible_draw_years.loc[eligible_draw_years.index >= 2027]
+    eligible_pairs = eligible_draw_years.stack()
+    eligible_pairs = eligible_pairs[eligible_pairs].index.reorder_levels(['draw', 'year'])
+    cost_draw_years = pd.MultiIndex.from_frame(input_costs_with_proportional_hrh_costs[['draw', 'year']])
+    zero_salary_mask = (
+        cost_draw_years.isin(eligible_pairs)
+        & input_costs_with_proportional_hrh_costs['cost_subcategory'].eq('salary_for_cadres_used')
+        & input_costs_with_proportional_hrh_costs['cost_category'].eq('human resources for health')
+    )
+    salary_cost_removed = input_costs_with_proportional_hrh_costs.loc[zero_salary_mask, 'cost'].sum()
+    input_costs_with_proportional_hrh_costs.loc[zero_salary_mask, 'cost'] = 0.0
+    print(f"Eligible draw/year combinations: {list(eligible_pairs)}")
+    print(
+        f"Zeroed {zero_salary_mask.sum()} salary rows across all runs; "
+        f"removed {salary_cost_removed:,.2f} in salary costs. Years through 2026 and other costs are unchanged."
+    )
 
     # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
     annual_cons_cost = input_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
@@ -548,7 +578,6 @@ def apply(
                 total_input_cost,
                 comparison='Nothing',)
         ))
-
         incremental_scenario_cost = (
             incremental_scenario_cost.T.reorder_levels(["draw", "run"], axis=1).sort_index(axis=1)
         )
