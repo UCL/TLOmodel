@@ -183,6 +183,43 @@ def test_exacerbations():
     assert 1 < len(_exacerbation_events), f'not all events have been scheduled {_exacerbation_events}'
 
 
+def test_inhaler_dispensation_at_first_appointment(treatment_allowed, monkeypatch):
+    """First attendance provides an inhaler when COPD treatment is allowed."""
+    sim = get_simulation(10)
+    hs = sim.modules['HealthSystem']
+    module = sim.modules['Copd']
+    person_id = 0
+    df = sim.population.props
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'age_years'] = module.parameters['min_age_first_appt'] + 1
+    df.at[person_id, 'ch_has_inhaler'] = False
+
+    hs.HSI_EVENT_QUEUE.clear()
+    hs.mode_appt_constraints = 1
+    hs.service_availability = ['FirstAttendance_NonEmergency', 'Copd_Treatment']
+
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=person_id, symptom_string='breathless_moderate',
+        add_or_remove='+', disease_module=module,
+    )
+
+    first_appt = hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id,
+    )
+
+    def unexpected_consumables(*args, **kwargs):
+        pytest.fail('Generic triage must not dispense the inhaler')
+
+    monkeypatch.setattr(first_appt, 'get_consumables', unexpected_consumables)
+    hs.schedule_hsi_event(first_appt, topen=sim.date, priority=0)
+    assert not df.at[person_id, 'ch_has_inhaler']
+
+    # Use the real scheduler so treatment-ID restrictions apply to follow-up HSIs.
+    healthsystem.HealthSystemScheduler(hs).apply(sim.population)
+
+    assert df.at[person_id, 'ch_has_inhaler'] == treatment_allowed
+
+
 def test_moderate_exacerbation():
     """ test moderate exacerbation leads to;
           i) moderate symptoms
