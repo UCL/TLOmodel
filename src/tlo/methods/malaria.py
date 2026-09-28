@@ -879,7 +879,12 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             bool(set(symptoms) & malaria_associated_symptoms)
             and individual_properties["ma_tx"] == "none"
         ):
-            event = HSI_Malaria_FirstAppointment_rdt(self, person_id, facility_level)
+            event = HSI_Malaria_FirstAppointment_rdt(
+               module=self,
+               person_id=person_id,
+               symptoms=symptoms,
+               facility_level=facility_level,
+            )
             schedule_hsi_event(
                 event, topen=self.sim.date, priority=0
             )
@@ -1082,12 +1087,22 @@ class HSI_Malaria_FirstAppointment_rdt(HSI_Event, IndividualScopeEventMixin):
         self.symptoms = list(symptoms)  # Symptoms at the time of referral.
         self.ACCEPTED_FACILITY_LEVEL = facility_level
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        malaria_test_result = self.check_if_fever_is_caused_by_malaria(
+
+        def diagnosis_function(test_name):
+            return hs.dx_manager.run_dx_test(
+                dx_tests_to_run=test_name,
+                hsi_event=self,
+            )
+
+        if not df.at[person_id, "is_alive"] or df.at[person_id, "ma_tx"] != "none":
+            return self.make_appt_footprint({})
+
+        malaria_test_result = self.module.check_if_fever_is_caused_by_malaria(
             true_malaria_infection_type=df.at[person_id, "ma_inf_type"],
-            diagnosis_function=hs.dx_manager.run_dx_test('malaria_rdt', self),
+            diagnosis_function=diagnosis_function,
             person_id=person_id,
             fever_is_a_symptom="fever" in self.symptoms,
             patient_age=df.at[person_id,"age_years"],
@@ -1097,7 +1112,7 @@ class HSI_Malaria_FirstAppointment_rdt(HSI_Event, IndividualScopeEventMixin):
         # Treat / refer based on diagnosis
         if malaria_test_result == "severe_malaria":
             df.at[person_id,"ma_dx_counter"] += 1
-            event = HSI_Malaria_Treatment_Complicated(person_id=person_id, module=self)
+            event = HSI_Malaria_Treatment_Complicated(person_id=person_id, module=self.module)
             hs.schedule_hsi_event(
                 event, priority=0, topen=self.sim.date
             )
@@ -1105,7 +1120,7 @@ class HSI_Malaria_FirstAppointment_rdt(HSI_Event, IndividualScopeEventMixin):
             # return type 'clinical_malaria' includes asymptomatic infection
         elif malaria_test_result == "clinical_malaria":
             df.at[person_id,"ma_dx_counter"] += 1
-            event = HSI_Malaria_Treatment(person_id=person_id, module=self)
+            event = HSI_Malaria_Treatment(person_id=person_id, module=self.module)
             hs.schedule_hsi_event(
                 event, priority=1, topen=self.sim.date
             )
