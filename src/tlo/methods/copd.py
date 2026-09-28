@@ -264,6 +264,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         symptoms: List[str],
         schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
+        facility_level: str,
     ):
         """What to do when a person presents at the generic first appt HSI
         with a symptom of `breathless_severe` or `breathless_moderate`.
@@ -272,17 +273,13 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         """
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
             # Schedule an HSI event to Give inhaler if patient does not already have one
-            if not individual_properties["ch_has_inhaler"] and consumables_checker(
-                {self.item_codes["bronchodilater_inhaler"]: 1}
-            ):
+            if not individual_properties["ch_has_inhaler"]:
                 event = HSI_Copd_InhalerDispensation(
-                    module=self, person_id=person_id
+                    module=self, person_id=person_id, facility_level=facility_level
                 )
                 schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-
-                #individual_properties["ch_has_inhaler"] = True
 
             # Schedule moderate COPD treatment for moderate cases (to handle equipment)
             if "breathless_moderate" in symptoms:
@@ -308,6 +305,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         symptoms: List[str],
         schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
+        facility_level: str,
         **kwargs,
     ) -> None:
         # Non-emergency appointments are only forwarded if
@@ -320,6 +318,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
                 symptoms=symptoms,
                 schedule_hsi_event=schedule_hsi_event,
                 consumables_checker=consumables_checker,
+                facility_level=facility_level,
             )
 
     def do_at_generic_first_appt_emergency(
@@ -329,6 +328,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         symptoms: List[str],
         schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
+        facility_level: str,
         **kwargs,
     ) -> None:
         return self._common_first_appt(
@@ -337,6 +337,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
             symptoms=symptoms,
             schedule_hsi_event=schedule_hsi_event,
             consumables_checker=consumables_checker,
+            facility_level=facility_level,
         )
 
 
@@ -627,12 +628,13 @@ class CopdDeath(Event, IndividualScopeEventMixin):
 
 class HSI_Copd_InhalerDispensation(HSI_Event, IndividualScopeEventMixin):
     """HSI event for dispensing inhalers to indivduals without one
-    Inhaler availability has been checked before scheduling this event"""
+    first checking if inhlaer is available."""
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level: str):
         super().__init__(module, person_id=person_id)
-
+        # There is only treatment ID for COPD;
         self.TREATMENT_ID = "Copd_Treatment"
+        self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
 
     def apply(self, person_id, squeeze_factor):
@@ -640,7 +642,10 @@ class HSI_Copd_InhalerDispensation(HSI_Event, IndividualScopeEventMixin):
             if not individual_properties['is_alive']:
                 return self.make_appt_footprint({})
             else:
-                individual_properties["ch_has_inhaler"] = True
+                if not individual_properties["ch_has_inhaler"] and self.get_consumables(
+                    {self.module.item_codes["bronchodilater_inhaler"]: 1}
+                ):
+                    individual_properties["ch_has_inhaler"] = True
 
 
 
