@@ -26,6 +26,8 @@ WBGT_SCENARIOS =  ["ssp126", "ssp245", "ssp585"]
 WBGT_FILE_PREFIX = "wbgt_daynight_"
 
 WBGT_VARS = ["wbgt_day", "wbgt_night"]
+EXTREME_VARS = ["wbgtx_day", "wbgtx_night", "wbgt5x_day", "wbgt5x_night"]
+LAG_MONTHS = [1, 2, 3, 4, 9]
 PRECIP_VARS = ["precip_month", "precip_5day"]
 PRECIP_FILE_PREFIX = "precip_monthly_"
 ALL_VARS = WBGT_VARS + PRECIP_VARS
@@ -227,17 +229,52 @@ for WBGT_SCENARIO in WBGT_SCENARIOS:
         monthly = {}
 
         # daily WBGT -> monthly mean
+
+        for var in WBGT_VARS:
+            bracket = var.split("_")[-1]  # "day" or "night"
+            arr = ds[var].values
+            series = arr[:, iy, ix].astype(float)
+            if far.any():
+                series[:, far] = np.nan
+            daily_df = pd.DataFrame(series, index=date_keys, columns=facility_names)
+
+            monthly[f"wbgtx_{bracket}"] = daily_df.groupby(level=0).max()
+            monthly[f"wbgt5x_{bracket}"] = daily_df.groupby(level=0).apply(
+                lambda m: m.rolling(5, min_periods=5).mean().max()
+            )
+            for j, fac in enumerate(facility_names):
+                avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
+
+        # ---- Monthly extreme indices from the same daily WBGT arrays ----
+        # WBGTx = monthly max of daily WBGT
+        # WBGT5x = monthly max of within-month 5-day rolling mean
+        monthly = {}
+
+        # daily WBGT -> monthly mean (populates monthly["wbgt_day"], monthly["wbgt_night"])
         for var in WBGT_VARS:
             arr = ds[var].values
             series = arr[:, iy, ix].astype(float)
             if far.any():
                 series[:, far] = np.nan
             daily_df = pd.DataFrame(series, index=date_keys, columns=facility_names)
-            monthly[var] = daily_df.groupby(level=0).mean()
+            monthly[var] = daily_df.groupby(level=0).mean()          # <-- this line must exist
             for j, fac in enumerate(facility_names):
                 avg_wbgt_accum[var][fac].append(np.nanmean(series[:, j]))
 
-        # monthly precip — already monthly, no groupby
+        # Extreme indices (populates monthly["wbgtx_day"], monthly["wbgt5x_day"], etc.)
+        for var in WBGT_VARS:
+            bracket = var.split("_")[-1]
+            arr = ds[var].values
+            series = arr[:, iy, ix].astype(float)
+            if far.any():
+                series[:, far] = np.nan
+            daily_df = pd.DataFrame(series, index=date_keys, columns=facility_names)
+            monthly[f"wbgtx_{bracket}"] = daily_df.groupby(level=0).max()
+            monthly[f"wbgt5x_{bracket}"] = daily_df.groupby(level=0).apply(
+                lambda m: m.rolling(5, min_periods=5).mean().max()
+            )
+
+        # THEN the precip block (uses wbgt_month_index from monthly["wbgt_day"])
         wbgt_month_index = monthly[WBGT_VARS[0]].index
         if ds_pr.sizes[WBGT_TIME_COORD] != len(wbgt_month_index):
             raise AssertionError(
@@ -256,30 +293,54 @@ for WBGT_SCENARIO in WBGT_SCENARIOS:
 
         ds.close()
         ds_pr.close()
-
-        # assemble long: facility, date, wbgt_day, wbgt_night, precip_month, precip_5day
+        # assemble long: facility, date, and the requested variable set
         dates = (pd.PeriodIndex(monthly[WBGT_VARS[0]].index, freq="M")
                  .to_timestamp(how="end").normalize())
-        parts = []
-        for var in ALL_VARS:
-            mv = monthly[var].copy()
-            mv.index = dates
-            mv.index.name = "date"
-            parts.append(mv.reset_index().melt(id_vars="date",
-                                               var_name="facility", value_name=var))
-        wbgt_df = parts[0]
-        for p in parts[1:]:
-            wbgt_df = wbgt_df.merge(p, on=["date", "facility"])
-        wbgt_df = (wbgt_df[["facility", "date"] + ALL_VARS]
-                   .sort_values(["facility", "date"]).reset_index(drop=True))
-        if wbgt_df.duplicated(["facility", "date"]).any():
-            raise RuntimeError(f"{path.name}: duplicate facility-month rows")
 
-        out = os.path.join(OUTPUT_DIR,
-                           f"wbgt_monthly_mean_facility_{model_id}_{WBGT_SCENARIO}.csv")
-        wbgt_df.to_csv(out, index=False)
-        print(f"  {wbgt_df['facility'].nunique()} facilities x "
-              f"{wbgt_df['date'].nunique()} months -> {Path(out).name}")
+        def _long_frame(var_list):
+            parts = []
+            for var in var_list:
+                mv = monthly[var].copy()
+                mv.index = dates
+                mv.index.name = "date"
+                parts.append(mv.reset_index().melt(id_vars="date",
+                                                   var_name="facility", value_name=var))
+            df = parts[0]
+            for p in parts[1:]:
+                df = df.merge(p, on=["date", "facility"])
+            df = (df[["facility", "date"] + var_list]
+                  .sort_values(["facility", "date"]).reset_index(drop=True))
+            if df.duplicated(["facility", "date"]).any():
+                raise RuntimeError(f"{path.name}: duplicate facility-month rows")
+            return df
+
+        # ---- Mean file: monthly-mean WBGT + precip ----
+        mean_vars = WBGT_VARS + PRECIP_VARS
+        mean_df = _long_frame(mean_vars)
+        out_mean = os.path.join(
+            OUTPUT_DIR,
+            f"wbgt_monthly_mean_facility_{model_id}_{WBGT_SCENARIO}.csv",
+        )
+        mean_df.to_csv(out_mean, index=False)
+        print(f"  MEAN    {mean_df['facility'].nunique()} facilities x "
+              f"{mean_df['date'].nunique()} months -> {Path(out_mean).name}")
+
+        # ---- Extreme file: WBGTx / WBGT5x + precip + lags ----
+        extreme_base_vars = EXTREME_VARS + PRECIP_VARS
+        extreme_df = _long_frame(extreme_base_vars)
+        # Add lags per facility for the extreme indices
+        for col in EXTREME_VARS:
+            for lag in LAG_MONTHS:
+                extreme_df[f"{col}_lag{lag}"] = (
+                    extreme_df.groupby("facility")[col].shift(lag)
+                )
+        out_extreme = os.path.join(
+            OUTPUT_DIR,
+            f"wbgt_extreme_indices_facility_{model_id}_{WBGT_SCENARIO}.csv",
+        )
+        extreme_df.to_csv(out_extreme, index=False)
+        print(f"  EXTREME {extreme_df['facility'].nunique()} facilities x "
+              f"{extreme_df['date'].nunique()} months -> {Path(out_extreme).name}")
 
 # ---------------------------------------------------------------------------
 # Covariate table (once)

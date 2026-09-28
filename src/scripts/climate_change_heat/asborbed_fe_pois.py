@@ -35,21 +35,15 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import warnings
 from multiprocessing import Pool, cpu_count
-from functools import partial
 import time
 from pathlib import Path
+from scipy.stats import norm
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import patsy
-import scipy.stats as stats
-import scipy.sparse as sp
+
 import pyfixest as pf
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-from scipy.optimize import minimize_scalar
 
 warnings.filterwarnings("ignore", category=UserWarning)
 numpy.random.seed(42)
@@ -166,9 +160,10 @@ SUPPORT_HIGH_PCTILE = 99.99
 
 # Model settings
 WBGT_VAR = "wbgt5x_day" #"wbgt_day"#"wbgt5x_day"
+DISTRICT_COL = "Dist"
 SPLINE_DF = 3
 LAG_MONTHS = [1]
-SA_LAG = False
+SA_LAG = True
 if SA_LAG:
     LAG_SUFFIX = "_with_lags"
 else:
@@ -426,7 +421,33 @@ def _monthly_jackknife_ci_local(mu_a, mu_b, facility_ids):
     se = np.sqrt((n - 1) / n * np.sum((jack - jack.mean()) ** 2))
     return pt, pt - 1.96 * se, pt + 1.96 * se
 
-
+def _write_district_outputs(hb, prefix, ci_prefix, indicator, df_tag=""):
+    """District point estimates + leave-one-facility-out CIs.
+    Writes {prefix}_… (district, deficit_pct) and {ci_prefix}_… (full table)."""
+    agg = _apply_deficit_filter(hb, "mu_b", "mu_a")
+    if agg.empty:
+        raise ValueError(f"[{indicator}] {prefix}: no rows to aggregate")
+    rows = []
+    for dist, sub in agg.groupby(DISTRICT_COL):
+        pt, lo, hi = _monthly_jackknife_ci_local(
+            sub["mu_a"].values, sub["mu_b"].values, sub["facility"].values
+        )
+        rows.append({
+            "district": dist,
+            "deficit_pct": pt,
+            "ci_lo": lo,
+            "ci_hi": hi,
+            "sig": bool(pd.notna(lo) and pd.notna(hi) and lo * hi > 0),
+            "n_rows": len(sub),
+            "n_facilities": sub["facility"].nunique(),
+        })
+    out = pd.DataFrame(rows)
+    stem = f"{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}{df_tag}.csv"
+    out.rename(columns={"district": DISTRICT_COL})[[DISTRICT_COL, "deficit_pct"]].to_csv(
+        f"{OUT_DIR}{prefix}_{stem}", index=False
+    )
+    out.to_csv(f"{OUT_DIR}{ci_prefix}_{stem}", index=False)
+    return out
 # ===========================================================================
 # Poisson QMLE with absorbed fixed effects (pyfixest)
 # ===========================================================================
@@ -737,6 +758,9 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     if CLUSTER_COL not in long.columns:
         print(f"  [{indicator}] Missing {CLUSTER_COL} in panel")
         return None
+    if DISTRICT_COL not in long.columns:
+        print(f"  [{indicator}] Missing {DISTRICT_COL} in panel")
+        return None
 
     for fac, d0, d1 in CLOSURES:
         m = (long["date"].between(d0, d1)) & (long["facility"] == fac)
@@ -945,49 +969,26 @@ def fit_indicator(indicator, panel_path, spline_df=None):
             "facility": nb_data["facility"].values,
             "month": nb_data["month"].values,
             CLUSTER_COL: nb_data[CLUSTER_COL].values,
+            DISTRICT_COL: nb_data[DISTRICT_COL].values,
+            WBGT_VAR: nb_data[WBGT_VAR].values,
             "y_int": nb_data["y_int"].values,
             "mu_a": nb_data["y_pred_wx"].values,
             "mu_b": nb_data["y_pred_base"].values,
         }
     )
-    hb.to_csv(
-        f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}.csv",
-        index=False,
-    )
+    hb.to_csv(f"{OUT_DIR}historical_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}{_df_tag}.csv", index=False)
 
-    hb_for_agg = _apply_deficit_filter(hb, "mu_b", "mu_a")
-    district_agg = hb_for_agg.groupby(CLUSTER_COL)[["mu_a", "mu_b"]].sum().reset_index()
-    district_agg["deficit_pct"] = np.where(
-        district_agg["mu_b"] > 0,
-        100.0 * (district_agg["mu_b"] - district_agg["mu_a"]) / district_agg["mu_b"],
-        np.nan,
-    )
-    district_agg[[CLUSTER_COL, "deficit_pct"]].to_csv(
-        f"{OUT_DIR}district_burden_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
-        index=False,
-    )
+    # National map / heatmap (unchanged estimand: all months)
+    _write_district_outputs(hb, "district_burden", "district_burden_ci", indicator, _df_tag)
 
-    dist_rows = []
-    for dist, sub in hb_for_agg.groupby(CLUSTER_COL):
-        pt, lo, hi = _monthly_jackknife_ci_local(
-            sub["mu_a"].values,
-            sub["mu_b"].values,
-            # sub["facility"].values,
-            sub[CLUSTER_COL].values,
-        )
-        sig = bool(pd.notna(lo) and pd.notna(hi) and (lo * hi > 0))
-        dist_rows.append(
-            {
-                "district": dist,
-                "deficit_pct": pt,
-                "ci_lo": lo,
-                "ci_hi": hi,
-                "sig": sig,
-            }
-        )
-    pd.DataFrame(dist_rows).to_csv(
-        f"{OUT_DIR}district_burden_ci_{indicator}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
-        index=False,
+    # Per-district p95: hot rows defined by each district's own WBGT distribution
+    dist_p95 = hb.groupby(DISTRICT_COL)[WBGT_VAR].transform(
+        lambda s: s.quantile(REFERENCE_WBGT_PERCENTILE / 100)
+    )
+    _write_district_outputs(
+        hb[hb[WBGT_VAR] > dist_p95],
+        "district_burden_per_district", "district_burden_ci_per_district",
+        indicator, _df_tag,
     )
     n_bins = 10
     edges = np.linspace(
@@ -1131,7 +1132,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         "_model_wx": model_wx,
         "_model_base": model_base,
         "_fac_meta": (
-            nb_data[list(dict.fromkeys(["facility", CLUSTER_COL, ZONE_COL]))].drop_duplicates().reset_index(drop=True)
+            nb_data[list(dict.fromkeys(["facility", CLUSTER_COL, DISTRICT_COL, ZONE_COL]))].drop_duplicates().reset_index(drop=True)
         ),
         "_wbgt_support": WBGT_SUPPORT,
         "_nb_rows": nb_data[["facility", "date"]].copy(),
@@ -1296,7 +1297,19 @@ if __name__ == "__main__":
     summary_df["qval"] = qvals
     summary_df["sig"] = rej
     summary_df = summary_df.sort_values("hot_deficit_pct", na_position="last")
+    hot_pval = np.full(len(summary_df), np.nan)
+    mask = (
+        summary_df["hot_se_jackknife"].notna()
+        & summary_df["hot_deficit_pct"].notna()
+        & (summary_df["hot_se_jackknife"] > 0)
+    )
+    z = (summary_df.loc[mask, "hot_deficit_pct"] / summary_df.loc[mask, "hot_se_jackknife"]).astype(float).values
+    hot_pval[mask.values] = 2.0 * (1.0 - norm.cdf(np.abs(z)))
+    summary_df["hot_pval"] = hot_pval
 
+    hot_qvals, hot_rej = _bh_fdr(hot_pval, FDR_ALPHA)
+    summary_df["hot_qval"] = hot_qvals
+    summary_df["hot_sig"] = hot_rej
     summary_df.to_csv(
         f"{OUT_DIR}two_model_deficit_results_NB_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv",
         index=False,
@@ -1320,7 +1333,7 @@ if __name__ == "__main__":
             for r in results
         ]
     )
-    irr_df.to_csv(f"{OUT_DIR}irr_contrast_{WBGT_VAR}.csv", index=False)
+    irr_df.to_csv(f"{OUT_DIR}irr_contrast_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv", index=False)
     curve_paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
     if curve_paths:
         pd.concat([pd.read_csv(p) for p in curve_paths], ignore_index=True).to_csv(
@@ -1336,9 +1349,10 @@ if __name__ == "__main__":
         print(f"\nForward projections ({min_year_projection}–{max_year_projection}) ...")
         PROJECTION_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices"
         if WBGT_VAR == "wbgt_day":
-            WBGT_PROJ_FILE_TPL = "wbgt_monthly_mean_facility_{tier}_{ssp}.csv"
+            WBGT_PROJ_FILE_TPL = "wbgt_monthly_mean_facility_{tier}_{ssp}.csv"  # Contains precip column
+
         elif WBGT_VAR == "wbgt5x_day":
-            WBGT_PROJ_FILE_TPL = "wbgt_extreme_indices_facility_{tier}_{ssp}.csv"
+            WBGT_PROJ_FILE_TPL = "wbgt_extreme_indices_facility_{tier}_{ssp}.csv" # Contains precip column
         else:
             raise ValueError(f"Unknown WBGT_VAR for projection: {WBGT_VAR}")
 
@@ -1380,21 +1394,6 @@ if __name__ == "__main__":
             drop = [c for c in clim.columns if (c.startswith(("wbgtx_", "wbgt5x_")) and c != WBGT_VAR) or c == "model"]
             if drop:
                 clim = clim.drop(columns=drop)
-
-            # Precip lives in a separate producer output — merge it in
-            precip_path = os.path.join(PROJECTION_DIR, PRECIP_FILE_BY_TIER[tier].format(ssp=ssp))
-            if not os.path.exists(precip_path):
-                return None, [precip_path]
-            precip_long = _load_precip_wide(precip_path, PRECIP_COL)
-            if precip_long is None:
-                return None, [precip_path]
-            precip_long["facility"] = precip_long["facility"].astype(str).str.strip()
-            clim = clim.merge(precip_long, on=["facility", "date"], how="left")
-            if clim[PRECIP_COL].isna().all():
-                raise ValueError(
-                    f"Precip merge for {ssp}/{tier} all-NaN — check facility name conventions "
-                    f"between {wbgt_path} and {precip_path}"
-                )
 
             clim = clim.sort_values(["facility", "date"]).reset_index(drop=True)
             for k in LAG_MONTHS:
@@ -1540,7 +1539,7 @@ if __name__ == "__main__":
                             "Deficit_Pct",
                         ]
                     ].to_csv(
-                        f"{OUT_DIR}projection_facility_{ind}_{ssp}_{tier}_{WBGT_VAR}.csv",
+                        f"{OUT_DIR}projection_facility_{ind}_{ssp}_{tier}_{WBGT_VAR}{LAG_SUFFIX}.csv",
                         index=False,
                     )
 
@@ -1697,11 +1696,6 @@ if __name__ == "__main__":
             )
             print(f"Annual pooled → {OUT_DIR}projection_annual_all_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
 
-    # ===========================================================================
-    # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
-    # ===========================================================================
-    # ===========================================================================
-    # COUNTERFACTUAL: 1940-1948 ERA5 climate ("if warming hadn't continued")
     # ===========================================================================
     # ===========================================================================
     # COUNTERFACTUAL: peri-industrial ERA5 climate ("warming attribution")
