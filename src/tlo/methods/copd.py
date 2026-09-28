@@ -272,10 +272,11 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         * Otherwise --> just give inhaler.
         """
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-            # Schedule an HSI event to Give inhaler if patient does not already have one
+            # Schedule an HSI event to give inhaler if patient does not already have one
             if not individual_properties["ch_has_inhaler"]:
                 event = HSI_Copd_InhalerDispensation(
-                    module=self, person_id=person_id, facility_level=facility_level
+                    module=self, person_id=person_id,
+                    facility_level=facility_level
                 )
                 schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
@@ -638,14 +639,12 @@ class HSI_Copd_InhalerDispensation(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
 
     def apply(self, person_id, squeeze_factor):
-        with self.sim.population.individual_properties(person_id, read_only=False) as individual_properties:
-            if not individual_properties['is_alive']:
-                return self.make_appt_footprint({})
-            else:
-                if not individual_properties["ch_has_inhaler"] and self.get_consumables(
-                    {self.module.item_codes["bronchodilater_inhaler"]: 1}
-                ):
-                    individual_properties["ch_has_inhaler"] = True
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return self.make_appt_footprint({})
+        else:
+            if (not df.at[person_id, "ch_has_inhaler"]) and self.get_consumables({self.module.item_codes["bronchodilater_inhaler"]: 1}):
+                df.at[person_id, "ch_has_inhaler"] = True
 
 
 
