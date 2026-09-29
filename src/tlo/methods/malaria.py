@@ -1084,7 +1084,8 @@ class HSI_Malaria_FirstAppointment_rdt(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Malaria_Test'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.symptoms = list(symptoms)  # Symptoms at the time of referral.
+        # Documentation introspection supplies None for runtime-only arguments.
+        self.symptoms = list(symptoms) if symptoms is not None else []
         self.ACCEPTED_FACILITY_LEVEL = facility_level
 
     def apply(self, person_id, squeeze_factor):
