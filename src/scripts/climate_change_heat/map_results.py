@@ -1106,7 +1106,6 @@ SSP_LABELS = {
     "ssp585": "SSP5-8.5",
 }
 
-
 # =====================================================================
 # 12. PROJECTION FOREST — end-of-period % deficit per indicator × SSP
 # =====================================================================
@@ -1115,81 +1114,101 @@ def plot_projection_forest(
     out_dir: str = None,
     wbgt_var: str = None,
     window: tuple[int, int] = (2025, 2040),
-    hot_months: tuple[int, ...] | None = None,
+    mode: str = "overall",              # "overall" | "hot"
     results_df: pd.DataFrame | None = None,
 ) -> str:
     """End-of-period projection forest.
 
     One row per indicator. Three points per row (one per SSP, colour-coded),
     horizontally offset. Error bar = range across GCM tiers (lowest/median/
-    highest). This isn't a formal CI — it's the modelling uncertainty from
-    the climate ensemble, which is what actually dominates on this horizon.
+    highest) — modelling uncertainty from the climate ensemble.
 
-    When `hot_months` is None, reads projection_annual_{ind}_{ssp}_{tier}...csv
-    and aggregates mu_a/mu_b over the window. When `hot_months` is a set of
-    calendar months, reads projection_monthly_{ind}_{ssp}_{tier}...csv instead
-    and restricts to those months before aggregating — this is the projection
-    analogue of the historical hot-month deficit. Note the historical version
-    uses a per-indicator WBGT threshold, not calendar months; see HOT_MONTHS.
+    `mode="overall"` aggregates mu_a/mu_b over the window across all months
+    (reads projection_annual_*.csv).
 
-    If `results_df` is passed, the corresponding historical estimate (aggregate
-    or hot-month, depending on `hot_months`) is plotted as a grey anchor left
-    of the SSP points so the reader can see departure from the fitted baseline.
+    `mode="hot"` reads `hot_deficit_pct` from projection_summary_*.csv, which
+    is the deficit on future months whose projected WBGT exceeds the
+    HISTORICAL p95 (per-indicator). This matches the observed and CF hot
+    arms — apples to apples. The `window` is ignored in this mode because
+    the summary already covers the full projection period.
+
+    If `results_df` is passed, the corresponding historical estimate is
+    plotted as a grey diamond per indicator (aggregate or hot, matching
+    `mode`).
     """
-
     out_dir = out_dir or OUT_DIR
     wbgt_var = wbgt_var or WBGT_VAR
-    hot_set = set(hot_months) if hot_months else None
-    mode_suffix = "_hot" if hot_set else ""
-    mode_label = f"hot months {sorted(hot_set)}" if hot_set else "all months"
+    assert mode in {"overall", "hot"}
 
     rows = []
-    for ind in fitted:
-        for ssp in ["ssp126", "ssp245", "ssp585"]:
-            tier_vals = {}
-            for tier in ["lowest", "median", "highest"]:
-                if hot_set:
-                    p = f"{out_dir}projection_monthly_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
-                else:
-                    p = f"{out_dir}projection_annual_{ind}_{ssp}_{tier}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
-                if not os.path.exists(p):
+    if mode == "hot":
+        # Read the WBGT-threshold hot deficit directly from the summary
+        summary_path = f"{out_dir}projection_summary_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv"
+        if not os.path.exists(summary_path):
+            print(f"  projection summary missing at {summary_path} — skipping")
+            return ""
+        summ = pd.read_csv(summary_path)
+        if "hot_deficit_pct" not in summ.columns:
+            print("  hot_deficit_pct missing from projection summary — "
+                  "rerun projection with hot-mode edits")
+            return ""
+        for ind in fitted:
+            for ssp in ["ssp126", "ssp245", "ssp585"]:
+                tier_vals = {}
+                for tier in ["lowest", "median", "highest"]:
+                    r = summ[(summ["indicator"] == ind)
+                            & (summ["ssp"] == ssp)
+                            & (summ["tier"] == tier)]
+                    if r.empty:
+                        continue
+                    v = r["hot_deficit_pct"].iloc[0]
+                    if pd.notna(v):
+                        tier_vals[tier] = float(v)
+                if not tier_vals:
                     continue
-                df = pd.read_csv(p)
-                sel = df[df["year"].between(*window)]
-                if hot_set:
-                    sel = sel[sel["month"].isin(hot_set)]
-                if sel.empty:
-                    continue
-                # Volume-weighted mean deficit over the window: sum mu_a
-                # and mu_b, THEN compute pct. This is the same aggregation
-                # the historical figures use — averaging monthly percentages
-                # would weight low-service months equally.
-                tot_a = float(sel["mu_a"].sum())
-                tot_b = float(sel["mu_b"].sum())
-                if tot_b > 0:
-                    tier_vals[tier] = 100.0 * (tot_b - tot_a) / tot_b
-            if not tier_vals:
-                continue
-            vals = list(tier_vals.values())
-            rows.append(
-                {
-                    "indicator": ind,
-                    "ssp": ssp,
+                vals = list(tier_vals.values())
+                rows.append({
+                    "indicator": ind, "ssp": ssp,
                     "median": tier_vals.get("median", np.median(vals)),
-                    "lo": min(vals),
-                    "hi": max(vals),
+                    "lo": min(vals), "hi": max(vals),
                     "n_tiers": len(vals),
-                }
-            )
+                })
+    else:
+        # Overall — aggregate mu_a/mu_b over the window from annual files
+        for ind in fitted:
+            for ssp in ["ssp126", "ssp245", "ssp585"]:
+                tier_vals = {}
+                for tier in ["lowest", "median", "highest"]:
+                    p = (f"{out_dir}projection_annual_{ind}_{ssp}_{tier}_"
+                         f"{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv")
+                    if not os.path.exists(p):
+                        continue
+                    df = pd.read_csv(p)
+                    sel = df[df["year"].between(*window)]
+                    if sel.empty:
+                        continue
+                    tot_a = float(sel["mu_a"].sum())
+                    tot_b = float(sel["mu_b"].sum())
+                    if tot_b > 0:
+                        tier_vals[tier] = 100.0 * (tot_b - tot_a) / tot_b
+                if not tier_vals:
+                    continue
+                vals = list(tier_vals.values())
+                rows.append({
+                    "indicator": ind, "ssp": ssp,
+                    "median": tier_vals.get("median", np.median(vals)),
+                    "lo": min(vals), "hi": max(vals),
+                    "n_tiers": len(vals),
+                })
+
     if not rows:
         print("  no projection rows found for forest — skipping")
         return ""
 
     df = pd.DataFrame(rows)
 
-    # Sort indicators by SSP245 median (central scenario), descending —
-    # most-affected at the top.
-    ranker = df[df["ssp"] == "ssp245"].set_index("indicator")["median"].reindex(fitted).fillna(-np.inf)
+    ranker = (df[df["ssp"] == "ssp245"].set_index("indicator")["median"]
+                .reindex(fitted).fillna(-np.inf))
     ind_order = ranker.sort_values(ascending=True).index.tolist()
 
     y_pos = {ind: i for i, ind in enumerate(ind_order)}
@@ -1200,19 +1219,16 @@ def plot_projection_forest(
     for _, r in df.iterrows():
         y = y_pos[r["indicator"]] + ssp_offset[r["ssp"]]
         colour = SSP_COLOURS[r["ssp"]]
-        pt = r["median"]
         ax.plot([r["lo"], r["hi"]], [y, y], color=colour, lw=1.4, alpha=0.8)
-        ax.scatter(pt, y, color=colour, s=45, zorder=3, edgecolor="white", linewidth=0.6)
+        ax.scatter(r["median"], y, color=colour, s=45, zorder=3,
+                   edgecolor="white", linewidth=0.6)
 
-    # Historical anchor: plot the fitted-period estimate to the left as a grey
-    # point per indicator so the reader can see departure from baseline. Uses
-    # hot_deficit_pct/hot_ci_* when we're in hot-month mode, deficit_pct/ci_*
-    # otherwise.
+    # Historical anchor
     hist_plotted = False
     if results_df is not None:
-        pt_col = "hot_deficit_pct" if hot_set else "deficit_pct"
-        lo_col = "hot_ci_lo" if hot_set else "ci_lo"
-        hi_col = "hot_ci_hi" if hot_set else "ci_hi"
+        pt_col = "hot_deficit_pct" if mode == "hot" else "deficit_pct"
+        lo_col = "hot_ci_lo" if mode == "hot" else "ci_lo"
+        hi_col = "hot_ci_hi" if mode == "hot" else "ci_hi"
         if pt_col in results_df.columns:
             hist = results_df.set_index("indicator")
             for ind in ind_order:
@@ -1225,7 +1241,8 @@ def plot_projection_forest(
                 lo = hist.loc[ind, lo_col] if lo_col in hist.columns else np.nan
                 hi = hist.loc[ind, hi_col] if hi_col in hist.columns else np.nan
                 if pd.notna(lo) and pd.notna(hi):
-                    ax.plot([lo, hi], [y, y], color="#444444", lw=1.0, alpha=0.6, zorder=1)
+                    ax.plot([lo, hi], [y, y], color="#444444",
+                            lw=1.0, alpha=0.6, zorder=1)
                 ax.scatter(pt, y, color="#444444", s=35, marker="D", zorder=3,
                            edgecolor="white", linewidth=0.6)
             hist_plotted = True
@@ -1233,31 +1250,32 @@ def plot_projection_forest(
     ax.axvline(0, color="black", ls="--", lw=0.9)
     ax.set_yticks(list(y_pos.values()))
     ax.set_yticklabels([_label(i) for i in ind_order], fontsize=9)
-    ax.set_xlabel(
-        f"Projected % deficit, mean over {window[0]}–{window[1]} ({mode_label})",
-        fontsize=10,
-    )
+
+    if mode == "hot":
+        xlabel = ("Projected % difference where "
+                  "future WBGT > historical 95th percentile")
+    else:
+        xlabel = (f"Projected % deficit, mean over {window[0]}–{window[1]} "
+                  f"(all months)")
+    ax.set_xlabel(xlabel, fontsize=10)
     ax.grid(axis="x", ls=":", alpha=0.4)
 
     legend_handles = [mpatches.Patch(color=SSP_COLOURS[s], label=SSP_LABELS[s])
                       for s in ["ssp126", "ssp245", "ssp585"]]
     if hist_plotted:
-        legend_handles.append(mpatches.Patch(color="#444444", label="Historical (fitted)"))
+        legend_handles.append(mpatches.Patch(color="#444444",
+                                             label="Historical"))
     ax.legend(
-        handles=legend_handles,
-        loc="lower right",
-        fontsize=9,
-        frameon=False,
-        title="Error bars: range across 3 curated GCM tiers (not full ensemble)",
+        handles=legend_handles, loc="lower right", fontsize=9, frameon=False,
+        title="Scenario",
         title_fontsize=8,
     )
     plt.tight_layout()
-    out_path = f"{out_dir}projection_forest_{window[0]}_{window[1]}_{wbgt_var}{mode_suffix}.png"
+    suffix = "_hot" if mode == "hot" else ""
+    out_path = f"{out_dir}projection_forest_{window[0]}_{window[1]}_{wbgt_var}{suffix}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
-
-
 # =====================================================================
 # 13. PROJECTION ANNUAL TRAJECTORY PANEL
 # =====================================================================
@@ -1356,7 +1374,7 @@ def plot_projection_annual_panel(
             hi = r.get("hot_ci_hi" if hot_set else "ci_hi", np.nan)
             if pd.notna(pt):
                 ax.axhline(pt, color="#444444", lw=1.0, ls="-", alpha=0.7,
-                           label="Historical (fitted)")
+                           label="Historical")
                 if pd.notna(lo) and pd.notna(hi):
                     ax.axhspan(lo, hi, color="#444444", alpha=0.08, linewidth=0)
 
@@ -1390,7 +1408,7 @@ def plot_projection_annual_panel(
         ax.tick_params(labelsize=7)
         ax.grid(ls=":", alpha=0.3)
         if idx % nc == 0:
-            ax.set_ylabel("% deficit", fontsize=8)
+            ax.set_ylabel("% Difference", fontsize=8)
         if idx // nc == nr - 1:
             ax.set_xlabel("Year", fontsize=8)
         if idx == 0:
@@ -1401,7 +1419,7 @@ def plot_projection_annual_panel(
 
     if hot_set:
         fig.suptitle(
-            f"Projected annual deficit — hot months {sorted(hot_set)}",
+            f"Projected annual difference in appointments between M1 and M0.",
             fontsize=10, y=1.00,
         )
 
@@ -1811,13 +1829,10 @@ def print_summary_statistics(stats: dict, by_ind: pd.DataFrame):
 
 
 # =====================================================================
-# 17. 1940s REFERENCE-PERIOD CONTRAST
+# 17. 1940s REFERENCE-PERIOD CONTRAST vs OBSERVED
 # =====================================================================
-CF_LABEL = "ERA5_periindustrial_1941_1949"
-CF_COLOURS = {"reference": "#4a7298", "observed": "#823038"}
-
 CF_LABEL = "ERA5_periindustrial_1940_1949"
-CF_COLOURS = {"overall": "#4a7298", "hot": "#823038"}
+CF_COLOURS = {"observed": "#823038", "attributed": "#4a7298"}
 
 
 def plot_reference_period_contrast(
@@ -1825,125 +1840,148 @@ def plot_reference_period_contrast(
     out_dir: str = None,
     wbgt_var: str = None,
     cf_label: str = CF_LABEL,
+    observed_summary_name: str = "summary_hot_months_only.csv",   # <-- your main hot-month table
 ) -> str:
-    """Two-panel forest of the warming attribution:
-      (a) Overall: fraction of expected services lost to the 1941-49 -> 2016-24
-          WBGT shift, holding exposure-response, baseline demand, facilities
-          and secular trend fixed.
-      (b) Hot months: same quantity restricted to rows where observed WBGT
-          exceeds the historical p95.
+    """Warming attribution set against what actually happened.
 
-    Both are within-sample: two predictions on the historical panel, one
-    with observed WBGT, one with CF WBGT. Positive = warming cost services.
+    Panel (a): per indicator, two markers on one row --
+        * observed hot-month deficit (from the main model summary)
+        * hot-month deficit attributable to the 1940s -> 2016-24 warming shift
+          (from the counterfactual summary)
+      The gap between them is the share of the observed deficit NOT explained
+      by long-run warming (i.e., attributable to variability, non-heat drivers,
+      or the residual exposure-response beyond the periindustrial contrast).
 
-    A side panel shows the WBGT p95 shift (deg C) that drives the effect.
+    Panel (b): WBGT p95 shift (deg C) driving the attribution.
 
-    Reads counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv
-    written by the counterfactual block in the model script.
+    Positive = services lost. Reads:
+      counterfactual_summary_{cf_label}_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv
+      {observed_summary_name}
     """
     out_dir = out_dir or OUT_DIR
     wbgt_var = wbgt_var or WBGT_VAR
 
-    csv_path = f"{out_dir}counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}{LAG_SUFFIX}.csv"
-    if not os.path.exists(csv_path):
-        print(f"  reference-period summary missing at {csv_path} — skipping")
-        return ""
+    cf_path  = f"{out_dir}counterfactual_summary_{cf_label}_{wbgt_var}{SUFFIX}{LAG_SUFFIX}.csv"
+    obs_path = f"{out_dir}{observed_summary_name}"
+    for p in (cf_path, obs_path):
+        if not os.path.exists(p):
+            print(f"  missing {p} — skipping")
+            return ""
 
-    df = pd.read_csv(csv_path)
-    df = df[df["indicator"].isin(fitted)].copy()
+    cf  = pd.read_csv(cf_path)
+    obs = pd.read_csv(obs_path)
+
+    # Standardise obs column names (whichever your summary uses)
+    obs = obs.rename(columns={
+        "hot_deficit_pct": "obs_hot",
+        "hot_ci_lo":       "obs_hot_lo",
+        "hot_ci_hi":       "obs_hot_hi",
+    })
+    cf  = cf.rename(columns={
+        "deficit_pct_hot": "cf_hot",
+        "hot_ci_lo":       "cf_hot_lo",
+        "hot_ci_hi":       "cf_hot_hi",
+    })
+
+    df = (cf.merge(obs[["indicator", "obs_hot", "obs_hot_lo", "obs_hot_hi"]],
+                   on="indicator", how="inner")
+            .query("indicator in @fitted")
+            .copy())
     if df.empty:
-        print("  no matching indicators in reference-period summary")
+        print("  no matching indicators")
         return ""
 
-    # Sort by overall attribution so the largest-affected indicator sits on top
-    df = df.sort_values("deficit_pct_overall").reset_index(drop=True)
-    y_pos = np.arange(len(df))
+    # Share of observed explained by warming (informational; sign-aware)
+    df["share_explained_pct"] = np.where(
+        df["obs_hot"].abs() > 1e-9,
+        100.0 * df["cf_hot"] / df["obs_hot"],
+        np.nan,
+    )
 
-    # Save the numbers alongside the figure
-    contrast_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.csv"
+    df = df.sort_values("obs_hot").reset_index(drop=True)
+    y = np.arange(len(df))
+
+    contrast_path = f"{out_dir}reference_period_contrast_vs_observed_{cf_label}_{wbgt_var}.csv"
     df.to_csv(contrast_path, index=False)
 
-    fig, (ax_overall, ax_hot, ax_shift) = plt.subplots(
-        1, 3, figsize=(13, max(4, 0.55 * len(df) + 1.5)),
-        gridspec_kw={"width_ratios": [4, 4, 2]},
-        sharey=True,
+    fig, (ax_def, ax_shift) = plt.subplots(
+        1, 2, figsize=(11, max(4, 0.55 * len(df) + 1.5)),
+        gridspec_kw={"width_ratios": [5, 2]}, sharey=True,
     )
 
-    # -------- (a) Overall attribution ------------------------------------
+    # -------- (a) Observed vs warming-attributable, hot months ----------
+    # Observed (dark red circles)
     for i, r in df.iterrows():
-        lo, hi = r.get("overall_ci_lo"), r.get("overall_ci_hi")
-        if pd.notna(lo) and pd.notna(hi):
-            ax_overall.plot([lo, hi], [i, i], color=CF_COLOURS["overall"],
-                            lw=1.4, alpha=0.75, zorder=1)
-    ax_overall.scatter(
-        df["deficit_pct_overall"], y_pos,
-        color=CF_COLOURS["overall"], s=55, zorder=3,
-        edgecolor="white", linewidth=0.6,
-    )
-    ax_overall.axvline(0, color="black", ls="--", lw=0.9)
-    ax_overall.set_yticks(y_pos)
-    ax_overall.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
-    ax_overall.set_xlabel("Deficit attributable to warming\n"
-                          "(% of expected services)", fontsize=9)
-    ax_overall.set_title("Overall (all months)", fontsize=10, fontweight="bold")
-    ax_overall.grid(axis="x", ls=":", alpha=0.4)
+        if pd.notna(r.get("obs_hot_lo")) and pd.notna(r.get("obs_hot_hi")):
+            ax_def.plot([r["obs_hot_lo"], r["obs_hot_hi"]], [i, i],
+                        color=CF_COLOURS["observed"], lw=1.4, alpha=0.75, zorder=1)
+    ax_def.scatter(df["obs_hot"], y, color=CF_COLOURS["observed"],
+                   s=55, zorder=3, edgecolor="white", linewidth=0.6,
+                   label="Observed hot-month deficit")
 
-    # -------- (b) Hot-month attribution ----------------------------------
+    # Attributed to warming (blue diamonds)
     for i, r in df.iterrows():
-        lo, hi = r.get("hot_ci_lo"), r.get("hot_ci_hi")
-        if pd.notna(lo) and pd.notna(hi):
-            ax_hot.plot([lo, hi], [i, i], color=CF_COLOURS["hot"],
-                        lw=1.4, alpha=0.75, zorder=1)
-    ax_hot.scatter(
-        df["deficit_pct_hot"], y_pos,
-        color=CF_COLOURS["hot"], s=55, zorder=3,
-        edgecolor="white", linewidth=0.6, marker="D",
-    )
-    ax_hot.axvline(0, color="black", ls="--", lw=0.9)
-    ax_hot.set_xlabel("Deficit attributable to warming,\n"
-                      "hot months only (obs WBGT > hist p95)", fontsize=9)
-    ax_hot.set_title("Hot months (top 5% observed)", fontsize=10, fontweight="bold")
-    ax_hot.grid(axis="x", ls=":", alpha=0.4)
+        if pd.notna(r.get("cf_hot_lo")) and pd.notna(r.get("cf_hot_hi")):
+            ax_def.plot([r["cf_hot_lo"], r["cf_hot_hi"]], [i, i],
+                        color=CF_COLOURS["attributed"], lw=1.4, alpha=0.75, zorder=1)
+    ax_def.scatter(df["cf_hot"], y, color=CF_COLOURS["attributed"],
+                   s=55, zorder=3, edgecolor="white", linewidth=0.6, marker="D",
+                   label="Attributable to 1940s→now warming")
 
-    # Flag rows with a small hot-month sample
-    if "n_hot_months" in df.columns:
-        for i, n_hot in enumerate(df["n_hot_months"]):
-            if pd.isna(n_hot) or n_hot < 30:
-                ax_hot.text(ax_hot.get_xlim()[1], i, "  †",
-                            va="center", ha="left", fontsize=9, color="#666")
+    # Faint connector to make the gap readable
+    for i, r in df.iterrows():
+        ax_def.plot([r["cf_hot"], r["obs_hot"]], [i, i],
+                    color="#999", lw=0.6, alpha=0.5, zorder=0)
 
-    # -------- (c) WBGT p95 shift (driver) --------------------------------
+    ax_def.axvline(0, color="black", ls="--", lw=0.9)
+    ax_def.set_yticks(y)
+    ax_def.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
+    ax_def.set_xlabel("Hot-month deficit (% of expected services)\n"
+                      "positive = services lost", fontsize=9)
+    ax_def.set_title("Observed vs attributable to warming (hot months)",
+                     fontsize=10, fontweight="bold")
+    ax_def.grid(axis="x", ls=":", alpha=0.4)
+    ax_def.legend(loc="lower right", fontsize=8, frameon=False)
+
+    # Annotate share explained on the right edge, only where signs agree
+    xmax = ax_def.get_xlim()[1]
+    for i, r in df.iterrows():
+        if pd.notna(r["share_explained_pct"]) and \
+           np.sign(r["obs_hot"]) == np.sign(r["cf_hot"]):
+            ax_def.text(xmax, i, f"  {r['share_explained_pct']:.0f}%",
+                        va="center", ha="left", fontsize=8, color="#444")
+    ax_def.text(xmax, len(df) - 0.5, "share explained",
+                va="bottom", ha="left", fontsize=7.5, color="#666", style="italic")
+
+    # -------- (b) WBGT p95 shift ---------------------------------------
     if "wbgt_p95_shift_c" in df.columns:
-        ax_shift.barh(y_pos, df["wbgt_p95_shift_c"],
-                      color="#666666", alpha=0.55, edgecolor="white")
+        ax_shift.barh(y, df["wbgt_p95_shift_c"], color="#666666",
+                      alpha=0.55, edgecolor="white")
         ax_shift.axvline(0, color="black", ls="--", lw=0.9)
         ax_shift.set_xlabel("Hist p95 − CF p95 (°C)", fontsize=9)
-        ax_shift.set_title("WBGT distribution shift\n(top 5%)",
-                           fontsize=10, fontweight="bold")
+        ax_shift.set_title("WBGT shift (top 5%)", fontsize=10, fontweight="bold")
         ax_shift.grid(axis="x", ls=":", alpha=0.4)
     else:
         ax_shift.set_visible(False)
 
-    # Clipping footnote — the one caveat that matters for attribution
     if "frac_cf_clipped_lo" in df.columns:
         max_clip = df[["frac_cf_clipped_lo", "frac_cf_clipped_hi"]].max().max()
         if max_clip > 0.05:
-            fig.text(
-                0.99, 0.01,
-                "†  hot-month n<30; CF WBGT clipped to training support "
-                f"(max {100 * max_clip:.0f}% of rows in any indicator)",
-                ha="right", fontsize=7, style="italic", color="#666",
-            )
+            fig.text(0.99, 0.01,
+                     f"CF WBGT clipped to training support "
+                     f"(max {100 * max_clip:.0f}% of rows in any indicator)",
+                     ha="right", fontsize=7, style="italic", color="#666")
 
     fig.suptitle(
-        f"Warming attribution: {cf_label.replace('_', ' ')} vs 2016–2024",
+        f"How much of the observed hot-month deficit is attributable "
+        f"to warming since {cf_label.split('_')[-2]}s?",
         fontsize=11, fontweight="bold", y=1.005,
     )
     plt.tight_layout()
-    out_path = f"{out_dir}reference_period_contrast_{cf_label}_{wbgt_var}.png"
+    out_path = f"{out_dir}reference_period_contrast_vs_observed_{cf_label}_{wbgt_var}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
-    print(f"  reference-period contrast table -> {contrast_path}")
+    print(f"  contrast (vs observed) table -> {contrast_path}")
     return out_path
 
 def plot_df_stability_panel(
@@ -2147,69 +2185,67 @@ if __name__ == "__main__":
     results_df = load_results_df()
     fitted = list(results_df["indicator"])
 
-    # print("\n[0] time-series + ER two-panel per indicator")
-    # plot_ts_overlay_with_wbgt_rug(fitted)
-    #
-    #
-    # print("\n[2] main forest plot")
-    # print("  ->", plot_main_forest(results_df))
-    #
-    # print("\n[4] IRR forest plot")
-    # print("  ->", plot_irr_forest(results_df))
-    #
-    # print("\n[5] exposure-response panel")
-    # print("  ->", plot_exposure_response_panel(fitted))
-    #
-    # print("\n[6] monthly deficit panel")
-    # print("  ->", plot_monthly_deficit_panel(fitted))
-    #
-    # print("\n[7] timeseries burden panel")
-    # print("  ->", plot_timeseries_panel(fitted))
+    print("\n[0] time-series + ER two-panel per indicator")
+    plot_ts_overlay_with_wbgt_rug(fitted)
+
+
+    print("\n[2] main forest plot")
+    print("  ->", plot_main_forest(results_df))
+
+    print("\n[4] IRR forest plot")
+    print("  ->", plot_irr_forest(results_df))
+
+    print("\n[5] exposure-response panel")
+    print("  ->", plot_exposure_response_panel(fitted))
+
+    print("\n[6] monthly deficit panel")
+    print("  ->", plot_monthly_deficit_panel(fitted))
+
+    print("\n[7] timeseries burden panel")
+    print("  ->", plot_timeseries_panel(fitted))
 
     print("\n[8] district choropleth maps")
     print("  ->", plot_district_maps(fitted, variant="per_district"))
     print("  ->", plot_district_maps(fitted, variant="national"))
 
-    #
-    # print("\n[9] projection heatmaps")
-    # for p in plot_projection_heatmaps(fitted):
-    #     print("  ->", p)
-    #
-    # print("\n[11] district × indicator heatmap")
-    # print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
-    #
-    # print("\n[12] projection forest — aggregate and hot-month, multiple windows")
-    # for w in [(2025, 2040), (2041, 2060), (2061, 2080)]:
-    #     print(f"  aggregate {w[0]}-{w[1]}:",
-    #           plot_projection_forest(fitted, window=w, results_df=results_df))
-    #     print(f"  hot-months {w[0]}-{w[1]}:",
-    #           plot_projection_forest(fitted, window=w, hot_months=HOT_MONTHS,
-    #                                  results_df=results_df))
-    #
-    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    # print("  aggregate ->",
-    #       plot_projection_annual_panel(fitted, results_df=results_df))
-    # print("  hot-months ->",
-    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-    #                                    results_df=results_df))
-    #
-    # print("\n[14] seasonal amplification (SSP245 / median)")
-    # print("  ->", plot_seasonal_amplification(fitted))
-    #
-    # print("\n[15] Summary statistics by indicator")
-    # by_ind = calculate_summary_statistics_by_indicator(fitted)
-    # print("  ->", by_ind.shape, "rows written")
-    #
-    # print("\n[16] Summary statistics rollup")
-    # stats = calculate_summary_statistics(fitted)
-    # print_summary_statistics(stats, by_ind)
-    # print("\nDone.")
-    #
-    # print("\n[17] 1940s reference-period contrast")
-    # print("  ->", plot_reference_period_contrast(fitted))
-    #
-    # print("\n[18] spline df stability panel")
-    # print("  ->", plot_df_stability_panel(fitted))
-    #
-    # print("\n[19] spline df stability panel")
-    # print("  ->", plot_displacement_empirical_panel(fitted))
+
+    print("\n[9] projection heatmaps")
+    for p in plot_projection_heatmaps(fitted):
+        print("  ->", p)
+
+    print("\n[11] district × indicator heatmap")
+    print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
+
+    print("\n[12] projection forest — aggregate and hot-month, multiple windows")
+    for w in [(2025, 2040)]:
+
+        print(f"  hot-months {w[0]}-{w[1]}:",
+              plot_projection_forest(fitted, mode="hot",     results_df=results_df))
+
+    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    print("  aggregate ->",
+          plot_projection_annual_panel(fitted, results_df=results_df))
+    print("  hot-months ->",
+          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+                                       results_df=results_df))
+
+    print("\n[14] seasonal amplification (SSP245 / median)")
+    print("  ->", plot_seasonal_amplification(fitted))
+
+    print("\n[15] Summary statistics by indicator")
+    by_ind = calculate_summary_statistics_by_indicator(fitted)
+    print("  ->", by_ind.shape, "rows written")
+
+    print("\n[16] Summary statistics rollup")
+    stats = calculate_summary_statistics(fitted)
+    print_summary_statistics(stats, by_ind)
+    print("\nDone.")
+
+    print("\n[17] 1940s reference-period contrast")
+    print("  ->", plot_reference_period_contrast(fitted))
+
+    print("\n[18] spline df stability panel")
+    print("  ->", plot_df_stability_panel(fitted))
+
+    print("\n[19] spline df stability panel")
+    print("  ->", plot_displacement_empirical_panel(fitted))
