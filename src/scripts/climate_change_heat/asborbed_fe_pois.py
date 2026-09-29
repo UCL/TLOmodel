@@ -1649,6 +1649,24 @@ if __name__ == "__main__":
                     mean_annual_disruption = (
                         (tot_b - tot_a) / df_agg["year"].nunique() if df_agg["year"].nunique() > 0 else np.nan
                     )
+                    # ---- Hot-month deficit using historical WBGT p95 ------
+                    hist_p95 = support["p95"]
+                    hot_mask = df_agg[WBGT_VAR].values > hist_p95
+                    n_hot_rows = int(hot_mask.sum())
+                    if n_hot_rows >= 10:
+                        tot_a_hot = float(df_agg.loc[hot_mask, "mu_a"].sum())
+                        tot_b_hot = float(df_agg.loc[hot_mask, "mu_b"].sum())
+                        deficit_hot_proj = (
+                            100.0 * (tot_b_hot - tot_a_hot) / tot_b_hot
+                            if tot_b_hot > 0 else np.nan
+                        )
+                        frac_hot_months = n_hot_rows / len(df_agg)
+                    else:
+                        tot_a_hot = tot_b_hot = np.nan
+                        deficit_hot_proj = np.nan
+                        frac_hot_months = n_hot_rows / max(len(df_agg), 1)
+                        print(f"    {ind} [{ssp}/{tier}]: only {n_hot_rows} rows "
+                              f"above hist p95 ({hist_p95:.2f}°C) — hot deficit NA")
                     all_proj_summary.append(
                         {
                             "indicator": ind,
@@ -1673,12 +1691,20 @@ if __name__ == "__main__":
                             "frac_clipped_hi": clip_diag["frac_clipped_hi"],
                             "n_clipped_lo": clip_diag["n_clipped_lo"],
                             "n_clipped_hi": clip_diag["n_clipped_hi"],
+                            "hist_p95_threshold": hist_p95,
+                            "n_hot_rows": n_hot_rows,
+                            "frac_hot_months": frac_hot_months,
+                            "total_A_projected_hot": tot_a_hot,
+                            "total_B_projected_hot": tot_b_hot,
+                            "hot_deficit_pct": deficit_hot_proj,
                         }
                     )
                     print(
                         f"    {ind}: deficit_proj={deficit_proj:+.2f}% "
-                        f"(rows used {len(df_agg):,}/{len(df):,}, "
-                        f"dropped {n_dropped:,})"
+                        f"| hot_deficit={deficit_hot_proj:+.2f}% "
+                        f"(n_hot={n_hot_rows}, {100*frac_hot_months:.1f}% of months "
+                        f"> {hist_p95:.2f}°C) "
+                        f"(rows used {len(df_agg):,}/{len(df):,}, dropped {n_dropped:,})"
                     )
 
         if all_proj_summary:
