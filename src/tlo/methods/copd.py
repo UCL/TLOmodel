@@ -643,7 +643,11 @@ class HSI_Copd_InhalerDispensation(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         else:
-            if (not df.at[person_id, "ch_has_inhaler"]) and self.get_consumables({self.module.item_codes["bronchodilater_inhaler"]: 1}):
+            needs_inhaler = not df.at[person_id, "ch_has_inhaler"]
+            inhaler_available = self.get_consumables(
+                {self.module.item_codes["bronchodilater_inhaler"]: 1}
+            )
+            if needs_inhaler and inhaler_available:
                 df.at[person_id, "ch_has_inhaler"] = True
 
 
