@@ -232,6 +232,10 @@ def test_inhaler_dispensation_at_first_appointment():
     hs.HSI_EVENT_QUEUE.clear()
     hs.mode_appt_constraints = 1
     hs.service_availability = ['FirstAttendance_NonEmergency']
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=person_id, symptom_string='breathless_moderate',
+        add_or_remove='+', disease_module=module,
+    )
 
     first_appt = hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id,
@@ -243,7 +247,6 @@ def test_inhaler_dispensation_at_first_appointment():
     healthsystem.HealthSystemScheduler(hs).apply(sim.population)
 
     assert not df.at[person_id, 'ch_has_inhaler']
-
 
 
 def test_moderate_exacerbation():
