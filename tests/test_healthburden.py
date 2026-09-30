@@ -143,6 +143,11 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         'dalys_stacked_by_age_and_time'
     ]
 
+    assert dalys_stacked_by_age_and_time.drop(
+        columns=['date'],
+        errors='ignore'
+    ).select_dtypes(include='number').sum().sum() > 0
+
     district_dalys = output['tlo.methods.healthburden'][
         'dalys_by_wealth_urban_region_district_stacked_by_age_and_time'
     ]
