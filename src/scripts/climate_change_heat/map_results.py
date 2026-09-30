@@ -573,8 +573,23 @@ def plot_irr_forest(results_df: pd.DataFrame, out_dir: str = OUT_DIR) -> str:
 # =====================================================================
 # 5. EXPOSURE-RESPONSE PANEL (all indicators)
 # =====================================================================
-def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> str:
-    curves_df = pd.read_csv(_require(f"{out_dir}exposure_response_curves_{WBGT_VAR}.csv"))
+def plot_exposure_response_panel(
+    fitted: list[str], out_dir: str = OUT_DIR, cumulative: bool = False
+) -> str:
+    kind = "_cumulative" if cumulative else ""
+    curves_df = pd.read_csv(
+        _require(f"{out_dir}exposure_response_curves{kind}_{WBGT_VAR}{LAG_SUFFIX}.csv")
+    )
+
+    # Loud failure: one curve per indicator, so wbgt must be unique within indicator.
+    dup = curves_df.duplicated(subset=["indicator", "wbgt"])
+    if dup.any():
+        bad = curves_df.loc[dup, "indicator"].unique().tolist()
+        raise ValueError(
+            f"Duplicate WBGT grid points for {bad} — multiple curves mixed in one file "
+            f"(stale per-indicator CSVs or contemporaneous/cumulative collision)."
+        )
+
     inds = [i for i in fitted if i in curves_df["indicator"].unique()]
     if not inds:
         print("  no exposure-response rows — skipping panel")
@@ -634,7 +649,7 @@ def plot_exposure_response_panel(fitted: list[str], out_dir: str = OUT_DIR) -> s
         axes_flat[idx].set_visible(False)
 
     plt.tight_layout()
-    out_path = f"{out_dir}exposure_response_panel_{WBGT_VAR}.png"
+    out_path = f"{out_dir}exposure_response_panel{kind}_{WBGT_VAR}{LAG_SUFFIX}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
@@ -1922,11 +1937,6 @@ def plot_reference_period_contrast(
                    s=55, zorder=3, edgecolor="white", linewidth=0.6, marker="D",
                    label="Historical")
 
-    # Faint connector to make the gap readable
-    for i, r in df.iterrows():
-        ax_def.plot([r["cf_hot"], r["obs_hot"]], [i, i],
-                    color="#999", lw=0.6, alpha=0.5, zorder=0)
-
     ax_def.axvline(0, color="black", ls="--", lw=0.9)
     ax_def.set_yticks(y)
     ax_def.set_yticklabels([_label(i) for i in df["indicator"]], fontsize=9)
@@ -1935,10 +1945,6 @@ def plot_reference_period_contrast(
 
     ax_def.grid(axis="x", ls=":", alpha=0.4)
     ax_def.legend(loc="lower right", fontsize=8, frameon=False)
-
-    # Annotate share explained on the right edge, only where signs agree
-    xmax = ax_def.get_xlim()[1]
-
     plt.tight_layout()
     out_path = f"{out_dir}reference_period_contrast_vs_observed_{cf_label}_{wbgt_var}.png"
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -2156,10 +2162,10 @@ if __name__ == "__main__":
     #
     # print("\n[4] IRR forest plot")
     # print("  ->", plot_irr_forest(results_df))
-    #
-    # print("\n[5] exposure-response panel")
-    # print("  ->", plot_exposure_response_panel(fitted))
-    #
+
+    print("\n[5] exposure-response panel")
+    print("  ->", plot_exposure_response_panel(fitted))
+
     # print("\n[6] monthly deficit panel")
     # print("  ->", plot_monthly_deficit_panel(fitted))
     #
@@ -2184,13 +2190,13 @@ if __name__ == "__main__":
     #     print(f"  hot-months {w[0]}-{w[1]}:",
     #           plot_projection_forest(fitted, mode="hot",     results_df=results_df))
     #
-    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    # print("  aggregate ->",
-    #       plot_projection_annual_panel(fitted, results_df=results_df))
-    # print("  hot-months ->",
-    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-    #                                    results_df=results_df))
-    #
+    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    print("  aggregate ->",
+          plot_projection_annual_panel(fitted, results_df=results_df))
+    print("  hot-months ->",
+          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+                                       results_df=results_df))
+
     # print("\n[14] seasonal amplification (SSP245 / median)")
     # print("  ->", plot_seasonal_amplification(fitted))
     #
