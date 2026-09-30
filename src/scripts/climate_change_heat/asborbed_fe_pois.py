@@ -177,6 +177,7 @@ CLUSTER_COL = "grid_id"
 USE_PRECIP = True
 PRECIP_COL = "precip_month"
 
+
 REFERENCE_WBGT_PERCENTILE = 95
 HOT_DEFICIT_CI_METHOD = "bootstrap"
 N_BOOTSTRAP = 1000
@@ -218,7 +219,7 @@ PRECIP_FILE_BY_TIER = {
 }
 
 WBGT_REFERENCE_TEMP = 23.0
-CURVE_REF_MODE = "p25"
+CURVE_REF_MODE = "p50"
 CURVE_N = 60
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
@@ -547,17 +548,18 @@ def add_weather_columns_optimized(df, shifts, spline_design=None, lag_months=LAG
 # Exposure-response curve
 # ===========================================================================
 def exposure_response_curve_fast(
-    model, spline_cols, design_info, WBGT_VAR_name, wbgt_shift, ref_mode, wbgt_values, n=CURVE_N
+    model, spline_cols, design_info, WBGT_VAR_name, wbgt_shift, ref_mode, wbgt_values,
+    n=CURVE_N, lag_cols=None,
 ):
     wobs = np.asarray(wbgt_values).flatten()
     grid = np.linspace(np.percentile(wobs, 1), np.percentile(wobs, 99), n)
     if ref_mode == "mean":
         ref = wobs.mean()
     elif isinstance(ref_mode, str) and ref_mode.startswith("p"):
-        pct = float(ref_mode[1:])
-        ref = np.percentile(wobs, pct)
+        ref = np.percentile(wobs, float(ref_mode[1:]))
     else:
         ref = float(ref_mode)  # absolute °C fallback
+
     # Only use spline cols that survived collinearity checks in fepois.
     retained = [c for c in spline_cols if c in model.coef().index]
     if not retained:
@@ -567,16 +569,27 @@ def exposure_response_curve_fast(
     Bg = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": grid - wbgt_shift})[0])
     Br = np.asarray(patsy.build_design_matrices([design_info[WBGT_VAR_name]], {"x": np.array([ref]) - wbgt_shift})[0])
     # Slice contrast to match retained coefficients — dropped bases have implicit coef 0
-    Bg = Bg[:, retained_idx]
-    Br = Br[:, retained_idx]
-    contrast = Bg - Br
-    beta = _pf_coef(model, retained)
-    V = _pf_vcov(model, retained)
+    contrast = Bg[:, retained_idx] - Br[:, retained_idx]
+    cols = list(retained)
+
+    if lag_cols:
+        missing = [c for c in lag_cols if c not in model.coef().index]
+        if missing:
+            raise ValueError(f"Lag columns dropped by model: {missing}")
+        # Sustained exposure: each lag month also at x rather than ref.
+        # Centring cancels: (x - shift) - (ref - shift) = x - ref
+        lag_contrast = np.repeat((grid - ref)[:, None], len(lag_cols), axis=1)
+        contrast = np.hstack([contrast, lag_contrast])
+        cols += list(lag_cols)
+
+    beta = _pf_coef(model, cols)
+    V = _pf_vcov(model, cols)  # joint block, so spline–lag covariance is included
     log_irr = contrast @ beta
     var = np.einsum("ij,jk,ik->i", contrast, V, contrast)
     se = np.sqrt(np.clip(var, 0, None))
     return pd.DataFrame(
         {
+            "curve_type": "cumulative" if lag_cols else "contemporaneous",
             "wbgt": grid,
             "wbgt_ref": ref,
             "rr_vs_ref": np.exp(log_irr),
@@ -584,7 +597,6 @@ def exposure_response_curve_fast(
             "rr_hi": np.exp(log_irr + 1.96 * se),
         }
     )
-
 def mask_spike_and_revert(
     df: pd.DataFrame,
     indicator: str,
@@ -795,7 +807,6 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     if USE_ZONE_YEAR_FE:
         nb_cols.append("zone_year")
     nb_data = long.dropna(subset=nb_cols).copy()
-    nb_data = long.dropna(subset=nb_cols).copy()
     nb_data["y_int"] = nb_data["y"].round().clip(lower=0).astype(int)
     obs_nb = nb_data.groupby("facility").size()
     nb_data = nb_data[nb_data["facility"].isin(obs_nb[obs_nb >= min_obs].index)].copy()
@@ -841,15 +852,11 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     if missing_spline:
         print(f"  [{indicator}] Warning: missing spline cols: {missing_spline}")
 
+    # Contemporaneous curve (splines only) — always
     try:
         curve = exposure_response_curve_fast(
-            model_wx,
-            spline_cols,
-            DESIGN,
-            WBGT_VAR,
-            SHIFTS[WBGT_VAR],
-            CURVE_REF_MODE,
-            nb_data[WBGT_VAR].values,
+            model_wx, spline_cols, DESIGN, WBGT_VAR, SHIFTS[WBGT_VAR],
+            CURVE_REF_MODE, nb_data[WBGT_VAR].values,
         )
         curve.insert(0, "indicator", indicator)
         curve.insert(1, "label", INDICATOR_LABELS.get(indicator, indicator))
@@ -859,6 +866,26 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         )
     except Exception as e:
         print(f"  [{indicator}] Curve failed: {e}")
+
+    # Cumulative curve (splines + lags) — additionally, when lags are in the model.
+    # Distinct stem ("erc_cumulative_") so the contemporaneous glob in main
+    # (exposure_response_curve_*) cannot pick these files up.
+    if SA_LAG:
+        try:
+            curve_cum = exposure_response_curve_fast(
+                model_wx, spline_cols, DESIGN, WBGT_VAR, SHIFTS[WBGT_VAR],
+                CURVE_REF_MODE, nb_data[WBGT_VAR].values,
+                lag_cols=[f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS],
+            )
+            curve_cum.insert(0, "indicator", indicator)
+            curve_cum.insert(1, "label", INDICATOR_LABELS.get(indicator, indicator))
+            curve_cum.to_csv(
+                f"{OUT_DIR}erc_cumulative_{indicator}_{WBGT_VAR}{LAG_SUFFIX}{_df_tag}.csv",
+                index=False,
+            )
+        except Exception as e:
+            print(f"  [{indicator}] Cumulative curve failed: {e}")
+
     nb_data["y_pred_base"] = model_base.predict(newdata=nb_data, type="response")
     nb_data["y_pred_wx"] = model_wx.predict(newdata=nb_data, type="response")
     # Drop rows where either model couldn't predict (separated facility-months)
@@ -923,7 +950,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         hot_se_jack = np.nan
         print(f"  [{indicator}] Not enough hot months ({len(hot_data)} observations)")
 
-    reference_wbgt = WBGT_REFERENCE_TEMP
+    reference_wbgt = float(np.percentile(nb_data[WBGT_VAR], 50))
     try:
         design_info_wbgt = DESIGN[WBGT_VAR]
         retained = [c for c in spline_cols if c in model_wx.coef().index]
@@ -951,14 +978,13 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         irr_pt = irr_lo = irr_hi = np.nan
 
     try:
+        retained = [c for c in spline_cols if c in model_wx.coef().index]
         coef_names = list(model_wx._coefnames)
-        n_spline = len(spline_cols)
-        R = np.zeros((n_spline, len(coef_names)))
-        for i, c in enumerate(spline_cols):
+        R = np.zeros((len(retained), len(coef_names)))
+        for i, c in enumerate(retained):
             R[i, coef_names.index(c)] = 1.0
-        q = np.zeros(n_spline)
-        model_wx.wald_test(R=R, q=q, distribution="chi2")
-        pval = float(model_wx._p_value)
+        wt = model_wx.wald_test(R=R, q=np.zeros(len(retained)), distribution="chi2")
+        pval = float(wt["pvalue"])
     except Exception as e:
         print(f"  [{indicator}] Wald test failed: {e}")
         pval = np.nan
@@ -1136,9 +1162,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         ),
         "_wbgt_support": WBGT_SUPPORT,
         "_nb_rows": nb_data[["facility", "date"]].copy(),
-        "_wbgt_support": WBGT_SUPPORT,
     }
-
 # ===========================================================================
 # MAIN
 # ===========================================================================
@@ -1334,12 +1358,12 @@ if __name__ == "__main__":
         ]
     )
     irr_df.to_csv(f"{OUT_DIR}irr_contrast_{WBGT_VAR}{SUFFIX}{LAG_SUFFIX}.csv", index=False)
-    curve_paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}.csv"))
-    if curve_paths:
-        pd.concat([pd.read_csv(p) for p in curve_paths], ignore_index=True).to_csv(
-            Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}.csv",
-            index=False,
-        )
+    curve_paths = sorted(Path(OUT_DIR).glob(f"exposure_response_curve_*_{WBGT_VAR}{LAG_SUFFIX}.csv"))
+    if not curve_paths:
+        raise FileNotFoundError(f"No curve files matched for {WBGT_VAR}{LAG_SUFFIX}")
+    pd.concat([pd.read_csv(p) for p in curve_paths], ignore_index=True).to_csv(
+        Path(OUT_DIR) / f"exposure_response_curves_{WBGT_VAR}{LAG_SUFFIX}.csv", index=False
+    )
 
 
     # =======================================================================
