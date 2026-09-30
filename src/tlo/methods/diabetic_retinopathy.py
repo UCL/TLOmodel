@@ -70,6 +70,8 @@ class DiabeticRetinopathy(Module):
         "rp_dr_urban": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if urban"
         ),
+        "rp_nc_hypertension": Parameter(
+            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if person has hypertension"),
         # "prob_diabetes_controlled": Parameter(
         #     Types.REAL,
         #     "Probability that a person with mild DR has controlled diabetes"
@@ -322,7 +324,7 @@ class DiabeticRetinopathy(Module):
             Predictor('li_high_sugar').when(True, p['rp_dr_high_sugar']),
             Predictor('li_low_ex').when(True, p['rp_dr_low_ex']),
             Predictor('li_urban').when(True, p['rp_dr_urban']),
-            # Predictor().when('nc_hypertension', p['rp_ckd_nc_hypertension']),
+            Predictor().when('nc_hypertension', p['rp_nc_hypertension']),
         )
 
         # any_dr = \
