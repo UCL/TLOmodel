@@ -1,11 +1,13 @@
-import re
 import io
 import logging
-import pdfplumber
-import pandas as pd
+import re
 from datetime import datetime
 from typing import Optional
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
+import pandas as pd
+import pdfplumber
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
+from playwright.sync_api import sync_playwright
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging.basicConfig(

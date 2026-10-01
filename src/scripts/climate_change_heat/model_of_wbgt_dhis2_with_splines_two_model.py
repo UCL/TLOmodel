@@ -29,10 +29,10 @@ import numpy.random
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-import warnings
-from multiprocessing import Pool, cpu_count
-from functools import partial
 import time
+import warnings
+from functools import partial
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -40,8 +40,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import patsy
-import scipy.stats as stats
 import scipy.sparse as sp
+import scipy.stats as stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from scipy.optimize import minimize_scalar
@@ -318,6 +318,7 @@ def load_indicator_panel(indicator: str, panel_dir: str) -> pd.DataFrame:
     base = base.drop(columns=[c for c in components if c in base.columns])
     return base
 import pyfixest as pf
+
 
 def fit_pois_absorbed(rhs_terms, fe_terms, data, cluster_col, y_col="y_int"):
     """Poisson with absorbed FE and cluster-robust SEs.

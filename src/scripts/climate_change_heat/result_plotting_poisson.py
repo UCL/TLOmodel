@@ -35,10 +35,11 @@ Sign convention: matches the Poisson script's _pct — positive `deficit_pct`
 """
 
 import os
+
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
 # =====================================================================
 # CONFIG — keep in sync with model_of_wbgt_dhis2_poisson_predicttwice.py
