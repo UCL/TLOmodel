@@ -55,21 +55,6 @@ class DiabeticRetinopathy(Module):
         "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having "
                                               "Diabetic Macular Oedema (DMO)"),
         "p_laser_success": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
-        "rp_dr_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if tobacco"
-        ),
-        "rp_dr_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if excessive alcohol"
-        ),
-        "rp_dr_high_sugar": Parameter(
-            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if high sugar"
-        ),
-        "rp_dr_low_ex": Parameter(
-            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if low exercise"
-        ),
-        "rp_dr_urban": Parameter(
-            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if urban"
-        ),
         "rp_nc_hypertension": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if person has hypertension"),
         # "prob_diabetes_controlled": Parameter(
@@ -319,12 +304,7 @@ class DiabeticRetinopathy(Module):
         lm_init_dr_status_any_dr = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prob_any_dr']),
-            Predictor('li_ex_alc').when(True, p['rp_dr_ex_alc']),
-            Predictor('li_tob').when(True, p['rp_dr_tobacco']),
-            Predictor('li_high_sugar').when(True, p['rp_dr_high_sugar']),
-            Predictor('li_low_ex').when(True, p['rp_dr_low_ex']),
-            Predictor('li_urban').when(True, p['rp_dr_urban']),
-            Predictor().when('nc_hypertension', p['rp_nc_hypertension']),
+            Predictor('nc_hypertension').when(True, p['rp_nc_hypertension']),
         )
 
         # any_dr = \

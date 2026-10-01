@@ -103,6 +103,19 @@ def get_simulation_nohsi(seed):
 def check_dtypes(sim):
     df = sim.population.props
     orig = sim.population.new_row
+
+    print("\nColumns in df but not in new_row:")
+    print(df.columns.difference(orig.index).tolist())
+
+    print("\nColumns in new_row but not in df:")
+    print(orig.index.difference(df.columns).tolist())
+
+    print("\ndf columns:")
+    print(df.columns.tolist())
+
+    print("\nnew_row index:")
+    print(orig.index.tolist())
+
     assert (df.dtypes == orig.dtypes).all()
 
 
