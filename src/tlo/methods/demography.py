@@ -528,6 +528,7 @@ class Demography(Module):
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
+            'district_of_residence': person['district_of_residence'],
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
@@ -559,6 +560,8 @@ class Demography(Module):
                                                                     urban=person['li_urban'],
                                                                     region_of_residence=person[
                                                                         'region_of_residence'],
+                                                                    district_of_residence=person[
+                                                                        'district_of_residence'],
                                                                     )
 
         # Release any beds-days that would be used by this person:
@@ -831,9 +834,9 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         if 'Lifestyle' in self.sim.modules:
             logger.info(
-                key='population_by_wealth_urban_region',
+                key='population_by_wealth_urban_region_district',
                 data=df[df.is_alive].groupby(
-                    ['sex','li_wealth', 'li_urban', 'region_of_residence']
+                    ['sex', 'li_wealth', 'li_urban', 'region_of_residence', 'district_of_residence']
                 ).size().to_dict()
             )
 
