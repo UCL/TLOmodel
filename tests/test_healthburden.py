@@ -173,6 +173,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     assert 'li_urban' in district_dalys.columns
     assert 'li_wealth' in district_dalys.columns
     assert 'year' in district_dalys.columns
+    assert 'sex' in district_dalys.columns
 
     check_district_dalys_sum_to_total_dalys(
         district_dalys=district_dalys,
