@@ -631,7 +631,7 @@ class HSI_Copd_InhalerDispensation(HSI_Event, IndividualScopeEventMixin):
     """HSI event for dispensing inhalers to indivduals without one
     first checking if inhlaer is available."""
 
-    def __init__(self, module, person_id, facility_level: str):
+    def __init__(self, module, person_id, facility_level: str = "0"):
         super().__init__(module, person_id=person_id)
         # There is only treatment ID for COPD;
         self.TREATMENT_ID = "Copd_Treatment"

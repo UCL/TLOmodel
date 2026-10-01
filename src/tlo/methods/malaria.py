@@ -1077,7 +1077,7 @@ class HSI_Malaria_FirstAppointment_rdt(HSI_Event, IndividualScopeEventMixin):
     this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
     """
 
-    def __init__(self, module, person_id, symptoms, facility_level):
+    def __init__(self, module, person_id, symptoms, facility_level="0"):
 
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
