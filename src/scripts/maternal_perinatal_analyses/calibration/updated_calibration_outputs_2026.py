@@ -13,7 +13,7 @@ resourcefilepath = Path("./resources")
 
 
 #  ======================================= DEFINE SCENARIO INFORMATION  ===============================================
-scenario = 'calibration_172156'
+scenario = 'calibration_emonc_interventions-2026-09-25T073946Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 # create_pickles_locally(results_folder)
 

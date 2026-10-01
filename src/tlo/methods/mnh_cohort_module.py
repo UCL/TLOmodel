@@ -55,67 +55,92 @@ class MaternalNewbornHealthCohort(Module):
         :param population: the population of individuals
         """
 
-        # Read in excel sheet with cohort
-        all_preg_df = read_csv_files(Path(f'{self.sim.resourcefilepath}/ResourceFile_MaternalCohort'),
-                                              files='ResourceFile_All2025PregnanciesCohortModel')
+        all_preg_df = read_csv_files(
+            Path(f'{self.sim.resourcefilepath}/ResourceFile_MaternalCohort'),
+            files='ResourceFile_All2026_7PregnanciesCohortModel'
+        )
 
-        # Select rows equal to the desired population size
-        if len(self.sim.population.props) <= len(all_preg_df):
-            preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
-        else:
-            # Calculate the number of rows needed to reach the desired length
-            additional_rows = len(self.sim.population.props) - len(all_preg_df)
+        # Randomly sample individuals from the cohort dataframe.
+        # If the requested population is larger than the available cohort,
+        # sample with replacement.
+        sample_size = len(self.sim.population.props)
 
-            # Initialize an empty DataFrame for additional rows
-            rows_to_add = pd.DataFrame(columns=all_preg_df.columns)
+        sampled_idx = self.sim.rng.choice(
+            all_preg_df.index,
+            size=sample_size,
+            replace=sample_size > len(all_preg_df)
+        )
 
-            # Loop to fill the required additional rows
-            while additional_rows > 0:
-                if additional_rows >= len(all_preg_df):
-                    rows_to_add = pd.concat([rows_to_add, all_preg_df], ignore_index=True)
-                    additional_rows -= len(all_preg_df)
-                else:
-                    rows_to_add = pd.concat([rows_to_add, all_preg_df.iloc[:additional_rows]], ignore_index=True)
-                    additional_rows = 0
+        preg_pop = (
+            all_preg_df.loc[sampled_idx]
+            .copy()
+            .reset_index(drop=True)
+        )
 
-            # Concatenate the original DataFrame with the additional rows
-            preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
+        # As merging in master may result in more/fewer columns than in the cohort
+        # dataframe which has been read in, here we remove old columns and/or append
+        # new columns. New column values are set as the most common value in the
+        # population.props dataframe.
+        additional_cols = [
+            col for col in preg_pop.columns
+            if col not in self.sim.population.props.columns
+        ]
 
-        # As merging in master may result in more/fewer columns than in the cohort dataframe which has been read in,
-        # here we remove old columns and/or append new columns. New column values are set as the most common value in
-        # the population.props dataframe
-        additional_cols =  [col for col in preg_pop.columns if col not in self.sim.population.props.columns]
         preg_pop = preg_pop.drop(columns=additional_cols)
 
-        missing_cols = [col for col in self.sim.population.props.columns if col not in preg_pop.columns]
-        props_sub = self.sim.population.props[missing_cols]
-        is_constant = props_sub.nunique(dropna=False) == 1
-        modes = props_sub.mode(dropna=False).iloc[0]
+        missing_cols = [
+            col for col in self.sim.population.props.columns
+            if col not in preg_pop.columns
+        ]
 
-        new_cols = pd.DataFrame(index=range(len(self.sim.population.props)))
+        # Only create and append new columns if there are actually missing columns
+        if missing_cols:
+            props_sub = self.sim.population.props[missing_cols]
+            is_constant = props_sub.nunique(dropna=False) == 1
+            modes = props_sub.mode(dropna=False).iloc[0]
 
-        for col in missing_cols:
-            if is_constant[col]:
-                new_cols[col] = self.sim.population.props[col].iloc[0]  # broadcasts to n rows
-            else:
-                new_cols[col] = modes[col]
+            new_cols = pd.DataFrame(
+                index=range(len(self.sim.population.props))
+            )
 
-        preg_pop = preg_pop.join(new_cols)
+            for col in missing_cols:
+                if is_constant[col]:
+                    new_cols[col] = self.sim.population.props[col].iloc[0]
+                else:
+                    new_cols[col] = modes[col]
+
+            preg_pop = preg_pop.join(new_cols)
 
         # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes.to_dict()
+
         for c, d in props_dtypes.items():
             if c in preg_pop.columns and "datetime" in str(d):
-                preg_pop[c] = pd.to_datetime(preg_pop[c], format="mixed", dayfirst=True, errors="raise")
+                preg_pop[c] = pd.to_datetime(
+                    preg_pop[c],
+                    format="mixed",
+                    dayfirst=True,
+                    errors="raise"
+                )
 
-        common_dtypes = {col: props_dtypes[col] for col in preg_pop.columns if col in props_dtypes}
+        common_dtypes = {
+            col: props_dtypes[col]
+            for col in preg_pop.columns
+            if col in props_dtypes
+        }
+
         preg_pop_final = preg_pop.astype(common_dtypes)
         preg_pop_final.index.name = 'person'
 
         # For the below columns we manually overwrite the dtypes
-        for column in ['rt_injuries_for_minor_surgery', 'rt_injuries_for_major_surgery',
-                       'rt_injuries_to_heal_with_time', 'rt_injuries_for_open_fracture_treatment',
-                       'rt_injuries_left_untreated', 'rt_injuries_to_cast']:
+        for column in [
+            'rt_injuries_for_minor_surgery',
+            'rt_injuries_for_major_surgery',
+            'rt_injuries_to_heal_with_time',
+            'rt_injuries_for_open_fracture_treatment',
+            'rt_injuries_left_untreated',
+            'rt_injuries_to_cast'
+        ]:
             preg_pop_final[column] = [[] for _ in range(len(preg_pop_final))]
 
         # Set the population.props dataframe to the new cohort
@@ -124,11 +149,9 @@ class MaternalNewbornHealthCohort(Module):
         # Update key pregnancy properties
         df = self.sim.population.props
         population = df.loc[df.is_alive]
+
         df.loc[population.index, 'date_of_last_pregnancy'] = self.sim.start_date
         df.loc[population.index, 'co_contraception'] = "not_using"
-
-        # TODO: getting errors from RTI - remove this code?
-        # self.sim.modules['RTI'].initialise_population(self.sim.population)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.

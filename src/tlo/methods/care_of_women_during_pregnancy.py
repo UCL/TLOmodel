@@ -1348,7 +1348,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         int_name = 'iv_anti_htns_ec' if (df.at[individual_id, 'ps_htn_disorders'] in
-                                         {'severe_pre_eclam', 'eclampsia'}) else "iv_anti_htns_gh"
+                                         {'severe_pre_eclamp', 'eclampsia'}) else "iv_anti_htns_gh"
 
         iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name=int_name, hsi_event=hsi_event,

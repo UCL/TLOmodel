@@ -2068,6 +2068,7 @@ def debug_plots():
     #             color='green',
     #             ecolor='green',
     #             markersize=5,
+    #             markersize=5,
     #             capsize=3,
     #             elinewidth=1,
     #             label='10 largest increases'

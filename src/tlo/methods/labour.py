@@ -1353,8 +1353,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                 if complication == 'obstruction_cpd':
                     mni[individual_id]['cpd'] = True
-                else:
-                    pregnancy_helper_functions.log_need(self, 'avd_ol')
 
             # Otherwise they are stored as individual properties (women with undiagnosed placental abruption may present
             # to labour)
@@ -1442,7 +1440,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                 df.at[individual_id, 'la_sepsis_pp'] = True
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'sepsis_onset', self.sim.date)
-                pregnancy_helper_functions.log_need(self, 'sepsis_treatment')
 
                 if complication == 'sepsis_endometritis':
                     mni[individual_id]['endo_pp'] = True
@@ -1456,7 +1453,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 # Store mni variables used during treatment
                 if complication == 'pph_uterine_atony':
                     mni[individual_id]['uterine_atony'] = True
-                    pregnancy_helper_functions.log_need(self, 'pph_treatment_uterotonics')
 
                 if complication == 'pph_retained_placenta':
                     mni[individual_id]['retained_placenta'] = True
@@ -1901,7 +1897,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
 
-            if mag_sulph_delivered and (not mni[person_id]['ec_treatment_an'] and labour_stage == 'ip'):
+            if mag_sulph_delivered and not (mni[person_id]['ec_treatment_an'] and labour_stage == 'ip'):
 
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
                 df.at[person_id, 'la_eclampsia_treatment'] = True
@@ -2090,8 +2086,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
             if pph_treatment_delivered:
 
-                if mni[person_id]['uterine_atony']:
-                    pregnancy_helper_functions.log_met_need(self, 'pph_treatment_uterotonics')
+                pregnancy_helper_functions.log_met_need(self, 'pph_treatment_uterotonics')
 
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
                 # meaning she will not require further treatment
@@ -2643,6 +2638,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_obstructed_labour']:
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['obstructed_labour'] += 1
+            if not mni[individual_id]['cpd']:
+                pregnancy_helper_functions.log_need(self, 'avd_ol')
 
         # And we determine if any existing hypertensive disorders would worsen
         self.module.progression_of_hypertensive_disorders(individual_id, property_prefix='ps')
@@ -2855,9 +2852,12 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
             if df.at[mother_id, 'la_sepsis_pp']:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_postnatal'] += 1
+                pregnancy_helper_functions.log_need(self, 'sepsis_treatment')
 
             if df.at[mother_id, 'la_postpartum_haem']:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['primary_postpartum_haemorrhage'] += 1
+                if not mni[mother_id]['retained_placenta']:
+                    pregnancy_helper_functions.log_need(self, 'pph_treatment_uterotonics')
 
             self.module.progression_of_hypertensive_disorders(mother_id, property_prefix='pn')
 
@@ -3015,6 +3015,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
             if df.at[person_id, 'la_obstructed_labour']:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['obstructed_labour'] += 1
+                if not mni[person_id]['cpd']:
+                    pregnancy_helper_functions.log_need(self, 'avd_ol')
 
         # ======================================= COMPLICATION MANAGEMENT ==========================
         # Next, women in labour are assessed for complications and treatment delivered if a need is identified and
@@ -3289,7 +3291,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             elif cs_delivered or (mni[person_id]['cs_indication'] == 'other'):
 
-                if mni[person_id]['cs_indication'] in ('ur', 'spe_ec', 'la_aph', 'an_aph_pa', 'an_aph_pp'):
+                if mni[person_id]['cs_indication'] in ('ur', 'spe_ec', 'la_aph', 'an_aph_pa', 'an_aph_pp', 'ol'):
                     pregnancy_helper_functions.log_met_need(self.module, 'caesarean_section_oth_surg_ip')
 
                 # If intervention is delivered - add used equipment
