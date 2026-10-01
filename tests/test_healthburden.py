@@ -143,10 +143,26 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         'dalys_stacked_by_age_and_time'
     ]
 
-    assert dalys_stacked_by_age_and_time.drop(
-        columns=['date'],
-        errors='ignore'
-    ).select_dtypes(include='number').sum().sum() > 0
+    # Check that the national DALY logger contains positive DALY values.
+    daly_metadata_columns = {
+        'date',
+        'sex',
+        'age_range',
+        'year',
+    }
+
+    daly_cause_columns = [
+        column
+        for column in dalys_stacked_by_age_and_time.columns
+        if column not in daly_metadata_columns
+    ]
+
+    assert (
+        dalys_stacked_by_age_and_time[daly_cause_columns]
+        .sum()
+        .sum()
+        > 0
+    )
 
     district_dalys = output['tlo.methods.healthburden'][
         'dalys_by_wealth_urban_region_district_stacked_by_age_and_time'
