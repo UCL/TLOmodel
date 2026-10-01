@@ -156,6 +156,72 @@ def test_cause_of_death_being_registered(tmpdir, seed):
                                                     )
 
 
+def test_death_log_records_district_of_residence(seed, tmpdir):
+    """
+    Check that when a person dies, their district of residence is correctly
+    recorded in the death log.
+    """
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        CAUSES_OF_DEATH = {'a_cause': Cause(label='a_cause')}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        seed=seed,
+        resourcefilepath=rfp,
+        log_config={
+            'filename': 'temp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.WARNING,
+                'tlo.methods.demography': logging.INFO,
+            },
+        },
+    )
+
+    sim.register(
+        demography.Demography(),
+        DummyModule(),
+    )
+
+    sim.make_initial_population(n=20)
+
+    # Select a person who is alive and record their district before death.
+    population = sim.population.props
+    alive_people = population.index[population['is_alive']]
+    person_id = alive_people[0]
+    expected_district = population.loc[person_id, 'district_of_residence']
+
+    # Make the person die.
+    sim.modules['Demography'].do_death(
+        individual_id=person_id,
+        originating_module=sim.modules['DummyModule'],
+        cause='a_cause',
+    )
+
+    output = parse_log_file(sim.log_filepath)
+    deaths = output['tlo.methods.demography']['death']
+
+    # The person should appear in the death log.
+    death_record = deaths.loc[deaths['person_id'] == person_id]
+
+    assert len(death_record) == 1
+
+    # The district recorded in the death log should match the person's
+    # district of residence.
+    assert death_record.iloc[0]['district_of_residence'] == expected_district
+
 
 
 @pytest.mark.slow
