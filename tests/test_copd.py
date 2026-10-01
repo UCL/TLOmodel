@@ -292,11 +292,16 @@ def test_moderate_exacerbation():
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
 
-    # check that no HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Only inhaler should be given
+    # Moderate symptoms must not schedule severe-exacerbation treatment.
     for _event in sim.modules['HealthSystem'].find_events_for_person(person_id):
         assert not isinstance(_event[1], HSI_Copd_TreatmentOnSevereExacerbation)
 
-    # check inhaler is given
+    # Triage schedules dispensing; the inhaler is provided only when that HSI runs.
+    assert not df.loc[person_id, 'ch_has_inhaler']
+    dispensing_events = [event for _, event in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                         if isinstance(event, copd.HSI_Copd_InhalerDispensation)]
+    assert len(dispensing_events) == 1
+    dispensing_events[0].run(squeeze_factor=0.0)
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
@@ -347,7 +352,12 @@ def test_severe_exacerbation():
                        isinstance(ev[1], HSI_Copd_TreatmentOnSevereExacerbation)][0],
                       HSI_Copd_TreatmentOnSevereExacerbation)
 
-    # check inhaler is given
+    # Emergency triage also schedules the separate inhaler-dispensation HSI.
+    assert not df.loc[person_id, 'ch_has_inhaler']
+    dispensing_events = [event for _, event in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                         if isinstance(event, copd.HSI_Copd_InhalerDispensation)]
+    assert len(dispensing_events) == 1
+    dispensing_events[0].run(squeeze_factor=0.0)
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
