@@ -523,26 +523,23 @@ def calculate_nurse_time_percent_change(
 
 def plot_percent_service_volume_change(
     summarized_percent_change,
+    scenarios,
     title,
 ):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     label_map = {
-        "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
-        "More Nurses / Default Healthsystem Function": "More nurses",
-        "More CNP staff / Default Healthsystem Function": "More CNP",
-        "More Nurses by District / Default Healthsystem Function":
-            "More nurses by district",
-        "More CNP staff by District / Default Healthsystem Function":
-            "More CNP by district",
+        "Fewer Nurses / Default Healthsystem Function": "Fewer\nnurses",
+        "More Nurses / Default Healthsystem Function": "More\nnurses",
+        "More CNP staff / Default Healthsystem Function": "More\nCNP",
+        "More Nurses by District / Default Healthsystem Function": "More nurses\nby district",
+        "More CNP staff by District / Default Healthsystem Function": "More CNP\nby district",
 
-        "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
-        "More Nurses / Improved Healthsystem Function": "More nurses",
-        "More CNP staff / Improved Healthsystem Function": "More CNP",
-        "More Nurses by District / Improved Healthsystem Function":
-            "More nurses by district",
-        "More CNP staff by District / Improved Healthsystem Function":
-            "More CNP by district",
+        "Fewer Nurses / Improved Healthsystem Function": "Fewer\nnurses",
+        "More Nurses / Improved Healthsystem Function": "More\nnurses",
+        "More CNP staff / Improved Healthsystem Function": "More\nCNP",
+        "More Nurses by District / Improved Healthsystem Function": "More nurses\nby district",
+        "More CNP staff by District / Improved Healthsystem Function": "More CNP\nby district",
     }
 
     color_map = {
@@ -561,19 +558,18 @@ def plot_percent_service_volume_change(
         "More CNP staff by District / Improved Healthsystem Function": "orange",
     }
 
-    # Get scenario names
-    scenarios = (
-        summarized_percent_change.columns
+    scenarios = [
+        scenario
+        for scenario in scenarios
+        if scenario in summarized_percent_change.columns
         .get_level_values(0)
         .unique()
-    )
+    ]
 
     x = np.arange(len(scenarios))
 
     for i, scenario in enumerate(scenarios):
 
-        # Extract the single summary value for this scenario.
-        # .iloc[0] ensures that mean, lower and upper are scalars.
         mean = float(
             summarized_percent_change[scenario]["mean"].iloc[0]
         ) * 100
@@ -599,7 +595,6 @@ def plot_percent_service_volume_change(
             ),
         )
 
-        # Calculate asymmetric error bars as scalars.
         lower_error = mean - lower
         upper_error = upper - mean
 
@@ -621,14 +616,14 @@ def plot_percent_service_volume_change(
             label_map.get(scenario, scenario)
             for scenario in scenarios
         ],
-        rotation=45,
-        ha="right",
+        rotation=0,
+        ha="center",
     )
 
-    ax.set_xlabel("Nurse staffing scenario")
-    ax.set_ylabel("% change in total service volume")
+    # ax.set_xlabel("Nurse staffing scenario")
+    ax.set_ylabel("% Services change")
     ax.set_title(title)
-    ax.grid(axis="y", alpha=0.3,)
+    ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     return fig
 
@@ -776,21 +771,17 @@ def plot_nurse_time_use_percent_change(
     """
 
     label_map = {
-        "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
-        "More CNP staff / Default Healthsystem Function": "More CNP",
-        "More CNP staff by District / Default Healthsystem Function":
-            "More CNP by district",
-        "More Nurses / Default Healthsystem Function": "More nurses",
-        "More Nurses by District / Default Healthsystem Function":
-            "More nurses by district",
+        "Fewer Nurses / Default Healthsystem Function": "Fewer\nnurses",
+        "More Nurses / Default Healthsystem Function": "More\nnurses",
+        "More CNP staff / Default Healthsystem Function": "More\nCNP",
+        "More Nurses by District / Default Healthsystem Function": "More nurses\nby district",
+        "More CNP staff by District / Default Healthsystem Function": "More CNP\nby district",
 
-        "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
-        "More CNP staff / Improved Healthsystem Function": "More CNP",
-        "More CNP staff by District / Improved Healthsystem Function":
-            "More CNP by district",
-        "More Nurses / Improved Healthsystem Function": "More nurses",
-        "More Nurses by District / Improved Healthsystem Function":
-            "More nurses by district",
+        "Fewer Nurses / Improved Healthsystem Function": "Fewer\nnurses",
+        "More Nurses / Improved Healthsystem Function": "More\nnurses",
+        "More CNP staff / Improved Healthsystem Function": "More\nCNP",
+        "More Nurses by District / Improved Healthsystem Function": "More nurses\nby district",
+        "More CNP staff by District / Improved Healthsystem Function": "More CNP\nby district",
     }
 
     color_map = {
@@ -875,12 +866,12 @@ def plot_nurse_time_use_percent_change(
             )
             for scenario in scenarios
         ],
-        rotation=45,
-        ha="right",
+        rotation=0,
+        ha="center",
     )
 
-    ax.set_xlabel("Nurse staffing scenario")
-    ax.set_ylabel("Nurse time increase %\n" "(relative to baseline)")
+    # ax.set_xlabel("Nurse staffing scenario")
+    ax.set_ylabel("% Nurse time use change")
     ax.set_title(title)
     ax.grid(axis="y", alpha=0.3,)
     fig.tight_layout()
@@ -1121,12 +1112,14 @@ if __name__ == "__main__":
 
     fig_default_percent = plot_percent_service_volume_change(
         percent_change_default,
-        "% Change in Total Service Volume vs Baseline\n(2027–2034, Default Healthsystem Function)",
+        default_hs_scenarios[1:],
+        "",
     )
 
     fig_improved_percent = plot_percent_service_volume_change(
         percent_change_improved,
-        "% Change in Total Service Volume vs Baseline\n(2027–2034, Improved Healthsystem Function)",
+        improved_hs_scenarios[1:],
+        "",
     )
 
     fig_service_area_default = (
@@ -1151,8 +1144,7 @@ if __name__ == "__main__":
         plot_nurse_time_use_percent_change(
             nurse_time_change_default,
             default_hs_scenarios[1:],
-            "Nurse Time Use Relative to Baseline\n"
-            "(2027–2034, Default Healthsystem Function)",
+            "",
         )
     )
 
@@ -1160,8 +1152,7 @@ if __name__ == "__main__":
         plot_nurse_time_use_percent_change(
             nurse_time_change_improved,
             improved_hs_scenarios[1:],
-            "Nurse Time Use Relative to Baseline\n"
-            "(2027–2034, Improved Healthsystem Function)",
+            "",
         )
     )
 

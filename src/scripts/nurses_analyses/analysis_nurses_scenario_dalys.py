@@ -600,11 +600,11 @@ def calculate_percent_deaths_averted_by_age_group(
 def plot_percent_dalys_averted_comparison(default_df, improved_df):
     # Default Healthsystem
     ordered_scenarios_default = [
+        "Fewer Nurses / Default Healthsystem Function",
         "More Nurses / Default Healthsystem Function",
         "More CNP staff / Default Healthsystem Function",
         "More Nurses by District / Default Healthsystem Function",
         "More CNP staff by District / Default Healthsystem Function",
-        "Fewer Nurses / Default Healthsystem Function",
     ]
 
     label_map_default = {
@@ -644,17 +644,14 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
     )
 
     ax_default.axhline(0, color="black", linewidth=1)
-    ax_default.set_title("Default Healthsystem")
-    ax_default.set_ylabel(
-        "% DALYs averted compared to Baseline\n"
-        "(total between 2027 and 2034)"
-    )
+    # ax_default.set_title("Default Healthsystem")
+    ax_default.set_ylabel("% DALYs averted")
     ax_default.grid(axis="y", alpha=0.3)
 
-    fig_default.suptitle(
-        "% DALYs averted relative to baseline (2027–2034)",
-        fontsize=14,
-    )
+    # fig_default.suptitle(
+    #     "% DALYs averted relative to baseline (2027–2034)",
+    #     fontsize=14,
+    # )
     fig_default.tight_layout()
 
 
@@ -703,16 +700,13 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
     )
 
     ax_improved.axhline(0, color="black", linewidth=1)
-    ax_improved.set_title("Improved Healthsystem")
-    ax_improved.set_ylabel(
-        "% DALYs averted compared to Baseline\n"
-        "(total between 2027 and 2034)"
-    )
+    # ax_improved.set_title("Improved Healthsystem")
+    ax_improved.set_ylabel("% DALYs averted")
     ax_improved.grid(axis="y", alpha=0.3)
-    fig_improved.suptitle(
-        "% DALYs averted relative to baseline (2027–2034)",
-        fontsize=14,
-    )
+    # fig_improved.suptitle(
+    #     "% DALYs averted relative to baseline (2027–2034)",
+    #     fontsize=14,
+    # )
     fig_improved.tight_layout()
     return fig_default, ax_default, fig_improved, ax_improved
 
@@ -720,11 +714,11 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
 def plot_percent_deaths_averted_comparison(default_df, improved_df):
     # Default Healthsystem
     ordered_scenarios_default = [
+        "Fewer Nurses / Default Healthsystem Function",
         "More Nurses / Default Healthsystem Function",
         "More CNP staff / Default Healthsystem Function",
         "More Nurses by District / Default Healthsystem Function",
         "More CNP staff by District / Default Healthsystem Function",
-        "Fewer Nurses / Default Healthsystem Function",
     ]
 
     label_map_default = {
@@ -763,17 +757,14 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
     )
 
     ax_default.axhline(0, color="black", linewidth=1)
-    ax_default.set_title("Default Healthsystem")
-    ax_default.set_ylabel(
-        "% deaths averted compared to Baseline\n"
-        "(total between 2027 and 2034)"
-    )
+    # ax_default.set_title("Default Healthsystem")
+    ax_default.set_ylabel("% Deaths averted")
     ax_default.grid(axis="y", alpha=0.3)
 
-    fig_default.suptitle(
-        "% deaths averted relative to baseline (2027–2034)",
-        fontsize=14,
-    )
+    # fig_default.suptitle(
+    #     "% deaths averted relative to baseline (2027–2034)",
+    #     fontsize=14,
+    # )
     fig_default.tight_layout()
 
 
@@ -823,10 +814,7 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
 
     ax_improved.axhline(0, color="black", linewidth=1)
     ax_improved.set_title("Improved Healthsystem")
-    ax_improved.set_ylabel(
-        "% deaths averted compared to Baseline\n"
-        "(total between 2027 and 2034)"
-    )
+    ax_improved.set_ylabel("% Deaths averted\n")
     ax_improved.grid(axis="y", alpha=0.3)
 
     fig_improved.suptitle(
@@ -1248,7 +1236,7 @@ def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
     ax_default.set_yticks(y_default)
     ax_default.set_yticklabels(scenarios_default[0][1].index)
     ax_default.set_xlabel("% DALYs averted")
-    ax_default.set_title("Default Healthsystem")
+    # ax_default.set_title("Default Healthsystem")
     ax_default.grid(axis="x", alpha=0.3)
 
     handles_default, labels_default = ax_default.get_legend_handles_labels()
@@ -1261,10 +1249,10 @@ def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
         frameon=True,
     )
 
-    fig_default.suptitle(
-        "% DALYs averted by age group on national level\n"
-        "(2027–2034)"
-    )
+    # fig_default.suptitle(
+    #     "% DALYs averted by age group on national level\n"
+    #     "(2027–2034)"
+    # )
     fig_default.tight_layout(rect=[0, 0.08, 1, 1])
 
     # Plot Improved Healthsystem
