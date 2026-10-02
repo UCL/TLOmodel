@@ -831,9 +831,9 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         if 'Lifestyle' in self.sim.modules:
             logger.info(
-                key='population_by_wealth_urban_region',
+                key='population_by_wealth_age_urban_region',
                 data=df[df.is_alive].groupby(
-                    ['sex','li_wealth', 'li_urban', 'region_of_residence']
+                    ['sex','age_range','li_wealth', 'li_urban', 'region_of_residence']
                 ).size().to_dict()
             )
 

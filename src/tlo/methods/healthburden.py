@@ -640,10 +640,10 @@ class HealthBurden(Module):
         # 5) Log total DALYS (Stacked by Age and Time), broken down by sex/wealth/urban/region (with the YLL stacked by
         # age and time)
         yld_by_wealth_urban_region = summarise_results_for_this_year_ur(
-            self.years_lived_with_disability_ur, level=[0,2,3,4]
+            self.years_lived_with_disability_ur, level=[0,1,2,3,4]
         )
         yll_by_wealth_urban_region = summarise_results_for_this_year_ur(
-            self.years_life_lost_stacked_age_and_time_ur, level=[0,2,3,4]
+            self.years_life_lost_stacked_age_and_time_ur, level=[0,1,2,3,4]
         )
 
         log_df_line_by_line(
