@@ -292,7 +292,7 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "total_laser_pan_retinal_coagulation_sessions"] = 0
         df.loc[list(alive_diabetes_idx), "on_laser_pan_retinal_coagulation_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_prc_treatment"] = pd.NaT
-        df.loc[list(alive_diabetes_idx), "dr_prc_vision_preserved"] = False
+        df.loc[list(alive_diabetes_idx), "dr_prp_vision_preserved"] = False
         df.loc[list(alive_diabetes_idx), "vision_status"] = "normal"
         df.loc[list(alive_diabetes_idx), "vision_loss_due_to_dr"] = False
 
@@ -479,7 +479,7 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, "total_laser_pan_retinal_coagulation_sessions"] = 0
         self.sim.population.props.at[child_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_prc_treatment'] = pd.NaT
-        self.sim.population.props.at[child_id, 'dr_prc_vision_preserved'] = False
+        self.sim.population.props.at[child_id, 'dr_prp_vision_preserved'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -597,7 +597,7 @@ class DiabeticRetinopathy(Module):
         if self.rng.random_sample() < success_prob:
             # Successful PRP preserves vision status the individual has
             # at the time of successful treatment.
-            df.at[person_id, 'dr_prc_vision_preserved'] = True
+            df.at[person_id, 'dr_prp_vision_preserved'] = True
 
     def update_dmo_status(self):
         """Update DMO status for people with diabetic retinopathy.

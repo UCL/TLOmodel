@@ -104,17 +104,31 @@ def check_dtypes(sim):
     df = sim.population.props
     orig = sim.population.new_row
 
-    print("\nColumns in df but not in new_row:")
-    print(df.columns.difference(orig.index).tolist())
-
-    print("\nColumns in new_row but not in df:")
-    print(orig.index.difference(df.columns).tolist())
-
-    print("\ndf columns:")
-    print(df.columns.tolist())
-
-    print("\nnew_row index:")
-    print(orig.index.tolist())
+    # print("\n--- population props ---")
+    # print("Number of df columns:", len(df.columns))
+    #
+    # print("\n--- new_row ---")
+    # print("Type:", type(orig))
+    # print("Shape:", orig.shape)
+    # print("Number of new_row columns:", len(orig.columns))
+    #
+    # print("\nColumns in df but not in new_row:")
+    # print(df.columns.difference(orig.columns).tolist())
+    #
+    # print("\nColumns in new_row but not in df:")
+    # print(orig.columns.difference(df.columns).tolist())
+    #
+    # print("\nCommon columns with different dtypes:")
+    # common = df.columns.intersection(orig.columns)
+    #
+    # for col in common:
+    #     df_dtype = df[col].dtype
+    #     new_row_dtype = orig[col].dtype
+    #
+    #     if df_dtype != new_row_dtype:
+    #         print(f"{col}: df={df_dtype}, new_row={new_row_dtype}")
+    #
+    # print("\nColumn order identical:", df.columns.equals(orig.columns))
 
     assert (df.dtypes == orig.dtypes).all()
 
