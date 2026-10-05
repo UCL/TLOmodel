@@ -1375,7 +1375,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Default Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Default Healthsystem",
-        "DALYs averted in percentage",
+        "DALYs averted in percentage (mean)",
     )
 
     # Keep only Improved Healthsystem scenarios
@@ -1451,7 +1451,7 @@ if __name__ == "__main__":
             "More CNP staff by District / Improved Healthsystem Function",
         ],
         "% DALYs averted (vs Baseline): Improved Healthsystem",
-        "DALYs averted in percentage",
+        "DALYs averted in percentage (mean)",
     )
 
     fig_dalys_bar_default, ax_dalys_bar_default = (
