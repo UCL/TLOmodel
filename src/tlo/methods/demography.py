@@ -556,6 +556,9 @@ class Demography(Module):
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
                                                                     cause_of_death=cause,
+                                                                    urban=person['li_urban'],
+                                                                    region_of_residence=person[
+                                                                        'region_of_residence'],
                                                                     )
 
         # Release any beds-days that would be used by this person:
@@ -825,6 +828,14 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                   'male': sex_count['M'],
                   'female': sex_count['F']
                   })
+
+        if 'Lifestyle' in self.sim.modules:
+            logger.info(
+                key='population_by_wealth_urban_region',
+                data=df[df.is_alive].groupby(
+                    ['sex','li_wealth', 'li_urban', 'region_of_residence']
+                ).size().to_dict()
+            )
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately.)

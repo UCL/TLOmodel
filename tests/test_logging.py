@@ -10,6 +10,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 import pytest
+from packaging.version import Version
 
 import tlo.logging as logging
 import tlo.logging.core as core
@@ -82,6 +83,14 @@ def initialise_logging(
     yield
     logging.reset()
 
+def _tlo_logger_handlers(logger: core.Logger) -> list[_logging.Handler]:
+    # The handlers tlo.logging installs: stdout StreamHandler and FileHandler.
+    # Excludes any capture handlers a test runner may have attached.
+    return [
+        h for h in logger.handlers
+        if type(h) in (_logging.StreamHandler, _logging.FileHandler)
+    ]
+
 
 @pytest.mark.parametrize("add_stdout_handler", [True, False])
 @pytest.mark.parametrize("root_level", LOGGING_LEVELS, ids=_logging.getLevelName)
@@ -96,22 +105,24 @@ def test_initialise_logging(
 ) -> None:
     logger = logging.getLogger("tlo")
     assert logger.level == root_level
+    handlers = _tlo_logger_handlers(logger)
     if add_stdout_handler:
-        assert len(logger.handlers) == 1
+        assert len(handlers) == 1
         handler = logger.handlers[0]
         assert isinstance(handler, _logging.StreamHandler)
         assert handler.stream is sys.stdout
         assert handler.level == stdout_handler_level
     else:
-        assert len(logger.handlers) == 0
+        assert len(handlers) == 0
     assert core._get_simulation_date is simulation_date_getter
 
 
 def _check_handlers(
     logger: core.Logger, expected_number_handlers: int, expected_log_path: Path
 ) -> None:
-    assert len(logger.handlers) == expected_number_handlers
-    file_handlers = [h for h in logger.handlers if isinstance(h, _logging.FileHandler)]
+    handlers = _tlo_logger_handlers(logger)
+    assert len(handlers) == expected_number_handlers
+    file_handlers = [h for h in handlers if isinstance(h, _logging.FileHandler)]
     assert len(file_handlers) == 1
     assert file_handlers[0].baseFilename == str(expected_log_path)
 
@@ -226,13 +237,17 @@ def test_get_columns_from_data_dict() -> None:
 
 
 @contextlib.contextmanager
-def _propagate_to_root() -> Generator[None, None, None]:
+def _propagate_to_root_if_needed() -> Generator[None, None, None]:
     # Enable propagation to root logger to allow pytest capturing to work
-    root_logger = logging.getLogger("tlo")
-    root_logger._std_logger.propagate = True
-    yield
-    root_logger._std_logger.propagate = False
-
+    # on pytest versions < 9.10 where non-propagating loggers are not
+    # captured - see https://github.com/pytest-dev/pytest/issues/3697
+    if Version(pytest.__version__) < Version("9.1.0"):
+        root_logger = logging.getLogger("tlo")
+        root_logger._std_logger.propagate = True
+        yield
+        root_logger._std_logger.propagate = False
+    else:
+        yield
 
 def _setup_caplog_and_get_logger(
     caplog: pytest.LogCaptureFixture, logger_name: str, logger_level: core.LogLevel
@@ -258,7 +273,7 @@ def test_disable(
     logging.disable(disable_level)
     assert not logger.isEnabledFor(disable_level)
     message_level = disable_level + logger_level_offset
-    with _propagate_to_root():
+    with _propagate_to_root_if_needed():
         logger.log(message_level, key="message", data=data)
     if message_level > disable_level:
         # Message level is above disable level and so should have been captured
@@ -297,7 +312,7 @@ def test_logging_with_log(
 ) -> None:
     logger_level = message_level + logger_level_offset
     logger = _setup_caplog_and_get_logger(caplog, logger_name, logger_level)
-    with _propagate_to_root():
+    with _propagate_to_root_if_needed():
         logger.log(level=message_level, key="message", data=data)
     _check_captured_log_output_for_levels(caplog, message_level, logger_level, data)
 
@@ -316,7 +331,7 @@ def test_logging_with_convenience_methods(
     logger_level = message_level + logger_level_offset
     logger = _setup_caplog_and_get_logger(caplog, logger_name, logger_level)
     convenience_method = getattr(logger, _logging.getLevelName(message_level).lower())
-    with _propagate_to_root():
+    with _propagate_to_root_if_needed():
         convenience_method(key="message", data=data)
     _check_captured_log_output_for_levels(caplog, message_level, logger_level, data)
 
@@ -436,7 +451,7 @@ def test_logging_structured_data(
     logger = _setup_caplog_and_get_logger(caplog, logger_name, level)
     log_data = data_type(data)
     data_dict = logging.core._get_log_data_as_dict(log_data)
-    with _propagate_to_root():
+    with _propagate_to_root_if_needed():
         for _ in range(number_repeats):
             logger.log(level=level, key=key, data=log_data, description=description)
     assert len(caplog.records) == number_repeats
@@ -467,7 +482,7 @@ def test_logging_updating_simulation_date(
     data = "spam"
     data_dict = logging.core._get_log_data_as_dict(data)
     dates = []
-    with _propagate_to_root():
+    with _propagate_to_root_if_needed():
         for _ in range(number_dates):
             logger.log(level=root_level, key=key, data=data)
             dates.append(simulation_date_getter())
@@ -497,7 +512,7 @@ def test_logging_structured_data_multiple_keys(
     keys = ["foo", "bar", "foo", "foo", "bar"]
     data_values = ["a", "b", "c", "d", "e"]
     data_dicts = [logging.core._get_log_data_as_dict(data) for data in data_values]
-    with _propagate_to_root():
+    with _propagate_to_root_if_needed():
         for key, data in zip(keys, data_values):
             logger.log(level=root_level, key=key, data=data)
     assert len(caplog.records) == len(keys)
