@@ -749,13 +749,13 @@ def plot_percent_service_area_volume_change(
             lw=1,
         )
 
-    ax.axhline(0, color="black", linestyle="--",linewidth=1,)
-    ax.set_xlabel("Service area")
+    ax.axhline(0, color="black", linestyle="--", linewidth=1,)
+    # ax.set_xlabel("Service area")
     ax.set_ylabel("% change in service volume\n(2027–2034)")
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels(service_areas, rotation=45, ha="right",)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3,)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=5,)
     ax.grid(axis="y", alpha=0.3,)
     fig.tight_layout()
     return fig

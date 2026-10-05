@@ -848,6 +848,8 @@ def _plot_percent_averted_by_cause(
         if cause in default_df["Fewer Nurses / Default Healthsystem Function"].index
         and cause in improved_df["Fewer Nurses / Improved Healthsystem Function"].index
     ]
+
+    available_causes = sorted(available_causes, key=str.lower)
     causes = available_causes[:top_n]
 
     # Scenario order and colours
@@ -918,7 +920,7 @@ def _plot_percent_averted_by_cause(
             rotation_mode="anchor",
         )
 
-        ax.set_xlabel("Cause", labelpad=10)
+        ax.set_xlabel("", labelpad=10)
         ax.set_ylabel(f"% {outcome_label} averted")
         ax.grid(axis="y", alpha=0.3)
         ax.set_axisbelow(True)
@@ -927,7 +929,7 @@ def _plot_percent_averted_by_cause(
         ax.legend(
             loc="upper center",
             bbox_to_anchor=(0.5, -0.28),
-            ncol=3,
+            ncol=5,
             frameon=True,
         )
 
@@ -936,7 +938,7 @@ def _plot_percent_averted_by_cause(
             left=0.06,
             right=0.99,
             top=0.97,
-            bottom=0.36,
+            bottom=0.30,
         )
 
         return fig, ax
