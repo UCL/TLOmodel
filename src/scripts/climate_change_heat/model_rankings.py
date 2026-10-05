@@ -45,11 +45,11 @@ PANEL_PREFIXES = [
 
 # One ranking applied to ALL prefixes, so low/median/high are the same models
 # across quantities. wbgtx_day matches the ranking in the extremes script.
-RANK_PREFIX = "wbgt_extreme_indices_facility_" #"wbgt_monthly_mean_facility_"#"wbgt_extreme_indices_facility_"
-RANK_COLUMN = "wbgt5x_day" ##"wbgtx_day"
-
+RANK_PREFIX = "wbgt_monthly_mean_facility_" #"wbgt_monthly_mean_facility_"#"wbgt_extreme_indices_facility_"
+RANK_COLUMN = "wbgt_day" ##"wbgtx_day"
+RANK_YEARS = (2025, 2040)
 ROLES = ["lowest", "median", "highest"]   # exact words model_of_wbgt_dhis2 expects
-
+RANK_TIME_COLUMN = "date"
 
 # ---------------------------------------------------------------------------
 def model_files_for(prefix, SCENARIO):
@@ -64,26 +64,33 @@ def model_files_for(prefix, SCENARIO):
         out[token] = p
     return out
 
-
 def rank_models(SCENARIO):
-    """Rank models coolest->hottest by mean(RANK_COLUMN). Models with an
-    all-NaN column are excluded with a warning."""
-    files = model_files_for(RANK_PREFIX, SCENARIO)  # FIXED: Added SCENARIO argument
+    """Rank models coolest->hottest by mean(RANK_COLUMN) over RANK_YEARS.
+    Models with no finite values in the window are excluded with a warning."""
+    files = model_files_for(RANK_PREFIX, SCENARIO)
     if not files:
         raise FileNotFoundError(
-            f"No {RANK_PREFIX}*{'_' + SCENARIO}.csv in {INDICES_DIR} — run the "
+            f"No {RANK_PREFIX}*_{SCENARIO}.csv in {INDICES_DIR} — run the "
             f"panel producer first.")
+    cols = [RANK_COLUMN] + ([RANK_TIME_COLUMN] if RANK_YEARS else [])
     means = {}
     for model, p in files.items():
-        col = pd.read_csv(p, usecols=[RANK_COLUMN])[RANK_COLUMN].to_numpy()
+        df = pd.read_csv(p, usecols=cols)
+        if RANK_YEARS:
+            t = df[RANK_TIME_COLUMN]
+            years = t if pd.api.types.is_integer_dtype(t) else pd.to_datetime(t).dt.year
+            df = df[years.between(*RANK_YEARS)]
+            if df.empty:
+                raise ValueError(
+                    f"{model}: no rows in {RANK_YEARS} — check RANK_TIME_COLUMN/panel coverage")
+        col = df[RANK_COLUMN].to_numpy(dtype=float)
         m = np.nanmean(col) if np.isfinite(col).any() else np.nan
         if np.isnan(m):
-            print(f"  ⚠ {model}: all-NaN {RANK_COLUMN} — excluded from ranking")
+            print(f"  ⚠ {model}: all-NaN {RANK_COLUMN} in window — excluded from ranking")
         else:
             means[model] = float(m)
-    ranked = sorted(means, key=means.get)          # coolest -> hottest
+    ranked = sorted(means, key=means.get)
     return ranked, means
-
 
 def pick_roles(ranked):
     """lowest = coolest, highest = hottest, median = lower-middle (matches the
