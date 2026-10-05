@@ -45,8 +45,8 @@ PANEL_PREFIXES = [
 
 # One ranking applied to ALL prefixes, so low/median/high are the same models
 # across quantities. wbgtx_day matches the ranking in the extremes script.
-RANK_PREFIX = "wbgt_monthly_mean_facility_"#"wbgt_extreme_indices_facility_"
-RANK_COLUMN = "wbgt_day"#"wbgtx_day"
+RANK_PREFIX = "wbgt_extreme_indices_facility_" #"wbgt_monthly_mean_facility_"#"wbgt_extreme_indices_facility_"
+RANK_COLUMN = "wbgt5x_day" ##"wbgtx_day"
 
 ROLES = ["lowest", "median", "highest"]   # exact words model_of_wbgt_dhis2 expects
 
