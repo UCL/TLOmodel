@@ -1567,6 +1567,8 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
 
         health_system.consumables._summary_counter.record_availability(
             items_available=resus_item_code,
+            items_not_available={},
+            items_used=resus_item_code,
         )
 
     def did_not_run(self):
