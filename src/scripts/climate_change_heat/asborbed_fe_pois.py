@@ -33,17 +33,16 @@ import numpy.random
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+import time
 import warnings
 from multiprocessing import Pool, cpu_count
-import time
 from pathlib import Path
-from scipy.stats import norm
 
 import numpy as np
 import pandas as pd
 import patsy
-
 import pyfixest as pf
+from scipy.stats import norm
 
 warnings.filterwarnings("ignore", category=UserWarning)
 numpy.random.seed(42)
@@ -154,23 +153,23 @@ def _apply_deficit_filter(df, base_col, wx_col):
 # out-of-support predictions flat rather than allowing the cr() basis +
 # linear lag terms to extrapolate. Historical fit is unaffected.
 CLIP_PROJECTION_TO_SUPPORT = True
-SUPPORT_LOW_PCTILE = 0.01
-SUPPORT_HIGH_PCTILE = 99.99
+SUPPORT_LOW_PCTILE = 0.001
+SUPPORT_HIGH_PCTILE = 99.999
 
 
 # Model settings
 WBGT_VAR = "wbgt5x_day" #"wbgt_day"#"wbgt5x_day"
 DISTRICT_COL = "Dist"
 SPLINE_DF = 3
-LAG_MONTHS = [1]
+LAG_MONTHS = [1,2,3]
 SA_LAG = True
 if SA_LAG:
-    LAG_SUFFIX = "_with_lags"
+    LAG_SUFFIX = "_with_lags_SI"
 else:
     LAG_SUFFIX = ""
 CENTER = True
 MIN_OBS = 24
-MIN_OBS_COVERAGE = 0.5
+MIN_OBS_COVERAGE = 0.95
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
 CLUSTER_COL = "grid_id"
@@ -220,7 +219,7 @@ PRECIP_FILE_BY_TIER = {
 
 WBGT_REFERENCE_TEMP = 23.0
 CURVE_REF_MODE = "p50"
-CURVE_N = 60
+CURVE_N = 30
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
 OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
