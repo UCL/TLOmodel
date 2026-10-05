@@ -3,12 +3,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
     care_of_women_during_pregnancy,
     labour,
-    mnh_cohort_module,
     newborn_outcomes,
     pregnancy_helper_functions,
 )
@@ -81,7 +79,8 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
-        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables[
+            'delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
@@ -143,7 +142,8 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
-        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables[
+            'delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']

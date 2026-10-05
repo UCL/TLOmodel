@@ -7,17 +7,11 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
-import scipy.stats as st
 import seaborn as sns
 from matplotlib.patches import Patch
 from scipy.stats import t
-from tableone import TableOne
 
-from src.scripts.costing.cost_estimation import (
-    do_stacked_bar_plot_of_cost_by_category,
-    estimate_input_cost_of_scenarios,
-    summarize_cost_data,
-)
+from src.scripts.costing.cost_estimation import summarize_cost_data
 from tlo import Date
 from tlo.analysis.utils import (
     bin_hsi_event_details,
@@ -25,7 +19,6 @@ from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
-    parse_log_file,
 )
 
 # Get results file

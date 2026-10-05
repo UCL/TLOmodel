@@ -1799,7 +1799,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
-            if not df.at[person_id, 'ac_mag_sulph_treatment'] and not df.at[person_id, 'la_severe_pre_eclampsia_treatment']:
+            if not df.at[person_id, 'ac_mag_sulph_treatment'] and not df.at[person_id,
+            'la_severe_pre_eclampsia_treatment']:
 
                 mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
                     self, int_name='mgso4_spe', hsi_event=hsi_event,

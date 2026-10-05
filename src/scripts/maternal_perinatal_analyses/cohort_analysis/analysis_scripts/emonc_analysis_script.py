@@ -7,21 +7,15 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
 from matplotlib.patches import Patch
 from scipy.stats import t
-from tableone import TableOne
 
-from src.scripts.costing.cost_estimation import (
-    do_stacked_bar_plot_of_cost_by_category,
-    estimate_input_cost_of_scenarios,
-    summarize_cost_data,
-)
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
-    parse_log_file,
 )
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
@@ -1793,10 +1787,10 @@ def debug_plots():
     nmr_by_scnario = {k: get_data(results['deaths_and_stillbirths']['summarised'], 'nmr', d) for k, d in zip (
         int_analysis, draws)}
 
-    mmr_by_scenario_oth_log = {k: get_data(results['mat_deaths']['summarised'], sim_start_year, d) for k, d in zip (
-        int_analysis, draws)}
-    nmr_by_scenario_oth_log = {k: get_data(results['neo_deaths']['summarised'], sim_start_year, d) for k, d in zip (
-        int_analysis, draws)}
+    # mmr_by_scenario_oth_log = {k: get_data(results['mat_deaths']['summarised'], sim_start_year, d) for k, d in zip (
+    #     int_analysis, draws)}
+    # nmr_by_scenario_oth_log = {k: get_data(results['neo_deaths']['summarised'], sim_start_year, d) for k, d in zip (
+    #     int_analysis, draws)}
 
     def barcharts(data, y_label, title):
 
