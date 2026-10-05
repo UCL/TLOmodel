@@ -14,16 +14,16 @@ means the timeseries panel here reads the correct file — unlike the reader
 in the model script's own plotting block, which is missing the suffix.
 """
 
-import pandas as pd
 from pathlib import Path
+
 import geopandas as gpd
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
-from matplotlib.colors import LinearSegmentedColormap, Normalize
+import matplotlib.pyplot as plt
+import pandas as pd
 from matplotlib.cm import ScalarMappable
-import matplotlib.gridspec as gridspec
+from matplotlib.colors import LinearSegmentedColormap, Normalize
 
 OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
 WBGT_VAR = "wbgt5x_day"
@@ -35,10 +35,11 @@ pd.concat([pd.read_csv(p) for p in paths], ignore_index=True).to_csv(
 )
 print(f"wrote {len(paths)} indicators")
 import os
+
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
 
 SHAPEFILE_PATH = (
@@ -234,8 +235,8 @@ def plot_ts_overlay_with_wbgt_rug(
       'index100'      : each series scaled so its own long-run mean = 100.
                         Pure shape comparison; y-axis is unitless.
     """
-    from matplotlib.colors import LinearSegmentedColormap, Normalize
     from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import LinearSegmentedColormap, Normalize
 
     panel_dir = panel_dir or f"{'/'.join(OUT_DIR.rstrip('/').split('/')[:-1])}/Thermofeel_WBGT/Indices/"
 
@@ -1962,8 +1963,9 @@ def plot_df_stability_panel(
     """Overlay exposure-response curves across spline df on shared axes,
     one subplot per indicator. Reads exposure_response_curve_{ind}_{WBGT_VAR}_df{k}.csv
     written by the SPLINE_DF_SWEEP block."""
-    import matplotlib.cm as cm
     import glob
+
+    import matplotlib.cm as cm
 
     print("out_dir:", repr(out_dir))
     print("WBGT_VAR:", repr(WBGT_VAR), "LAG_SUFFIX:", repr(LAG_SUFFIX))
@@ -2137,6 +2139,173 @@ def plot_displacement_empirical_panel(fitted: list[str], out_dir: str = OUT_DIR)
     plt.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close()
     return out_path
+
+def plot_displacement_df_stability_panel(
+    fitted: list[str],
+    df_sweep: tuple[int, ...] = (3, 4, 6, 8),
+    out_dir: str = OUT_DIR,
+) -> str:
+    """
+    Overlay empirical displacement curves across spline df,
+    with the corresponding 95% CI for every df.
+
+    Expected files:
+        displacement_empirical_{indicator}_{WBGT_VAR}{LAG_SUFFIX}_df{k}.csv
+
+    Expected columns:
+        indicator
+        wbgt_bin_mid
+        displacement_pct
+        ci_lo
+        ci_hi
+    """
+    import matplotlib.cm as cm
+
+    cmap = cm.get_cmap("viridis")
+    df_colours = {
+        k: cmap(i / max(len(df_sweep) - 1, 1))
+        for i, k in enumerate(df_sweep)
+    }
+
+    n = len(fitted)
+    n_cols = min(3, n)
+    n_rows = int(np.ceil(n / n_cols))
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(5 * n_cols, 3.4 * n_rows),
+        squeeze=False,
+        sharex=True,
+        sharey=False,
+    )
+    axes_flat = axes.flatten()
+
+    for idx, ind in enumerate(fitted):
+        ax = axes_flat[idx]
+        curves_found = 0
+
+        for k in df_sweep:
+
+            path = (
+                f"{out_dir}"
+                f"displacement_empirical_{ind}_"
+                f"{WBGT_VAR}{LAG_SUFFIX}_df{k}.csv"
+            )
+
+            if not os.path.exists(path):
+                print(f"Missing: {path}")
+                continue
+
+            curve = (
+                pd.read_csv(path)
+                .sort_values("wbgt_bin_mid")
+                .reset_index(drop=True)
+            )
+
+            if curve.empty:
+                continue
+
+            colour = df_colours[k]
+
+            # --------------------------------------------------
+            # CI FOR THIS DF
+            # --------------------------------------------------
+            if (
+                {"ci_lo", "ci_hi"}.issubset(curve.columns)
+                and curve["ci_lo"].notna().any()
+            ):
+                ax.fill_between(
+                    curve["wbgt_bin_mid"],
+                    curve["ci_lo"],
+                    curve["ci_hi"],
+                    color=colour,
+                    alpha=0.08,
+                    linewidth=0,
+                )
+
+            # --------------------------------------------------
+            # CENTRAL ESTIMATE
+            # --------------------------------------------------
+            ax.plot(
+                curve["wbgt_bin_mid"],
+                curve["displacement_pct"],
+                color=colour,
+                lw=1.5,
+                label=f"df={k}",
+            )
+
+            curves_found += 1
+
+        if curves_found == 0:
+            ax.set_visible(False)
+            continue
+
+        ax.axhline(
+            0.0,
+            color="black",
+            lw=0.6,
+            ls="--",
+        )
+
+        ax.set_title(
+            _label(ind),
+            fontsize=9,
+            fontweight="bold",
+        )
+
+        if idx % n_cols == 0:
+            ax.set_ylabel(
+                "Displacement (%)",
+                fontsize=8,
+            )
+
+        if idx // n_cols == n_rows - 1:
+            ax.set_xlabel(
+                "WBGT (°C)",
+                fontsize=8,
+            )
+
+        ax.tick_params(labelsize=7)
+
+        if idx == 0:
+            ax.legend(
+                fontsize=6,
+                frameon=False,
+                ncol=2,
+                loc="best",
+            )
+
+        if idx < len(PANEL_LABELS):
+            ax.annotate(
+                PANEL_LABELS[idx],
+                xy=(0.05, 1.05),
+                xycoords="axes fraction",
+                size=14,
+            )
+
+    # Hide unused panels
+    for idx in range(n, len(axes_flat)):
+        axes_flat[idx].set_visible(False)
+
+    plt.tight_layout()
+
+    out_path = (
+        f"{out_dir}"
+        f"displacement_df_stability_panel_"
+        f"{WBGT_VAR}{LAG_SUFFIX}.png"
+    )
+
+    plt.savefig(
+        out_path,
+        dpi=180,
+        bbox_inches="tight",
+    )
+    plt.close()
+
+    print(f"Saved: {out_path}")
+    return out_path
+
 # =====================================================================
 # MAIN — run everything
 # =====================================================================
@@ -2190,13 +2359,13 @@ if __name__ == "__main__":
     #     print(f"  hot-months {w[0]}-{w[1]}:",
     #           plot_projection_forest(fitted, mode="hot",     results_df=results_df))
     #
-    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    print("  aggregate ->",
-          plot_projection_annual_panel(fitted, results_df=results_df))
-    print("  hot-months ->",
-          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-                                       results_df=results_df))
-
+    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    # print("  aggregate ->",
+    #       plot_projection_annual_panel(fitted, results_df=results_df))
+    # print("  hot-months ->",
+    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+    #                                    results_df=results_df))
+    #
     # print("\n[14] seasonal amplification (SSP245 / median)")
     # print("  ->", plot_seasonal_amplification(fitted))
     #
@@ -2208,12 +2377,16 @@ if __name__ == "__main__":
     # stats = calculate_summary_statistics(fitted)
     # print_summary_statistics(stats, by_ind)
     # print("\nDone.")
+    #
+    # print("\n[17] 1940s reference-period contrast")
+    # print("  ->",plot_reference_period_contrast(fitted=fitted, results_df=results_df))
+    # #
+    print("\n[18] spline df stability panel")
+    print("  ->", plot_df_stability_panel(fitted))
 
-    print("\n[17] 1940s reference-period contrast")
-    print("  ->",plot_reference_period_contrast(fitted=fitted, results_df=results_df))
-    #
-    # print("\n[18] spline df stability panel")
-    # print("  ->", plot_df_stability_panel(fitted))
-    #
-    # print("\n[19] spline df stability panel")
-    # print("  ->", plot_displacement_empirical_panel(fitted))
+    print("\n[19] spline df stability panel")
+    print("  ->", plot_displacement_empirical_panel(fitted))
+
+    print("\n[20] displacement df stability panel")
+    print("  ->", plot_displacement_df_stability_panel(fitted))
+

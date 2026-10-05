@@ -136,7 +136,7 @@ SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
 # df_sensitivity_{WBGT_VAR}.csv with deficit_pct, CIs, and pseudo-AIC for
 # both the weather and baseline models. The main pipeline (projections,
 # counterfactuals) still runs at SPLINE_DF. Set to [] to skip.
-SPLINE_DF_SWEEP: list[int] = [3, 4, 6, 8, 12, 20]
+SPLINE_DF_SWEEP: list[int] = [3, 4, 6, 8]
 
 
 def _apply_deficit_filter(df, base_col, wx_col):
@@ -161,10 +161,10 @@ SUPPORT_HIGH_PCTILE = 99.999
 WBGT_VAR = "wbgt5x_day" #"wbgt_day"#"wbgt5x_day"
 DISTRICT_COL = "Dist"
 SPLINE_DF = 3
-LAG_MONTHS = [1,2,3]
+LAG_MONTHS = [1]#[1,2,3]
 SA_LAG = True
 if SA_LAG:
-    LAG_SUFFIX = "_with_lags_SI"
+    LAG_SUFFIX = "_with_lags_SI" #"_with_lags_SI"
 else:
     LAG_SUFFIX = ""
 CENTER = True
@@ -219,7 +219,7 @@ PRECIP_FILE_BY_TIER = {
 
 WBGT_REFERENCE_TEMP = 23.0
 CURVE_REF_MODE = "p50"
-CURVE_N = 30
+CURVE_N = 80
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
 OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
