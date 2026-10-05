@@ -29,8 +29,7 @@ from src.scripts.costing.cost_estimation import (do_stacked_bar_plot_of_cost_by_
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-scenario = 'emonc_interventions-2026-09-25T073946Z'
-# scenario = 'testing_scenario_172156'
+scenario = 'testing_scenario_33089'
 
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 sim_start_year = 2025
@@ -213,6 +212,7 @@ def produce_fig_1():
             "name": "Maternal haem.\nCM",
             "draw": 3,
             "items": [
+                # ("haem_cm_amtsl", "AMTSL")
                 ("haem_cm_ut", "Uterotonics"),
                 ("haem_cm_mrp", "MRRP"),
                 ("haem_cm_blood_pph", "Blood (PPH)†"),
@@ -1465,15 +1465,16 @@ figure_2c_alt_cause_specific_dalys_intervals(
 # Extract initial system level cost data
 
 list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
-# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
-#                                      resourcefilepath=resourcefilepath,
-#                                      suspended_results_folder=results_folder,
-#                                      _draws=draws,
-#                                      _years=list_of_relevant_years_for_costing,
-#                                      cost_only_used_staff= True,
-#                                      alt_scaling_factor=p_scaling_factor)
 
-# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+                                     resourcefilepath=resourcefilepath,
+                                     suspended_results_folder=results_folder,
+                                     _draws=draws,
+                                     _years=list_of_relevant_years_for_costing,
+                                     cost_only_used_staff= True,
+                                     alt_scaling_factor=p_scaling_factor)
+
+input_costs_df.to_csv(f'{g_path}/input_costs.csv')
 
 input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
 input_costs = input_costs.set_index('Unnamed: 0')

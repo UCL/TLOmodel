@@ -2076,6 +2076,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         person_id = hsi_event.target
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
+        def refer_for_surg():
+            mni[person_id]['referred_for_blood'] = True
+            mni[person_id]['referred_for_surgery'] = True
+
         if df.at[person_id, 'la_postpartum_haem'] and not mni[person_id]['retained_placenta']:
 
             pph_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
@@ -2098,10 +2102,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                 # If uterotonics do not stop bleeding the woman is referred for additional treatment
                 else:
-                    mni[person_id]['referred_for_surgery'] = True
-                    mni[person_id]['referred_for_blood'] = True
+                    refer_for_surg()
 
-                    # pregnancy_helper_functions.log_need(self, 'blood_transfusion_pph')
+            else:
+                refer_for_surg()
 
     def assessment_and_treatment_of_pph_retained_placenta(self, hsi_event):
         """
@@ -2116,6 +2120,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
         person_id = hsi_event.target
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
+
+        def refer_for_surg():
+            mni[person_id]['referred_for_blood'] = True
+            mni[person_id]['referred_for_surgery'] = True
+
 
         if (
             (df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta']) or
@@ -2140,11 +2149,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                         df.at[person_id, 'pn_postpartum_haem_secondary'] = False
 
                 else:
-                    mni[person_id]['referred_for_surgery'] = True
-                    mni[person_id]['referred_for_blood'] = True
-
-                    # pregnancy_helper_functions.log_need(self, 'blood_transfusion_pph')
-
+                    refer_for_surg()
+            else:
+                refer_for_surg()
 
     def surgical_management_of_pph(self, hsi_event):
         """
@@ -3307,8 +3314,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces
                 # risk of intrapartum still birth and death due to antepartum haemorrhage
                 mni[person_id]['mode_of_delivery'] = 'caesarean_section'
-                mni[person_id]['amtsl_given'] = True
+
                 df.at[person_id, 'la_previous_cs_delivery'] += 1
+
+                if not mni[person_id]['amtsl_given']:
+                    mni[person_id]['amtsl_given'] = True
+                    pregnancy_helper_functions.log_met_need(self, 'amtsl')
 
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to

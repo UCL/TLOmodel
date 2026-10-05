@@ -2619,6 +2619,9 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'm_sepsis_cm': met_need(c['sepsis_treatment_need_met'],
                                                   c['sepsis_treatment_need']),
 
+                          'haem_cm_amtsl': met_need(c['amtsl_need_met'],
+                                                 c['amtsl_need']),
+
                           'haem_cm_ut': met_need(c['pph_treatment_uterotonics_need_met'],
                                                  c['pph_treatment_uterotonics_need']),
 
