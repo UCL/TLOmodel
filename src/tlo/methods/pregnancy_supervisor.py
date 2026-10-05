@@ -1167,7 +1167,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # Log the pregnancy loss
         self.mnh_outcome_counter[type_abortion] += 1
-
         pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, type_abortion)
 
         # This function officially ends a pregnancy through the contraception module (updates 'is_pregnant' and
@@ -1441,8 +1440,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
                 self.mnh_outcome_counter['direct_mat_death'] += 1
 
+                # Log the pregnancy loss
                 if df.at[person, 'ps_gestational_age_in_weeks'] >= 28:
                     self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+                pregnancy_helper_functions.log_pregnancy_loss(self, person, "maternal_death_an")
 
                 self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
@@ -1513,6 +1514,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         self.mnh_outcome_counter['mild_mod_antepartum_haemorrhage'] += len(non_severe_women.loc[non_severe_women].index)
 
+        # Log need for treatment
         for person in non_severe_women.loc[non_severe_women].index:
             pregnancy_helper_functions.log_need(self, 'blood_transfusion_aph')
             pregnancy_helper_functions.log_need(self, 'caesarean_section_oth_surg_ip')
@@ -1631,9 +1633,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # pregnancy status and update contraceptive status
         for person in women.index:
             pregnancy_helper_functions.log_pregnancy_loss(self, person, "antenatal_stillbirth")
+            self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+
             self.sim.modules['Contraception'].end_pregnancy(person)
             mni[person]['delete_mni'] = True
-            self.mnh_outcome_counter['antenatal_stillbirth'] += 1
 
         # Call functions across the modules to ensure properties are rest
         self.sim.modules['Labour'].reset_due_date(id_or_index=women.index, new_due_date=pd.NaT)
@@ -1762,13 +1765,17 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
+
+            # Log the pregnancy loss
+            if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 28:
+                self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+            pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, "maternal_death_an")
+
             pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
             self.mnh_outcome_counter['direct_mat_death'] += 1
-
-            if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 28:
-                self.mnh_outcome_counter['antenatal_stillbirth'] += 1
 
             del mni[individual_id]
 
@@ -2442,7 +2449,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         c = self.module.mnh_outcome_counter
         la_params = self.sim.modules['Labour'].current_parameters
 
-        # DENOMINATORS
         # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
         live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
         pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
@@ -2505,7 +2511,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'pn_anaemia': rate(total_pn_anaemia_cases, c['six_week_survivors'], 100)})
 
 
-        # NEWBORN COMPLICATIONS
+        # NEWBORN COMPLICATION INCIDENCE
         logger.info(key='nb_comp_incidence',
                     data={'twin_birth': rate(c['twin_birth'], deliveries, 100),
                           'nb_sepsis': rate(total_neo_sepsis, live_births, 1000),
@@ -2586,7 +2592,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'm_pnc1+': rate(m_pnc1, total_births, 100),
                           'n_pnc1+': rate(n_pnc1, total_births, 100)})
 
-        # Intervention met need
+        # EFFECTIVE COVERAGE OF INTERVENTIONS (TREATMENT/CLINICAL NEED)
         def met_need(treatments, cases):
             if cases == 0:
                 return 0

@@ -1,33 +1,31 @@
+import os
 from pathlib import Path
 
-import os
-import pandas as pd
-import numpy as np
-
-from tlo.analysis.utils import get_scenario_outputs, extract_results, create_pickles_locally
-from scipy.stats import t
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.stats import t
 
+from tlo.analysis.utils import extract_results, get_scenario_outputs
+
+# This script outputs compares key model outputs to calibration targets. This script is designed for single year cohort.
+
+#  ==================================== DEFINE FILE AND SCENARIO INFORMATION  =========================================
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-
-#  ======================================= DEFINE SCENARIO INFORMATION  ===============================================
 scenario = 'calibration_emonc_interventions-2026-09-25T073946Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
-# create_pickles_locally(results_folder)
 
 g_path = f'{outputspath}calibration_{scenario}'
 
 if not os.path.isdir(g_path):
         os.makedirs(f'{outputspath}calibration_{scenario}')
 
+#  =========================================== HELPER FUNCTIONS =====================================================
 def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
-    """Utility function to compute summary statistics
-
-    Finds mean value and 95% interval across the runs for each draw.
+    """Utility function to compute summary statistics. Finds mean value and 95% interval across the runs for each draw.
     """
-
     # Calculate summary statistics
     grouped = results.groupby(axis=1, by='draw', sort=False)
     mean = grouped.mean()
@@ -54,8 +52,10 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-
 def get_ps_data_frames(key, results_folder):
+    """
+    Return logged data from pregnancy supervisor module. Unscaled, raw numbers and summarised.
+    """
     def sort_df(_df):
         _x = _df.drop(columns=['date'], inplace=False)
         return _x.iloc[0]
@@ -72,11 +72,12 @@ def get_ps_data_frames(key, results_folder):
 
     return {'crude':results_df, 'summarised':results_df_summ}
 
-#  ========================================== EXTRACT CORE DATA  =====================================================
+#  ========================================== EXTRACT DATA  =====================================================
 results = {k:get_ps_data_frames(k, results_folder) for k in
            ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage', 'met_need',
             'yearly_mnh_counter_dict', 'intervention_coverage']}
 
+# Define calibration targets
 calibration_targets = {
 
     "PROM": {
@@ -457,7 +458,7 @@ calibration_targets = {
 
 }
 
-
+# Select relevant dataframes
 model_dfs = [
     results["mat_comp_incidence"]["summarised"],
     results["nb_comp_incidence"]["summarised"],
@@ -465,6 +466,7 @@ model_dfs = [
     results['service_coverage']["summarised"]
 ]
 
+# Output model results vs calibration targets
 def plot_calibration(
     model_dfs,
     calibration_targets,
@@ -708,8 +710,8 @@ def plot_calibration(
         rect=[0, 0, 1, 0.95]
     )
 
-    plt.show()
     plt.savefig(f'{g_path}/calibration.png', bbox_inches='tight')
+    plt.show()
 
     return fig, axes, plot_df
 

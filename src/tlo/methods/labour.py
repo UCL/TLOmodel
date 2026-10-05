@@ -1978,6 +1978,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         person_id = hsi_event.target
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
+        # We check when the intervention is delivered and the indication to prevent repeated treatment administration
         if ((labour_stage == 'ip' and (df.at[person_id, 'la_sepsis'] or
                                       df.at[person_id, 'ps_chorioamnionitis']))
             or (labour_stage == 'pp' and (df.at[person_id, 'la_sepsis_pp'] or
@@ -2104,6 +2105,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 else:
                     refer_for_surg()
 
+            # If treatment cannot be delivered due to resource constraints then referal for surgical intervention
+            # may be needed
             else:
                 refer_for_surg()
 
@@ -2150,6 +2153,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                 else:
                     refer_for_surg()
+            # If treatment cannot be delivered due to resource constraints then referal for surgical intervention
+            # may be needed
             else:
                 refer_for_surg()
 
@@ -2645,6 +2650,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_obstructed_labour']:
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['obstructed_labour'] += 1
+
+            # We assume clinical need for AVD comes from non-CPD obstruction only
             if not mni[individual_id]['cpd']:
                 pregnancy_helper_functions.log_need(self, 'avd_ol')
 
@@ -2731,7 +2738,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         outcome_of_still_birth_equation = self.module.predict(self.module.la_linear_models['intrapartum_still_birth'],
                                                               individual_id)
 
-        # We also assume that if a womans labour has started prior to 24 weeks the baby would not survive and we class
+        # We also assume that if a woman's labour has started prior to 24 weeks the baby would not survive and we class
         # this as a stillbirth
         if pre_24_weeks or outcome_of_still_birth_equation:
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
@@ -2740,6 +2747,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
             random_draw = self.module.rng.random_sample()
 
+            # For twin mothers we determine if both pregnancies will end or not
             twin_mother = df.at[individual_id, 'ps_multiple_pregnancy']
             both_twins_stillborn = True if pre_24_weeks else random_draw < params['prob_both_twins_ip_still_birth']
 
@@ -3056,9 +3064,9 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, indication='other')
 
-        # # -------------------------- Newborn resuscitation ------------------------------------------------------------
-        # # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
-        # # the intervention
+        # -------------------------- Newborn resuscitation ------------------------------------------------------------
+        # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
+        # the intervention
         if not mni[person_id]['sought_care_for_complication']:
 
              int_name = 'neo_resus_term' if mni[person_id]['labour_state'] == 'term_labour' else 'neo_resus_preterm'
@@ -3317,6 +3325,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
                 df.at[person_id, 'la_previous_cs_delivery'] += 1
 
+                # Assumed that AMTSL is administered during CS when delivered
                 if not mni[person_id]['amtsl_given']:
                     mni[person_id]['amtsl_given'] = True
                     pregnancy_helper_functions.log_met_need(self, 'amtsl')

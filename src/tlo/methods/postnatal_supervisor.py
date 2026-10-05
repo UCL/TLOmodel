@@ -622,10 +622,12 @@ class PostnatalSupervisor(Module):
                     for person in new_onset_disease.index:
                         self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[disease] += 1
 
+                        # Log need for treatment
                         if disease == 'severe_pre_eclamp':
                             mni[person]['new_onset_spe'] = True
                             pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
                             pregnancy_helper_functions.log_need(self, 'mgso4_spe')
+
                         elif disease == 'ecmapsia':
                             pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
                             pregnancy_helper_functions.log_need(self, 'mgso4_ec')
@@ -774,6 +776,7 @@ class PostnatalSupervisor(Module):
             df.at[child_id, 'pn_sepsis_early_neonatal'] = True
             self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['sepsis_postnatal'] = True
 
+            # Logging is differentiated by term status
             comp = "early_onset_sepsis_pt" if (
                     df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) \
                 else "early_onset_sepsis"
@@ -809,6 +812,7 @@ class PostnatalSupervisor(Module):
             if person in nci:
                 nci[person]['sepsis_postnatal'] = True
 
+            # Logging is differentiated by term status
             comp = "late_onset_sepsis_pt" if (df.at[person, 'nb_early_preterm'] or df.at[person, 'nb_late_preterm']) \
                 else 'late_onset_sepsis'
 
@@ -1182,6 +1186,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                         for person in new_onset_disease.index:
                             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[disease] += 1
 
+                            # Log treatment need
                             if disease == 'severe_pre_eclamp':
                                 mni[person]['new_onset_spe'] = True
                                 pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')

@@ -14,6 +14,8 @@ from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
 from tlo.util import BitsetHandler, read_csv_files
 
 logger = logging.getLogger(__name__)
+logger_hs = logging.getLogger("tlo.methods.healthsystem")
+
 logger.setLevel(logging.INFO)
 
 
@@ -502,10 +504,11 @@ class NewbornOutcomes(Module):
             'encephalopathy_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_enceph_death, parameters=params),
 
-            # This equation is used to determine a newborns risk of death from sepsis
+            # This equation is used to determine a newborns risk of death from early onset sepsis
             'early_onset_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
+            # This equation is used to determine a newborns risk of death from late onset sepsis
             'late_onset_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
@@ -588,6 +591,7 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
 
+        # For logging purposes we differentiate between sepsis in term and preterm neonates
         comp = "early_onset_sepsis_pt" if (df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) \
             else "early_onset_sepsis"
 
@@ -611,10 +615,7 @@ class NewbornOutcomes(Module):
         """
         params = self.current_parameters
         df = self.sim.population.props
-        mother_id = df.at[child_id, 'mother_id']
         is_preterm = df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']
-        analysis_ints = self.sim.modules["PregnancySupervisor"].current_parameters['interventions_under_analysis']
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # We use a linear model equation to determine risk of encephalopathy on birth
         if timing == 'on_birth':
@@ -636,9 +637,11 @@ class NewbornOutcomes(Module):
             else:
                 df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
+            # For logging purposes we differentiate between encephalopathy in term and preterm neonates
             if is_preterm:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
                     f'{df.at[child_id, "nb_encephalopathy"]}_pt'] += 1
+
                 if df.at[child_id, "nb_preterm_respiratory_distress"]:
                     self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['rds_enceph_dc'] += 1
 
@@ -691,6 +694,7 @@ class NewbornOutcomes(Module):
         elif self.rng.random_sample() < params['prob_failure_to_transition']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
 
+            # For logging purposes we differentiate between failure to transition in term and preterm neonates
             if is_preterm:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth_pt'] += 1
             else:
@@ -1014,6 +1018,8 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_not_breathing_at_birth']:
             int_name = "neo_resus_preterm" if is_preterm else "neo_resus_term"
 
+            # Because we capture whether resus can be delivered during labour events, here we schedule a HSI to capture
+            # the required resources. This is only called if resus will be delivered.
             if (mni[mother_id]['neo_will_receive_resus_if_needed'] or
                 (is_preterm and ("neo_resus_preterm" in analysis_ints)) or
                 (not is_preterm and ("neo_resus_term" in analysis_ints))):
@@ -1045,7 +1051,8 @@ class NewbornOutcomes(Module):
         pnc_location = 'hc' if facility_type == '1a' else 'hp'
 
         int_name = "neo_sepsis_treatment_preterm" if (df.at[person_id, 'nb_early_preterm'] or
-                                                      df.at[person_id, 'nb_late_preterm']) else "neo_sepsis_treatment_term"
+                                                      df.at[person_id, 'nb_late_preterm']) else \
+            "neo_sepsis_treatment_term"
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
@@ -1528,7 +1535,10 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         return False
 
 class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """
+    This is HSI_NewbornOutcomes_ResusConsumableLog. This event is called for newborns who have received resuscitation
+    in order to log the relevant consumables. No other health system resources are used during this event.
+    """
 
     def __init__(self, module, person_id, int_name):
         super().__init__(module, person_id=person_id)
@@ -1540,13 +1550,24 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
 
     def apply(self, person_id, squeeze_factor):
+        health_system = self.sim.modules["HealthSystem"]
 
         resus_item_code = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
 
-        # TO DO: could the result not be different?
-        pregnancy_helper_functions.check_int_deliverable(
-            self.module, int_name=self.int_name, hsi_event=self,
-            cons=resus_item_code, to_log=True)
+        logger_hs.info(
+            key="Consumables",
+            data={
+                "TREATMENT_ID": self.TREATMENT_ID,
+                "Item_Available": str(resus_item_code),
+                "Item_NotAvailable": str({}),
+                "Item_Used": str({}),
+            },
+            description="Record of requested and used consumable items.",
+        )
+
+        health_system.consumables._summary_counter.record_availability(
+            items_available=resus_item_code,
+        )
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: did not run')

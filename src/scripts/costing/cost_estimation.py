@@ -320,7 +320,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         If True, only costs for level-cadre combinations ever used in simulation are included.
     _discount_rate : float or dict of {int: float}, default 0
         Discount rate to apply to future costs. Can be a constant or year-specific dictionary.
-
+    alt_scaling_parameter: float, default None. If a float value is provided this is used as an alternative to the
+    scaling parameter logged by demography.
     Returns:
     -------
     pd.DataFrame
@@ -550,9 +551,11 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
+        # Use standard scaling factor if an alternative isnt provided
         do_scaling=alt_scaling_factor is None,
     )
 
+    # scale staff count by provided scaling factor
     if alt_scaling_factor is not None:
         available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype * alt_scaling_factor
 
@@ -847,8 +850,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
             custom_generate_series=get_counts_of_items_requested,
+            # Use standard scaling factor if an alternative isnt provided
             do_scaling=alt_scaling_factor is None)
 
+        # If alternative scaling factor is provided scale consumables accordingly
         if alt_scaling_factor is not None:
             cons_req = cons_req * alt_scaling_factor
 

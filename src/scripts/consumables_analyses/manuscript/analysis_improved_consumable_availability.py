@@ -6,9 +6,9 @@ import textwrap
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 import numpy as np
+import pandas as pd
+import seaborn as sns
 
 from scripts.costing.cost_estimation import (
     clean_consumable_name,
@@ -16,17 +16,17 @@ from scripts.costing.cost_estimation import (
     do_line_plot_of_cost,
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
-    summarize_cost_data
+    summarize_cost_data,
 )
 from tlo import Date
 from tlo.analysis.utils import (
     compute_summary_statistics,
+    create_pickles_locally,
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    create_pickles_locally,
     summarize,
 )
 

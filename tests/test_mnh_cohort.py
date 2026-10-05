@@ -1,13 +1,12 @@
 import os
+from pathlib import Path
 
 import pandas as pd
 
-from pathlib import Path
-
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import mnh_cohort_module
 from tlo.methods.fullmodel import fullmodel
-from tlo.analysis.utils import parse_log_file
 
 # The resource files
 try:
@@ -28,6 +27,9 @@ def register_modules(sim):
 
 
 def test_run_sim_with_mnh_cohort(tmpdir, seed):
+    """
+    This test runs the cohort model for 1 year and checks for error outputs
+    """
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
                      log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
 
@@ -40,6 +42,9 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
 
 
 def test_mnh_cohort_module_updates_properties_as_expected(tmpdir, seed):
+    """
+    This test checks that the cohort module updates the dataframe as expected
+    """
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
                      log_config={"filename": "log", "directory": tmpdir})
 
@@ -55,11 +60,12 @@ def test_mnh_cohort_module_updates_properties_as_expected(tmpdir, seed):
     assert not (pd.isnull(df.loc[pop.index, 'la_due_date_current_pregnancy'])).all()
     assert (df.loc[pop.index, 'co_contraception'] == 'not_using').all()
 
-    # orig = sim.population.new_row
-    # assert (df.dtypes == orig.dtypes).all()
 
-
-def test_run_sim_with_mnh_cohort_and_emonc_analyisis(tmpdir, seed):
+def test_run_sim_with_mnh_cohort_and_ehp_analysis(tmpdir, seed):
+    """
+    This test runs the cohort model under analysis conditions in which the availability of key interventions in
+    manipulated. This checks that each intervention is delivered as expected.
+    """
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
                      log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
 

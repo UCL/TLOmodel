@@ -1,10 +1,10 @@
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
-
 from tlo.scenario import BaseScenario
 
 
 class FullModelRunForCohort(BaseScenario):
+    """Runs the full model to output pregnancies used to develop initial cohort model population dataframe"""
     def __init__(self):
         super().__init__()
         self.seed = 120589
@@ -16,7 +16,7 @@ class FullModelRunForCohort(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'fullmodel_200k_cohort', 'directory': './outputs',
+            'filename': 'full_model_run_for_cohort', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.contraception": logging.DEBUG,

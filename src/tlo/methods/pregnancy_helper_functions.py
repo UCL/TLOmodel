@@ -2,15 +2,13 @@
 This file stores any functions that are called from multiple different modules in the Maternal and Perinatal Health
 module suite
 """
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 
 from tlo import logging
-from tlo.methods.consumables import (
-    Consumables,
-    ConsumablesSummaryCounter,
-)
+
 logger_hs = logging.getLogger("tlo.methods.healthsystem")
 logger_ps = logging.getLogger("tlo.methods.pregnancy_supervisor")
 
@@ -70,6 +68,7 @@ def generate_mnh_outcome_counter():
                     'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
                     'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
 
+    # all module interventions
     all_ints = ["urine_dipstick", "bp_measurement", "iron_folic_acid", "protein_supplement", "calcium_supplement",
                 "hb_test", "syphilis_test", "syphilis_treatment", "gdm_test", "full_blood_count",
                 "blood_transfusion_anaemia", "blood_transfusion_aph", "blood_transfusion_pph", "oral_anti_htns",
@@ -82,6 +81,7 @@ def generate_mnh_outcome_counter():
 
     interventions = []
 
+    # Update the counter so that we can log met need
     for i in all_ints:
         interventions.append(f'{i}_req')
         interventions.append(f'{i}_need')
@@ -106,10 +106,17 @@ def get_list_of_items(self, item_list):
 
     return codes
 
-def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
-                          alt_con=None, opt_cons=None,
-                          equipment=None, dx_test=None,
-                          to_log=True):
+def check_int_deliverable(self,
+                          int_name: str,
+                          hsi_event,
+                          q_param: Optional[list] = None,
+                          cons: Optional[dict] = None,
+                          alt_con: Optional[dict] = None,
+                          opt_cons: Optional[dict] = None,
+                          equipment: Optional = None,
+                          dx_test: Optional=None,
+                          to_log=True) -> bool:
+
     """
     This function is called to determine if an intervention within the MNH modules can be delivered to an individual
     during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
@@ -117,19 +124,21 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
      intervention delivery is determined by any module-level quality parameters, consumable availability, and
      (if applicable) the results of any dx_tests. Equipment is also declared.
 
-   :param self: module
-    param int_name: name of intervention
-    param hsi_event: hsi_event
-    param q_param: any quality parameters
-    param cons: required consumable item codes
-    param opt_cons: optional consumable item codes
-    param equipment: required equipment
-    param dx_test: dx_test
-    param to_log: whether consumables are logged AND intervention delivery is logged
+    :param self: module
+    :param int_name: name of intervention
+    :param hsi_event: hsi_event
+    :param q_param: any quality parameters
+    :param cons: required consumable item codes
+    :param alt_con: alternative consumable item codes (used instead of primary cons)
+    :param opt_cons: optional consumable item codes
+    :param equipment: required equipment
+    :param dx_test: dx_test
+    :param to_log: whether consumables are logged AND intervention delivery is logged
     """
     df = self.sim.population.props
     individual_id = hsi_event.target
 
+    # get modules and parameters
     pregnancy_supervisor = self.sim.modules["PregnancySupervisor"]
     labour = self.sim.modules["Labour"]
     health_system = self.sim.modules["HealthSystem"]
@@ -138,8 +147,10 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     l_params = labour.current_parameters
     counter = pregnancy_supervisor.mnh_outcome_counter
 
+    # check the intervention being evaluated is recognised
     assert int_name in p_params["all_interventions"]
 
+    # Log that an attempt to request this consumable has been made
     if to_log:
         counter[f"{int_name}_req"] += 1
 
@@ -214,24 +225,11 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
         if to_log:
             counter[f"{int_name}_deliv"] += 1
 
-    # ------------------------------------------------------------------
     # Generate explicit random draws before choosing a branch
-    # ------------------------------------------------------------------
-    # These draws are consumed on every call, regardless of whether the
-    # corresponding analysis pathway is active. This helps paired scenarios
-    # remain aligned at the level of random draws made directly in this
-    # function.
-    #
-    # It changes the RNG sequence relative to the previous implementation,
-    # so baseline and intervention scenarios should both be rerun.
-
     intervention_analysis_draw = self.rng.random_sample()
     broader_analysis_draw = self.rng.random_sample()
 
-    # Generate all quality draws before evaluating them. This avoids the
-    # variable RNG consumption caused by all(rng() < p for p in q_param),
-    # which stops drawing as soon as one condition fails.
-
+    # Generate all quality draws before evaluating them.
     if q_param is None:
         quality_ok = True
     else:
@@ -249,10 +247,7 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
             )
         )
 
-    # ------------------------------------------------------------------
     # Identify analysis modes
-    # ------------------------------------------------------------------
-
     intervention_under_analysis = (
         p_params["interventions_analysis"]
         and p_params["ps_analysis_in_progress"]
@@ -267,10 +262,9 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
         )
     )
 
-    # ------------------------------------------------------------------
     # 1. Intervention-specific analysis
-    # ------------------------------------------------------------------
-
+    # If this function is called for an intervention which the availability is being altered during an analysis, the
+    # probability that it will run is determined here
     if intervention_under_analysis:
         can_run = (
             intervention_analysis_draw
@@ -290,10 +284,9 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
 
         return True
 
-    # ------------------------------------------------------------------
     # 2. Service wide analysis
-    # ------------------------------------------------------------------
-
+    # If this function is called for an intervention within a service which the availability is being altered during
+    # an analysis, the probability that it will run is determined here
     if broader_analysis_in_progress:
         params = current_module_params()
 
@@ -352,14 +345,15 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
 
                 return can_run
 
-    # ------------------------------------------------------------------
     # 3. Normal logic: quality, equipment, consumables and diagnosis
-    # ------------------------------------------------------------------
+    # Finally, if no analyses are being conducted which impacts intervention delivery, then the probability an
+    # intervention can be delivered is determined here
 
+    # Check if equipment use needs to be logged
     if quality_ok and equipment is not None:
         hsi_event.add_equipment(equipment)
 
-    # Required consumables
+    # Check required consumables
     if cons is None:
         consumables_ok = True
     else:
@@ -381,7 +375,7 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
             to_log=to_log,
         )
 
-    # Normal diagnostic-test pathway.
+    # Run any dx_tests (if required).
     if dx_test is None:
         test_ok = True
     else:
@@ -391,8 +385,7 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
         )
 
     # Delivery is logged when the intervention itself is available.
-    # A negative diagnostic result does not mean that the intervention or
-    # diagnostic process was unavailable.
+    # A negative diagnostic result does not mean that the intervention or diagnostic process was unavailable.
     delivered = bool(quality_ok and consumables_ok)
 
     if delivered:
@@ -402,8 +395,12 @@ def check_int_deliverable(self, int_name, hsi_event, q_param=None, cons=None,
     return bool(delivered and test_ok)
 
 def log_pregnancy_loss(self, individual_id, cause):
+    """
+    This function logs the cause and timing of pregnancy loss during a simulation run.
+    """
     df = self.sim.population.props
 
+    # Loss of twins contributes 2 losses
     if cause == "intrapartum_stillbirth":
         number_of_losses = 2 if (df.at[individual_id, "ps_multiple_pregnancy"] and
                                  df.at[individual_id, "la_intrapartum_still_birth"]) else 1
@@ -780,11 +777,7 @@ def log_met_need(module, int_name):
     counter = module.sim.modules["PregnancySupervisor"].mnh_outcome_counter
     counter[f"{int_name}_need_met"] += 1
 
-    print('need')
-    print(counter[f"{int_name}_need"])
-    print('need_met')
-    print(counter[f"{int_name}_need_met"])
-
+    # Certain interventions can be requested more than theyre needed so these are not logged
     if int_name not in ('caesarean_section_oth_surg_ip', 'blood_transfusion_pph', 'caesarean_section_oth_surg_pp'):
         if counter[f"{int_name}_need_met"] > counter[f"{int_name}_need"]:
             logger.info(key='error', data=f'met need for {int_name} exceeds need')

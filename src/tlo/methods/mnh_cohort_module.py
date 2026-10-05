@@ -1,12 +1,11 @@
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
-from typing import Optional
-
 from tlo import Module, logging
-from tlo.methods import Metadata
 from tlo.events import IndividualScopeEventMixin
+from tlo.methods import Metadata
 from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
@@ -14,10 +13,12 @@ logger.setLevel(logging.INFO)
 
 class MaternalNewbornHealthCohort(Module):
     """
-    When registered this module overrides the population data frame with a cohort of pregnant women. Cohort properties
-    are sourced from a long run of the full model in which the properties of all newly pregnant women per year were
-    logged. The cohort represents women in 2024.
+    When this module is registered it overrides the initial population data frame. The new population data frame
+    consists of women who are pregnant with a date of conception set to the first date of the simulation.
+    Initial properties are sourced from logged properties of newly pregnant women during a full model run.
+    Properties are extracted from ResourceFile_All2026_7PregnanciesCohortModel.
     """
+
     INIT_DEPENDENCIES = {'Demography', 'RTI', 'Contraception', 'Labour'}
 
     METADATA = {
@@ -40,8 +41,6 @@ class MaternalNewbornHealthCohort(Module):
 
         self.stop_pregnancies = stop_pregnancies
 
-        # self.resourcefilepath = resourcefilepath
-
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
@@ -55,6 +54,7 @@ class MaternalNewbornHealthCohort(Module):
         :param population: the population of individuals
         """
 
+        # Read in ResourceFile_All2026_7PregnanciesCohortModel which contains properties of newly pregnant women
         all_preg_df = read_csv_files(
             Path(f'{self.sim.resourcefilepath}/ResourceFile_MaternalCohort'),
             files='ResourceFile_All2026_7PregnanciesCohortModel'
@@ -92,6 +92,9 @@ class MaternalNewbornHealthCohort(Module):
             col for col in self.sim.population.props.columns
             if col not in preg_pop.columns
         ]
+
+        # When merging in master there may be additional columns in the dataframe that do not exsist in
+        # ResourceFile_All2026_7PregnanciesCohortModel. These columns are added to the new population here
 
         # Only create and append new columns if there are actually missing columns
         if missing_cols:
@@ -163,6 +166,9 @@ class MaternalNewbornHealthCohort(Module):
         """
         df = self.sim.population.props
 
+        # To ensure the model can run with the new population we clear any events that may have been scheduled on
+        # initialisation for individuals who no longer exist in the population
+
         # Clear HSI queue for events scheduled during initialisation
         sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
@@ -171,7 +177,7 @@ class MaternalNewbornHealthCohort(Module):
                                if not isinstance(item[3], IndividualScopeEventMixin)]
         self.sim.event_queue.queue = updated_event_queue
 
-        # Prevent additional pregnancies from occurring during the cohort tun
+        # Prevent additional pregnancies from occurring during the cohort run (unless otherwise specified)
         if self.stop_pregnancies:
             self.sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].iloc[:] = 0
             self.sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].iloc[:] = 0

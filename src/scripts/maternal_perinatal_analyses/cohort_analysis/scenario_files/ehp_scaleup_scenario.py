@@ -4,8 +4,9 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class EmoncScenario(BaseScenario):
-    """Scenario for cohort model"""
+class EHPScaleUpScenario(BaseScenario):
+    """Scenario using the cohort model in which the effective coverage of maternal and newborn health interventions
+    is increased"""
     def __init__(self):
         super().__init__()
         self.seed = 120589
@@ -17,13 +18,13 @@ class EmoncScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'emonc_interventions', 'directory': './outputs',
+            'filename': 'ehp_scale_up_scenario', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,  # TODO: will this work with new cons output
+                "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
                 "tlo.methods.labour.detail": logging.INFO,

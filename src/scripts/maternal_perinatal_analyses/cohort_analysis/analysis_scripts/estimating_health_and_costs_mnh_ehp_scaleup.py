@@ -1,28 +1,31 @@
+import os
+from collections import Counter, defaultdict
 from pathlib import Path
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-import matplotlib.ticker as mticker
-from collections import Counter, defaultdict
-
 import matplotlib.colors as colors
-import seaborn as sns
-
-import os
-from scipy.stats import t
-
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import numpy as np
 import pandas as pd
-from tableone import TableOne
 import scipy.stats as st
+import seaborn as sns
+from matplotlib.patches import Patch
+from scipy.stats import t
+from tableone import TableOne
 
-# from scripts.costing.costing_validation import input_costs
-# from scripts.comparison_of_horizontal_and_vertical_programs.economic_analysis_for_manuscript.roi_analysis_horizontal_vs_vertical import \
-#     icers_summarized
+from src.scripts.costing.cost_estimation import (
+    do_stacked_bar_plot_of_cost_by_category,
+    estimate_input_cost_of_scenarios,
+    summarize_cost_data,
+)
 from tlo import Date
-from tlo.analysis.utils import bin_hsi_event_details, extract_results, get_scenario_outputs, get_scenario_info, parse_log_file, compute_summary_statistics
-from src.scripts.costing.cost_estimation import (do_stacked_bar_plot_of_cost_by_category,
-    estimate_input_cost_of_scenarios, summarize_cost_data
+from tlo.analysis.utils import (
+    bin_hsi_event_details,
+    compute_summary_statistics,
+    extract_results,
+    get_scenario_info,
+    get_scenario_outputs,
+    parse_log_file,
 )
 
 # Get results file
@@ -607,7 +610,7 @@ def produce_fig_1():
 
     plt.show()
 
-produce_fig_1()
+# produce_fig_1()
 
 #  ======================================= FIGURE 2 - HEALTH IMPACTS  =================================================
 # TODO: review if we want to look at all cause maternal deaths and all cause neonatal deaths
@@ -1044,13 +1047,13 @@ def produce_fig_2(
 
     plt.show()
 
-produce_fig_2(
-    death_plot_df_summ,
-    dalys_outcomes_df_summ,
-    death_outcome_labels,
-    dalys_outcome_labels,
-    "fig_2_health_outcomes"
-)
+# produce_fig_2(
+#     death_plot_df_summ,
+#     dalys_outcomes_df_summ,
+#     death_outcome_labels,
+#     dalys_outcome_labels,
+#     "fig_2_health_outcomes"
+# )
 
 #  ================================ FIGURE 2b/S1 - CAUSE SPECIFIC deaths  ============================================
 deaths_by_cause = extract_results(
@@ -1319,9 +1322,9 @@ def figure_2c_heatmap_cause_specific_dalys_averted(
 
     plt.show()
 
-figure_2c_heatmap_cause_specific_dalys_averted(dalys_averted_by_cause_df,
-                                             'DALYs averted by cause and intervention scenario',
-                                             'fig_2b_diff_in_dalys_by_cause_heatmap', True)
+# figure_2c_heatmap_cause_specific_dalys_averted(dalys_averted_by_cause_df,
+#                                              'DALYs averted by cause and intervention scenario',
+#                                              'fig_2b_diff_in_dalys_by_cause_heatmap', True)
 
 
 # Alternative figure:
@@ -1455,30 +1458,29 @@ def figure_2c_alt_cause_specific_dalys_intervals(
         )
         plt.show()
 
-figure_2c_alt_cause_specific_dalys_intervals(
-    data=dalys_averted_by_cause_df,
-    title="Cause-specific DALYs averted",
-    save_title="cause_specific_dalys_intervals",
-)
+# figure_2c_alt_cause_specific_dalys_intervals(
+#     data=dalys_averted_by_cause_df,
+#     title="Cause-specific DALYs averted",
+#     save_title="cause_specific_dalys_intervals",
+# )
 
 #  ===========================---===== TABLE 2 - INCREMENTAL COSTS  ===================================================
 # Extract initial system level cost data
 
 list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
 
-input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
-                                     resourcefilepath=resourcefilepath,
-                                     suspended_results_folder=results_folder,
-                                     _draws=draws,
-                                     _years=list_of_relevant_years_for_costing,
-                                     cost_only_used_staff= True,
-                                     alt_scaling_factor=p_scaling_factor)
-
-input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
+#                                      resourcefilepath=resourcefilepath,
+#                                      suspended_results_folder=results_folder,
+#                                      _draws=draws,
+#                                      _years=list_of_relevant_years_for_costing,
+#                                      cost_only_used_staff= True,
+#                                      alt_scaling_factor=p_scaling_factor)
+#
+# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
 
 input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
 input_costs = input_costs.set_index('Unnamed: 0')
-# input_cost_unadjusted = input_costs
 
 # Adjust costs as required...
 
@@ -1595,25 +1597,6 @@ def get_hcw_time_use_ratios(df):
 
 hcw_ratios_unadjusted = get_hcw_time_use_ratios(hcw_time_by_treatment_id_df)
 
-
-# def return_cost_adjusted_for_hcw_growth(cost_data, hcw_ratios):
-#     # Multiply the HCW cost estimates by ratios
-#     central_df = hcw_ratios.xs('central', axis=1, level=1)
-#
-#     # Function to safely get multiplier
-#     def get_multiplier(row):
-#         subgroup = row['cost_subgroup']
-#         draw = row['draw']
-#         if subgroup in central_df.index and draw in central_df.columns:
-#             return central_df.loc[subgroup, draw]
-#         else:
-#             return 1.0  # or np.nan, or row['cost'] unmodified depending on your logic
-#
-#     cost_data['cost'] = cost_data.apply(lambda row: row['cost'] * get_multiplier(row), axis=1)
-#     total_input_cost = cost_data.groupby(['draw', 'run'])['cost'].sum()
-#
-#     return [total_input_cost, cost_data]
-
 def return_cost_adjusted_for_hcw_growth(cost_data, fold_change_cadre):
     adjusted = cost_data.copy()
 
@@ -1643,7 +1626,6 @@ input_costs_adjusted_hcw = return_cost_adjusted_for_hcw_growth(
     hcw_ratios_unadjusted[3],
 )
 
-# input_costs_adjusted_hcw = return_cost_adjusted_for_hcw_growth(input_costs, hcw_ratios_unadjusted[1])
 
 def find_cost_diff_from_sq_and_sum(data):
 

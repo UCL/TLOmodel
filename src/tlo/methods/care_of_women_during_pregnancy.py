@@ -1347,6 +1347,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
+        # We differentiate the name of the intervention depending on the indication
         int_name = 'iv_anti_htns_ec' if (df.at[individual_id, 'ps_htn_disorders'] in
                                          {'severe_pre_eclamp', 'eclampsia'}) else "iv_anti_htns_gh"
 
@@ -1384,7 +1385,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         l_params = self.sim.modules['Labour'].current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
+        # We differentiate the name of the intervention depending on the indication
         int = 'mgso4_spe' if df.at[individual_id, 'ps_htn_disorders'] == "severe_pre_eclamp" else "mgso4_ec"
 
         mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
@@ -1398,6 +1399,7 @@ class CareOfWomenDuringPregnancy(Module):
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
             pregnancy_helper_functions.log_met_need(self, int)
 
+            # We capture timing of treatment to prevent "double treatment" which would impact resource use
             if int == 'mgso4_ec':
                 mni[individual_id]['ec_treatment_an'] = True
 
@@ -2370,7 +2372,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_now', 'caesarean_future'):
                 mni[person_id]['cs_indication'] = 'spe_ec'
 
-
         # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
         # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
         # etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or
@@ -2676,8 +2677,6 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             pac_opt_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_sepsis_optional'])
 
         if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
-            # TODO: determine if we should be modelling this...
-            # pac_cons.update(self.module.item_codes_preg_consumables['blood_transfusion'])
             pac_opt_cons.update(self.module.item_codes_preg_consumables['iv_drug_equipment'])
 
 
