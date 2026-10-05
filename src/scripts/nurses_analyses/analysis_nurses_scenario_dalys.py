@@ -825,308 +825,163 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
     return fig_default, ax_default, fig_improved, ax_improved
 
 
-# Plot % DALYs averted by cause
-def plot_percent_dalys_averted_by_cause(default_df, improved_df, top_n=30):
-    # Default Healthsystem
-    default_more = default_df["More Nurses / Default Healthsystem Function"]
-    default_cnp = default_df["More CNP staff / Default Healthsystem Function"]
-    default_more_district = default_df["More Nurses by District / Default Healthsystem Function"]
-    default_cnp_district = default_df["More CNP staff by District / Default Healthsystem Function"]
-    default_fewer = default_df["Fewer Nurses / Default Healthsystem Function"]
 
-    # Improved Healthsystem
-    improved_more = improved_df["More Nurses / Improved Healthsystem Function"]
-    improved_cnp = improved_df["More CNP staff / Improved Healthsystem Function"]
-    improved_more_district = improved_df["More Nurses by District / Improved Healthsystem Function"]
-    improved_cnp_district = improved_df["More CNP staff by District / Improved Healthsystem Function"]
-    improved_fewer = improved_df["Fewer Nurses / Improved Healthsystem Function"]
+# Shared plotting function for percentage DALYs/deaths averted by cause
+def _plot_percent_averted_by_cause(
+    default_df,
+    improved_df,
+    cause_order,
+    outcome_label,
+    top_n=30,
+):
+    """
+    Plot percentage DALYs or deaths averted by cause.
 
-    default_more = default_more.reindex(cause_order)
-    default_cnp = default_cnp.reindex(cause_order)
-    default_more_district = default_more_district.reindex(cause_order)
-    default_cnp_district = default_cnp_district.reindex(cause_order)
-    default_fewer = default_fewer.reindex(cause_order)
+    Causes are on the x-axis and percentage averted is on the y-axis.
+    Default and Improved Healthsystem figures are plotted separately.
+    """
 
-    improved_more = improved_more.reindex(cause_order)
-    improved_cnp = improved_cnp.reindex(cause_order)
-    improved_more_district = improved_more_district.reindex(cause_order)
-    improved_cnp_district = improved_cnp_district.reindex(cause_order)
-    improved_fewer = improved_fewer.reindex(cause_order)
+    # Keep the existing cause order and limit the number of causes plotted.
+    available_causes = [
+        cause
+        for cause in cause_order
+        if cause in default_df["Fewer Nurses / Default Healthsystem Function"].index
+        and cause in improved_df["Fewer Nurses / Improved Healthsystem Function"].index
+    ]
+    causes = available_causes[:top_n]
 
-    # Plot Default Healthsystem
-    scenarios_default = [
-        ("Fewer nurses", default_fewer, "indianred"),
-        ("More nurses", default_more, "steelblue"),
-        ("More CNP", default_cnp, "darkgreen"),
-        ("More nurses by district", default_more_district, "mediumpurple"),
-        ("More CNP by district", default_cnp_district, "orange"),
+    # Scenario order and colours
+    scenarios = [
+        ("Fewer nurses", "Fewer Nurses", "indianred"),
+        ("More nurses", "More Nurses", "steelblue"),
+        ("More CNP", "More CNP staff", "darkgreen"),
+        ("More nurses by district", "More Nurses by District", "mediumpurple"),
+        ("More CNP by district", "More CNP staff by District", "orange"),
     ]
 
-    fig_default, ax_default = plt.subplots(figsize=(14, 12))
+    # Make each figure wider as the number of causes increases.
+    # A larger width also makes the individual bars easier to distinguish.
+    figure_width = max(20, len(causes) * 0.8)
+    figure_height = 10
 
-    y_default = np.arange(len(scenarios_default[0][1]))
-    offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    # Total width allocated to the five bars for each cause.
+    group_width = 0.95
+    bar_width = group_width / len(scenarios)
 
-    for offset, (label, df, color) in zip(offsets, scenarios_default):
-        ax_default.barh(
-            y_default + offset,
-            df["mean"],
-            height=0.18,
-            color=color,
-            label=label,
+    x = np.arange(len(causes))
+    offsets = (
+        np.arange(len(scenarios))
+        - (len(scenarios) - 1) / 2
+    ) * bar_width
+
+    def plot_healthsystem(data, healthsystem):
+        fig, ax = plt.subplots(
+            figsize=(figure_width, figure_height)
         )
 
-        ax_default.errorbar(
-            df["mean"],
-            y_default + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
+        for i, (label, scenario_prefix, color) in enumerate(scenarios):
+            scenario_name = (
+                f"{scenario_prefix} / {healthsystem} Healthsystem Function"
+            )
+
+            # Retrieve values and put causes in the intended order.
+            scenario_df = data[scenario_name].reindex(causes)
+
+            means = scenario_df["mean"].to_numpy()
+            lower = scenario_df["lower"].to_numpy()
+            upper = scenario_df["upper"].to_numpy()
+
+            # Draw vertical bars, with causes on the x-axis.
+            xpos = x + offsets[i]
+
+            ax.bar(
+                xpos,
+                means,
+                width=bar_width * 0.95,
+                color=color,
+                label=label,
+                yerr=np.vstack([
+                    means - lower,
+                    upper - means,
+                ]),
+                capsize=2,
+                error_kw={"elinewidth": 0.8},
+            )
+
+        ax.axhline(0, color="black", linewidth=1)
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            causes,
+            rotation=60,
+            ha="right",
+            rotation_mode="anchor",
         )
 
-    ax_default.axvline(0, color="black")
-    ax_default.set_yticks(y_default)
-    ax_default.set_yticklabels(scenarios_default[0][1].index)
-    ax_default.set_xlabel("% DALYs averted")
-    # ax_default.set_title("Default Healthsystem")
-    ax_default.grid(axis="x", alpha=0.3)
+        ax.set_xlabel("Cause", labelpad=10)
+        ax.set_ylabel(f"% {outcome_label} averted")
+        ax.grid(axis="y", alpha=0.3)
+        ax.set_axisbelow(True)
 
-    handles_default, labels_default = ax_default.get_legend_handles_labels()
-    ax_default.legend(
-        handles_default,
-        labels_default,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
-        frameon=True,
+        # Put the legend below the x-axis label.
+        ax.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.28),
+            ncol=3,
+            frameon=True,
+        )
+
+        # Leave room for long cause labels and the bottom legend.
+        fig.subplots_adjust(
+            left=0.06,
+            right=0.99,
+            top=0.97,
+            bottom=0.36,
+        )
+
+        return fig, ax
+
+    # Produce separate figures for each healthsystem.
+    fig_default, ax_default = plot_healthsystem(
+        default_df,
+        "Default",
     )
 
-    # fig_default.suptitle(
-    #     "% DALYs averted by causes on national level\n"
-    #     "(2027–2034)"
-    # )
-    fig_default.tight_layout(rect=[0, 0.08, 1, 1])
-
-    # Plot Improved Healthsystem
-    scenarios_improved = [
-        ("Fewer nurses", improved_fewer, "indianred"),
-        ("More nurses", improved_more, "steelblue"),
-        ("More CNP", improved_cnp, "darkgreen"),
-        ("More nurses by district", improved_more_district, "mediumpurple"),
-        ("More CNP by district", improved_cnp_district, "orange"),
-    ]
-
-    fig_improved, ax_improved = plt.subplots(figsize=(14, 12))
-
-    y_improved = np.arange(len(scenarios_improved[0][1]))
-
-    for offset, (label, df, color) in zip(offsets, scenarios_improved):
-        ax_improved.barh(
-            y_improved + offset,
-            df["mean"],
-            height=0.18,
-            color=color,
-            label=label,
-        )
-
-        ax_improved.errorbar(
-            df["mean"],
-            y_improved + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
-        )
-
-    ax_improved.axvline(0, color="black")
-    ax_improved.set_yticks(y_improved)
-    ax_improved.set_yticklabels(scenarios_improved[0][1].index)
-    ax_improved.set_xlabel("% DALYs averted")
-    # ax_improved.set_title("Improved Healthsystem")
-    ax_improved.grid(axis="x", alpha=0.3)
-
-    handles_improved, labels_improved = ax_improved.get_legend_handles_labels()
-    ax_improved.legend(
-        handles_improved,
-        labels_improved,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
-        frameon=True,
+    fig_improved, ax_improved = plot_healthsystem(
+        improved_df,
+        "Improved",
     )
 
-    # fig_improved.suptitle(
-    #     "% DALYs averted by causes on national level\n"
-    #     "(2027–2034)"
-    # )
-    fig_improved.tight_layout(rect=[0, 0.08, 1, 1])
     return fig_default, ax_default, fig_improved, ax_improved
 
 
+# Plot % DALYs averted by cause
+def plot_percent_dalys_averted_by_cause(
+    default_df,
+    improved_df,
+    top_n=30,
+):
+    return _plot_percent_averted_by_cause(
+        default_df=default_df,
+        improved_df=improved_df,
+        cause_order=cause_order,
+        outcome_label="DALYs",
+        top_n=top_n,
+    )
+
+
 # Plot % deaths averted by cause
-def plot_percent_deaths_averted_by_cause(default_df, improved_df, top_n=30):
-    # Default Healthsystem
-    default_more = default_df["More Nurses / Default Healthsystem Function"]
-    default_cnp = default_df["More CNP staff / Default Healthsystem Function"]
-    default_more_district = default_df["More Nurses by District / Default Healthsystem Function"]
-    default_cnp_district = default_df["More CNP staff by District / Default Healthsystem Function"]
-    default_fewer = default_df["Fewer Nurses / Default Healthsystem Function"]
-
-    # Improved Healthsystem
-    improved_more = improved_df["More Nurses / Improved Healthsystem Function"]
-    improved_cnp = improved_df["More CNP staff / Improved Healthsystem Function"]
-    improved_more_district = improved_df["More Nurses by District / Improved Healthsystem Function"]
-    improved_cnp_district = improved_df["More CNP staff by District / Improved Healthsystem Function"]
-    improved_fewer = improved_df["Fewer Nurses / Improved Healthsystem Function"]
-
-    # Reorder causes
-    default_more = default_more.reindex(death_order)
-    default_cnp = default_cnp.reindex(death_order)
-    default_more_district = default_more_district.reindex(death_order)
-    default_cnp_district = default_cnp_district.reindex(death_order)
-    default_fewer = default_fewer.reindex(death_order)
-
-    improved_more = improved_more.reindex(death_order)
-    improved_cnp = improved_cnp.reindex(death_order)
-    improved_more_district = improved_more_district.reindex(death_order)
-    improved_cnp_district = improved_cnp_district.reindex(death_order)
-    improved_fewer = improved_fewer.reindex(death_order)
-
-    # Offsets for the five scenario bars
-    offsets = np.array([-0.32, -0.16, 0.0, 0.16, 0.32])
-
-    # Default Healthsystem
-
-    scenarios_default = [
-        ("Fewer nurses", default_fewer, "indianred"),
-        ("More nurses", default_more, "steelblue"),
-        ("More CNP", default_cnp, "darkgreen"),
-        ("More nurses by district", default_more_district, "mediumpurple"),
-        ("More CNP by district", default_cnp_district, "orange"),
-    ]
-
-    fig_default, ax_default = plt.subplots(figsize=(14, 12))
-
-    y_default = np.arange(len(scenarios_default[0][1]))
-
-    for offset, (label, df, color) in zip(offsets, scenarios_default):
-        ax_default.barh(y_default + offset, df["mean"], height=0.18, color=color, label=label,)
-
-        ax_default.errorbar(
-            df["mean"],
-            y_default + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
-        )
-
-    ax_default.axvline(0, color="black")
-    ax_default.set_yticks(y_default)
-    ax_default.set_yticklabels(scenarios_default[0][1].index)
-    ax_default.set_xlabel("% Deaths averted")
-    # ax_default.set_title("Default Healthsystem")
-    ax_default.grid(axis="x", alpha=0.3,)
-
-    handles_default, labels_default = ax_default.get_legend_handles_labels()
-
-    ax_default.legend(
-        handles_default,
-        labels_default,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
-        frameon=True,
-    )
-
-    # fig_default.suptitle(
-    #     "% deaths averted by causes on national level\n"
-    #     "(2027–2034)"
-    # )
-
-    fig_default.tight_layout(rect=[0, 0.08, 1, 1])
-
-    # Plot Improved Healthsystem
-    scenarios_improved = [
-        ("Fewer nurses", improved_fewer, "indianred"),
-        ("More nurses", improved_more, "steelblue"),
-        ("More CNP", improved_cnp, "darkgreen"),
-        ("More nurses by district", improved_more_district, "mediumpurple"),
-        ("More CNP by district", improved_cnp_district, "orange"),
-    ]
-
-    fig_improved, ax_improved = plt.subplots(figsize=(14, 12))
-    y_improved = np.arange(len(scenarios_improved[0][1]))
-
-    for offset, (label, df, color) in zip(offsets, scenarios_improved):
-        ax_improved.barh(
-            y_improved + offset,
-            df["mean"],
-            height=0.18,
-            color=color,
-            label=label,
-        )
-
-        ax_improved.errorbar(
-            df["mean"],
-            y_improved + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
-        )
-
-    ax_improved.axvline(0, color="black")
-    ax_improved.set_yticks(y_improved)
-    ax_improved.set_yticklabels(scenarios_improved[0][1].index)
-    ax_improved.set_xlabel("% Deaths averted")
-    # ax_improved.set_title("Improved Healthsystem")
-    ax_improved.grid(axis="x", alpha=0.3,)
-
-    handles_improved, labels_improved = ax_improved.get_legend_handles_labels()
-
-    ax_improved.legend(
-        handles_improved,
-        labels_improved,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
-        frameon=True,
-    )
-
-    # fig_improved.suptitle(
-    #     "% deaths averted by causes on national level\n"
-    #     "(2027–2034)"
-    # )
-
-    fig_improved.tight_layout(rect=[0, 0.08, 1, 1])
-
-    return (
-        fig_default,
-        ax_default,
-        fig_improved,
-        ax_improved,
+def plot_percent_deaths_averted_by_cause(
+    default_df,
+    improved_df,
+    top_n=30,
+):
+    return _plot_percent_averted_by_cause(
+        default_df=default_df,
+        improved_df=improved_df,
+        cause_order=death_order,
+        outcome_label="Deaths",
+        top_n=top_n,
     )
 
 
