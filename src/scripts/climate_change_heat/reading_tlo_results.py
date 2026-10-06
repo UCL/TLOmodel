@@ -22,6 +22,7 @@ Two sets of outputs:
 """
 
 import argparse
+import glob
 import difflib
 import re
 from pathlib import Path
@@ -58,6 +59,12 @@ WBGT_VAR = "wbgt5x_day" #"wbgt5x_day"
 
 TLO_DRAW = 0
 SCALING_FACTOR = 145.39   # simulated → national population, for these runs
+# Hot-month mode: count only losses in facility-months with WBGT above the historical p95
+# (the threshold the projection script uses for hot_deficit_pct), expressed against the
+# full annual expected volume, so rate × annual TLO volume = services lost in hot months.
+# Outputs get a "_hot" suffix so all-month and hot-month results sit side by side.
+HOT_ONLY = True
+SCALED_SUFFIX = "_hot" if HOT_ONLY else ""
 DROP_BLANK_FOOTPRINT = False  # True: keep only non-blank-footprint HSIs (pending discussion)
 TLO_RESULTS_FOLDER = Path("/Users/rachelmurray-watson/PycharmProjects/TLOmodel/"
                           "outputs/rm916@ic.ac.uk/"
@@ -198,6 +205,34 @@ def non_blank_fraction(prefixes, target_period, draw):
 # ---------------------------------------------------------------------------
 # District scaling
 # ---------------------------------------------------------------------------
+def load_hot_thresholds():
+    """Historical WBGT p95 per indicator, from the projection summary (hist_p95_threshold)."""
+    files = sorted(glob.glob(str(HEAT_OUT_DIR / f"projection_summary_{WBGT_VAR}*{LAG_SUFFIX}.csv")))
+    if not files:
+        raise FileNotFoundError("HOT_ONLY needs projection_summary_*.csv from the projection script")
+    s = pd.read_csv(files[0])
+    print(f"Hot-month thresholds from {Path(files[0]).name}")
+    return s.groupby("indicator")["hist_p95_threshold"].first()
+
+
+def facility_year_for_rates(fac, p95=None):
+    """Facility-year mu_a / mu_b for the district rates.
+
+    All-month mode: plain sums.
+    Hot-month mode: mu_b = all-month sum (annual expected volume);
+                    mu_a = mu_b − losses in hot months only, so mu_b − mu_a = hot-month loss.
+    """
+    g = fac.groupby(["facility", "year"])
+    out = g.agg(mu_a=("mu_a", "sum"), mu_b=("mu_b", "sum")).reset_index()
+    if p95 is None:
+        return out
+    hot = fac[fac[WBGT_VAR] > p95].assign(hot_lost=lambda x: x["mu_b"] - x["mu_a"])
+    hot_lost = hot.groupby(["facility", "year"])["hot_lost"].sum().reset_index()
+    out = out.merge(hot_lost, on=["facility", "year"], how="left").fillna({"hot_lost": 0.0})
+    out["mu_a"] = out["mu_b"] - out["hot_lost"]
+    return out.drop(columns="hot_lost")
+
+
 def wbgt_district_rates(fac_yr, fac_to_dist):
     """District loss rates from ALL WBGT-modelled facilities (independent of TLO matching).
 
@@ -416,7 +451,15 @@ def combine_for_indicator(wbgt_indicator, tlo_prefixes, target_period, fac_to_di
                   f"({tot_only/tot_hsi*100:.2f}% loss-only)")
 
             # ---- District-scaled: WBGT district rate (all modelled facilities) × full district TLO volume ----
-            dy, dp, unmapped = wbgt_district_rates(fac_yr, fac_to_dist)
+            p95 = HOT_THRESHOLDS.get(wbgt_indicator) if HOT_ONLY else None
+            if HOT_ONLY and p95 is None:
+                print(f"  [{ssp}/{tier}] [skip] no hot threshold for {wbgt_indicator}")
+                continue
+            fac_yr_rates = facility_year_for_rates(fac, p95)
+            if HOT_ONLY:
+                print(f"  [{ssp}/{tier}] hot months: WBGT > {p95:.2f} °C "
+                      f"({100*(fac[WBGT_VAR] > p95).mean():.1f}% of facility-months)")
+            dy, dp, unmapped = wbgt_district_rates(fac_yr_rates, fac_to_dist)
             if unmapped:
                 print(f"  [{ssp}/{tier}] [warn] {len(unmapped)} WBGT facilities not in registry → "
                       f"excluded from district rates: {unmapped[:10]}{' …' if len(unmapped) > 10 else ''}")
@@ -430,7 +473,7 @@ def combine_for_indicator(wbgt_indicator, tlo_prefixes, target_period, fac_to_di
             no_rate = scaled.loc[scaled["rate_source"] == "none", "District"].unique()
 
             scaled = scaled[scaled["rate_source"] != "none"]  # no modelled facility → grey on maps
-            out_scaled = OUT_DIR / f"combined_district_scaled_{wbgt_indicator}_{ssp}_{tier}.csv"
+            out_scaled = OUT_DIR / f"combined_district_scaled{SCALED_SUFFIX}_{wbgt_indicator}_{ssp}_{tier}.csv"
             scaled.to_csv(out_scaled, index=False)
 
             s_hsi  = scaled["HSIs_expected"].sum()
@@ -443,7 +486,14 @@ def combine_for_indicator(wbgt_indicator, tlo_prefixes, target_period, fac_to_di
                       f"(omitted): {', '.join(sorted(no_rate))}")
 
 
+HOT_THRESHOLDS = {}
+
+
 def main():
+    global HOT_THRESHOLDS
+    if HOT_ONLY:
+        HOT_THRESHOLDS = load_hot_thresholds().to_dict()
+        print(f"HOT_ONLY: rates = hot-month losses / annual expected volume")
     target_period = (Date(MIN_YEAR, 1, 1), Date(MAX_YEAR, 12, 31))
     fac_to_dist = load_facility_to_district()
     for wbgt_ind, tlo_prefixes in WBGT_TO_TLO.items():
