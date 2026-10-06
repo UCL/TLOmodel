@@ -31,7 +31,7 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
     This test runs the cohort model for 1 year and checks for error outputs
     """
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
-                     log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
+                     log_config={"filename": "log", "custom_levels":{"*": logging.WARNING},"directory": tmpdir})
 
     register_modules(sim)
     sim.make_initial_population(n=2000)
@@ -90,3 +90,16 @@ def test_run_sim_with_mnh_cohort_and_ehp_analysis(tmpdir, seed):
         if col != "date" and int_cov.at[0, col] is not None:
             assert int_cov.at[0, col] == 100.0
 
+def test_run_sim_with_mnh_cohort_long_run(tmpdir, seed):
+    """
+    This test runs the cohort model for 1 year and checks for error outputs
+    """
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
+                     log_config={"filename": "log", "custom_levels":{"*": logging.WARNING},"directory": tmpdir})
+
+    register_modules(sim)
+    sim.make_initial_population(n=2000)
+    sim.simulate(end_date=Date(2046, 1, 2))
+
+    output= parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    assert 'error' not in output['tlo.methods.pregnancy_supervisor']

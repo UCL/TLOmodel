@@ -858,156 +858,427 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         logger.debug(key='message', data='This is PregnancySupervisor, being alerted about a health system interaction '
                                          f'person {person_id} for: {treatment_id}')
 
-    def report_daly_values(self):
-        """
-        This function calculates and reports the monthly daly weight values accumulated from Maternal Disorders. For
-        simplicity all daly weights from Maternal Disorders are reported in this module (though may be attributable to
-        conditions occurring antenatally, intrapartum or postnatally). Individual level monthly-daly weights are
-        calculated using the mni dictionary where date of complication onset/resolution is stored.
-        :return: daly_series
-        """
+    # def report_daly_values(self):
+    #     """
+    #     This function calculates and reports the monthly daly weight values accumulated from Maternal Disorders. For
+    #     simplicity all daly weights from Maternal Disorders are reported in this module (though may be attributable to
+    #     conditions occurring antenatally, intrapartum or postnatally). Individual level monthly-daly weights are
+    #     calculated using the mni dictionary where date of complication onset/resolution is stored.
+    #     :return: daly_series
+    #     """
+    #
+    #     df = self.sim.population.props
+    #     p = self.parameters['ps_daly_weights']
+    #     mni = self.mother_and_newborn_info
+    #
+    #     logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
+    #     monthly_daly = dict()
+    #
+    #     # First we define a function that calculates disability associated with 'acute' complications of pregnancy
+    #     def acute_daly_calculation(person, complication):
+    #         # If the woman has not experienced the complication of interest in the past month she does not accrue dalys
+    #         if pd.isnull(mni[person][f'{complication}_onset']):
+    #             return
+    #
+    #         # If the complication has onset within the last month...
+    #         if (self.sim.date - DateOffset(months=1)) <= mni[person][f'{complication}_onset'] <= self.sim.date:
+    #
+    #             # We assume that any woman who experiences an acute event receives the whole weight for that daly
+    #             monthly_daly[person] += p[f'{complication}']
+    #
+    #             # Ensure some weight is assigned
+    #             if mni[person][f'{complication}_onset'] != self.sim.date:
+    #                 if monthly_daly[person] == 0:
+    #                     logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
+    #
+    #             # Reset the variable within the mni dictionary to prevent double counting
+    #             mni[person][f'{complication}_onset'] = pd.NaT
+    #
+    #     # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
+    #     def chronic_daly_calculations(person, complication):
+    #         # If the complication hasn't occurred, the function ends
+    #
+    #         if person == 29 and complication == "moderate_anaemia":
+    #             print(
+    #                 "REPORT", self.sim.date,
+    #                 mni[person]["moderate_anaemia_onset"],
+    #                 mni[person]["moderate_anaemia_resolution"],
+    #                 flush=True,
+    #             )
+    #
+    #         if pd.isnull(mni[person][f'{complication}_onset']):
+    #             return
+    #
+    #         # Check if a resolution date has been provided
+    #         if pd.isnull(mni[person][f'{complication}_resolution']):
+    #
+    #             # If the complication has not yet resolved, and started more than a month ago, the woman gets a
+    #             # months disability
+    #             if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
+    #                 weight = (p[f'{complication}'] / DAYS_IN_YEAR) * (DAYS_IN_YEAR / 12)
+    #                 monthly_daly[person] += weight
+    #
+    #                 assert weight >= 0, (
+    #                     f"Negative DALY weight for person {person}, complication '{complication}'. "
+    #                     f"Weight={weight}, "
+    #                     f"onset={mni[person][f'{complication}_onset']}, "
+    #                     f"resolution={mni[person][f'{complication}_resolution']}, "
+    #                     f"sim_date={self.sim.date}"
+    #                 )
+    #
+    #                 if not weight >= 0:
+    #                     logger.info(key='error', data=f'Daly wt not correctly assigned for person {person} for'
+    #                                                   f' {complication}')
+    #
+    #             # Otherwise, if the complication started this month she gets a daly weight relative to the number of
+    #             # days she has experience the complication
+    #             elif (self.sim.date - DateOffset(months=1)) <= mni[person][
+    #                  f'{complication}_onset'] <= self.sim.date:
+    #
+    #                 days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
+    #                                                 unit='d')
+    #                 daly_weight = days_since_onset.days * (p[f'{complication}'] / DAYS_IN_YEAR)
+    #
+    #                 monthly_daly[person] += daly_weight
+    #
+    #                 assert daly_weight >= 0, (
+    #                     f"Negative DALY weight for person {person}, complication '{complication}'. "
+    #                     f"Weight={daly_weight}, "
+    #                     f"onset={mni[person][f'{complication}_onset']}, "
+    #                     f"resolution={mni[person][f'{complication}_resolution']}, "
+    #                     f"sim_date={self.sim.date}"
+    #                 )
+    #
+    #                 if not daly_weight >= 0:
+    #                     logger.info(key='error', data=f'Daly wt not correctly assigned for person {person} for'
+    #                                                   f' {complication}')
+    #
+    #         else:
+    #             # It's possible for a condition to resolve (via treatment) and onset within the same month
+    #             # (i.e. anaemia). If so, here we calculate how many days this month an individual has suffered
+    #             if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
+    #
+    #                 if (mni[person][f'{complication}_resolution'] == (self.sim.date - DateOffset(months=1))) and \
+    #                   (mni[person][f'{complication}_onset'] == self.sim.date):
+    #                     return
+    #
+    #                 month_start = self.sim.date - DateOffset(months=1)
+    #                 onset = mni[person][f"{complication}_onset"]
+    #                 resolution = mni[person][f"{complication}_resolution"]
+    #
+    #                 # Earlier episode: assumed ongoing at the beginning of the month.
+    #                 earlier_end = min(resolution, self.sim.date)
+    #                 earlier_days = max(0, (earlier_end - month_start).days)
+    #
+    #                 # Recurrent episode: ongoing at the reporting date.
+    #                 later_start = max(onset, month_start)
+    #                 later_days = max(0, (self.sim.date - later_start).days)
+    #
+    #                 daly_weight = (
+    #                     (earlier_days + later_days) * p[complication] / DAYS_IN_YEAR
+    #                 )
+    #                 monthly_daly[person] += daly_weight
+    #
+    #                 # Earlier resolution has been accounted for; retain the ongoing onset.
+    #                 # mni[person][f"{complication}_resolution"] = pd.NaT
+    #                 #
+    #                 # # Calculate daily weight and how many days this woman hasnt had the complication
+    #                 # daily_weight = p[f'{complication}'] / DAYS_IN_YEAR
+    #                 # days_without_complication = pd.Timedelta((
+    #                 #     mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
+    #                 #     unit='d')
+    #                 #
+    #                 # # Use the average days in a month to calculate how many days shes had the complication this
+    #                 # # month
+    #                 # days_with_comp = DAYS_IN_MONTH - days_without_complication.days
+    #                 # final_wt = daily_weight * days_with_comp
+    #                 #
+    #                 # monthly_daly[person] += final_wt
+    #
+    #                 assert daly_weight >= 0, (
+    #                     f"Negative DALY weight for person {person}, complication '{complication}'. "
+    #                     f"Weight={daly_weight}, "
+    #                     f"onset={mni[person][f'{complication}_onset']}, "
+    #                     f"resolution={mni[person][f'{complication}_resolution']}, "
+    #                     f"sim_date={self.sim.date}"
+    #                 )
+    #
+    #                 if not daly_weight >= 0:
+    #                     logger.info(key='error', data=f'Daly wt not correctly assigned for person {person} for '
+    #                                                   f'{complication}')
+    #
+    #                 mni[person][f'{complication}_resolution'] = pd.NaT
+    #
+    #             else:
+    #                 # If the complication has truly resolved, check the dates make sense
+    #                 if not mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']:
+    #                     logger.info(key='error', data=f'Complication resolution has occurred before onset in'
+    #                                                   f' {person}')
+    #                     return
+    #
+    #                 # We calculate how many days she has been free of the complication this month to determine how
+    #                 # many days she has suffered from the complication this month
+    #
+    #                 onset = mni[person][f"{complication}_onset"]
+    #                 resolution = mni[person][f"{complication}_resolution"]
+    #                 month_start = self.sim.date - DateOffset(months=1)
+    #
+    #                 start = max(onset, month_start)
+    #                 end = min(resolution, self.sim.date)
+    #                 days_with_complication = max(0, (end - start).days)
+    #
+    #                 daly_weight = (
+    #                     days_with_complication * p[complication] / DAYS_IN_YEAR
+    #                 )
+    #                 monthly_daly[person] += daly_weight
+    #
+    #                 # days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
+    #                 #                                                                          f'resolution']),
+    #                 #                                             unit='d')
+    #                 # mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
+    #                 # days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
+    #                 # daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / DAYS_IN_YEAR)
+    #                 # monthly_daly[person] += daly_weight
+    #
+    #                 assert daly_weight >= 0, (
+    #                     f"Negative DALY weight for person {person}, complication '{complication}'. "
+    #                     f"Weight={daly_weight}, "
+    #                     f"onset={mni[person][f'{complication}_onset']}, "
+    #                     f"resolution={mni[person][f'{complication}_resolution']}, "
+    #                     f"sim_date={self.sim.date}"
+    #                 )
+    #
+    #                 if not daly_weight >= 0:
+    #                     logger.info(key='error', data=f'Daly wt not correctly assigned for person {person} for '
+    #                                                   f'{complication}')
+    #
+    #                 # Reset the dates to stop additional disability being applied
+    #                 mni[person][f'{complication}_onset'] = pd.NaT
+    #                 mni[person][f'{complication}_resolution'] = pd.NaT
+    #
+    #     # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
+    #     # calculate their individual daly weight for the month
+    #     for person in list(mni):
+    #         if df.at[person, 'is_alive']:
+    #             monthly_daly[person] = 0
+    #
+    #             for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic', 'ectopic_rupture',
+    #                                  'mild_mod_aph', 'severe_aph', 'chorio', 'eclampsia', 'obstructed_labour',
+    #                                  'sepsis', 'uterine_rupture',  'mild_mod_pph', 'severe_pph', 'secondary_pph']:
+    #                 acute_daly_calculation(complication=complication, person=person)
+    #
+    #             for complication in ['hypertension', 'gest_diab', 'mild_anaemia', 'moderate_anaemia',
+    #                                  'severe_anaemia', 'mild_anaemia_pp', 'moderate_anaemia_pp', 'severe_anaemia_pp',
+    #                                  'vesicovaginal_fistula', 'rectovaginal_fistula']:
+    #                 chronic_daly_calculations(complication=complication, person=person)
+    #
+    #             # ensure value doesnt exceed one
+    #             if monthly_daly[person] > 1:
+    #                 monthly_daly[person] = 1
+    #
+    #             if not monthly_daly[person] >= 0:
+    #                 logger.info(key='error', data=f'Total disability for {person} has been calculated as a negative')
+    #
+    #             # delete_mni is used to signify that pregnancy has ended. We delete the mni variable for women whose
+    #             # pregnancy has ended prematurely via this monthly function to allow for daly weights to be calculated
+    #             # for women who are no long pregnant -this check ensures women who are still pregnant do not have the
+    #             # entry in the mni deleted
+    #             if mni[person]['delete_mni'] and (df.at[person, 'is_pregnant'] or
+    #                                               df.at[person, 'la_is_postpartum'] or
+    #                                               (df.at[person, 'ps_ectopic_pregnancy'] != 'none')):
+    #                 mni[person]['delete_mni'] = False
+    #
+    #             # otherwise the entry can be deleted
+    #             elif (mni[person]['delete_mni'] and
+    #                   not df.at[person, 'is_pregnant'] and
+    #                   not df.at[person, 'la_is_postpartum'] and
+    #                   (df.at[person, 'ps_ectopic_pregnancy'] == 'none')):
+    #                 del mni[person]
+    #
+    #     daly_series = pd.Series(data=0, index=df.index[df.is_alive])
+    #     daly_series[monthly_daly.keys()] = list(monthly_daly.values())
+    #
+    #     return daly_series
 
+    def report_daly_values(self):
+        """Report maternal disability contributions for the previous calendar month."""
         df = self.sim.population.props
-        p = self.parameters['ps_daly_weights']
+        weights = self.parameters["ps_daly_weights"]
         mni = self.mother_and_newborn_info
 
-        logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
-        monthly_daly = dict()
+        report_date = self.sim.date
+        month_start = report_date - DateOffset(months=1)
+        monthly_daly = {}
 
-        # First we define a function that calculates disability associated with 'acute' complications of pregnancy
+        logger.debug(
+            key="message",
+            data="This is PregnancySupervisor reporting my health values",
+        )
+
+        def add_contribution(person, complication, contribution):
+            """Validate each contribution before adding it to the person's total."""
+            assert contribution >= 0, (
+                f"Negative or invalid DALY weight for person {person}, "
+                f"complication '{complication}'. "
+                f"Weight={contribution}, "
+                f"onset={mni[person][f'{complication}_onset']}, "
+                f"resolution={mni[person].get(f'{complication}_resolution', pd.NaT)}, "
+                f"sim_date={report_date}"
+            )
+            monthly_daly[person] += contribution
+
         def acute_daly_calculation(person, complication):
-            # If the woman has not experienced the complication of interest in the past month she does not accrue dalys
-            if pd.isnull(mni[person][f'{complication}_onset']):
+            onset_key = f"{complication}_onset"
+            onset = mni[person][onset_key]
+
+            if pd.isnull(onset):
                 return
 
-            # If the complication has onset within the last month...
-            if (self.sim.date - DateOffset(months=1)) <= mni[person][f'{complication}_onset'] <= self.sim.date:
+            assert onset <= report_date, (
+                f"Future onset for person {person}, complication '{complication}': "
+                f"onset={onset}, sim_date={report_date}"
+            )
 
-                # We assume that any woman who experiences an acute event receives the whole weight for that daly
-                monthly_daly[person] += p[f'{complication}']
+            # Preserve the existing convention of assigning the whole acute weight.
+            if month_start <= onset <= report_date:
+                add_contribution(person, complication, weights[complication])
+                mni[person][onset_key] = pd.NaT
 
-                # Ensure some weight is assigned
-                if mni[person][f'{complication}_onset'] != self.sim.date:
-                    if monthly_daly[person] == 0:
-                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
-
-                # Reset the variable within the mni dictionary to prevent double counting
-                mni[person][f'{complication}_onset'] = pd.NaT
-
-        # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
         def chronic_daly_calculations(person, complication):
-            # If the complication hasn't occurred, the function ends
-            if pd.isnull(mni[person][f'{complication}_onset']):
+            onset_key = f"{complication}_onset"
+            resolution_key = f"{complication}_resolution"
+
+            onset = mni[person][onset_key]
+            resolution = mni[person][resolution_key]
+
+            if pd.isnull(onset):
                 return
 
-            # If the complication has not yet resolved, and started more than a month ago, the woman gets a
-            # months disability
-            if pd.isnull(mni[person][f'{complication}_resolution']):
-                if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
-                    weight = (p[f'{complication}'] / DAYS_IN_YEAR) * (DAYS_IN_YEAR / 12)
-                    monthly_daly[person] += weight
+            assert onset <= report_date, (
+                f"Future onset for person {person}, complication '{complication}': "
+                f"onset={onset}, sim_date={report_date}"
+            )
+            assert pd.isnull(resolution) or resolution <= report_date, (
+                f"Future resolution for person {person}, "
+                f"complication '{complication}': "
+                f"resolution={resolution}, sim_date={report_date}"
+            )
 
-                # Otherwise, if the complication started this month she gets a daly weight relative to the number of
-                # days she has experience the complication
-                elif (self.sim.date - DateOffset(months=1)) <= mni[person][
-                     f'{complication}_onset'] <= self.sim.date:
-                    days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
-                                                    unit='d')
-                    daly_weight = days_since_onset.days * (p[f'{complication}'] / DAYS_IN_YEAR)
+            if pd.isnull(resolution):
+                # Ongoing episode: count its overlap with the reporting month.
+                start = max(onset, month_start)
+                days_with_complication = max(0, (report_date - start).days)
 
-                    monthly_daly[person] += daly_weight
+            elif resolution < onset:
+                # Recurrence: assume the earlier episode was ongoing at month_start.
+                # Its original onset is unavailable because recurrence overwrote it.
+                earlier_end = min(resolution, report_date)
+                earlier_days = max(0, (earlier_end - month_start).days)
 
-                    if not monthly_daly[person] >= 0:
-                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
+                later_start = max(onset, month_start)
+                later_days = max(0, (report_date - later_start).days)
+
+                days_with_complication = earlier_days + later_days
 
             else:
-                # Its possible for a condition to resolve (via treatment) and onset within the same month
-                # (i.e. anaemia). If so, here we calculate how many days this month an individual has suffered
-                if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
+                # Resolved episode: count only its overlap with the reporting month.
+                start = max(onset, month_start)
+                end = min(resolution, report_date)
+                days_with_complication = max(0, (end - start).days)
 
-                    if (mni[person][f'{complication}_resolution'] == (self.sim.date - DateOffset(months=1))) and \
-                      (mni[person][f'{complication}_onset'] == self.sim.date):
-                        return
+            assert 0 <= days_with_complication <= (report_date - month_start).days, (
+                f"Invalid disability duration for person {person}, "
+                f"complication '{complication}': "
+                f"days={days_with_complication}, onset={onset}, "
+                f"resolution={resolution}, sim_date={report_date}"
+            )
 
-                    # Calculate daily weight and how many days this woman hasnt had the complication
-                    daily_weight = p[f'{complication}'] / DAYS_IN_YEAR
-                    days_without_complication = pd.Timedelta((
-                        mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
-                        unit='d')
+            contribution = (
+                days_with_complication * weights[complication] / DAYS_IN_YEAR
+            )
+            add_contribution(person, complication, contribution)
 
-                    # Use the average days in a month to calculate how many days shes had the complication this
-                    # month
-                    days_with_comp = DAYS_IN_MONTH - days_without_complication.days
-
-                    monthly_daly[person] += daily_weight * days_with_comp
-
-                    if not monthly_daly[person] >= 0:
-                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
-
-                    mni[person][f'{complication}_resolution'] = pd.NaT
-
+            # Reset dates only after the contribution has been validated.
+            if pd.notnull(resolution):
+                if resolution < onset:
+                    # Retain the onset of the ongoing recurrent episode.
+                    mni[person][resolution_key] = pd.NaT
                 else:
-                    # If the complication has truly resolved, check the dates make sense
-                    if not mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']:
-                        logger.info(key='error', data=f'Complication resolution has occurred before onset in'
-                                                      f' {person}')
-                        return
+                    # The completed episode has now been accounted for.
+                    mni[person][onset_key] = pd.NaT
+                    mni[person][resolution_key] = pd.NaT
 
-                    # We calculate how many days she has been free of the complication this month to determine how
-                    # many days she has suffered from the complication this month
-                    days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
-                                                                                             f'resolution']),
-                                                                unit='d')
-                    mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
-                    days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
-                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / DAYS_IN_YEAR)
-                    monthly_daly[person] += daly_weight
+        acute_complications = [
+            "abortion",
+            "abortion_haem",
+            "abortion_sep",
+            "ectopic",
+            "ectopic_rupture",
+            "mild_mod_aph",
+            "severe_aph",
+            "chorio",
+            "eclampsia",
+            "obstructed_labour",
+            "sepsis",
+            "uterine_rupture",
+            "mild_mod_pph",
+            "severe_pph",
+            "secondary_pph",
+        ]
 
-                    if not monthly_daly[person] >= 0:
-                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
+        chronic_complications = [
+            "hypertension",
+            "gest_diab",
+            "mild_anaemia",
+            "moderate_anaemia",
+            "severe_anaemia",
+            "mild_anaemia_pp",
+            "moderate_anaemia_pp",
+            "severe_anaemia_pp",
+            "vesicovaginal_fistula",
+            "rectovaginal_fistula",
+        ]
 
-                    # Reset the dates to stop additional disability being applied
-                    mni[person][f'{complication}_onset'] = pd.NaT
-                    mni[person][f'{complication}_resolution'] = pd.NaT
-
-        # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
-        # calculate their individual daly weight for the month
         for person in list(mni):
-            if df.at[person, 'is_alive']:
-                monthly_daly[person] = 0
+            if not df.at[person, "is_alive"]:
+                continue
 
-                for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic', 'ectopic_rupture',
-                                     'mild_mod_aph', 'severe_aph', 'chorio', 'eclampsia', 'obstructed_labour',
-                                     'sepsis', 'uterine_rupture',  'mild_mod_pph', 'severe_pph', 'secondary_pph']:
-                    acute_daly_calculation(complication=complication, person=person)
+            monthly_daly[person] = 0.0
 
-                for complication in ['hypertension', 'gest_diab', 'mild_anaemia', 'moderate_anaemia',
-                                     'severe_anaemia', 'mild_anaemia_pp', 'moderate_anaemia_pp', 'severe_anaemia_pp',
-                                     'vesicovaginal_fistula', 'rectovaginal_fistula']:
-                    chronic_daly_calculations(complication=complication, person=person)
+            for complication in acute_complications:
+                acute_daly_calculation(person, complication)
 
-                # ensure value doesnt exceed one
-                if monthly_daly[person] > 1:
-                    monthly_daly[person] = 1
+            for complication in chronic_complications:
+                chronic_daly_calculations(person, complication)
 
-                # delete_mni is used to signify that pregnancy has ended. We delete the mni variable for women whose
-                # pregnancy has ended prematurely via this monthly function to allow for daly weights to be calculated
-                # for women who are no long pregnant -this check ensures women who are still pregnant do not have the
-                # entry in the mni deleted
-                if mni[person]['delete_mni'] and (df.at[person, 'is_pregnant'] or
-                                                  df.at[person, 'la_is_postpartum'] or
-                                                  (df.at[person, 'ps_ectopic_pregnancy'] != 'none')):
-                    mni[person]['delete_mni'] = False
+            assert monthly_daly[person] >= 0, (
+                f"Negative total disability for person {person}: "
+                f"{monthly_daly[person]}, sim_date={report_date}"
+            )
 
-                # otherwise the entry can be deleted
-                elif (mni[person]['delete_mni'] and
-                      not df.at[person, 'is_pregnant'] and
-                      not df.at[person, 'la_is_postpartum'] and
-                      (df.at[person, 'ps_ectopic_pregnancy'] == 'none')):
+            # Preserve the existing upper cap.
+            monthly_daly[person] = min(monthly_daly[person], 1.0)
+
+            # Retain entries while pregnancy or postpartum care is ongoing.
+            ongoing_pregnancy_or_postpartum = (
+                df.at[person, "is_pregnant"]
+                or df.at[person, "la_is_postpartum"]
+                or df.at[person, "ps_ectopic_pregnancy"] != "none"
+            )
+
+            if mni[person]["delete_mni"]:
+                if ongoing_pregnancy_or_postpartum:
+                    mni[person]["delete_mni"] = False
+                else:
                     del mni[person]
 
-        daly_series = pd.Series(data=0, index=df.index[df.is_alive])
-        daly_series[monthly_daly.keys()] = list(monthly_daly.values())
+        daly_series = pd.Series(
+            data=0.0,
+            index=df.index[df.is_alive],
+        )
+
+        if monthly_daly:
+            daly_series.loc[list(monthly_daly)] = list(monthly_daly.values())
 
         return daly_series
 

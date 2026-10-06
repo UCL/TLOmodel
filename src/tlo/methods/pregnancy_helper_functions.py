@@ -512,6 +512,9 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
         return
 
     mni[individual_id][mni_variable] = date
+    if individual_id == 29:
+        print("WRITE", mni_variable, date, flush=True)
+
 
 
 def log_mni_for_maternal_death(self, person_id):

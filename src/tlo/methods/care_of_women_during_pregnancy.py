@@ -880,12 +880,14 @@ class CareOfWomenDuringPregnancy(Module):
                     # starting on a course of IFA will correct anaemia prior to follow up
                     if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
 
-                        # Store date of resolution for daly calculations
-                        pregnancy_helper_functions.store_dalys_in_mni(
-                            person_id, mni, f'{df.at[person_id, "ps_anaemia_in_pregnancy"]}_anaemia_resolution',
-                            self.sim.date)
+                        if df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none':
 
-                        df.at[person_id, 'ps_anaemia_in_pregnancy'] = 'none'
+                            # Store date of resolution for daly calculations
+                            pregnancy_helper_functions.store_dalys_in_mni(
+                                person_id, mni, f'{df.at[person_id, "ps_anaemia_in_pregnancy"]}_anaemia_resolution',
+                                self.sim.date)
+
+                            df.at[person_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
     def balance_energy_and_protein_supplementation(self, hsi_event):
         """This function contains the intervention balance energy and protein supplementation delivered during ANC.

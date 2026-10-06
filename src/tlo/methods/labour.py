@@ -2275,6 +2275,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                     df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
 
                     if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+
                         # Store date of resolution for daly calculations
                         pregnancy_helper_functions.store_dalys_in_mni(
                             person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_resolution',

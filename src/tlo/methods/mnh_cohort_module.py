@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional
+from heapq import heapify
 
 import pandas as pd
 
@@ -176,6 +177,7 @@ class MaternalNewbornHealthCohort(Module):
         updated_event_queue = [item for item in self.sim.event_queue.queue
                                if not isinstance(item[3], IndividualScopeEventMixin)]
         self.sim.event_queue.queue = updated_event_queue
+        heapify(self.sim.event_queue.queue)
 
         # Prevent additional pregnancies from occurring during the cohort run (unless otherwise specified)
         if self.stop_pregnancies:
