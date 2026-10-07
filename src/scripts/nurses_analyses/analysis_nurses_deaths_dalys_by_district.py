@@ -736,17 +736,17 @@ def plot_percent_dalys_averted_by_district(df, healthsystem_label, top_n=30):
 
     # Scenario order
     scenarios = [
+        ("Fewer nurses", fewer, "indianred"),
         ("More nurses", more, "steelblue"),
         ("More CNP", cnp, "darkgreen"),
         ("More nurses by district", more_district, "mediumpurple"),
         ("More CNP by district", cnp_district, "orange"),
-        ("Fewer nurses", fewer, "indianred"),
     ]
 
     # One figure for one healthsystem
     fig, ax = plt.subplots(figsize=(10, 13))
 
-    offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    offsets = [0.32, 0.16, 0.0, -0.16, -0.32]
     y = np.arange(len(scenarios[0][1]))
 
     for offset, (label, scenario_df, color) in zip(offsets, scenarios):
@@ -775,7 +775,7 @@ def plot_percent_dalys_averted_by_district(df, healthsystem_label, top_n=30):
         "(2027–2034)"
     )
     ax.grid(axis="x", alpha=0.3)
-    ax.legend(loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.12),)
+    ax.legend(loc="lower center", ncol=5, bbox_to_anchor=(0.5, -0.12),)
     fig.tight_layout()
     return fig, ax
 
@@ -809,17 +809,17 @@ def plot_percent_deaths_averted_by_district(df, healthsystem_label, top_n=30):
 
     # Scenario order
     scenarios = [
+        ("Fewer nurses", fewer, "indianred"),
         ("More nurses", more, "steelblue"),
         ("More CNP", cnp, "darkgreen"),
         ("More nurses by district", more_district, "mediumpurple"),
         ("More CNP by district", cnp_district, "orange"),
-        ("Fewer nurses", fewer, "indianred"),
     ]
 
     # One figure for one healthsystem
     fig, ax = plt.subplots(figsize=(10, 13))
 
-    offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    offsets = [0.32, 0.16, 0.0, -0.16, -0.32]
     y = np.arange(len(scenarios[0][1]))
 
     for offset, (label, scenario_df, color) in zip(offsets, scenarios):
@@ -848,7 +848,7 @@ def plot_percent_deaths_averted_by_district(df, healthsystem_label, top_n=30):
         "(2027–2034)"
     )
     ax.grid(axis="x", alpha=0.3)
-    ax.legend(loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.12),)
+    ax.legend(loc="lower center", ncol=5, bbox_to_anchor=(0.5, -0.12),)
     fig.tight_layout()
     return fig, ax
 
