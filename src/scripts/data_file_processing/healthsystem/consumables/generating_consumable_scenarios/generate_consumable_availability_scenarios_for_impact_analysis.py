@@ -37,6 +37,7 @@ extracted from the Harmonised Health Facility Assessment 2018/19.
 Consumable availability is measured as probability of consumable being available at any point in time.
 """
 import datetime
+import os
 from collections import defaultdict
 from pathlib import Path
 
@@ -44,11 +45,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from tlo.methods.consumables import check_format_of_consumables_file
-
 #from plotnine import aes, element_text, geom_bar, ggplot, labs, theme, ylim  # for ggplots from R
 
+from tlo.methods.consumables import check_format_of_consumables_file
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -79,7 +78,7 @@ def generate_alternative_availability_scenarios(tlo_availability_df: pd.DataFram
     # Get TLO Facility_ID for each district and facility level
     mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
     districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
-    fac_levels = {'0', '1a', '1b', '2', '3', '4'}  # noqa: F841
+    fac_levels = {'0', '1a', '1b', '2', '3', '4'}
     tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                         on = ['Facility_ID'], how='left')
 
@@ -600,7 +599,7 @@ def generate_alternative_availability_scenarios(tlo_availability_df: pd.DataFram
     #------------------------------------------------------
     # Combine all scenario suffixes into a single list
     scenario_suffixes = list_of_scenario_suffixes + [f'scenario{i}' for i in range(6, 16)]
-    scenario_vars = [f'available_prop_{s}' for s in scenario_suffixes]  # noqa: F841
+    scenario_vars = [f'available_prop_{s}' for s in scenario_suffixes]
     old_vars = ['Facility_ID', 'month', 'item_code']
 
     # Prepare the full base dataframe from scenarios 6–8
