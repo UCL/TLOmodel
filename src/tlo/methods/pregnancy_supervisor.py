@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import (
-    DAYS_IN_MONTH,
     DAYS_IN_YEAR,
     Date,
     DateOffset,
@@ -876,7 +875,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     #
     #     # First we define a function that calculates disability associated with 'acute' complications of pregnancy
     #     def acute_daly_calculation(person, complication):
-    #         # If the woman has not experienced the complication of interest in the past month she does not accrue dalys
+    #         # If the woman has not experienced the complication of interest in the past month she does not accrue
+    #         dalys
     #         if pd.isnull(mni[person][f'{complication}_onset']):
     #             return
     #

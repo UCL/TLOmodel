@@ -1,6 +1,6 @@
+from heapq import heapify
 from pathlib import Path
 from typing import Optional
-from heapq import heapify
 
 import pandas as pd
 

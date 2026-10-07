@@ -1,7 +1,6 @@
 import pytest
 
 from tlo import Date
-
 from tlo.dependencies import (
     get_all_dependencies,
     get_all_required_dependencies,
