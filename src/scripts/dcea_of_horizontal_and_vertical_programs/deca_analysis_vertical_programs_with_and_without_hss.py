@@ -123,6 +123,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum(axis=1)
         )
 
+    def get_dalys_per_wealth_urban_age(_df):
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        return (
+            _df
+            .loc[_df.year.between(*years_needed)]
+            .drop(columns=['date', 'sex', 'region_of_residence', 'year'], errors='ignore')
+            .groupby(['li_wealth', 'li_urban','age_range'])
+            .sum()
+            .sum(axis=1)
+        )
+
     def get_dalys_per_wealth_region(_df):
         years_needed = [i.year for i in TARGET_PERIOD]
         assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
@@ -134,6 +146,49 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum()
             .sum(axis=1)
         )
+
+    def get_dalys_per_wealth_cause_age(_df):
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        cause_columns = find_cause_columns(_df)
+        if not cause_columns:
+            raise ValueError("No DALY cause columns found in the healthburden log.")
+        return (
+            _df.loc[_df.year.between(*years_needed)]
+            .groupby(['li_wealth', 'age_range'])[cause_columns]
+            .sum()
+            .stack()
+            .rename_axis(index=['li_wealth', 'age_range', 'cause'])
+        )
+
+    def get_dalys_per_wealth_cause_sex(_df):
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        cause_columns = find_cause_columns(_df)
+        if not cause_columns:
+            raise ValueError("No DALY cause columns found in the healthburden log.")
+        return (
+            _df.loc[_df.year.between(*years_needed)]
+            .groupby(['li_wealth', 'sex'])[cause_columns]
+            .sum()
+            .stack()
+            .rename_axis(index=['li_wealth', 'sex', 'cause'])
+        )
+
+    def get_dalys_per_wealth_cause_urban(_df):
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        cause_columns = find_cause_columns(_df)
+        if not cause_columns:
+            raise ValueError("No DALY cause columns found in the healthburden log.")
+        return (
+            _df.loc[_df.year.between(*years_needed)]
+            .groupby(['li_wealth', 'li_urban'])[cause_columns]
+            .sum()
+            .stack()
+            .rename_axis(index=['li_wealth', 'li_urban', 'cause'])
+        )
+
     dalys_key = "dalys_by_wealth_urban_region_stacked_by_age_and_time"
 
     dalys_per_wealth = extract_results(
@@ -176,11 +231,44 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_draw_names_as_column_index_level_0)
 
+    dalys_per_wealth_urban_age = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key=dalys_key,
+        custom_generate_series=get_dalys_per_wealth_urban_age,
+        do_scaling=True
+    ).pipe(set_draw_names_as_column_index_level_0)
+
+
     dalys_per_wealth_region = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_region,
+        do_scaling=True
+    ).pipe(set_draw_names_as_column_index_level_0)
+
+    dalys_per_wealth_cause_age = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key=dalys_key,
+        custom_generate_series=get_dalys_per_wealth_cause_age,
+        do_scaling=True
+    ).pipe(set_draw_names_as_column_index_level_0)
+
+    dalys_per_wealth_cause_sex = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key=dalys_key,
+        custom_generate_series=get_dalys_per_wealth_cause_sex,
+        do_scaling=True
+    ).pipe(set_draw_names_as_column_index_level_0)
+
+    dalys_per_wealth_cause_urban = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key=dalys_key,
+        custom_generate_series=get_dalys_per_wealth_cause_urban,
         do_scaling=True
     ).pipe(set_draw_names_as_column_index_level_0)
 
@@ -238,6 +326,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         z = _get_population_long_from_wide(_df)
         return z.groupby(['li_wealth', 'region_of_residence'])['value'].sum()
 
+    def get_pop_per_wealth_urban_age(_df):
+        z = _get_population_long_from_wide(_df)
+        return z.groupby(['li_wealth', 'li_urban', 'age_range'])['value'].sum()
 
     pop_key = "population_by_wealth_age_urban_region"
 
@@ -281,6 +372,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_draw_names_as_column_index_level_0)
 
+    pop_per_wealth_urban_age = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key=pop_key,
+        custom_generate_series=get_pop_per_wealth_urban_age,
+        do_scaling=True
+    ).pipe(set_draw_names_as_column_index_level_0)
+
     # %% Save outputs
     output_folder.mkdir(parents=True, exist_ok=True)
 
@@ -289,12 +388,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     dalys_per_wealth_age.to_csv(output_folder / "dalys_per_wealth_age.csv")
     dalys_per_wealth_sex.to_csv(output_folder / "dalys_per_wealth_sex.csv")
     dalys_per_wealth_urban.to_csv(output_folder / "dalys_per_wealth_urban.csv")
+    dalys_per_wealth_urban_age.to_csv(output_folder / "dalys_per_wealth_urban_age.csv")
     dalys_per_wealth_region.to_csv(output_folder / "dalys_per_wealth_region.csv")
+    dalys_per_wealth_cause_age.to_csv(output_folder / "dalys_per_wealth_cause_age.csv")
+    dalys_per_wealth_cause_sex.to_csv(output_folder / "dalys_per_wealth_cause_sex.csv")
+    dalys_per_wealth_cause_urban.to_csv(output_folder / "dalys_per_wealth_cause_urban.csv")
+
 
     pop_per_wealth.to_csv(output_folder / "population_per_wealth.csv")
     pop_per_wealth_age.to_csv(output_folder / "population_per_wealth_age.csv")
     pop_per_wealth_sex.to_csv(output_folder / "population_per_wealth_sex.csv")
     pop_per_wealth_urban.to_csv(output_folder / "population_per_wealth_urban.csv")
+    pop_per_wealth_urban_age.to_csv(output_folder / "population_per_wealth_urban_age.csv")
     pop_per_wealth_region.to_csv(output_folder / "population_per_wealth_region.csv")
 
     print(f"Done. CSVs saved in: {output_folder}")
@@ -303,9 +408,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 if __name__ == "__main__":
 
     apply(
-        #results_folder=Path("outputs/n.fuller@ic.ac.uk/htm_with_and_without_hss-2026-08-21T101642Z"),
-        #output_folder=Path("outputs/n.fuller@ic.ac.uk/htm_with_and_without_hss-2026-08-21T101642Z"),
-        results_folder=Path("outputs/n.fuller@ic.ac.uk/htm_with_and_without_hss-2026-08-07T092059Z"),
-        output_folder=Path("outputs/n.fuller@ic.ac.uk/htm_with_and_without_hss-2026-08-07T092059Z"),
+        results_folder=Path("outputs/n.fuller@ic.ac.uk/htm_with_and_without_hss-2026-10-02T100124Z"),
+        output_folder=Path("outputs/n.fuller@ic.ac.uk/htm_with_and_without_hss-2026-10-02T100124Z"),
         resourcefilepath=Path("./resources")
     )

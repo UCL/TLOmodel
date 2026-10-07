@@ -90,7 +90,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the Malaria program"""
         return {
             'Malaria': {
-                'type_of_scaleup': 'target',
+                'type_of_scaleup': 'target', #Change to target from max
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
