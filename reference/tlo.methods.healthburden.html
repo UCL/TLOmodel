@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthburden module &mdash; TLOmodel 0.1.dev2661+ga15a99564 documentation</title>
+  <title>tlo.methods.healthburden module &mdash; TLOmodel 0.1.dev2666+g0c39dc494 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=ecc4e7e2"></script>
+      <script src="../_static/documentation_options.js?v=a493db61"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -269,14 +269,16 @@ Sequela code for particular conditions can be looked-up in ResourceFile_DALY_Wei
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.report_live_years_lost">
-<span class="sig-name descname"><span class="pre">report_live_years_lost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wealth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_of_birth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause_of_death</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.report_live_years_lost" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">report_live_years_lost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wealth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_of_birth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause_of_death</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">urban</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_of_residence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.report_live_years_lost" title="Link to this definition"></a></dt>
 <dd><p>Calculate and store the period for which there is ‘years of lost life’ when someone dies (assuming that the
 person has died on today’s date in the simulation).
 :param sex: sex of the person that had died
 :param wealth: the value ‘li_wealth’ for the person at the time of death
 :param date_of_birth: date_of_birth of the person that has died
 :param age_range: The age-range for the person at the time of death
-:param cause_of_death: title for the column in YLL dataframe (of form &lt;ModuleName&gt;_&lt;Cause&gt;)</p>
+:param cause_of_death: title for the column in YLL dataframe (of form &lt;ModuleName&gt;_&lt;Cause&gt;)
+:param urban: the value ‘li_urban’ for the person at the time of death
+:param region_of_residence: the value ‘region_of_residence’ for the person at the time of death</p>
 </dd></dl>
 
 <dl class="py method">
