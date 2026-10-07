@@ -1296,12 +1296,12 @@ def generate_all_consumable_figures(
         resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
     )[['Item_Code', 'item_category']]
 
-    item_to_program_map = dict(
-        zip(
-            item_to_program_df['Item_Code'].astype(str),
-            item_to_program_df['item_category']
-        )
-    )
+    # item_to_program_map = dict(
+    #     zip(
+    #         item_to_program_df['Item_Code'].astype(str),
+    #         item_to_program_df['item_category']
+    #     )
+    # )
 
     # Plot the proportion of instances that a consumable was not available when requested
     pct_unavailable_by_program = extract_results(
