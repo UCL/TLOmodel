@@ -480,8 +480,8 @@ def plot_stacked_mean_with_total_ci(
 
     if xticklabels_wrapped:
         labels = [
-            "\n".join(textwrap.wrap(str(l), wrap_width))
-            for l in labels
+            "\n".join(textwrap.wrap(str(label), wrap_width))
+            for label in labels
         ]
         ha = "center"
     else:
@@ -594,8 +594,8 @@ def plot_percentage_change_with_ci(
 
     if xticklabels_wrapped:
         labels = [
-            "\n".join(textwrap.wrap(str(l), wrap_width))
-            for l in labels
+            "\n".join(textwrap.wrap(str(label), wrap_width))
+            for label in labels
         ]
         ha = "center"
     else:
@@ -962,7 +962,7 @@ def get_percentage_unavailable_by_program(_df):
 
     # Map items to program
     pct_unavailable.index = pct_unavailable.index.astype(str)
-    pct_unavailable = pct_unavailable.rename(index=item_to_program_map)
+    # pct_unavailable = pct_unavailable.rename(index=item_to_program_map)
 
     # Aggregate to program level
     pct_unavailable = (

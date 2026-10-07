@@ -690,9 +690,9 @@ def plot_calibration(
 
     for ax in axes:
 
-        h, l = ax.get_legend_handles_labels()
+        han, lab = ax.get_legend_handles_labels()
 
-        for handle, label in zip(h, l):
+        for handle, label in zip(han, lab):
 
             if label not in labels:
                 handles.append(handle)
