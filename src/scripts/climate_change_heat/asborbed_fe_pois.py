@@ -169,7 +169,7 @@ else:
     LAG_SUFFIX = ""
 CENTER = True
 MIN_OBS = 24
-MIN_OBS_COVERAGE = 0.95
+MIN_OBS_COVERAGE = 0.85
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
 CLUSTER_COL = "grid_id"
