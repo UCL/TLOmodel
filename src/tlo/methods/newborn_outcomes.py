@@ -1545,7 +1545,7 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
         assert isinstance(module, NewbornOutcomes)
 
         self.int_name = int_name
-        self.TREATMENT_ID = 'PostnatalCare_Resus_ConsumableLog'
+        self.TREATMENT_ID = 'PostnatalCare_Neonatal_Resus_ConsumableLog'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
 
