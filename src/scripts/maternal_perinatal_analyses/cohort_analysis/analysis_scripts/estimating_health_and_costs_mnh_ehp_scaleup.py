@@ -1733,7 +1733,7 @@ fig, ax = figure_3_incremental_costs(
     incremental_scenario_cost_annual_summarized,
     draw_labels=draw_labels,
     currency="$",  # change or omit as appropriate
-    save_path="fig_3_incremental_costs.png",
+    save_path=g_path,
 )
 plt.show()
 
