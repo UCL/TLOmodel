@@ -20,7 +20,7 @@ class MaternalNewbornHealthCohort(Module):
     Properties are extracted from ResourceFile_All2026_7PregnanciesCohortModel.
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'RTI', 'Contraception', 'Labour'}
+    INIT_DEPENDENCIES = {'Demography', 'RTI', 'Contraception', 'Labour', 'HealthSystem'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
