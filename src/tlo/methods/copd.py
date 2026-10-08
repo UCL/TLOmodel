@@ -313,7 +313,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         # the patient is over the minimum age threshold
         p = self.parameters
         if individual_properties["age_years"] > p["min_age_first_appt"]:
-            return self._common_first_appt(
+            self._common_first_appt(
                 person_id=person_id,
                 individual_properties=individual_properties,
                 symptoms=symptoms,
@@ -332,7 +332,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         facility_level: str,
         **kwargs,
     ) -> None:
-        return self._common_first_appt(
+        self._common_first_appt(
             person_id=person_id,
             individual_properties=individual_properties,
             symptoms=symptoms,
