@@ -2476,7 +2476,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # queue and therefore it will never ran. Log this here.
                             if event.facility_info is not None:
                                 # Fully-defined HSI Event
-                                self.module.write_to_never_ran_hsi_log(
+                                self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
                                     event_details=event.as_namedtuple(),
                                     person_id=event.target,
                                     facility_id=event.facility_info.id,
@@ -2484,7 +2484,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     clinic=event_clinic,
                                 )
                             else:
-                                self.module.write_to_never_ran_hsi_log(
+                                self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
                                     event_details=event.as_namedtuple(),
                                     person_id=-1,
                                     facility_id=-1,
@@ -2642,7 +2642,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # queue and therefore it will never ran. Log this here.
                     if event.facility_info is not None:
                         # Fully-defined HSI Event
-                        self.write_to_never_ran_hsi_log(
+                        self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
                             event_details=event.as_namedtuple(),
                             person_id=event.target,
                             facility_id=event.facility_info.id,
@@ -2650,7 +2650,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             clinic=event_clinic,
                         )
                     else:
-                        self.write_to_never_ran_hsi_log(
+                        self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
                             event_details=event.as_namedtuple(),
                             person_id=-1,
                             facility_id=-1,
