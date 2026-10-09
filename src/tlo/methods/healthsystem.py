@@ -2463,14 +2463,30 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Add the event to the queue:
                             hp.heappush(hold_over, next_event_tuple)
 
-                        # Log that the event did not run
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            did_run=False,
-                            priority=_priority,
-                            clinic=event_clinic,
-                        )
+                            # Log that the event did not run
+                            self.module.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                did_run=False,
+                                priority=_priority,
+                                clinic=event_clinic,
+                            )
+                        else:
+                        # If rtn_from_did_not_run is False, the event is not added to the hold-over
+                        # queue and therefore it will never ran. Log this here.
+                            if event.facility_info is not None:
+                                # Fully-defined HSI Event
+                                self.write_to_never_ran_hsi_log(
+                                    event_details=event.as_namedtuple(),
+                                    person_id=event.target,
+                                    facility_id=event.facility_info.id,
+                                    priority=_priority,
+                                    clinic=event_clinic,
+                                )
+                            else:
+                                self.write_to_never_ran_hsi_log(
+                                    event_details=event.as_namedtuple(), person_id=-1, facility_id=-1, priority=_priority, clinic=event_clinic
+                                )
 
                     # Have enough capabilities left to run event
                     else:
@@ -2609,14 +2625,30 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Add the event to the queue:
                     hp.heappush(hold_over, next_event_tuple)
 
-                # Log that the event did not run
-                self.module.record_hsi_event(
-                    hsi_event=event,
-                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                    did_run=False,
-                    priority=next_event_tuple.priority,
-                    clinic=next_event_tuple.clinic_eligibility,
-                )
+                    # Log that the event did not run
+                    self.module.record_hsi_event(
+                        hsi_event=event,
+                        actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                        did_run=False,
+                        priority=next_event_tuple.priority,
+                        clinic=next_event_tuple.clinic_eligibility,
+                    )
+                else:
+                    # If rtn_from_did_not_run is False, the event is not added to the hold-over
+                    # queue and therefore it will never ran. Log this here.
+                    if event.facility_info is not None:
+                        # Fully-defined HSI Event
+                        self.write_to_never_ran_hsi_log(
+                            event_details=event.as_namedtuple(),
+                            person_id=event.target,
+                            facility_id=event.facility_info.id,
+                            priority=_priority,
+                            clinic=event_clinic,
+                        )
+                    else:
+                        self.write_to_never_ran_hsi_log(
+                            event_details=event.as_namedtuple(), person_id=-1, facility_id=-1, priority=_priority, clinic=event_clinic
+                        )
 
         # add events from the list_of_events_not_due_today back into the queue
         while len(list_of_events_not_due_today) > 0:
