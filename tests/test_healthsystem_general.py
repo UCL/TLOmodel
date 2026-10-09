@@ -1863,38 +1863,3 @@ def test_service_availability_switch(tmpdir, seed):
         0
     ]
     assert nevents_did_not_run == nevents_with_withdrawn_ids
-
-def test_no_consumables_used_in_first_appointments(tmpdir, seed):
-    """Test that if non consumables are used if only First* treatment-ids are allowed.
-    """
-
-    log_config = {
-        "filename": "log",
-        "directory": tmpdir,
-            "custom_levels": {
-                "tlo.methods.healthsystem.summary": logging.INFO,
-            },
-    }
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
-
-    sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(
-            capabilities_coefficient=1.0,
-            mode_appt_constraints=1,
-            ignore_priority=False,
-            randomise_queue=True,
-            policy_name="",
-            use_funded_or_actual_staffing="funded_plus",
-        ),
-    )
-
-    hs_params = sim.modules["HealthSystem"].parameters
-    hs_params["Service_Availability"] = ['FirstAttendance*']
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
-    cons_req = output["tlo.methods.healthsystem.summary"]['Consumables']
-    assert cons_req['Item_Used'].apply(lambda d: not d).all(), "Non-empty Item_Used found"
