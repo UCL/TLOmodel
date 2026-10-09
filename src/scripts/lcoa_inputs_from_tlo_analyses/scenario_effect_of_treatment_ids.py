@@ -20,7 +20,6 @@ tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_tr
 ```
 
 """
-
 from pathlib import Path
 from typing import Dict, List
 from tlo import Date, logging
@@ -68,7 +67,7 @@ class EffectOfEachTreatment(BaseScenario):
         self.pop_size = 250_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -96,14 +95,18 @@ class EffectOfEachTreatment(BaseScenario):
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=None)
+        # Remove trailing _* from treatment names
+        treatments = ["_".join(s.split("_")[:-1]) for s in treatments]
         # Return 'Service_Availability' values, with scenarios for nothing, and ones for which all but one
         # treatment is omitted
-        service_availability = dict({"Nothing": []})
+        # Allow 'FirstAttendance_SpuriousEmergencyCare' in the baseline as it has non-blank appointment
+        # footprint and is allowed in all other scenarios.
+        service_availability = dict({"Nothing": ['FirstAttendance_SpuriousEmergencyCare']})
         # For each treatment group, create scenarios keeping only one treatment from that group
         # Commenting to allow draw 0 to be run and suspended.
-        service_availability.update(
-            {f"Only {treatment}": [treatment] for treatment in treatments}
-        )
+        # service_availability.update(
+        #    {f"Only {treatment}": [treatment] for treatment in treatments}
+        #)
 
         scenario_definitions = ScenarioDefinitions()
 
