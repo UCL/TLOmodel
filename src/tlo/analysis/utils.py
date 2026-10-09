@@ -442,7 +442,7 @@ def extract_individual_histories(results_folder: Path,
     format 'entity', 'date', 'event_name', 'Info' where 'Info' is a dictionary that combines
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.methods.individual_history'
+    module = 'tlo.methods.individual_history_tracker'
     key = 'individual_histories'
 
     # get number of draws and numbers of runs
@@ -482,7 +482,7 @@ def extract_individual_histories(results_folder: Path,
 
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-
+    print(res)
     return res
 
 
