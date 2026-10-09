@@ -804,10 +804,14 @@ def test_mode_2_clinics(seed, tmpdir):
         return sim
 
     def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        # Only target people who are alive (some may have died in the simulation run before this point);
+        # an HSI event for a dead person does not run.
+        props = sim.population.props
+        alive_ids = props.index[props.is_alive]
         for i in range(0, ngenericclinic):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleGenericClinic"],
-                person_id=i,
+                person_id=int(alive_ids[i % len(alive_ids)]),
                 appt_type="ConWithDCSA",
                 level="0",
                 treatment_id="DummyHSIEventGenericClinic",
@@ -829,7 +833,7 @@ def test_mode_2_clinics(seed, tmpdir):
         for i in range(ngenericclinic, ngenericclinic + nclinic1):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleClinic1"],
-                person_id=i,
+                person_id=int(alive_ids[i % len(alive_ids)]),
                 appt_type="ConWithDCSA",
                 level="0",
                 treatment_id="DummyHSIEvent",
