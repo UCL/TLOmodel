@@ -2485,7 +2485,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 )
                             else:
                                 self.write_to_never_ran_hsi_log(
-                                    event_details=event.as_namedtuple(), person_id=-1, facility_id=-1, priority=_priority, clinic=event_clinic
+                                    event_details=event.as_namedtuple(),
+                                    person_id=-1,
+                                    facility_id=-1,
+                                    priority=_priority,
+                                    clinic=event_clinic
                                 )
 
                     # Have enough capabilities left to run event
@@ -2647,7 +2651,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         )
                     else:
                         self.write_to_never_ran_hsi_log(
-                            event_details=event.as_namedtuple(), person_id=-1, facility_id=-1, priority=_priority, clinic=event_clinic
+                            event_details=event.as_namedtuple(),
+                            person_id=-1,
+                            facility_id=-1,
+                            priority=_priority,
+                            clinic=event_clinic
                         )
 
         # add events from the list_of_events_not_due_today back into the queue
