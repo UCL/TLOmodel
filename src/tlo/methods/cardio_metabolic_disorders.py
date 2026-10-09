@@ -301,6 +301,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         self.lms_event_death = dict()
         self.lms_event_symptoms = dict()
 
+        # Dictionary to hold date onset
+        self.diabetes_onset_dates = {}
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
@@ -443,6 +446,14 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                 # Select all eligible individuals (men & women w/o condition and in age range)
                 sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
                 sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
+
+            # Initialise diabetes onset dates for those with prevalent diabetes
+            if condition == 'diabetes':
+                has_diabetes = df.index[df.is_alive & df.nc_diabetes]
+
+                for person_id in has_diabetes:
+                    if person_id not in self.diabetes_onset_dates:
+                        self.diabetes_onset_dates[person_id] = self.sim.date
 
             # ----- Set variables to false / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
@@ -1057,6 +1068,12 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
+
+            # Store onset dates only for diabetes
+            if condition == 'diabetes':
+                for person_id in idx_acquires_condition:
+                    if person_id not in self.module.diabetes_onset_dates:
+                        self.module.diabetes_onset_dates[person_id] = self.sim.date
 
             # Add incident cases to the tracker
             self.module.trackers['onset_condition'].add(
