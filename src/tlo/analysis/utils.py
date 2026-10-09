@@ -482,7 +482,7 @@ def extract_individual_histories(results_folder: Path,
 
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-    print(res)
+
     return res
 
 

@@ -33,7 +33,7 @@ class TrackIndividualHistories(BaseScenario):
         self.pop_size = 500
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 2
+        self.runs_per_draw = 1
         self.generate_event_chains = True
 
     def log_configuration(self):
@@ -71,7 +71,6 @@ class TrackIndividualHistories(BaseScenario):
                     {
                     }
                 ),
-
         }
 
     def _baseline(self) -> Dict:

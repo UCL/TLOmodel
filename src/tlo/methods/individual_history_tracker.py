@@ -283,7 +283,10 @@ class IndividualHistoryTracker(Module):
                 if 'footprint' in data.keys():
                     HSI_specific_fields = {'footprint','level','treatment_ID','equipment','bed_days'}
                     for field in HSI_specific_fields:
-                        link_info[field] = data[field]
+                        if field == 'bed_days':
+                            link_info[field] = {key: value for key, value in data[field].items() if value != 0}
+                        else:
+                            link_info[field] = data[field]
 
                 # Store (if any) property changes as a result of the event for this individual
                 for key in self.row_before.index:
