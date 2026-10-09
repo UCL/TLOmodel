@@ -1292,9 +1292,9 @@ def generate_all_consumable_figures(
     # --------------------------------------------------
     # 6) CONSUMABLE UNAVAILABILITY
     # --------------------------------------------------
-    item_to_program_df = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
-    )[['Item_Code', 'item_category']]
+    # item_to_program_df = pd.read_csv(
+    #     resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
+    # )[['Item_Code', 'item_category']]
 
     # item_to_program_map = dict(
     #     zip(

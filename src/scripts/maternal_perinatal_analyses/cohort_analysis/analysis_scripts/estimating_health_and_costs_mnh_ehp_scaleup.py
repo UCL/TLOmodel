@@ -728,7 +728,7 @@ total_dalys_averted_df = baseline.sub(
 total_dalys_averted_df.rename(index={sim_start_year: "total_dalys_averted"}, inplace=True)
 
 # 7.) All cause DALYs averted (inc. stillbirths)
-#  TODO: determine GA that whill be included
+#  TODO: I THINK WE NEED TO WEIGHT THIS BASED ON GESTATIONAL AGE
 preg_loss = extract_results(
     results_folder,
     module="tlo.methods.pregnancy_supervisor",
