@@ -1,5 +1,6 @@
 import pytest
 
+from tlo import Date
 from tlo.dependencies import (
     get_all_dependencies,
     get_all_required_dependencies,
@@ -24,6 +25,9 @@ def test_module_dependencies_complete(sim, module_class):
     Dependencies here refers to the union of INIT_DEPENDENCIES and
     ADDITIONAL_DEPENDENCIES.
     """
+    if module_class.__name__ == "MaternalNewbornHealthCohort":
+        sim.start_date = Date(2026, 1, 1)
+        sim.date = sim.start_date
     try:
         # If this module is an 'alternative' to one or more other modules, exclude these
         # modules from being selected to avoid clashes with this module
@@ -43,6 +47,7 @@ def test_module_dependencies_complete(sim, module_class):
         )
     except Exception:
         all_dependencies = get_all_required_dependencies(module_class)
+        print(all_dependencies)
         pytest.fail(
             f"Module {module_class.__name__} appears to be missing dependencies "
             f"required to run simulation in the union of the INIT_DEPENDENCIES and "
