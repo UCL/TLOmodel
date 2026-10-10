@@ -74,14 +74,14 @@ def initialise_logging(
     root_level: core.LogLevel,
     stdout_handler_level: core.LogLevel,
 ) -> Generator[None, None, None]:
-    logging.initialise(
-        add_stdout_handler=add_stdout_handler,
-        simulation_date_getter=simulation_date_getter,
-        root_level=root_level,
-        stdout_handler_level=stdout_handler_level,
-    )
-    yield
-    logging.reset()
+    with logging.restore_global_state():
+        logging.initialise(
+            add_stdout_handler=add_stdout_handler,
+            simulation_date_getter=simulation_date_getter,
+            root_level=root_level,
+            stdout_handler_level=stdout_handler_level,
+        )
+        yield
 
 def _tlo_logger_handlers(logger: core.Logger) -> list[_logging.Handler]:
     # The handlers tlo.logging installs: stdout StreamHandler and FileHandler.
