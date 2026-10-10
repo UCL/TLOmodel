@@ -14,6 +14,8 @@ equip_availability_postSwitch,default
 year_equip_availability_switch,2100
 tclose_overwrite,0
 tclose_days_offset_overwrite,7
+HR_scaling_by_year_and_officer_type_mode,no_historical_growth
+HR_expansion_absorption_rate,1.0
 HR_scaling_by_level_and_officer_type_mode,default
 year_HR_scaling_by_level_and_officer_type,2100
 HR_scaling_by_district_mode,default
