@@ -23,6 +23,16 @@ def predict_for_dataframe(self, df, rng=None, **externals):
 import pandas as pd
 
 
+def person_properties(keys):
+    """Decorator to specify the person's properties needed to evaluate the function"""
+    keys_t = tuple(keys)
+    def decorator(func):
+        func.person_properties = keys_t
+        return func
+    return decorator
+
+
+@person_properties(['li_bmi'])
 def predict_post_term_labour(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of post term labour. Risk is increased in
@@ -40,6 +50,7 @@ def predict_post_term_labour(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['age_years', 'li_mar_stat', 'li_wealth', 'li_ed_lev', 'li_urban'])
 def predict_parity(self, df, rng=None, **externals):
     """
     Population level linear model (additive) which returns a df containing the predicted parity (previous number of
@@ -70,6 +81,7 @@ def predict_parity(self, df, rng=None, **externals):
     return result
 
 
+@person_properties(['un_HAZ_category'])
 def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing obstructed labour
@@ -91,6 +103,7 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['ps_premature_rupture_of_membranes', 'ac_received_abx_for_prom'])
 def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing sepsis secondary
@@ -111,6 +124,7 @@ def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties([])
 def predict_sepsis_endometritis_pp(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing sepsis secondary
@@ -128,6 +142,7 @@ def predict_sepsis_endometritis_pp(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties([])
 def predict_sepsis_skin_soft_tissue_pp(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing sepsis secondary
@@ -145,6 +160,7 @@ def predict_sepsis_skin_soft_tissue_pp(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties([])
 def predict_sepsis_urinary_tract_pp(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing sepsis secondary
@@ -160,6 +176,7 @@ def predict_sepsis_urinary_tract_pp(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['la_sepsis_treatment'])
 def predict_sepsis_death(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of death due to postpartum sepsis.
@@ -175,6 +192,8 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['la_eclampsia_treatment', 'ac_mag_sulph_treatment', 'la_maternal_hypertension_treatment',
+                    'ac_iv_anti_htn_treatment'])
 def predict_eclampsia_death(self, df, rng=None, **externals):
     """
     This is an individual level linear model which predicts an individuals probability of death due to eclampsia.
@@ -195,6 +214,7 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['la_maternal_hypertension_treatment', 'ac_iv_anti_htn_treatment'])
 def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of death due to severe
@@ -211,6 +231,7 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['la_previous_cs_delivery', 'ps_htn_disorders'])
 def predict_placental_abruption_ip(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing placental
@@ -230,6 +251,7 @@ def predict_placental_abruption_ip(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['ps_placenta_praevia', 'ps_placental_abruption', 'la_placental_abruption'])
 def predict_antepartum_haem_ip(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing an antepartum
@@ -249,6 +271,7 @@ def predict_antepartum_haem_ip(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties([])
 def predict_antepartum_haem_death(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of death due to antepartum
@@ -268,6 +291,8 @@ def predict_antepartum_haem_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['pn_htn_disorders', 'nc_hypertension', 'ps_multiple_pregnancy', 'la_placental_abruption',
+                    'ps_placental_abruption'])
 def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing a postpartum haemorrhage due
@@ -298,6 +323,7 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties([])
 def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of developing a postpartum
@@ -313,6 +339,7 @@ def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['la_postpartum_haem_treatment'])
 def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of death following a postpartum
@@ -333,6 +360,7 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['la_parity', 'la_previous_cs_delivery', 'la_obstructed_labour'])
 def predict_uterine_rupture_ip(self, df, rng=None, **externals):
     """
     Population level linear model to allow for the model to be scaled at initialisation of the simulation. The model
@@ -352,6 +380,7 @@ def predict_uterine_rupture_ip(self, df, rng=None, **externals):
     return result
 
 
+@person_properties(['la_uterine_rupture_treatment', 'la_has_had_hysterectomy'])
 def predict_uterine_rupture_death(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of death following a uterine
@@ -371,6 +400,9 @@ def predict_uterine_rupture_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['is_alive', 'la_uterine_rupture', 'la_obstructed_labour', 'la_antepartum_haem',
+                    'ps_antepartum_haemorrhage', 'ps_htn_disorders', 'la_sepsis', 'ps_chorioamnionitis',
+                    'ps_multiple_pregnancy'])
 def predict_intrapartum_still_birth(self, df, rng=None, **externals):
     """
     Individual level linear model which predicts an individuals probability of experiencing an intrapartum
@@ -410,6 +442,7 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+@person_properties(['age_years', 'li_wealth', 'la_parity', 'li_mar_stat', 'li_urban'])
 def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
     """
     Population level to allow for scaling at the initialisation of the simulation. This model predicts an
@@ -444,6 +477,7 @@ def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
     return result
 
 
+@person_properties(['age_years', 'li_urban', 'la_parity', 'li_ed_lev', 'li_wealth', 'li_mar_stat'])
 def predict_probability_delivery_at_home(self, df, rng=None, **externals):
     """
     Population level to allow for scaling at the initialisation of the simulation. This model predicts an
@@ -481,6 +515,7 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
     return result
 
 
+@person_properties(['age_years', 'li_urban', 'la_parity', 'li_wealth', 'ac_total_anc_visits_current_pregnancy'])
 def predict_postnatal_check(self, df, rng=None, **externals):
     """
     Population level to allow for scaling at the initialisation of the simulation. This model predicts an
