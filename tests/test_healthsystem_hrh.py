@@ -268,8 +268,6 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
         sim.simulate(end_date=end_date)
         check_dtypes(sim)
 
-        print(type(parse_log_file(sim.log_filepath, level=logging.DEBUG)))
-
         # read the results
         output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
 
@@ -366,8 +364,8 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             ratio = row_2010[col] / row_2011[col]
 
             results[col] = ratio > 10
-            if not results[col]:
-                print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
+            # if not results[col]:
+            #     print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
 
     # Ensure that this test is not passing because issue in results
     assert len(results) > 0
@@ -592,14 +590,12 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     )
     hsi1.initialise()
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k])
         sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population / 4)
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority, which currently is zero.
     max_squeeze = 0.0
     scale = 1.0 + max_squeeze
-    print("Scale is ", scale)
     hsi2 = DummyHSIEvent(
         module=sim.modules["DummyModule"],
         person_id=int(tot_population / 2),  # Ensures call is on officers in second district
@@ -818,10 +814,8 @@ def test_mode_2_clinics(seed, tmpdir):
             )
             # Schedule events for future
             if i in [1, 3, 5, 7]:
-                print(f"Scheduling event {i} in the future")
                 topen = sim.date + pd.DateOffset(days=i)
                 tclose = None
-                print(f"topen: {topen}, tclose: {tclose}")
             else:
                 topen = sim.date
                 tclose = sim.date + pd.DateOffset(days=1)
@@ -841,10 +835,8 @@ def test_mode_2_clinics(seed, tmpdir):
             # Schedule events for future
             future_indices = [x + ngenericclinic for x in [1, 3, 5, 7]]
             if i in future_indices:
-                print(f"Scheduling event {i} in the future")
                 topen = sim.date + pd.DateOffset(days=i - ngenericclinic)
                 tclose = None
-                print(f"topen: {topen}, tclose: {tclose}")
             else:
                 topen = sim.date
                 tclose = sim.date + pd.DateOffset(days=1)
