@@ -706,6 +706,21 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
     assert any(sim.population.props["mi_status"] == "P")
 
 
+def test_using_parameter_to_set_clinic_configuration(seed):
+    """
+    Check that user can set clinic_configuration_name by specifying it in the
+    parameters of the HealthSystem module, as would be done when running any
+    scenario.
+    """
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    clinic_config = "Test"
+    sim.register(demography.Demography(), healthsystem.HealthSystem())
+    sim.modules["HealthSystem"].parameters["clinic_configuration_name"] = clinic_config
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert set(sim.modules["HealthSystem"]._clinic_names) == {'GenericClinic', 'TestClinic'}
+
 
 def test_mode_2_clinics(seed, tmpdir):
     """Test that clinics work as expected in mode_appt_constraints=2. Specifically:
