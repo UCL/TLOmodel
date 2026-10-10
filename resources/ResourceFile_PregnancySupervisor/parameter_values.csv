@@ -11,6 +11,8 @@ prob_placenta_praevia,"[0.005,0.0058]",undetermined,"[0, 0]","[1,1]",calibration
 rr_placenta_praevia_previous_cs,"[1.47,1.47]",local,"[0.01, 0.01]","[100,100]",vague prior,"Yang, Q. et al. (2007) ‘Association of caesarean delivery for first birth with placenta praevia and placental abruption in second pregnancy’, BJOG: An International Journal of Obstetrics and Gynaecology. BJOG, 114(5), pp. 609–613. doi: 10.1111/j.1471-0528.2007.01295.x."
 ,,,,,,
 prob_syphilis_during_pregnancy,"[0.028, 0.028]",undetermined,"[0, 0]","[1,1]",calibration,Malawi Integrated HIV Program Reports
+prob_pre_existing_syphilis_at_pregnancy_start,"[0.0, 0.0]",undetermined,"[0, 0]","[1,1]",calibration,Requires calibration to Malawi ANC syphilis prevalence
+pre_existing_syphilis_stage_distribution,"[[0.05, 0.15, 0.55, 0.25], [0.05, 0.15, 0.55, 0.25]]",undetermined,"[0, 0]","[1,1]",calibration,"Assumption pending calibration: primary, secondary, early latent, late latent"
 ,,,,,,
 prob_previous_miscarriage_at_baseline,0.047,undetermined,0,1,calibration,"National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017"
 prob_spontaneous_abortion_per_month,"[[0.025, 0.037, 0.05, 0.037, 0.025], [0.025, 0.037, 0.05, 0.037, 0.025]]",undetermined,"[0, 0]","[1,1]",calibration,"Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: https://www.jstor.org/stable/41959960 (Accessed: 5 July 2021).
@@ -195,4 +197,3 @@ anc_month_8_max_week,35,local,33,42,vague prior,
 anc_month_9_min_week,36,local,33,42,vague prior,
 anc_month_9_max_week,40,local,38,44,vague prior,
 earliest_anc_care_seeking_month,2,local,0,5,vague prior,
-,,,,,,
