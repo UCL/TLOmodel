@@ -1017,6 +1017,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     'Schisto*': 'skyblue',
 
     'CardioMetabolicDisorders*': 'brown',
+    'Dr*': 'firebrick',
 
     'BladderCancer*': 'orchid',
     'BreastCancer*': 'mediumvioletred',
