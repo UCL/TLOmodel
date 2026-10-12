@@ -2870,8 +2870,21 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             return (treatments / cases) * 100
 
-        pph_ua_need_blood_surg = ((c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])) +
-                                  (c['pph_other'] * (1 - la_params['prob_haemostatis_uterotonics'])))
+        all_ua_pph = c['pph_uterine_atony'] + c['pph_other']
+
+        get_meds = all_ua_pph * 0.80
+
+        bleed_post_meds = get_meds * (1 - la_params['prob_haemostatis_uterotonics'])
+        dont_get_meds =  all_ua_pph * 0.2
+
+        pph_ua_need_blood_surg = bleed_post_meds + dont_get_meds
+
+        # pph_ua_need_blood_surg = ((c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])) +
+        #                           (c['pph_other'] * (1 - la_params['prob_haemostatis_uterotonics'])))
+
+
+        # pph_ua_need_blood_surg = ((c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])) +
+        #                           (c['pph_other'] * (1 - la_params['prob_haemostatis_uterotonics'])))
 
         pph_mrp_need_blood_surg = ((c['pph_retained_placenta'] *
                                     (1 - la_params['prob_successful_manual_removal_placenta']))
@@ -2886,6 +2899,10 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                     (c['obstruction_other'] *
                                      (1-la_params['prob_successful_assisted_vaginal_delivery']))
                                     )
+
+        logger.info(key='pph_surg_estimates',
+                    data={'ua': pph_ua_need_blood_surg,
+                          'rp': pph_mrp_need_blood_surg})
 
         logger.info(key="met_need",
                     data={'pac_ep': met_need((c['post_abortion_care_core_need_met'] +

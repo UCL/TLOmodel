@@ -11,7 +11,7 @@ import seaborn as sns
 from matplotlib.patches import Patch
 from scipy.stats import t
 
-from src.scripts.costing.cost_estimation import summarize_cost_data
+from src.scripts.costing.cost_estimation import estimate_input_cost_of_scenarios_JC_REFACTOR, summarize_cost_data
 from tlo import Date
 from tlo.analysis.utils import (
     bin_hsi_event_details,
@@ -25,10 +25,11 @@ from tlo.analysis.utils import (
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-scenario = 'testing_scenario_33089'
+scenario = 'testing_scenario_73595'
 
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
-sim_start_year = 2025
+sim_start_year = 2026
+sim_end_year = 2027
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
 g_path = f'{outputspath}figures_{scenario}'
@@ -603,7 +604,7 @@ def produce_fig_1():
 
     plt.show()
 
-# produce_fig_1()
+produce_fig_1()
 
 #  ======================================= FIGURE 2 - HEALTH IMPACTS  =================================================
 # TODO: review if we want to look at all cause maternal deaths and all cause neonatal deaths
@@ -628,10 +629,10 @@ num_deaths_by_cause_label = extract_results(
             do_scaling=False
         )
 
-num_deaths_by_cause_label.fillna(0)
+num_deaths_by_cause_label = num_deaths_by_cause_label.fillna(0)
+num_deaths_by_cause_label = num_deaths_by_cause_label * p_scaling_factor
 
 direct_deaths = num_deaths_by_cause_label.loc['Maternal Disorders'].reindex(num_deaths_by_cause_label.columns).to_frame().T
-direct_deaths = direct_deaths * p_scaling_factor
 direct_deaths.rename(index={"Maternal Disorders": sim_start_year}, inplace=True)
 
 baseline = direct_deaths.xs(0, axis=1, level="draw")
@@ -651,7 +652,7 @@ dalys_by_cause = extract_results(
                 lambda df: df.drop(
                     columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=False)
-dalys_by_cause = dalys_by_cause.loc[dalys_by_cause.index.get_level_values(0) != 2026]
+dalys_by_cause = dalys_by_cause.loc[dalys_by_cause.index.get_level_values(0) != sim_end_year]
 
 mat_dalys = dalys_by_cause.loc[sim_start_year, 'Maternal Disorders'].reindex(dalys_by_cause.columns).to_frame().T
 mat_dalys = mat_dalys * p_scaling_factor
@@ -1040,53 +1041,16 @@ def produce_fig_2(
 
     plt.show()
 
-# produce_fig_2(
-#     death_plot_df_summ,
-#     dalys_outcomes_df_summ,
-#     death_outcome_labels,
-#     dalys_outcome_labels,
-#     "fig_2_health_outcomes"
-# )
+produce_fig_2(
+    death_plot_df_summ,
+    dalys_outcomes_df_summ,
+    death_outcome_labels,
+    dalys_outcome_labels,
+    "fig_2_health_outcomes"
+)
 
-#  ================================ FIGURE 2b/S1 - CAUSE SPECIFIC deaths  ============================================
-deaths_by_cause = extract_results(
-            results_folder,
-            module="tlo.methods.demography.detail",
-            key="properties_of_deceased_persons",
-            custom_generate_series=(
-                lambda df: df.assign(
-                    year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()),
-            do_scaling=False)
-deaths_by_c = deaths_by_cause.fillna(0)
-
-
-deaths_by_c = deaths_by_c.loc[deaths_by_c.index.get_level_values(0) != 2026]
-deaths_by_c = deaths_by_c.droplevel(0, axis=0)
-
-baseline = deaths_by_c.xs(0, axis=1, level="draw")
-deaths_by_c_averted_df = baseline.sub(
-    deaths_by_c,
-    axis="columns",
-    level="run"
-).drop(columns=0, level="draw")
-deaths_by_c_averted_df = summarize_confidence_intervals(deaths_by_c_averted_df)
-
-
-#  ================================ FIGURE 2c/S2 - CAUSE SPECIFIC DALYS  ============================================
-dalys_by_cause = dalys_by_cause.loc[dalys_by_cause.index.get_level_values(0) != 2026]
-dalys_by_cause = dalys_by_cause * p_scaling_factor
-
-dalys_by_cause = dalys_by_cause.droplevel(0, axis=0)
-
-baseline = dalys_by_cause.xs(0, axis=1, level="draw")
-dalys_averted_by_cause_df = baseline.sub(
-    dalys_by_cause,
-    axis="columns",
-    level="run"
-).drop(columns=0, level="draw")
-dalys_averted_by_cause_df = summarize_confidence_intervals(dalys_averted_by_cause_df)
-
-def figure_2c_heatmap_cause_specific_dalys_averted(
+#  ============================ FIGURE S1 and S2 - DEATHS AND DALYS BY CAUSE  =========================================
+def figure_S1_and_S2_heatmap(
         data,
         title,
         save_title,
@@ -1094,7 +1058,7 @@ def figure_2c_heatmap_cause_specific_dalys_averted(
 
 ):
     """
-    Outputs a heatmap showing DALYs averted by cause.
+    Outputs a heatmap showing Deaths/DALYS averted by cause.
 
     Parameters
     ----------
@@ -1315,163 +1279,203 @@ def figure_2c_heatmap_cause_specific_dalys_averted(
 
     plt.show()
 
-# figure_2c_heatmap_cause_specific_dalys_averted(dalys_averted_by_cause_df,
-#                                              'DALYs averted by cause and intervention scenario',
-#                                              'fig_2b_diff_in_dalys_by_cause_heatmap', True)
+# Deaths by cause
+deaths_by_cause = extract_results(
+            results_folder,
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
+            custom_generate_series=(
+                lambda df: df.assign(
+                    year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()),
+            do_scaling=False)
+deaths_by_c = deaths_by_cause.fillna(0)
+deaths_by_c = deaths_by_c * p_scaling_factor
+
+deaths_by_c = deaths_by_c.loc[deaths_by_c.index.get_level_values(0) != sim_end_year]
+deaths_by_c = deaths_by_c.droplevel(0, axis=0)
+
+baseline = deaths_by_c.xs(0, axis=1, level="draw")
+deaths_by_c_averted_df = baseline.sub(
+    deaths_by_c,
+    axis="columns",
+    level="run"
+).drop(columns=0, level="draw")
+deaths_by_c_averted_df = summarize_confidence_intervals(deaths_by_c_averted_df)
+
+# DALYs by cause
+dalys_by_cause = dalys_by_cause.loc[dalys_by_cause.index.get_level_values(0) != sim_end_year]
+dalys_by_cause = dalys_by_cause * p_scaling_factor
+
+dalys_by_cause = dalys_by_cause.droplevel(0, axis=0)
+
+baseline = dalys_by_cause.xs(0, axis=1, level="draw")
+dalys_averted_by_cause_df = baseline.sub(
+    dalys_by_cause,
+    axis="columns",
+    level="run"
+).drop(columns=0, level="draw")
+dalys_averted_by_cause_df = summarize_confidence_intervals(dalys_averted_by_cause_df)
+
+figure_S1_and_S2_heatmap(deaths_by_c_averted_df,
+                                             'Deaths averted by cause and intervention scenario',
+                                             'fig_S1_diff_in_deaths_by_cause_heatmap', True)
+
+
+figure_S1_and_S2_heatmap(dalys_averted_by_cause_df,
+                                             'DALYs averted by cause and intervention scenario',
+                                             'fig_S2_diff_in_dalys_by_cause_heatmap', True)
 
 
 # Alternative figure:
-def figure_2c_alt_cause_specific_dalys_intervals(
-    data,
-    title,
-    save_title,
-    causes_per_page=6,
-):
-    """
-    Plot mean DALYs averted and uncertainty intervals by cause and scenario.
+# def figure_2c_alt_cause_specific_dalys_intervals(
+#     data,
+#     title,
+#     save_title,
+#     causes_per_page=6,
+# ):
+#     """
+#     Plot mean DALYs averted and uncertainty intervals by cause and scenario.
+#
+#     Parameters
+#     ----------
+#     data : pandas.DataFrame
+#         Causes in the index; MultiIndex columns (draw, stat), where
+#         stat contains 'mean', 'lower', and 'upper'.
+#     causes_per_page : int
+#         Number of causes per saved figure. Use an even number for
+#         the two-column layout.
+#     """
+#     if causes_per_page < 1:
+#         raise ValueError("causes_per_page must be at least 1")
+#
+#     required_stats = {"mean", "lower", "upper"}
+#     available_stats = set(data.columns.get_level_values("stat"))
+#     if not required_stats.issubset(available_stats):
+#         raise ValueError(
+#             f"Missing statistics: {required_stats - available_stats}"
+#         )
+#
+#     mean_df = data.xs("mean", axis=1, level="stat").dropna(how="all")
+#     lower_df = data.xs("lower", axis=1, level="stat").reindex_like(mean_df)
+#     upper_df = data.xs("upper", axis=1, level="stat").reindex_like(mean_df)
+#
+#     draws = sorted(mean_df.columns)
+#     mean_df = mean_df.reindex(columns=draws)
+#     lower_df = lower_df.reindex(columns=draws)
+#     upper_df = upper_df.reindex(columns=draws)
+#
+#     scenario_labels = [
+#         draw_labels.get(draw, f"Scenario {draw}")
+#         for draw in draws
+#     ]
+#
+#     causes = mean_df.index.tolist()
+#     if not causes:
+#         raise ValueError("No causes with non-missing means to plot")
+#
+#     n_pages = int(np.ceil(len(causes) / causes_per_page))
+#
+#     for page in range(n_pages):
+#         page_causes = causes[
+#             page * causes_per_page:(page + 1) * causes_per_page
+#         ]
+#
+#         ncols = min(2, len(page_causes))
+#         nrows = int(np.ceil(len(page_causes) / ncols))
+#
+#         fig, axes = plt.subplots(
+#             nrows=nrows,
+#             ncols=ncols,
+#             figsize=(7 * ncols, 0.55 * len(draws) * nrows + 1.8),
+#             squeeze=False,
+#         )
+#
+#         for ax, cause in zip(axes.flat, page_causes):
+#             means = mean_df.loc[cause].to_numpy(dtype=float)
+#             lowers = lower_df.loc[cause].to_numpy(dtype=float)
+#             uppers = upper_df.loc[cause].to_numpy(dtype=float)
+#
+#             valid = (
+#                 np.isfinite(means)
+#                 & np.isfinite(lowers)
+#                 & np.isfinite(uppers)
+#             )
+#             y = np.arange(len(draws))
+#
+#             ax.axvline(0, color="black", linewidth=0.9, linestyle="--")
+#
+#             # Draw each interval from its lower to upper bound.
+#             ax.hlines(
+#                 y[valid],
+#                 lowers[valid],
+#                 uppers[valid],
+#                 color="#377EB8",
+#                 linewidth=1.6,
+#                 zorder=2,
+#             )
+#
+#             ax.scatter(
+#                 means[valid],
+#                 y[valid],
+#                 color="#174A6E",
+#                 s=24,
+#                 zorder=3,
+#             )
+#
+#             ax.set_yticks(y, scenario_labels)
+#             ax.invert_yaxis()
+#             ax.set_title(str(cause), loc="left", fontweight="bold")
+#             ax.set_xlabel("DALYs averted")
+#             ax.grid(axis="x", alpha=0.2)
+#             ax.spines[["top", "right"]].set_visible(False)
+#
+#             # Leave a little space beyond the widest interval.
+#             if valid.any():
+#                 xmin = min(0, np.min(lowers[valid]))
+#                 xmax = max(0, np.max(uppers[valid]))
+#                 span = xmax - xmin
+#                 pad = 0.06 * span if span > 0 else 1
+#                 ax.set_xlim(xmin - pad, xmax + pad)
+#
+#         # Hide any unused panel on the final page.
+#         for ax in list(axes.flat)[len(page_causes):]:
+#             ax.set_visible(False)
+#
+#         page_title = (
+#             f"{title} (page {page + 1} of {n_pages})"
+#             if n_pages > 1 else title
+#         )
+#         fig.suptitle(page_title, fontsize=14)
+#
+#         fig.tight_layout()
+#
+#         suffix = f"_page_{page + 1}" if n_pages > 1 else ""
+#         fig.savefig(
+#             f"{g_path}/{save_title}{suffix}.png",
+#             bbox_inches="tight",
+#             dpi=300,
+#         )
+#         plt.show()
+#
+# # figure_2c_alt_cause_specific_dalys_intervals(
+# #     data=dalys_averted_by_cause_df,
+# #     title="Cause-specific DALYs averted",
+# #     save_title="cause_specific_dalys_intervals",
+# # )
 
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        Causes in the index; MultiIndex columns (draw, stat), where
-        stat contains 'mean', 'lower', and 'upper'.
-    causes_per_page : int
-        Number of causes per saved figure. Use an even number for
-        the two-column layout.
-    """
-    if causes_per_page < 1:
-        raise ValueError("causes_per_page must be at least 1")
-
-    required_stats = {"mean", "lower", "upper"}
-    available_stats = set(data.columns.get_level_values("stat"))
-    if not required_stats.issubset(available_stats):
-        raise ValueError(
-            f"Missing statistics: {required_stats - available_stats}"
-        )
-
-    mean_df = data.xs("mean", axis=1, level="stat").dropna(how="all")
-    lower_df = data.xs("lower", axis=1, level="stat").reindex_like(mean_df)
-    upper_df = data.xs("upper", axis=1, level="stat").reindex_like(mean_df)
-
-    draws = sorted(mean_df.columns)
-    mean_df = mean_df.reindex(columns=draws)
-    lower_df = lower_df.reindex(columns=draws)
-    upper_df = upper_df.reindex(columns=draws)
-
-    scenario_labels = [
-        draw_labels.get(draw, f"Scenario {draw}")
-        for draw in draws
-    ]
-
-    causes = mean_df.index.tolist()
-    if not causes:
-        raise ValueError("No causes with non-missing means to plot")
-
-    n_pages = int(np.ceil(len(causes) / causes_per_page))
-
-    for page in range(n_pages):
-        page_causes = causes[
-            page * causes_per_page:(page + 1) * causes_per_page
-        ]
-
-        ncols = min(2, len(page_causes))
-        nrows = int(np.ceil(len(page_causes) / ncols))
-
-        fig, axes = plt.subplots(
-            nrows=nrows,
-            ncols=ncols,
-            figsize=(7 * ncols, 0.55 * len(draws) * nrows + 1.8),
-            squeeze=False,
-        )
-
-        for ax, cause in zip(axes.flat, page_causes):
-            means = mean_df.loc[cause].to_numpy(dtype=float)
-            lowers = lower_df.loc[cause].to_numpy(dtype=float)
-            uppers = upper_df.loc[cause].to_numpy(dtype=float)
-
-            valid = (
-                np.isfinite(means)
-                & np.isfinite(lowers)
-                & np.isfinite(uppers)
-            )
-            y = np.arange(len(draws))
-
-            ax.axvline(0, color="black", linewidth=0.9, linestyle="--")
-
-            # Draw each interval from its lower to upper bound.
-            ax.hlines(
-                y[valid],
-                lowers[valid],
-                uppers[valid],
-                color="#377EB8",
-                linewidth=1.6,
-                zorder=2,
-            )
-
-            ax.scatter(
-                means[valid],
-                y[valid],
-                color="#174A6E",
-                s=24,
-                zorder=3,
-            )
-
-            ax.set_yticks(y, scenario_labels)
-            ax.invert_yaxis()
-            ax.set_title(str(cause), loc="left", fontweight="bold")
-            ax.set_xlabel("DALYs averted")
-            ax.grid(axis="x", alpha=0.2)
-            ax.spines[["top", "right"]].set_visible(False)
-
-            # Leave a little space beyond the widest interval.
-            if valid.any():
-                xmin = min(0, np.min(lowers[valid]))
-                xmax = max(0, np.max(uppers[valid]))
-                span = xmax - xmin
-                pad = 0.06 * span if span > 0 else 1
-                ax.set_xlim(xmin - pad, xmax + pad)
-
-        # Hide any unused panel on the final page.
-        for ax in list(axes.flat)[len(page_causes):]:
-            ax.set_visible(False)
-
-        page_title = (
-            f"{title} (page {page + 1} of {n_pages})"
-            if n_pages > 1 else title
-        )
-        fig.suptitle(page_title, fontsize=14)
-
-        fig.tight_layout()
-
-        suffix = f"_page_{page + 1}" if n_pages > 1 else ""
-        fig.savefig(
-            f"{g_path}/{save_title}{suffix}.png",
-            bbox_inches="tight",
-            dpi=300,
-        )
-        plt.show()
-
-# figure_2c_alt_cause_specific_dalys_intervals(
-#     data=dalys_averted_by_cause_df,
-#     title="Cause-specific DALYs averted",
-#     save_title="cause_specific_dalys_intervals",
-# )
-
-#  ===========================---===== TABLE 2 - INCREMENTAL COSTS  ===================================================
-# Extract initial system level cost data
-
+#  ================================ TABLE 3 - COSTS  =================================================================
+# ----------------------- Extract initial system level cost data -----------------------------------------------------
 list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
 
-# input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
-#                                      resourcefilepath=resourcefilepath,
-#                                      suspended_results_folder=results_folder,
-#                                      _draws=draws,
-#                                      _years=list_of_relevant_years_for_costing,
-#                                      cost_only_used_staff= True,
-#                                      alt_scaling_factor=p_scaling_factor)
-#
-# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+input_costs_df = estimate_input_cost_of_scenarios_JC_REFACTOR(results_folder=results_folder,
+                                     resourcefilepath=resourcefilepath,
+                                     suspended_results_folder=results_folder,
+                                     _draws=draws,
+                                     _years=list_of_relevant_years_for_costing,
+                                     cost_only_used_staff= True,
+                                     alt_scaling_factor=p_scaling_factor)
 
+input_costs_df.to_csv(f'{g_path}/input_costs.csv')
 input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
 input_costs = input_costs.set_index('Unnamed: 0')
 
@@ -1536,7 +1540,6 @@ yearly_mins = daily_mins * 365.25
 yearly_mins.rename(columns={'Total_Mins_Per_Day': 'mins_per_year'}, inplace=True)
 yearly_mins_sum = yearly_mins.sum(axis=0).to_frame().T
 
-# --------------------------------------------- PLOT TOTAL HCW TIME RATIO ------------------------------------------
 # Next we calculate the total HCW time use
 hcw_time_by_treatment_id_df = pd.DataFrame.from_dict(hcw_time_by_treatment_id)
 hcw_time_by_treatment_id_df = hcw_time_by_treatment_id_df.fillna(0)
@@ -1619,9 +1622,8 @@ input_costs_adjusted_hcw = return_cost_adjusted_for_hcw_growth(
     hcw_ratios_unadjusted[3],
 )
 
-
+# ------------------------------------------ INCREMENTAL COSTS -------------------------------------------------------
 def find_cost_diff_from_sq_and_sum(data):
-
     def find_difference_relative_to_comparison(_ser: pd.Series,
                                                comparison: str,
                                                scaled: bool = False,
@@ -1636,106 +1638,387 @@ def find_cost_diff_from_sq_and_sum(data):
             .drop(columns=([comparison] if drop_comparison else [])) \
             .stack()
 
-    incremental_scenario_cost_annual = (pd.DataFrame(
+    incremental_scenario_cost_annual = (
         find_difference_relative_to_comparison(
             data,
-            comparison=0)  # sets the comparator to 0 which is the Actual scenario
-    ).T.iloc[0].unstack()).T
+            comparison=0,
+        )
+        .swaplevel(0, 1)
+        .rename_axis(["draw", "run"])
+        .sort_index()
+        .to_frame()
+        .T
+    )
 
-    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost_annual)
+    incremental_scenario_cost_annual.index = ["incremental_cost"]
 
-    return incremental_scenario_cost_summarized
+    incremental_scenario_cost_summarized = summarize_confidence_intervals(incremental_scenario_cost_annual)
 
-incremental_scenario_cost_annual_summarized = find_cost_diff_from_sq_and_sum(input_costs_adjusted_hcw[0])
+    return [incremental_scenario_cost_annual, incremental_scenario_cost_summarized]
 
-def figure_3_incremental_costs(
-    cost_summary,
-    draw_labels=draw_labels,
-    scale=1_000_000,
+incremental_scenario_costs = find_cost_diff_from_sq_and_sum(input_costs_adjusted_hcw[0])
+
+# def dummy_fig_incremental_costs(
+#     cost_summary,
+#     draw_labels=draw_labels,
+#     scale=1_000_000,
+#     currency="USD",
+#     save_path=g_path,
+# ):
+#     """
+#     Plot mean incremental costs and their lower–upper intervals.
+#
+#     cost_summary: DataFrame indexed by draw, with mean/lower/upper columns.
+#     draw_labels:  Dictionary mapping draw numbers to scenario names.
+#     scale:        Divide costs by this amount for display (default: millions).
+#     """
+#     draw_labels = draw_labels or {}
+#
+#     data = cost_summary.loc[
+#         cost_summary.index != 0, ["mean", "lower", "upper"]
+#     ].sort_index().copy()
+#
+#     if data.empty:
+#         raise ValueError("No intervention draws found.")
+#
+#     values = data / scale
+#     y = np.arange(len(values))
+#
+#     fig, ax = plt.subplots(
+#         figsize=(10.5, max(5, 0.48 * len(values) + 1.5))
+#     )
+#
+#     ax.axvline(0, color="#667085", linewidth=1.25, zorder=0)
+#
+#     ax.hlines(
+#         y, values["lower"], values["upper"],
+#         color="#8DA7BE", linewidth=2.4, zorder=1
+#     )
+#     ax.plot(
+#         values["lower"], y, "|",
+#         color="#8DA7BE", markersize=10, markeredgewidth=1.5
+#     )
+#     ax.plot(
+#         values["upper"], y, "|",
+#         color="#8DA7BE", markersize=10, markeredgewidth=1.5
+#     )
+#     ax.scatter(
+#         values["mean"], y,
+#         s=75, color="#115E87", edgecolor="white",
+#         linewidth=1, zorder=3
+#     )
+#
+#     ax.set_yticks(
+#         y,
+#         [draw_labels.get(draw, f"Draw {draw}") for draw in values.index],
+#     )
+#     ax.invert_yaxis()
+#
+#     unit = "millions" if scale == 1_000_000 else f"÷ {scale:g}"
+#     ax.set_xlabel(f"Incremental cost ({currency}{unit})")
+#     ax.set_title(
+#         "Incremental cost by scenario",
+#         loc="left", fontsize=16, weight="bold", pad=17
+#     )
+#     ax.text(
+#         0, 1.015,
+#         "Point = mean  •  line = lower–upper interval",
+#         transform=ax.transAxes, fontsize=10, color="#475467"
+#     )
+#
+#     ax.grid(axis="x", color="#E5EAF0", linewidth=0.8)
+#     ax.set_axisbelow(True)
+#     for spine in ax.spines.values():
+#         spine.set_visible(False)
+#     ax.tick_params(axis="both", length=0, pad=8)
+#
+#     fig.tight_layout()
+#     plt.savefig(f'{g_path}/inc_costs.png', dpi=220, bbox_inches="tight")
+#     plt.show()
+#
+# dummy_fig_incremental_costs(
+#     incremental_scenario_cost_annual_summarized,
+#     draw_labels=draw_labels,
+#     currency="$",  # change or omit as appropriate
+# )
+
+# ------------------------------------ COST PER DALY/DEATH AVERTED ---------------------------------------------------
+# cost = incremental_scenario_costs[0]
+#
+# def get_cost_per_outcome_averted(outcome_df):
+#     cost_per_outcome_averted = cost.reset_index(drop=True) / outcome_df.reset_index(drop=True)
+#     cost_per_total_outcome_averted_summ = summarize_confidence_intervals(cost_per_outcome_averted)
+#     return cost_per_total_outcome_averted_summ
+#
+#
+# cost_per_total_daly_averted = get_cost_per_outcome_averted(total_dalys_averted_df)
+# cost_per_adj_daly_averted = get_cost_per_outcome_averted(adj_dalys_averted_df)
+# cost_per_mnh_daly_averted = get_cost_per_outcome_averted(mat_neo_dalys_averted)
+#
+# # TODO - how to deal with no-change in deaths (0 values)
+total_deaths = num_deaths_by_cause_label.sum(axis=0).to_frame().T
+baseline = total_deaths.xs(0, axis=1, level="draw")
+total_deaths_averted_averted_df = baseline.sub(
+    total_deaths,
+    axis="columns",
+    level="run"
+).drop(columns=0, level="draw")
+
+
+# cost_per_total_deaths_averted = get_cost_per_outcome_averted(total_deaths_averted_averted_df)
+# cost_per_mat_death_averted = get_cost_per_outcome_averted(direct_mat_deaths_averted_df)
+# cost_per_neo_death_averted = get_cost_per_outcome_averted(direct_neo_deaths_averted_df)
+# cost_per_stillbirth_averted = get_cost_per_outcome_averted(stillbirths_averted_df)
+
+def plot_cost_per_outcome(
+    cost,
+    outcomes,
+    draw_labels=None,
     currency="USD",
-    save_path=g_path,
 ):
     """
-    Plot mean incremental costs and their lower–upper intervals.
+    cost: one-row DataFrame with MultiIndex columns ('draw', 'run').
+    outcomes: dict mapping outcome labels to DataFrames of the same structure.
 
-    cost_summary: DataFrame indexed by draw, with mean/lower/upper columns.
-    draw_labels:  Dictionary mapping draw numbers to scenario names.
-    scale:        Divide costs by this amount for display (default: millions).
+    Bars represent empirical run-level ratio percentiles, not confidence
+    intervals around the central ICER.
     """
-    draw_labels = draw_labels or {}
+    draw_labels = {} if draw_labels is None else draw_labels
 
-    data = cost_summary.loc[
-        cost_summary.index != 0, ["mean", "lower", "upper"]
-    ].sort_index().copy()
+    def as_series(df):
+        if len(df) != 1:
+            raise ValueError("Each input must have exactly one row.")
+        if not isinstance(df.columns, pd.MultiIndex):
+            raise ValueError("Columns must be a MultiIndex: draw → run.")
+        if list(df.columns.names) != ["draw", "run"]:
+            raise ValueError("Column levels must be named 'draw' and 'run'.")
+        if not df.columns.is_unique:
+            raise ValueError("Each draw/run column must be unique.")
+        return df.iloc[0].astype(float)
 
-    if data.empty:
-        raise ValueError("No intervention draws found.")
+    cost_s = as_series(cost)
+    draws = list(cost_s.index.get_level_values("draw").unique())
 
-    values = data / scale
-    y = np.arange(len(values))
-
-    fig, ax = plt.subplots(
-        figsize=(10.5, max(5, 0.48 * len(values) + 1.5))
+    fig, axes = plt.subplots(
+        1,
+        len(outcomes),
+        figsize=(5 * len(outcomes), max(5, 0.65 * len(draws))),
+        squeeze=False,
+        constrained_layout=True,
     )
 
-    ax.axvline(0, color="#667085", linewidth=1.25, zorder=0)
+    records = []
 
-    ax.hlines(
-        y, values["lower"], values["upper"],
-        color="#8DA7BE", linewidth=2.4, zorder=1
-    )
-    ax.plot(
-        values["lower"], y, "|",
-        color="#8DA7BE", markersize=10, markeredgewidth=1.5
-    )
-    ax.plot(
-        values["upper"], y, "|",
-        color="#8DA7BE", markersize=10, markeredgewidth=1.5
-    )
-    ax.scatter(
-        values["mean"], y,
-        s=75, color="#115E87", edgecolor="white",
-        linewidth=1, zorder=3
-    )
+    for ax, (outcome_name, outcome_df) in zip(axes.ravel(), outcomes.items()):
+        effect_s = as_series(outcome_df)
 
-    ax.set_yticks(
-        y,
-        [draw_labels.get(draw, f"Draw {draw}") for draw in values.index],
-    )
-    ax.invert_yaxis()
+        if (
+            len(effect_s) != len(cost_s)
+            or not cost_s.index.isin(effect_s.index).all()
+        ):
+            raise ValueError(
+                f"{outcome_name}: draw/run columns do not match costs."
+            )
 
-    unit = "millions" if scale == 1_000_000 else f"÷ {scale:g}"
-    ax.set_xlabel(f"Incremental cost ({currency}{unit})")
-    ax.set_title(
-        "Incremental cost by scenario",
-        loc="left", fontsize=16, weight="bold", pad=17
-    )
-    ax.text(
-        0, 1.015,
-        "Point = mean  •  line = lower–upper interval",
-        transform=ax.transAxes, fontsize=10, color="#475467"
-    )
+        effect_s = effect_s.reindex(cost_s.index)
+        labels = []
 
-    ax.grid(axis="x", color="#E5EAF0", linewidth=0.8)
-    ax.set_axisbelow(True)
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    ax.tick_params(axis="both", length=0, pad=8)
+        for y, draw in enumerate(draws):
+            c = cost_s.xs(draw, level="draw").to_numpy()
+            e = effect_s.xs(draw, level="draw").to_numpy()
 
-    fig.tight_layout()
+            missing = np.isnan(c) | np.isnan(e)
+            valid = np.isfinite(c) & np.isfinite(e)
+            zero_effect = np.isfinite(e) & (e == 0)
 
-    if save_path is not None:
-        fig.savefig(save_path, dpi=220, bbox_inches="tight")
+            with np.errstate(divide="ignore", invalid="ignore"):
+                ratios = c / e
 
-    return fig, ax
+            n_undefined = int((~np.isfinite(ratios)).sum())
+            notes = []
 
-fig, ax = figure_3_incremental_costs(
-    incremental_scenario_cost_annual_summarized,
+            if zero_effect.any():
+                notes.append(f"zero outcome: {zero_effect.sum()}")
+            if missing.any():
+                notes.append(f"missing: {missing.sum()}")
+            if n_undefined:
+                notes.append(f"undefined ratio: {n_undefined}")
+
+            estimate = lower = upper = np.nan
+
+            if valid.any():
+                mean_effect = e[valid].mean()
+
+                if mean_effect != 0:
+                    estimate = c[valid].mean() / mean_effect
+
+                # Ratio intervals are interpretable here only when
+                # every valid run has strictly positive benefit.
+                if (e[valid] > 0).all():
+                    lower, upper = np.quantile(
+                        ratios[valid], [0.025, 0.975]
+                    )
+                    ax.hlines(y, lower, upper, color="steelblue", lw=2)
+                elif (e[valid] < 0).all():
+                    notes.append("all valid runs: worse outcomes")
+                elif (e[valid] < 0).any() and (e[valid] > 0).any():
+                    notes.append("benefit crosses zero")
+                else:
+                    notes.append("benefit includes zero")
+
+            if np.isfinite(estimate):
+                ax.plot(estimate, y, "o", color="black", markersize=5)
+            else:
+                # x uses axes coordinates; y uses data coordinates.
+                ax.text(
+                    0.98, y, "undefined",
+                    transform=ax.get_yaxis_transform(),
+                    ha="right", va="center",
+                    color="firebrick", fontsize=9,
+                )
+
+            label = str(draw_labels.get(draw, f"Scenario {draw}"))
+            if notes:
+                label += "\n[" + "; ".join(notes) + "]"
+            labels.append(label)
+
+            records.append({
+                "outcome": outcome_name,
+                "draw": draw,
+                "central_icer": estimate,
+                "run_ratio_p2.5": lower,
+                "run_ratio_p97.5": upper,
+                "zero_outcome_runs": int(zero_effect.sum()),
+                "missing_runs": int(missing.sum()),
+                "undefined_ratio_runs": n_undefined,
+                "notes": "; ".join(notes),
+            })
+
+        ax.set(
+            yticks=np.arange(len(draws)),
+            yticklabels=labels,
+            title=outcome_name,
+            xlabel=f"{currency} per outcome averted",
+        )
+        ax.invert_yaxis()
+        ax.axvline(0, color="grey", lw=0.8)
+        ax.grid(axis="x", alpha=0.2)
+        ax.spines[["top", "right"]].set_visible(False)
+        plt.show()
+
+    return fig, pd.DataFrame(records)
+
+outcomes = {
+    "Total DALYs": total_dalys_averted_df,
+    "Adjusted DALYs": adj_dalys_averted_df,
+    "Maternal/newborn DALYs": mat_neo_dalys_averted,
+    "Total deaths": total_deaths_averted_averted_df,
+    "Maternal deaths": direct_mat_deaths_averted_df,
+    "Neonatal deaths": direct_neo_deaths_averted_df,
+    "Stillbirths": stillbirths_averted_df,
+}
+
+fig, plot_summary = plot_cost_per_outcome(
+    cost=incremental_scenario_costs[0],
+    outcomes=outcomes,
     draw_labels=draw_labels,
-    currency="$",  # change or omit as appropriate
-    save_path=g_path,
+    currency="USD",  # Change to your costing currency
 )
-plt.show()
+
+
+# -------------------------------------- MAXIMUM ABILITY TO PAY -------------------------------------------------------
+
+
+
+
+# def figure_3_incremental_costs(
+#     cost_summary,
+#     draw_labels=draw_labels,
+#     scale=1_000_000,
+#     currency="USD",
+#     save_path=g_path,
+# ):
+#     """
+#     Plot mean incremental costs and their lower–upper intervals.
+#
+#     cost_summary: DataFrame indexed by draw, with mean/lower/upper columns.
+#     draw_labels:  Dictionary mapping draw numbers to scenario names.
+#     scale:        Divide costs by this amount for display (default: millions).
+#     """
+#     draw_labels = draw_labels or {}
+#
+#     data = cost_summary.loc[
+#         cost_summary.index != 0, ["mean", "lower", "upper"]
+#     ].sort_index().copy()
+#
+#     if data.empty:
+#         raise ValueError("No intervention draws found.")
+#
+#     values = data / scale
+#     y = np.arange(len(values))
+#
+#     fig, ax = plt.subplots(
+#         figsize=(10.5, max(5, 0.48 * len(values) + 1.5))
+#     )
+#
+#     ax.axvline(0, color="#667085", linewidth=1.25, zorder=0)
+#
+#     ax.hlines(
+#         y, values["lower"], values["upper"],
+#         color="#8DA7BE", linewidth=2.4, zorder=1
+#     )
+#     ax.plot(
+#         values["lower"], y, "|",
+#         color="#8DA7BE", markersize=10, markeredgewidth=1.5
+#     )
+#     ax.plot(
+#         values["upper"], y, "|",
+#         color="#8DA7BE", markersize=10, markeredgewidth=1.5
+#     )
+#     ax.scatter(
+#         values["mean"], y,
+#         s=75, color="#115E87", edgecolor="white",
+#         linewidth=1, zorder=3
+#     )
+#
+#     ax.set_yticks(
+#         y,
+#         [draw_labels.get(draw, f"Draw {draw}") for draw in values.index],
+#     )
+#     ax.invert_yaxis()
+#
+#     unit = "millions" if scale == 1_000_000 else f"÷ {scale:g}"
+#     ax.set_xlabel(f"Incremental cost ({currency}{unit})")
+#     ax.set_title(
+#         "Incremental cost by scenario",
+#         loc="left", fontsize=16, weight="bold", pad=17
+#     )
+#     ax.text(
+#         0, 1.015,
+#         "Point = mean  •  line = lower–upper interval",
+#         transform=ax.transAxes, fontsize=10, color="#475467"
+#     )
+#
+#     ax.grid(axis="x", color="#E5EAF0", linewidth=0.8)
+#     ax.set_axisbelow(True)
+#     for spine in ax.spines.values():
+#         spine.set_visible(False)
+#     ax.tick_params(axis="both", length=0, pad=8)
+#
+#     fig.tight_layout()
+#
+#     if save_path is not None:
+#         fig.savefig(save_path, dpi=220, bbox_inches="tight")
+#
+#     return fig, ax
+#
+# fig, ax = figure_3_incremental_costs(
+#     incremental_scenario_cost_annual_summarized,
+#     draw_labels=draw_labels,
+#     currency="$",  # change or omit as appropriate
+#     save_path=g_path,
+# )
+# plt.show()
 
 # ====================================== DEBUG COST PLOT =============================================================
 cost_by_category = input_costs_adjusted_hcw[1].groupby(['draw', 'run', 'year', 'cost_category'])['cost'].sum()
@@ -1929,12 +2212,12 @@ appt_difference_df = counts_of_appts.subtract(
 )
 summ_apt_diff = summarize_confidence_intervals(appt_difference_df)
 
-figure_2c_heatmap_cause_specific_dalys_averted(summ_apt_diff,
-                                            'Diff in appt types',
-                                            'fig_diff_in_apt_types', True)
-figure_2c_heatmap_cause_specific_dalys_averted(summ_hsi_diff,
-                                            'Diff in hsi types',
-                                            'fig_diff_in_hsi', True)
+# figure_S2_heatmap_cause_specific_dalys_averted(summ_apt_diff,
+#                                             'Diff in appt types',
+#                                             'fig_diff_in_apt_types', True)
+# figure_S2_heatmap_cause_specific_dalys_averted(summ_hsi_diff,
+#                                             'Diff in hsi types',
+#                                             'fig_diff_in_hsi', True)
 
 medical_consumables_df = (
         input_costs[input_costs["cost_category"].eq("medical consumables")]

@@ -1607,6 +1607,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
             mni[individual_id]['retained_placenta'] = False
             mni[individual_id]['uterine_atony'] = False
+            mni[individual_id]['referred_for_blood'] = False
+            mni[individual_id]['referred_for_surgery'] = False
+
             self.pph_treatment.unset(
                 [individual_id], 'surgery', 'hysterectomy')
 
@@ -2787,6 +2790,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'ac_mag_sulph_treatment'] = False
             df.at[individual_id, 'la_eclampsia_treatment'] = False
             df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
+            mni[individual_id]['referred_for_blood'] = False
+            mni[individual_id]['referred_for_surgery'] = False
 
             # Reset variables for eclampsia
             if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']:
