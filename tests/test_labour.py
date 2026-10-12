@@ -736,6 +736,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     # reset comp variables
     df.at[mother_id, 'la_currently_in_labour'] = True
     df.at[mother_id, 'la_postpartum_haem'] = True
+    mni[mother_id]['referred_for_surgery'] = True
 
     # now set surgery success to 0 and check that hysterectomy occurred
     params['success_rate_pph_surgery'] = 0.0
