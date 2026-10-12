@@ -97,7 +97,7 @@ def test_all_injuries_run(seed):
         sim.population.props.index, "severe_trauma", "+", sim.modules["RTI"]
     )
     # Assign an injury date
-    sim.population.props['rt_date_inj'] = sim.start_date
+    sim.population.props['rt_date_inj'] = sim.start_date.as_unit('ns')
     # Show that they have been injured
     sim.population.props['rt_road_traffic_inc'] = True
     # Assign them a random ISS score
@@ -169,7 +169,7 @@ def test_all_injuries_run_no_healthsystem(seed):
         sim.population.props.index, "severe_trauma", "+", sim.modules["RTI"]
     )
     # Assign an injury date
-    sim.population.props['rt_date_inj'] = sim.start_date
+    sim.population.props['rt_date_inj'] = sim.start_date.as_unit('ns')
     # Show that they have been injured
     sim.population.props['rt_road_traffic_inc'] = True
     # Assign them a random ISS score

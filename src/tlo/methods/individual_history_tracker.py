@@ -61,6 +61,7 @@ class IndividualHistoryTracker(Module):
         notifier.add_listener("hsi_event.pre-run", self.on_event_pre_run)
         notifier.add_listener("hsi_event.post-run", self.on_event_post_run)
         notifier.add_listener("consumables.post-request_consumables", self.on_consumable_request)
+        notifier.add_listener("healthburden.monthly-daly-report", self.on_monthly_daly_report)
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         self.load_parameters_from_dataframe(
@@ -282,7 +283,10 @@ class IndividualHistoryTracker(Module):
                 if 'footprint' in data.keys():
                     HSI_specific_fields = {'footprint','level','treatment_ID','equipment','bed_days'}
                     for field in HSI_specific_fields:
-                        link_info[field] = data[field]
+                        if field == 'bed_days':
+                            link_info[field] = {key: value for key, value in data[field].items() if value != 0}
+                        else:
+                            link_info[field] = data[field]
 
                 # Store (if any) property changes as a result of the event for this individual
                 for key in self.row_before.index:
@@ -370,6 +374,36 @@ class IndividualHistoryTracker(Module):
         self.entire_mni_before = {}
         self.consumable_access = {}
         self.cons_call_number_within_event = 0
+
+    def on_monthly_daly_report(self,data):
+        """Upon receiving monthly daly report, convert it to custom EAV format and log"""
+        rows = []
+
+        # This is not a real event, so create custom name and create custom tag associated with it
+        event_name = "monthly_daly_report"
+        event_tag = -1
+        
+        data_cleaned = (
+            data.rename_axis("person")
+              .stack()
+              .loc[lambda s: s != 0]
+              .rename("value")
+              .reset_index()
+              .rename(columns={"level_1": "cause"})
+        )
+        
+        for person, cause, value in data_cleaned.itertuples(index=False, name=None):
+            rows.append({
+                "entity": person,
+                "event_name": event_name,
+                "event_tag": event_tag,
+                "attribute": cause,
+                "value": value
+            })
+
+        eav = pd.DataFrame(rows)
+        self.log_eav_dataframe_to_individual_histories(eav)
+        return
 
     def mni_values_differ(self, v1, v2):
 
