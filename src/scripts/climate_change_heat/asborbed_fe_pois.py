@@ -164,7 +164,7 @@ SPLINE_DF = 3
 LAG_MONTHS = [1]#[1,2,3]
 SA_LAG = True
 if SA_LAG:
-    LAG_SUFFIX = "_with_lags_SI" #"_with_lags_SI"
+    LAG_SUFFIX = "_with_lags" #"_with_lags_SI"
 else:
     LAG_SUFFIX = ""
 CENTER = True
@@ -1824,27 +1824,27 @@ if __name__ == "__main__":
                 model_wx = res["_model_wx"]
                 support = res["_wbgt_support"]
 
+                lag_raw = [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS] if SA_LAG else []
+                lag_cfc = [f"{c}_cf" for c in lag_raw]
+
                 # -----------------------------------------------------------
-                # Rebuild the exact historical fit data for this indicator.
+                # Rebuild the exact historical fit rows for this indicator.
                 # -----------------------------------------------------------
                 hist = load_indicator_panel(ind, PANEL_DIR)
-                hist = apply_hard_ceilings(hist, ind)
-                hist = hist.rename(columns={ind: "y"})
-                for fac, d0, d1 in CLOSURES:
-                    m = (hist["date"].between(d0, d1)) & (hist["facility"] == fac)
-                    if m.any():
-                        hist.loc[m, "y"] = 0
                 hist["year"] = hist["date"].dt.year
                 hist["month"] = hist["date"].dt.month
                 ind_min_year = MIN_YEAR_BY_INDICATOR.get(ind, min_year_historical)
                 hist = hist[hist["year"].between(ind_min_year, max_year_historical - 1)]
-                hist = hist[hist["facility"].isin(train_facs)].reset_index(drop=True)
+                hist = hist[hist["facility"].isin(train_facs)]
                 hist = hist.sort_values(["facility", "date"]).reset_index(drop=True)
+
+                # FIX 1: lags on the full facility panel BEFORE restricting to
+                # fitted rows, so lag1 is the preceding calendar month (as in the fit).
+                for k, raw in zip(LAG_MONTHS, lag_raw):
+                    hist[raw] = hist.groupby("facility")[WBGT_VAR].shift(k)
+
                 hist = hist.merge(res["_nb_rows"], on=["facility", "date"], how="inner")
 
-                # Loud failure: if the zone control is on, every training row
-                # must have a Zonename — otherwise zone_year silently becomes
-                # 'nan_2020' etc. and pollutes the FE.
                 if USE_ZONE_YEAR_FE and hist[ZONE_COL].isna().any():
                     n_null = int(hist[ZONE_COL].isna().sum())
                     raise RuntimeError(
@@ -1852,31 +1852,37 @@ if __name__ == "__main__":
                         f"have null {ZONE_COL} — cannot build zone_year FE."
                     )
 
-                if SA_LAG:
-                    for k in LAG_MONTHS:
-                        hist[f"{WBGT_VAR}_lag{k}"] = hist.groupby("facility")[WBGT_VAR].shift(k)
-
                 # Merge CF WBGT + lag onto historical rows by (facility, year, month)
-                cf_cols = ["facility", "year", "month", WBGT_VAR]
-                if SA_LAG:
-                    cf_cols += [f"{WBGT_VAR}_lag{k}" for k in LAG_MONTHS]
-                cf_slice = cf[cf_cols].rename(
-                    columns={
-                        WBGT_VAR: f"{WBGT_VAR}_cf",
-                        **{f"{WBGT_VAR}_lag{k}": f"{WBGT_VAR}_lag{k}_cf" for k in LAG_MONTHS},
-                    }
+                cf_slice = cf[["facility", "year", "month", WBGT_VAR] + lag_raw].rename(
+                    columns={WBGT_VAR: f"{WBGT_VAR}_cf", **dict(zip(lag_raw, lag_cfc))}
                 )
                 hist = hist.merge(cf_slice, on=["facility", "year", "month"], how="inner")
                 if hist.empty:
                     print(f"    {ind}: no facility-month overlap between historical and CF panels")
                     continue
 
-                # ---- Build the HISTORICAL-WBGT prediction frame -----------
-                df_h = hist.copy()
-                df_h = add_year_fixed_effects(df_h, use_reference_year=False)
+                # ---- Shared covariates --------------------------------------
+                df_h = add_year_fixed_effects(hist, use_reference_year=False)
                 df_h["covid"] = df_h["date"].between(lo, hi).astype(int)
                 df_h = add_seasonality_covariates(df_h, hold_year_at_reference=False)
                 df_h["precip_c"] = df_h[PRECIP_COL] - shifts.get("precip", 0.0)
+
+                need = YEAR_FE_COLS + ["covid", "precip_c", WBGT_VAR] + lag_raw
+                if USE_ZONE_YEAR_FE:
+                    need.append("zone_year")
+
+                # FIX 2: one row filter covering BOTH historical and CF inputs,
+                # applied before any prediction, so df_h and df_c are row-identical.
+                ok_rows = df_h[need + [f"{WBGT_VAR}_cf"] + lag_cfc].notna().all(axis=1)
+                n_drop = int((~ok_rows).sum())
+                if n_drop:
+                    print(f"    {ind}: dropping {n_drop} rows with missing historical or CF inputs")
+                df_h = df_h.loc[ok_rows].reset_index(drop=True)
+                if df_h.empty:
+                    print(f"    {ind}: no rows with complete historical + CF inputs")
+                    continue
+
+                # ---- HISTORICAL-WBGT frame ----------------------------------
                 xc_h = df_h[WBGT_VAR].values - shifts[WBGT_VAR]
                 B_h = np.asarray(
                     patsy.build_design_matrices([design_map[WBGT_VAR]], {"x": xc_h})[0],
@@ -1884,31 +1890,14 @@ if __name__ == "__main__":
                 )
                 for i_col, c in enumerate(spline_cols):
                     df_h[c] = B_h[:, i_col]
-                if SA_LAG:
-                    for k in LAG_MONTHS:
-                        df_h[f"{WBGT_VAR}_lag{k}_c"] = df_h[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+                for raw in lag_raw:
+                    df_h[f"{raw}_c"] = df_h[raw] - shifts[WBGT_VAR]
 
-                need_h = YEAR_FE_COLS + ["covid", "precip_c"] + list(spline_cols) + [WBGT_VAR]
-                if "rainy" in df_h.columns:
-                    need_h.append("rainy")
-                if USE_ZONE_YEAR_FE:
-                    need_h.append("zone_year")
-                if SA_LAG:
-                    need_h += [f"{WBGT_VAR}_lag{k}_c" for k in LAG_MONTHS]
-                df_h = df_h.dropna(subset=need_h).reset_index(drop=True)
-                if df_h.empty:
-                    print(f"    {ind}: no historical rows with complete covariates")
-                    continue
-
-                mu_hist = np.asarray(model_wx.predict(newdata=df_h, type="response"), dtype=float)
-
-                # ---- Build the CF-WBGT prediction frame (same rows) -------
+                # ---- CF-WBGT frame (same rows, WBGT + lags swapped, clipped) -
                 df_c = df_h.copy()
-                # Clip CF WBGT to training support first, then recompute spline + lag_c
                 df_c[WBGT_VAR] = df_c[f"{WBGT_VAR}_cf"]
-                if SA_LAG:
-                    for k in LAG_MONTHS:
-                        df_c[f"{WBGT_VAR}_lag{k}"] = df_c[f"{WBGT_VAR}_lag{k}_cf"]
+                for raw, cfc in zip(lag_raw, lag_cfc):
+                    df_c[raw] = df_c[cfc]
                 df_c, clip_diag = _clip_wbgt_to_support(df_c, support)
 
                 xc_c = df_c[WBGT_VAR].values - shifts[WBGT_VAR]
@@ -1918,84 +1907,58 @@ if __name__ == "__main__":
                 )
                 for i_col, c in enumerate(spline_cols):
                     df_c[c] = B_c[:, i_col]
-                if SA_LAG:
-                    for k in LAG_MONTHS:
-                        df_c[f"{WBGT_VAR}_lag{k}_c"] = df_c[f"{WBGT_VAR}_lag{k}"] - shifts[WBGT_VAR]
+                for raw in lag_raw:
+                    df_c[f"{raw}_c"] = df_c[raw] - shifts[WBGT_VAR]
 
-                df_c = df_c.dropna(subset=need_h).reset_index(drop=True)
-                if df_c.empty or len(df_c) != len(df_h):
-                    # Alignment guard: if CF lag is missing for some rows the two
-                    # frames desync. Take the intersection.
-                    keep_idx = df_c.index
-                    df_h = df_h.loc[keep_idx].reset_index(drop=True)
-                    mu_hist = mu_hist[keep_idx.values]
-
+                mu_hist = np.asarray(model_wx.predict(newdata=df_h, type="response"), dtype=float)
                 mu_cf = np.asarray(model_wx.predict(newdata=df_c, type="response"), dtype=float)
+                if len(mu_hist) != len(df_h) or len(mu_cf) != len(df_c):
+                    raise RuntimeError(f"[{ind}] counterfactual: prediction length mismatch")
+
                 ok = np.isfinite(mu_hist) & np.isfinite(mu_cf)
+                if not ok.all():
+                    print(f"    {ind}: {int((~ok).sum())} non-finite predictions dropped (both frames)")
                 df_h = df_h.loc[ok].reset_index(drop=True)
                 df_c = df_c.loc[ok].reset_index(drop=True)
-                mu_hist = mu_hist[ok]
-                mu_cf = mu_cf[ok]
+                mu_hist, mu_cf = mu_hist[ok], mu_cf[ok]
                 if len(mu_hist) == 0:
                     continue
-                # -----------------------------------------------------------
-                # (a) OVERALL: whole-sample deficit from the climate shift
-                # -----------------------------------------------------------
-                tot_hist = float(mu_hist.sum())
-                tot_cf = float(mu_cf.sum())
-                deficit_overall = 100.0 * (tot_hist - tot_cf) / tot_hist if tot_hist > 0 else np.nan
 
-                # District jackknife on the difference (shared beta cancels)
-                dists = df_h[CLUSTER_COL].values
-                u_dists = np.unique(dists)
-
+                # FIX 3: CF climate is the reference.
+                # deficit = 100 * (mu_cf - mu_hist) / mu_cf ; positive = lost to warming
                 def _stat(mh, mc):
                     sh, sc = float(mh.sum()), float(mc.sum())
-                    return 100.0 * (sh - sc) / sh if sh > 0 else np.nan
+                    return 100.0 * (sc - sh) / sc if sc > 0 else np.nan
 
-                jack = np.array([_stat(mu_hist[dists != d], mu_cf[dists != d]) for d in u_dists])
-                jack = jack[np.isfinite(jack)]
-                if len(jack) > 1:
+                def _jack_ci(mh, mc, cl):
+                    pt = _stat(mh, mc)
+                    jack = np.array([_stat(mh[cl != c], mc[cl != c]) for c in np.unique(cl)])
+                    jack = jack[np.isfinite(jack)]
+                    if len(jack) < 2:
+                        return pt, np.nan, np.nan
                     n = len(jack)
                     se = np.sqrt((n - 1) / n * np.sum((jack - jack.mean()) ** 2))
-                    ci_lo_overall = deficit_overall - 1.96 * se
-                    ci_hi_overall = deficit_overall + 1.96 * se
-                else:
-                    ci_lo_overall = ci_hi_overall = np.nan
+                    return pt, pt - 1.96 * se, pt + 1.96 * se
 
-                # -----------------------------------------------------------
+                dists = df_h[CLUSTER_COL].values
+
+                # (a) OVERALL
+                deficit_overall, ci_lo_overall, ci_hi_overall = _jack_ci(mu_hist, mu_cf, dists)
+
                 # (b) HOT-MONTH: rows where OBSERVED WBGT > historical p95
-                # -----------------------------------------------------------
                 hist_p95 = support["p95"]
                 hot_mask = df_h[WBGT_VAR].values > hist_p95
                 n_hot = int(hot_mask.sum())
-
                 if n_hot >= 10:
-                    mh_hot = mu_hist[hot_mask]
-                    mc_hot = mu_cf[hot_mask]
-                    d_hot = dists[hot_mask]
-                    tot_h_hot = float(mh_hot.sum())
-                    tot_c_hot = float(mc_hot.sum())
-                    deficit_hot = 100.0 * (tot_h_hot - tot_c_hot) / tot_h_hot if tot_h_hot > 0 else np.nan
-
-                    u_d_hot = np.unique(d_hot)
-                    jack_hot = np.array([_stat(mh_hot[d_hot != d], mc_hot[d_hot != d]) for d in u_d_hot])
-                    jack_hot = jack_hot[np.isfinite(jack_hot)]
-                    if len(jack_hot) > 1:
-                        n = len(jack_hot)
-                        se = np.sqrt((n - 1) / n * np.sum((jack_hot - jack_hot.mean()) ** 2))
-                        ci_lo_hot = deficit_hot - 1.96 * se
-                        ci_hi_hot = deficit_hot + 1.96 * se
-                    else:
-                        ci_lo_hot = ci_hi_hot = np.nan
+                    deficit_hot, ci_lo_hot, ci_hi_hot = _jack_ci(
+                        mu_hist[hot_mask], mu_cf[hot_mask], dists[hot_mask]
+                    )
                 else:
                     deficit_hot = ci_lo_hot = ci_hi_hot = np.nan
                     print(f"    {ind}: only {n_hot} rows above historical p95 - skipping hot arm")
 
-                # -----------------------------------------------------------
                 # (c) Descriptive: how the top of the WBGT distribution shifted
-                # -----------------------------------------------------------
-                cf_p95 = float(np.percentile(df_c[WBGT_VAR].values, 95))  # note: post-clip
+                cf_p95 = float(np.percentile(df_c[WBGT_VAR].values, 95))  # post-clip
                 cf_p95_raw = float(np.percentile(df_h[f"{WBGT_VAR}_cf"].values, 95))
                 wbgt_p95_shift = hist_p95 - cf_p95_raw
 
@@ -2006,6 +1969,7 @@ if __name__ == "__main__":
                         "cf_years_original": f"{CF_ANALYSIS_START_ORIG}-{CF_ANALYSIS_END_ORIG}",
                         "cf_years_relabelled": f"{CF_ANALYSIS_START_NEW}-{CF_ANALYSIS_END_NEW}",
                         "n_rows": len(mu_hist),
+                        "n_rows_dropped_inputs": n_drop,
                         "n_facilities": df_h["facility"].nunique(),
                         "n_districts": df_h[CLUSTER_COL].nunique(),
                         # (a) overall

@@ -2378,9 +2378,9 @@ if __name__ == "__main__":
     # print_summary_statistics(stats, by_ind)
     # print("\nDone.")
     #
-    # print("\n[17] 1940s reference-period contrast")
-    # print("  ->",plot_reference_period_contrast(fitted=fitted, results_df=results_df))
-    # #
+    print("\n[17] 1940s reference-period contrast")
+    print("  ->",plot_reference_period_contrast(fitted=fitted, results_df=results_df))
+    #
     print("\n[18] spline df stability panel")
     print("  ->", plot_df_stability_panel(fitted))
 
