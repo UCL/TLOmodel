@@ -183,6 +183,72 @@ def test_exacerbations():
     assert 1 < len(_exacerbation_events), f'not all events have been scheduled {_exacerbation_events}'
 
 
+def test_inhaler_dispensation_at_first_appointment():
+    """First attendance provides an inhaler when COPD treatment is allowed."""
+    sim = get_simulation(10)
+    hs = sim.modules['HealthSystem']
+    module = sim.modules['Copd']
+    person_id = 0
+    df = sim.population.props
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'age_years'] = module.parameters['min_age_first_appt'] + 1
+    df.at[person_id, 'ch_has_inhaler'] = False
+
+    hs.HSI_EVENT_QUEUE.clear()
+    hs.mode_appt_constraints = 1
+    hs.service_availability = ['FirstAttendance_NonEmergency', 'Copd_Treatment']
+
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=person_id, symptom_string='breathless_moderate',
+        add_or_remove='+', disease_module=module,
+    )
+
+    first_appt = hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id,
+    )
+
+    hs.schedule_hsi_event(first_appt, topen=sim.date, priority=0)
+    assert not df.at[person_id, 'ch_has_inhaler']
+
+    healthsystem.HealthSystemScheduler(hs).apply(sim.population)
+
+    assert df.at[person_id, 'ch_has_inhaler']
+
+    # Set ch_has_inhaler to False again
+    # Check that if Copd_Treatment is not available, the individual does not
+    # receive an inhaler i.e. inhaler is not dispensed in First apppointment
+    sim = get_simulation(10)
+    hs = sim.modules['HealthSystem']
+    module = sim.modules['Copd']
+    person_id = 0
+    df = sim.population.props
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'age_years'] = module.parameters['min_age_first_appt'] + 1
+    df.at[person_id, 'ch_has_inhaler'] = False
+
+    hs.HSI_EVENT_QUEUE.clear()
+    hs.mode_appt_constraints = 1
+    df.at[person_id, 'ch_has_inhaler'] = False
+    hs.HSI_EVENT_QUEUE.clear()
+    hs.mode_appt_constraints = 1
+    hs.service_availability = ['FirstAttendance_NonEmergency']
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=person_id, symptom_string='breathless_moderate',
+        add_or_remove='+', disease_module=module,
+    )
+
+    first_appt = hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id,
+    )
+
+    hs.schedule_hsi_event(first_appt, topen=sim.date, priority=0)
+    assert not df.at[person_id, 'ch_has_inhaler']
+
+    healthsystem.HealthSystemScheduler(hs).apply(sim.population)
+
+    assert not df.at[person_id, 'ch_has_inhaler']
+
+
 def test_moderate_exacerbation():
     """ test moderate exacerbation leads to;
           i) moderate symptoms
@@ -226,11 +292,16 @@ def test_moderate_exacerbation():
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
 
-    # check that no HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Only inhaler should be given
+    # Moderate symptoms must not schedule severe-exacerbation treatment.
     for _event in sim.modules['HealthSystem'].find_events_for_person(person_id):
         assert not isinstance(_event[1], HSI_Copd_TreatmentOnSevereExacerbation)
 
-    # check inhaler is given
+    # Triage schedules dispensing; the inhaler is provided only when that HSI runs.
+    assert not df.loc[person_id, 'ch_has_inhaler']
+    dispensing_events = [event for _, event in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                         if isinstance(event, copd.HSI_Copd_InhalerDispensation)]
+    assert len(dispensing_events) == 1
+    dispensing_events[0].run(squeeze_factor=0.0)
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
@@ -281,7 +352,12 @@ def test_severe_exacerbation():
                        isinstance(ev[1], HSI_Copd_TreatmentOnSevereExacerbation)][0],
                       HSI_Copd_TreatmentOnSevereExacerbation)
 
-    # check inhaler is given
+    # Emergency triage also schedules the separate inhaler-dispensation HSI.
+    assert not df.loc[person_id, 'ch_has_inhaler']
+    dispensing_events = [event for _, event in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                         if isinstance(event, copd.HSI_Copd_InhalerDispensation)]
+    assert len(dispensing_events) == 1
+    dispensing_events[0].run(squeeze_factor=0.0)
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
