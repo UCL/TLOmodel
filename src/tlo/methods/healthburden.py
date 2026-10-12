@@ -358,9 +358,6 @@ class HealthBurden(Module):
                 .reorder_levels(['sex', 'age_range', 'li_wealth', 'li_urban', 'region_of_residence', 'year'])[_yll.name]
             )
 
-        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
         assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
         assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
         assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
