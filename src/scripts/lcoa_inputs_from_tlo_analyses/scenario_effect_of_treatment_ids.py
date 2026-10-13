@@ -104,9 +104,9 @@ class EffectOfEachTreatment(BaseScenario):
         service_availability = dict({"Nothing": ['FirstAttendance_SpuriousEmergencyCare']})
         # For each treatment group, create scenarios keeping only one treatment from that group
         # Commenting to allow draw 0 to be run and suspended.
-        # service_availability.update(
-        #    {f"Only {treatment}": [treatment] for treatment in treatments}
-        #)
+        service_availability.update(
+           {f"Only {treatment}": [treatment] for treatment in treatments}
+        )
 
         scenario_definitions = ScenarioDefinitions()
 

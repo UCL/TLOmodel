@@ -14,7 +14,6 @@ from tlo.analysis.utils import (
 )
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
-    get_parameter_names_from_scenario_file,
     format_scenario_name,
 )
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
@@ -23,6 +22,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_deaths_by_period_for_cause,
     plot_deaths_by_period_for_draw,
     plot_hsi_counts_by_period_for_draw,
+    plot_hsi_counts_stacked_bar,
     plot_population_by_year,
     plot_capacity_used_by_cadre_and_level_over_time_for_draw,
     plot_cost_by_cadre_over_time_for_draw,
@@ -31,6 +31,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs-with-discounted-dalys
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs10runs
+# python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_sanity_checks.pkl --output_folder=figs-sanity-checks
 
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
 
@@ -277,7 +278,7 @@ def apply(
     dalys_and_costs_from_lcoa = primary_results.get('dalys_and_costs_from_lcoa')
     annual_cost_by_cadre = primary_results.get('annual_cost_by_cadre')
     input_costs = primary_results.get('input_costs')
-    counts_of_hsi = primary_results['counts_of_hsi_by_period']
+    counts_of_hsi = primary_results.get('counts_of_hsi_by_period')
     annual_capacity_used_by_cadre_and_level = primary_results.get("annual_capacity_used_by_cadre_and_level")
 
     comparison_metrics_available = all(
@@ -285,15 +286,11 @@ def apply(
         for metric in (
             dalys_averted,
             pc_dalys_averted,
-            incremental_scenario_cost
+            incremental_scenario_cost,
+            net_health,
         )
     )
     print(f"Comparison metrics available: {comparison_metrics_available}")
-    # Get the list of draws directly from the results and not from scenario files
-    # as some draws have been excluded at the previous step.
-    param_names = discounted_dalys.columns.get_level_values('draw').unique()
-    print(f"Loaded parameter names: {len(param_names)}")
-
     if input_costs is not None:
         print("Plotting costs by subcategory over time (one figure per treatment ID).")
         for draw in input_costs['draw'].dropna().unique():
@@ -309,23 +306,24 @@ def apply(
             fig.savefig(outfile, bbox_inches='tight')
             plt.close(fig)
 
-    draws = input_costs['draw'].unique()
-    cost_subcategories = list(input_costs['cost_subcategory'].unique())
-    for draw in draws:
-        if draw == "Nothing":
-            continue
-        print(f"Comparing costs by subcategory over time for Nothing and {draw}")
-        draw_pair = ('Nothing', draw)
-        fig, axes = plot_cost_subcategories_over_time_for_draw_pair(
-          input_costs,
-          draws=draw_pair,
-          cost_subcategories=cost_subcategories,)
-        name_of_plot = f"Cost by Subcategory Over Time for {draw_pair[0]} and {draw_pair[1]}"
-        fig.suptitle(name_of_plot)
-        fig.tight_layout(rect=(0, 0, 1, 0.98))
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile, bbox_inches='tight')
-        plt.close(fig)
+    if input_costs is not None and 'Nothing' in input_costs['draw'].values:
+        draws = input_costs['draw'].unique()
+        cost_subcategories = list(input_costs['cost_subcategory'].unique())
+        for draw in draws:
+            if draw == "Nothing":
+                continue
+            print(f"Comparing costs by subcategory over time for Nothing and {draw}")
+            draw_pair = ('Nothing', draw)
+            fig, axes = plot_cost_subcategories_over_time_for_draw_pair(
+              input_costs,
+              draws=draw_pair,
+              cost_subcategories=cost_subcategories,)
+            name_of_plot = f"Cost by Subcategory Over Time for {draw_pair[0]} and {draw_pair[1]}"
+            fig.suptitle(name_of_plot)
+            fig.tight_layout(rect=(0, 0, 1, 0.98))
+            outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+            fig.savefig(outfile, bbox_inches='tight')
+            plt.close(fig)
 
     if isinstance(undiscounted_dalys, pd.DataFrame) and isinstance(discounted_dalys, pd.DataFrame):
         undiscounted_totals = undiscounted_dalys.sum(axis=0).unstack("stat")
@@ -392,60 +390,43 @@ def apply(
         plt.close(fig)
         print(f"Saved: {name_of_plot}")
 
-    result_rows = []
-    for draw in counts_of_hsi.columns.get_level_values(0).unique():
-        # Keep only rows where this draw has at least one non-zero HSI count.
-        non_zero_rows = (counts_of_hsi[draw] != 0).any(axis=1)
-        for treatment_id, period in counts_of_hsi[draw].loc[non_zero_rows].index:
-            result_rows.append(
-                {
-                    'treatment_id_included': draw,
-                    'nonzero_hsis': treatment_id,
-                    'period': period,
-                }
+    if counts_of_hsi is not None:
+        for param in counts_of_hsi.columns.get_level_values(0).unique():
+            if param == "Nothing":
+                continue
+            draw = param
+            print(f"Plotting yearly HSI counts for draw: {draw}")
+            name_of_plot = f"Yearly HSI counts for {draw}"
+            # Since all HSIs will be delivered before the service availability switch
+            # retain only the treatment id of interest in this period to avoid plot
+            # clutter.
+            pre_switch_periods = [str(i) for i in list(range(2010, 2025))]
+            # Filter rows to retain those in implementation period only
+            mask_other_periods = (
+                ~counts_of_hsi.
+                index.
+                get_level_values("period").
+                isin(pre_switch_periods) &
+                (counts_of_hsi > 0).any(axis=1)
             )
-
-    result_df_by_period = pd.DataFrame(result_rows)
-    result_df_by_period['treatment_id_included'] = result_df_by_period['treatment_id_included'].str.replace(
-        '_\\*$', '', regex=True
-    )
-
-    for param in param_names:
-        if param == "Nothing":
-            continue
-        draw = param
-        print(f"Plotting yearly HSI counts for draw: {draw}")
-        name_of_plot = f"Yearly HSI counts for {draw}"
-        # Since all HSIs will be delivered before the service availability switch
-        # retain only the treatment id of interest in this period to avoid plot
-        # clutter.
-        pre_switch_periods = [str(i) for i in list(range(2010, 2025))]
-        # Filter rows to retain those in implementation period only
-        mask_other_periods = (
-            ~counts_of_hsi.
-            index.
-            get_level_values("period").
-            isin(pre_switch_periods) &
-            (counts_of_hsi > 0).any(axis=1)
-        )
-        # In the pre-implentation period only retain the treatment id of interest to avoid plot clutter
-        mask_early_periods = (
-            counts_of_hsi.index.get_level_values("period").isin(pre_switch_periods) &
-            (counts_of_hsi.index.get_level_values("appt_type") == draw.replace("_*", ""))
-        )
-        plot_this = counts_of_hsi[mask_other_periods | mask_early_periods]
-        fig, ax = plot_hsi_counts_by_period_for_draw(
-            plot_this,
-            draw,
-        )
-        ax.set_title(name_of_plot)
-        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-        fig.savefig(outfile)
-        plt.close(fig)
+            # In the pre-implentation period only retain the treatment id of interest to avoid plot clutter
+            mask_early_periods = (
+                counts_of_hsi.index.get_level_values("period").isin(pre_switch_periods) &
+                (counts_of_hsi.index.get_level_values("appt_type") == draw.replace("_*", ""))
+            )
+            plot_this = counts_of_hsi[mask_other_periods | mask_early_periods]
+            fig, ax = plot_hsi_counts_by_period_for_draw(
+                plot_this,
+                draw,
+            )
+            ax.set_title(name_of_plot)
+            outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+            fig.savefig(outfile)
+            plt.close(fig)
 
     if annual_capacity_used_by_cadre_and_level is not None:
         print("Plotting capacity used by cadre and facility level over time (one figure per treatment ID).")
-        for param in param_names:
+        for param in annual_capacity_used_by_cadre_and_level.columns.get_level_values(0).unique():
             if param == "Nothing":
                 continue
             draw = param
@@ -466,7 +447,7 @@ def apply(
 
     if annual_cost_by_cadre is not None:
         print("Plotting annual costs by cadre and over time (one figure per treatment ID).")
-        for param in param_names:
+        for param in annual_cost_by_cadre.columns.get_level_values(0).unique():
             print(f"### {param}")
             if param == "Nothing":
                 continue
@@ -489,24 +470,24 @@ def apply(
 
     # Plot number of deaths and DALYS by cause for each parameter, with
     # confidence intervals, for the target period
-    num_dalys_by_cause_label_implementation = primary_results['dalys']
+    num_dalys_by_cause_label_implementation = undiscounted_dalys
 
 
-    daly_draw_labels = param_names
-    print("Plotting stacked DALYs by cause label for each draw.")
-    fig, ax = plot_dalys_by_cause_label_stacked_by_draw(
-        num_dalys_by_cause_label_implementation,
-        draw_labels=daly_draw_labels,
-    )
-    name_of_plot = "DALYs by Cause Label for Each Draw"
-    ax.set_title(name_of_plot)
-    outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-    fig.savefig(outfile, bbox_inches="tight")
-    plt.close(fig)
-    print("Saved: DALYs by Cause Label for Each Draw")
+    if undiscounted_dalys is not None:
+        daly_draw_labels = undiscounted_dalys.columns.get_level_values(0).unique()
+        print("Plotting stacked DALYs by cause label for each draw.")
+        fig, ax = plot_dalys_by_cause_label_stacked_by_draw(
+            num_dalys_by_cause_label_implementation,
+            draw_labels=daly_draw_labels,
+        )
+        name_of_plot = "DALYs by Cause Label for Each Draw"
+        ax.set_title(name_of_plot)
+        outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+        fig.savefig(outfile, bbox_inches="tight")
+        plt.close(fig)
+        print("Saved: DALYs by Cause Label for Each Draw")
 
-    if comparison_metrics_available:
-        print("Plotting comparison metrics: deaths/DALYs averted, percentages, and net health.")
+    if dalys_averted is not None:
         dalys_averted_sorted = (dalys_averted.sort_values(by="central", ascending=True) / 1e3)
         dalys_order = dalys_averted_sorted.index
         fig_height = max(6, min(0.28 * len(dalys_averted_sorted.index) + 4, 18))
@@ -524,6 +505,7 @@ def apply(
         plt.close(fig)
         print("Saved: DALYS Averted by Each Treatment ID")
 
+    if pc_dalys_averted is not None:
         pc_dalys_averted_sorted = (pc_dalys_averted.sort_values(by="central", ascending=True))
         fig_height = max(6, min(0.28 * len(pc_dalys_averted_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -540,8 +522,10 @@ def apply(
         plt.close(fig)
         print("Saved: Percentage DALYs Averted by Each Treatment ID")
 
+    if net_health is not None:
         nh_sorted = net_health.sort_values(by="central", ascending=True)
-        nh_sorted = nh_sorted.reindex(dalys_order.intersection(nh_sorted.index))
+        if dalys_averted is not None:
+            nh_sorted = nh_sorted.reindex(dalys_averted.sort_values(by="central").index.intersection(nh_sorted.index))
         fig_height = max(6, min(0.28 * len(nh_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
         name_of_plot = "Net Health for Each Treatment ID"
@@ -557,7 +541,10 @@ def apply(
         plt.close(fig)
         print("Saved: Net health for Each Treatment ID")
 
-        incremental_cost_sorted = incremental_scenario_cost.reindex(dalys_order)
+    if incremental_scenario_cost is not None:
+        incremental_cost_sorted = incremental_scenario_cost.sort_values(by="central")
+        if dalys_averted is not None:
+            incremental_cost_sorted = incremental_scenario_cost.reindex(dalys_averted.sort_values(by="central").index)
         fig_height = max(6, min(0.28 * len(incremental_cost_sorted.index) + 4, 18))
         fig, ax = plt.subplots(figsize=(10, fig_height))
         name_of_plot = "Incremental Cost for Each Treatment ID"
@@ -573,6 +560,7 @@ def apply(
         plt.close(fig)
         print("Saved: Incremental Cost for Each Treatment ID")
 
+    if comparison_metrics_available:
         facet_order = (
             dalys_order
             .intersection(incremental_cost_sorted.dropna().index)
@@ -768,6 +756,57 @@ def apply(
         fig.savefig(outfile)
         plt.close(fig)
         print(f"Saved: {name_of_plot}")
+
+    # Sanity-check figures use only the corresponding entries in the pickle.
+    def save_plot(fig, ax, title):
+        ax.set_title(title)
+        fig.savefig(output_folder / make_graph_file_name(title), bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved: {title}")
+
+    population = primary_results.get('total_population_by_year')
+    if population is not None:
+        fig, ax = plot_population_by_year(population)
+        save_plot(fig, ax, "Population Size by Year")
+
+    deaths = primary_results.get('num_deaths')
+    if deaths is not None:
+        for draw in deaths.columns.get_level_values(0).unique():
+            fig, ax = plot_deaths_by_period_for_draw(deaths, draw)
+            save_plot(fig, ax, f"Yearly Deaths by Cause for {draw}")
+        for cause in deaths.index.get_level_values('label').unique():
+            fig, ax = plot_deaths_by_period_for_cause(deaths, cause)
+            save_plot(fig, ax, f"Yearly Deaths by Treatment ID for {cause}")
+
+    for key, title, xlabel in (
+        ('num_deaths_averted', 'Deaths Averted by Each Treatment ID', 'Deaths averted'),
+        ('pc_deaths_averted', 'Percentage Deaths Averted by Each Treatment ID', 'Percentage of deaths averted'),
+    ):
+        metric = primary_results.get(key)
+        if metric is None:
+            continue
+        metric = metric.sort_values(by='central')
+        fig_height = max(6, min(0.28 * len(metric.index) + 4, 18))
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+        do_barh_plot_with_ci(metric, ax)
+        ax.set_xlabel(xlabel)
+        ax.grid(axis='x')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        fig.tight_layout()
+        save_plot(fig, ax, title)
+
+    hsi_totals = primary_results.get('counts_of_hsi_by_short_treatment_id')
+    if hsi_totals is not None:
+        central_counts = hsi_totals.xs('central', axis=1, level='stat')
+        if central_counts.empty or not central_counts.gt(0).any().any():
+            print("Skipping total HSI counts: no positive counts.")
+        else:
+            fig, ax = plot_hsi_counts_stacked_bar(hsi_totals)
+            ax.set_xlabel('Number of HSI events')
+            ax.set_ylabel('Treatment ID included')
+            ax.legend(title='HSI treatment ID', loc='center left', bbox_to_anchor=(1.02, 0.5))
+            save_plot(fig, ax, 'Total HSI Counts by Treatment ID')
 
     print("Finished generating figures.")
 
