@@ -7,6 +7,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from copy import deepcopy
+
 from tlo import logging
 
 logger_hs = logging.getLogger("tlo.methods.healthsystem")
@@ -274,6 +276,9 @@ def check_int_deliverable(self,
         if not can_run:
             return False
 
+        if equipment is not None:
+            hsi_event.add_equipment(equipment)
+
         record_delivery()
 
         if to_log and (cons is not None or opt_cons is not None):
@@ -343,7 +348,14 @@ def check_int_deliverable(self,
                 if can_run:
                     record_delivery()
 
-                return can_run
+                if not can_run:
+                    return False
+
+                if equipment is not None:
+                    hsi_event.add_equipment(equipment)
+
+                record_delivery()
+                return passes_forced_dx_gate()
 
     # 3. Normal logic: quality, equipment, consumables and diagnosis
     # Finally, if no analyses are being conducted which impacts intervention delivery, then the probability an
@@ -755,12 +767,12 @@ def update_mni_dictionary(self, individual_id):
     df = self.sim.population.props
 
     if self == self.sim.modules['PregnancySupervisor']:
-
-        mni[individual_id] = self.sim.modules['PregnancySupervisor'].default_mni_values.copy()
+        mni[individual_id] = deepcopy(self.default_mni_values)
 
     elif self == self.sim.modules['Labour']:
 
-        labour_default = self.sim.modules['PregnancySupervisor'].default_labour_values.copy()
+        # labour_default = self.sim.modules['PregnancySupervisor'].default_labour_values.copy()
+        labour_default =  deepcopy(self.sim.modules['PregnancySupervisor'].default_labour_values)
         mni[individual_id].update(labour_default)
 
         # Update from default based on individual case

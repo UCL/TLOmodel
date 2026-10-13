@@ -381,7 +381,7 @@ class CareOfWomenDuringPregnancy(Module):
         self.item_codes_preg_consumables['gdm_test'] = {ic('Blood glucose level test'): 1}
 
         # ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------
-        self.item_codes_preg_consumables['full_blood_count'] = {ic('Complete blood count'): 1}
+        # self.item_codes_preg_consumables['full_blood_count'] = {ic('Complete blood count'): 1}
 
         # ---------------------------------------- BLOOD TRANSFUSION -------------------------------------------------
         self.item_codes_preg_consumables['blood_transfusion'] = {ic('Blood, one unit'): 2}
@@ -753,7 +753,8 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         individual_id = hsi_event.target
 
-        if df.at[individual_id, 'is_pregnant'] and not df.at[individual_id, 'la_currently_in_labour']:
+        if (df.at[individual_id, 'is_alive'] and df.at[individual_id, 'is_pregnant'] and
+            not df.at[individual_id, 'la_currently_in_labour']):
             logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not'
                                              f' run for person {individual_id}')
 
@@ -763,39 +764,6 @@ class CareOfWomenDuringPregnancy(Module):
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
     # are called from within the ANC HSIs. Which interventions are called depends on the mothers gestation and the
     # number of visits she has attended at the time each HSI runs (see ANC HSIs)
-
-    def check_intervention_should_run_and_update_mni(self, person_id, int_1, int2):
-        """
-        This function is called to check if specific interventions within the ANC matrix should run for an individual.
-        If the individual has received the intervention the appropriate amount of times per pregnancy then the
-        intervention wont run again
-        :param person_id: individual id
-        :param int_1: first intervention (i.e. first tetanus vaccine)
-        :param int2: second intervention (i.e. second tetanus vaccine)
-        :return BOOL (should the intervention be delivered)
-        """
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        # If both of the interventions have been delivered, return false to prevent the intervention being delivered
-        # again
-        if int_1 and int2 in mni[person_id]['anc_ints']:
-            return False
-
-        # If the first intervention hasn't already been given, store within the mni, return True so the intervention is
-        # delivered
-        elif (int_1 not in mni[person_id]['anc_ints']) and (int2 not in mni[person_id]['anc_ints']):
-            mni[person_id]['anc_ints'].append(int_1)
-            return True
-
-        # If the second intervention hasn't already been given, store within the mni, return True so the intervention is
-        # delivered
-        elif (int_1 in mni[person_id]['anc_ints']) and int2 not in mni[person_id]['anc_ints']:
-            mni[person_id]['anc_ints'].append(int2)
-            return True
-
-        else:
-            # If no conditions are met return true to prevent interventions not running
-            return True
 
     def screening_interventions_delivered_at_every_contact(self, hsi_event):
         """
@@ -984,10 +952,11 @@ class CareOfWomenDuringPregnancy(Module):
         """
         person_id = hsi_event.target
         df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # If this woman has already had her Hb checked twice during pregnancy she will not receive another Hb test
-        if not self.check_intervention_should_run_and_update_mni(person_id, 'hb_1', 'hb_2'):
-            return
+        if 'hb_1' and 'hb_2' in mni[person_id]['anc_ints']:
+            return False
 
         logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
 
@@ -999,6 +968,12 @@ class CareOfWomenDuringPregnancy(Module):
 
         if hb_test_delivered:
             df.at[person_id, 'ac_to_be_admitted'] = True
+
+            # store delivery
+            if 'hb_1'not in mni[person_id]['anc_ints']:
+                mni[person_id]['anc_ints'].append('hb_1')
+            else:
+                mni[person_id]['anc_ints'].append('hb_2')
 
     def albendazole_administration(self, hsi_event):
         """
@@ -1032,10 +1007,11 @@ class CareOfWomenDuringPregnancy(Module):
         """
         person_id = hsi_event.target
         cons = self.item_codes_preg_consumables
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # If this woman has already been tested for hep b twice in her pregnancy the intervention will not run
-        if not self.check_intervention_should_run_and_update_mni(person_id, 'hep_b_1', 'hep_b_2'):
-            return
+        if 'hep_b_1' and 'hep_b_2' in mni[person_id]['anc_ints']:
+            return False
 
         # This intervention is a placeholder prior to the Hepatitis B module being coded
         # Define the consumables
@@ -1047,6 +1023,12 @@ class CareOfWomenDuringPregnancy(Module):
         if avail:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
 
+            if 'hep_b_1' not in mni[person_id]['anc_ints']:
+                mni[person_id]['anc_ints'].append('hep_b_1')
+            else:
+                mni[person_id]['anc_ints'].append('hep_b_2')
+
+
     def syphilis_screening_and_treatment(self, hsi_event):
         """
         This function contains the intervention Syphilis testing and is provided to women during ANC. As Syphilis is
@@ -1056,10 +1038,11 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.current_parameters
         person_id = hsi_event.target
         df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # If this woman has already been screened twice for syphilis then the intervention will not run
-        if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
-            return
+        if 'syph_1' and 'syph_2' in mni[person_id]['anc_ints']:
+            return False
 
         syph_test_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='syphilis_test', hsi_event=hsi_event,
@@ -1069,6 +1052,11 @@ class CareOfWomenDuringPregnancy(Module):
             dx_test='blood_test_syphilis')
 
         if syph_test_delivered:
+
+            if 'syph_1' not in mni[person_id]['anc_ints']:
+                mni[person_id]['anc_ints'].append('syph_1')
+            else:
+                mni[person_id]['anc_ints'].append('syph_2')
 
             syph_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='syphilis_treatment', hsi_event=hsi_event,
@@ -2669,18 +2657,24 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',
                                                                      'other', first=True):
             return
+        consumables = self.module.item_codes_preg_consumables
 
-        pac_cons = self.module.item_codes_preg_consumables['post_abortion_care_core']
-        pac_cons_other = self.module.item_codes_preg_consumables['post_abortion_care_core_other']
-        pac_opt_cons = self.module.item_codes_preg_consumables['post_abortion_care_optional']
+        pac_cons = consumables['post_abortion_care_core'].copy()
+        pac_cons_other = consumables['post_abortion_care_core_other'].copy()
+        pac_opt_cons = consumables['post_abortion_care_optional'].copy()
 
         if abortion_complications.has_any([person_id], 'sepsis', first=True):
-            pac_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_sepsis_core'])
-            pac_opt_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_sepsis_optional'])
+            sepsis_cons = consumables['post_abortion_care_sepsis_core']
+
+            pac_cons.update(sepsis_cons)
+            pac_cons_other.update(sepsis_cons)
+
+            pac_opt_cons.update(
+                consumables['post_abortion_care_sepsis_optional']
+            )
 
         if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
-            pac_opt_cons.update(self.module.item_codes_preg_consumables['iv_drug_equipment'])
-
+            pac_opt_cons.update(consumables['iv_drug_equipment'])
 
         pac_delivered = pregnancy_helper_functions.check_int_deliverable(
             self.module, int_name='post_abortion_care_core', hsi_event=self,

@@ -625,7 +625,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                  'mild_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(476),
                  'mild_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(476),
                  'moderate_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(480),
-                 'moderate_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(478),
+                 'moderate_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(480),
                  'severe_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(478),
                  'severe_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(478),
                  'eclampsia': self.sim.modules['HealthBurden'].get_daly_weight(861),
@@ -1108,6 +1108,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         report_date = self.sim.date
         month_start = report_date - DateOffset(months=1)
+        days_in_month = (report_date - month_start).days
         monthly_daly = {}
 
         logger.debug(
@@ -1193,8 +1194,14 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 f"resolution={resolution}, sim_date={report_date}"
             )
 
+            # contribution = (
+            #     days_with_complication * weights[complication] / DAYS_IN_YEAR
+            # )
+
+            # Return the average disability weight for the reporting month.
+            # HealthBurden subsequently converts this to YLD by multiplying by 1/12.
             contribution = (
-                days_with_complication * weights[complication] / DAYS_IN_YEAR
+                weights[complication] * days_with_complication / days_in_month
             )
             add_contribution(person, complication, contribution)
 
@@ -1234,9 +1241,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             "severe_anaemia",
             "mild_anaemia_pp",
             "moderate_anaemia_pp",
-            "severe_anaemia_pp",
-            "vesicovaginal_fistula",
-            "rectovaginal_fistula",
+            "severe_anaemia_pp"
         ]
 
         for person in list(mni):
@@ -2720,7 +2725,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         c = self.module.mnh_outcome_counter
         la_params = self.sim.modules['Labour'].current_parameters
 
-        # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
+        # Define denominators used to calculate annual rates.
         live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
         pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
         comp_pregnancies = (c['ectopic_unruptured'] + c['spontaneous_abortion'] +
@@ -2730,9 +2735,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_births = live_births + c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
         total_preterm_birth = c['early_preterm_labour'] + c['late_preterm_labour']
 
-        for denom in [live_births, pregnancies, comp_pregnancies, deliveries, total_births, total_preterm_birth]:
-            if denom == 0:
-                return
 
         # MATERNAL COMPLICATION INCIDENCE
         # Log the yearly dictionary (allows for analyses with outcomes not used in this event)
@@ -2740,7 +2742,9 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Calculate and store rates of key maternal and neonatal complications
         def rate (count, denom, multiplier):
-            return (count/denom) * multiplier
+            if denom == 0:
+                return np.nan
+            return (count / denom) * multiplier
 
         total_an_anaemia_cases = c['an_anaemia_mild'] + c['an_anaemia_moderate'] + c['an_anaemia_severe']
         total_pn_anaemia_cases = c['pn_anaemia_mild'] + c['pn_anaemia_moderate'] + c['pn_anaemia_severe']
@@ -2847,7 +2851,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         anc8 = c['anc8'] + c['anc8+']
 
         m_pnc1 = sum(c[f'm_pnc{i}'] for i in range(1, 3)) + c['m_pnc3+']
-        n_pnc1 = sum(c[f'm_pnc{i}'] for i in range(1, 3)) + c['m_pnc3+']
+        n_pnc1 = sum(c[f'n_pnc{i}'] for i in range(1, 3)) + c['n_pnc3+']
 
         # HEALTH SERVICE COVERAGE
         logger.info(key='service_coverage',
@@ -2855,7 +2859,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'anc4+': rate(anc4, total_births, 100),
                           'anc8+': rate(anc8, total_births, 100),
 
-                          'fd_rate': rate(anc1 , total_births, 100),
+                          'fd_rate': rate(c['health_centre_delivery'] +
+                                          c['hospital_delivery'], total_births, 100),
                           'hb_rate': rate(c['home_birth_delivery'] , total_births, 100),
                           'hc_rate': rate(c['health_centre_delivery']  , total_births, 100),
                           'hp_rate': rate(c['hospital_delivery']  , total_births, 100),

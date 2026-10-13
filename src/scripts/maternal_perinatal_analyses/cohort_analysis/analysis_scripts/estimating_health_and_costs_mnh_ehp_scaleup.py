@@ -45,7 +45,7 @@ modelled_pop = 40_000
 
 # We estimate pregnancies in 2026 using proportion of pregnancies ending in live births from Polis et al (2015) and
 # UN population props live birth estimates (this is an approximation)
-p_scaling_factor =  1 / (modelled_pop / 1_010_00)
+p_scaling_factor =  1 / (modelled_pop / 1_010_000)
 
 int_analysis = ['baseline',
                 'abortion',
@@ -66,6 +66,7 @@ scenario_names = ['Status quo',
                   'Post-abortion and ectopic pregnancy case management',
                   'Maternal sepsis case management',
                   'Postpartum haemorrhage case management',
+                  'Obstructed labour case management',
                   'Severe pre-eclampsia/eclampsia case management',
                   'Caesarean section/other obstetric surgery',
                   'Neonatal sepsis case management',

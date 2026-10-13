@@ -534,18 +534,20 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         nci = self.newborn_care_info
         person = df.loc[[person_id]]
+        mother_id = df.loc[person_id, 'mother_id']
 
         # Here we define all the possible external variables used in the linear model
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
-
         chorio = nci[person_id]['maternal_chorio']
+        prom_status = df.at[mother_id, 'ps_premature_rupture_of_membranes']
 
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
                                                            received_corticosteroids=steroid_status,
                                                            received_abx_for_prom=abx_for_prom,
                                                            maternal_chorioamnionitis=chorio,
+                                                           prom=prom_status
                                                            )[person_id]
 
     # ========================================= OUTCOME FUNCTIONS  ===================================================
@@ -590,6 +592,7 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
+        nci = self.newborn_care_info
 
         # For logging purposes we differentiate between sepsis in term and preterm neonates
         comp = "early_onset_sepsis_pt" if (df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) \
@@ -598,6 +601,7 @@ class NewbornOutcomes(Module):
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
         if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
+            nci[child_id]['ever_neonatal_sepsis'] = True
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
 
             if comp == 'early_onset_sepsis_pt':
@@ -797,11 +801,14 @@ class NewbornOutcomes(Module):
 
             self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                   cause=potential_cause_of_death), death_date)
-        # Reset variables
+        # Reset complication and treatment variables
         else:
             df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
             df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
             df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+
+            df.at[individual_id, 'nb_inj_abx_neonatal_sepsis'] = False
+            df.at[individual_id, 'nb_supp_care_neonatal_sepsis'] = False
 
         # Finally we schedule the postnatal week one event
         if individual_id in nci:
@@ -875,7 +882,7 @@ class NewbornOutcomes(Module):
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_enceph'])
 
-        if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
+        if nci[individual_id]['ever_neonatal_sepsis']:
             if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_sepsis'])
@@ -1010,21 +1017,31 @@ class NewbornOutcomes(Module):
         mother_id = df.at[person_id, 'mother_id']
         is_preterm = df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']
         analysis_ints = self.sim.modules["PregnancySupervisor"].current_parameters['interventions_under_analysis']
+        analysis_prob = self.sim.modules["PregnancySupervisor"].current_parameters['intervention_analysis_availability']
+        counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
         if mni[mother_id]['delivery_setting'] == 'home_birth':
             logger.info(key='error', data=f'Child {person_id} has received resuscitation despite their '
                                           f'mother delivering at home')
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
+
             int_name = "neo_resus_preterm" if is_preterm else "neo_resus_term"
+            counter[f'{int_name}_req'] += 1
+
+            avail_if_under_analysis = self.rng.random_sample() < analysis_prob
 
             # Because we capture whether resus can be delivered during labour events, here we schedule a HSI to capture
             # the required resources. This is only called if resus will be delivered.
+
+            #  Logic here also ensure resusictation is delivered during analyses where intervention availability is
+            # manipulated
             if (mni[mother_id]['neo_will_receive_resus_if_needed'] or
-                (is_preterm and ("neo_resus_preterm" in analysis_ints)) or
-                (not is_preterm and ("neo_resus_term" in analysis_ints))):
+                (is_preterm and ("neo_resus_preterm" in analysis_ints) and avail_if_under_analysis) or
+                (not is_preterm and ("neo_resus_term" in analysis_ints) and avail_if_under_analysis)):
 
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
+                counter[f'{int_name}_deliv'] += 1
                 pregnancy_helper_functions.log_met_need(self, int_name)
 
                 cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id, int_name=int_name)
@@ -1289,7 +1306,7 @@ class NewbornOutcomes(Module):
                              'corticosteroids_given': mni[mother_id]['corticosteroids_given'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'cause_of_death_after_birth': [],
-                             'sepsis_postnatal': False,
+                             'ever_neonatal_sepsis': False,
                              'passed_through_week_one': False,
                              'will_receive_pnc': 'none'}
 
@@ -1560,7 +1577,7 @@ class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixi
                 "TREATMENT_ID": self.TREATMENT_ID,
                 "Item_Available": str(resus_item_code),
                 "Item_NotAvailable": str({}),
-                "Item_Used": str({}),
+                "Item_Used": str(resus_item_code),
             },
             description="Record of requested and used consumable items.",
         )

@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
+from scripts.maternal_perinatal_analyses.cohort_analysis.analysis_scripts.emonc_analysis_script import preg_loss
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
@@ -1607,6 +1608,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
             mni[individual_id]['retained_placenta'] = False
             mni[individual_id]['uterine_atony'] = False
+            mni[individual_id]['received_blood_transfusion'] = False
+
             mni[individual_id]['referred_for_blood'] = False
             mni[individual_id]['referred_for_surgery'] = False
 
@@ -2237,9 +2240,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 pregnancy_helper_functions.log_met_need(self, intervention)
 
             # We assume that anaemia is corrected by blood transfusion
-            if df.at[person_id, 'pn_anaemia_following_pregnancy'] != 'none':
+            severity = df.at[person_id, 'pn_anaemia_following_pregnancy']
+            if severity != 'none':
                 if params['treatment_effect_blood_transfusion_anaemia'] > self.rng.random_sample():
-                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'severe_anaemia_resolution',
+                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, f'{severity}_anaemia_pp_resolution',
                                                                   self.sim.date)
                     df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
 
@@ -2281,7 +2285,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                         # Store date of resolution for daly calculations
                         pregnancy_helper_functions.store_dalys_in_mni(
-                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_resolution',
+                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution',
                             self.sim.date)
 
                         df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
@@ -2716,7 +2720,10 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive']:
             return
 
+        # Store key characteristics relating to stillbirth
         pre_24_weeks = df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24
+        twin_mother = df.at[individual_id, 'ps_multiple_pregnancy']
+        twin_stillbirth = self.module.rng.random_sample() < params['prob_both_twins_ip_still_birth']
 
         # Check the correct amount of time has passed between labour onset and this event event
         if not (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D'):
@@ -2750,22 +2757,17 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
             df.at[individual_id, 'ps_prev_stillbirth'] = True
 
-            random_draw = self.module.rng.random_sample()
-
             # For twin mothers we determine if both pregnancies will end or not
-            twin_mother = df.at[individual_id, 'ps_multiple_pregnancy']
-            both_twins_stillborn = True if pre_24_weeks else random_draw < params['prob_both_twins_ip_still_birth']
-
-            if not twin_mother or (twin_mother and both_twins_stillborn):
+            if not twin_mother or (twin_mother and twin_stillbirth):
                 df.at[individual_id, 'la_intrapartum_still_birth'] = True
                 self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
                 if not twin_mother:
                     self.module.intrapartum_stillbirth_since_last_reset += 1
-                elif twin_mother and both_twins_stillborn:
+                elif twin_mother and twin_stillbirth:
                     self.module.intrapartum_stillbirth_since_last_reset += 2
 
-            elif twin_mother and not both_twins_stillborn:
+            elif twin_mother and not twin_stillbirth:
                 mni[individual_id]['single_twin_still_birth'] = True
                 logger.debug(key='message', data=f'single twin stillbirth for {individual_id}')
                 self.module.intrapartum_stillbirth_since_last_reset += 1
@@ -2776,7 +2778,12 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             del mni[individual_id]
 
         if df.at[individual_id, 'la_intrapartum_still_birth'] or mni[individual_id]['single_twin_still_birth']:
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['intrapartum_stillbirth'] += 1
+            if twin_mother and twin_stillbirth:
+                preg_loss = 2
+            else:
+                preg_loss = 1
+
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['intrapartum_stillbirth'] += preg_loss
             pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, 'intrapartum_stillbirth')
 
         # Reset property
@@ -2790,6 +2797,9 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'ac_mag_sulph_treatment'] = False
             df.at[individual_id, 'la_eclampsia_treatment'] = False
             df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_sepsis_treatment'] = False
+
+            mni[individual_id]['received_blood_transfusion'] = False
             mni[individual_id]['referred_for_blood'] = False
             mni[individual_id]['referred_for_surgery'] = False
 
@@ -3075,18 +3085,21 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
         # the intervention
         if not mni[person_id]['sought_care_for_complication']:
+         term = (mni[person_id]['labour_state'] == 'term_labour' or
+                 mni[person_id]['labour_state'] == 'postterm_labour')
 
-             int_name = 'neo_resus_term' if mni[person_id]['labour_state'] == 'term_labour' else 'neo_resus_preterm'
+         # We assume that women who seek care
+         int_name = 'neo_resus_term' if term else 'neo_resus_preterm'
 
-             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
-                 self.module, int_name=int_name, hsi_event=self,
-                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
-                 cons=self.module.item_codes_lab_consumables['resuscitation'],
-                 equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'},
-                 to_log=False) # cons logged in separate event
+         neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
+             self.module, int_name=int_name, hsi_event=self,
+             q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
+             cons=self.module.item_codes_lab_consumables['resuscitation'],
+             equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'},
+             to_log=False) # cons logged in separate event
 
-             if neo_resus_delivered:
-                 mni[person_id]['neo_will_receive_resus_if_needed'] = True
+         if neo_resus_delivered:
+             mni[person_id]['neo_will_receive_resus_if_needed'] = True
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
