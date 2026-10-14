@@ -45,6 +45,8 @@ cachetools==5.3.1
 certifi==2023.7.22
     # via
     #   msrest
+    #   pyogrio
+    #   pyproj
     #   requests
 cffi==1.15.1
     # via cryptography
@@ -88,6 +90,16 @@ filelock==3.12.4
     #   virtualenv
 fonttools==4.42.1
     # via matplotlib
+    # via matplotlib
+geopandas==1.0.1
+    # via tlo (pyproject.toml)
+    # via
+    #   -c requirements/base.txt
+    #   matplotlib
+fsspec==2025.10.0
+    # via
+    #   -c requirements/base.txt
+    #   torch
 gitdb==4.0.10
     # via gitpython
 gitpython==3.1.36
@@ -126,9 +138,19 @@ msrestazure==0.6.4
 numpy==1.24.4
     # via
     #   contourpy
+    #   geopandas
+    #   copulas
+    #   ctgan
+    #   deepecho
     #   matplotlib
     #   pandas
+    #   pyogrio
+    #   rdt
+    #   scikit-learn
     #   scipy
+    #   shapely
+    #   sdmetrics
+    #   sdv
     #   tlo (pyproject.toml)
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -137,7 +159,10 @@ openpyxl==3.1.0
 packaging==23.1
     # via
     #   build
+    #   geopandas
     #   matplotlib
+    #   pyogrio
+    #   plotly
     #   pyproject-api
     #   pytest
     #   tox
@@ -170,8 +195,16 @@ pyjwt[crypto]==2.8.0
     #   msal
 pylint==3.0.1
     # via tlo (pyproject.toml)
+pyogrio==0.10.0
+    # via geopandas
 pyparsing==3.1.1
     # via matplotlib
+    # via matplotlib
+pyproj==3.7.1
+    # via geopandas
+    # via
+    #   -c requirements/base.txt
+    #   matplotlib
 pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
@@ -210,6 +243,23 @@ ruff==0.12.11
     # via tlo (pyproject.toml)
 scipy==1.10.1
     # via tlo (pyproject.toml)
+    # via tlo (pyproject.toml)
+shapely==2.1.0
+    # via
+    #   geopandas
+    #   tlo (pyproject.toml)
+    # via
+    #   -c requirements/base.txt
+    #   copulas
+    #   rdt
+    #   scikit-learn
+    #   sdmetrics
+    #   tlo (pyproject.toml)
+sdmetrics==0.24.0
+    # via
+    #   -c requirements/base.txt
+    #   sdv
+
 six==1.16.0
     # via
     #   azure-core

@@ -60,6 +60,8 @@ dev = [
     "pyinstrument>=4.3",
     # Building requirements files
     "pip-tools",
+    "shapely",
+    "geopandas"
 ]
 
 [project.scripts]

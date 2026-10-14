@@ -1,0 +1,29 @@
+{
+  "scenario_script_path": "src/scripts/climate_disruptions/test_memory_issue.py",
+  "scenario_seed": 0,
+  "arguments": [],
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        }
+      },
+      "draw_name": "0"
+    }
+  ],
+  "commit": "f2640d00b91226ba7e1ade44b2822d9ff4284f18",
+  "github": "https://github.com/UCL/TLOmodel/tree/f2640d00b91226ba7e1ade44b2822d9ff4284f18"
+}

@@ -12,6 +12,42 @@ or locally using:
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
+from tlo.methods import (
+    alri,
+    bladder_cancer,
+    breast_cancer,
+    cardio_metabolic_disorders,
+    care_of_women_during_pregnancy,
+    cervical_cancer,
+    contraception,
+    copd,
+    demography,
+    depression,
+    diarrhoea,
+    enhanced_lifestyle,
+    epi,
+    epilepsy,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    labour,
+    malaria,
+    measles,
+    newborn_outcomes,
+    oesophagealcancer,
+    other_adult_cancers,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    prostate_cancer,
+    rti,
+    schisto,
+    simplified_births,
+    stunting,
+    symptommanager,
+    tb,
+    wasting,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -21,14 +57,14 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 20_000
+        self.end_date = Date(2011, 1, 1)  # The simulation will stop before reaching this date.
+        self.pop_size = 10_000
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'long_run_all_diseases',  # <- (specified only for local running)
+            'filename': 'long_run_all_diseases_2040_test_100k',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -42,8 +78,41 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel()
-
+        return [
+    demography.Demography(),
+    enhanced_lifestyle.Lifestyle(),
+    healthburden.HealthBurden(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    symptommanager.SymptomManager(),
+    epi.Epi(),
+    healthsystem.HealthSystem(),
+    alri.Alri(),
+    diarrhoea.Diarrhoea(),
+    stunting.Stunting(),
+    wasting.Wasting(),
+    hiv.Hiv(),
+    malaria.Malaria(),
+    measles.Measles(),
+    schisto.Schisto(),
+    tb.Tb(),
+    bladder_cancer.BladderCancer(),
+    breast_cancer.BreastCancer(),
+    cervical_cancer.CervicalCancer(),
+    oesophagealcancer.OesophagealCancer(),
+    other_adult_cancers.OtherAdultCancer(),
+    prostate_cancer.ProstateCancer(),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(),
+    rti.RTI(),
+    copd.Copd(),
+    depression.Depression(),
+    epilepsy.Epilepsy(),
+            contraception.Contraception(),
+            pregnancy_supervisor.PregnancySupervisor(),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+            labour.Labour(),
+            newborn_outcomes.NewbornOutcomes(),
+            postnatal_supervisor.PostnatalSupervisor(),
+        ]
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()
 

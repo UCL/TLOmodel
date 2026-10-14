@@ -1,0 +1,1713 @@
+{
+  "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_param_scans.py",
+  "scenario_seed": 0,
+  "arguments": [
+    "--resume-simulation",
+      "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/baseline_run_with_pop_mode_2-2026-03-27T134831Z/0"
+  ],
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.8435054305192233,
+            "delay_in_seeking_care_weather": 21.733643018977013,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.2124852759752858,
+            "scale_factor_appointment_urgency": 0.6683080853121359,
+            "scale_factor_severity_disruption_and_delay": 1.8957266959842265,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.1885048276495498,
+            "delay_in_seeking_care_weather": 29.371810567543605,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.5573482331837452,
+            "scale_factor_appointment_urgency": 1.5705313942449022,
+            "scale_factor_severity_disruption_and_delay": 1.9723097138380836,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.5993550784848736,
+            "delay_in_seeking_care_weather": 49.850711306600374,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.3280166305633323,
+            "scale_factor_appointment_urgency": 0.6701616200215242,
+            "scale_factor_severity_disruption_and_delay": 1.3774203177003679,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.5783711713840007,
+            "delay_in_seeking_care_weather": 3.4746184066670165,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.0361749081850926,
+            "scale_factor_appointment_urgency": 1.45445069552947,
+            "scale_factor_severity_disruption_and_delay": 1.499606273770479,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.5914086255060047,
+            "delay_in_seeking_care_weather": 42.864266708709536,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.3872884846715372,
+            "scale_factor_appointment_urgency": 1.364527532368105,
+            "scale_factor_severity_disruption_and_delay": 1.7448152742613119,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "4"
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.385585942694864,
+            "delay_in_seeking_care_weather": 11.60339342940696,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.741971881829702,
+            "scale_factor_appointment_urgency": 0.911776504369394,
+            "scale_factor_severity_disruption_and_delay": 0.1016775843657867,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "5"
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.2172926445759613,
+            "delay_in_seeking_care_weather": 16.439285415699537,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.13014018495267266,
+            "scale_factor_appointment_urgency": 0.40152098208905546,
+            "scale_factor_severity_disruption_and_delay": 0.9234587228991098,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "6"
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7272487153485895,
+            "delay_in_seeking_care_weather": 4.503555677056293,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.9372963613417039,
+            "scale_factor_appointment_urgency": 1.5831377342875907,
+            "scale_factor_severity_disruption_and_delay": 1.787402985454995,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "7"
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.5360475099298964,
+            "delay_in_seeking_care_weather": 39.09810856650797,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.2498329251580207,
+            "scale_factor_appointment_urgency": 1.138684035211522,
+            "scale_factor_severity_disruption_and_delay": 1.470566790158569,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "8"
+    },
+    {
+      "draw_number": 9,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.06725551795161,
+            "delay_in_seeking_care_weather": 28.66731689067301,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.12118149709763285,
+            "scale_factor_appointment_urgency": 0.011121863578975273,
+            "scale_factor_severity_disruption_and_delay": 0.9540094003932242,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "9"
+    },
+    {
+      "draw_number": 10,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.0582831293488917,
+            "delay_in_seeking_care_weather": 7.8827454660948035,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.6516121641042635,
+            "scale_factor_appointment_urgency": 1.756624170957222,
+            "scale_factor_severity_disruption_and_delay": 1.784482001995436,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "10"
+    },
+    {
+      "draw_number": 11,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.9658492225226114,
+            "delay_in_seeking_care_weather": 30.697230808997872,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.7333463044049082,
+            "scale_factor_appointment_urgency": 0.18085913735477707,
+            "scale_factor_severity_disruption_and_delay": 0.8906938935632633,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "11"
+    },
+    {
+      "draw_number": 12,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.865637224423223,
+            "delay_in_seeking_care_weather": 54.751820433833174,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.0260156642269282,
+            "scale_factor_appointment_urgency": 1.1859682947215453,
+            "scale_factor_severity_disruption_and_delay": 0.17125801277634192,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "12"
+    },
+    {
+      "draw_number": 13,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.6113313750722874,
+            "delay_in_seeking_care_weather": 58.11566501879865,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.10626161256895064,
+            "scale_factor_appointment_urgency": 0.905123389923401,
+            "scale_factor_severity_disruption_and_delay": 0.294233843997008,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "13"
+    },
+    {
+      "draw_number": 14,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.46884892031393954,
+            "delay_in_seeking_care_weather": 26.974522938303924,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.5194953938246845,
+            "scale_factor_appointment_urgency": 1.0223527722893566,
+            "scale_factor_severity_disruption_and_delay": 1.0747115989639935,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "14"
+    },
+    {
+      "draw_number": 15,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.4435755478602357,
+            "delay_in_seeking_care_weather": 20.63219577039269,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.2137491373426937,
+            "scale_factor_appointment_urgency": 1.6881818560743014,
+            "scale_factor_severity_disruption_and_delay": 0.19719321692480787,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "15"
+    },
+    {
+      "draw_number": 16,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.7623593844112782,
+            "delay_in_seeking_care_weather": 8.706278274434414,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.0095473339044114,
+            "scale_factor_appointment_urgency": 0.27993485530037077,
+            "scale_factor_severity_disruption_and_delay": 0.3736393278269086,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "16"
+    },
+    {
+      "draw_number": 17,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.5284540425886778,
+            "delay_in_seeking_care_weather": 48.77907520943273,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.5068717358799643,
+            "scale_factor_appointment_urgency": 1.779617466468824,
+            "scale_factor_severity_disruption_and_delay": 1.7604666786352394,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "17"
+    },
+    {
+      "draw_number": 18,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.5530412486071412,
+            "delay_in_seeking_care_weather": 39.027055203655394,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.059413183486199436,
+            "scale_factor_appointment_urgency": 0.8390868429926037,
+            "scale_factor_severity_disruption_and_delay": 1.1799085747941083,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "18"
+    },
+    {
+      "draw_number": 19,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.9883809607058602,
+            "delay_in_seeking_care_weather": 48.545550064597435,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.2644947049605633,
+            "scale_factor_appointment_urgency": 1.7230087554551043,
+            "scale_factor_severity_disruption_and_delay": 0.028312431301111947,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "19"
+    },
+    {
+      "draw_number": 20,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.0279923582484016,
+            "delay_in_seeking_care_weather": 7.220042555580707,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.6684652281653689,
+            "scale_factor_appointment_urgency": 1.0273466875256154,
+            "scale_factor_severity_disruption_and_delay": 0.7262868566181121,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "20"
+    },
+    {
+      "draw_number": 21,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.2799996199967851,
+            "delay_in_seeking_care_weather": 7.582072787313682,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.02739795203803877,
+            "scale_factor_appointment_urgency": 1.1587427441524796,
+            "scale_factor_severity_disruption_and_delay": 0.2694972826808994,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "21"
+    },
+    {
+      "draw_number": 22,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.429580440259826,
+            "delay_in_seeking_care_weather": 9.742430376791667,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.18100613035876764,
+            "scale_factor_appointment_urgency": 0.2976254386233819,
+            "scale_factor_severity_disruption_and_delay": 1.2122276501401754,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "22"
+    },
+    {
+      "draw_number": 23,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7762352266760253,
+            "delay_in_seeking_care_weather": 29.42702589569823,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.1505878079449259,
+            "scale_factor_appointment_urgency": 1.439097226529893,
+            "scale_factor_severity_disruption_and_delay": 1.4183971132712583,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "23"
+    },
+    {
+      "draw_number": 24,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.42233228750743795,
+            "delay_in_seeking_care_weather": 19.694150418042966,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.241513702321437,
+            "scale_factor_appointment_urgency": 0.26995102307960406,
+            "scale_factor_severity_disruption_and_delay": 0.49268349384341736,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "24"
+    },
+    {
+      "draw_number": 25,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.285177484611033,
+            "delay_in_seeking_care_weather": 13.986344349293166,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.012280304944906582,
+            "scale_factor_appointment_urgency": 0.3209324958120095,
+            "scale_factor_severity_disruption_and_delay": 0.629245111698689,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "25"
+    },
+    {
+      "draw_number": 26,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.1725740209181492,
+            "delay_in_seeking_care_weather": 5.897437818269255,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.384635434213724,
+            "scale_factor_appointment_urgency": 0.9603151518913193,
+            "scale_factor_severity_disruption_and_delay": 1.8348453628295103,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "26"
+    },
+    {
+      "draw_number": 27,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.8949679130403195,
+            "delay_in_seeking_care_weather": 50.18898551198355,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.7262220386839613,
+            "scale_factor_appointment_urgency": 0.6072664977331448,
+            "scale_factor_severity_disruption_and_delay": 0.06431616828037919,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "27"
+    },
+    {
+      "draw_number": 28,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.6269902208724837,
+            "delay_in_seeking_care_weather": 58.19487966295384,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.645102036025375,
+            "scale_factor_appointment_urgency": 1.6454176072047082,
+            "scale_factor_severity_disruption_and_delay": 1.9229442299106723,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "28"
+    },
+    {
+      "draw_number": 29,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7982933802893292,
+            "delay_in_seeking_care_weather": 22.909232668366773,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.5110495507514161,
+            "scale_factor_appointment_urgency": 0.028834995496529618,
+            "scale_factor_severity_disruption_and_delay": 1.4544603593769985,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "29"
+    },
+    {
+      "draw_number": 30,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7121180460749972,
+            "delay_in_seeking_care_weather": 44.90696352712589,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.6941567639622752,
+            "scale_factor_appointment_urgency": 0.547326882075309,
+            "scale_factor_severity_disruption_and_delay": 1.8604713604573646,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "30"
+    },
+    {
+      "draw_number": 31,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.22847254908336453,
+            "delay_in_seeking_care_weather": 8.486923261153722,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.35365242256254503,
+            "scale_factor_appointment_urgency": 1.6172275914086796,
+            "scale_factor_severity_disruption_and_delay": 1.0654182997635215,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "31"
+    },
+    {
+      "draw_number": 32,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7200662427614699,
+            "delay_in_seeking_care_weather": 36.08132265234148,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.646181924326476,
+            "scale_factor_appointment_urgency": 1.7134076804607312,
+            "scale_factor_severity_disruption_and_delay": 1.0211421198828283,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "32"
+    },
+    {
+      "draw_number": 33,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.8828652553486029,
+            "delay_in_seeking_care_weather": 27.99871630899658,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.10908700074569211,
+            "scale_factor_appointment_urgency": 1.3028013858855978,
+            "scale_factor_severity_disruption_and_delay": 0.7099434280512988,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "33"
+    },
+    {
+      "draw_number": 34,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.26732037769020567,
+            "delay_in_seeking_care_weather": 6.479986698017382,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.3410349247559965,
+            "scale_factor_appointment_urgency": 1.1007839986698391,
+            "scale_factor_severity_disruption_and_delay": 1.5938140190798686,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "34"
+    },
+    {
+      "draw_number": 35,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7095158111957104,
+            "delay_in_seeking_care_weather": 37.27176049073646,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.4983194368803008,
+            "scale_factor_appointment_urgency": 1.9952245334914591,
+            "scale_factor_severity_disruption_and_delay": 0.7203715525389175,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "35"
+    },
+    {
+      "draw_number": 36,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.9034457194939357,
+            "delay_in_seeking_care_weather": 3.917633506661191,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.7189090867526857,
+            "scale_factor_appointment_urgency": 0.24511980184219467,
+            "scale_factor_severity_disruption_and_delay": 0.34868711544765246,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "36"
+    },
+    {
+      "draw_number": 37,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.9279732186418057,
+            "delay_in_seeking_care_weather": 39.530253393437505,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.191412353071224,
+            "scale_factor_appointment_urgency": 1.8906388747804608,
+            "scale_factor_severity_disruption_and_delay": 0.032587529373277246,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "37"
+    },
+    {
+      "draw_number": 38,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.236638478351628,
+            "delay_in_seeking_care_weather": 20.353942973606173,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.8158408968779726,
+            "scale_factor_appointment_urgency": 0.3077882221831693,
+            "scale_factor_severity_disruption_and_delay": 0.4422892976794758,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "38"
+    },
+    {
+      "draw_number": 39,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7072863244940777,
+            "delay_in_seeking_care_weather": 59.425897722570994,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.0049929943885331715,
+            "scale_factor_appointment_urgency": 0.16274667485732477,
+            "scale_factor_severity_disruption_and_delay": 0.6658461065775441,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "39"
+    },
+    {
+      "draw_number": 40,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.994460419547267,
+            "delay_in_seeking_care_weather": 6.832595860310211,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.798637251076332,
+            "scale_factor_appointment_urgency": 1.1571957158016986,
+            "scale_factor_severity_disruption_and_delay": 0.5530154767278757,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "40"
+    },
+    {
+      "draw_number": 41,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.31665661253127847,
+            "delay_in_seeking_care_weather": 47.01773983495826,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.847907925057297,
+            "scale_factor_appointment_urgency": 0.06407157689655679,
+            "scale_factor_severity_disruption_and_delay": 0.8109546462011841,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "41"
+    },
+    {
+      "draw_number": 42,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.4185157107178783,
+            "delay_in_seeking_care_weather": 51.44812230997655,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.9483606261946601,
+            "scale_factor_appointment_urgency": 1.0188707676418245,
+            "scale_factor_severity_disruption_and_delay": 1.8557544862432256,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "42"
+    },
+    {
+      "draw_number": 43,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.10671618687068839,
+            "delay_in_seeking_care_weather": 1.069635559833781,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.8423526917299667,
+            "scale_factor_appointment_urgency": 0.8506378767990544,
+            "scale_factor_severity_disruption_and_delay": 1.6241203827237138,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "43"
+    },
+    {
+      "draw_number": 44,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.800741838420917,
+            "delay_in_seeking_care_weather": 39.706490214152716,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.0008857249083494338,
+            "scale_factor_appointment_urgency": 0.29045645544608023,
+            "scale_factor_severity_disruption_and_delay": 1.6905762234049497,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "44"
+    },
+    {
+      "draw_number": 45,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.395315406587997,
+            "delay_in_seeking_care_weather": 6.3806789309637715,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.4941294618773978,
+            "scale_factor_appointment_urgency": 0.0066303799138009295,
+            "scale_factor_severity_disruption_and_delay": 1.1412653971954951,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "45"
+    },
+    {
+      "draw_number": 46,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.2481784833392333,
+            "delay_in_seeking_care_weather": 23.05034254843631,
+            "scale_factor_reseeking_healthcare_post_disruption": 1.8702896324794656,
+            "scale_factor_appointment_urgency": 1.9017863172466134,
+            "scale_factor_severity_disruption_and_delay": 1.9574183423327185,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "46"
+    },
+    {
+      "draw_number": 47,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.7124197443946796,
+            "delay_in_seeking_care_weather": 17.86351155024692,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.3678525881288843,
+            "scale_factor_appointment_urgency": 0.9086334679750548,
+            "scale_factor_severity_disruption_and_delay": 1.6464014600870418,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "47"
+    },
+    {
+      "draw_number": 48,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 1.9707164643837194,
+            "delay_in_seeking_care_weather": 12.039309399814499,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.834880453362065,
+            "scale_factor_appointment_urgency": 0.27195696009710507,
+            "scale_factor_severity_disruption_and_delay": 1.268874676688494,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "48"
+    },
+    {
+      "draw_number": 49,
+      "parameters": {
+        "HealthSystem": {
+          "services_affected_precip": "all",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+            "scale_factor_prob_disruption": 0.7502863976505698,
+            "delay_in_seeking_care_weather": 22.375316805899125,
+            "scale_factor_reseeking_healthcare_post_disruption": 0.4452333612069044,
+            "scale_factor_appointment_urgency": 0.447670272564947,
+            "scale_factor_severity_disruption_and_delay": 0.9492399842067335,
+          "prop_supply_side_disruptions": 0.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "49"
+    }
+  ],
+    "commit": "ccf46fa332e4130d05505196ffba021408b3f2f3",
+    "github": "https://github.com/UCL/TLOmodel/tree/ccf46fa332e4130d05505196ffba021408b3f2f3"
+}
