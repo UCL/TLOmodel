@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
-from scripts.maternal_perinatal_analyses.cohort_analysis.analysis_scripts.emonc_analysis_script import preg_loss
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
