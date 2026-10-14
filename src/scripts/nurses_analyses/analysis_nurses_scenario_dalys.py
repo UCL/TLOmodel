@@ -18,6 +18,104 @@ from tlo.analysis.utils import extract_results, load_pickled_dataframes, summari
 DALY_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
 
 
+def prepare_plot_data_for_excel(data, category_name="Category"):
+    """
+    Prepare the mean and error-bar values used in a plot
+    for export to Excel.
+    For baseline-comparison plots, data is a DataFrame indexed
+    by scenario.
+    For cause and age-group plots, data is a dictionary of
+    scenario names and DataFrames indexed by cause or age group.
+    """
+    if isinstance(data, pd.DataFrame):
+        # Baseline-comparison plots
+        result = data.copy()
+        result.index.name = "Scenario"
+        result = result.reset_index()
+
+    else:
+        # Cause and age-group plots
+        frames = []
+
+        for scenario, scenario_df in data.items():
+            temp = scenario_df.copy()
+            temp.index.name = category_name
+            temp = temp.reset_index()
+            temp.insert(0, "Scenario", scenario)
+            frames.append(temp)
+
+        result = pd.concat(frames, ignore_index=True)
+
+    # Include the numerical size of each error bar.
+    if {"mean", "lower", "upper"}.issubset(result.columns):
+        result["Lower error"] = result["mean"] - result["lower"]
+        result["Upper error"] = result["upper"] - result["mean"]
+
+        # Arrange the columns in a useful order.
+        result = result[
+            [
+                col for col in [
+                    "Scenario",
+                    category_name,
+                    "mean",
+                    "lower",
+                    "upper",
+                    "Lower error",
+                    "Upper error",
+                ]
+                if col in result.columns
+            ]
+        ]
+
+        result = result.rename(
+            columns={
+                "mean": "Mean",
+                "lower": "Lower bound",
+                "upper": "Upper bound",
+            }
+        )
+
+    return result
+
+
+def export_nurse_plot_data_to_excel(results_folder, plot_data):
+    """
+    Export the data underlying the selected nurse-scenario
+    plots into separate worksheets in one Excel workbook.
+    """
+    output_file = results_folder / "nurses_scenario_plot_data.xlsx"
+
+    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+        for sheet_name, data, category_name in plot_data:
+            excel_df = prepare_plot_data_for_excel(
+                data,
+                category_name=category_name,
+            )
+
+            excel_df.to_excel(
+                writer,
+                sheet_name=sheet_name,
+                index=False,
+            )
+
+            # Make columns easier to read in Excel.
+            worksheet = writer.sheets[sheet_name]
+            worksheet.freeze_panes = "A2"
+            worksheet.auto_filter.ref = worksheet.dimensions
+
+            for column_cells in worksheet.columns:
+                max_length = max(
+                    len(str(cell.value)) if cell.value is not None else 0
+                    for cell in column_cells
+                )
+                column_letter = column_cells[0].column_letter
+                worksheet.column_dimensions[column_letter].width = min(
+                    max_length + 2, 45
+                )
+
+    print(f"Excel plot data saved to: {output_file}")
+
+
 def find_difference_relative_to_comparison_series(
     _ser: pd.Series,
     comparison: str,
@@ -1754,6 +1852,84 @@ if __name__ == "__main__":
             percent_dalys_by_age_improved,
         )
     )
+
+
+    # Export numerical data underlying 12 selected plots.
+    plot_data_for_excel = [
+        # 1–4: Baseline-comparison plots
+        (
+            "DALYs_Base_Default",
+            percent_dalys_averted,
+            "Category",
+        ),
+        (
+            "DALYs_Base_Improved",
+            percent_dalys_averted_improved,
+            "Category",
+        ),
+        (
+            "Deaths_Base_Default",
+            percent_deaths_averted,
+            "Category",
+        ),
+        (
+            "Deaths_Base_Improved",
+            percent_deaths_averted_improved,
+            "Category",
+        ),
+
+        # 5–8: Cause-level plots
+        (
+            "DALYs_Cause_Default",
+            percent_by_cause_default,
+            "Cause",
+        ),
+        (
+            "DALYs_Cause_Improved",
+            percent_by_cause_improved,
+            "Cause",
+        ),
+        (
+            "Deaths_Cause_Default",
+            percent_deaths_by_cause_default,
+            "Cause",
+        ),
+        (
+            "Deaths_Cause_Improved",
+            percent_deaths_by_cause_improved,
+            "Cause",
+        ),
+
+        # 9–12: Age-group plots
+        (
+            "DALYs_Age_Default",
+            percent_dalys_by_age_default,
+            "Age group",
+        ),
+        (
+            "DALYs_Age_Improved",
+            percent_dalys_by_age_improved,
+            "Age group",
+        ),
+        (
+            "Deaths_Age_Default",
+            percent_deaths_by_age_default,
+            "Age group",
+        ),
+        (
+            "Deaths_Age_Improved",
+            percent_deaths_by_age_improved,
+            "Age group",
+        ),
+    ]
+
+    export_nurse_plot_data_to_excel(
+        results_folder=results_folder,
+        plot_data=plot_data_for_excel,
+    )
+
+    # Showing figures
+
 
     # Showing figures
     if args.show_figures:

@@ -882,6 +882,102 @@ def plot_nurse_time_use_percent_change(
     return fig
 
 
+
+def prepare_service_volume_plot_data_for_excel(
+    summarized_data,
+    value_multiplier=1.0,
+    category_name="Measure",
+    single_row_label="Total change (2027–2034)",
+):
+    """
+    Prepare the numerical values used in a service-volume plot
+    for export to Excel.
+
+    Includes the mean, lower and upper bounds, and the sizes
+    of the lower and upper error bars.
+
+    value_multiplier=100 converts proportions to percentages.
+    """
+    rows = []
+
+    # The columns are grouped by scenario, with statistics
+    # such as mean, lower, and upper under each scenario.
+    scenarios = summarized_data.columns.get_level_values(0).unique()
+
+    for scenario in scenarios:
+        scenario_data = summarized_data[scenario]
+
+        for index_value, values in scenario_data.iterrows():
+            mean = float(values["mean"]) * value_multiplier
+            lower = float(values["lower"]) * value_multiplier
+            upper = float(values["upper"]) * value_multiplier
+
+            # For plots showing a single overall value, use a
+            # descriptive label instead of an index such as 0.
+            if len(summarized_data.index) == 1:
+                category = single_row_label
+            else:
+                category = str(index_value)
+
+            rows.append(
+                {
+                    "Scenario": scenario,
+                    category_name: category,
+                    "Mean (%)": mean,
+                    "Lower bound (%)": lower,
+                    "Upper bound (%)": upper,
+                    "Lower error (percentage points)": mean - lower,
+                    "Upper error (percentage points)": upper - mean,
+                }
+            )
+
+    return pd.DataFrame(rows)
+
+
+def export_service_volume_plot_data_to_excel(
+    results_folder,
+    plot_data,
+):
+    """
+    Export the numerical data underlying the six selected plots
+    to separate worksheets in one Excel workbook.
+    """
+    output_file = results_folder / "nurses_service_volume_plot_data.xlsx"
+
+    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+        for sheet_name, data, multiplier, category_name, row_label in plot_data:
+            excel_df = prepare_service_volume_plot_data_for_excel(
+                summarized_data=data,
+                value_multiplier=multiplier,
+                category_name=category_name,
+                single_row_label=row_label,
+            )
+
+            excel_df.to_excel(
+                writer,
+                sheet_name=sheet_name,
+                index=False,
+            )
+
+            # Improve readability in Excel.
+            worksheet = writer.sheets[sheet_name]
+            worksheet.freeze_panes = "A2"
+            worksheet.auto_filter.ref = worksheet.dimensions
+
+            for column_cells in worksheet.columns:
+                max_length = max(
+                    len(str(cell.value)) if cell.value is not None else 0
+                    for cell in column_cells
+                )
+                column_letter = column_cells[0].column_letter
+                worksheet.column_dimensions[column_letter].width = min(
+                    max_length + 2, 45
+                )
+
+    print(f"Excel plot data saved to: {output_file}")
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Analyse service volume across nurse staffing scenarios"
@@ -1100,6 +1196,69 @@ if __name__ == "__main__":
             comparison_years=range(2027, 2035),
         )
     )
+
+
+    # Export the numerical data underlying the six selected plots.
+    # value_multiplier=100 converts the first two outputs from
+    # proportions to percentages, matching their plotting functions.
+    # The other four outputs are already expressed as percentages.
+
+    plot_data_for_excel = [
+        # 1–2: Overall service-volume percentage change
+        (
+            "ServiceVol_Default",
+            percent_change_default,
+            100,
+            "Measure",
+            "Total service-volume change (2027–2034)",
+        ),
+        (
+            "ServiceVol_Improved",
+            percent_change_improved,
+            100,
+            "Measure",
+            "Total service-volume change (2027–2034)",
+        ),
+
+        # 3–4: Percentage change by service area
+        (
+            "Area_Default",
+            percent_service_area_volume_change_default,
+            1,
+            "Service area",
+            "Total change (2027–2034)",
+        ),
+        (
+            "Area_Improved",
+            percent_service_area_volume_change_improved,
+            1,
+            "Service area",
+            "Total change (2027–2034)",
+        ),
+
+        # 5–6: Nurse time use relative to baseline
+        (
+            "NurseTime_Default",
+            nurse_time_change_default,
+            1,
+            "Measure",
+            "Total nurse-time change (2027–2034)",
+        ),
+        (
+            "NurseTime_Improved",
+            nurse_time_change_improved,
+            1,
+            "Measure",
+            "Total nurse-time change (2027–2034)",
+        ),
+    ]
+
+    export_service_volume_plot_data_to_excel(
+        results_folder=results_folder,
+        plot_data=plot_data_for_excel,
+    )
+
+
 
     fig_default = plot_annual_service_volumes(
         summarized_annual_service_volumes,

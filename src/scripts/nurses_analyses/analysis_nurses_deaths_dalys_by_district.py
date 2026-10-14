@@ -17,6 +17,83 @@ from tlo.analysis.utils import extract_results, load_pickled_dataframes, summari
 DALY_DEATH_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
 
 
+def export_district_outcomes_to_excel(
+    results_folder,
+    plot_data,
+):
+    """
+    Export numerical data underlying the district-level
+    DALY and death bar charts to separate Excel worksheets.
+
+    Each input is a dictionary mapping scenario names to
+    DataFrames indexed by district, with mean/lower/upper columns.
+    """
+    output_file = results_folder / "district_deaths_dalys_barplot_data.xlsx"
+
+    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+        for sheet_name, scenario_data, outcome_name in plot_data:
+            frames = []
+
+            for scenario, district_df in scenario_data.items():
+                temp = district_df.copy()
+                temp.index.name = "District"
+                temp = temp.reset_index()
+                temp.insert(0, "Scenario", scenario)
+
+                # Calculate the numerical size of each error bar.
+                temp["Lower error"] = temp["mean"] - temp["lower"]
+                temp["Upper error"] = temp["upper"] - temp["mean"]
+
+                temp = temp.rename(
+                    columns={
+                        "mean": f"Mean {outcome_name} averted (%)",
+                        "lower": "Lower bound (%)",
+                        "upper": "Upper bound (%)",
+                    }
+                )
+
+                frames.append(temp)
+
+            if frames:
+                excel_df = pd.concat(frames, ignore_index=True)
+            else:
+                excel_df = pd.DataFrame(
+                    columns=[
+                        "Scenario",
+                        "District",
+                        f"Mean {outcome_name} averted (%)",
+                        "Lower bound (%)",
+                        "Upper bound (%)",
+                        "Lower error",
+                        "Upper error",
+                    ]
+                )
+
+            excel_df.to_excel(
+                writer,
+                sheet_name=sheet_name,
+                index=False,
+            )
+
+            # Make the worksheet easier to read in Excel.
+            worksheet = writer.sheets[sheet_name]
+            worksheet.freeze_panes = "A2"
+            worksheet.auto_filter.ref = worksheet.dimensions
+
+            for column_cells in worksheet.columns:
+                max_length = max(
+                    len(str(cell.value)) if cell.value is not None else 0
+                    for cell in column_cells
+                )
+                column_letter = column_cells[0].column_letter
+                worksheet.column_dimensions[column_letter].width = min(
+                    max_length + 2, 45
+                )
+
+    print(f"District bar-plot data saved to: {output_file}")
+
+
+
 def find_difference_relative_to_comparison_series(
     _ser: pd.Series,
     comparison: str,
@@ -709,18 +786,18 @@ def plot_district_maps(gdf, scenario_names, title, colorbar_label):
 def plot_percent_dalys_averted_by_district(df, healthsystem_label, top_n=30):
     # Extract scenarios for the selected healthsystem
     if healthsystem_label == "Default Healthsystem":
+        fewer = df["Fewer Nurses / Default Healthsystem Function"]
         more = df["More Nurses / Default Healthsystem Function"]
         cnp = df["More CNP staff / Default Healthsystem Function"]
         more_district = df["More Nurses by District / Default Healthsystem Function"]
         cnp_district = df["More CNP staff by District / Default Healthsystem Function"]
-        fewer = df["Fewer Nurses / Default Healthsystem Function"]
 
     elif healthsystem_label == "Improved Healthsystem":
+        fewer = df["Fewer Nurses / Improved Healthsystem Function"]
         more = df["More Nurses / Improved Healthsystem Function"]
         cnp = df["More CNP staff / Improved Healthsystem Function"]
         more_district = df["More Nurses by District / Improved Healthsystem Function"]
         cnp_district = df["More CNP staff by District / Improved Healthsystem Function"]
-        fewer = df["Fewer Nurses / Improved Healthsystem Function"]
 
     else:
         raise ValueError(
@@ -728,11 +805,11 @@ def plot_percent_dalys_averted_by_district(df, healthsystem_label, top_n=30):
         )
 
     # Reindex districts
+    fewer = fewer.reindex(district_order)
     more = more.reindex(district_order)
     cnp = cnp.reindex(district_order)
     more_district = more_district.reindex(district_order)
     cnp_district = cnp_district.reindex(district_order)
-    fewer = fewer.reindex(district_order)
 
     # Scenario order
     scenarios = [
@@ -782,18 +859,18 @@ def plot_percent_dalys_averted_by_district(df, healthsystem_label, top_n=30):
 
 def plot_percent_deaths_averted_by_district(df, healthsystem_label, top_n=30):
     if healthsystem_label == "Default Healthsystem":
+        fewer = df["Fewer Nurses / Default Healthsystem Function"]
         more = df["More Nurses / Default Healthsystem Function"]
         cnp = df["More CNP staff / Default Healthsystem Function"]
         more_district = df["More Nurses by District / Default Healthsystem Function"]
         cnp_district = df["More CNP staff by District / Default Healthsystem Function"]
-        fewer = df["Fewer Nurses / Default Healthsystem Function"]
 
     elif healthsystem_label == "Improved Healthsystem":
+        fewer = df["Fewer Nurses / Improved Healthsystem Function"]
         more = df["More Nurses / Improved Healthsystem Function"]
         cnp = df["More CNP staff / Improved Healthsystem Function"]
         more_district = df["More Nurses by District / Improved Healthsystem Function"]
         cnp_district = df["More CNP staff by District / Improved Healthsystem Function"]
-        fewer = df["Fewer Nurses / Improved Healthsystem Function"]
 
     else:
         raise ValueError(
@@ -801,11 +878,11 @@ def plot_percent_deaths_averted_by_district(df, healthsystem_label, top_n=30):
         )
 
     # Reindex districts
+    fewer = fewer.reindex(district_order)
     more = more.reindex(district_order)
     cnp = cnp.reindex(district_order)
     more_district = more_district.reindex(district_order)
     cnp_district = cnp_district.reindex(district_order)
-    fewer = fewer.reindex(district_order)
 
     # Scenario order
     scenarios = [
@@ -1526,6 +1603,37 @@ if __name__ == "__main__":
         deaths_by_district_improved,
         baseline_scenario=baseline_improved_scenario,
     )
+
+
+    # Exporting numerical data underlying the four district bar charts.
+    plot_data_for_excel = [
+        (
+            "DALYs_Default",
+            percent_dalys_default,
+            "DALYs",
+        ),
+        (
+            "DALYs_Improved",
+            percent_dalys_improved,
+            "DALYs",
+        ),
+        (
+            "Deaths_Default",
+            percent_deaths_default,
+            "Deaths",
+        ),
+        (
+            "Deaths_Improved",
+            percent_deaths_improved,
+            "Deaths",
+        ),
+    ]
+
+    export_district_outcomes_to_excel(
+        results_folder=results_folder,
+        plot_data=plot_data_for_excel,
+    )
+
 
     improved_pct_deaths = pd.DataFrame(
         {
