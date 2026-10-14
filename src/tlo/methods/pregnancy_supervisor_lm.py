@@ -216,7 +216,7 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
     Population level linear model which returns a df containing the probability of antenatal stillbirth for a
     subset of the population during set months of pregnancy. Risk of stillbirth increases with later gestational
     age (41+), all hypertensive disorders of pregnancy, antepartum haemorrhage, chorioamnionitis, gestational diabetes,
-    syphilis, malaria, non-gestational hypertension and diabetes mellitus
+    malaria, non-gestational hypertension and diabetes mellitus
     """
     params = self.module.current_parameters
     result = pd.Series(data=params['prob_still_birth_per_month'], index=df.index)
@@ -236,7 +236,6 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
     result[df.ps_chorioamnionitis] *= params['rr_still_birth_chorio']
     result[(df.ps_gest_diab == 'controlled') & (df.ac_gest_diab_on_treatment != 'none')] *=\
         (params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_management'])
-    result[df.ps_syphilis] *= params['rr_still_birth_maternal_syphilis']
 
     # Effect of malaria and NCDs only applied in the modules are registered
     if 'Malaria' in self.module.sim.modules:

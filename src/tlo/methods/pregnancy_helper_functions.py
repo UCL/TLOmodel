@@ -22,11 +22,18 @@ def generate_mnh_outcome_counter():
                     'induced_abortion_haemorrhage','induced_abortion_other_comp','spontaneous_abortion_sepsis',
                     'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
 
-                    # antenatal onset outcomes
-                    'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
-                    'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn','severe_pre_eclamp', 'eclampsia','severe_gest_htn',
-                    'syphilis',  'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
-                    'mild_mod_antepartum_haemorrhage','severe_antepartum_haemorrhage', 'antenatal_stillbirth',
+        # antenatal onset outcomes
+        'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
+        'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn',
+        'syphilis',
+        'syphilis_progression_primary_secondary',
+        'syphilis_progression_secondary_latent',
+        'syphilis_progression_late_latent',
+        'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
+        'mild_mod_antepartum_haemorrhage', 'severe_antepartum_haemorrhage', 'antenatal_stillbirth',
+        'congenital_syphilis_infection',
+        'congenital_syphilis_stillbirth',
+        'congenital_syphilis_live_birth',
 
                     # intrapartum/postpartum onset outcomes
                     'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other','obstructed_labour',
@@ -66,6 +73,7 @@ def generate_mnh_outcome_counter():
     return {'counter': mnh_outcome_counter,
             'outcomes': outcome_list}
 
+
 def get_list_of_items(self, item_list):
     """
     Uses get_item_code_from_item_name to return item codes for a list of named items
@@ -76,6 +84,7 @@ def get_list_of_items(self, item_list):
     codes = [item_code_function(item) for item in item_list]
 
     return codes
+
 
 def check_int_deliverable(self, int_name, hsi_event,
                           q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
@@ -534,12 +543,10 @@ def update_mni_dictionary(self, individual_id):
         mni[individual_id] = self.sim.modules['PregnancySupervisor'].default_mni_values.copy()
 
     elif self == self.sim.modules['Labour']:
-    
+
         labour_default = self.sim.modules['PregnancySupervisor'].default_labour_values.copy()
         mni[individual_id].update(labour_default)
 
         # Update from default based on individual case
         mni[individual_id]['twins'] = df.at[individual_id, 'ps_multiple_pregnancy']
         mni[individual_id]['an_placental_abruption'] = df.at[individual_id, 'ps_placental_abruption']
-
-

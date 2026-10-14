@@ -21,6 +21,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
+    syphilis,
 )
 
 start_date = Date(2010, 1, 1)
@@ -86,8 +87,8 @@ def register_modules(sim):
                  labour.Labour(),
                  postnatal_supervisor.PostnatalSupervisor(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
-
                  hiv.DummyHivModule(),
+                 syphilis.Syphilis(),
                  )
 
 
