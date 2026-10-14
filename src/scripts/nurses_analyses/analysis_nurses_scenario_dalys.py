@@ -1005,7 +1005,7 @@ def _plot_percent_averted_by_cause(
                     upper - means,
                 ]),
                 capsize=2,
-                error_kw={"elinewidth": 0.8},
+                error_kw={"elinewidth": 0.8, "alpha": 0.4},
             )
 
         ax.axhline(0, color="black", linewidth=1)
