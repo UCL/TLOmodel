@@ -990,18 +990,20 @@ def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
         ),
     ]
 
+    districts = sorted(scaleup_plot_data["District"].unique())
+
     figures = {}
 
     for scaleup_column, ylabel, title in [
         (
             "Scale2027_2024",
-            "Staff scale-up factor (2027/2024)",
-            "Staff scale-up factor by district: 2027 vs 2024",
+            "Workforce size scale-up factor (2027:2024)",
+            "",
         ),
         (
             "Scale2027_2019",
-            "Staff scale-up factor (2027/2019)",
-            "Staff scale-up factor by district: 2027 vs 2019",
+            "Workforce size scale-up factor (2027:2019)",
+            "",
         ),
     ]:
 
@@ -1018,25 +1020,60 @@ def plot_staff_scaleup_factors_by_district(scaleup_plot_data):
             if scenario_data.empty:
                 continue
 
-            scenario_data = scenario_data.sort_values("District")
+            scenario_data = (
+                scenario_data.set_index("District")
+                .reindex(districts)
+                .reset_index()
+            )
 
-            ax.scatter(
+            ax.plot(
                 scenario_data["District"],
                 scenario_data[scaleup_column],
                 color=color,
                 marker="o",
                 label=label,
                 alpha=0.7,
+                linestyle="-",
+                linewidth=1,
+                markersize=5,
             )
 
         # Reference line: no scale-up relative to the comparison year.
-        ax.axhline(1.0, linestyle="--", linewidth=1,)
+        ax.axhline(1.0, linestyle="--", linewidth=1.5)
         ax.set_xlabel("District")
         ax.set_ylabel(ylabel)
         ax.set_title(title)
         ax.tick_params(axis="x", rotation=90,)
-        ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left",)
-        fig.tight_layout()
+
+        legend_order = [
+            "Baseline nurses",
+            "Fewer nurses",
+            "More nurses",
+            "More CNP - Clinical",
+            "More CNP - Pharmacy",
+            "More nurses by district",
+            "More CNP by district - Clinical",
+            "More CNP by district - Pharmacy",
+        ]
+
+        handles, labels = ax.get_legend_handles_labels()
+        handle_by_label = dict(zip(labels, handles))
+        ordered = [lab for lab in legend_order if lab in handle_by_label]
+
+        ncol = 4
+        ordered = [ordered[i] for c in range(ncol) for i in range(c, len(ordered), ncol)]
+
+        ax.legend(
+            [handle_by_label[lab] for lab in ordered],
+            ordered,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.25),
+            ncol=ncol,
+            numpoints=1,
+            handlelength=2.5,
+            frameon=False,
+        )
+
         figures[scaleup_column] = fig
 
     return figures
