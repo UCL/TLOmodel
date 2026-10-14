@@ -9,8 +9,8 @@ class CohortCalibration(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 7969672
-        self.start_date = Date(2025, 1, 1)
-        self.end_date = Date(2026, 1, 2)
+        self.start_date = Date(2026, 1, 1)
+        self.end_date = Date(2027, 1, 2)
         self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 20

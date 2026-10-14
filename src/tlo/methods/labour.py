@@ -2081,6 +2081,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
         person_id = hsi_event.target
+        counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         def refer_for_surg():
@@ -2102,6 +2103,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
                 # meaning she will not require further treatment
                 if params['prob_haemostatis_uterotonics'] > self.rng.random_sample():
+
+                    # count effective resolution for met need calculations
+                    counter['pph_resolved_first_line'] += 1
 
                     # Bleeding has stopped, this woman will not be at risk of death
                     df.at[person_id, 'la_postpartum_haem'] = False
@@ -2128,6 +2132,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
         person_id = hsi_event.target
+        counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         def refer_for_surg():
@@ -2150,6 +2155,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
 
                 if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
+
+                    counter['pph_resolved_first_line'] += 1
 
                     df.at[person_id, 'la_postpartum_haem'] = False
                     mni[person_id]['retained_placenta'] = False

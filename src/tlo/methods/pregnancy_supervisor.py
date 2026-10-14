@@ -2875,28 +2875,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             return (treatments / cases) * 100
 
-        all_ua_pph = c['pph_uterine_atony'] + c['pph_other']
-
-        get_meds = all_ua_pph * 0.80
-
-        bleed_post_meds = get_meds * (1 - la_params['prob_haemostatis_uterotonics'])
-        dont_get_meds =  all_ua_pph * 0.2
-
-        pph_ua_need_blood_surg = bleed_post_meds + dont_get_meds
-
-        # pph_ua_need_blood_surg = ((c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])) +
-        #                           (c['pph_other'] * (1 - la_params['prob_haemostatis_uterotonics'])))
-
-
-        # pph_ua_need_blood_surg = ((c['pph_uterine_atony'] * (1 - la_params['prob_haemostatis_uterotonics'])) +
-        #                           (c['pph_other'] * (1 - la_params['prob_haemostatis_uterotonics'])))
-
-        pph_mrp_need_blood_surg = ((c['pph_retained_placenta'] *
-                                    (1 - la_params['prob_successful_manual_removal_placenta']))
-                              +  (c['secondary_postpartum_haemorrhage'] *
-                                  (1 - la_params['prob_successful_manual_removal_placenta']))
-                                   )
-
         est_other_cs_indications = (c['uterine_rupture'] + total_aph + c['eclampsia'] + (c['severe_pre_eclamp'] * 0.9)
                                     + c['obstruction_cpd'] +
                                     (c['obstruction_malpos_malpres'] *
@@ -2905,9 +2883,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                      (1-la_params['prob_successful_assisted_vaginal_delivery']))
                                     )
 
-        logger.info(key='pph_surg_estimates',
-                    data={'ua': pph_ua_need_blood_surg,
-                          'rp': pph_mrp_need_blood_surg})
+        pph_surgical_need = (c['primary_postpartum_haemorrhage'] + c['secondary_postpartum_haemorrhage']
+                             - c['pph_resolved_first_line'])
 
         logger.info(key="met_need",
                     data={'pac_ep': met_need((c['post_abortion_care_core_need_met'] +
@@ -2928,7 +2905,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                   c['pph_treatment_mrrp_need']),
 
                           'haem_cm_blood_pph': met_need(c['blood_transfusion_pph_need_met'],
-                                                        pph_ua_need_blood_surg + pph_mrp_need_blood_surg),
+                                                        pph_surgical_need),
 
                           'heam_cm_blood_aph': met_need(c['blood_transfusion_aph_need_met'],
                                                         c['blood_transfusion_aph_need']),
@@ -2949,7 +2926,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                   est_other_cs_indications),
 
                           'cs_surg_pph': met_need(c['caesarean_section_oth_surg_pp_need_met'],
-                                                  pph_ua_need_blood_surg + pph_mrp_need_blood_surg),
+                                                  pph_surgical_need),
 
                           'n_sepsis_cm': met_need(c['neo_sepsis_treatment_term_need_met'] +
                                                   c['neo_sepsis_treatment_preterm_need_met'],

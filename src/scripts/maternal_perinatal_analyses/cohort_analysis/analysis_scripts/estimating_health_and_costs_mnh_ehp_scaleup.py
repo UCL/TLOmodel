@@ -25,8 +25,8 @@ from tlo.analysis.utils import (
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 resourcefilepath = Path("./resources")
 
-scenario = 'testing_scenario_73595'
-
+# scenario = 'testing_scenario_73595'
+scenario = 'testing_scenario_112679'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 sim_start_year = 2026
 sim_end_year = 2027
