@@ -625,7 +625,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                  'mild_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(476),
                  'mild_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(476),
                  'moderate_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(480),
-                 'moderate_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(478),
+                 'moderate_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(480),
                  'severe_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(478),
                  'severe_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(478),
                  'eclampsia': self.sim.modules['HealthBurden'].get_daly_weight(861),
