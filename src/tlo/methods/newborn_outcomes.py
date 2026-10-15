@@ -502,8 +502,12 @@ class NewbornOutcomes(Module):
             'encephalopathy_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_enceph_death, parameters=params),
 
-            # This equation is used to determine a newborns risk of death from sepsis
+            # This equation is used to determine a newborns risk of death from early onset sepsis
             'early_onset_sepsis_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
+
+            # This equation is used to determine a newborns risk of death from late onset sepsis
+            'late_onset_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
             # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
@@ -584,10 +588,12 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
+        nci = self.newborn_care_info
 
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
         if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
+            nci[child_id]['ever_neonatal_sepsis'] = True
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
@@ -834,7 +840,7 @@ class NewbornOutcomes(Module):
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_enceph'])
 
-        if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
+        if nci[individual_id]['ever_neonatal_sepsis']:
             if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_sepsis'])
@@ -1223,7 +1229,7 @@ class NewbornOutcomes(Module):
                              'corticosteroids_given': mni[mother_id]['corticosteroids_given'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'cause_of_death_after_birth': [],
-                             'sepsis_postnatal': False,
+                             'ever_neonatal_sepsis': False,
                              'passed_through_week_one': False,
                              'will_receive_pnc': 'none'}
 
