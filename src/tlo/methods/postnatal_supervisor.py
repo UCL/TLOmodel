@@ -393,7 +393,7 @@ class PostnatalSupervisor(Module):
                     'care_seeking_for_fistula_repair'].predict(df.loc[[mother_id]])[mother_id]
 
                 # Schedule repair to occur for 1 week postnatal
-                if care_seeking_for_repair:
+                if self.rng.random_sample() < care_seeking_for_repair:
                     repair_hsi = HSI_PostnatalSupervisor_TreatmentForObstetricFistula(
                         self, person_id=mother_id)
                     repair_date = self.sim.date + DateOffset(days=(self.rng.randint(
@@ -413,18 +413,36 @@ class PostnatalSupervisor(Module):
                 df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
             #  ANAEMIA...
-            if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
-                df.at[mother_id, 'pn_anaemia_following_pregnancy'] = df.at[mother_id, 'ps_anaemia_in_pregnancy']
+            severity = df.at[mother_id, 'ps_anaemia_in_pregnancy']
+            if severity != 'none':
+
+                df.at[mother_id, 'pn_anaemia_following_pregnancy'] = severity
+                store_dalys_in_mni(mother_id, mni, f'{severity}_anaemia_resolution', self.sim.date)
+                store_dalys_in_mni(mother_id, mni, f'{severity}_anaemia_pp_onset', self.sim.date)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system '
                                          f'interaction person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
-        logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
-        df = self.sim.population.props
+        logger.debug(
+            key='message',
+            data='This is PostnatalSupervisor reporting my health values'
+        )
 
-        daly_series = pd.Series(data=0, index=df.index[df.is_alive])
+        # TODO: store onset and resolution date outside of the MNI to give more exact weight on onset/resolution month
+        df = self.sim.population.props
+        weights = self.sim.modules['PregnancySupervisor'].parameters['ps_daly_weights']
+        daly_series = pd.Series( data=0.0, index=df.index[df.is_alive])
+
+        for fistula_type in ('vesicovaginal', 'rectovaginal'):
+            affected = df.index[
+                df.is_alive
+                & (df.pn_obstetric_fistula == fistula_type)
+                ]
+            daly_series.loc[affected] = weights[
+                f'{fistula_type}_fistula'
+            ]
 
         return daly_series
 
@@ -763,7 +781,7 @@ class PostnatalSupervisor(Module):
         if self.rng.random_sample() < risk_eons:
             df.at[child_id, 'pn_sepsis_early_neonatal'] = True
             self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['sepsis_postnatal'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['ever_neonatal_sepsis'] += 1
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
@@ -787,7 +805,7 @@ class PostnatalSupervisor(Module):
         df.loc[onset_sepsis.loc[onset_sepsis].index, 'pn_sepsis_late_neonatal'] = True
         for person in onset_sepsis.loc[onset_sepsis].index:
             if person in nci:
-                nci[person]['sepsis_postnatal'] = True
+                nci[person]['ever_neonatal_sepsis'] = True
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
 
         # Then we determine if care will be sought for newly septic newborns
