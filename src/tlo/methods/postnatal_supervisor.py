@@ -393,7 +393,7 @@ class PostnatalSupervisor(Module):
                     'care_seeking_for_fistula_repair'].predict(df.loc[[mother_id]])[mother_id]
 
                 # Schedule repair to occur for 1 week postnatal
-                if care_seeking_for_repair:
+                if self.rng.random_sample() < care_seeking_for_repair:
                     repair_hsi = HSI_PostnatalSupervisor_TreatmentForObstetricFistula(
                         self, person_id=mother_id)
                     repair_date = self.sim.date + DateOffset(days=(self.rng.randint(
@@ -421,10 +421,24 @@ class PostnatalSupervisor(Module):
                                          f'interaction person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
-        logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
-        df = self.sim.population.props
+        logger.debug(
+            key='message',
+            data='This is PostnatalSupervisor reporting my health values'
+        )
 
-        daly_series = pd.Series(data=0, index=df.index[df.is_alive])
+        # TODO: store onset and resolution date outside of the MNI to give more exact weight on onset/resolution month
+        df = self.sim.population.props
+        weights = self.sim.modules['PregnancySupervisor'].parameters['ps_daly_weights']
+        daly_series = pd.Series( data=0.0, index=df.index[df.is_alive])
+
+        for fistula_type in ('vesicovaginal', 'rectovaginal'):
+            affected = df.index[
+                df.is_alive
+                & (df.pn_obstetric_fistula == fistula_type)
+                ]
+            daly_series.loc[affected] = weights[
+                f'{fistula_type}_fistula'
+            ]
 
         return daly_series
 
