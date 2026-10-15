@@ -2150,9 +2150,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             mni[person_id]['received_blood_transfusion'] = True
 
             # We assume that anaemia is corrected by blood transfusion
-            if df.at[person_id, 'pn_anaemia_following_pregnancy'] != 'none':
+            severity = df.at[person_id, 'pn_anaemia_following_pregnancy']
+            if severity != 'none':
                 if params['treatment_effect_blood_transfusion_anaemia'] > self.rng.random_sample():
-                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'severe_anaemia_resolution',
+                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, f'{severity}_anaemia_pp_resolution',
                                                                   self.sim.date)
                     df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
 
@@ -2189,9 +2190,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                     df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
 
                     if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+
                         # Store date of resolution for daly calculations
                         pregnancy_helper_functions.store_dalys_in_mni(
-                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_resolution',
+                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution',
                             self.sim.date)
 
                         df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'

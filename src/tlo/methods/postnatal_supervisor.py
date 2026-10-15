@@ -413,8 +413,12 @@ class PostnatalSupervisor(Module):
                 df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
             #  ANAEMIA...
-            if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
-                df.at[mother_id, 'pn_anaemia_following_pregnancy'] = df.at[mother_id, 'ps_anaemia_in_pregnancy']
+            severity = df.at[mother_id, 'ps_anaemia_in_pregnancy']
+            if severity != 'none':
+
+                df.at[mother_id, 'pn_anaemia_following_pregnancy'] = severity
+                store_dalys_in_mni(mother_id, mni, f'{severity}_anaemia_resolution', self.sim.date)
+                store_dalys_in_mni(mother_id, mni, f'{severity}_anaemia_pp_onset', self.sim.date)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system '
