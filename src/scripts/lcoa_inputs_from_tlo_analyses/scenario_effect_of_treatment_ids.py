@@ -67,7 +67,7 @@ class EffectOfEachTreatment(BaseScenario):
         self.pop_size = 250_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -91,7 +91,7 @@ class EffectOfEachTreatment(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
-        The sequences of scenarios systematically omits all but one TREATMENT_ID that is defined in the model."""
+        The sequences of scenarios iterates over the list of TREATMENT_ID defined in the model."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=None)
