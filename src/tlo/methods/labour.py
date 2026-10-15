@@ -2193,7 +2193,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                         # Store date of resolution for daly calculations
                         pregnancy_helper_functions.store_dalys_in_mni(
-                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution',
+                            person_id, mni,
+                            f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution',
                             self.sim.date)
 
                         df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'

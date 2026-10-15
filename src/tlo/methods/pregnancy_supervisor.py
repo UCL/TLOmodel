@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import (
-    DAYS_IN_MONTH,
     DAYS_IN_YEAR,
     Date,
     DateOffset,

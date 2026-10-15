@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Simulation
+from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
