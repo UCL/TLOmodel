@@ -351,6 +351,10 @@ def check_int_deliverable(self,
                     hsi_event.add_equipment(equipment)
 
                 record_delivery()
+
+                if to_log and (cons is not None or opt_cons is not None):
+                    log_forced_consumable_use()
+
                 return passes_forced_dx_gate()
 
     # 3. Normal logic: quality, equipment, consumables and diagnosis

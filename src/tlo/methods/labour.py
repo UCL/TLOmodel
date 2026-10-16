@@ -3071,8 +3071,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # -------------------------- Active Management of the third stage of labour ----------------------------------
         # Prophylactic treatment to prevent postpartum bleeding is applied
-        if not mni[person_id]['sought_care_for_complication']:
-            self.module.active_management_of_the_third_stage_of_labour(self)
+        self.module.active_management_of_the_third_stage_of_labour(self)
 
         # -------------------------- Caesarean section/AVD for un-modelled reason ------------------------------------
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
@@ -3092,22 +3091,21 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # -------------------------- Newborn resuscitation ------------------------------------------------------------
         # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
         # the intervention
-        if not mni[person_id]['sought_care_for_complication']:
-         term = (mni[person_id]['labour_state'] == 'term_labour' or
+        term = (mni[person_id]['labour_state'] == 'term_labour' or
                  mni[person_id]['labour_state'] == 'postterm_labour')
 
-         # We assume that women who seek care
-         int_name = 'neo_resus_term' if term else 'neo_resus_preterm'
+        # We assume that women who seek care
+        int_name = 'neo_resus_term' if term else 'neo_resus_preterm'
 
-         neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
+        neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
              self.module, int_name=int_name, hsi_event=self,
              q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
              cons=self.module.item_codes_lab_consumables['resuscitation'],
              equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'},
              to_log=False) # cons logged in separate event
 
-         if neo_resus_delivered:
-             mni[person_id]['neo_will_receive_resus_if_needed'] = True
+        if neo_resus_delivered:
+            mni[person_id]['neo_will_receive_resus_if_needed'] = True
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
