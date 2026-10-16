@@ -2,12 +2,11 @@
 This file stores any functions that are called from multiple different modules in the Maternal and Perinatal Health
 module suite
 """
+from copy import deepcopy
 from typing import Optional
 
 import numpy as np
 import pandas as pd
-
-from copy import deepcopy
 
 from tlo import logging
 
@@ -344,9 +343,6 @@ def check_int_deliverable(self,
                     broader_analysis_draw
                     < params[probability_param]
                 )
-
-                if can_run:
-                    record_delivery()
 
                 if not can_run:
                     return False

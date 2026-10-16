@@ -2291,7 +2291,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                         # Store date of resolution for daly calculations
                         pregnancy_helper_functions.store_dalys_in_mni(
-                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution',
+                            person_id, mni,
+                            f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution',
                             self.sim.date)
 
                         df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
@@ -2729,7 +2730,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Store key characteristics relating to stillbirth
         pre_24_weeks = df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24
         twin_mother = df.at[individual_id, 'ps_multiple_pregnancy']
-        twin_stillbirth = self.module.rng.random_sample() < params['prob_both_twins_ip_still_birth']
+        twin_stillbirth = (pre_24_weeks or self.module.rng.random_sample() <
+                                             params['prob_both_twins_ip_still_birth'])
 
         # Check the correct amount of time has passed between labour onset and this event event
         if not (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D'):

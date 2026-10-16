@@ -570,7 +570,11 @@ class PostnatalSupervisor(Module):
 
         # ---------------------------------------------  ANAEMIA --------------------------------------------------
         # We apply a risk of anaemia developing in this week, and determine its severity
-        onset_anaemia = onset('anaemia_after_pregnancy')
+        onset_anaemia = self.apply_linear_model(
+            self.pn_linear_models['anaemia_after_pregnancy'],
+            df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
+                   (df['pn_anaemia_following_pregnancy'] == 'none') & ~df['hs_is_inpatient']])
+
         random_choice_severity = pd.Series(self.rng.choice(['mild', 'moderate', 'severe'],
                                                            p=params['prob_type_of_anaemia_pn'],
                                                            size=len(onset_anaemia.loc[onset_anaemia])),

@@ -844,11 +844,15 @@ class NewbornOutcomes(Module):
             return
 
         if nci[individual_id]['ga_at_birth'] < 32:
-            if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
+            draw = self.rng.random_sample()
+            p_mild = params['prob_mild_disability_preterm_<32weeks']
+            p_mod_severe = params['prob_mod_severe_disability_preterm_<32weeks']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_disability_preterm_<32weeks'])
 
-            elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
+            elif draw < p_mild + p_mod_severe:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_disability_preterm_<32weeks'])
 
@@ -859,11 +863,15 @@ class NewbornOutcomes(Module):
                     p=params['prob_retinopathy_severity_no_treatment'])
 
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
-            if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
+            draw = self.rng.random_sample()
+            p_mild = params['prob_mild_disability_preterm_32_36weeks']
+            p_mod_severe = params['prob_mod_severe_disability_preterm_32_36weeks']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_disability_preterm_32_36weeks'])
 
-            elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
+            elif draw < p_mild + p_mod_severe:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_disability_preterm_32_36weeks'])
 
@@ -874,22 +882,35 @@ class NewbornOutcomes(Module):
                     p=params['prob_retinopathy_severity_no_treatment'])
 
         if child.nb_encephalopathy != 'none':
-            if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
+            draw = self.rng.random_sample()
+            p_mild = params['prob_mild_impairment_post_enceph']
+            p_mod_severe = params['prob_mod_severe_impairment_post_enceph']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_enceph'])
 
-            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
+            elif draw < p_mild + p_mod_severe:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_enceph'])
 
         if nci[individual_id]['ever_neonatal_sepsis']:
-            if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
-                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_sepsis'])
+            draw = self.rng.random_sample()
 
-            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_sepsis']:
+            p_mild = params['prob_mild_impairment_post_sepsis']
+            p_mod_severe = params['prob_mod_severe_impairment_post_sepsis']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_sepsis'])
+                    ('mild_motor_and_cog', 'mild_motor'),
+                    p=params['prob_dist_mild_impairment_post_sepsis']
+                )
+
+            elif draw < p_mild + p_mod_severe:
+                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
+                    ('moderate_motor', 'severe_motor'),
+                    p=params['prob_dist_mod_severe_impairment_post_sepsis']
+                )
 
         del nci[individual_id]
 
@@ -1016,8 +1037,6 @@ class NewbornOutcomes(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.at[person_id, 'mother_id']
         is_preterm = df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']
-        analysis_ints = self.sim.modules["PregnancySupervisor"].current_parameters['interventions_under_analysis']
-        analysis_prob = self.sim.modules["PregnancySupervisor"].current_parameters['intervention_analysis_availability']
         counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
         if mni[mother_id]['delivery_setting'] == 'home_birth':
@@ -1029,16 +1048,9 @@ class NewbornOutcomes(Module):
             int_name = "neo_resus_preterm" if is_preterm else "neo_resus_term"
             counter[f'{int_name}_req'] += 1
 
-            avail_if_under_analysis = self.rng.random_sample() < analysis_prob
-
             # Because we capture whether resus can be delivered during labour events, here we schedule a HSI to capture
             # the required resources. This is only called if resus will be delivered.
-
-            #  Logic here also ensure resusictation is delivered during analyses where intervention availability is
-            # manipulated
-            if (mni[mother_id]['neo_will_receive_resus_if_needed'] or
-                (is_preterm and ("neo_resus_preterm" in analysis_ints) and avail_if_under_analysis) or
-                (not is_preterm and ("neo_resus_term" in analysis_ints) and avail_if_under_analysis)):
+            if mni[mother_id]['neo_will_receive_resus_if_needed']:
 
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
                 counter[f'{int_name}_deliv'] += 1

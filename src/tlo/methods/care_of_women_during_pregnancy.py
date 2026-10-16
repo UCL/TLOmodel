@@ -953,12 +953,16 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        history = mni[person_id]['anc_ints']
+        counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
         # If this woman has already had her Hb checked twice during pregnancy she will not receive another Hb test
-        if 'hb_1' and 'hb_2' in mni[person_id]['anc_ints']:
+        if 'hb_1' in history and 'hb_2' in history:
             return False
 
         logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
+
+        deliveries_before = counter['hb_test_deliv']
 
         hb_test_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='hb_test', hsi_event=hsi_event,
@@ -966,14 +970,12 @@ class CareOfWomenDuringPregnancy(Module):
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
             dx_test='point_of_care_hb_test')
 
+        # If the test is delivered (regardless of detection of anaemia) we capture the screening
+        if counter['hb_test_deliv'] > deliveries_before:
+            history.append('hb_1' if 'hb_1' not in history else 'hb_2')
+
         if hb_test_delivered:
             df.at[person_id, 'ac_to_be_admitted'] = True
-
-            # store delivery
-            if 'hb_1'not in mni[person_id]['anc_ints']:
-                mni[person_id]['anc_ints'].append('hb_1')
-            else:
-                mni[person_id]['anc_ints'].append('hb_2')
 
     def albendazole_administration(self, hsi_event):
         """
@@ -1008,9 +1010,10 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         cons = self.item_codes_preg_consumables
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        history = mni[person_id]['anc_ints']
 
         # If this woman has already been tested for hep b twice in her pregnancy the intervention will not run
-        if 'hep_b_1' and 'hep_b_2' in mni[person_id]['anc_ints']:
+        if 'hep_b_1' in history and 'hep_b_2' in history:
             return False
 
         # This intervention is a placeholder prior to the Hepatitis B module being coded
@@ -1022,12 +1025,7 @@ class CareOfWomenDuringPregnancy(Module):
         # availability of the test itself
         if avail:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
-
-            if 'hep_b_1' not in mni[person_id]['anc_ints']:
-                mni[person_id]['anc_ints'].append('hep_b_1')
-            else:
-                mni[person_id]['anc_ints'].append('hep_b_2')
-
+            history.append('hep_b_1' if 'hep_b_1' not in history else 'hep_b_2')
 
     def syphilis_screening_and_treatment(self, hsi_event):
         """
@@ -1039,10 +1037,14 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        history = mni[person_id]['anc_ints']
+        counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
         # If this woman has already been screened twice for syphilis then the intervention will not run
-        if 'syph_1' and 'syph_2' in mni[person_id]['anc_ints']:
+        if 'syph_1' in history and 'syph_2' in history:
             return False
+
+        deliveries_before = counter['syphilis_test_deliv']
 
         syph_test_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='syphilis_test', hsi_event=hsi_event,
@@ -1051,12 +1053,12 @@ class CareOfWomenDuringPregnancy(Module):
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
             dx_test='blood_test_syphilis')
 
-        if syph_test_delivered:
+        # If the test is delivered (regardless of detection of syphillis) we capture the screening
+        if counter['syphilis_test_deliv'] > deliveries_before:
+            history.append('syph_1' if 'syph_1' not in history else 'syph_2')
 
-            if 'syph_1' not in mni[person_id]['anc_ints']:
-                mni[person_id]['anc_ints'].append('syph_1')
-            else:
-                mni[person_id]['anc_ints'].append('syph_2')
+        # If testing occurs and syphilis is detected then treatment is delivered
+        if syph_test_delivered:
 
             syph_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='syphilis_treatment', hsi_event=hsi_event,
