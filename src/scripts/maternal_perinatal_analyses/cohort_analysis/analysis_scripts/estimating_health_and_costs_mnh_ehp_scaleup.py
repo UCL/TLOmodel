@@ -12,14 +12,13 @@ from matplotlib.patches import Patch
 from scipy.stats import t
 
 from src.scripts.costing.cost_estimation import estimate_input_cost_of_scenarios_JC_REFACTOR
-
 from tlo import Date
 from tlo.analysis.utils import (
-    bin_hsi_event_details,
-    compute_summary_statistics,
-    extract_results,
-    get_scenario_info,
-    get_scenario_outputs,
+        bin_hsi_event_details,
+        compute_summary_statistics,
+        extract_results,
+        get_scenario_info,
+        get_scenario_outputs,
 )
 
 # Get results file
