@@ -268,8 +268,6 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
         sim.simulate(end_date=end_date)
         check_dtypes(sim)
 
-        print(type(parse_log_file(sim.log_filepath, level=logging.DEBUG)))
-
         # read the results
         output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
 
@@ -366,8 +364,8 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             ratio = row_2010[col] / row_2011[col]
 
             results[col] = ratio > 10
-            if not results[col]:
-                print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
+            # if not results[col]:
+            #     print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
 
     # Ensure that this test is not passing because issue in results
     assert len(results) > 0
@@ -592,14 +590,12 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     )
     hsi1.initialise()
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k])
         sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population / 4)
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority, which currently is zero.
     max_squeeze = 0.0
     scale = 1.0 + max_squeeze
-    print("Scale is ", scale)
     hsi2 = DummyHSIEvent(
         module=sim.modules["DummyModule"],
         person_id=int(tot_population / 2),  # Ensures call is on officers in second district
@@ -731,6 +727,10 @@ def test_mode_2_clinics(seed, tmpdir):
         def apply(self, person_id, squeeze_factor):
             self.this_hsi_event_ran = True
 
+        # Return False to prevent the HSI_Event from being rescheduled.
+        def did_not_run(self):
+            return False
+
     def create_simulation(tmpdir: Path, tot_population) -> Simulation:
         class DummyModuleGenericClinic(Module):
             METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
@@ -795,33 +795,54 @@ def test_mode_2_clinics(seed, tmpdir):
         ## and that caused problems later on.
         sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
 
-        sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
+        sim.initialise(end_date=sim.start_date + pd.DateOffset(years=1))
 
         return sim
 
     def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        # Only target people who are alive (some may have died in the simulation run before this point);
+        # an HSI event for a dead person does not run.
+        props = sim.population.props
+        alive_ids = props.index[props.is_alive]
         for i in range(0, ngenericclinic):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleGenericClinic"],
-                person_id=i,
+                person_id=int(alive_ids[i % len(alive_ids)]),
                 appt_type="ConWithDCSA",
                 level="0",
                 treatment_id="DummyHSIEventGenericClinic",
             )
+            # Schedule events for future
+            if i in [1, 3, 5, 7]:
+                topen = sim.date + pd.DateOffset(days=i)
+                tclose = None
+            else:
+                topen = sim.date
+                tclose = sim.date + pd.DateOffset(days=1)
+
             sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+                hsi, topen=topen, tclose=tclose, priority=1
             )
 
         for i in range(ngenericclinic, ngenericclinic + nclinic1):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleClinic1"],
-                person_id=i,
+                person_id=int(alive_ids[i % len(alive_ids)]),
                 appt_type="ConWithDCSA",
                 level="0",
                 treatment_id="DummyHSIEvent",
             )
+            # Schedule events for future
+            future_indices = [x + ngenericclinic for x in [1, 3, 5, 7]]
+            if i in future_indices:
+                topen = sim.date + pd.DateOffset(days=i - ngenericclinic)
+                tclose = None
+            else:
+                topen = sim.date
+                tclose = sim.date + pd.DateOffset(days=1)
+
             sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+                hsi, topen=topen, tclose=tclose, priority=1
             )
 
         return sim
@@ -861,12 +882,14 @@ def test_mode_2_clinics(seed, tmpdir):
         sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * tot_population
         sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][k] = v * tot_population
 
-    # Run healthsystemscheduler and read the results
-    sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+    # Simulate and read the results
+    sim.run_simulation_to(to_date=sim.date + pd.DateOffset(days=8))
+    sim.finalise()
 
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output["tlo.methods.healthsystem"]["HSI_Event"]
     ## All events should have run
+
     assert hs_output["did_run"].sum() == tot_population, "All events did not run!!"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
     assert Nevents.loc[("Clinic1", True)] == tot_population // 2, "Unexpected count of Clinic1 events"
@@ -880,11 +903,11 @@ def test_mode_2_clinics(seed, tmpdir):
     for k, v in hsi1.expected_time_requests.items():
         sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][k] = v * (tot_population)
 
-    sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+    sim.run_simulation_to(to_date=sim.date + pd.DateOffset(days=8))
+    sim.finalise()
 
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output["tlo.methods.healthsystem"]["HSI_Event"]
-
     assert hs_output["did_run"].sum() == tot_population // 2, "Unexpected number of events ran"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
     ## No GenericClinic events should have run, but all Clinic1 ones should have
@@ -901,7 +924,8 @@ def test_mode_2_clinics(seed, tmpdir):
     for k, v in hsi1.expected_time_requests.items():
         sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population)
 
-    sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+    sim.run_simulation_to(to_date=sim.date + pd.DateOffset(days=8))
+    sim.finalise()
 
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output["tlo.methods.healthsystem"]["HSI_Event"]
@@ -925,7 +949,8 @@ def test_mode_2_clinics(seed, tmpdir):
     for k, v in hsi1.expected_time_requests.items():
         sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population / 2)
 
-    sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+    sim.run_simulation_to(to_date=sim.date + pd.DateOffset(days=8))
+    sim.finalise()
 
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output["tlo.methods.healthsystem"]["HSI_Event"]
@@ -935,4 +960,3 @@ def test_mode_2_clinics(seed, tmpdir):
     ## No more non-fungible events should have run, but all GenericClinic ones should have
     assert Nevents.loc[("Clinic1", False)] == tot_population // 2, "No additional NonFungible events ran"
     assert Nevents.loc[("GenericClinic", True)] == tot_population // 2, "Scheduled GenericClinic events ran"
-
