@@ -4,7 +4,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     demography,
@@ -21,6 +22,7 @@ from tlo.methods import (
     tb,
 )
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import HSI_GenericNonEmergencyFirstAppt
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 12, 31)
@@ -78,6 +80,77 @@ def sim(seed):
         epi.Epi(),
     )
     return sim
+
+
+@pytest.mark.parametrize('treatment_allowed', [True, False], ids=['allowed', 'blocked'])
+def test_rdt_at_first_appointment(seed, tmpdir, treatment_allowed):
+    """First attendance runs the malaria assessment only when Malaria_Test is allowed."""
+    service_availability = ['FirstAttendance_NonEmergency']
+    if treatment_allowed:
+        service_availability.append('Malaria_Test')
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        resourcefilepath=resourcefilepath,
+        log_config={
+            'filename': 'malaria_first_appointment',
+            'directory': tmpdir,
+            'custom_levels': {'tlo.methods.healthsystem': logging.DEBUG},
+        },
+    )
+    sim.register(
+        demography.Demography(),
+        healthsystem.HealthSystem(
+            disable=False, mode_appt_constraints=1, cons_availability='all',
+            service_availability=service_availability,
+        ),
+        simplified_births.SimplifiedBirths(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        enhanced_lifestyle.Lifestyle(),
+        malaria.Malaria(),
+        tb.Tb(),
+        hiv.Hiv(),
+        epi.Epi(),
+    )
+    module = sim.modules['Malaria']
+    module.parameters['sensitivity_rdt'] = 1.0
+    sim.make_initial_population(n=200)
+    sim.simulate(end_date=start_date)
+
+    person_id = 0
+    df = sim.population.props
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'ma_is_infected'] = True
+    df.at[person_id, 'ma_inf_type'] = 'clinical'
+    df.at[person_id, 'ma_date_infected'] = sim.date
+    df.at[person_id, 'ma_date_symptoms'] = sim.date
+    df.at[person_id, 'ma_tx'] = 'none'
+    df.at[person_id, 'ma_dx_counter'] = 0
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=person_id, symptom_string='fever', add_or_remove='+', disease_module=module,
+    )
+
+    hs = sim.modules['HealthSystem']
+    hs.HSI_EVENT_QUEUE.clear()
+    hs.schedule_hsi_event(
+        HSI_GenericNonEmergencyFirstAppt(
+            module=sim.modules['HealthSeekingBehaviour'], person_id=person_id,
+        ),
+        topen=sim.date, priority=0,
+    )
+    healthsystem.HealthSystemScheduler(hs).apply(sim.population)
+
+    hsi_events = parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event']
+    patient_events = hsi_events.loc[hsi_events['Person_ID'] == person_id]
+    assert patient_events.loc[
+        patient_events['Event_Name'] == 'HSI_GenericNonEmergencyFirstAppt', 'did_run'
+    ].sum() == 1
+    assert patient_events.loc[
+        patient_events['Event_Name'] == 'HSI_Malaria_FirstAppointment_rdt', 'did_run'
+    ].sum() == int(treatment_allowed)
+    assert df.at[person_id, 'ma_dx_counter'] == int(treatment_allowed)
 
 
 @pytest.mark.slow
