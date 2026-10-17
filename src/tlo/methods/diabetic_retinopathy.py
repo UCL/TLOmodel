@@ -116,6 +116,36 @@ class DiabeticRetinopathy(Module):
             "Probability that pan-retinal laser coagulation successfully preserves the "
             "person's current vision by preventing further vision deterioration from proliferative DR"
         ),
+        "prob_antivegf_moderate_to_normal": Parameter(
+            Types.REAL,
+            "Probability that successful anti-VEGF treatment improves vision from "
+            "moderate_vision_impairment to normal",
+        ),
+        "prob_antivegf_severe_to_moderate": Parameter(
+            Types.REAL,
+            "Probability that successful anti-VEGF treatment improves vision from "
+            "severe_vision_impairment to moderate_vision_impairment",
+        ),
+        "prob_antivegf_severe_to_normal": Parameter(
+            Types.REAL,
+            "Probability that successful anti-VEGF treatment improves vision from "
+            "severe_vision_impairment directly to normal",
+        ),
+        "prob_focal_laser_moderate_to_normal": Parameter(
+            Types.REAL,
+            "Probability that successful focal laser treatment improves vision from "
+            "moderate_vision_impairment to normal",
+        ),
+        "prob_focal_laser_severe_to_moderate": Parameter(
+            Types.REAL,
+            "Probability that successful focal laser treatment improves vision from "
+            "severe_vision_impairment to moderate_vision_impairment",
+        ),
+        "prob_focal_laser_severe_to_normal": Parameter(
+            Types.REAL,
+            "Probability that successful focal laser treatment improves vision from "
+            "severe_vision_impairment directly to normal",
+        ),
         "rr_progression_after_treatment": Parameter(
             Types.REAL,
             "Relative risk of progression to more severe stages after receiving treatment (applied multiplicatively)"
@@ -210,6 +240,16 @@ class DiabeticRetinopathy(Module):
             Types.BOOL,
             "Whether current vision impairment is due to diabetic retinopathy"
         ),
+
+        "dmo_treatment_success": Property(
+            Types.BOOL,
+            "Whether the most recent DMO treatment assessment was successful",
+        ),
+        "dmo_vision_improved": Property(
+            Types.BOOL,
+            "Whether vision improved during the most recent DMO treatment assessment",
+        ),
+
     }
 
     def __init__(self):
@@ -254,7 +294,6 @@ class DiabeticRetinopathy(Module):
         """ Set property values for the initial population
 
         :param population: all individuals in the model
-
         """
         df = population.props
         p = self.parameters
@@ -295,6 +334,8 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_prp_vision_preserved"] = False
         df.loc[list(alive_diabetes_idx), "vision_status"] = "normal"
         df.loc[list(alive_diabetes_idx), "vision_loss_due_to_dr"] = False
+        df.loc[list(alive_diabetes_idx), "dmo_treatment_success"] = False
+        df.loc[list(alive_diabetes_idx), "dmo_vision_improved"] = False
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -480,6 +521,8 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_prc_treatment'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_prp_vision_preserved'] = False
+        self.sim.population.props.at[child_id, "dmo_treatment_success"] = False
+        self.sim.population.props.at[child_id, "dmo_vision_improved"] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -545,7 +588,7 @@ class DiabeticRetinopathy(Module):
         }
 
     def do_treatment_success_dmo(self, person_id: int, treatment_type: str) -> None:
-        """Apply treatment success for DMO (clinically_significant)"""
+        """Apply treatment success for DMO (clinically_significant) and treatment-specific vision outcomes."""
         df = self.sim.population.props
         p = self.parameters
 
@@ -554,13 +597,76 @@ class DiabeticRetinopathy(Module):
 
         if treatment_type == 'antivegf':
             success_prob = p['prob_antivegf_success_clinically_significant']
+            prob_moderate_to_normal = p['prob_antivegf_moderate_to_normal']
+            prob_severe_to_moderate = p['prob_antivegf_severe_to_moderate']
+            prob_severe_to_normal = p['prob_antivegf_severe_to_normal']
+
         elif treatment_type == 'focal_laser':
             success_prob = p['prob_focal_laser_success_clinically_significant']
+            prob_moderate_to_normal = p['prob_focal_laser_moderate_to_normal']
+            prob_severe_to_moderate = p['prob_focal_laser_severe_to_moderate']
+            prob_severe_to_normal = p['prob_focal_laser_severe_to_normal']
+
         else:
+            raise ValueError(f"Unknown DMO treatment type: {treatment_type}")
+
+        if self.rng.random_sample() >= success_prob:
             return
 
-        if self.rng.random_sample() < success_prob:
-            self.improve_vision(person_id)
+        vision_before = df.at[person_id, 'vision_status']
+
+        self.apply_dmo_vision_outcome(
+            person_id=person_id,
+            prob_moderate_to_normal=prob_moderate_to_normal,
+            prob_severe_to_moderate=prob_severe_to_moderate,
+            prob_severe_to_normal=prob_severe_to_normal,
+        )
+
+        vision_after = df.at[person_id, 'vision_status']
+
+        # If using these outcome properties, update them accordingly.
+        df.at[person_id, 'dmo_treatment_success'] = True
+        df.at[person_id, 'dmo_vision_improved'] = (
+            vision_after != vision_before
+        )
+
+    def apply_dmo_vision_outcome(
+        self,
+        person_id: int,
+        prob_moderate_to_normal: float,
+        prob_severe_to_moderate: float,
+        prob_severe_to_normal: float,
+    ) -> None:
+        """Apply vision regression conditional on successful DMO treatment.
+
+        Any probability not assigned to an improvement represents successful
+        treatment with no change in vision.
+        """
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'vision_loss_due_to_dr']:
+            return
+
+        current_vision = df.at[person_id, 'vision_status']
+        random_draw = self.rng.random_sample()
+
+        if current_vision == 'moderate_vision_impairment':
+            if random_draw < prob_moderate_to_normal:
+                df.at[person_id, 'vision_status'] = 'normal'
+
+        elif current_vision == 'severe_vision_impairment':
+            if random_draw < prob_severe_to_normal:
+                # Direct improvement from severe impairment to normal.
+                df.at[person_id, 'vision_status'] = 'normal'
+
+            elif random_draw < prob_severe_to_normal + prob_severe_to_moderate:
+                # Improvement from severe to moderate impairment.
+                df.at[person_id, 'vision_status'] = 'moderate_vision_impairment'
+
+        # Once vision is normal, vision loss is no longer attributed to DR.
+        if df.at[person_id, 'vision_status'] == 'normal':
+            df.at[person_id, 'vision_loss_due_to_dr'] = False
+
 
     def improve_vision(self, person_id: int) -> None:
         """Improve vision status by one category after receiving DMO treatment"""
@@ -1098,17 +1204,17 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
             # Increment the injection count
             df.at[person_id, 'dmo_antivegf_count'] = df.at[person_id, 'dmo_antivegf_count'] + 1
 
-            # Check if more injections are needed. Must not exceed 8
-            if df.at[person_id, 'dmo_antivegf_count'] < 8:
+
+            # Continue monthly injections until the course reaches 4 injections.
+            if df.at[person_id, 'dmo_antivegf_count'] < 4:
+                next_session = self.sim.date + pd.DateOffset(months=1)
+                hs.schedule_hsi_event(self, topen=next_session, priority=0,)
+
+            else:
+                # Assess treatment success once, at the end of the course.
                 self.module.do_treatment_success_dmo(person_id, 'antivegf')
 
-                next_session = self.sim.date + pd.DateOffset(months=1)
-                hs.schedule_hsi_event(self,
-                                      topen=next_session,
-                                      priority=0
-                                      )
-            else:
-                # Reset individual injections after getting 8 of them
+                # Reset the counter and end the treatment course.
                 df.at[person_id, 'dmo_antivegf_count'] = 0
                 df.at[person_id, 'dmo_on_treatment'] = False
 
@@ -1141,7 +1247,10 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
             return hs.get_blank_appt_footprint()
 
         # if person not yet diagnosed, do nothing
-        if not person["dr_diagnosed"]:
+        if (
+            not person["dr_diagnosed"]
+            or df.at[person_id, 'dr_status'] != 'proliferative'
+        ):
             return hs.get_blank_appt_footprint()
 
         is_cons_available = self.get_consumables(
