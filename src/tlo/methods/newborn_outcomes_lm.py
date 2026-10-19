@@ -14,7 +14,7 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
 
     if externals['maternal_chorioamnionitis']:
         result *= params['rr_eons_maternal_chorio']
-    if person['ps_premature_rupture_of_membranes']:
+    if externals['prom']:
         result *= params['rr_eons_maternal_prom']
     if person['nb_early_preterm'] or person['nb_late_preterm']:
         result *= params['rr_eons_preterm_neonate']
