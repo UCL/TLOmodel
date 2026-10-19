@@ -142,7 +142,7 @@ def maternal_anaemia(self, df, rng=None, **externals):
     if 'Malaria' in self.module.sim.modules:
         result[df.ma_is_infected] *= params['rr_anaemia_maternal_malaria']
     if 'Hiv' in self.module.sim.modules:
-        result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
+        result[df.hv_inf & (df.hv_art == 'not')] *= params['rr_anaemia_hiv_no_art']
 
     return result
 

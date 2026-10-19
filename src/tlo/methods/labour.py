@@ -3306,7 +3306,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
-        deliv_location = 'hc' if self.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour

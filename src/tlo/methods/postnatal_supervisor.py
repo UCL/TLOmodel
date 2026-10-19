@@ -411,6 +411,10 @@ class PostnatalSupervisor(Module):
             if df.at[mother_id, 'ps_htn_disorders'] != 'none':
                 df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
+                if df.at[mother_id, 'pn_htn_disorders'] == 'severe_pre_eclamp':
+                    pregnancy_helper_functions.log_need(self, 'mgso4_spe')
+                    pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+
             #  ANAEMIA...
             severity = df.at[mother_id, 'ps_anaemia_in_pregnancy']
             if severity != 'none':
@@ -549,6 +553,7 @@ class PostnatalSupervisor(Module):
         for person in new_sepsis.loc[new_sepsis].index:
             store_dalys_in_mni(person, mni, 'sepsis_onset', self.sim.date)
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_postnatal'] += 1
+            pregnancy_helper_functions.log_need(self, 'sepsis_treatment')
 
         # ------------------------------------ SECONDARY PPH ----------------------------------------------------------
         # Next we determine if any women will experience postnatal bleeding
@@ -561,10 +566,15 @@ class PostnatalSupervisor(Module):
         for person in onset_pph.loc[onset_pph].index:
             store_dalys_in_mni(person, mni, 'secondary_pph_onset', self.sim.date)
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['secondary_postpartum_haemorrhage'] += 1
+            pregnancy_helper_functions.log_need(self, 'pph_treatment_mrrp')
 
         # ---------------------------------------------  ANAEMIA --------------------------------------------------
         # We apply a risk of anaemia developing in this week, and determine its severity
-        onset_anaemia = onset('anaemia_after_pregnancy')
+        onset_anaemia = self.apply_linear_model(
+            self.pn_linear_models['anaemia_after_pregnancy'],
+            df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
+                   (df['pn_anaemia_following_pregnancy'] == 'none') & ~df['hs_is_inpatient']])
+
         random_choice_severity = pd.Series(self.rng.choice(['mild', 'moderate', 'severe'],
                                                            p=params['prob_type_of_anaemia_pn'],
                                                            size=len(onset_anaemia.loc[onset_anaemia])),
@@ -634,8 +644,15 @@ class PostnatalSupervisor(Module):
                     for person in new_onset_disease.index:
                         self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[disease] += 1
 
+                        # Log need for treatment
                         if disease == 'severe_pre_eclamp':
                             mni[person]['new_onset_spe'] = True
+                            pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                            pregnancy_helper_functions.log_need(self, 'mgso4_spe')
+
+                        elif disease == 'eclampsia':
+                            pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                            pregnancy_helper_functions.log_need(self, 'mgso4_ec')
 
             for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                 log_new_progressed_cases(disease)
@@ -780,7 +797,18 @@ class PostnatalSupervisor(Module):
         if self.rng.random_sample() < risk_eons:
             df.at[child_id, 'pn_sepsis_early_neonatal'] = True
             self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['ever_neonatal_sepsis'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
+
+            # Logging is differentiated by term status
+            comp = "early_onset_sepsis_pt" if (
+                    df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) \
+                else "early_onset_sepsis"
+
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
+
+            if comp == 'early_onset_sepsis_pt':
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_preterm')
+            else:
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_term')
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
@@ -805,7 +833,17 @@ class PostnatalSupervisor(Module):
         for person in onset_sepsis.loc[onset_sepsis].index:
             if person in nci:
                 nci[person]['ever_neonatal_sepsis'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
+
+            # Logging is differentiated by term status
+            comp = "late_onset_sepsis_pt" if (df.at[person, 'nb_early_preterm'] or df.at[person, 'nb_late_preterm']) \
+                else 'late_onset_sepsis'
+
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
+
+            if comp == 'late_onset_sepsis_pt':
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_preterm')
+            else:
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_term')
 
         # Then we determine if care will be sought for newly septic newborns
         care_seeking = pd.Series(
@@ -1090,6 +1128,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
             store_dalys_in_mni(individual_id, mni, 'sepsis_onset', self.sim.date)
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_postnatal'] += 1
+            pregnancy_helper_functions.log_need(self, 'sepsis_treatment')
 
             # Sepsis secondary to endometritis is stored within the mni as it is used as a predictor in a linear model
             if endo_result:
@@ -1106,6 +1145,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
             store_dalys_in_mni(individual_id, mni, 'secondary_pph_onset', self.sim.date)
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['secondary_postpartum_haemorrhage'] += 1
+            pregnancy_helper_functions.log_need(self, 'pph_treatment_mrrp')
 
         # ------------------------------------------------ NEW ONSET ANAEMIA ------------------------------------------
         # And then risk of developing anaemia...
@@ -1134,7 +1174,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                     # Store date of resolution for women who were aware of their hypertension (in keeping with daly
                     # weight definition)
                     store_dalys_in_mni(individual_id, mni, 'hypertension_resolution', self.sim.date)
-                    df.at[individual_id, 'pn_htn_disorders'] = 'resolved'
+
+                df.at[individual_id, 'pn_htn_disorders'] = 'resolved'
 
             else:
                 # If not, we apply a risk that the hypertension might worsen and progress into a more severe form
@@ -1168,8 +1209,15 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                         for person in new_onset_disease.index:
                             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[disease] += 1
 
+                            # Log treatment need
                             if disease == 'severe_pre_eclamp':
                                 mni[person]['new_onset_spe'] = True
+                                pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                                pregnancy_helper_functions.log_need(self, 'mgso4_spe')
+
+                            elif disease == 'eclampsia':
+                                pregnancy_helper_functions.log_need(self, 'iv_anti_htns_ec')
+                                pregnancy_helper_functions.log_need(self, 'mgso4_ec')
 
                         if disease == 'eclampsia':
                             new_onset_disease.index.to_series().apply(
