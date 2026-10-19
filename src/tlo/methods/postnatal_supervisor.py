@@ -276,7 +276,6 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
         df.loc[df.is_alive, 'pn_sepsis_early_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
-        df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_anaemia_following_pregnancy'] = 'none'
         df.loc[df.is_alive, 'pn_obstetric_fistula'] = 'none'
         df.loc[df.is_alive, 'pn_emergency_event_mother'] = False
