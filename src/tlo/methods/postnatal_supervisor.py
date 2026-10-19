@@ -780,8 +780,8 @@ class PostnatalSupervisor(Module):
         # Update the df, mni and log the case
         if self.rng.random_sample() < risk_eons:
             df.at[child_id, 'pn_sepsis_early_neonatal'] = True
-            self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['sepsis_postnatal'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['ever_neonatal_sepsis'] += 1
+            self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['ever_neonatal_sepsis'] = True
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
