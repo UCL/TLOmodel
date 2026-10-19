@@ -2483,6 +2483,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
         c = self.module.mnh_outcome_counter
+        la_params = self.sim.modules['Labour'].current_parameters
 
         # DENOMINATORS
         # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
