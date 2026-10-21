@@ -56,7 +56,7 @@ class DiabeticRetinopathy(Module):
                                               "Diabetic Macular Oedema (DMO)"),
         "p_laser_success": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
         "rp_nc_hypertension": Parameter(
-            Types.REAL, "relative prevalence at baseline of diabetic retinopathy if person has hypertension"),
+            Types.REAL, "relative risk at baseline of diabetic retinopathy if person has hypertension"),
         # "prob_diabetes_controlled": Parameter(
         #     Types.REAL,
         #     "Probability that a person with mild DR has controlled diabetes"
@@ -155,10 +155,6 @@ class DiabeticRetinopathy(Module):
             "Probability matrix for vision status transitions for people without sight-threatening DR"
         ),
         "vision_transition_matrix_sight_threatening": Parameter(
-            Types.LIST,
-            "Probability matrix for vision status transitions for people with sight-threatening DR"
-        ),
-        "vision_transition_matrix_treated_sight_threatening": Parameter(
             Types.LIST,
             "Probability matrix for vision status transitions for people with sight-threatening DR"
         ),
@@ -454,11 +450,7 @@ class DiabeticRetinopathy(Module):
         # Convert vision transition matrices
         vision_states = sim.population.props.vision_status.cat.categories
 
-        for key in [
-            'vision_transition_matrix_no_dr',
-            'vision_transition_matrix_sight_threatening',
-            'vision_transition_matrix_treated_sight_threatening'
-        ]:
+        for key in ['vision_transition_matrix_no_dr', 'vision_transition_matrix_sight_threatening']:
             mat = pd.DataFrame(
                 self.parameters[key],
                 index=vision_states,
@@ -787,73 +779,40 @@ class DiabeticRetinopathy(Module):
                 (df.dmo_status == 'clinically_significant')
         )
 
-        # People on treatment should have better outcomes so should be isolated
+        # Get all people on treatment
         on_treatment = df.dr_on_treatment | df.dmo_on_treatment
 
+        # Apply natural-history transitions only to people who are not
+        # currently receiving any treatment and whose vision is not protected
+        # by successful PRP.
+
+        untreated = alive_diabetes & ~vision_preserved & ~on_treatment
+
         for idx, base_matrix in [
-            (alive_diabetes & ~vision_preserved & ~sight_threatening,
-                p['vision_transition_matrix_no_dr']),
-            (alive_diabetes & ~vision_preserved & sight_threatening & ~on_treatment,
-                p['vision_transition_matrix_sight_threatening']),
-            (alive_diabetes & ~vision_preserved & sight_threatening & on_treatment,
-                p['vision_transition_matrix_treated_sight_threatening'])
+            (
+                untreated & ~sight_threatening,
+                p['vision_transition_matrix_no_dr']
+            ),
+            (
+                untreated & sight_threatening,
+                p['vision_transition_matrix_sight_threatening']
+            ),
         ]:
             if not idx.any():
                 continue
 
             current = df.loc[idx, 'vision_status']
 
-            # Safety check only — no renormalisation
             if not np.allclose(base_matrix.sum(axis=0), 1.0):
                 raise ValueError(
                     "Vision transition matrix columns do not sum to 1"
                 )
 
-            # Propose new vision states
             proposed = transition_states(current, base_matrix, rng)
-            treated_idx = idx & on_treatment
-            if treated_idx.any():
-                current_treated = df.loc[treated_idx, 'vision_status']
-                proposed_treated = proposed.loc[treated_idx]
-
-                # Keep best (min index = better vision)
-                vision_categories = df.vision_status.cat.categories
-                cat_to_int = {cat: i for i, cat in enumerate(vision_categories)}
-
-                current_int = current_treated.map(cat_to_int)
-                proposed_int = proposed_treated.map(cat_to_int)
-
-                # improved = proposed_int < current_int
-                not_worse = proposed_int <= current_int
-
-                final_int = current_int.copy()
-                final_int[not_worse] = proposed_int[not_worse]
-
-                int_to_cat = {i: cat for cat, i in cat_to_int.items()}
-                proposed.loc[treated_idx] = final_int.map(int_to_cat)
-
-            # on_treatment = df.loc[idx, 'dr_on_treatment']
-            #
-            # # For treated individuals, they shouldn't worsen
-            # proposed.loc[on_treatment] = np.minimum(
-            #     proposed.loc[on_treatment],
-            #     current.loc[on_treatment]
-            # )
-
-            # Allow only same or worse vision (ordinal categories)
-            # allowed = proposed >= current
-
-            # Series of True values with the same index
-            # allowed = pd.Series(True, index=current.index)
-
-            # Apply updates
-            # df.loc[idx & allowed, 'vision_status'] = proposed[allowed]
             df.loc[idx, 'vision_status'] = proposed
+
         # Update cause only when vision impaired and diabetes-related eye disease
-        impaired = df.vision_status.isin([
-            'moderate_vision_impairment',
-            'severe_vision_impairment',
-            'blindness'])
+        impaired = df.vision_status.isin(['moderate_vision_impairment', 'severe_vision_impairment', 'blindness'])
 
         df.loc[impaired & df.nc_diabetes, 'vision_loss_due_to_dr'] = True
 
@@ -1017,7 +976,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_Dmo_Eye_Examination'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ACCEPTED_FACILITY_LEVEL = '3' #todo should also include level 2
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1154,6 +1113,11 @@ class HSI_Dr_Dmo_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
             # Apply treatment success
             self.module.do_treatment_success_dmo(person_id, 'focal_laser')
 
+            # todo find out if this is the case?
+            # Treatment is complete after this procedure, regardless of success while the
+            # person remains eligible for natural-history transitions
+            df.at[person_id, 'dmo_on_treatment'] = False
+
             # Schedule follow-up checkup after 3 months #todo add chance that person needs after 3 months
             follow_up_date = self.sim.date + pd.DateOffset(months=3)
             hs.schedule_hsi_event(
@@ -1273,8 +1237,6 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
                 df.at[person_id, 'dr_date_prc_treatment'] = self.sim.date
                 df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
 
-                self.module.do_treatment_success_proliferative(person_id)
-
                 # Schedule session 2 in 1 week
                 next_session_date = self.sim.date + pd.DateOffset(weeks=1)
                 hs.schedule_hsi_event(
@@ -1284,6 +1246,7 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
                     priority=1
                 )
             else:
+                self.module.do_treatment_success_proliferative(person_id)
                 df.at[person_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
 
                 # Schedule follow-up and/or review at 2 months
