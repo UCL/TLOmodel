@@ -1,6 +1,6 @@
 import copy
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
 from tlo.util import read_csv_files, transition_states
 
@@ -23,7 +24,7 @@ logger.setLevel(logging.INFO)
 class DiabeticRetinopathy(Module):
     """ This is Diabetic Retinopathy (DR) module. It seeks to model DR effects. """
 
-    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders'}
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders', 'SymptomManager'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
@@ -111,9 +112,9 @@ class DiabeticRetinopathy(Module):
             "Probability that focal laser treatment improves vision (transition from clinically_significant to "
             "non_clinically_significant)"
         ),
-        "prob_laser_prc_success_proliferative": Parameter(
+        "prob_laser_prp_success_proliferative": Parameter(
             Types.REAL,
-            "Probability that pan-retinal laser coagulation successfully preserves the "
+            "Probability that laser pan-retinal photocoagulation successfully preserves the "
             "person's current vision by preventing further vision deterioration from proliferative DR"
         ),
         "prob_antivegf_moderate_to_normal": Parameter(
@@ -192,9 +193,10 @@ class DiabeticRetinopathy(Module):
             Types.DATE,
             "Date of last eye screening (pd.NaT if never screened)"
         ),
-        "dr_date_prc_treatment": Property(
+        "dr_date_prp_treatment": Property(
             Types.DATE,
-            "date of first receiving Laser Pan Retinal Coagulation treatment (pd.NaT if never started treatment)"
+            "date of first receiving Laser Pan Retinal Photo Coagulation treatment "
+            "(pd.NaT if never started treatment)"
         ),
         "dr_date_diagnosis": Property(
             Types.DATE,
@@ -215,10 +217,10 @@ class DiabeticRetinopathy(Module):
             Types.INT,
             "Number of anti-VEGF injections received in the current treatment cycle",
         ),
-        "total_laser_pan_retinal_coagulation_sessions": Property(
-            Types.INT, "Number of Laser Pan Retinal Coagulation sessions received",
+        "total_laser_pan_retinal_photocoagulation_sessions": Property(
+            Types.INT, "Number of Laser Pan Retinal Photo Coagulation sessions received",
         ),
-        "on_laser_pan_retinal_coagulation_treatment": Property(
+        "on_laser_pan_retinal_photocoagulation_treatment": Property(
             Types.BOOL, "Whether this person is on Laser Pan Retinal Coagulation treatment",
         ),
         "dr_prp_vision_preserved": Property(
@@ -244,6 +246,11 @@ class DiabeticRetinopathy(Module):
         "dmo_vision_improved": Property(
             Types.BOOL,
             "Whether vision improved during the most recent DMO treatment assessment",
+        ),
+        "dr_dmo_diagnosis_pathway": Property(
+            Types.CATEGORICAL,
+            "Pathway by which DR/DMO was first diagnosed",
+            categories=["none", "screening", "symptomatic"],
         ),
 
     }
@@ -285,6 +292,12 @@ class DiabeticRetinopathy(Module):
             read_csv_files(resourcefilepath / "ResourceFile_Diabetic_Retinopathy",
                            files="parameter_values")
         )
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='reduced_vision',
+                odds_ratio_health_seeking_in_adults=3.0,  # to adjust based on literature/assumptions
+            )
+        )
 
     def initialise_population(self, population: Population) -> None:
         """ Set property values for the initial population
@@ -324,14 +337,15 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_stage_at_which_treatment_given"] = "none"
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dmo_antivegf_count"] = 0
-        df.loc[list(alive_diabetes_idx), "total_laser_pan_retinal_coagulation_sessions"] = 0
-        df.loc[list(alive_diabetes_idx), "on_laser_pan_retinal_coagulation_treatment"] = False
-        df.loc[list(alive_diabetes_idx), "dr_date_prc_treatment"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "total_laser_pan_retinal_photocoagulation_sessions"] = 0
+        df.loc[list(alive_diabetes_idx), "on_laser_pan_retinal_photocoagulation_treatment"] = False
+        df.loc[list(alive_diabetes_idx), "dr_date_prp_treatment"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_prp_vision_preserved"] = False
         df.loc[list(alive_diabetes_idx), "vision_status"] = "normal"
         df.loc[list(alive_diabetes_idx), "vision_loss_due_to_dr"] = False
         df.loc[list(alive_diabetes_idx), "dmo_treatment_success"] = False
         df.loc[list(alive_diabetes_idx), "dmo_vision_improved"] = False
+        df.loc[list(alive_diabetes_idx), "dr_dmo_diagnosis_pathway"] = "none"
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -509,12 +523,13 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'selected_for_eye_screening'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, "dmo_antivegf_count"] = 0
-        self.sim.population.props.at[child_id, "total_laser_pan_retinal_coagulation_sessions"] = 0
-        self.sim.population.props.at[child_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
-        self.sim.population.props.at[child_id, 'dr_date_prc_treatment'] = pd.NaT
+        self.sim.population.props.at[child_id, "total_laser_pan_retinal_photocoagulation_sessions"] = 0
+        self.sim.population.props.at[child_id, 'on_laser_pan_retinal_photocoagulation_treatment'] = False
+        self.sim.population.props.at[child_id, 'dr_date_prp_treatment'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_prp_vision_preserved'] = False
         self.sim.population.props.at[child_id, "dmo_treatment_success"] = False
         self.sim.population.props.at[child_id, "dmo_vision_improved"] = False
+        self.sim.population.props.at[child_id, 'dr_dmo_diagnosis_pathway'] = 'none'
 
     def on_simulation_end(self) -> None:
         pass
@@ -630,7 +645,6 @@ class DiabeticRetinopathy(Module):
         prob_severe_to_normal: float,
     ) -> None:
         """Apply vision regression conditional on successful DMO treatment.
-
         Any probability not assigned to an improvement represents successful
         treatment with no change in vision.
         """
@@ -658,6 +672,13 @@ class DiabeticRetinopathy(Module):
         # Once vision is normal, vision loss is no longer attributed to DR.
         if df.at[person_id, 'vision_status'] == 'normal':
             df.at[person_id, 'vision_loss_due_to_dr'] = False
+            # Clear the symptom
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=[person_id],
+                symptom_string='reduced_vision',
+                add_or_remove='-',
+                disease_module=self,
+            )
 
 
     def improve_vision(self, person_id: int) -> None:
@@ -680,7 +701,7 @@ class DiabeticRetinopathy(Module):
 
     def do_treatment_success_proliferative(self, person_id: int) -> None:
         """Apply treatment success for proliferative DR
-        Successful PRC does not improve existing vision impairment.
+        Successful PRP does not improve existing vision impairment.
         Instead, it preserves the person's current vision status and
         prevents further vision deterioration due to proliferative DR.
         """
@@ -690,7 +711,7 @@ class DiabeticRetinopathy(Module):
         if df.at[person_id, 'dr_status'] != 'proliferative':
             return
 
-        success_prob = p['prob_laser_prc_success_proliferative']
+        success_prob = p['prob_laser_prp_success_proliferative']
 
         if self.rng.random_sample() < success_prob:
             # Successful PRP preserves vision status the individual has
@@ -826,6 +847,22 @@ class DiabeticRetinopathy(Module):
                     [self.sim.date] * count
                 )
 
+        # Add symptom when vision deteriorates
+        newly_impaired = (
+            df.is_alive & df.nc_diabetes & ~df.dr_diagnosed
+            & df.vision_loss_due_to_dr
+            & df.vision_status.isin(['moderate_vision_impairment',
+                                     'severe_vision_impairment', 'blindness'])
+        )
+        if newly_impaired.any():
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=df.index[newly_impaired].tolist(),
+                symptom_string='reduced_vision',
+                add_or_remove='+',
+                disease_module=self,
+            )
+
+
     def reset_incidence_trackers(self):
         self.dr_incident_case_tracker = copy.deepcopy(self.dr_incident_case_tracker_blank)
         self.dmo_incident_case_tracker = copy.deepcopy(self.dmo_incident_case_tracker_blank)
@@ -936,6 +973,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 (df.is_alive & df.nc_diabetes) &  # todo add condition for people not to be selected again witin 1 year
                 # (df.dr_status == 'none') &
                 # (df.dmo_status == 'none') &
+                # (df["dr_dmo_diagnosis_pathway"] == "none") &
+                (df.dr_dmo_diagnosis_pathway == 'none') &
                 (df.age_years >= 20) &
                 (pd.isna(df.dr_date_diagnosis)) &
                 # Add time since last screening condition
@@ -959,10 +998,120 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             self,
             person_id: int,
             individual_properties: IndividualProperties,
+            symptoms: List[str],
             schedule_hsi_event: HSIEventScheduler,
             **kwargs,
     ) -> None:
-        pass
+        if ('reduced_vision' in symptoms
+            and individual_properties['nc_diabetes']
+            and not individual_properties['dr_diagnosed']):
+            schedule_hsi_event(
+                HSI_Dr_Dmo_Symptomatic_Presentation(self, person_id),
+                priority=0,
+                topen=self.sim.date,
+            )
+
+
+class HSI_Dr_Dmo_Symptomatic_Presentation(HSI_Event, IndividualScopeEventMixin):
+    """Symptom-driven (reduced_vision) eye examination. Triggered by the SymptomManager.
+    People entering this pathway may present more advanced disease than those selected through screening"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, DiabeticRetinopathy)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Dr_Dmo_Symptomatic_Presentation'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '2' #todo should also include level 3?
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
+
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return hs.get_blank_appt_footprint()
+
+        # if person["dr_on_treatment"] and not pd.isna(person["dr_date_last_screening"]):
+        #     return hs.get_blank_appt_footprint()
+        if person["dr_on_treatment"] or person["dmo_on_treatment"]:
+            return hs.get_blank_appt_footprint()
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['eye_screening']
+        )
+        # todo should I create another test so that the second one is for dmo?
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='dilated_eye_exam_dr_dmo',
+            hsi_event=self
+        )
+
+        if dx_result and is_cons_available:
+            df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            df.at[person_id, 'dr_date_last_screening'] = self.sim.date
+            df.at[person_id, 'dr_diagnosed'] = True
+            df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
+            df.at[person_id, 'dr_dmo_diagnosis_pathway'] = 'symptomatic'
+
+            # Set diabetes ever diagnosed to true if not already set
+            if not df.at[person_id, 'nc_diabetes_ever_diagnosed']:
+                df.at[person_id, 'nc_diabetes_ever_diagnosed'] = True
+
+            # If consumables are available, add equipment used
+            self.add_equipment({'Visual acuity chart', 'Direct ophthalmoscope',
+                                'Fundus camera'})
+
+            if person.dr_status == 'mild_or_moderate' or person.dmo_status == 'non_clinically_significant':
+                # schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
+                # and repeat HSI_DR_Dmo_Screening in 1 year
+                hs.schedule_hsi_event(
+                    hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        person_id=person_id,
+                        module=self.sim.modules["CardioMetabolicDisorders"],
+                        condition='diabetes',
+                    ),
+                    priority=0,
+                    topen=self.sim.date
+                )
+
+                # Repeat eye screening in 1 year if dr_status is mild_or_moderate or dmo_status is
+                # non_clinically_significant
+                next_screening_if_mild_or_moderate = \
+                    self.sim.date + pd.DateOffset(months=p['next_screening_if_mild_or_moderate'])
+                hs.schedule_hsi_event(self,
+                                      topen=next_screening_if_mild_or_moderate,
+                                      tclose=None,
+                                      priority=1)
+
+            elif person.dr_status == 'severe':
+                next_screening_if_severe = self.sim.date + pd.DateOffset(months=p['next_screening_if_severe'])
+                hs.schedule_hsi_event(self,
+                                      topen=next_screening_if_severe,
+                                      tclose=None,
+                                      priority=1)
+
+            if person.dr_status == 'proliferative':
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_Dr_Laser_Pan_Retinal_Coagulation(self.module, person_id),
+                    topen=self.sim.date,
+                    priority=0
+                )
+
+            if person.dmo_status == 'clinically_significant':
+                # Randomise between AntiVEGF or Focal Laser
+                treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
+                    if self.module.rng.random_sample() < p[
+                    'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
+                hs.schedule_hsi_event(
+                    hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
+                    topen=self.sim.date,
+                    priority=0
+                )
 
 
 class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
@@ -1004,12 +1153,12 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         )
 
         if dx_result and is_cons_available:
-            # record date of diagnosis
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
             df.at[person_id, 'dr_date_last_screening'] = self.sim.date
             df.at[person_id, 'dr_diagnosed'] = True
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
+            df.at[person_id, 'dr_dmo_diagnosis_pathway'] = 'screening'
 
             # Set diabetes ever diagnosed to true if not already set
             if not df.at[person_id, 'nc_diabetes_ever_diagnosed']:
@@ -1227,14 +1376,14 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
                                 'Indirect laser delivery system', 'Laser wide-field contact lens'})
             df.at[person_id, 'dr_on_treatment'] = True
             # Increment the per-person session count
-            df.at[person_id, 'total_laser_pan_retinal_coagulation_sessions'] += 1
-            sessions = df.at[person_id, 'total_laser_pan_retinal_coagulation_sessions']
+            df.at[person_id, 'total_laser_pan_retinal_photocoagulation_sessions'] += 1
+            sessions = df.at[person_id, 'total_laser_pan_retinal_photocoagulation_sessions']
 
             # Marks treatment started on first session of each cycle
             # Odd-numbered session means session 1 of cycle
             if sessions % 2 == 1:
-                df.at[person_id, 'on_laser_pan_retinal_coagulation_treatment'] = True
-                df.at[person_id, 'dr_date_prc_treatment'] = self.sim.date
+                df.at[person_id, 'on_laser_pan_retinal_photocoagulation_treatment'] = True
+                df.at[person_id, 'dr_date_prp_treatment'] = self.sim.date
                 df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
 
                 # Schedule session 2 in 1 week
@@ -1247,7 +1396,7 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
                 )
             else:
                 self.module.do_treatment_success_proliferative(person_id)
-                df.at[person_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
+                df.at[person_id, 'on_laser_pan_retinal_photocoagulation_treatment'] = False
 
                 # Schedule follow-up and/or review at 2 months
                 follow_up = self.sim.date + pd.DateOffset(months=2)
@@ -1366,6 +1515,15 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for state in df.vision_status.cat.categories:
             # out[f'total_vision_{state}'] = (alive.vision_status == state).sum()
             out[f'total_vision_{state}'] = int((alive.vision_status == state).sum())
+
+        for pathway in ['screening', 'symptomatic']:
+            mask = alive.dr_dmo_diagnosis_pathway == pathway
+            out[f'n_diagnosed_{pathway}'] = int(mask.sum())
+            out[f'n_on_treatment_{pathway}'] = int((mask & alive.dr_on_treatment).sum())
+            for state in df.dr_status.cat.categories:
+                out[f'total_dr_{state}_{pathway}'] = int((mask & (alive.dr_status == state)).sum())
+            for state in df.vision_status.cat.categories:
+                out[f'total_vision_{state}_{pathway}'] = int((mask & (alive.vision_status == state)).sum())
 
         # To calculate prevalence among total alive diabetics
         out['total_alive_diabetics'] = int(alive.nc_diabetes.sum())
