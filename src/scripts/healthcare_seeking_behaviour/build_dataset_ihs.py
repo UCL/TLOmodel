@@ -60,12 +60,15 @@ V = {
 # D06 action codes: 1 nothing/not serious, 2 nothing/no money, 3 stock medicine, 4 known remedies,
 # 5 govt facility, 6 church/mission (CHAM), 7 private facility, 8 village clinic/HSA, 9 pharmacy,
 # 10 grocery, 11 traditional healer, 12 faith healer, 13 other.
+
+
 CHOICE_MAP = {1:"none", 2:"none", 3:"none", 4:"none",
               5:"gov", 8:"gov", 6:"cham",
               7:"none", 9:"none", 10:"none", 11:"none", 12:"none", 13:"none"}
-# precedence when several actions are reported (highest wins): formal facility > other > none
-RANK = {"none": 0, "other": 1, "gov": 2, "cham": 2, "private": 2}
 
+
+# precedence when several actions are reported (highest wins): formal facility > other > none
+RANK = {"none": 0, "gov": 1, "cham": 1}
 # ---- symptom groups from D04 codes ---------------------------------------------------------------
 SYMPTOM_GROUPS = {
     "fever_malaria": [1],
@@ -299,26 +302,26 @@ else:
     notes.append("no cost column -> cost_* not created")
 
 # ============================================================ 7. distance to nearest facility by type
-if FACILITY_FILE is not None and geo is not None:
-    from scipy.spatial import cKDTree
-    la = pick(geo, ["ea_lat_mod", "lat_modified", "latitude"], "lat", src="geo")
-    lo = pick(geo, ["ea_lon_mod", "lon_modified", "longitude"], "lon", src="geo")
-    g = geo[[HH, la, lo]].rename(columns={la: "lat", lo: "lon"}).drop_duplicates(HH)
-    df = df.merge(g, on=HH, how="left")
-    fac = read(FACILITY_FILE)
-    xyz = lambda lat, lon: np.c_[np.cos(np.radians(lat)) * np.cos(np.radians(lon)),
-                                 np.cos(np.radians(lat)) * np.sin(np.radians(lon)), np.sin(np.radians(lat))]
-    P = xyz(df["lat"].values, df["lon"].values)
-    for a in ("gov", "cham", "private"):
-        f = fac[fac["type"] == a]
-        dist, _ = cKDTree(xyz(f["lat"].values, f["lon"].values)).query(np.nan_to_num(P))
-        df[f"dist_{a}"] = np.where(df["lat"].notna(), 2 * 6371 * np.arcsin(dist / 2), np.nan)   # chord -> great-circle km
-    df["dist_none"] = 0.0
-    df["dist_other"] = 0.0
-    notes.append("distances are EA-centroid (IHS5 modified coords, displaced up to 2 km urban / 5 km rural) to nearest facility "
-                 "of each type; straight-line, not travel time.")
-else:
-    notes.append("distance NOT built: set FACILITY_FILE (geocoded facility list with lat, lon, type) and check GEO_FILE.")
+# if FACILITY_FILE is not None and geo is not None:
+#     from scipy.spatial import cKDTree
+#     la = pick(geo, ["ea_lat_mod", "lat_modified", "latitude"], "lat", src="geo")
+#     lo = pick(geo, ["ea_lon_mod", "lon_modified", "longitude"], "lon", src="geo")
+#     g = geo[[HH, la, lo]].rename(columns={la: "lat", lo: "lon"}).drop_duplicates(HH)
+#     df = df.merge(g, on=HH, how="left")
+#     fac = read(FACILITY_FILE)
+#     xyz = lambda lat, lon: np.c_[np.cos(np.radians(lat)) * np.cos(np.radians(lon)),
+#                                  np.cos(np.radians(lat)) * np.sin(np.radians(lon)), np.sin(np.radians(lat))]
+#     P = xyz(df["lat"].values, df["lon"].values)
+#     for a in ("gov", "cham", "private"):
+#         f = fac[fac["type"] == a]
+#         dist, _ = cKDTree(xyz(f["lat"].values, f["lon"].values)).query(np.nan_to_num(P))
+#         df[f"dist_{a}"] = np.where(df["lat"].notna(), 2 * 6371 * np.arcsin(dist / 2), np.nan)   # chord -> great-circle km
+#     df["dist_none"] = 0.0
+#     df["dist_other"] = 0.0
+#     notes.append("distances are EA-centroid (IHS5 modified coords, displaced up to 2 km urban / 5 km rural) to nearest facility "
+#                  "of each type; straight-line, not travel time.")
+# else:
+#     notes.append("distance NOT built: set FACILITY_FILE (geocoded facility list with lat, lon, type) and check GEO_FILE.")
 
 df.to_csv(OUT / "hsb_analysis.csv", index=False)
 print(df["choice"].value_counts(normalize=True).round(3).to_string())

@@ -45,12 +45,13 @@ from biogeme.nests import OneNestForNestedLogit, NestsForNestedLogit
 
 
 #ALTS = ["none", "other", "gov", "cham", "private"]
-ALTS = ["none", "care"] # i.e. not public care (incl. no care, faith healther, private) and public care (gov. or CHAM)
+ALTS = ["none", "gov", "cham"]
+ # i.e. not public care (incl. no care, faith healther, private) and public care (gov. or CHAM)
 NESTS = [["gov", "cham"]]
-GENERIC = ["cost", "dist"]
+GENERIC = ["cost"]#"dist"]
 CLUSTER = "ea_id"
 USE_WEIGHTS = False
-N_BOOT = 0
+N_BOOT = 100
 OUTNAME = "hsb_nested_logit_biogeme"
 
 INCLUDE_SEVERITY = True
@@ -522,13 +523,13 @@ def simulate(N=20_000, seed=1, n_boot=0):
 
     df = pd.DataFrame({CLUSTER: rng.integers(0, 500, N)})
     cost = rng.normal(0, 1, (N, J))
-    dist = rng.exponential(1, (N, J))
+    #dist = rng.exponential(1, (N, J))
     cost[:, 0] = 0
-    dist[:, :2] = 0
+    #dist[:, :2] = 0
 
     for j, alt in enumerate(alts):
         df[f"cost_{alt}"] = cost[:, j]
-        df[f"dist_{alt}"] = dist[:, j]
+        #df[f"dist_{alt}"] = dist[:, j]
 
     true_beta = np.array(
         [
@@ -543,7 +544,7 @@ def simulate(N=20_000, seed=1, n_boot=0):
 
     V = np.zeros((N, J))
     V[:, 1:] = true_beta[:, 0] + X.to_numpy() @ true_beta[:, 1:].T
-    V += np.einsum("njl,l->nj", np.stack([cost, dist], axis=2), true_generic)
+    V += np.einsum("njl,l->nj", np.stack([cost], axis=2), true_generic) #removed dist
 
     inclusive = np.logaddexp.reduce(V[:, 2:] / true_lambda, axis=1)
     top = np.column_stack([V[:, 0], V[:, 1], true_lambda * inclusive])
