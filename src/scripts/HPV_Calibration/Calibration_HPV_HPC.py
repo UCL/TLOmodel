@@ -1,15 +1,31 @@
 from __future__ import annotations
 
+import os
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+
+import sys
+# MODIFIED: use the actual TLOmodel project path on the Q drive.
+sys.path.insert(0, r"Q:\TLOmodel\src")
+import math
+import datetime
+import multiprocessing
+
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-import math
+
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from scipy.optimize import minimize_scalar
+# MODIFIED: scipy.optimize.minimize_scalar is no longer needed because the
+# calibration now uses a pre-specified parallel grid of b_hpv values.
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 
@@ -28,33 +44,34 @@ from tlo.methods import (
     tb,
 )
 
-RESOURCE_FILEPATH = Path("./resources").resolve()
-
-OUTPUT_ROOT = Path("./outputs/hpv_b_hpv_single_target_calibration").resolve()
+# MODIFIED: restore the actual project root used locally and on DIDE Windows HPC.
+TLO_ROOT = Path(r"Q:\TLOmodel")
+RESOURCE_FILEPATH = TLO_ROOT / "resources"
+run_time = datetime.datetime.now().strftime("%d_%m_%Y_%H%M%S")
+# MODIFIED: the folder name now states that this is a parallel grid calibration.
+OUTPUT_ROOT = (TLO_ROOT / "outputs" / f"hpv_b_hpv_parallel_grid_calibration_{run_time}")
 
 START_DATE = Date(2010, 1, 1)
 END_DATE = Date(2023, 1, 1)
 ORIGINAL_B_HPV = 0.75
 
-TEST_MODE = True
+TEST_MODE = False
+MAX_PARALLEL_RUNS = 5
 
 if TEST_MODE:
 
     POPULATION_SIZE = 2000
     SEARCH_SEEDS = [1001, 1002,]
     CONFIRMATION_SEEDS = [2001, 2002, 2003,]
-    OPTIMIZER_MAXITER = 8
 
 else:
-    POPULATION_SIZE = 20000
+    POPULATION_SIZE = 10000
     SEARCH_SEEDS = [1001, 1002, 1003, 1004, 1005,]
     CONFIRMATION_SEEDS = list(range(2001, 2021,))
-    OPTIMIZER_MAXITER = 25
 
-B_HPV_BOUNDS = (0.05, 3.0,)
-B_HPV_XATOL = 0.01
-
-RANGE_CHECK_BETAS = [0.25, 0.50, 0.75, 1.00, 1.50,]
+# MODIFIED: replace the sequential bounded optimiser with a fixed fine grid.
+# Every beta uses the same SEARCH_SEEDS, allowing fair paired comparisons.
+B_HPV_GRID = [0.65, 0.66, 0.67, 0.68, 0.69, 0.70,]
 
 DEFAULT_SENSITIVITY = 1.0
 DEFAULT_SPECIFICITY = 1.0
@@ -409,24 +426,83 @@ def evaluate_b_hpv(
     replicate_records = []
     beta_label = safe_beta_label(b_hpv)
 
+    jobs = []
+
     for seed in seeds:
-        print(
-            f"Running "
-            f"b_hpv={b_hpv:.6f}, "
-            f"seed={seed}"
+        run_directory = (
+            output_root
+            / f"beta_{beta_label}"
+            / f"seed_{seed}"
         )
 
-        run_directory = (output_root/f"beta_{beta_label}"/f"seed_{seed}")
-
-        result = run_one_simulation(
-            b_hpv=(b_hpv),
-            seed=(seed),
-            run_directory=(run_directory),
+        jobs.append(
+            (
+                float(b_hpv),
+                int(seed),
+                run_directory,
+            )
         )
 
-        replicate_records.append(result)
+    max_workers = min(
+        MAX_PARALLEL_RUNS,
+        len(jobs),
+    )
+
+    print(
+        f"Running b_hpv={b_hpv:.6f} "
+        f"with {len(jobs)} seeds "
+        f"using {max_workers} parallel workers."
+    )
+
+    with ProcessPoolExecutor(
+        max_workers=max_workers
+    ) as executor:
+
+        future_to_seed = {}
+
+        for beta_value, seed, run_directory in jobs:
+            future = executor.submit(
+                run_one_simulation,
+                beta_value,
+                seed,
+                run_directory,
+            )
+
+            future_to_seed[future] = seed
+
+        for future in as_completed(future_to_seed):
+
+            seed = future_to_seed[future]
+
+            try:
+                result = future.result()
+
+            except Exception as error:
+                raise RuntimeError(
+                    f"Simulation failed for "
+                    f"b_hpv={b_hpv:.6f}, "
+                    f"seed={seed}."
+                ) from error
+
+            replicate_records.append(result)
+
+            print(
+                f"Completed "
+                f"b_hpv={b_hpv:.6f}, "
+                f"seed={seed}"
+            )
+
+    replicate_records.sort(
+        key=lambda record: record["seed"]
+    )
 
     replicate_df = pd.DataFrame(replicate_records)
+
+    if replicate_df.empty:
+        raise ValueError(
+            f"No simulation results were produced "
+            f"for b_hpv={b_hpv:.6f}."
+        )
 
     # =============================================================================
     # PRIMARY CALIBRATION TARGET
@@ -528,58 +604,161 @@ def evaluate_b_hpv(
     return (summary, replicate_df,)
 
 # =============================================================================
-# 11. DIAGNOSTIC RANGE CHECK
+# 11. PARALLEL GRID SEARCH
 # =============================================================================
-def run_range_check() -> pd.DataFrame:
-    records = []
+# MODIFIED: summarise already-completed replicates without launching new runs.
+def summarise_replicates(
+    b_hpv: float,
+    replicate_df: pd.DataFrame,
+) -> dict[str, Any]:
 
-    for beta in RANGE_CHECK_BETAS:
+    primary_values = pd.to_numeric(
+        replicate_df[CALIBRATION_TARGET.name],
+        errors="coerce",
+    ).dropna()
 
-        print(
-            f"\nRange check: "
-            f"b_hpv={beta}"
+    if primary_values.empty:
+        raise ValueError(
+            f"No valid simulation values for {CALIBRATION_TARGET.name} "
+            f"at b_hpv={b_hpv:.6f}."
         )
 
-        summary, _ = evaluate_b_hpv(
-            b_hpv=float(beta),
-            seeds=(SEARCH_SEEDS),
-            output_root=(OUTPUT_ROOT / "range_check"),
+    simulated_mean = float(primary_values.mean())
+    simulated_sd = (
+        float(primary_values.std(ddof=1))
+        if len(primary_values) > 1
+        else np.nan
+    )
+    simulation_mcse = (
+        simulated_sd / math.sqrt(len(primary_values))
+        if len(primary_values) > 1
+        else np.nan
+    )
+    residual = simulated_mean - CALIBRATION_TARGET.observed
+    standardized_residual = residual / CALIBRATION_TARGET.observed_se
+    loss = standardized_residual ** 2
+
+    summary: dict[str, Any] = {
+        "b_hpv": float(b_hpv),
+        "loss": float(loss),
+        "observed": CALIBRATION_TARGET.observed,
+        "observed_se": CALIBRATION_TARGET.observed_se,
+        "sim_mean": simulated_mean,
+        "sim_sd": simulated_sd,
+        "sim_mcse": simulation_mcse,
+        "residual": residual,
+        "standardized_residual": standardized_residual,
+        "n_seeds": int(len(primary_values)),
+    }
+
+    for target in VALIDATION_TARGETS:
+        values = pd.to_numeric(
+            replicate_df[target.name],
+            errors="coerce",
+        ).dropna()
+
+        summary[f"{target.name}__sim_mean"] = (
+            float(values.mean()) if not values.empty else np.nan
+        )
+        summary[f"{target.name}__sim_sd"] = (
+            float(values.std(ddof=1))
+            if len(values) > 1
+            else np.nan
+        )
+        summary[f"{target.name}__observed"] = target.observed
+
+    return summary
+
+
+# MODIFIED: create one process pool for every beta-by-seed combination.
+# This avoids nested process pools and allows different beta values to run
+# concurrently, rather than waiting for one beta to finish before starting next.
+def run_parallel_grid_search() -> tuple[pd.DataFrame, pd.DataFrame]:
+    jobs = []
+
+    for beta in B_HPV_GRID:
+        beta_label = safe_beta_label(beta)
+
+        for seed in SEARCH_SEEDS:
+            run_directory = (
+                OUTPUT_ROOT
+                / "grid_search"
+                / f"beta_{beta_label}"
+                / f"seed_{seed}"
+            )
+            jobs.append((float(beta), int(seed), run_directory))
+
+    max_workers = min(MAX_PARALLEL_RUNS, len(jobs))
+
+    print(
+        f"Running {len(B_HPV_GRID)} beta values x "
+        f"{len(SEARCH_SEEDS)} seeds = {len(jobs)} simulations "
+        f"using {max_workers} parallel workers."
+    )
+
+    replicate_records = []
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        future_to_job = {
+            executor.submit(
+                run_one_simulation,
+                beta,
+                seed,
+                run_directory,
+            ): (beta, seed)
+            for beta, seed, run_directory in jobs
+        }
+
+        for future in as_completed(future_to_job):
+            beta, seed = future_to_job[future]
+
+            try:
+                result = future.result()
+            except Exception as error:
+                raise RuntimeError(
+                    f"Grid simulation failed for b_hpv={beta:.6f}, "
+                    f"seed={seed}."
+                ) from error
+
+            replicate_records.append(result)
+            print(f"Completed grid b_hpv={beta:.6f}, seed={seed}")
+
+    all_replicates = (
+        pd.DataFrame(replicate_records)
+        .sort_values(["b_hpv", "seed"])
+        .reset_index(drop=True)
+    )
+
+    if all_replicates.empty:
+        raise ValueError("The parallel grid search produced no results.")
+
+    all_replicates.to_csv(
+        OUTPUT_ROOT / "grid_search_replicates.csv",
+        index=False,
+    )
+
+    summaries = []
+    for beta in B_HPV_GRID:
+        beta_replicates = all_replicates.loc[
+            np.isclose(all_replicates["b_hpv"], float(beta))
+        ].copy()
+
+        summaries.append(
+            summarise_replicates(float(beta), beta_replicates)
         )
 
-        records.append(summary)
+    grid_results = (
+        pd.DataFrame(summaries)
+        .sort_values("b_hpv")
+        .reset_index(drop=True)
+    )
 
-    result = (pd.DataFrame(records).sort_values("b_hpv").reset_index(drop=True))
+    grid_results.to_csv(
+        OUTPUT_ROOT / "grid_search_results.csv",
+        index=False,
+    )
 
-    result.to_csv(OUTPUT_ROOT / "range_check_results.csv", index = False,)
-
-    return result
-
-SEARCH_CACHE: dict[float, dict[str, Any],] = {}
-
-def objective_function(b_hpv: float,) -> float:
-
-    cache_key = round(float(b_hpv), 8,)
-
-    if (cache_key not in SEARCH_CACHE):
-
-        print(
-            f"\nOptimizer evaluating "
-            f"b_hpv={b_hpv:.6f}"
-        )
-
-        summary, _ = evaluate_b_hpv(b_hpv=float(b_hpv),
-            seeds=(SEARCH_SEEDS),
-            output_root=(OUTPUT_ROOT / "optimizer"),
-        )
-
-        SEARCH_CACHE[cache_key] = summary
-
-        pd.DataFrame(SEARCH_CACHE.values()).sort_values("b_hpv").to_csv(
-            OUTPUT_ROOT / "optimizer_evaluations.csv",
-            index=False,
-        )
-
-    return float(SEARCH_CACHE[cache_key]["loss"])
+    return grid_results, all_replicates
 
 # =============================================================================
 # 13. BUILD FINAL CALIBRATION / VALIDATION TABLE
@@ -634,8 +813,7 @@ def make_target_comparison(
 # 14. PLOTS
 # =============================================================================
 def make_plots(
-    range_check: pd.DataFrame,
-    optimizer_df: pd.DataFrame,
+    grid_results: pd.DataFrame,  # MODIFIED: results from the fixed parallel grid
     target_comparison: pd.DataFrame,
     best_beta: float,
 ) -> None:
@@ -645,8 +823,8 @@ def make_plots(
     # =========================================================================
 
     plt.figure(figsize=(8, 5))
-    plt.plot(range_check["b_hpv"],
-        range_check["sim_mean"],
+    plt.plot(grid_results["b_hpv"],  # MODIFIED
+        grid_results["sim_mean"],
         marker="o",
         label="Model mean",
     )
@@ -677,28 +855,28 @@ def make_plots(
 
     plt.xlabel("b_hpv")
     plt.ylabel("HR-HPV prevalence")
-    plt.title("Diagnostic range check: ""b_hpv versus HR-HPV prevalence")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(OUTPUT_ROOT / "figure_1_range_check.png", dpi=300,)
+    plt.title("Parallel grid search: b_hpv versus HR-HPV prevalence")  # MODIFIED
+    plt.savefig(OUTPUT_ROOT / "figure_1_grid_prevalence.png", dpi=300,)  # MODIFIED
     plt.close()
 
     # =========================================================================
     # FIGURE 2 b_hpv versus least-squares loss
     # =========================================================================
-    optimizer_df = (optimizer_df.sort_values("b_hpv").copy())
+    grid_results = (grid_results.sort_values("b_hpv").copy())  # MODIFIED
     plt.figure(figsize=(8, 5))
-    plt.plot(optimizer_df["b_hpv"],
-        optimizer_df["loss"],
+    plt.plot(grid_results["b_hpv"],  # MODIFIED
+        grid_results["loss"],
         marker="o",
     )
     plt.axvline(best_beta, linestyle="--", label=(f"Calibrated "f"b_hpv={best_beta:.4f}"),)
     plt.xlabel("b_hpv")
     plt.ylabel("Squared standardized residual")
-    plt.title("One-dimensional least-squares ""calibration objective")
+    plt.title("Parallel grid calibration loss")  # MODIFIED
     plt.legend()
     plt.tight_layout()
-    plt.savefig(OUTPUT_ROOT / "figure_2_optimizer_loss.png", dpi=300,)
+    plt.savefig(OUTPUT_ROOT / "figure_2_grid_loss.png", dpi=300,)  # MODIFIED
     plt.close()
 
     # =========================================================================
@@ -760,6 +938,66 @@ def make_plots(
     plt.savefig(OUTPUT_ROOT/"figure_3_observed_vs_predicted.png", dpi=300,)
     plt.close()
 
+
+# MODIFIED: plot the simulated prevalence of every HPV group across b_hpv.
+# These plots use grid_search_results.csv and do not require new simulations.
+def make_hpv_group_plots(
+    grid_results: pd.DataFrame,
+    output_directory: Path = OUTPUT_ROOT,
+) -> None:
+    output_directory.mkdir(parents=True, exist_ok=True)
+    results = grid_results.sort_values("b_hpv").copy()
+
+    plot_groups = [
+        ("HR-HPV", [CALIBRATION_TARGET, VALIDATION_TARGETS[0]], "hrhpv"),
+        ("HPV16", [VALIDATION_TARGETS[1], VALIDATION_TARGETS[2]], "hpv16"),
+        ("HPV18/45", [VALIDATION_TARGETS[3], VALIDATION_TARGETS[4]], "hpv18_45"),
+        ("HPV31/33/35/52/58 (P3)", [VALIDATION_TARGETS[5], VALIDATION_TARGETS[6]], "p3"),
+    ]
+
+    for title, targets, file_label in plot_groups:
+        plt.figure(figsize=(8, 5))
+
+        for target in targets:
+            is_primary = target.name == CALIBRATION_TARGET.name
+            mean_column = "sim_mean" if is_primary else f"{target.name}__sim_mean"
+            sd_column = "sim_sd" if is_primary else f"{target.name}__sim_sd"
+            status = "Non-WLWH" if "non_WLWH" in target.name else "WLWH"
+
+            if mean_column not in results.columns:
+                raise KeyError(
+                    f"Required plotting column is missing: {mean_column}. "
+                    "Use grid_search_results.csv from this calibration script."
+                )
+
+            y_error = results[sd_column] if sd_column in results.columns else None
+            plt.errorbar(
+                results["b_hpv"],
+                results[mean_column],
+                yerr=y_error,
+                marker="o",
+                capsize=3,
+                label=f"Simulated {status}",
+            )
+            plt.axhline(
+                target.observed,
+                linestyle="--",
+                alpha=0.8,
+                label=f"Observed {status} ({target.observed:.3f})",
+            )
+
+        plt.xlabel("b_hpv")
+        plt.ylabel("Prevalence")
+        plt.ylim(bottom=0.0)
+        plt.title(f"{title} prevalence across b_hpv values")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(
+            output_directory / f"figure_group_{file_label}_by_b.png",
+            dpi=300,
+        )
+        plt.close()
+
 # =============================================================================
 # 15. MAIN CALIBRATION WORKFLOW
 # =============================================================================
@@ -798,16 +1036,19 @@ def main() -> None:
     )
 
     # =========================================================================
-    # STEP 1 DIAGNOSTIC RANGE CHECK
+    # STEP 1 PARALLEL FIXED-GRID SEARCH  # MODIFIED
     # =========================================================================
     print(
         "\n=== STEP 1: "
-        "RANGE CHECK ==="
+        "PARALLEL FIXED-GRID SEARCH ==="  # MODIFIED
     )
 
-    range_check = (run_range_check())
-    min_model_prev = float(range_check["sim_mean"].min())
-    max_model_prev = float(range_check["sim_mean"].max())
+    print(f"b_hpv grid = {B_HPV_GRID}")  # MODIFIED
+    print(f"Maximum simultaneous simulations = {MAX_PARALLEL_RUNS}")  # MODIFIED
+
+    grid_results, grid_replicates = run_parallel_grid_search()  # MODIFIED
+    min_model_prev = float(grid_results["sim_mean"].min())
+    max_model_prev = float(grid_results["sim_mean"].max())
 
     if not (
         min_model_prev <= CALIBRATION_TARGET.observed <= max_model_prev):
@@ -815,53 +1056,15 @@ def main() -> None:
         print(
             "\nWARNING:\n"
             "Observed prevalence is outside "
-            "the range generated by "
-            "RANGE_CHECK_BETAS.\n"
-
-            "This does not automatically "
-            "invalidate the optimizer, "
-
-            "but you should inspect "
-            "B_HPV_BOUNDS and Figure 1."
+            "the range generated by B_HPV_GRID.\n"  # MODIFIED
+            "Expand B_HPV_GRID before accepting the result."
         )
 
-    # =========================================================================
-    # STEP 2 ONE-DIMENSIONAL LEAST-SQUARES OPTIMISATION
-    # =========================================================================
-
-    print(
-        "\n=== STEP 2: "
-        "ONE-DIMENSIONAL "
-        "LEAST-SQUARES OPTIMIZATION ==="
-    )
-
-    optimization = minimize_scalar(
-        objective_function,
-        bounds=(B_HPV_BOUNDS),
-        method="bounded",
-        options={"xatol": (B_HPV_XATOL), "maxiter": (OPTIMIZER_MAXITER),},
-    )
-
-    # -------------------------------------------------------------------------
-    # Check optimiser success
-    # -------------------------------------------------------------------------
-    if not optimization.success:
-        print(
-            "\nWARNING: optimizer did not "
-            "report convergence:"
-        )
-
-        print(optimization.message)
-
-    # -------------------------------------------------------------------------
-    # Best b_hpv
-    # -------------------------------------------------------------------------
-
-    best_beta = float(optimization.x)
-
-    optimizer_df = (pd.DataFrame(SEARCH_CACHE.values()).sort_values("b_hpv").reset_index(drop=True))
-
-    optimizer_df.to_csv(OUTPUT_ROOT/"optimizer_evaluations.csv", index=False,)
+    # MODIFIED: select the tested b_hpv with the smallest loss. There is no
+    # sequential optimiser, so all grid values can be submitted at once.
+    best_row = grid_results.loc[grid_results["loss"].idxmin()]
+    best_beta = float(best_row["b_hpv"])
+    best_loss = float(best_row["loss"])
 
     print(
         f"\nSearch-stage best "
@@ -872,24 +1075,17 @@ def main() -> None:
     print(
         f"Search-stage minimum "
         f"loss = "
-        f"{optimization.fun:.6f}"
+        f"{best_loss:.6f}"  # MODIFIED
     )
 
-    lower_bound, upper_bound = (B_HPV_BOUNDS)
-
-    boundary_margin = (0.05 * (upper_bound - lower_bound))
-
-    if (
-        best_beta <= lower_bound + boundary_margin
-        or
-        best_beta >= upper_bound - boundary_margin
+    if np.isclose(best_beta, min(B_HPV_GRID)) or np.isclose(  # MODIFIED
+        best_beta, max(B_HPV_GRID)
     ):
 
         print(
             "\nWARNING:\n"
-            "Best b_hpv is close to a "
-            "search boundary.\n"
-            "Expand B_HPV_BOUNDS before "
+            "Best b_hpv is at a grid boundary.\n"  # MODIFIED
+            "Expand B_HPV_GRID before "
             "accepting the final result."
         )
 
@@ -968,10 +1164,16 @@ def main() -> None:
     # STEP 7 CREATE FIGURES
     # =========================================================================
     make_plots(
-        range_check=(range_check),
-        optimizer_df=(optimizer_df),
+        grid_results=(grid_results),  # MODIFIED
         target_comparison=(target_comparison),
         best_beta=(best_beta),
+    )
+
+    # MODIFIED: create four additional figures comparing Non-WLWH and WLWH
+    # prevalence for HR-HPV, HPV16, HPV18/45 and P3 at every tested b_hpv.
+    make_hpv_group_plots(
+        grid_results=grid_results,
+        output_directory=OUTPUT_ROOT,
     )
 
     # =========================================================================
@@ -989,4 +1191,5 @@ def main() -> None:
 # 16. RUN SCRIPT
 # =============================================================================
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()
