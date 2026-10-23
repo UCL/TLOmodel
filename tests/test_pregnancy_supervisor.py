@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Simulation
+from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
@@ -276,8 +276,8 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
     # Call the report_daly_function which contains the functionality to calculate the daly weight this woman should have
     # following her complications
 
-    dalys_from_pregnancy = sim.modules['PregnancySupervisor'].report_daly_values()
-    assert dalys_from_pregnancy.loc[mother_id] > 0
+    dalys_from_pregnancy_ac = sim.modules['PregnancySupervisor'].report_daly_values()
+    assert dalys_from_pregnancy_ac.loc[mother_id] > 0
 
     # We assume any of the 'acute' complications cause women to accrue 7 days of disability weight
     ectopic_preg_weight = params['ps_daly_weights']['ectopic']
@@ -289,7 +289,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
 
     # Now we use the output returned from the report_daly_values function and check that the function has correctly
     # calculated the weight for this month and store that in the output against this mothers index
-    rounded_dalys = round(dalys_from_pregnancy.loc[mother_id], 4)
+    rounded_dalys = round(dalys_from_pregnancy_ac.loc[mother_id], 4)
     assert total_weight == rounded_dalys
 
     # Chronic complications
@@ -300,15 +300,15 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
 
     # Move the date forward 1 month and run the report_daly_values
     sim.date = sim.date + pd.DateOffset(months=1)
-    dalys_from_pregnancy = sim.modules['PregnancySupervisor'].report_daly_values()
+    dalys_from_pregnancy_chron = sim.modules['PregnancySupervisor'].report_daly_values()
 
     # Check a daly weight has been stored for this woman
-    assert dalys_from_pregnancy.loc[mother_id] > 0
+    assert dalys_from_pregnancy_chron.loc[mother_id] > 0
 
     # This woman has had this complication for the entire month (01/01/2010 - 01/02/2010) and it has not resolved,
     # therefore we expect her to have accrued 1 months weight
-    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * DAYS_IN_MONTH, 2)
-    reported_weight = round(dalys_from_pregnancy.loc[mother_id], 2)
+    sev_anemia_weight = round(params['ps_daly_weights']['severe_anaemia'],2)
+    reported_weight = round(dalys_from_pregnancy_chron.loc[mother_id], 2)
     assert sev_anemia_weight == reported_weight
 
     # Move the date forward 2 weeks and set the date of resolution for the complication
@@ -318,17 +318,20 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
     # Move the date forward another 2 weeks and call report_daly_values. This woman will only have experienced the
     # complication for half the month as it was resolved 2 weeks prior to report_daly_values being called
     sim.date = sim.date + pd.DateOffset(weeks=2)
-    dalys_from_pregnancy = sim.modules['PregnancySupervisor'].report_daly_values()
+    dalys_from_pregnancy_chron_2 = sim.modules['PregnancySupervisor'].report_daly_values()
 
     # Ensure some weight was captured
-    assert dalys_from_pregnancy.loc[mother_id] > 0
+    assert dalys_from_pregnancy_chron_2.loc[mother_id] > 0
     # Ensure the complication variables are reset within the report_daly_values
     assert pd.isnull(mni[mother_id]['severe_anaemia_onset'])
     assert pd.isnull(mni[mother_id]['severe_anaemia_resolution'])
 
     # We know she has experience 15 days of complication this month, check the function returns the correct daly weight
-    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * 15, 3)
-    reported_weight = round(dalys_from_pregnancy.loc[mother_id], 3)
+    month_start = sim.date - pd.DateOffset(months=1)
+    days_in_month = (sim.date - month_start).days
+    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] * 14 / days_in_month),2)
+    # sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * 15, 3)
+    reported_weight = round(dalys_from_pregnancy_chron_2.loc[mother_id], 2)
 
     assert sev_anemia_weight == reported_weight
 
