@@ -47,11 +47,11 @@ from biogeme.nests import OneNestForNestedLogit, NestsForNestedLogit
 #ALTS = ["none", "other", "gov", "cham", "private"]
 ALTS = ["none", "gov", "cham"]
  # i.e. not public care (incl. no care, faith healther, private) and public care (gov. or CHAM)
-NESTS = [["gov", "cham"]]
+NESTS = [["gov","cham"]]
 GENERIC = ["cost"]#"dist"]
 CLUSTER = "ea_id"
 USE_WEIGHTS = False
-N_BOOT = 100
+N_BOOT = 10
 OUTNAME = "hsb_nested_logit_biogeme"
 
 INCLUDE_SEVERITY = True
@@ -97,6 +97,7 @@ def prepare(df):
         if c in df.columns:
             cat.append(c)
 
+
     for c in ["female", "urban", "chronic"] + EXTRA_NUMERIC:
         if c in df.columns and df[c].notna().any():
             num_cols.append(c)
@@ -121,7 +122,7 @@ def prepare(df):
         pieces.append(df[num_cols].astype(float))
     if cat:
         pieces.append(pd.get_dummies(df[cat], dtype=float))
-
+    print(pieces)
     X = pd.concat(pieces, axis=1)
 
     # Missing covariates cause the corresponding observation to be dropped.
@@ -133,15 +134,19 @@ def prepare(df):
         "agegrp": "15-34",
         "symptom": "fever_malaria",
         "wq": "Q1",
-        "region": "North",
+        "region": "Northern",
         "severity": "0d",
         "head_educ": "none",
     }
-    drop_cols = [
-        f"{key}_{value}"
-        for key, value in references.items()
-        if f"{key}_{value}" in X.columns
-    ]
+    drop_cols = []
+    for key, value in references.items():
+        cols = [c for c in X.columns if c.startswith(f"{key}_")]
+        if not cols:
+            continue
+        ref = f"{key}_{value}"
+        if ref not in X.columns:
+            raise ValueError(f"Reference {ref} not found; levels present: {cols}")
+        drop_cols.append(ref)
     X = X.drop(columns=drop_cols)
 
     # Drop constant columns, including all-zero dummy columns.
@@ -222,6 +227,13 @@ def build_database(df, X, alts=ALTS, generic=GENERIC, use_w=USE_WEIGHTS):
         d["WEIGHT"] = df.loc[ok, "hh_weight"].to_numpy() / mean_weight
     else:
         d["WEIGHT"] = 1.0
+    CONT = ["log_hhsize", "rain_anom"]
+    cont_sds = {}
+    for c in CONT:
+        if safe(c) in d.columns:
+            sd = d[safe(c)].std()
+            cont_sds[c] = sd if np.isfinite(sd) and sd > 0 else 1.0
+            d[safe(c)] = (d[safe(c)] - d[safe(c)].mean()) / cont_sds[c]
 
     return d, [safe(c) for c in xcols], available_generic, sds
 
@@ -250,7 +262,7 @@ def build_model(d, xcols, alts=ALTS, nests=NESTS, generic=GENERIC, start=None):
     for m, nest_alts in enumerate(nests, start=1):
         mu = Beta(
             f"MU_{m}",
-            start.get(f"MU_{m}", 1.2),
+            start.get(f"MU_{m}", 1.01),
             1.0,
             20.0,
             0,
@@ -290,6 +302,10 @@ def estimate(model, name):
     model.model_name = name
     return model.estimate()
 
+def model_aic(result):
+    """Return AIC = -2 log-likelihood + 2 number of free parameters."""
+    n_parameters = len(result.get_beta_values())
+    return -2.0 * result.final_loglikelihood + 2.0 * n_parameters
 
 # ---------------------------------------------------------------------------
 # Estimation output
@@ -366,41 +382,51 @@ def run(
 
     print(f"N = {len(d)} | clusters = {d['CLUSTER'].nunique()}")
 
+    mnl = fit_mnl(d, xcols, alts, used_generic)
+    start = dict(mnl.get_beta_values())
+    start["MU_1"] = 1.05
     result = estimate(
-        build_model(d, xcols, alts, nests, used_generic),
-        outname,
+        build_model(d, xcols, alts, nests, used_generic, start=start), outname
     )
+
+    ll = result.final_loglikelihood
+    ll_mnl = mnl.final_loglikelihood
+    if ll < ll_mnl - 1e-3:
+        raise RuntimeError(
+            f"Nested logL {ll:.2f} < MNL logL {ll_mnl:.2f}: nested did not converge"
+        )
+
     out = parameter_table(result)
 
-    # Undo standardisation for generic coefficients.
     for g in used_generic:
         name = f"B_{g.upper()}"
         if name in out.index:
             out.loc[name, "coef"] /= sds[g]
             out.loc[name, "se_robust"] /= sds[g]
 
-    # Convert Biogeme's mu to lambda = 1 / mu using the delta method.
     for m in range(len(nests)):
-        mu_name = f"MU_{m + 1}"
-        lambda_name = f"lambda_{m + 1}"
-        mu = out.loc[mu_name, "coef"]
-        se_mu = out.loc[mu_name, "se_robust"]
-        out.loc[lambda_name, "coef"] = 1.0 / mu
-        out.loc[lambda_name, "se_robust"] = se_mu / mu**2
+        mu = out.loc[f"MU_{m + 1}", "coef"]
+        se_mu = out.loc[f"MU_{m + 1}", "se_robust"]
+        out.loc[f"lambda_{m + 1}", "coef"] = 1.0 / mu
+        out.loc[f"lambda_{m + 1}", "se_robust"] = se_mu / mu**2
 
     out["z"] = out["coef"] / out["se_robust"]
     out["p"] = 2.0 * norm.sf(np.abs(out["z"]))
-
-    # MNL comparison. For one free nest, the LR p-value is the usual
-    # 50:50 boundary-mixture approximation.
-    mnl = fit_mnl(d, xcols, alts, used_generic)
+    result = estimate(build_model(d, xcols, alts, nests, used_generic, start=start), outname)
     ll = result.final_loglikelihood
     ll_mnl = mnl.final_loglikelihood
+    k_nested = len(result.get_beta_values())
+    k_mnl = len(mnl.get_beta_values())
+    aic_nested = model_aic(result)
+    aic_mnl = model_aic(mnl)
     lr = max(0.0, 2.0 * (ll - ll_mnl))
 
     print(
         f"converged = {result.algorithm_has_converged} | "
-        f"logL = {ll:.2f} | MNL logL = {ll_mnl:.2f}"
+        f"nested logL = {ll:.2f} | nested k = {k_nested} | "
+        f"nested AIC = {aic_nested:.2f} | "
+        f"MNL logL = {ll_mnl:.2f} | MNL k = {k_mnl} | "
+        f"MNL AIC = {aic_mnl:.2f}"
     )
 
     if len(nests) == 1:
@@ -423,6 +449,17 @@ def run(
 
     if any(out.loc[f"lambda_{m + 1}", "coef"] > 0.95 for m in range(len(nests))):
         print("[warning] lambda is close to 1; MNL may be adequate.")
+    fit_stats = pd.DataFrame(
+        {
+            "model": ["nested_logit", "mnl"],
+            "logLik": [ll, ll_mnl],
+            "n_parameters": [k_nested, k_mnl],
+            "AIC": [aic_nested, aic_mnl],
+        }
+    )
+    print("\nmodel fit statistics")
+    print(fit_stats.to_string(index=False))
+    out.attrs["fit_stats"] = fit_stats
 
     if n_boot:
         out = cluster_bootstrap(
@@ -456,53 +493,117 @@ def cluster_bootstrap(
     seed=0,
 ):
     rng = np.random.default_rng(seed)
-    start = result.get_beta_values()
+    start = result.get_beta_values().copy()
 
-    groups = {
-        cluster: group.index.to_numpy()
-        for cluster, group in d.groupby("CLUSTER", sort=False)
-    }
-    keys = np.array(list(groups), dtype=object)
+    clusters = d["CLUSTER"].drop_duplicates().to_numpy()
+    n_clusters = len(clusters)
     draws = []
 
     for b in range(n_boot):
-        sampled_keys = rng.choice(keys, size=len(keys), replace=True)
-        indices = np.concatenate([groups[key] for key in sampled_keys])
-        d_boot = d.loc[indices].reset_index(drop=True)
+        sampled_clusters = rng.choice(
+            clusters,
+            size=n_clusters,
+            replace=True,
+        )
+
+        # Number of times each cluster appears in this bootstrap sample.
+        multiplicities = pd.Series(sampled_clusters).value_counts()
+
+        # Keep each original observation once and represent the resample
+        # using likelihood weights.
+        d_boot = d.copy()
+        d_boot["WEIGHT"] = d_boot["WEIGHT"] * (
+            d_boot["CLUSTER"].map(multiplicities).fillna(0.0).astype(float)
+        )
+
+        d_boot = d_boot.loc[d_boot["WEIGHT"] > 0].reset_index(drop=True)
+
+        # Skip pathological resamples.
+        if d_boot["CHOICE"].nunique() < len(alts):
+            print(
+                f"  bootstrap rep {b} skipped: "
+                "not all alternatives are represented"
+            )
+            continue
+
+        if d_boot["CLUSTER"].nunique() < 5:
+            print(
+                f"  bootstrap rep {b} skipped: "
+                "too few clusters"
+            )
+            continue
 
         try:
+            boot_model = build_model(
+                d_boot,
+                xcols,
+                alts,
+                nests,
+                generic,
+                start=start,
+            )
+
             boot_result = estimate(
-                build_model(d_boot, xcols, alts, nests, generic, start=start),
+                boot_model,
                 f"boot_{b}",
             )
+
             if not boot_result.algorithm_has_converged:
                 print(f"  bootstrap rep {b} did not converge")
                 continue
 
-            draw = pd.Series(boot_result.get_beta_values(), dtype=float)
+            draw = pd.Series(
+                boot_result.get_beta_values(),
+                dtype=float,
+            )
+
             for g in generic:
                 name = f"B_{g.upper()}"
                 if name in draw.index:
                     draw[name] /= sds[g]
 
             for m in range(len(nests)):
-                draw[f"lambda_{m + 1}"] = 1.0 / draw[f"MU_{m + 1}"]
+                mu_name = f"MU_{m + 1}"
+                lambda_name = f"lambda_{m + 1}"
+
+                if mu_name not in draw.index:
+                    raise ValueError(
+                        f"Missing {mu_name} in bootstrap results"
+                    )
+
+                draw[lambda_name] = 1.0 / draw[mu_name]
 
             draws.append(draw)
+
         except Exception as exc:
             print(f"  bootstrap rep {b} failed: {exc}")
 
     if not draws:
-        raise RuntimeError("No bootstrap replications succeeded.")
+        raise RuntimeError(
+            "No bootstrap replications succeeded. "
+            "The bootstrap samples may be too unstable."
+        )
 
     D = pd.DataFrame(draws)
-    out["se_cluster_boot"] = D.std(ddof=1).reindex(out.index)
-    out["z_cluster"] = out["coef"] / out["se_cluster_boot"]
-    out["p_cluster"] = 2.0 * norm.sf(np.abs(out["z_cluster"]))
 
-    print(f"cluster bootstrap: {len(D)} / {n_boot} replications succeeded")
+    out["se_cluster_boot"] = D.std(
+        ddof=1
+    ).reindex(out.index)
+
+    out["z_cluster"] = (
+        out["coef"] / out["se_cluster_boot"]
+    )
+
+    out["p_cluster"] = 2.0 * norm.sf(
+        np.abs(out["z_cluster"])
+    )
+
+    print(
+        f"cluster bootstrap: {len(D)} / "
+        f"{n_boot} replications succeeded"
+    )
+
     return out
-
 
 # ---------------------------------------------------------------------------
 # Simulation and command-line entry point
@@ -598,7 +699,10 @@ def main():
     pd.set_option("display.width", 220)
     print("\n", out.to_string())
     out.to_csv(f"/Users/rachelmurray-watson/Documents/HSB/hsb_output/{OUTNAME}_coefs.csv")
-
+    out.attrs["fit_stats"].to_csv(
+        f"/Users/rachelmurray-watson/Documents/HSB/hsb_output/{OUTNAME}_fit_stats.csv",
+        index=False,
+    )
 
 if __name__ == "__main__":
     main()
