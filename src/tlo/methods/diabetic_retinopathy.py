@@ -983,7 +983,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         df.loc[eligible_population_for_eye_screening, 'selected_for_eye_screening'] = (
-                np.random.random_sample(size=len(df[eligible_population_for_eye_screening]))
+                self.module.rng.random_sample(size=len(df[eligible_population_for_eye_screening]))
                 < self.module.parameters['prob_eye_screening']
         )
 
