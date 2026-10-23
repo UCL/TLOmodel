@@ -1,8 +1,18 @@
 """
-This file analyses and plots the patient load and mix in service areas including outpatient (including ANC) and
-emergency care.
+Validation of the Thanzi La Onse (TLO) model against the Thanzi La Mawa (TLM) 2024 survey:
+patient load, patient mix and access to prescribed medicines.
 
-The scenarios are defined in XXX.py.
+TLO
+  - Outputs restricted to the TLM period, districts (central hospitals by region) and facility
+    levels 1a, 2 and 3 (level 1b merged into 2, level 4 (ZMH) into 3; levels 0 and 5 and DCSA
+    staff excluded).
+  - Each measure is calculated per run and by facility level, then reweighted to the TLM
+    facility-level composition, using the weights exported from the Stata analysis.
+  - Summarised across runs as the mean with a 95% CI (t distribution, n_runs - 1 df).
+TLM
+  - Pooled estimates with delete-one-facility jackknife 95% CIs, read from the Stata outputs
+
+The TLO simulation scenario is defined in src/scripts/calibration_analyses/scenarios/scenario_patient_mix.py.
 """
 import argparse
 from collections import Counter
@@ -25,80 +35,12 @@ from tlo.analysis.utils import (
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None,
-          the_target_period: Tuple[Date, Date] = None,
-          district_resolution: Optional[bool] = False,
-          level_resolution: Optional[bool] = False,
-          year_resolution: Optional[bool] = False,
-          month_resolution: Optional[bool] = False,
-          date_resolution: Optional[bool] = False):
+          the_target_period: Tuple[Date, Date] = None):
 
     TARGET_PERIOD = the_target_period
 
-    def get_patient_counts_in_emerg(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
-
-        # include HSIs of generic first attendance (nonemerg) and first and subsequent ANC visits
-        _df = _df.loc[_df['TREATMENT_ID'].isin(['FirstAttendance_Emergency',
-                                                'FirstAttendance_SpuriousEmergencyCare'])]
-
-        # count patient volume, dropping duplicated person_ids between first attendance and anc on the same day
-        _daily_person_counts = _df.groupby("date")["Person_ID"].nunique()
-        _daily_person_counts.index = pd.to_datetime(_daily_person_counts.index)
-        _daily_person_counts.name = "daily_patient_volume"
-        return _daily_person_counts
-
-    def get_hcw_count(_df):
-        the_hrh_target_period = (Date(2024, 1, 1), Date(2024, 1, 1))
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*the_hrh_target_period), :]
-        _df_staff = (
-            pd.Series(_df.GenericClinic.iloc[0], name="staff_count")
-            .rename_axis("facility_officer")
-            .reset_index()
-        )
-
-        _df_staff[["facility_id", "officer_type"]] = _df_staff["facility_officer"].str.extract(
-            r"FacilityID_(\d+)_Officer_(.*)"
-        )
-
-        _df_staff["facility_id"] = _df_staff["facility_id"].astype(int)
-
-        _df_staff = _df_staff[["facility_id", "officer_type", "staff_count"]]
-
-        _df_staff = _df_staff.loc[_df_staff.officer_type != 'DCSA']
-
-        _df_staff = pd.Series(_df_staff.staff_count.sum())
-
-        _df_staff.index = [pd.to_datetime(_df["date"].iloc[0])]
-        _df_staff.name = 'yearly_staff_count'
-
-        return _df_staff
-
-    def get_patient_counts_in_opd(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
-
-        # include HSIs of generic first attendance (nonemerg) and first and subsequent ANC visits
-        _df = _df.loc[_df['TREATMENT_ID'].isin(['FirstAttendance_NonEmergency',
-                                                'AntenatalCare_Outpatient'])]
-
-        # count patient volume, dropping duplicated person_ids between first attendance and anc on the same day
-        _daily_person_counts = _df.groupby("date")["Person_ID"].nunique()
-        _daily_person_counts.index = pd.to_datetime(_daily_person_counts.index)
-        _daily_person_counts.name = "daily_patient_volume"
-
-        return _daily_person_counts
-
-    def get_patient_count(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
-
-        # count overall patient volume, dropping duplicated person_ids on the same day
-        _daily_person_counts = _df.groupby("date")["Person_ID"].nunique()
-        _daily_person_counts.index = pd.to_datetime(_daily_person_counts.index)
-        _daily_person_counts.name = "daily_patient_volume"
-
-        return _daily_person_counts
-
     def get_hcw_count_facility_id(_df):
-        the_hrh_target_period = (Date(2010, 1, 1), Date(2010, 5, 1))
+        the_hrh_target_period = (Date(2024, 1, 1), Date(2024, 5, 1))
         _df = _df.loc[pd.to_datetime(_df['date']).between(*the_hrh_target_period), :]
 
         _df_staff = (
