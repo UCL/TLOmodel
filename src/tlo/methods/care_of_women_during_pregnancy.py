@@ -846,9 +846,9 @@ class CareOfWomenDuringPregnancy(Module):
 
                     # Women started on IFA at this stage may already be anaemic, we here apply a probability that
                     # starting on a course of IFA will correct anaemia prior to follow up
-                    if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+                    if df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none':
 
-                        if df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none':
+                        if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
 
                             # Store date of resolution for daly calculations
                             pregnancy_helper_functions.store_dalys_in_mni(

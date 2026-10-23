@@ -2790,7 +2790,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                 preg_loss = 1
 
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['intrapartum_stillbirth'] += preg_loss
-            pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, 'intrapartum_stillbirth')
+            pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, 'intrapartum_stillbirth',
+                                                          number_of_losses=preg_loss)
 
         # Reset property
         if individual_id in mni:

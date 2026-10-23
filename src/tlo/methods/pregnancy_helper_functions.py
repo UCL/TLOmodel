@@ -406,18 +406,16 @@ def check_int_deliverable(self,
     # Return True only when delivery occurs and any diagnostic gate passes.
     return bool(delivered and test_ok)
 
-def log_pregnancy_loss(self, individual_id, cause):
+def log_pregnancy_loss(self, individual_id, cause, number_of_losses: Optional[int] = 1):
     """
     This function logs the cause and timing of pregnancy loss during a simulation run.
     """
     df = self.sim.population.props
 
-    # Loss of twins contributes 2 losses
-    if cause == "intrapartum_stillbirth":
-        number_of_losses = 2 if (df.at[individual_id, "ps_multiple_pregnancy"] and
-                                 df.at[individual_id, "la_intrapartum_still_birth"]) else 1
-    else:
-        number_of_losses = 2 if df.at[individual_id, "ps_multiple_pregnancy"] else 1
+    # If a woman was pregnant with twins we count 2 losses (both losses are passed already if the stillbirth
+    # occurs during labour)
+    if cause != 'intrapartum_stillbirth':
+        number_of_losses = 2 if df.at[individual_id, "ps_multiple_pregnancy"]  else 1
 
     for _ in range(number_of_losses):
 

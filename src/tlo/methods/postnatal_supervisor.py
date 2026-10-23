@@ -428,16 +428,21 @@ class PostnatalSupervisor(Module):
                                          f'interaction person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
+        """Report disability contributions for the previous calendar month for ongoing disability after birth (fistula)
+        """
+
         logger.debug(
             key='message',
             data='This is PostnatalSupervisor reporting my health values'
         )
 
-        # TODO: store onset and resolution date outside of the MNI to give more exact weight on onset/resolution month
+        # Here we ascribe monthly disability to women who experienced obstetric vistula following their deliveries
         df = self.sim.population.props
         weights = self.sim.modules['PregnancySupervisor'].parameters['ps_daly_weights']
         daly_series = pd.Series( data=0.0, index=df.index[df.is_alive])
 
+        # Disability weight is dependent on "type" of fistula. We assume disability is life long without treatment.
+        # Treatment delivery resets 'pn_obstetric_fistula' and ends disability
         for fistula_type in ('vesicovaginal', 'rectovaginal'):
             affected = df.index[
                 df.is_alive
@@ -446,6 +451,10 @@ class PostnatalSupervisor(Module):
             daly_series.loc[affected] = weights[
                 f'{fistula_type}_fistula'
             ]
+
+        # TODO: Currently disability is calculted for women for whom "pn_obstetric_fistula" has a relevant value.
+        #  We dont currently log actual onset date so on the date of onset/resolution so women may accrue less than 1
+        #  months weight
 
         return daly_series
 
