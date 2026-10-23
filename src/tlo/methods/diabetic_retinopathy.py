@@ -13,7 +13,6 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
-from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
 from tlo.util import read_csv_files, transition_states
 
@@ -24,12 +23,12 @@ logger.setLevel(logging.INFO)
 class DiabeticRetinopathy(Module):
     """ This is Diabetic Retinopathy (DR) module. It seeks to model DR effects. """
 
-    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
         Metadata.DISEASE_MODULE,
-        Metadata.USES_SYMPTOMMANAGER,
+        # Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
     }
@@ -76,6 +75,12 @@ class DiabeticRetinopathy(Module):
                         "proliferative Diabetic Retinopathy "),
         "prob_eye_screening": Parameter(
             Types.REAL, "probability of going for an eye exam/screening"
+        ),
+        "prob_seek_care_for_reduced_vision": Parameter(
+            Types.REAL,
+            "Monthly probability that an eligible person with diabetes, "
+            "undiagnosed DR/DMO and reduced vision seeks care through "
+            "the symptom-driven pathway"
         ),
         "prob_repeat_laser": Parameter(
             Types.REAL,
@@ -292,12 +297,12 @@ class DiabeticRetinopathy(Module):
             read_csv_files(resourcefilepath / "ResourceFile_Diabetic_Retinopathy",
                            files="parameter_values")
         )
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='reduced_vision',
-                odds_ratio_health_seeking_in_adults=3.0,  # to adjust based on literature/assumptions
-            )
-        )
+        # self.sim.modules['SymptomManager'].register_symptom(
+        #     Symptom(
+        #         name='reduced_vision',
+        #         odds_ratio_health_seeking_in_adults=3.0,  # to adjust based on literature/assumptions
+        #     )
+        # )
 
     def initialise_population(self, population: Population) -> None:
         """ Set property values for the initial population
@@ -673,13 +678,12 @@ class DiabeticRetinopathy(Module):
         if df.at[person_id, 'vision_status'] == 'normal':
             df.at[person_id, 'vision_loss_due_to_dr'] = False
             # Clear the symptom
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=[person_id],
-                symptom_string='reduced_vision',
-                add_or_remove='-',
-                disease_module=self,
-            )
-
+            # self.sim.modules['SymptomManager'].change_symptom(
+            #     person_id=[person_id],
+            #     symptom_string='reduced_vision',
+            #     add_or_remove='-',
+            #     disease_module=self,
+            # )
 
     def improve_vision(self, person_id: int) -> None:
         """Improve vision status by one category after receiving DMO treatment"""
@@ -796,8 +800,8 @@ class DiabeticRetinopathy(Module):
             return
 
         sight_threatening = (
-                df.dr_status.isin(['severe', 'proliferative']) |
-                (df.dmo_status == 'clinically_significant')
+            df.dr_status.isin(['severe', 'proliferative']) |
+            (df.dmo_status == 'clinically_significant')
         )
 
         # Get all people on treatment
@@ -848,20 +852,37 @@ class DiabeticRetinopathy(Module):
                 )
 
         # Add symptom when vision deteriorates
-        newly_impaired = (
-            df.is_alive & df.nc_diabetes & ~df.dr_diagnosed
-            & df.vision_loss_due_to_dr
-            & df.vision_status.isin(['moderate_vision_impairment',
-                                     'severe_vision_impairment', 'blindness'])
-        )
-        if newly_impaired.any():
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=df.index[newly_impaired].tolist(),
-                symptom_string='reduced_vision',
-                add_or_remove='+',
-                disease_module=self,
-            )
+        # newly_impaired = (
+        #     df.is_alive & df.nc_diabetes & ~df.dr_diagnosed
+        #     & df.vision_loss_due_to_dr
+        #     & df.vision_status.isin(['moderate_vision_impairment',
+        #                              'severe_vision_impairment', 'blindness'])
+        # )
+        # if newly_impaired.any():
+        #     self.sim.modules['SymptomManager'].change_symptom(
+        #         person_id=df.index[newly_impaired].tolist(),
+        #         symptom_string='reduced_vision',
+        #         add_or_remove='+',
+        #         disease_module=self,
+        #     )
 
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        # symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        pass
+        # if ('reduced_vision' in symptoms
+        #     and individual_properties['nc_diabetes']
+        #     and not individual_properties['dr_diagnosed']):
+        #     schedule_hsi_event(
+        #         HSI_Dr_Dmo_Symptomatic_Presentation(self, person_id),
+        #         priority=0,
+        #         topen=self.sim.date,
+        #     )
 
     def reset_incidence_trackers(self):
         self.dr_incident_case_tracker = copy.deepcopy(self.dr_incident_case_tracker_blank)
@@ -895,7 +916,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Calculate only for those who have onset dates recorded
         has_onset_date = alive_with_diabetes & df.index.isin(diabetes_onset_series.index)
         diabetes_duration_years.loc[has_onset_date] = (
-                (self.sim.date - diabetes_onset_series.loc[has_onset_date]).dt.days / 365.25
+            (self.sim.date - diabetes_onset_series.loc[has_onset_date]).dt.days / 365.25
         )
 
         # Boolean for >15 years
@@ -970,21 +991,21 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.selected_for_eye_screening = False
 
         eligible_population_for_eye_screening = (
-                (df.is_alive & df.nc_diabetes) &  # todo add condition for people not to be selected again witin 1 year
-                # (df.dr_status == 'none') &
-                # (df.dmo_status == 'none') &
-                # (df["dr_dmo_diagnosis_pathway"] == "none") &
-                (df.dr_dmo_diagnosis_pathway == 'none') &
-                (df.age_years >= 20) &
-                (pd.isna(df.dr_date_diagnosis)) &
-                # Add time since last screening condition
-                ((df.dr_date_last_screening.isna()) |
-                 (df.dr_date_last_screening < self.sim.date - pd.DateOffset(years=1)))
+            (df.is_alive & df.nc_diabetes) &  # todo add condition for people not to be selected again witin 1 year
+            # (df.dr_status == 'none') &
+            # (df.dmo_status == 'none') &
+            # (df["dr_dmo_diagnosis_pathway"] == "none") &
+            (df.dr_dmo_diagnosis_pathway == 'none') &
+            (df.age_years >= 20) &
+            (pd.isna(df.dr_date_diagnosis)) &
+            # Add time since last screening condition
+            ((df.dr_date_last_screening.isna()) |
+             (df.dr_date_last_screening < self.sim.date - pd.DateOffset(years=1)))
         )
 
         df.loc[eligible_population_for_eye_screening, 'selected_for_eye_screening'] = (
-                self.module.rng.random_sample(size=len(df[eligible_population_for_eye_screening]))
-                < self.module.parameters['prob_eye_screening']
+            self.module.rng.random_sample(size=len(df[eligible_population_for_eye_screening]))
+            < self.module.parameters['prob_eye_screening']
         )
 
         for idx in df.index[df.selected_for_eye_screening]:
@@ -994,22 +1015,46 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 topen=self.sim.date,
                 tclose=None)
 
-    def do_at_generic_first_appt(
-            self,
-            person_id: int,
-            individual_properties: IndividualProperties,
-            symptoms: List[str],
-            schedule_hsi_event: HSIEventScheduler,
-            **kwargs,
-    ) -> None:
-        if ('reduced_vision' in symptoms
-            and individual_properties['nc_diabetes']
-            and not individual_properties['dr_diagnosed']):
-            schedule_hsi_event(
-                HSI_Dr_Dmo_Symptomatic_Presentation(self, person_id),
-                priority=0,
-                topen=self.sim.date,
+
+        # ---------------- SELECTING INDIVIDUALS FOR SYMPTOM-DRIVEN PRESENTATIONS ----------------
+        vision_impaired = df['vision_status'].isin([
+            'moderate_vision_impairment',
+            'severe_vision_impairment',
+            'blindness',
+        ])
+
+        eligible_for_symptomatic_presentation = (
+            df['is_alive']
+            & df['nc_diabetes']
+            & (df['age_years'] >= 20)
+            & ~df['dr_diagnosed']
+            & (df['dr_dmo_diagnosis_pathway'] == 'none')
+            & df['vision_loss_due_to_dr']
+            & vision_impaired
+            & ~df['selected_for_eye_screening']
+            & ~df['dr_on_treatment']
+            & ~df['dmo_on_treatment']
+        )
+
+        eligible_ids = df.index[eligible_for_symptomatic_presentation]
+
+        if len(eligible_ids) > 0:
+            seeks_care = (
+                self.module.rng.random_sample(size=len(eligible_ids))
+                < self.module.parameters['prob_seek_care_for_reduced_vision']
             )
+
+            symptomatic_ids = eligible_ids[seeks_care]
+
+            for person_id in symptomatic_ids:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Dr_Dmo_Symptomatic_Presentation(
+                        module=self.module,
+                        person_id=person_id,
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                )
 
 
 class HSI_Dr_Dmo_Symptomatic_Presentation(HSI_Event, IndividualScopeEventMixin):
@@ -1023,7 +1068,7 @@ class HSI_Dr_Dmo_Symptomatic_Presentation(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_Dmo_Symptomatic_Presentation'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '2' #todo should also include level 3?
+        self.ACCEPTED_FACILITY_LEVEL = '2'  #todo should also include level 3?
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1034,6 +1079,13 @@ class HSI_Dr_Dmo_Symptomatic_Presentation(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
+            return hs.get_blank_appt_footprint()
+
+        if (
+            df.at[person_id, 'dr_diagnosed']
+            or df.at[person_id, 'dr_dmo_diagnosis_pathway'] != 'none'
+            or df.at[person_id, 'selected_for_eye_screening']
+        ):
             return hs.get_blank_appt_footprint()
 
         # if person["dr_on_treatment"] and not pd.isna(person["dr_date_last_screening"]):
@@ -1125,7 +1177,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_Dmo_Eye_Examination'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3' #todo should also include level 2
+        self.ACCEPTED_FACILITY_LEVEL = '3'  #todo should also include level 2
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1136,6 +1188,12 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
+            return hs.get_blank_appt_footprint()
+
+        if (
+            df.at[person_id, 'dr_diagnosed']
+            or df.at[person_id, 'dr_dmo_diagnosis_pathway'] != 'none'
+        ):
             return hs.get_blank_appt_footprint()
 
         # if person["dr_on_treatment"] and not pd.isna(person["dr_date_last_screening"]):
@@ -1317,11 +1375,10 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
             # Increment the injection count
             df.at[person_id, 'dmo_antivegf_count'] = df.at[person_id, 'dmo_antivegf_count'] + 1
 
-
             # Continue monthly injections until the course reaches 4 injections.
             if df.at[person_id, 'dmo_antivegf_count'] < 4:
                 next_session = self.sim.date + pd.DateOffset(months=1)
-                hs.schedule_hsi_event(self, topen=next_session, priority=0,)
+                hs.schedule_hsi_event(self, topen=next_session, priority=0, )
 
             else:
                 # Assess treatment success once, at the end of the course.
@@ -1445,7 +1502,7 @@ class HSI_Dr_Dmo_Review(HSI_Event, IndividualScopeEventMixin):
             if self.module.rng.random_sample() < p['prob_repeat_dmo_treatment']:
                 treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
                     if self.module.rng.random_sample() < p[
-                        'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
+                    'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
                 hs.schedule_hsi_event(
                     hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
                     topen=self.sim.date,
@@ -1527,6 +1584,39 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # To calculate prevalence among total alive diabetics
         out['total_alive_diabetics'] = int(alive.nc_diabetes.sum())
+
+        # Vision impairment attributed to DR among living people with diabetes
+        vision_impaired = alive.vision_status.isin([
+            'moderate_vision_impairment',
+            'severe_vision_impairment',
+            'blindness',
+        ])
+
+        out['vision_loss_due_to_dr'] = int((
+                                               alive.nc_diabetes
+                                               & alive.vision_loss_due_to_dr
+                                               & vision_impaired
+                                           ).sum()
+                                           )
+
+        out['severe_vision_loss_due_to_dr'] = int(
+            (
+                alive.nc_diabetes
+                & alive.vision_loss_due_to_dr
+                & alive.vision_status.isin([
+                'severe_vision_impairment',
+                'blindness',
+            ])
+            ).sum()
+        )
+
+        out['blindness_due_to_dr'] = int(
+            (
+                alive.nc_diabetes
+                & alive.vision_loss_due_to_dr
+                & (alive.vision_status == 'blindness')
+            ).sum()
+        )
 
         # DR incidence
         dr_inc = {
