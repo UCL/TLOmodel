@@ -1473,7 +1473,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
                 # Log the pregnancy loss
                 if df.at[person, 'ps_gestational_age_in_weeks'] >= 28:
-                    self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+                    self.mnh_outcome_counter['antenatal_stillbirth'] \
+                        += 1 if not df.at[person, 'ps_multiple_pregnancy'] else 2
                     self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(
                         person)
 
@@ -1667,7 +1668,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # pregnancy status and update contraceptive status
         for person in women.index:
             pregnancy_helper_functions.log_pregnancy_loss(self, person, "antenatal_stillbirth")
-            self.mnh_outcome_counter['antenatal_stillbirth'] += 1
+            self.mnh_outcome_counter['antenatal_stillbirth'] += 1 if not df.at[person, 'ps_multiple_pregnancy'] else 2
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(person)
 
             self.sim.modules['Contraception'].end_pregnancy(person)
@@ -1803,8 +1804,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
             # Log the pregnancy loss
             if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 28:
-                self.mnh_outcome_counter['antenatal_stillbirth'] += 1
-                self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(individual_id)
+                self.mnh_outcome_counter['antenatal_stillbirth'] += 1 if not df.at[individual_id,
+                'ps_multiple_pregnancy'] else 2
+                self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(
+                    individual_id)
 
             pregnancy_helper_functions.log_pregnancy_loss(self, individual_id, "maternal_death_an")
             pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
