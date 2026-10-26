@@ -1894,20 +1894,22 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia' and labour_stage == "ip") or \
            (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia' and labour_stage == "pp"):
 
-            mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='mgso4_ec', hsi_event=hsi_event,
-                q_param=[params['prob_hcw_avail_anticonvulsant'], params[f'mean_hcw_competence_{deliv_location}']],
-                cons=self.item_codes_lab_consumables['magnesium_sulfate'],
-                opt_cons=self.item_codes_lab_consumables['eclampsia_management_optional'])
+            if not (mni[person_id]['ec_treatment_an'] and labour_stage == 'ip'):
 
+                mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
+                    self, int_name='mgso4_ec', hsi_event=hsi_event,
+                    q_param=[params['prob_hcw_avail_anticonvulsant'], params[f'mean_hcw_competence_{deliv_location}']],
+                    cons=self.item_codes_lab_consumables['magnesium_sulfate'],
+                    opt_cons=self.item_codes_lab_consumables['eclampsia_management_optional'])
+
+                if mag_sulph_delivered:
+                    # Treatment with magnesium reduces a womans risk of death from eclampsia
+                    df.at[person_id, 'la_eclampsia_treatment'] = True
+                    pregnancy_helper_functions.log_met_need(self, 'mgso4_ec')
+
+            # If labour is occuring, set delivery mode
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
-
-            if mag_sulph_delivered and not (mni[person_id]['ec_treatment_an'] and labour_stage == 'ip'):
-
-                # Treatment with magnesium reduces a womans risk of death from eclampsia
-                df.at[person_id, 'la_eclampsia_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, 'mgso4_ec')
 
     def assessment_for_assisted_vaginal_delivery(self, hsi_event, indication):
         """
