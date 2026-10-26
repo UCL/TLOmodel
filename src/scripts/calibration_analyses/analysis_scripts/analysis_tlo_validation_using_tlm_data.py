@@ -187,7 +187,7 @@ def forest_layout(sections, label_map=None):
             y += 1
         for s in subgroups:
             rows.append((cat, s, y))
-            ypos.append(y), ylab.append(label_map.get(s, s)), bold.append(False)
+            ypos.append(y), ylab.append(label_map.get(s, s)), bold.append(s == "Overall")
             y += 1
         y += 0.3
     return rows, ypos, ylab, bold, y
