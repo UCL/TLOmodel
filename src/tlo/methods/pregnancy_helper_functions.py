@@ -358,14 +358,16 @@ def check_int_deliverable(self,
                 return passes_forced_dx_gate()
 
     # 3. Normal logic: quality, equipment, consumables and diagnosis
-    # Finally, if no analyses are being conducted which impacts intervention delivery, then the probability an
-    # intervention can be delivered is determined here
 
-    # Check if equipment use needs to be logged
-    if quality_ok and equipment is not None:
+    # Failed quality prevents delivery, so do not consume supplies
+    # or run diagnostics. Analysis overrides have already been handled.
+    if not quality_ok:
+        return False
+
+    if equipment is not None:
         hsi_event.add_equipment(equipment)
 
-    # Check required consumables
+    # Check essential consumables, falling back to alternatives if needed.
     if cons is None:
         consumables_ok = True
     else:
@@ -380,7 +382,12 @@ def check_int_deliverable(self,
                 to_log=to_log,
             )
 
-    # Optional consumables do not determine whether delivery succeeds.
+    # Failed essential requests already record zero consumption.
+    # Do not consume optional supplies or run diagnostics afterwards.
+    if not consumables_ok:
+        return False
+
+    # Optional supplies do not determine whether delivery succeeds.
     if opt_cons is not None:
         hsi_event.get_consumables(
             optional_item_codes=opt_cons,
