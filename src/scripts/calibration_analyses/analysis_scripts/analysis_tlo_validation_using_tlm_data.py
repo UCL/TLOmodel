@@ -13,7 +13,7 @@ TLO
 TLM
   - Pooled estimates with delete-one-facility jackknife 95% CIs, read from the Stata outputs.
 
-Sensitivity analyses (choose with --analysis; outputs in <results folder>/tlm_validation/<analysis>):
+Sensitivity analyses (choose with --analysis; outputs in <output folder>/tlm_validation/<analysis>):
   (1) no_reweighting:     TLO estimates not reweighted to the TLM facility-level composition
   (2) no_blank_footprint: HSIs with a blank appointment footprint dropped (patient load and patient mix)
   (3) outpatient_meds:    medicine access restricted to outpatient service areas
@@ -369,7 +369,7 @@ def plot_patient_mix(cmp_mix: pd.DataFrame, path: Path):
     idx = cmp_mix.set_index(["category", "subgroup"])
     series = [
         dict(est="tlm_est", lo="tlm_lower", hi="tlm_upper", offset=-0.15, fmt="o",
-             color=COLOUR_TLM_EXIT_SURVEY, label="TLM exit survey (95% CI, jackknife)"),
+             color=COLOUR_TLM_EXIT_SURVEY, label="TLM patient exit survey (95% CI, jackknife)"),
         dict(est="tlo_mean", lo="tlo_lower", hi="tlo_upper", offset=0.15, fmt="D", color=COLOUR_TLO,
              label="TLO (95% CI across runs)"),
     ]
@@ -759,7 +759,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
              ("Service area", "Service area", areas)],
             [
                 dict(est="tlm_est", lo="tlm_lower", hi="tlm_upper", offset=-0.27, fmt="o", color=COLOUR_TLM_EXIT_SURVEY,
-                     label="TLM exit survey: obtained prescribed medicines (95% CI, jackknife)"),
+                     label="TLM patient exit survey: obtained prescribed medicines (95% CI, jackknife)"),
                 dict(est="tlo_complete_mean", lo="tlo_complete_lower", hi="tlo_complete_upper",
                      offset=-0.07, fmt="<", color=COLOUR_TLO, label="TLO: all medicines available"),
                 dict(est="tlo_proportional_mean", lo="tlo_proportional_lower", hi="tlo_proportional_upper",
@@ -797,7 +797,7 @@ if __name__ == "__main__":
 
     apply(
         results_folder=args.results_folder,  # outputs/bshe@ic.ac.uk/scenario_patient_mix-2026-05-15T125453Z
-        output_folder=args.results_folder,
+        output_folder=Path("./outputs"),
         resourcefilepath=Path("./resources"),
         the_target_period=(Date(2024, 1, 1), Date(2024, 5, 31)),
         tlm_results_folder=args.tlm_results_folder,
