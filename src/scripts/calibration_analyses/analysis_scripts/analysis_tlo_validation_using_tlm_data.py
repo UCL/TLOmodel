@@ -13,6 +13,11 @@ TLO
 TLM
   - Pooled estimates with delete-one-facility jackknife 95% CIs, read from the Stata outputs.
 
+Sensitivity analyses (choose with --analysis; outputs in <results folder>/tlm_validation/<analysis>):
+  (1) no_reweighting:     TLO estimates not reweighted to the TLM facility-level composition
+  (2) no_blank_footprint: HSIs with a blank appointment footprint dropped (patient load and patient mix)
+  (3) outpatient_meds:    medicine access restricted to outpatient service areas
+
 The TLO simulation scenario is defined in src/scripts/calibration_analyses/scenarios/scenario_patient_mix.py.
 """
 import argparse
@@ -44,7 +49,7 @@ TLM_CI_METHOD = "jackknife"          # main CI method in the TLM results files
 HCW_ON_DUTY_FRACTION = 206.3381 / 365.25
 
 # Main analysis keeps HSIs with a blank appointment footprint and HSIs that did not run due to no mental health staff.
-# Sensitivity analysis on the definition of a patient: set KEEP_BLANK_FOOTPRINT_HSI = False.
+# Sensitivity analysis on the definition of a patient: run with --analysis no_blank_footprint.
 KEEP_BLANK_FOOTPRINT_HSI = True
 DROP_DID_NOT_RUN_HSI = False  # TLO simulation is in Mode 1, every requested HSI should run
 
@@ -58,6 +63,9 @@ TLM_FILES = {
     "w_clinic": "tlm_clinic_weights.csv",
     "w_mix": "tlm_pat_mix_weights.csv",
     "w_meds": "tlm_med_access_weights.csv",
+    # sensitivity analysis: medicine access among prescribed patients in outpatient areas
+    "meds_outpatient": "tlm_med_access_outpatient_from_exit.csv",
+    "w_meds_outpatient": "tlm_med_access_outpatient_weights.csv",
 }
 
 # Patient mix: TLM variable names -> categories, and harmonised subgroup labels
@@ -83,6 +91,23 @@ TLM_DISTRICTS = [
     # Southern
     "Blantyre", "Chiradzulu", "Neno", "Nsanje", "Zomba", "Central Hospitals (Southern)",
 ]
+
+# Analyses (choose with --analysis); each saves its outputs in <results folder>/tlm_validation/<analysis>
+ANALYSES = {
+    "main": "Main analysis",
+    "no_reweighting": "Sensitivity (1): TLO estimates not reweighted to the TLM facility-level composition",
+    "no_blank_footprint": "Sensitivity (2): HSIs with a blank appointment footprint dropped "
+                          "(patient load and patient mix)",
+    "outpatient_meds": "Sensitivity (3): medicine access restricted to outpatient service areas",
+}
+MEASURES_BY_ANALYSIS = {
+    "main": {"load", "mix", "meds"},
+    "no_reweighting": {"load", "mix", "meds"},
+    "no_blank_footprint": {"load", "mix"},     # the Consumables log has no appointment footprint
+    "outpatient_meds": {"meds"},
+}
+# Outpatient service areas for sensitivity analysis (3); must match the Stata definition exactly
+OUTPATIENT_AREAS = ["Outpatient - General", "Outpatient - Maternity/Gynaecology", "CD clinic"]
 
 # Plot colours
 # (TLM time-and-motion and exit survey blue, TLM clinic records green, TLO orange)
@@ -387,10 +412,19 @@ def plot_patient_mix(cmp_mix: pd.DataFrame, path: Path):
 # Main analysis
 # ----------------------------------------------------------------------------------------------
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
-          the_target_period: Tuple[Date, Date], tlm_results_folder: Optional[Path] = None):
+          the_target_period: Tuple[Date, Date], tlm_results_folder: Optional[Path] = None,
+          analysis: str = "main"):
+
+    assert analysis in ANALYSES, f"Unknown analysis '{analysis}'; choose from {list(ANALYSES)}"
+    print(ANALYSES[analysis])
+    reweight = analysis != "no_reweighting"
+    keep_blank_footprint = KEEP_BLANK_FOOTPRINT_HSI and analysis != "no_blank_footprint"
+    outpatient_only = analysis == "outpatient_meds"
+    run_measures = MEASURES_BY_ANALYSIS[analysis]
 
     TARGET_PERIOD = the_target_period
     n_days = (TARGET_PERIOD[1] - TARGET_PERIOD[0]).days + 1
+    output_folder = output_folder / "tlm_validation" / analysis
     output_folder.mkdir(parents=True, exist_ok=True)
 
     path_to_tlm_folder = resourcefilepath / "healthsystem" / "human_resources" / "TLM_2024"
@@ -433,7 +467,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         _df = _df.loc[pd.to_datetime(_df["date"]).between(*TARGET_PERIOD)].copy()
         if DROP_DID_NOT_RUN_HSI:
             _df = _df.loc[_df["did_run"].astype(bool)]
-        if not KEEP_BLANK_FOOTPRINT_HSI:
+        if not keep_blank_footprint:
             _df = _df.loc[_df["Number_By_Appt_Type_Code"].apply(len) > 0]
         return _df
 
@@ -576,154 +610,171 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
     # ------------------------------------------------------------------------------------------
     # 1. Patient load
     # ------------------------------------------------------------------------------------------
-    pat_days = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
-                             get_patient_days_by_level, do_scaling=True).reindex(LEVELS).fillna(0.0)
-    staff = extract_draw0("tlo.methods.healthsystem.summary", "number_of_hcw_staff",
-                          get_staff_by_level, do_scaling=False).reindex(LEVELS)
-    # patients per staff on duty per day, by level and run
-    load_by_level = pat_days.div(staff[pat_days.columns] * HCW_ON_DUTY_FRACTION * n_days)
+    if "load" in run_measures:
+        pat_days = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
+                                 get_patient_days_by_level, do_scaling=True).reindex(LEVELS).fillna(0.0)
+        staff = extract_draw0("tlo.methods.healthsystem.summary", "number_of_hcw_staff",
+                              get_staff_by_level, do_scaling=False).reindex(LEVELS)
+        # patients per staff on duty per day, by level and run
+        load_by_level = pat_days.div(staff[pat_days.columns] * HCW_ON_DUTY_FRACTION * n_days)
 
-    def compare_load(tlm_file, weights_file):
-        w = read_level_weights(tlm_folder / weights_file)["Overall"]
-        overall = load_by_level.mul(w.reindex(LEVELS).values, axis=0).sum() / w.sum()
-        per_run = pd.concat([overall.to_frame("Overall").T,
-                             load_by_level.rename(index=lambda lvl: f"Level {lvl}")])
-        tlo = summarise_runs(per_run).rename_axis("group").reset_index()
-        tlm = read_tlm(tlm_folder / tlm_file)
-        tlm = tlm.loc[tlm["group"].isin(["Overall"] + [f"Level {lvl}" for lvl in LEVELS])]
-        return tlm[["group", "tlm_est", "tlm_lower", "tlm_upper"]].merge(tlo, on="group", how="left")
+        def compare_load(tlm_file, weights_file):
+            if reweight:
+                w = read_level_weights(tlm_folder / weights_file)["Overall"]
+                overall = load_by_level.mul(w.reindex(LEVELS).values, axis=0).sum() / w.sum()
+            else:
+                # TLO's own level composition: all patients / all staff on duty
+                overall = pat_days.sum() / (staff[pat_days.columns].sum() * HCW_ON_DUTY_FRACTION * n_days)
+            per_run = pd.concat([overall.to_frame("Overall").T,
+                                 load_by_level.rename(index=lambda lvl: f"Level {lvl}")])
+            tlo = summarise_runs(per_run).rename_axis("group").reset_index()
+            tlm = read_tlm(tlm_folder / tlm_file)
+            tlm = tlm.loc[tlm["group"].isin(["Overall"] + [f"Level {lvl}" for lvl in LEVELS])]
+            return tlm[["group", "tlm_est", "tlm_lower", "tlm_upper"]].merge(tlo, on="group", how="left")
 
-    cmp_load_tms = compare_load(TLM_FILES["load_tms"], TLM_FILES["w_tms"])
-    cmp_load_clinic = compare_load(TLM_FILES["load_clinic"], TLM_FILES["w_clinic"])
-    pd.concat([cmp_load_tms.assign(tlm_source="time-and-motion"),
-               cmp_load_clinic.assign(tlm_source="clinic records")]).to_csv(
-        output_folder / "comparison_patient_load.csv", index=False)
-    plot_patient_load(cmp_load_tms, cmp_load_clinic, output_folder / "fig_patient_load.png")
+        cmp_load_tms = compare_load(TLM_FILES["load_tms"], TLM_FILES["w_tms"])
+        cmp_load_clinic = compare_load(TLM_FILES["load_clinic"], TLM_FILES["w_clinic"])
+        pd.concat([cmp_load_tms.assign(tlm_source="time-and-motion"),
+                   cmp_load_clinic.assign(tlm_source="clinic records")]).to_csv(
+            output_folder / "comparison_patient_load.csv", index=False)
+        plot_patient_load(cmp_load_tms, cmp_load_clinic, output_folder / "fig_patient_load.png")
 
     # ------------------------------------------------------------------------------------------
     # 2. Patient mix (overall, reweighted by level)
     # ------------------------------------------------------------------------------------------
-    mix_counts = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
-                               get_patient_mix_counts, do_scaling=False).fillna(0)
-    mix_counts.index = mix_counts.index.set_names(["category", "subgroup", "Facility_Level"])
-    w_mix = read_level_weights(tlm_folder / TLM_FILES["w_mix"])["Overall"]
+    if "mix" in run_measures:
+        mix_counts = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
+                                   get_patient_mix_counts, do_scaling=False).fillna(0)
+        mix_counts.index = mix_counts.index.set_names(["category", "subgroup", "Facility_Level"])
+        w_mix = read_level_weights(tlm_folder / TLM_FILES["w_mix"])["Overall"]
 
-    mix_runs = {}
-    for run in mix_counts.columns:
-        props = []
-        for cat, c_cat in mix_counts[run].groupby(level="category"):
-            tab = (c_cat.droplevel("category").unstack("Facility_Level")
-                   .reindex(columns=LEVELS).fillna(0))                  # subgroup x level
-            share = tab / tab.sum(axis=0)                                  # shares within level
-            w = w_mix.where(tab.sum(axis=0) > 0, 0.0)
-            if not np.isclose(w.sum(), w_mix.sum()):
-                renormalised.add(("patient mix", cat))
-            prop = share.fillna(0).mul(w, axis=1).sum(axis=1) / w.sum()
-            props.append(pd.concat({cat: prop}, names=["category"]))
-        mix_runs[run] = pd.concat(props)
-    mix_runs = pd.DataFrame(mix_runs) * 100
-    mix_runs.index = mix_runs.index.set_names(["category", "subgroup"])
-    tlo_mix = summarise_runs(mix_runs).reset_index()
+        mix_runs = {}
+        for run in mix_counts.columns:
+            props = []
+            for cat, c_cat in mix_counts[run].groupby(level="category"):
+                tab = (c_cat.droplevel("category").unstack("Facility_Level")
+                       .reindex(columns=LEVELS).fillna(0))                  # subgroup x level
+                if reweight:
+                    share = tab / tab.sum(axis=0)                              # shares within level
+                    w = w_mix.where(tab.sum(axis=0) > 0, 0.0)
+                    if not np.isclose(w.sum(), w_mix.sum()):
+                        renormalised.add(("patient mix", cat))
+                    prop = share.fillna(0).mul(w, axis=1).sum(axis=1) / w.sum()
+                else:
+                    prop = tab.sum(axis=1) / tab.to_numpy().sum()             # TLO's own level mix
+                props.append(pd.concat({cat: prop}, names=["category"]))
+            mix_runs[run] = pd.concat(props)
+        mix_runs = pd.DataFrame(mix_runs) * 100
+        mix_runs.index = mix_runs.index.set_names(["category", "subgroup"])
+        tlo_mix = summarise_runs(mix_runs).reset_index()
 
-    tlm_mix = read_tlm(tlm_folder / TLM_FILES["mix"])
-    tlm_mix["category"] = tlm_mix["variable"].map(MIX_VARS)
-    tlm_mix["subgroup"] = tlm_mix["label"].astype(str)
-    for cat, labels in (("Education", EDUC_LABELS), ("Wealth quintile", WEALTH_LABELS)):
-        is_cat = tlm_mix["category"] == cat
-        tlm_mix.loc[is_cat, "subgroup"] = tlm_mix.loc[is_cat, "value"].astype(int).map(labels)
+        tlm_mix = read_tlm(tlm_folder / TLM_FILES["mix"])
+        tlm_mix["category"] = tlm_mix["variable"].map(MIX_VARS)
+        tlm_mix["subgroup"] = tlm_mix["label"].astype(str)
+        for cat, labels in (("Education", EDUC_LABELS), ("Wealth quintile", WEALTH_LABELS)):
+            is_cat = tlm_mix["category"] == cat
+            tlm_mix.loc[is_cat, "subgroup"] = tlm_mix.loc[is_cat, "value"].astype(int).map(labels)
 
-    cmp_mix = tlm_mix[["category", "subgroup", "tlm_est", "tlm_lower", "tlm_upper"]].merge(
-        tlo_mix, on=["category", "subgroup"], how="outer", indicator=True)
-    unmatched = cmp_mix.loc[cmp_mix["_merge"] != "both", ["category", "subgroup", "_merge"]]
-    if not unmatched.empty:
-        print("Patient mix subgroups found in only one source (check labels):\n", unmatched)
-    cmp_mix = cmp_mix.drop(columns="_merge")
-    cmp_mix.to_csv(output_folder / "comparison_patient_mix.csv", index=False)
+        cmp_mix = tlm_mix[["category", "subgroup", "tlm_est", "tlm_lower", "tlm_upper"]].merge(
+            tlo_mix, on=["category", "subgroup"], how="outer", indicator=True)
+        unmatched = cmp_mix.loc[cmp_mix["_merge"] != "both", ["category", "subgroup", "_merge"]]
+        if not unmatched.empty:
+            print("Patient mix subgroups found in only one source (check labels):\n", unmatched)
+        cmp_mix = cmp_mix.drop(columns="_merge")
+        cmp_mix.to_csv(output_folder / "comparison_patient_mix.csv", index=False)
 
-    plot_patient_mix(cmp_mix, output_folder / "fig_patient_mix.png")
+        plot_patient_mix(cmp_mix, output_folder / "fig_patient_mix.png")
 
     # ------------------------------------------------------------------------------------------
     # 3. Access to prescribed medicines
     # ------------------------------------------------------------------------------------------
-    meds_sums = extract_draw0("tlo.methods.healthsystem", "Consumables",
-                              get_meds_access_sums, do_scaling=False).fillna(0)
-    meds_sums.index = meds_sums.index.set_names(["loc_cat", "Facility_Level", "stat"])
-    w_meds = read_level_weights(tlm_folder / TLM_FILES["w_meds"])
+    if "meds" in run_measures:
+        meds_sums = extract_draw0("tlo.methods.healthsystem", "Consumables",
+                                  get_meds_access_sums, do_scaling=False).fillna(0)
+        meds_sums.index = meds_sums.index.set_names(["loc_cat", "Facility_Level", "stat"])
+        w_meds = read_level_weights(tlm_folder / TLM_FILES["w_meds_outpatient" if outpatient_only else "w_meds"])
 
-    meds_runs = {}
-    for run in meds_sums.columns:
-        s = meds_sums[run].unstack("stat").reindex(columns=["n"] + TLO_MEDS_ACCESS_MEASURES).fillna(0)
-        rec = {}
-        # overall (reweighted with overall weights) and by level (no reweighting)
-        lvl = s.groupby(level="Facility_Level").sum().reindex(LEVELS)
-        lvl_rate = lvl[TLO_MEDS_ACCESS_MEASURES].div(lvl["n"].where(lvl["n"] > 0), axis=0)
-        for m in TLO_MEDS_ACCESS_MEASURES:
-            v, flag = combine_levels(lvl_rate[m], w_meds["Overall"])
-            rec[("Overall", "Overall", m)] = v
-            if flag:
-                renormalised.add(("medicine access", "Overall"))
-            for lvl_name in LEVELS:
-                rec[("Facility level", f"Level {lvl_name}", m)] = lvl_rate.loc[lvl_name, m]
-        # by service area (reweighted with service-area-specific weights)
-        for area, s_area in s.groupby(level="loc_cat"):
-            r = s_area.droplevel("loc_cat").reindex(LEVELS)
-            rate = r[TLO_MEDS_ACCESS_MEASURES].div(r["n"].where(r["n"] > 0), axis=0)
+        meds_runs = {}
+        for run in meds_sums.columns:
+            s = meds_sums[run].unstack("stat").reindex(columns=["n"] + TLO_MEDS_ACCESS_MEASURES).fillna(0)
+            if outpatient_only:
+                s = s.loc[s.index.get_level_values("loc_cat").isin(OUTPATIENT_AREAS)]
+            rec = {}
+            # overall (reweighted with overall weights) and by level (no reweighting)
+            lvl = s.groupby(level="Facility_Level").sum().reindex(LEVELS)
+            lvl_rate = lvl[TLO_MEDS_ACCESS_MEASURES].div(lvl["n"].where(lvl["n"] > 0), axis=0)
             for m in TLO_MEDS_ACCESS_MEASURES:
-                if area in w_meds:
-                    v, flag = combine_levels(rate[m], w_meds[area])
+                if reweight:
+                    v, flag = combine_levels(lvl_rate[m], w_meds["Overall"])
                     if flag:
-                        renormalised.add(("medicine access", area))
+                        renormalised.add(("medicine access", "Overall"))
                 else:
-                    v = np.nan
-                rec[("Service area", area, m)] = v
-        meds_runs[run] = pd.Series(rec)
-    meds_runs = pd.DataFrame(meds_runs) * 100
-    meds_runs.index = meds_runs.index.set_names(["category", "subgroup", "measure"])
+                    v = lvl[m].sum() / lvl["n"].sum()                          # TLO's own level mix
+                rec[("Overall", "Overall", m)] = v
+                for lvl_name in LEVELS:
+                    rec[("Facility level", f"Level {lvl_name}", m)] = lvl_rate.loc[lvl_name, m]
+            # by service area (reweighted with service-area-specific weights)
+            for area, s_area in s.groupby(level="loc_cat"):
+                r = s_area.droplevel("loc_cat").reindex(LEVELS)
+                rate = r[TLO_MEDS_ACCESS_MEASURES].div(r["n"].where(r["n"] > 0), axis=0)
+                for m in TLO_MEDS_ACCESS_MEASURES:
+                    if not reweight:
+                        v = r[m].sum() / r["n"].sum() if r["n"].sum() > 0 else np.nan
+                    elif area in w_meds:
+                        v, flag = combine_levels(rate[m], w_meds[area])
+                        if flag:
+                            renormalised.add(("medicine access", area))
+                    else:
+                        v = np.nan
+                    rec[("Service area", area, m)] = v
+            meds_runs[run] = pd.Series(rec)
+        meds_runs = pd.DataFrame(meds_runs) * 100
+        meds_runs.index = meds_runs.index.set_names(["category", "subgroup", "measure"])
 
-    tlo_meds = summarise_runs(meds_runs).unstack("measure")
-    tlo_meds.columns = [col.replace("tlo_", f"tlo_{m}_") for col, m in tlo_meds.columns]
-    tlo_meds = tlo_meds.reset_index()
+        tlo_meds = summarise_runs(meds_runs).unstack("measure")
+        tlo_meds.columns = [col.replace("tlo_", f"tlo_{m}_") for col, m in tlo_meds.columns]
+        tlo_meds = tlo_meds.reset_index()
 
-    tlm_meds = read_tlm(tlm_folder / TLM_FILES["meds"])
-    tlm_meds["category"] = np.select(
-        [tlm_meds["group"].eq("Overall"), tlm_meds["group"].str.startswith("Level ")],
-        ["Overall", "Facility level"], default="Service area")
-    tlm_meds["subgroup"] = tlm_meds["group"]
+        tlm_meds = read_tlm(tlm_folder / TLM_FILES["meds_outpatient" if outpatient_only else "meds"])
+        tlm_meds["category"] = np.select(
+            [tlm_meds["group"].eq("Overall"), tlm_meds["group"].str.startswith("Level ")],
+            ["Overall", "Facility level"], default="Service area")
+        tlm_meds["subgroup"] = tlm_meds["group"]
 
-    cmp_meds = tlm_meds[["category", "subgroup", "tlm_est", "tlm_lower", "tlm_upper"]].merge(
-        tlo_meds, on=["category", "subgroup"], how="outer", indicator=True)
-    unmatched = cmp_meds.loc[cmp_meds["_merge"] != "both", ["category", "subgroup", "_merge"]]
-    if not unmatched.empty:
-        print("Medicine access groups found in only one source (check labels):\n", unmatched)
-    cmp_meds = cmp_meds.drop(columns="_merge")
-    cmp_meds.to_csv(output_folder / "comparison_medicine_access.csv", index=False)
+        cmp_meds = tlm_meds[["category", "subgroup", "tlm_est", "tlm_lower", "tlm_upper"]].merge(
+            tlo_meds, on=["category", "subgroup"], how="outer", indicator=True)
+        unmatched = cmp_meds.loc[cmp_meds["_merge"] != "both", ["category", "subgroup", "_merge"]]
+        if not unmatched.empty:
+            print("Medicine access groups found in only one source (check labels):\n", unmatched)
+        cmp_meds = cmp_meds.drop(columns="_merge")
+        cmp_meds.to_csv(output_folder / "comparison_medicine_access.csv", index=False)
 
-    meds_idx = cmp_meds.set_index(["category", "subgroup"])
-    areas = [a for a in SERVICE_AREA_ORDER if ("Service area", a) in meds_idx.index]
-    areas += sorted(s for c, s in meds_idx.index if c == "Service area" and s not in areas)
-    forest_plot(
-        meds_idx,
-        [(None, "Overall", ["Overall"]),
-         ("Facility level", "Facility level", [f"Level {lvl}" for lvl in LEVELS]),
-         ("Service area", "Service area", areas)],
-        [
-            dict(est="tlm_est", lo="tlm_lower", hi="tlm_upper", offset=-0.27, fmt="o", color=COLOUR_TLM_EXIT_SURVEY,
-                 label="TLM exit survey: obtained prescribed medicines (95% CI, jackknife)"),
-            dict(est="tlo_complete_mean", lo="tlo_complete_lower", hi="tlo_complete_upper",
-                 offset=-0.07, fmt="<", color=COLOUR_TLO, label="TLO: all medicines available"),
-            dict(est="tlo_proportional_mean", lo="tlo_proportional_lower", hi="tlo_proportional_upper",
-                 offset=0.10, fmt="d", color=COLOUR_TLO, label="TLO: proportion of medicine types available"),
-            dict(est="tlo_any_mean", lo="tlo_any_lower", hi="tlo_any_upper",
-                 offset=0.27, fmt=">", color=COLOUR_TLO, label="TLO: any medicine available"),
-        ],
-        "Prescribed patients with access to medicines (%)",
-        output_folder / "fig_medicine_access.png",
-        xlim=(0, 100),
-        band=dict(lo="tlo_complete_mean", hi="tlo_any_mean", y0=-0.14, y1=0.34, color=COLOUR_TLO),
-        label_map=LEVEL_LABELS,
-        width=8.5,
-        legend_rows=[[0], [1, 2, 3]]
-    )
+        meds_idx = cmp_meds.set_index(["category", "subgroup"])
+        areas = [a for a in SERVICE_AREA_ORDER if ("Service area", a) in meds_idx.index]
+        areas += sorted(s for c, s in meds_idx.index if c == "Service area" and s not in areas)
+        forest_plot(
+            meds_idx,
+            [(None, "Overall", ["Overall"]),
+             ("Facility level", "Facility level", [f"Level {lvl}" for lvl in LEVELS]),
+             ("Service area", "Service area", areas)],
+            [
+                dict(est="tlm_est", lo="tlm_lower", hi="tlm_upper", offset=-0.27, fmt="o", color=COLOUR_TLM_EXIT_SURVEY,
+                     label="TLM exit survey: obtained prescribed medicines (95% CI, jackknife)"),
+                dict(est="tlo_complete_mean", lo="tlo_complete_lower", hi="tlo_complete_upper",
+                     offset=-0.07, fmt="<", color=COLOUR_TLO, label="TLO: all medicines available"),
+                dict(est="tlo_proportional_mean", lo="tlo_proportional_lower", hi="tlo_proportional_upper",
+                     offset=0.10, fmt="d", color=COLOUR_TLO, label="TLO: proportion of medicine types available"),
+                dict(est="tlo_any_mean", lo="tlo_any_lower", hi="tlo_any_upper",
+                     offset=0.27, fmt=">", color=COLOUR_TLO, label="TLO: any medicine available"),
+            ],
+            "Prescribed patients with access to medicines (%)",
+            output_folder / "fig_medicine_access.png",
+            xlim=(0, 100),
+            band=dict(lo="tlo_complete_mean", hi="tlo_any_mean", y0=-0.14, y1=0.34, color=COLOUR_TLO),
+            label_map=LEVEL_LABELS,
+            width=8.5,
+            legend_rows=[[0], [1, 2, 3]]
+        )
 
     # ------------------------------------------------------------------------------------------
     # Notes
@@ -740,6 +791,8 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)
     parser.add_argument("--tlm-results-folder", type=Path, default=None,
                         help="Folder with the Stata output CSVs (default: the TLM_2024 resource folder)")
+    parser.add_argument("--analysis", choices=list(ANALYSES), default="main",
+                        help="main, no_reweighting, no_blank_footprint or outpatient_meds")
     args = parser.parse_args()
 
     apply(
@@ -748,5 +801,7 @@ if __name__ == "__main__":
         resourcefilepath=Path("./resources"),
         the_target_period=(Date(2024, 1, 1), Date(2024, 5, 31)),
         tlm_results_folder=args.tlm_results_folder,
+        analysis=args.analysis,
     )
 # outputs/bshe@ic.ac.uk/scenario_patient_mix-2026-05-15T125453Z --tlm-results-folder resources/healthsystem/human_resources/TLM_2024
+# add --analysis no_reweighting | no_blank_footprint | outpatient_meds for the sensitivity analyses
