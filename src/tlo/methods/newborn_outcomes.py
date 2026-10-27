@@ -1579,60 +1579,6 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
                                          'this configuration')
         return False
 
-class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is HSI_NewbornOutcomes_ResusConsumableLog. This event is called for newborns who have received resuscitation
-    in order to log the relevant consumables. No other health system resources are used during this event.
-    """
-
-    def __init__(self, module, person_id, int_name):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, NewbornOutcomes)
-
-        self.int_name = int_name
-        self.TREATMENT_ID = 'PostnatalCare_Neonatal_Resus_ConsumableLog'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
-
-    def apply(self, person_id, squeeze_factor):
-        health_system = self.sim.modules["HealthSystem"]
-
-        resus_item_code = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
-
-        logger_hs.info(
-            key="Consumables",
-            data={
-                "TREATMENT_ID": self.TREATMENT_ID,
-                "Item_Available": str(resus_item_code),
-                "Item_NotAvailable": str({}),
-                "Item_Used": str(resus_item_code),
-            },
-            description="Record of requested and used consumable items.",
-        )
-
-        health_system.consumables._summary_counter.record_availability(
-            items_available=resus_item_code,
-            items_not_available={},
-            items_used=resus_item_code,
-        )
-
-    def did_not_run(self):
-        logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: did not run')
-        return False
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: cannot not run with '
-                                         'this configuration')
-        return False
-
-    def _get_facility_level_for_pnc(self, person_id):
-        nci = self.module.newborn_care_info
-
-        if (person_id in nci) and (nci[person_id]['delivery_setting'] == 'hospital'):
-            return self.module.rng.choice(['1b', '2'])
-        else:
-            return '1a'
-
 class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
     """ This is BreastfeedingStatusUpdateEventSixMonths. It is scheduled via the breastfeeding function.
     Children who are alive and still breastfeeding by six months have their breastfeeding status updated. Those who will
