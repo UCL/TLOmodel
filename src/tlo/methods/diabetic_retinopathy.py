@@ -54,7 +54,6 @@ class DiabeticRetinopathy(Module):
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
         "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having "
                                               "Diabetic Macular Oedema (DMO)"),
-        "p_laser_success": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
         "rp_nc_hypertension": Parameter(
             Types.REAL, "relative risk at baseline of diabetic retinopathy if person has hypertension"),
         # "prob_diabetes_controlled": Parameter(
