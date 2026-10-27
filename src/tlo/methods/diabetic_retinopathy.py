@@ -156,7 +156,7 @@ class DiabeticRetinopathy(Module):
             Types.REAL,
             "Relative risk of progression to more severe stages after receiving treatment (applied multiplicatively)"
         ),
-        "vision_transition_matrix_no_dr": Parameter(
+        "vision_transition_matrix_non_sight_threatening": Parameter(
             Types.LIST,
             "Probability matrix for vision status transitions for people without sight-threatening DR"
         ),
@@ -469,7 +469,7 @@ class DiabeticRetinopathy(Module):
         # Convert vision transition matrices
         vision_states = sim.population.props.vision_status.cat.categories
 
-        for key in ['vision_transition_matrix_no_dr', 'vision_transition_matrix_sight_threatening']:
+        for key in ['vision_transition_matrix_non_sight_threatening', 'vision_transition_matrix_sight_threatening']:
             mat = pd.DataFrame(
                 self.parameters[key],
                 index=vision_states,
@@ -816,7 +816,7 @@ class DiabeticRetinopathy(Module):
         for idx, base_matrix in [
             (
                 untreated & ~sight_threatening,
-                p['vision_transition_matrix_no_dr']
+                p['vision_transition_matrix_non_sight_threatening']
             ),
             (
                 untreated & sight_threatening,
