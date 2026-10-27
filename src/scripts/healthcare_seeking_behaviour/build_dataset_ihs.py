@@ -63,12 +63,12 @@ V = {
 
 
 CHOICE_MAP = {1:"none", 2:"none", 3:"none", 4:"none",
-              5:"gov", 8:"gov", 6:"cham",
+              5:"gov", 8:"gov", 6:"gov", #6:"cham",
               7:"none", 9:"none", 10:"none", 11:"none", 12:"none", 13:"none"}
 
 
 # precedence when several actions are reported (highest wins): formal facility > other > none
-RANK = {"none": 0, "gov": 1, "cham": 1}
+RANK = {"none": 0, "gov": 1}#, "cham": 1}
 # ---- symptom groups from D04 codes ---------------------------------------------------------------
 SYMPTOM_GROUPS = {
     "fever_malaria": [1],
@@ -323,7 +323,7 @@ else:
 # else:
 #     notes.append("distance NOT built: set FACILITY_FILE (geocoded facility list with lat, lon, type) and check GEO_FILE.")
 
-df.to_csv(OUT / "hsb_analysis.csv", index=False)
+df.to_csv(OUT / "hsb_analysis_no_cham.csv", index=False)
 print(df["choice"].value_counts(normalize=True).round(3).to_string())
 print(f"\nN episodes = {len(df)}  | children = {df['child'].mean():.2f}")
 print("\nNotes / to check:")
