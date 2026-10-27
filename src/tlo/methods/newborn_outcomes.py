@@ -1056,12 +1056,28 @@ class NewbornOutcomes(Module):
                 counter[f'{int_name}_deliv'] += 1
                 pregnancy_helper_functions.log_met_need(self, int_name)
 
-                cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id, int_name=int_name)
+                # Availability was checked during labour. Record consumption immediately, before any subsequent
+                # neonatal death.
+                resus_items = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    cons_log, priority=0,
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(days=1))
+                health_system = self.sim.modules['HealthSystem']
+
+                logger_hs.info(
+                    key="Consumables",
+                    data={
+                        "TREATMENT_ID": "PostnatalCare_Neonatal_Resus_ConsumableLog",
+                        "Item_Available": str(resus_items),
+                        "Item_NotAvailable": str({}),
+                        "Item_Used": str(resus_items),
+                    },
+                    description="Record of requested and used consumable items.",
+                )
+
+                health_system.consumables._summary_counter.record_availability(
+                    items_available=resus_items,
+                    items_not_available={},
+                    items_used=resus_items,
+                )
 
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
