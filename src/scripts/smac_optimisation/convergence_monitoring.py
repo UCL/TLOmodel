@@ -186,7 +186,9 @@ def get_best_feasible_dalys(history: list[dict]) -> float | None:
     best = None
     for entries in grouped.values():
         median_violations = {k: np.median([e[k] for e in entries]) for k in violation_keys}
-        if all(v == 0 for v in median_violations.values()):
+        if all(v <= 0 for v in median_violations.values()):  # <= 0, not == 0: the
+            # constraint values are SIGNED budget slack (negative = headroom), see
+            # initialise.py - a feasible config's slack is generally strictly negative
             dalys = float(np.median([e["dalys"] for e in entries]))
             if best is None or dalys < best:
                 best = dalys

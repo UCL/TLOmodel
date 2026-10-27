@@ -37,7 +37,8 @@ import pandas as pd
 from tlo.analysis.utils import load_pickled_dataframes
 from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from optimisation_parameters import (
-    YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE, POP_SIZE,
+    YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
+    BASELINE_BUDGET_COMPARISON_FILE, POP_SIZE,
 )
 
 # Malawi's real population, used as the numerator of the scaling-factor
@@ -265,6 +266,57 @@ def postprocess_run(run_dir: Path) -> dict:
     }
 
 
+def _report_budget_comparison(per_run_results: list, hrh_stats: dict, cons_stats: dict,
+                              first_year: int, last_year: int) -> None:
+    """
+    Prints and saves (BASELINE_BUDGET_COMPARISON_FILE) how the adopted
+    budget (highest yearly cost across baseline runs) compares with the
+    upper 95% CI of the mean: per year and category, and in total. Also
+    reports how many baseline runs would have exceeded the CI budget in
+    at least one year of each period, which is what the CI budget would
+    have meant for the baseline's own feasibility.
+    """
+    n_runs = len(per_run_results)
+    rows = []
+    summary_lines = []
+    for category, stats, key in (
+        ("hiv_hrh", hrh_stats, "hiv_hrh_cost_by_year"),
+        ("hiv_consumable", cons_stats, "hiv_consumable_cost_by_year"),
+    ):
+        years = [y for y in range(first_year, last_year + 1) if y in stats]
+        for y in years:
+            st = stats[y]
+            rows.append({
+                "category": category, "year": y, "mean": st["mean"], "max_budget": st["max"],
+                "upper95_ci": st["upper95"],
+                "max_over_ci_minus_1": (st["max"] / st["upper95"] - 1.0) if st["upper95"] > 0 else float("nan"),
+            })
+        if not years:
+            continue
+        # Totals over the years considered: summed yearly budgets vs the most
+        # expensive single run (the summed maxima come from different runs).
+        run_totals = np.array([sum(r[key].get(y, 0.0) for y in years) for r in per_run_results])
+        sum_max = sum(stats[y]["max"] for y in years)
+        sum_ci = sum(stats[y]["upper95"] for y in years)
+        summary_lines.append(
+            f"[baseline] {category}: summed yearly max budget = {sum_max:,.0f}; most expensive single "
+            f"run total = {run_totals.max():,.0f} (summed max is {sum_max / run_totals.max() - 1:+.1%} vs it); "
+            f"summed upper-95%-CI budget = {sum_ci:,.0f} (max budget is {sum_max / sum_ci - 1:+.1%} vs CI)."
+        )
+        # Baseline runs that would have breached the CI budget, per year.
+        n_breach_any = sum(
+            any(r[key].get(y, 0.0) > stats[y]["upper95"] for y in years) for r in per_run_results
+        )
+        summary_lines.append(
+            f"[baseline] {category}: {n_breach_any}/{n_runs} baseline runs exceed the upper-95%-CI budget "
+            f"in at least one year (0/{n_runs} under the max budget, by construction)."
+        )
+    pd.DataFrame(rows).to_csv(BASELINE_BUDGET_COMPARISON_FILE, index=False)
+    for line in summary_lines:
+        print(line)
+    print(f"[baseline] per-year comparison saved to {BASELINE_BUDGET_COMPARISON_FILE}.")
+
+
 def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, last_year: int) -> None:
     """
     Computes the upper 95% CI (across all runs found in baseline_draw_dir)
@@ -287,17 +339,24 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     own costs are computed - just aggregated across 10 independent runs
     instead of 1.
 
-    UPPER 95% CI: mean + 1.96 * (sample std / sqrt(n)) - the standard
-    normal-approximation confidence interval for a mean, the same
-    convention TLOmodel's own analysis scripts use (e.g.
-    tlo.analysis.utils.summarize()) rather than an empirical percentile
-    (unreliable with only ~10 samples). Deliberately the UPPER bound,
-    not the mean itself: using the upper 95% CI as the BUDGET means a
-    config only gets penalised for exceeding what the status-quo
-    scenario could plausibly cost even on an unusually expensive run,
-    not merely its average cost - a conservative (permissive) choice,
-    consistent with "budget" meaning "the most this category should
-    reasonably be allowed to cost", not "the average cost".
+    BUDGET = HIGHEST COST ACROSS THE BASELINE RUNS, per year and category:
+    for each year, the maximum of that year's cost over all runs found in
+    baseline_draw_dir. If the status-quo programme is taken to be always
+    feasible, then in any given year the budget must allow the most
+    expensive outcome the baseline can produce, so by construction every
+    baseline run is feasible on every constraint. (An upper 95% CI of the
+    MEAN cost, mean + 1.96 * std / sqrt(n), was the previous choice; it is
+    far tighter than a single run's spread, so single baseline runs could
+    exceed it. It is still computed here, for comparison only.)
+
+    Because the budget is a maximum taken separately for each year, the
+    maxima come from different runs, so the summed budget over years can
+    exceed the total cost of ANY single baseline run. A comparison table
+    (per year and category: mean, max, upper-95%-CI, and the max-vs-CI gap;
+    and per category: the summed yearly budget against the most expensive
+    single run and against the summed CI budget) is printed and saved to
+    BASELINE_BUDGET_COMPARISON_FILE, together with how many baseline runs
+    would have violated each period under the CI budget.
 
     hiv_dalys is written as 0.0 for every year in COST_LIMITS_FILE - loaded
     by initialise.py but not currently used as a constraint (DALYs
@@ -310,7 +369,7 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     Years in [first_year, last_year] outside what the baseline run
     actually simulated (TARGET_PERIOD, above) get a budget of 0.0 too -
     confirmed SAFE, not a division-by-zero risk: initialise.py's own
-    bucket_cumulative_violation() only ever looks up a year's budget
+    bucket_peak_budget_slack() only ever looks up a year's budget
     for years that ALSO appear as keys in a real trial's own
     cost_by_year dict, which is itself restricted to TARGET_PERIOD - so
     a year outside that range is never actually divided into, on either
@@ -337,7 +396,8 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     per_run_results = [postprocess_run(run_dir) for run_dir in run_dirs]
     n_runs = len(per_run_results)
 
-    def upper_95_ci_by_year(key: str) -> dict[int, float]:
+    def yearly_stats(key: str) -> dict[int, dict]:
+        """Per year: mean, max (the budget), upper 95% CI of the mean (comparison only)."""
         all_years = set()
         for r in per_run_results:
             all_years.update(r[key].keys())
@@ -346,15 +406,22 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
         for year in all_years:
             values = np.array([r[key].get(year, 0.0) for r in per_run_results], dtype=float)
             mean = values.mean()
-            # ddof=1: SAMPLE std (n-1 denominator) - correct when
-            # estimating a CI for the population mean from a sample,
-            # rather than merely describing the sample itself.
+            # ddof=1: SAMPLE std (n-1 denominator), as appropriate for a CI of the mean.
             std = values.std(ddof=1) if n_runs > 1 else 0.0
-            out[int(year)] = float(mean + 1.96 * std / np.sqrt(n_runs))
+            out[int(year)] = {
+                "mean": float(mean),
+                "max": float(values.max()),
+                "upper95": float(mean + 1.96 * std / np.sqrt(n_runs)),
+                "values": values,
+            }
         return out
 
-    hrh_upper = upper_95_ci_by_year("hiv_hrh_cost_by_year")
-    cons_upper = upper_95_ci_by_year("hiv_consumable_cost_by_year")
+    hrh_stats = yearly_stats("hiv_hrh_cost_by_year")
+    cons_stats = yearly_stats("hiv_consumable_cost_by_year")
+    hrh_upper = {y: v["max"] for y, v in hrh_stats.items()}
+    cons_upper = {y: v["max"] for y, v in cons_stats.items()}
+
+    _report_budget_comparison(per_run_results, hrh_stats, cons_stats, first_year, last_year)
 
     rows = [
         {
@@ -367,7 +434,7 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     ]
 
     pd.DataFrame(rows).to_csv(COST_LIMITS_FILE, index=False)
-    print(f"[baseline] {COST_LIMITS_FILE} updated: {n_runs} run(s), years {first_year}-{last_year}.")
+    print(f"[baseline] {COST_LIMITS_FILE} updated (budget = highest yearly cost across runs): {n_runs} run(s), years {first_year}-{last_year}.")
 
     # Persisted separately from the CSV above - this is the baseline's
     # own OBJECTIVE-side result (DALYs), not a budget/constraint value,

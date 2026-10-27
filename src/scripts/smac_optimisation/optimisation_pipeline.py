@@ -103,7 +103,9 @@ from convergence_monitoring import (
 )
 from optimisation_parameters import (
     N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, PENALTY_COEFFICIENT_MULTIPLIER,
-    INFEASIBILITY_FLOOR_MULTIPLIER, MERIT_VIOLATION_THRESHOLD, MERIT_PENALTY_ALPHA,
+    INFEASIBILITY_FLOOR_MULTIPLIER,
+    CONSTRAINT_COMBINATION, MERIT_DALYS_IMPROVEMENT_PCT, MERIT_BUDGET_VIOLATION_PCT,
+    MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
@@ -1230,7 +1232,7 @@ def aggregate_postprocessed_results(draw_dir: Path) -> dict:
     convergence_monitoring.get_best_feasible_dalys) - this is
     specifically the "single runs" side of that convention: this
     function's OWN output is what gets compared against the baseline's
-    upper-95%-CI budget in bucket_cumulative_violation(), which is a
+    baseline-derived budget in bucket_peak_budget_slack(), which is a
     genuinely different (and unchanged) computation.
     """
     per_run_results = [postprocess_run(run_dir) for run_dir in sorted(draw_dir.iterdir())]
@@ -1276,28 +1278,25 @@ configspace.add(Float("prob_circ_after_hiv_test", (0., 1.)))
 configspace.add(Float("linked_to_care_after_selftest", (0., 1.)))
 configspace.add(Float("prob_receive_viral_load_test_result", (0., 1.)))
 configspace.add(Float("config_coverage_plhiv", (0., 1.)))
-configspace.add(Categorical("config_target_IPT", [True, False]))
 configspace.add(Categorical("tdf_test_replace_vl_test", [True, False]))
 configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
-
 
 # --------------------------------------------------------------------------
 # Period-bucketed HIV-HRH and HIV-consumable cost constraints
 #
 # Rather than a year-by-year constraint (prohibitive across a 25-year
 # horizon - would need ~25 separate RF surrogates per cost type, with
-# the multiplied-probability problem discussed at length getting worse
-# with every added constraint), each cost type is bucketed into a small,
-# USER-DEFINABLE number of periods. Within each period, the CUMULATIVE
-# (mean-across-years, not max) violation is computed:
+# the per-constraint feasibility terms compounding with every added
+# constraint), each cost type is bucketed into a small,
+# USER-DEFINABLE number of periods. Within each period, the constraint
+# value is the PEAK yearly budget ratio, as a signed slack:
 #
-#     period_violation = mean( max(0, cost_year/limit_year - 1) for year in period )
+#     period_slack = max( cost_year/limit_year for year in period ) - 1
 #
-# Mean-across-years (not max-across-years, and NOT an average restricted
-# to only the years that violate) so that an ADDITIONAL bad year can
-# only raise or maintain a period's score, never lower it - averaging
-# only the positive values would let a config with MORE violating years
-# score BETTER than one with fewer, which is the wrong direction.
+# <= 0 means no year in the period exceeds its limit (feasible); > 0 is
+# the fractional overspend in the worst year. Signed (not clipped at 0)
+# so the value stays continuous through the feasibility boundary - see
+# initialise.py's own comment for the full reasoning.
 #
 # PERIOD_BOUNDARIES is user-definable (absolute calendar years,
 # inclusive on both ends) and MUST be the same list for HIV-HRH and
@@ -1366,7 +1365,7 @@ if SUBMIT_BASELINE_RUN:
 
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
-    bucket_cumulative_violation, HIV_HRH_CONSTRAINT_NAMES,
+    bucket_peak_budget_slack, HIV_HRH_CONSTRAINT_NAMES,
     HIV_CONSUMABLE_CONSTRAINT_NAMES, CONSTRAINT_NAMES, PRIOR_RUNS, BASELINE_CONFIG_VALUES,
 )
 
@@ -1410,16 +1409,22 @@ def record_result(
     deliberately kept OUT of `history` itself, so ConstrainedEI's
     surrogates never see them as if they were real features.
 
-    PERIOD_BOUNDARIES/budgets/bucket_cumulative_violation/constraint
+    PERIOD_BOUNDARIES/budgets/bucket_peak_budget_slack/constraint
     names all live in initialise.py - see that file for the actual
     constraint definitions and the cost-vs-budget terminology note.
+
+    The per-period constraint values stored in `history` are the SIGNED
+    budget slack (max yearly cost/budget ratio in the period, minus 1):
+    <= 0 feasible, > 0 overspend. ConstrainedEI's surrogates train on
+    these signed values directly; only the scalar SMAC cost below clips
+    them at 0, so headroom never offsets another constraint's overspend.
     """
     dalys = result["dalys"]
 
-    hrh_period_violations = bucket_cumulative_violation(
+    hrh_period_violations = bucket_peak_budget_slack(
         result["hiv_hrh_cost_by_year"], HIV_HRH_BUDGET_BY_YEAR
     )
-    consumable_period_violations = bucket_cumulative_violation(
+    consumable_period_violations = bucket_peak_budget_slack(
         result["hiv_consumable_cost_by_year"], HIV_CONSUMABLE_BUDGET_BY_YEAR
     )
 
@@ -1435,7 +1440,9 @@ def record_result(
     K = PENALTY_COEFFICIENT_MULTIPLIER * dalys  # penalty coefficient - rough, not load-bearing
     # for search quality now that ConstrainedEI does the real steering,
     # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
-    total_violation = sum(entry[name] for name in CONSTRAINT_NAMES)
+    total_violation = sum(max(0.0, entry[name]) for name in CONSTRAINT_NAMES)  # clipped: the
+    # stored values are signed slack, and negative slack (headroom) must not
+    # cancel another constraint's overspend in SMAC's own scalar cost
     penalty = K * total_violation
     if total_violation > 0:
         # See optimisation_parameters.INFEASIBILITY_FLOOR_MULTIPLIER's own
@@ -1638,6 +1645,37 @@ scenario = Scenario(configspace, n_trials=N_TRIALS, deterministic=False)  # tota
 # see optimisation_parameters.py's own comment on why these must match.
 intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_config_calls=MAX_CONFIG_CALLS)
 
+def derive_merit_penalty_alpha() -> float:
+    """
+    Converts the fixed exchange rate "MERIT_DALYS_IMPROVEMENT_PCT % of
+    baseline DALYs is worth MERIT_BUDGET_VIOLATION_PCT % of budget
+    violation" into ConstrainedEI's alpha (DALYs per unit, i.e. 100%, of
+    expected overshoot): alpha = (X / Y) * baseline median DALYs. Only
+    needed for the additive combination; returns 0.0 otherwise.
+    """
+    if CONSTRAINT_COMBINATION != "additive":
+        return 0.0
+    if MERIT_BUDGET_VIOLATION_PCT <= 0:
+        raise ValueError("MERIT_BUDGET_VIOLATION_PCT must be > 0")
+    path = Path(BASELINE_SUMMARY_FILE)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{BASELINE_SUMMARY_FILE} not found: the additive constraint combination "
+            "derives its penalty weight from the baseline run's median DALYs. Run the "
+            "baseline first (SUBMIT_BASELINE_RUN) or use CONSTRAINT_COMBINATION='multiplicative'."
+        )
+    with open(path) as f:
+        baseline_dalys = float(json.load(f)["median_dalys"])
+    alpha = (MERIT_DALYS_IMPROVEMENT_PCT / MERIT_BUDGET_VIOLATION_PCT) * baseline_dalys
+    print(
+        f"[merit] additive penalty: {MERIT_DALYS_IMPROVEMENT_PCT}% of baseline DALYs "
+        f"({baseline_dalys:.4f}) per {MERIT_BUDGET_VIOLATION_PCT}% budget violation -> "
+        f"alpha = {alpha:.4f} DALYs per 100% overshoot "
+        f"(1% expected overshoot = {alpha / 100:.4f} DALYs)"
+    )
+    return alpha
+
+
 acquisition_function = ConstrainedEI(
     configspace=configspace,
     objective_name="dalys",
@@ -1653,14 +1691,16 @@ acquisition_function = ConstrainedEI(
                        # on MultiSurrogateModel's own hardcoded default
                        # deep inside constrained_ei.py, with no way to
                        # actually tune it from here
-    alpha=MERIT_PENALTY_ALPHA,      # scales the additive merit term
-                       # (sum_j pi_j(x)) into the objective's own DALYs
-                       # units - see optimisation_parameters.py's own
-                       # description of MERIT_PENALTY_ALPHA
-    tau=MERIT_VIOLATION_THRESHOLD,  # tolerance on each constraint's
-                       # predicted violation probability - see
-                       # optimisation_parameters.py's own description of
-                       # MERIT_VIOLATION_THRESHOLD
+    combination=CONSTRAINT_COMBINATION,  # single switch: "multiplicative"
+                       # (EI * prod_j P(feasible_j); assumes uncorrelated
+                       # constraints) or "additive" (EI - alpha * sum_j
+                       # expected overshoot_j; no such assumption) - see
+                       # optimisation_parameters.py's own description
+    alpha=derive_merit_penalty_alpha(),  # additive mode only: DALYs per
+                       # unit (100%) of expected budget overshoot, derived
+                       # from the baseline - see that function
+    tolerance=MERIT_OVERSHOOT_TOLERANCE,  # additive mode only: fraction
+                       # of budget below which expected overshoot is ignored
 )
 
 smac = HyperparameterOptimizationFacade(
@@ -1757,29 +1797,42 @@ def _safe_ask(max_retries: int = 3, retry_delay_seconds: float = 5.0) -> TrialIn
 
 pending: list[tuple[TrialInfo, AzureJobHandle]] = []
 
-# prime the pipeline
-for _ in range(N_CONCURRENT):
-    info = _safe_ask()
-    pending.append((info, submit_azure_job(info.config, info.seed)))
-
 n_completed = 0  # N_TRIALS is a budget for NEW trials only - warm-started
     # runs (recovered, PRIOR_RUNS, N_INIT) don't count against it,
     # regardless of n_seeded.
+n_in_flight = 0  # jobs submitted and not yet resolved (success or failure)
 best_dalys_over_time: list[float] = []
 converged = False
 
 
+def _submit_proposal(target: list) -> None:
+    """
+    Asks SMAC for one trial and submits it. SMAC's intensifier decides which
+    (config, seed) comes next: a queued challenger on a seed the incumbent has
+    already run, an extra seed for the incumbent, or the first seed of a
+    freshly proposed config. Each result is told back as it arrives.
+    """
+    global n_in_flight
+    info = _safe_ask()
+    target.append((info, submit_azure_job(info.config, info.seed)))
+    n_in_flight += 1
+
+
 def _top_up_pending(still_pending: list) -> None:
     """
-    Ask SMAC for a fresh config and submit it, keeping N_CONCURRENT
-    slots full - unless the budget or convergence say otherwise. Shared
-    by the success path and both failure paths below, so a failed Azure
-    task or a postprocessing crash doesn't permanently shrink how many
-    jobs are in flight.
+    Keeps up to N_CONCURRENT jobs in flight - unless the trial budget
+    (completed + in-flight) or convergence
+    say otherwise. Shared by the success path and both failure paths below,
+    so a failed Azure task or a postprocessing crash doesn't permanently
+    shrink how many jobs are in flight.
     """
-    if n_completed < scenario.n_trials and not converged:
-        new_info = _safe_ask()
-        still_pending.append((new_info, submit_azure_job(new_info.config, new_info.seed)))
+    while (not converged and n_in_flight < N_CONCURRENT
+           and n_completed + n_in_flight < scenario.n_trials):
+        _submit_proposal(still_pending)
+
+
+# prime the pipeline
+_top_up_pending(pending)
 
 
 def _drain_pending(pending: list) -> None:
@@ -1833,6 +1886,7 @@ try:
             if not azure_job_is_finished(job):
                 still_pending.append((info, job))
                 continue
+            n_in_flight -= 1  # this job has resolved, whatever its outcome
 
             # --- the Azure task itself failed (non-zero exit code) - this
             # trial produced no usable result. Told to SMAC as CRASHED (not
@@ -1889,6 +1943,7 @@ try:
             _top_up_pending(still_pending)
 
         pending = still_pending
+        _top_up_pending(pending)  # also covers the case where nothing was in flight
         if not made_progress:
             time.sleep(POLL_INTERVAL_SECONDS)
 except (Exception, KeyboardInterrupt) as e:
@@ -1934,9 +1989,36 @@ for entries in grouped.values():
         agg[name] = float(np.median([e[name] for e in entries]))
     aggregated.append(agg)
 
-feasible = [a for a in aggregated if all(a[name] == 0 for name in CONSTRAINT_NAMES)]
-best = min(feasible, key=lambda a: a["dalys"])
-print(
-    "Best feasible config:", dict(best["config_object"]),
-    "DALYs:", best["dalys"], f"(averaged over {best['n_seeds_evaluated']} seed(s))",
-)
+# A reported answer must be CONFIRMED: evaluated on at least MAX_CONFIG_CALLS
+# seeds (the intensifier's own cap), so that neither its median DALYs nor its
+# median slack rests on a lucky single realisation.
+confirmed = [a for a in aggregated if a["n_seeds_evaluated"] >= MAX_CONFIG_CALLS]
+feasible = [a for a in confirmed if all(a[name] <= 0 for name in CONSTRAINT_NAMES)]  # signed slack: <= 0
+if feasible:
+    best = min(feasible, key=lambda a: a["dalys"])
+    print(
+        "Best feasible config:", dict(best["config_object"]),
+        "DALYs:", best["dalys"], f"(median over {best['n_seeds_evaluated']} seed(s))",
+    )
+else:
+    # No configuration satisfied every constraint on its median over seeds.
+    # Report the closest one instead of crashing at the very end of a long
+    # run - but it is NOT a valid answer: it violates the budget.
+    unconfirmed_feasible = [
+        a for a in aggregated
+        if a["n_seeds_evaluated"] < MAX_CONFIG_CALLS and all(a[name] <= 0 for name in CONSTRAINT_NAMES)
+    ]
+    if unconfirmed_feasible:
+        u = min(unconfirmed_feasible, key=lambda a: a["dalys"])
+        print(
+            f"[no confirmed feasible config] No feasible configuration has been evaluated on "
+            f"{MAX_CONFIG_CALLS} seeds. Best UNCONFIRMED feasible (fewer seeds, NOT a reported answer):",
+            dict(u["config_object"]), "DALYs:", u["dalys"], f"({u['n_seeds_evaluated']} seed(s))",
+        )
+    closest = min(aggregated, key=lambda a: max(a[name] for name in CONSTRAINT_NAMES))
+    print(
+        "[no feasible config] No confirmed configuration met every budget constraint. "
+        "Closest overall (smallest worst-constraint slack, NOT a valid answer):",
+        dict(closest["config_object"]), "DALYs:", closest["dalys"],
+        "worst slack:", max(closest[name] for name in CONSTRAINT_NAMES),
+    )

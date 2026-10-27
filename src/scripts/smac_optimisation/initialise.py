@@ -8,7 +8,8 @@ or edited independently of the orchestration logic that imports it.
 Two responsibilities live here:
 1. Defining PERIOD_BOUNDARIES (user-definable), loading the year-specific
    BUDGET for each cost category from a limits file, and the bucketing
-   logic that turns a run's per-year cost into a period-level violation.
+   logic that turns a run's per-year cost into a period-level budget
+   SLACK (signed: negative = headroom under budget, positive = overspend).
 2. PRIOR_RUNS - already-completed runs to warm-start the search with.
 
 TERMINOLOGY, since this has been a source of confusion before: "cost"
@@ -47,18 +48,39 @@ from optimisation_parameters import (
 #
 # Rather than a year-by-year constraint (prohibitive across a long
 # horizon - would need one separate RF surrogate per year, with the
-# multiplied-probability problem getting worse with every added
+# per-constraint feasibility terms compounding with every added
 # constraint), each cost category is bucketed into a small,
-# USER-DEFINABLE number of periods. Within each period, the CUMULATIVE
-# (mean-across-years, not max) violation is computed:
+# USER-DEFINABLE number of periods. Within each period, the constraint
+# value is the PEAK budget ratio, expressed as a signed slack:
 #
-#     period_violation = mean( max(0, cost_year/budget_year - 1) for year in period )
+#     period_slack = max( cost_year/budget_year for year in period ) - 1
 #
-# Mean-across-years (not max-across-years, and NOT an average restricted
-# to only the years that violate) so that an ADDITIONAL bad year can
-# only raise or maintain a period's score, never lower it - averaging
-# only the positive values would let a config with MORE violating years
-# score BETTER than one with fewer, which is the wrong direction.
+# i.e. the highest yearly cost/budget ratio in the period, minus 1. The
+# constraint is satisfied exactly when period_slack <= 0 (no year in the
+# period exceeds its budget); a positive value is the fractional overspend
+# in the worst year (0.25 = 25% over budget in that year), a negative one
+# is the headroom in the worst year (-0.40 = even the worst year used
+# only 60% of its budget).
+#
+# WHY SIGNED, NOT CLIPPED AT 0: an earlier version averaged
+# max(0, cost/budget - 1) over the years of the period. That is exactly 0
+# across the whole feasible region, so the surrogate saw a flat floor
+# with a kink at the boundary, and a feasible configuration's distance
+# from the limit was invisible to it. The peak-ratio slack is continuous
+# through 0 - it carries on below 0 (how much headroom) and above 0 (how
+# much overspend) - so a regression surrogate's mean and spread are
+# meaningful on both sides of the limit and the standard Gaussian read of
+# feasibility is valid (see constrained_ei.py).
+#
+# WHY THE PEAK, NOT THE MEAN, ACROSS YEARS: any bad year makes the period
+# infeasible, and an ADDITIONAL bad year can never improve the score (a
+# mean over years would let good years offset a violating one).
+#
+# The constraint NAMES below still contain "_violation" (e.g.
+# hiv_hrh_violation_p1) because convergence_monitoring.py and
+# evaluate_pipeline_run.py discover constraint columns by that substring;
+# the VALUES are now the signed slack, so "feasible" means <= 0 (not
+# == 0) wherever it is checked.
 #
 # PERIOD_BOUNDARIES is user-definable (absolute calendar years,
 # inclusive on both ends) and MUST be the same list for HIV-HRH and
@@ -75,9 +97,9 @@ PERIOD_BOUNDARIES = [
 # Consistency check against postprocess_output.py: every YEAR ACTUALLY
 # SIMULATED (postprocess_output.py's TARGET_PERIOD) must fall into AT
 # LEAST ONE defined period - otherwise that year's real cost data would
-# be silently dropped from every constraint (bucket_cumulative_violation
+# be silently dropped from every constraint (bucket_peak_budget_slack
 # excludes years with no matching period, which is indistinguishable
-# from "0 violation", i.e. always "feasible" - the wrong kind of failure
+# from "no cost", i.e. always "feasible" - the wrong kind of failure
 # to have hidden).
 #
 # The REVERSE is explicitly fine and NOT checked: PERIOD_BOUNDARIES may
@@ -119,7 +141,7 @@ HIV_CONSUMABLE_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_con
 
 
 _warned_zero_budget_years: set[int] = set()  # tracks which years have
-    # already triggered bucket_cumulative_violation()'s zero-budget
+    # already triggered bucket_peak_budget_slack()'s zero-budget
     # warning below, so it prints once per year, not once per trial
 
 
@@ -135,31 +157,42 @@ def _year_to_period_index(year: int) -> int | None:
     return None
 
 
-def bucket_cumulative_violation(cost_by_year: dict, budget_by_year: dict) -> list[float]:
+NO_DATA_SLACK = -1.0  # slack reported for a period in which NO year had both
+    # a cost and a usable (> 0) budget. Equal to what a cost ratio of 0
+    # gives (0 - 1): "nothing spent, nothing to violate" - clearly
+    # feasible, and a constant that costs the surrogates nothing. (The
+    # previous metric returned 0.0 here; under the signed metric 0.0 would
+    # mean "exactly AT the budget", i.e. sitting right on the feasibility
+    # boundary, which would distort the constraint surrogate for every
+    # short test run whose later periods never accumulate any data.)
+
+
+def bucket_peak_budget_slack(cost_by_year: dict, budget_by_year: dict) -> list[float]:
     """
-    For each period in PERIOD_BOUNDARIES, computes the mean of
-    max(0, cost_year/budget_year - 1) across every year in that period -
-    see the module-level comment above for why mean-across-all-years
-    (not max, not mean-of-positives-only). Years with no defined budget
-    ARE SKIPPED (excluded from that period's denominator too, not
-    treated as a violation or as feasible) - a budget of exactly 0 (or
-    negative) is treated the SAME as no budget at all: it almost always
-    means the baseline run never actually recorded any cost for this
-    year/category (compute_and_save_baseline_budgets() defaults a
-    year's budget to 0.0 if the baseline's own runs never produced data
-    for it), not that the true limit is genuinely zero. Dividing by a
-    real zero would raise ZeroDivisionError outright - caught by
-    optimisation_pipeline.py's own [postprocessing failed] handler, but
-    silently CRASHING EVERY trial that has any cost in that year, which
-    can empty out `history` entirely for the whole run (surfacing much
-    later as "min() arg is an empty sequence" at final selection,
-    genuinely confusing to trace back to this). Prints a warning the
-    first time a zero/negative budget is actually skipped, so a
-    systematically-broken baseline (e.g. most years ending up at 0.0)
-    doesn't go unnoticed.
+    For each period in PERIOD_BOUNDARIES, computes the highest yearly
+    cost/budget ratio among the years in that period, minus 1 - see the
+    module-level comment above for the definition, why it is signed, and
+    why it is the peak rather than the mean. The result is <= 0 exactly
+    when no year of the period exceeds its budget.
+
+    Years with no defined budget ARE SKIPPED (not treated as a violation
+    or as feasible) - a budget of exactly 0 (or negative) is treated the
+    SAME as no budget at all: it almost always means the baseline run
+    never actually recorded any cost for this year/category
+    (compute_and_save_baseline_budgets() defaults a year's budget to 0.0
+    if the baseline's own runs never produced data for it), not that the
+    true limit is genuinely zero. Dividing by a real zero would raise
+    ZeroDivisionError outright - caught by optimisation_pipeline.py's own
+    [postprocessing failed] handler, but silently CRASHING EVERY trial
+    that has any cost in that year, which can empty out `history`
+    entirely for the whole run (surfacing much later as "min() arg is an
+    empty sequence" at final selection, genuinely confusing to trace back
+    to this). Prints a warning the first time a zero/negative budget is
+    actually skipped, so a systematically-broken baseline (e.g. most years
+    ending up at 0.0) doesn't go unnoticed. A period left with no usable
+    year at all returns NO_DATA_SLACK.
     """
-    period_sums = [0.0] * len(PERIOD_BOUNDARIES)
-    period_counts = [0] * len(PERIOD_BOUNDARIES)
+    period_peak_ratio: list[float | None] = [None] * len(PERIOD_BOUNDARIES)
 
     for year, cost in cost_by_year.items():
         idx = _year_to_period_index(year)
@@ -178,12 +211,13 @@ def bucket_cumulative_violation(cost_by_year: dict, budget_by_year: dict) -> lis
                 )
                 _warned_zero_budget_years.add(year)
             continue
-        period_sums[idx] += max(0.0, cost / budget - 1)
-        period_counts[idx] += 1
+        ratio = cost / budget
+        if period_peak_ratio[idx] is None or ratio > period_peak_ratio[idx]:
+            period_peak_ratio[idx] = ratio
 
     return [
-        (period_sums[i] / period_counts[i]) if period_counts[i] > 0 else 0.0
-        for i in range(len(PERIOD_BOUNDARIES))
+        (peak - 1.0) if peak is not None else NO_DATA_SLACK
+        for peak in period_peak_ratio
     ]
 
 
@@ -250,6 +284,5 @@ BASELINE_CONFIG_VALUES = {
     "config_coverage_plhiv": 0.30,
     "tdf_test_replace_vl_test": False,
     "targeted_adherence_monitoring": False,
-    "config_target_IPT": False,
 }
 

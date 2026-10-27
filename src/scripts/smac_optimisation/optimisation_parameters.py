@@ -2,7 +2,7 @@
 # TLO / hyperparameters
 # --------------------------------------------------------------------------
 YEAR_START_DATE = 2010
-YEAR_END_DATE = 2014 # inclusive, from a TLO perspective
+YEAR_END_DATE = 2014
 CONFIG_YEAR_START_DATE = 2011
 POP_SIZE = 1000
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
@@ -20,8 +20,10 @@ EI_XI = 0.0
 MIN_SAMPLES_LEAF = 3
 PENALTY_COEFFICIENT_MULTIPLIER = 3
 INFEASIBILITY_FLOOR_MULTIPLIER = 100
-MERIT_VIOLATION_THRESHOLD = 0.5
-MERIT_PENALTY_ALPHA = 50.0
+CONSTRAINT_COMBINATION = "multiplicative"  # "multiplicative" or "additive"
+MERIT_DALYS_IMPROVEMENT_PCT = 10.0         # additive mode only: X in "X% DALYs ...
+MERIT_BUDGET_VIOLATION_PCT = 2.0           # ... is worth Y% budget violation" (Y)
+MERIT_OVERSHOOT_TOLERANCE = 0.0            # additive mode only
 
 # --------------------------------------------------------------------------
 # Operational (Azure submission / polling) hyperparameters
@@ -41,7 +43,7 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
 SUBMIT_SUSPEND_PART = False
-VALID_CHECKPOINT_COMMITS: list[str] = ['8bd3208531e26a36a303ddbf618ea8539301a5e9']
+VALID_CHECKPOINT_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47']
 
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
@@ -49,11 +51,12 @@ VALID_CHECKPOINT_COMMITS: list[str] = ['8bd3208531e26a36a303ddbf618ea8539301a5e9
 SUBMIT_BASELINE_RUN = False
 COST_LIMITS_FILE = "cost_limits_by_year.csv"
 BASELINE_SUMMARY_FILE = "baseline_summary.json"
+BASELINE_BUDGET_COMPARISON_FILE = "baseline_budget_comparison.csv"
 
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
-VALID_PRIOR_RUN_COMMITS: list[str] = ['8bd3208531e26a36a303ddbf618ea8539301a5e9']
+VALID_PRIOR_RUN_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47', '2d12ead5f49287557a4ee4c56060b1efe42dd4a5']
 SUBMIT_INITIAL_DESIGN = False
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
@@ -108,34 +111,49 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     results, which argues for a HIGHER min_samples_leaf to compensate,
 #     not a lower one).
 #
-# MERIT_VIOLATION_THRESHOLD
-#     (tau in ConstrainedEI's own docstring/comments.) Tolerance, on the
-#     predicted violation-PROBABILITY axis (in [0, 1], not on the
-#     violation amount itself), below which a constraint's predicted
-#     P(violated) contributes nothing to the acquisition function's merit
-#     term - only the exceedance above this threshold is penalised. Has
-#     nothing to do with a constraint's own fixed violation<=0 feasibility
-#     boundary, which is unaffected by this value. A lower threshold makes
-#     the search more risk-averse (penalises even a small predicted
-#     violation probability); 0.5 (a coin-flip) is a reasonable starting
-#     point when nothing more specific is known.
+# CONSTRAINT_COMBINATION
+#     The single switch for how ConstrainedEI combines the objective's
+#     expected improvement (EI) with the six constraints. Each constraint
+#     value is the signed slack g_j = (highest yearly cost/budget ratio in
+#     the period) - 1, feasible when g_j <= 0 (see initialise.py).
+#       "multiplicative": acquisition = EI * prod_j P(g_j <= 0). ASSUMES the
+#           constraints are statistically independent (uncorrelated); the
+#           product shrinks geometrically with the number of constraints.
+#           No extra parameters.
+#       "additive": acquisition = EI - alpha * sum_j E[max(
+#           g_j - MERIT_OVERSHOOT_TOLERANCE, 0)]. Makes no independence
+#           assumption; penalises the expected SIZE of the overshoot, and
+#           grows only linearly with the number of constraints. Needs
+#           the exchange rate (MERIT_DALYS_IMPROVEMENT_PCT /
+#           MERIT_BUDGET_VIOLATION_PCT) chosen.
+#     Only steers which config is evaluated next; the reported answer is
+#     always chosen on the recorded g_j <= 0.
 #
-# MERIT_PENALTY_ALPHA
-#     (alpha/lambda in ConstrainedEI's own docstring/comments.) Scales the
-#     summed per-constraint merit term (unitless, each term in [0, 1])
-#     into the objective's own DALYs units before it's subtracted from EI
-#     - i.e. acquisition(x) = EI(x) - MERIT_PENALTY_ALPHA * sum_j pi_j(x).
-#     Needs calibrating against the actual DALYs scale this pipeline
-#     produces, not left at a placeholder: a reasonable starting point is
-#     to match MERIT_PENALTY_ALPHA * (1 - MERIT_VIOLATION_THRESHOLD) *
-#     (number of constraints) to a fraction of the observed spread in EI
-#     values (e.g. the std or IQR of DALYs across the initial design) -
-#     then sanity-check on the realistic case of one borderline
-#     constraint (not the worst case of every constraint maximally
-#     violated), and revisit if the search seems to either ignore
-#     constraints it shouldn't, or refuse to explore anything with any
-#     nonzero predicted violation probability at all. The default here
-#     (50.0) is an untuned placeholder.
+# MERIT_DALYS_IMPROVEMENT_PCT, MERIT_BUDGET_VIOLATION_PCT
+#     ADDITIVE MODE ONLY. A fixed exchange rate for the whole search: an
+#     improvement of MERIT_DALYS_IMPROVEMENT_PCT (X) percent of the BASELINE
+#     DALYs is worth MERIT_BUDGET_VIOLATION_PCT (Y) percent of budget
+#     overshoot (in the worst year of a period). Budgets are the highest
+#     yearly cost across the baseline runs, so every baseline run has
+#     slack <= 0 (the baseline's median sits below 0). At startup the pipeline converts
+#     this into ConstrainedEI's alpha, in DALYs per unit (100%) of expected
+#     overshoot:
+#         alpha = (X / Y) * baseline median DALYs
+#     (baseline median DALYs is read from BASELINE_SUMMARY_FILE, written by
+#     the baseline run). Example: X = 10, Y = 2 gives alpha = 5 * baseline
+#     DALYs, i.e. 1% of expected overshoot costs 5% of baseline DALYs of
+#     acquisition value. The same rate applies to all six constraints.
+#     Only X / Y matters. Larger X / Y = stricter on violations. Judge it
+#     against late-run EI values, which shrink as the search converges: a
+#     rate that is too strict will push the search away from the boundary.
+#     Not used in multiplicative mode.
+#
+# MERIT_OVERSHOOT_TOLERANCE
+#     (delta in ConstrainedEI.) ADDITIVE MODE ONLY. Fraction of the budget
+#     (in cost/budget-ratio units, 0.02 = 2%) by which a constraint's
+#     expected overshoot is ignored in the search penalty; 0.0 counts any
+#     expected overshoot. Does not change feasibility, which is always
+#     g_j <= 0.
 #
 # PENALTY_COEFFICIENT_MULTIPLIER
 #     K = PENALTY_COEFFICIENT_MULTIPLIER * dalys, the penalty coefficient
@@ -159,6 +177,20 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     spending extra seeds confirming an infeasible config. Self-scaling
 #     (multiplies THIS trial's own dalys, not a fixed constant) so it
 #     stays proportionate regardless of the objective's actual scale.
+#     WHY THE FLOOR CAN STAY HIGH even though the intensifier compares means
+#     on few seeds: the intensifier is only the search's gatekeeper, never
+#     the source of the reported answer. (1) Its strictness costs little: a
+#     config wrongly rejected on one noisy seed is a lost candidate, not a
+#     wrong result, and ConstrainedEI, which steers proposals from ALL
+#     observations rather than from the intensifier's verdicts, can propose
+#     nearby configs again. (2) A low floor would be worse: infeasible
+#     configs could win comparisons and be promoted and topped up. (3) The
+#     final answer ignores SMAC's incumbent entirely: it needs at least
+#     MAX_CONFIG_CALLS seeds, the MEDIAN over seeds, and every median slack
+#     <= 0, so a config the intensifier over-rejected can never be reported
+#     and one it over-promoted must still pass that test. (4) The EI
+#     incumbent eta is also independent of the floor: it is the best
+#     surrogate-predicted mean over configs that are feasible by median.
 #     Deliberately NOT np.inf (used elsewhere for genuinely CRASHED
 #     trials, which SMAC's own runhistory encoder explicitly excludes
 #     from surrogate training via considered_states) - a
@@ -222,8 +254,8 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 # --- Baseline run ------------------------------------------------------------
 # A standard (non-suspend/resume), 10-differently-seeded-run submission of
 # smac_scenario_baseline.py, used ONLY to derive the budget constraint
-# values themselves (the upper 95% CI, across those 10 runs, of HIV-HRH
-# and HIV-consumable cost) - written into COST_LIMITS_FILE before the real
+# values themselves (per year, the HIGHEST cost across those 10 runs, of
+# HIV-HRH and HIV-consumable cost) - written into COST_LIMITS_FILE before the real
 # optimisation loop starts. See
 # postprocess_output.compute_and_save_baseline_budgets() and
 # optimisation_pipeline.submit_baseline_job().
@@ -264,6 +296,15 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     evaluate_pipeline_run.py's plotting to draw the baseline comparison
 #     line - read from disk, independently, matching that file's own
 #     "never touches the live process" design.
+#
+# BASELINE_BUDGET_COMPARISON_FILE
+#     CSV written by compute_and_save_baseline_budgets(): per year and
+#     category, the baseline mean, the adopted budget (max across runs) and
+#     the upper 95% CI of the mean, plus the gap between the two. For
+#     inspection only - nothing reads it back. The same function prints,
+#     per category, the summed yearly budget against the most expensive
+#     single baseline run, and how many baseline runs would have exceeded
+#     a CI-based budget.
 
 
 # --- Initial design ----------------------------------------------------------
