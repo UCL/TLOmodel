@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, get_root_path
 from tlo.methods import (
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
@@ -28,32 +28,41 @@ from tlo.methods import (
     tb,
 )
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+# outputpath = Path("./outputs")  # folder for convenience of storing outputs
+outputpath = Path("./outputs/diabetic_retinopathy_outputs")
+outputpath.mkdir(parents=True, exist_ok=True)
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# The resource files
-resourcefilepath = Path("./resources")
-
-# Alternative from DR calibrarion check
-# root = get_root_path()
-# resourcefilepath = root / "resources"
+root = get_root_path()
+resourcefilepath = root / "resources"
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 2000
+seed = 0
+FORECAST_BASELINE_YEAR = 2012
+FORECAST_END_YEAR = 2014
 
+CALIBRATION_FILE = Path("./resources/diabetic_retinopathy_calibration_targets.csv")
 
-def run_sim(service_availability):
+def run_sim(service_availability, run_name="baseline"):
     # log_config = {
     #     'filename': 'LogFile',
     #     'directory': outputpath
     # }
-    sim = Simulation(start_date=start_date, seed=0,
-                     log_config={"filename": "LogFile"}, resourcefilepath=resourcefilepath)
+
+    # sim = Simulation(start_date=start_date, seed=0,
+    #                  log_config={"filename": "LogFile"}, resourcefilepath=resourcefilepath)
+    logfile_name = f"LogFile_{run_name}_{datestamp}"
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={"filename": logfile_name, "directory": outputpath},
+        resourcefilepath=resourcefilepath,
+    )
 
     # Register the appropriate modules
     sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
@@ -80,232 +89,269 @@ def run_sim(service_availability):
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-
     return sim.log_filepath
 
 
+# Previously
+# def get_summary_stats(logfile):
+#     output = parse_log_file(logfile)
+#     df = output['tlo.methods.diabetic_retinopathy']['summary_stats']
+#     # Create a date column for filtering
+#     df['date'] = pd.to_datetime(df['date'])
+#     df = df.set_index('date')
+#     return df
+
+# Alternative
 def get_summary_stats(logfile):
+    """Read the DR module's monthly summary_stats log."""
     output = parse_log_file(logfile)
-    df = output['tlo.methods.diabetic_retinopathy']['summary_stats']
-    # Create a date column for filtering
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.set_index('date')
+    df = output["tlo.methods.diabetic_retinopathy"]["summary_stats"].copy()
+    df["date"] = pd.to_datetime(df["date"])
+    return df.set_index("date").sort_index()
+
+
+def annualise_monthly_results(df):
+    """Keep December observations as year-end prevalence/stock estimates."""
+    year = df.index.year
+    annual = df.groupby(year).last()
+
+    # Incidence columns are monthly flows, so sum them over the year rather
+    # than keeping only December's value. Prevalence/count columns remain
+    # year-end stocks and therefore use the last observation in each year.
+    incidence_cols = [
+        c for c in df.columns
+        if c.startswith(("inc_dr_", "inc_dmo_", "inc_vision_"))
+    ]
+    if incidence_cols:
+        annual_incidence = df[incidence_cols].groupby(year).sum()
+        annual.loc[:, incidence_cols] = annual_incidence
+
+    annual.index.name = "year"
+    return annual
+
+
+def safe_percent(numerator, denominator):
+    """Percentages with missing/zero denominators represented as NA."""
+    return (100.0 * numerator / denominator.where(denominator != 0)).astype(float)
+
+
+
+def derive_analysis_metrics(monthly):
+    """
+    Derive measures from existing monthly logs. Vision impairment attribution
+    requires the small extra logging addition described in the accompanying
+    instructions; without it, do not treat all impairment as DR-attributable.
+    """
+    df = monthly.copy()
+    df["total_dr_any"] = (
+        df["total_dr_mild_or_moderate"]
+        + df["total_dr_severe"]
+        + df["total_dr_proliferative"]
+    )
+    df["total_dmo_any"] = (
+        df["total_dmo_clinically_significant"]
+        + df["total_dmo_non_clinically_significant"]
+    )
+    df["total_vision_impaired"] = (
+        df["total_vision_moderate_vision_impairment"]
+        + df["total_vision_severe_vision_impairment"]
+        + df["total_vision_blindness"]
+    )
+
+    # DR among people with diabetes; DMO among
+    # people with DR; vision impairment among people with diabetes.
+    df["dr_prevalence_among_diabetics_pct"] = safe_percent(
+        df["total_dr_any"], df["total_alive_diabetics"]
+    )
+    df["dmo_prevalence_among_dr_pct"] = safe_percent(
+        df["total_dmo_any"], df["total_dr_any"]
+    )
+    df["vision_impairment_among_diabetics_pct"] = safe_percent(
+        df["total_vision_impaired"], df["total_alive_diabetics"]
+    )
+    df["severe_vision_or_blindness_among_diabetics_pct"] = safe_percent(
+        df["total_vision_severe_vision_impairment"] + df["total_vision_blindness"],
+        df["total_alive_diabetics"],
+    )
+    df["blindness_among_diabetics_pct"] = safe_percent(
+        df["total_vision_blindness"], df["total_alive_diabetics"]
+    )
+
+    # Cumulative incidence is not reconstructed by summing monthly incidence
+    # blindly across calendar years; the logged monthly counts are summed below.
     return df
 
+def plot_burden_trends(annual):
+    """The core natural-history and possibly future-burden figures."""
+    figures = {
+        "dr_stages_prevalence": (
+            ["total_dr_mild_or_moderate", "total_dr_severe", "total_dr_proliferative"],
+            "DR stages: modelled counts",
+            "People alive",
+        ),
+        "vision_status_counts": (
+            ["total_vision_moderate_vision_impairment",
+             "total_vision_severe_vision_impairment", "total_vision_blindness"],
+            "Vision outcomes: modelled counts",
+            "People alive",
+        ),
+        "incidence_dr": (
+            ["inc_dr_mild_or_moderate", "inc_dr_severe", "inc_dr_proliferative"],
+            "Annual new DR-stage cases",
+            "New cases per year",
+        ),
+        "incidence_vision": (
+            ["inc_vision_moderate_vision_impairment",
+             "inc_vision_severe_vision_impairment", "inc_vision_blindness"],
+            "Annual new vision-impairment transitions",
+            "New transitions per year",
+        ),
+    }
 
-def plot_prevalence(df, prefix, title):
-    cols = [c for c in df.columns if c.startswith(prefix)]
+    for filename, (cols, title, ylabel) in figures.items():
+        available = [c for c in cols if c in annual.columns]
+        if not available:
+            continue
 
-    prev = df[cols].div(df[cols].sum(axis=1), axis=0)
+        # Grouped bar chart: one bar per outcome for each year
+        ax = annual[available].plot(
+            kind="bar",
+            figsize=(11, 6),
+            width=0.8,
+        )
 
-    prev.plot(figsize=(12, 6))
-    plt.title(title)
-    plt.ylabel("Prevalence")
-    plt.xlabel("Time")
-    plt.show()
+        ax.set_title(title)
+        ax.set_xlabel("Year")
+        ax.set_ylabel(ylabel)
+        ax.tick_params(axis="x", labelrotation=0)
+        ax.grid(True, axis="y", alpha=0.25)
+        ax.set_axisbelow(True)
+        ax.legend(title="Outcome", bbox_to_anchor=(1.02, 1), loc="upper left")
 
+        plt.tight_layout()
+        plt.savefig(
+            outputpath / f"{filename}_{datestamp}.png",
+            dpi=200,
+            bbox_inches="tight",
+        )
+        plt.close()
 
-# def plot_incidence(df, prefix, title):
-#     cols = [c for c in df.columns if c.startswith(prefix)]
-#
-#     df[cols].plot(figsize=(12, 6))
-#     plt.title(title)
-#     plt.ylabel("New Cases")
-#     plt.xlabel("Time")
-#     plt.show()
+    # Percentages use the actual number of alive people with diabetes, not the
+    # whole population or the sum of selected categories.
+    pct_cols = [
+        "dr_prevalence_among_diabetics_pct",
+        "vision_impairment_among_diabetics_pct",
+        "severe_vision_or_blindness_among_diabetics_pct",
+        "blindness_among_diabetics_pct",
+    ]
 
-def plot_prevalence_among_diabetics(df, prefix, title):
+    available = [c for c in pct_cols if c in annual.columns]
+    if available:
+        ax = annual[available].plot(
+            kind="bar",
+            figsize=(12, 6),
+            width=0.8,
+        )
 
-    cols = [c for c in df.columns if c.startswith(prefix)]
+        ax.set_title("DR and vision outcomes among people living with diabetes")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Percent of people with diabetes")
+        ax.tick_params(axis="x", labelrotation=0)
+        ax.grid(True, axis="y", alpha=0.25)
+        ax.set_axisbelow(True)
+        ax.legend(title="Outcome", bbox_to_anchor=(1.02, 1), loc="upper left")
 
-    prev = df[cols].div(df['total_alive_diabetics'], axis=0)
-
-    prev.plot(figsize=(12,6))
-    plt.title(title)
-    plt.ylabel("Prevalence among diabetics")
-    plt.xlabel("Time")
-    plt.show()
-
-
-def plot_incidence(df, prefix, title):
-    cols = [c for c in df.columns if c.startswith(prefix)]
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    df[cols].plot(ax=ax)
-
-    # Force integer y-axis ticks
-    from matplotlib.ticker import MaxNLocator
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
-    plt.title(title)
-    plt.ylabel("Number of New Cases")
-    plt.xlabel("Time")
-    plt.show()
-
-
-def plot_dr_status(df, title_prefix):
-    """Plot DR status both as counts and as prevalence among diabetics"""
-
-    # Plot 1: Absolute counts
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    # Absolute counts
-    dr_cols = ['total_dr_mild_or_moderate', 'total_dr_severe', 'total_dr_proliferative']
-    # for col in dr_cols:
-    #     label = col.replace('total_dr_', '').replace('_', ' ').title()
-    #     axes[0].plot(df.index, df[col], label=label, linewidth=2)
-    # axes[0].set_title(f'{title_prefix} - Absolute Counts')
-    # axes[0].set_xlabel('Date')
-    # axes[0].set_ylabel('Number of People')
-    # axes[0].legend()
-    # axes[0].grid(True, alpha=0.3)
-
-    # Prevalence among diabetics
-    total_diabetics = df[dr_cols].sum(axis=1) + df['total_dr_none']
-    for col in dr_cols:
-        label = col.replace('total_dr_', '').replace('_', ' ').title()
-        prevalence = (df[col] / total_diabetics * 100).fillna(0)
-        axes[1].plot(df.index, prevalence, label=label, linewidth=2)
-    axes[1].set_title(f'{title_prefix} - Prevalence Among Diabetics')
-    axes[1].set_xlabel('Date')
-    axes[1].set_ylabel('Prevalence Among Diabetics (%)')
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_dmo_status(df, title_prefix):
-    """Plot DMO status among people with DR"""
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    dmo_cols = ['total_dmo_clinically_significant', 'total_dmo_non_clinically_significant']
-    total_with_dr = df[['total_dr_mild_or_moderate', 'total_dr_severe', 'total_dr_proliferative']].sum(axis=1)
-
-    # Absolute counts
-    # for col in dmo_cols:
-    #     label = col.replace('total_dmo_', '').replace('_', ' ').title()
-    #     axes[0].plot(df.index, df[col], label=label, linewidth=2)
-    # axes[0].set_title(f'{title_prefix} - Absolute Counts')
-    # axes[0].set_xlabel('Date')
-    # axes[0].set_ylabel('Number of People')
-    # axes[0].legend()
-    # axes[0].grid(True, alpha=0.3)
-
-    # Prevalence among those with DR
-    for col in dmo_cols:
-        label = col.replace('total_dmo_', '').replace('_', ' ').title()
-        prevalence = (df[col] / total_with_dr * 100).fillna(0)
-        axes[1].plot(df.index, prevalence, label=label, linewidth=2)
-    axes[1].set_title(f'{title_prefix} - Prevalence Among People with DR')
-    axes[1].set_xlabel('Date')
-    axes[1].set_ylabel('Prevalence Among DR Patients (%)')
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.savefig(
+            outputpath / f"burden_percentages_{datestamp}.png",
+            dpi=200,
+            bbox_inches="tight",
+        )
+        plt.close()
 
 
-def plot_dmo_by_dr_stage(df_with):
-    """Plot DMO prevalence stratified by DR stage"""
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-
-    stages = ['mild_or_moderate', 'severe', 'proliferative']
-    titles = ['Mild/Moderate DR', 'Severe DR', 'Proliferative DR']
-
-    for idx, (stage, title) in enumerate(zip(stages, titles)):
-        # Need to track DMO by DR stage separately
-        # This may require additional logging
-        axes[idx].set_title(f'DMO in {title}')
-        axes[idx].set_ylabel('Prevalence')
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_vision_attribution(df_with):
-    """Plot what proportion of vision impairment is due to DR vs other causes"""
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-
-    # Calculate vision loss due to DR as proportion of total vision impairment
-    if 'vision_loss_due_to_dr' in df_with.columns:
-        total_vision_impaired = (df_with['total_vision_moderate_vision_impairment'] +
-                                 df_with['total_vision_severe_vision_impairment'] +
-                                 df_with['total_vision_blindness'])
-
-        dr_attributed = df_with['vision_loss_due_to_dr']
-
-        axes[0].plot(df_with.index, dr_attributed / (total_vision_impaired + 0.01) * 100)
-        axes[0].set_title('Vision Impairment Attributed to DR')
-        axes[0].set_ylabel('Percentage')
-
-    # Stacked area chart of vision outcomes
-    vision_cols = ['total_vision_normal', 'total_vision_moderate_vision_impairment',
-                   'total_vision_severe_vision_impairment', 'total_vision_blindness']
-
-    if all(col in df_with.columns for col in vision_cols):
-        axes[1].stackplot(df_with.index,
-                          df_with[vision_cols[0]] / df_with[vision_cols].sum(axis=1),
-                          df_with[vision_cols[1]] / df_with[vision_cols].sum(axis=1),
-                          df_with[vision_cols[2]] / df_with[vision_cols].sum(axis=1),
-                          df_with[vision_cols[3]] / df_with[vision_cols].sum(axis=1),
-                          labels=['Normal', 'Moderate', 'Severe', 'Blindness'],
-                          alpha=0.8)
-        axes[1].set_title('Vision Status Distribution Over Time')
-        axes[1].set_ylabel('Proportion')
-        axes[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
-    plt.tight_layout()
-    plt.show()
+def make_pathway_summary(annual):
+    """
+    Summarise the model's recorded first-diagnosis pathways. These are
+    descriptive groups, not randomised/comparable cohorts.
+    """
+    rows = []
+    for pathway in ("screening", "symptomatic"):
+        for year in (FORECAST_BASELINE_YEAR, FORECAST_END_YEAR):
+            if year not in annual.index:
+                continue
+            row = {"year": year, "pathway": pathway}
+            for col in (
+                f"n_diagnosed_{pathway}",
+                f"n_on_treatment_{pathway}",
+                f"total_dr_mild_or_moderate_{pathway}",
+                f"total_dr_severe_{pathway}",
+                f"total_dr_proliferative_{pathway}",
+                f"total_vision_moderate_vision_impairment_{pathway}",
+                f"total_vision_severe_vision_impairment_{pathway}",
+                f"total_vision_blindness_{pathway}",
+            ):
+                row[col] = annual.at[year, col] if col in annual.columns else pd.NA
+            rows.append(row)
+    result = pd.DataFrame(rows)
+    result.to_csv(outputpath / f"pathway_summary_{datestamp}.csv", index=False)
+    return result
 
 
-try:
-    logfile_with_healthsystem = run_sim(service_availability=['*'])
-    results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
-
-    logfile_no_healthsystem = run_sim(service_availability=[])
-    results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
-
-    df_with = get_summary_stats(logfile_with_healthsystem)
-    df_without = get_summary_stats(logfile_no_healthsystem)
-
-    # WITH HEALTH SYSTEM
-    # plot_prevalence(df_with, 'total_dr_', 'DR Prevalence (With Health System)')
-    plot_incidence(df_with, 'inc_dr_', 'DR Incidence (With Health System)')
-
-    # plot_prevalence(df_with, 'total_dmo_', 'DMO Prevalence (With Health System)')
-    plot_incidence(df_with, 'inc_dmo_', 'DMO Incidence (With Health System)')
-
-    plot_prevalence(df_with, 'total_vision_', 'Vision Prevalence (With Health System)')
-    plot_incidence(df_with, 'inc_vision_', 'Vision Incidence (With Health System)')
-
-    plot_dr_status(df_with, 'DR Status (With Health System)')
-    plot_dmo_status(df_with, 'DMO Status (With Health System)')
-
-    plot_dmo_by_dr_stage(df_with)
-    plot_vision_attribution(df_with)
-
-    plot_prevalence_among_diabetics(df_with,'total_vision_','Vision Prevalence Among Diabetics (With Health System)')
-
-    # WITHOUT HEALTH SYSTEM
-    plot_prevalence(df_without, 'total_dr_', 'DR Prevalence (No Health System)')
-    plot_incidence(df_without, 'inc_dr_', 'DR Incidence (No Health System)')
-
-    plot_prevalence(df_without, 'total_dmo_', 'DMO Prevalence (No Health System)')
-    plot_incidence(df_without, 'inc_dmo_', 'DMO Incidence (No Health System)')
-
-    plot_prevalence(df_without, 'total_vision_', 'Vision Prevalence (No Health System)')
-    plot_incidence(df_without, 'inc_vision_', 'Vision Incidence (No Health System)')
-
-    plot_dr_status(df_without, 'DR Status (Without Health System)')
-    plot_dmo_status(df_without, 'DMO Status (Without Health System)')
-
-    plot_prevalence_among_diabetics(df_without, 'total_vision_', 'Vision Prevalence Among Diabetics (No Health System)')
+def make_forecast_summary(annual):
+    """Compare the 2012 model state with 2014 and quantify absolute changes."""
+    requested = [
+        "total_alive_diabetics",
+        "total_dr_mild_or_moderate",
+        "total_dr_severe",
+        "total_dr_proliferative",
+        "total_dr_any",
+        "total_dmo_any",
+        "total_vision_moderate_vision_impairment",
+        "total_vision_severe_vision_impairment",
+        "total_vision_blindness",
+        "dr_prevalence_among_diabetics_pct",
+        "vision_impairment_among_diabetics_pct",
+        "severe_vision_or_blindness_among_diabetics_pct",
+        "blindness_among_diabetics_pct",
+    ]
+    years = [y for y in (FORECAST_BASELINE_YEAR, FORECAST_END_YEAR) if y in annual.index]
+    if len(years) < 2:
+        print(f"WARNING: Need annual outputs for both {FORECAST_BASELINE_YEAR} and "
+              f"{FORECAST_END_YEAR}; found {years}. Check simulation end date.")
+        return pd.DataFrame()
+    summary = annual.loc[years, [c for c in requested if c in annual.columns]].T
+    summary.columns = [f"value_{y}" for y in years]
+    summary["absolute_change"] = summary.iloc[:, 1] - summary.iloc[:, 0]
+    summary["percent_change"] = (
+        summary["absolute_change"] / summary.iloc[:, 0].replace(0, pd.NA) * 100
+    )
+    summary.to_csv(outputpath / f"forecast_2012_to_2014_{datestamp}.csv")
+    return summary
 
 
+def main():
+    logfile = run_sim(service_availability=["*"], run_name="full_healthsystem")
+    monthly = get_summary_stats(logfile)
+    monthly = derive_analysis_metrics(monthly)
+    annual = annualise_monthly_results(monthly)
 
-except Exception as e:
-    print(f"Error running simulation: {str(e)}")
-    raise
+    monthly.to_csv(outputpath / f"monthly_results_{datestamp}.csv")
+    annual.to_csv(outputpath / f"annual_results_{datestamp}.csv")
+
+    plot_burden_trends(annual)
+    pathway_summary = make_pathway_summary(annual)
+    forecast_summary = make_forecast_summary(annual)
+    # check_calibration_targets(annual)
+
+    # Print concise results for quick review; complete results are saved above.
+    print("\nForecast summary (2026 model state versus 2040):")
+    print(forecast_summary)
+    print("\nPathway summary (descriptive; not causal):")
+    print(pathway_summary)
+    print(f"\nOutputs saved to: {outputpath.resolve()}")
+
+
+if __name__ == "__main__":
+    main()
+
