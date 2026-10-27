@@ -14,7 +14,7 @@ class EHPScaleUpScenario(BaseScenario):
         self.end_date = Date(2027, 1, 2)
         self.pop_size = 40_000
         self.number_of_draws = 13
-        self.runs_per_draw = 20
+        self.runs_per_draw = 250
 
     def log_configuration(self):
         return {
