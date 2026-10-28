@@ -304,8 +304,8 @@ def plot_patient_load(cmp_tms: pd.DataFrame, cmp_clinic: pd.DataFrame, path: Pat
     tick_bold = [True, True, False, False, False]
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.3), sharey=True, sharex=True)
     panels = [
-        (axes[0], cmp_tms, "(a) TLO vs TLM time-and-motion study", "o", COLOUR_TLM_TIME_MOTION, "TLM time-and-motion"),
-        (axes[1], cmp_clinic, "(b) TLO vs TLM clinic records", "s", COLOUR_TLM_CLINIC_RECORDS, "TLM clinic records"),
+        (axes[1], cmp_tms, "(b) TLO vs TLM time-and-motion study", "o", COLOUR_TLM_TIME_MOTION, "TLM time-and-motion"),
+        (axes[0], cmp_clinic, "(a) TLO vs TLM clinic records", "s", COLOUR_TLM_CLINIC_RECORDS, "TLM clinic records"),
     ]
     for ax, cmp, title, marker, colour, label in panels:
         d = cmp.set_index("group").reindex(groups)
@@ -617,6 +617,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
                               get_staff_by_level, do_scaling=False).reindex(LEVELS)
         # patients per staff on duty per day, by level and run
         load_by_level = pat_days.div(staff[pat_days.columns] * HCW_ON_DUTY_FRACTION * n_days)
+
+        # check: TLO's own level composition = worker share = worker-day share, the implicit weights without reweighting
+        tlo_wd = (staff[pat_days.columns] * HCW_ON_DUTY_FRACTION * n_days).mean(axis=1)
+        pd.DataFrame({"tlo_worker_days": tlo_wd, "tlo_share": tlo_wd / tlo_wd.sum()}) \
+            .rename_axis("level").round(2).to_csv(output_folder / "tlo_level_composition.csv")
 
         def compare_load(tlm_file, weights_file):
             if reweight:
