@@ -844,7 +844,7 @@ def plot_district_maps(
     global_vmax = max(float(dist_all["deficit_pct"].abs().quantile(0.99)), 0.5)
     cmap = LinearSegmentedColormap.from_list(
         "custom_diverging",
-        ["#4D7799", "#7FA4C4", "#FFFFFF", "#D48E95", "#B5515B"],
+        ["#5E3C99", "#B2ABD2", "#FFFFFF", "#D48E95", "#B5515B"],
     )
     norm = plt.Normalize(vmin=-global_vmax, vmax=global_vmax)
 
@@ -915,11 +915,11 @@ def plot_district_maps(
         missing_data = merged[merged["deficit_pct"].isna()]
         if not missing_data.empty:
             missing_data.plot(
-                ax=ax, facecolor="#e8e8e8", edgecolor="#bbbbbb",
-                linewidth=0.3, zorder=2,
+                ax=ax, facecolor="white", edgecolor="#999999",
+                hatch="////", linewidth=0.3, zorder=2,
             )
 
-        lakes.plot(ax=ax, color="#cfe3f2", edgecolor="#a8c8dc", linewidth=0.2, zorder=3)
+        lakes.plot(ax=ax, color="#cfe3f2", edgecolor="#5b8db8", linewidth=0.4, zorder=3)
 
         ax.set_axis_off()
         letter = panel_labels[idx] if idx < len(panel_labels) else ""
@@ -940,11 +940,16 @@ def plot_district_maps(
     cbar.set_label("Heat-attributable service deficit (%)", fontsize=9)
     cbar.ax.tick_params(labelsize=8)
 
-    fig.text(
-        0.5, 0.025,
-        "Positive = services lost during hot months. Grey: insufficient data.",
-        ha="center", fontsize=8, style="italic", color="#333",
+    import matplotlib.patches as mpatches
+    fig.legend(
+        handles=[
+            mpatches.Patch(facecolor="white", edgecolor="#999999", hatch="////", label="Insufficient data"),
+            mpatches.Patch(facecolor="#cfe3f2", edgecolor="#5b8db8", label="Lake"),
+        ],
+        loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=2, frameon=False, fontsize=8,
     )
+    fig.text(0.5, 0.045, "Positive = services lost during hot months.",
+             ha="center", fontsize=8, style="italic", color="#333")
     # ---- Save vector + raster ---------------------------------------------
     stem = f"map_district_deficit_panel_{variant}_{WBGT_VAR}"
     out_png = f"{out_dir}{stem}.png"
@@ -2322,61 +2327,61 @@ if __name__ == "__main__":
     results_df = load_results_df()
     fitted = list(results_df["indicator"])
 
-    # print("\n[0] time-series + ER two-panel per indicator")
-    # plot_ts_overlay_with_wbgt_rug(fitted)
-    #
-    #
-    # print("\n[2] main forest plot")
-    # print("  ->", plot_main_forest(results_df))
-    #
-    # print("\n[4] IRR forest plot")
-    # print("  ->", plot_irr_forest(results_df))
+    print("\n[0] time-series + ER two-panel per indicator")
+    plot_ts_overlay_with_wbgt_rug(fitted)
+
+
+    print("\n[2] main forest plot")
+    print("  ->", plot_main_forest(results_df))
+
+    print("\n[4] IRR forest plot")
+    print("  ->", plot_irr_forest(results_df))
 
     print("\n[5] exposure-response panel")
     print("  ->", plot_exposure_response_panel(fitted))
 
-    # print("\n[6] monthly deficit panel")
-    # print("  ->", plot_monthly_deficit_panel(fitted))
-    #
-    # print("\n[7] timeseries burden panel")
-    # print("  ->", plot_timeseries_panel(fitted))
-    #
-    # print("\n[8] district choropleth maps")
-    # print("  ->", plot_district_maps(fitted, variant="per_district"))
-    # print("  ->", plot_district_maps(fitted, variant="national"))
-    #
-    #
-    # print("\n[9] projection heatmaps")
-    # for p in plot_projection_heatmaps(fitted):
-    #     print("  ->", p)
-    #
-    # print("\n[11] district × indicator heatmap")
-    # print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
-    #
-    # print("\n[12] projection forest — aggregate and hot-month, multiple windows")
-    # for w in [(2025, 2040)]:
-    #
-    #     print(f"  hot-months {w[0]}-{w[1]}:",
-    #           plot_projection_forest(fitted, mode="hot",     results_df=results_df))
-    #
-    # print("\n[13] projection annual trajectory panel — aggregate and hot-month")
-    # print("  aggregate ->",
-    #       plot_projection_annual_panel(fitted, results_df=results_df))
-    # print("  hot-months ->",
-    #       plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
-    #                                    results_df=results_df))
-    #
-    # print("\n[14] seasonal amplification (SSP245 / median)")
-    # print("  ->", plot_seasonal_amplification(fitted))
-    #
-    # print("\n[15] Summary statistics by indicator")
-    # by_ind = calculate_summary_statistics_by_indicator(fitted)
-    # print("  ->", by_ind.shape, "rows written")
-    #
-    # print("\n[16] Summary statistics rollup")
-    # stats = calculate_summary_statistics(fitted)
-    # print_summary_statistics(stats, by_ind)
-    # print("\nDone.")
+    print("\n[6] monthly deficit panel")
+    print("  ->", plot_monthly_deficit_panel(fitted))
+
+    print("\n[7] timeseries burden panel")
+    print("  ->", plot_timeseries_panel(fitted))
+
+    print("\n[8] district choropleth maps")
+    print("  ->", plot_district_maps(fitted, variant="per_district"))
+    print("  ->", plot_district_maps(fitted, variant="national"))
+
+
+    print("\n[9] projection heatmaps")
+    for p in plot_projection_heatmaps(fitted):
+        print("  ->", p)
+
+    print("\n[11] district × indicator heatmap")
+    print("  ->", plot_district_indicator_heatmap(indicator_list=fitted))
+
+    print("\n[12] projection forest — aggregate and hot-month, multiple windows")
+    for w in [(2025, 2040)]:
+
+        print(f"  hot-months {w[0]}-{w[1]}:",
+              plot_projection_forest(fitted, mode="hot",     results_df=results_df))
+
+    print("\n[13] projection annual trajectory panel — aggregate and hot-month")
+    print("  aggregate ->",
+          plot_projection_annual_panel(fitted, results_df=results_df))
+    print("  hot-months ->",
+          plot_projection_annual_panel(fitted, hot_months=HOT_MONTHS,
+                                       results_df=results_df))
+
+    print("\n[14] seasonal amplification (SSP245 / median)")
+    print("  ->", plot_seasonal_amplification(fitted))
+
+    print("\n[15] Summary statistics by indicator")
+    by_ind = calculate_summary_statistics_by_indicator(fitted)
+    print("  ->", by_ind.shape, "rows written")
+
+    print("\n[16] Summary statistics rollup")
+    stats = calculate_summary_statistics(fitted)
+    print_summary_statistics(stats, by_ind)
+    print("\nDone.")
     #
     print("\n[17] 1940s reference-period contrast")
     print("  ->",plot_reference_period_contrast(fitted=fitted, results_df=results_df))

@@ -172,7 +172,7 @@ MIN_OBS = 24
 MIN_OBS_COVERAGE = 0.85
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
-CLUSTER_COL = "grid_id"
+CLUSTER_COL = "district"#"grid_id"
 USE_PRECIP = True
 PRECIP_COL = "precip_month"
 
@@ -220,9 +220,13 @@ PRECIP_FILE_BY_TIER = {
 WBGT_REFERENCE_TEMP = 23.0
 CURVE_REF_MODE = "p50"
 CURVE_N = 80
+CLUSTER_LEVEL = "district"   # "grid" = primary analysis; "district" = spatial-correlation sensitivity
+CLUSTER_COL = {"grid": "grid_id", "district": DISTRICT_COL}[CLUSTER_LEVEL]
 
 DATA_DIR = "/Users/rachelmurray-watson/Documents/Heat_data"
-OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/"
+OUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Model_outputs/" + (
+    "" if CLUSTER_LEVEL == "grid" else "district_cluster/"
+)
 PANEL_DIR = f"{DATA_DIR}/Thermofeel_WBGT/Indices/"
 INDICES_DIR = PANEL_DIR
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -982,7 +986,7 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         R = np.zeros((len(retained), len(coef_names)))
         for i, c in enumerate(retained):
             R[i, coef_names.index(c)] = 1.0
-        wt = model_wx.wald_test(R=R, q=np.zeros(len(retained)), distribution="chi2")
+        wt = model_wx.wald_test(R=R, q=np.zeros(len(retained)), distribution="F")
         pval = float(wt["pvalue"])
     except Exception as e:
         print(f"  [{indicator}] Wald test failed: {e}")
