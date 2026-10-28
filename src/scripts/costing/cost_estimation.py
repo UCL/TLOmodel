@@ -279,16 +279,23 @@ def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
 
     return cleaned
 
+# First-round performance refactor of the supplied function.
+# Keep the existing project imports for extract_results, metadata/unit-cost
+# loaders, unflatten_flattened_multi_index_in_logging, and discounting.
+# Consumables are now annual rows rather than daily rows labelled by year.
+# Existing costing formulas and the level-1b equipment behaviour are retained.
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path,
+                                     suspended_results_folder: Path = None,
                                      _draws: Optional[list[int]] = None,
                                      _runs: Optional[list[int]] = None,
                                      summarize: bool = False,
                                      _metric: Literal['mean', 'median'] = 'mean',
                                      _years: Optional[list[int]] = None,
                                      cost_only_used_staff: bool = True,
-                                     _discount_rate: Union[float, dict[int, float]] = 0) -> pd.DataFrame:
+                                     _discount_rate: Union[float, dict[int, float]] = 0,
+                                     alt_scaling_factor:Optional[float] = None) -> pd.DataFrame:
     """
     Estimate health system input costs for a given simulation.
 
@@ -298,6 +305,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         Path to the directory containing simulation output files.
     resourcefilepath : Path, optional
         Path to the resource files
+    suspended_results_folder: Path, optional
+        Path to the directory containing suspended simulation output files (using the suspend and resume functionality),
+        This is used to extract the scaling_factor to scale result to actual population size. If None, then the
+        'scaling_factor' is obtained from the results_folder.
     _draws : list, optional
         Specific draws to include in the cost estimation. Defaults to all available draws.
     _runs : list, optional
@@ -312,7 +323,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         If True, only costs for level-cadre combinations ever used in simulation are included.
     _discount_rate : float or dict of {int: float}, default 0
         Discount rate to apply to future costs. Can be a constant or year-specific dictionary.
-
+    alt_scaling_parameter: float, default None. If a float value is provided this is used as an alternative to the
+    scaling parameter logged by demography.
     Returns:
     -------
     pd.DataFrame
@@ -343,6 +355,16 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         _draws = range(0, info['number_of_draws'])
     if _runs is None:
         _runs = range(0, info['runs_per_draw'])
+
+    _draws = list(_draws)
+    _runs = list(_runs)
+
+    def select_requested_simulations(df):
+        mask = (
+            df.columns.get_level_values(0).isin(_draws)
+            & df.columns.get_level_values(1).isin(_runs)
+        )
+        return df.loc[:, mask]
 
     # Load cost input files
     # ------------------------
@@ -477,30 +499,82 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         return merged_df
 
     # Get available staff count for each year and draw
-    def get_staff_count_by_facid_and_officer_type(_df: pd.Series) -> pd.Series:
-        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-        _df.index.name = 'year'
+    def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+        """
+        Convert logged staff dictionary output into tidy format,
+        summing staff counts across all clinic columns.
 
-        def change_to_standard_flattened_index_format(col):
-            parts = col.split("_", 3)  # Split by "_" only up to 3 parts
-            if len(parts) > 2:
-                return parts[0] + "=" + parts[1] + "|" + parts[2] + "=" + parts[
-                    3]  # Rejoin with "I" at the second occurrence
-            return col  # If there's no second underscore, return the string as it is
+        Returns pd.Series indexed by:
+        (year, FacilityID, Officer)
+        """
 
-        _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+        df = _df.copy()
+        df["year"] = df["date"].dt.year
+        df = df.drop(columns=["date"])
 
-        return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+        clinic_cols = df.columns.difference(["year"])
+
+        long_frames = []
+
+        for clinic in clinic_cols:
+            expanded = df[[clinic, "year"]].copy()
+            expanded = expanded[expanded[clinic].notna()]
+
+            expanded_dict = expanded[clinic].apply(pd.Series)
+            expanded_dict["year"] = expanded["year"].values
+
+            long_frames.append(expanded_dict)
+
+        # Combine all clinics
+        combined = pd.concat(long_frames, ignore_index=True)
+
+        # Melt to long format
+        long_df = (
+            combined
+            .melt(id_vars=["year"],
+                  var_name="facility_officer",
+                  value_name="count")
+            .dropna(subset=["count"])
+        )
+
+        # Split FacilityID and Officer
+        parts = long_df["facility_officer"].str.split("_Officer_", expand=True)
+
+        long_df["FacilityID"] = (
+            parts[0]
+            .str.replace("FacilityID_", "", regex=False)
+            .astype(int)
+        )
+        long_df["Officer"] = parts[1]
+
+        # SUM ACROSS CLINICS HERE
+        result = (
+            long_df
+            .groupby(["year", "FacilityID", "Officer"])["count"]
+            .sum()
+            .sort_index()
+        )
+
+        return result
 
     # Staff count by Facility ID
     available_staff_count_by_facid_and_officertype = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
-        do_scaling=True,
+        # Use standard scaling factor if an alternative isnt provided
+        do_scaling=alt_scaling_factor is None,
     )
+
+    available_staff_count_by_facid_and_officertype = select_requested_simulations(
+        available_staff_count_by_facid_and_officertype
+    )
+
+    # scale staff count by provided scaling factor
+    if alt_scaling_factor is not None:
+        available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype * alt_scaling_factor
 
     # Update above series to get staff count by Facility_Level
     available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(
@@ -525,42 +599,95 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Get list of cadres which were utilised in each run to get the count of staff used in the simulation
     # Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run, and
     # not the amount of time which was used
-    def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
-        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-        _df.index.name = 'year'
-        return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+    def get_capacity_used_by_officer_type_and_facility_level(
+        _df: pd.DataFrame
+    ) -> pd.Series:
+        """
+        Parse logging output and return a Series indexed by:
+            (year, OfficerType, FacilityLevel)
 
-    annual_capacity_used_by_cadre_and_level = extract_results(
-        Path(results_folder),
-        module='tlo.methods.healthsystem.summary',
-        key='Capacity_By_OfficerType_And_FacilityLevel',
-        custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
-        do_scaling=False,
-    )
+        Collapses (sums) across clinics.
+        Uses facility_id_levels_dict to map FacilityID → FacilityLevel.
+        """
 
-    # Prepare capacity used dataframe to be multiplied by staff count
-    average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(
-        ['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
-    # TODO see if cadre-level combinations should be chosen by year
-    average_capacity_used_by_cadre_and_level.reset_index(drop=True)  # Flatten multi=index column
-    average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(
-        id_vars=['OfficerType', 'FacilityLevel'],
-        var_name=['draw', 'run'],
-        value_name='capacity_used')
-    list_of_cadre_and_level_combinations_used = \
-    average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][
-        ['OfficerType', 'FacilityLevel', 'draw', 'run']]
-    print(
-        f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} cadre and level combinations available, {list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} are used across the simulations")
-    list_of_cadre_and_level_combinations_used = list_of_cadre_and_level_combinations_used.rename(
-        columns={'FacilityLevel': 'Facility_Level'})
+        # ---- 1. Set year index ----
+        _df = _df.set_axis(_df["date"].dt.year).drop(columns=["date"])
+        _df.index.name = "year"
 
-    # Subset scenario staffing level to only include cadre-level combinations used in the simulation
-    used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
-        list_of_cadre_and_level_combinations_used, on=['draw', 'run', 'OfficerType', 'Facility_Level'], how='right',
-        validate='m:m')
-    used_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
+        # ---- 2. Unflatten logging columns ----
+        _df = unflatten_flattened_multi_index_in_logging(_df)
+
+        # Expect columns like:
+        # ('Clinic', 'facID_and_officer')
+
+        col_df = _df.columns.to_frame(index=False)
+
+        # ---- 3. Extract OfficerType ----
+        col_df["OfficerType"] = (
+            col_df["facID_and_officer"]
+            .str.split("_Officer_")
+            .str[-1]
+        )
+
+        # ---- 4. Extract FacilityID ----
+        col_df["FacilityID"] = (
+            col_df["facID_and_officer"]
+            .str.split("_Officer_")
+            .str[0]
+            .str.replace("FacilityID_", "", regex=False)
+            .astype(int)
+        )
+
+        # ---- 5. Map to FacilityLevel ----
+        col_df["FacilityLevel"] = col_df["FacilityID"].map(facility_id_levels_dict)
+
+        # ---- 6. Rebuild MultiIndex (drop clinic level) ----
+        _df.columns = pd.MultiIndex.from_frame(
+            col_df[["OfficerType", "FacilityLevel"]]
+        )
+
+        # ---- 7. Collapse across clinics ----
+        _df = _df.groupby(level=["OfficerType", "FacilityLevel"], axis=1).sum()
+
+        # ---- 8. Return stacked format ----
+        return _df.stack(["OfficerType", "FacilityLevel"])
+
+    if cost_only_used_staff:
+        annual_capacity_used_by_cadre_and_level = extract_results(
+            Path(results_folder),
+            suspended_results_folder=suspended_results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='Capacity_By_FacID_and_Officer',
+            custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
+            do_scaling=False,
+        )
+
+        annual_capacity_used_by_cadre_and_level = select_requested_simulations(
+            annual_capacity_used_by_cadre_and_level
+        )
+
+        # Prepare capacity used dataframe to be multiplied by staff count
+        average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(
+            ['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
+        # TODO see if cadre-level combinations should be chosen by year
+        average_capacity_used_by_cadre_and_level.reset_index(drop=True)  # Flatten multi=index column
+        average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(
+            id_vars=['OfficerType', 'FacilityLevel'],
+            var_name=['draw', 'run'],
+            value_name='capacity_used')
+        list_of_cadre_and_level_combinations_used = \
+        average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][
+            ['OfficerType', 'FacilityLevel', 'draw', 'run']]
+        print(
+            f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} cadre and level combinations available, {list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} are used across the simulations")
+        list_of_cadre_and_level_combinations_used = list_of_cadre_and_level_combinations_used.rename(
+            columns={'FacilityLevel': 'Facility_Level'})
+
+        # Subset scenario staffing level to only include cadre-level combinations used in the simulation
+        used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
+            list_of_cadre_and_level_combinations_used, on=['draw', 'run', 'OfficerType', 'Facility_Level'], how='right',
+            validate='m:m')
+        used_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
 
     if (cost_only_used_staff):
         print(
@@ -612,13 +739,21 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
         return npv
 
-    # Calculate NPV for each row using iterrows and store in a new column
-    npv_values = []
-    for index, row in preservice_training_cost.iterrows():
-        npv = calculate_npv_past_training_expenses_by_row(row, r=annuitization_rate)
-        npv_values.append(npv)
+    # Evaluate repeated training assumptions once, retaining the original formula.
+    training_parameter_columns = [
+        'average_annual_preservice_training_cost_for_cadre',
+        'preservice_training_duration',
+        'recruitment_cost_per_person_recruited_usd',
+    ]
+    training_parameters = preservice_training_cost[training_parameter_columns].drop_duplicates().copy()
+    training_parameters['npv_of_training_and_recruitment_cost'] = [
+        calculate_npv_past_training_expenses_by_row(row, r=annuitization_rate)
+        for row in training_parameters.to_dict('records')
+    ]
+    preservice_training_cost = preservice_training_cost.merge(
+        training_parameters, on=training_parameter_columns, how='left', validate='m:1'
+    )
 
-    preservice_training_cost['npv_of_training_and_recruitment_cost'] = npv_values
     preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit'] = preservice_training_cost[
                                                                                        'npv_of_training_and_recruitment_cost'] * \
                                                                                    (1 / (preservice_training_cost[
@@ -718,42 +853,61 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     print("Now estimating Consumables costs...")
 
     def get_quantity_of_consumables_dispensed(results_folder):
-        def get_counts_of_items_requested(_df):
-            _df = drop_outside_period(_df)
-            counts_of_used = defaultdict(lambda: defaultdict(int))
-            counts_of_not_available = defaultdict(lambda: defaultdict(int))
+        def get_annual_counts_of_items_used(_df):
+            df = drop_outside_period(_df)
+            daily_used = defaultdict(lambda: defaultdict(float))
+            used_items, unavailable_items = set(), set()
+            used_dates, unavailable_dates = set(), set()
 
-            for _, row in _df.iterrows():
-                date = row['date']
-                for item, num in row['Item_Used'].items():
-                    counts_of_used[date][item] += num
-                for item, num in row['Item_NotAvailable'].items():
-                    counts_of_not_available[date][item] += num
-            used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
-            not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename(
-                'Not_Available')
+            # Avoid iterrows and never build a dense item-by-date table.
+            for date, used, unavailable in zip(
+                df['date'], df['Item_Used'], df['Item_NotAvailable']
+            ):
+                for item, quantity in used.items():
+                    daily_used[date][item] += quantity
+                    used_items.add(item)
+                    used_dates.add(date)
+                # Only the support of unavailable quantities is needed: the
+                # original code discards their values but retains zero rows.
+                if unavailable:
+                    unavailable_items.update(unavailable)
+                    unavailable_dates.add(date)
 
-            # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
-            combined_df = pd.concat([used_df, not_available_df], axis=1).fillna(0).astype(int)
+            support = {
+                (item, date.year)
+                for item in used_items
+                for date in used_dates
+            }
+            support.update(
+                (item, date.year)
+                for item in unavailable_items
+                for date in unavailable_dates
+            )
+            annual = dict.fromkeys(support, 0)
+            for date, items in daily_used.items():
+                for item, quantity in items.items():
+                    # Original code truncates daily totals BEFORE scaling.
+                    annual[(item, date.year)] += int(quantity)
 
-            # Convert to a pd.Series, as expected by the custom_generate_series function
-            return combined_df.stack()
+            index = pd.MultiIndex.from_tuples(
+                list(annual), names=['Item_Code', 'year']
+            )
+            return pd.Series(list(annual.values()), index=index, dtype=float).sort_index()
 
-        cons_req = extract_results(
+        quantities = extract_results(
             results_folder,
+            suspended_results_folder=suspended_results_folder,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
-            custom_generate_series=get_counts_of_items_requested,
-            do_scaling=True)
+            custom_generate_series=get_annual_counts_of_items_used,
+            do_scaling=alt_scaling_factor is None,
+        )
+        quantities = select_requested_simulations(quantities)
+        if alt_scaling_factor is not None:
+            quantities = quantities * alt_scaling_factor
+        return quantities
 
-        cons_dispensed = cons_req.xs("Used", level=2)  # only keep actual dispensed amount, i.e. when available
-        return cons_dispensed
-
-    consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
-    consumables_dispensed = consumables_dispensed.reset_index().rename(
-        columns={'level_0': 'Item_Code', 'level_1': 'year'})
-    consumables_dispensed[idx['year']] = pd.to_datetime(
-        consumables_dispensed[idx['year']]).dt.year  # Extract only year from date
+    consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder).reset_index()
     consumables_dispensed[idx['Item_Code']] = pd.to_numeric(consumables_dispensed[idx['Item_Code']])
     # Make a list of columns in the DataFrame pertaining to quantity dispensed
     quantity_columns = consumables_dispensed.columns.to_list()
@@ -944,43 +1098,40 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             ast.literal_eval)
 
     # Initialize an empty DataFrame
-    equipment_cost_across_sim = pd.DataFrame()
+    equipment_cost_frames = []
 
     # Extract equipment cost for each draw and run
     for d in _draws:
         for r in _runs:
             print(f"Processing draw {d} and run {r} of equipment costs")
             # Extract a list of equipment which was used at each facility level within each district
-            equipment_used = {district: {level: [] for level in fac_levels} for district in list(
-                district_dict.values())}  # create a dictionary with a key for each district and facility level
-            list_of_equipment_used_by_current_draw_and_run = list_of_equipment_used_by_draw_and_run[
-                (d, r)].reset_index()
-            for dist in list(district_dict.values()):
-                for level in fac_levels:
-                    equipment_used_subset = list_of_equipment_used_by_current_draw_and_run[
-                        (list_of_equipment_used_by_current_draw_and_run['District'] == dist) & (
-                                    list_of_equipment_used_by_current_draw_and_run['Facility_Level'] == level)]
-                    equipment_used_subset.columns = ['District', 'Facility_Level', 'EquipmentEverUsed']
-                    equipment_used[dist][level] = set().union(*equipment_used_subset['EquipmentEverUsed'])
-            equipment_used = pd.concat({
-                k: pd.DataFrame.from_dict(v, 'index') for k, v in equipment_used.items()},
-                axis=0)
-            full_list_of_equipment_used = set(equipment_used.values.flatten())
-            full_list_of_equipment_used = set(filter(pd.notnull, full_list_of_equipment_used))
-
-            equipment_df = pd.DataFrame()
-            equipment_df.index = equipment_used.index
-            for item in full_list_of_equipment_used:
-                equipment_df[str(item)] = 0
-                for dist_fac_index in equipment_df.index:
-                    equipment_df.loc[equipment_df.index == dist_fac_index, str(item)] = equipment_used[
-                        equipment_used.index == dist_fac_index].isin([item]).any(axis=1)
-            # equipment_df.to_csv('./outputs/equipment_use.csv')
-
-            equipment_df = equipment_df.reset_index().rename(
-                columns={'level_0': 'District', 'level_1': 'Facility_Level'})
-            equipment_df = pd.melt(equipment_df, id_vars=['District', 'Facility_Level']).rename(
-                columns={'variable': 'Item_code', 'value': 'whether_item_was_used'})
+            equipment_series = list_of_equipment_used_by_draw_and_run[(d, r)]
+            districts = list(district_dict.values())
+            levels = list(fac_levels)
+            district_set = set(districts)
+            used_records = [
+                (district, level, item)
+                for (district, level), items in equipment_series.items()
+                if district in district_set and level in fac_levels
+                for item in items
+                if pd.notna(item)
+            ]
+            used_membership = pd.DataFrame(
+                used_records, columns=['District', 'Facility_Level', 'Item_code']
+            ).drop_duplicates()
+            all_items = used_membership['Item_code'].drop_duplicates()
+            equipment_df = pd.MultiIndex.from_product(
+                [districts, levels, all_items],
+                names=['District', 'Facility_Level', 'Item_code'],
+            ).to_frame(index=False)
+            equipment_df = equipment_df.merge(
+                used_membership.assign(whether_item_was_used=True),
+                on=['District', 'Facility_Level', 'Item_code'],
+                how='left', validate='1:1',
+            )
+            equipment_df['whether_item_was_used'] = (
+                equipment_df['whether_item_was_used'].eq(True)
+            )
             equipment_df['Item_code'] = pd.to_numeric(equipment_df['Item_code'])
             # Merge the count of facilities by district and level
             equipment_df = equipment_df.merge(mfl[['District', 'Facility_Level', 'Facility_Count']],
@@ -989,16 +1140,24 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
             # Because levels 1b and 2 are collapsed together, we assume that the same equipment is used by level 1b as that recorded for level 2
             def update_itemuse_for_level1b_using_level2_data(_df):
-                # Create a list of District and Item_code combinations for which use == True
-                list_of_equipment_used_at_level2 = \
-                _df[(_df.Facility_Level == '2') & (_df['whether_item_was_used'] is True)][['District', 'Item_code']]
-                # Now update the 'whether_item_was_used' for 'Facility_Level' == '1b' to match that of level '2'
-                _df.loc[
-                    (_df['Facility_Level'] == '1b') &
-                    (_df[['District', 'Item_code']].apply(tuple, axis=1).isin(
-                        list_of_equipment_used_at_level2.apply(tuple, axis=1))),
-                    'whether_item_was_used'
-                ] = True
+                level2_items = pd.MultiIndex.from_frame(
+                    _df.loc[
+                        _df["Facility_Level"].eq("2")
+                        & _df["whether_item_was_used"].eq(True),
+                        ["District", "Item_code"],
+                    ]
+                )
+
+                row_items = pd.MultiIndex.from_frame(
+                    _df[["District", "Item_code"]]
+                )
+
+                copy_use = (
+                    _df["Facility_Level"].eq("1b")
+                    & row_items.isin(level2_items)
+                )
+
+                _df.loc[copy_use, "whether_item_was_used"] = True
 
                 return _df
 
@@ -1020,19 +1179,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                                                   equipment_cost['Quantity'] * equipment_cost[
                                                                       'Facility_Count']
             equipment_cost['year'] = max(years) - 1
-            if equipment_cost_across_sim.empty:
-                equipment_cost_across_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[
-                    [item + '_annual_total' for item in categories_of_equipment_cost]].sum()
-                equipment_cost_across_sim['draw'] = d
-                equipment_cost_across_sim['run'] = r
-            else:
-                equipment_cost_for_current_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[
-                    [item + '_annual_total' for item in categories_of_equipment_cost]].sum()
-                equipment_cost_for_current_sim['draw'] = d
-                equipment_cost_for_current_sim['run'] = r
-                # Concatenate the results
-                equipment_cost_across_sim = pd.concat([equipment_cost_across_sim, equipment_cost_for_current_sim],
-                                                      axis=0)
+            equipment_cost_for_current_sim = equipment_cost.groupby(
+                ['year', 'Facility_Level', 'Equipment_tlo']
+            )[[item + '_annual_total' for item in categories_of_equipment_cost]].sum()
+            equipment_cost_frames.append(equipment_cost_for_current_sim.assign(draw=d, run=r))
+
+    equipment_cost_across_sim = pd.concat(equipment_cost_frames, axis=0)
 
     equipment_costs = pd.melt(equipment_cost_across_sim.reset_index(),
                               id_vars=['draw', 'run', 'Facility_Level', 'Equipment_tlo'],  # Columns to keep
@@ -1110,11 +1262,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             # Define aggregation function based on _metric input (mean or median)
             agg_func = np.mean if _metric == 'mean' else np.median
 
+            grouped_cost = scenario_cost.groupby(by=groupby_cols, sort=False)['cost']
             scenario_cost = pd.concat(
                 {
-                    _metric: scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].agg(agg_func),
-                    'lower': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.025),
-                    'upper': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.975),
+                    _metric: grouped_cost.agg(agg_func),
+                    'lower': grouped_cost.quantile(0.025),
+                    'upper': grouped_cost.quantile(0.975),
                 },
                 axis=1
             )
@@ -1134,7 +1287,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         return apply_discounting_to_cost_data(_df=scenario_cost[scenario_cost.year.isin(_years)],
                                               _discount_rate=_discount_rate,
                                               _column_for_discounting='cost')
-
 
 # Define a function to summarize cost data from
 # Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
