@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file, get_root_path
+from tlo.analysis.utils import get_root_path, parse_log_file
 from tlo.methods import (
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
@@ -28,7 +28,6 @@ from tlo.methods import (
     tb,
 )
 
-# outputpath = Path("./outputs")  # folder for convenience of storing outputs
 outputpath = Path("./outputs/diabetic_retinopathy_outputs")
 outputpath.mkdir(parents=True, exist_ok=True)
 
@@ -40,11 +39,11 @@ resourcefilepath = root / "resources"
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 2000
+end_date = Date(2030, 1, 1)
+popsize = 3000
 seed = 0
-FORECAST_BASELINE_YEAR = 2012
-FORECAST_END_YEAR = 2014
+FORECAST_BASELINE_YEAR = 2020
+FORECAST_END_YEAR = 2029
 
 CALIBRATION_FILE = Path("./resources/diabetic_retinopathy_calibration_targets.csv")
 
@@ -115,9 +114,9 @@ def annualise_monthly_results(df):
     year = df.index.year
     annual = df.groupby(year).last()
 
-    # Incidence columns are monthly flows, so sum them over the year rather
+    # Incidence columns are monthly flows, so summing them over the year rather
     # than keeping only December's value. Prevalence/count columns remain
-    # year-end stocks and therefore use the last observation in each year.
+    # year-end stocks and therefore we use the last observation in each year.
     incidence_cols = [
         c for c in df.columns
         if c.startswith(("inc_dr_", "inc_dmo_", "inc_vision_"))
@@ -213,28 +212,49 @@ def plot_burden_trends(annual):
         if not available:
             continue
 
-        # Grouped bar chart: one bar per outcome for each year
-        ax = annual[available].plot(
+        # Grouped bar chart with a wider plotting area
+        fig, ax = plt.subplots(figsize=(16, 7))
+
+        annual[available].plot(
             kind="bar",
-            figsize=(11, 6),
-            width=0.8,
+            ax=ax,
+            width=0.85,
         )
 
-        ax.set_title(title)
-        ax.set_xlabel("Year")
+        ax.set_title(title, pad=12)
+        ax.set_xlabel("Year", labelpad=8)
         ax.set_ylabel(ylabel)
-        ax.tick_params(axis="x", labelrotation=0)
+
+        # Keep year labels horizontal and readable
+        ax.tick_params(axis="x", labelrotation=0, labelsize=9)
+        ax.tick_params(axis="y", labelsize=9)
+
         ax.grid(True, axis="y", alpha=0.25)
         ax.set_axisbelow(True)
-        ax.legend(title="Outcome", bbox_to_anchor=(1.02, 1), loc="upper left")
 
-        plt.tight_layout()
-        plt.savefig(
+        # Put the legend below the x-axis label, centred
+        ax.legend(
+            title="Outcome",
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.20),
+            ncol=len(available),
+            frameon=False,
+        )
+
+        # Reserve room for the legend below the plot
+        fig.subplots_adjust(
+            left=0.10,
+            right=0.98,
+            top=0.90,
+            bottom=0.27,
+        )
+
+        fig.savefig(
             outputpath / f"{filename}_{datestamp}.png",
             dpi=200,
             bbox_inches="tight",
         )
-        plt.close()
+        plt.close(fig)
 
     # Percentages use the actual number of alive people with diabetes, not the
     # whole population or the sum of selected categories.
@@ -246,28 +266,50 @@ def plot_burden_trends(annual):
     ]
 
     available = [c for c in pct_cols if c in annual.columns]
+
     if available:
-        ax = annual[available].plot(
+        fig, ax = plt.subplots(figsize=(16, 7))
+
+        annual[available].plot(
             kind="bar",
-            figsize=(12, 6),
-            width=0.8,
+            ax=ax,
+            width=0.85,
         )
 
-        ax.set_title("DR and vision outcomes among people living with diabetes")
-        ax.set_xlabel("Year")
+        ax.set_title(
+            "DR and vision outcomes among people living with diabetes",
+            pad=12,
+        )
+        ax.set_xlabel("Year", labelpad=8)
         ax.set_ylabel("Percent of people with diabetes")
-        ax.tick_params(axis="x", labelrotation=0)
+
+        ax.tick_params(axis="x", labelrotation=0, labelsize=9)
+        ax.tick_params(axis="y", labelsize=9)
+
         ax.grid(True, axis="y", alpha=0.25)
         ax.set_axisbelow(True)
-        ax.legend(title="Outcome", bbox_to_anchor=(1.02, 1), loc="upper left")
 
-        plt.tight_layout()
-        plt.savefig(
+        ax.legend(
+            title="Outcome",
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.20),
+            ncol=len(available),
+            frameon=False,
+        )
+
+        fig.subplots_adjust(
+            left=0.10,
+            right=0.98,
+            top=0.90,
+            bottom=0.27,
+        )
+
+        fig.savefig(
             outputpath / f"burden_percentages_{datestamp}.png",
             dpi=200,
             bbox_inches="tight",
         )
-        plt.close()
+        plt.close(fig)
 
 
 def make_pathway_summary(annual):
@@ -299,7 +341,7 @@ def make_pathway_summary(annual):
 
 
 def make_forecast_summary(annual):
-    """Compare the 2012 model state with 2014 and quantify absolute changes."""
+    """Compare the (baseline) 2012 model state with 2014 (forecast end year) and quantify absolute changes."""
     requested = [
         "total_alive_diabetics",
         "total_dr_mild_or_moderate",
