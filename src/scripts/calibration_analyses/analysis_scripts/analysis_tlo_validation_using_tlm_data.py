@@ -68,7 +68,7 @@ TLM_FILES = {
     "meds_outpatient": "tlm_med_access_outpatient_from_exit.csv",
     "w_meds_outpatient": "tlm_med_access_outpatient_weights.csv",
     # sensitivity analysis: TLM time-and-motion patient load standardised to the TLO cadre mix
-    "load_tms_cadre": "tlm_patient_load_from_tms_cadre_reweighted.csv",
+    "load_tms_cadre": "tlm_patient_load_from_tms_cadre_weighted.csv",
 }
 
 # Patient mix: TLM variable names -> categories, and harmonised subgroup labels
