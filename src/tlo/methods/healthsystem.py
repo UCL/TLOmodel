@@ -2659,9 +2659,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     did_run=True,
                 )
 
-        # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
+        # Restart the total footprint of all calls - and across all clinics - today.
         # Important: Here we assign all inpatient bed-days to the GenericClinic
+        self.module.running_total_footprint = defaultdict(Counter)
         self.module.running_total_footprint["GenericClinic"] = inpatient_footprints
+        
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
