@@ -17,6 +17,7 @@ Sensitivity analyses (choose with --analysis; outputs in <output folder>/tlm_val
   (1) no_reweighting:     TLO estimates not reweighted to the TLM facility-level composition
   (2) no_blank_footprint: HSIs with a blank appointment footprint dropped (patient load and patient mix)
   (3) outpatient_meds:    medicine access restricted to outpatient service areas
+  (4) cadre_reweighted_tms: TLM time-and-motion patient load standardised to the TLO cadre mix
 
 The TLO simulation scenario is defined in src/scripts/calibration_analyses/scenarios/scenario_patient_mix.py.
 """
@@ -66,6 +67,8 @@ TLM_FILES = {
     # sensitivity analysis: medicine access among prescribed patients in outpatient areas
     "meds_outpatient": "tlm_med_access_outpatient_from_exit.csv",
     "w_meds_outpatient": "tlm_med_access_outpatient_weights.csv",
+    # sensitivity analysis: TLM time-and-motion patient load standardised to the TLO cadre mix
+    "load_tms_cadre": "tlm_patient_load_from_tms_cadre_reweighted.csv",
 }
 
 # Patient mix: TLM variable names -> categories, and harmonised subgroup labels
@@ -105,15 +108,23 @@ ANALYSES = {
     "no_blank_footprint": "Sensitivity (2): HSIs with a blank appointment footprint dropped "
                           "(patient load and patient mix)",
     "outpatient_meds": "Sensitivity (3): medicine access restricted to outpatient service areas",
+    "cadre_weighted_tms": "Sensitivity (4): TLM time-and-motion patient load standardised to the TLO "
+                          "cadre mix within each facility level",
 }
 MEASURES_BY_ANALYSIS = {
     "main": {"load", "mix", "meds"},
     "no_reweighting": {"load", "mix", "meds"},
     "no_blank_footprint": {"load", "mix"},     # the Consumables log has no appointment footprint
     "outpatient_meds": {"meds"},
+    "cadre_weighted_tms": {"load"},
 }
 # Outpatient service areas for sensitivity analysis (3); must match the Stata definition exactly
 OUTPATIENT_AREAS = ["Outpatient - General", "Outpatient - Maternity/Gynaecology", "CD clinic"]
+
+# Cadre groups for sensitivity analysis (4): must match the cadres in Stata TMS
+CADRE_GROUPS = {"Clinical": "Clinical", "Nursing_and_Midwifery": "Nursing and Midwifery",
+                "Pharmacy": "Pharmacy", "Laboratory": "Laboratory", "Dental": "Dental",
+                "Mental": "Clinical", "Radiography": "Radiography"}
 
 # Plot colours
 # (TLM time-and-motion and exit survey blue, TLM clinic records green, TLO orange)
@@ -426,6 +437,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
     reweight = analysis != "no_reweighting"
     keep_blank_footprint = KEEP_BLANK_FOOTPRINT_HSI and analysis != "no_blank_footprint"
     outpatient_only = analysis == "outpatient_meds"
+    tms_file = TLM_FILES["load_tms_cadre" if analysis == "cadre_weighted_tms" else "load_tms"]
     run_measures = MEASURES_BY_ANALYSIS[analysis]
 
     TARGET_PERIOD = the_target_period
@@ -557,6 +569,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         staff = restrict_to_tlm(staff.loc[staff["Officer_Type"] != "DCSA"])
         return staff.groupby("Facility_Level")["Staff_Count"].sum().reindex(LEVELS, fill_value=0)
 
+    def get_staff_by_level_cadre(_df):
+        """Staff in post by level and cadre group (as in get_staff_by_level), excl. DCSA."""
+        _df = _df.loc[pd.to_datetime(_df["date"]) <= TARGET_PERIOD[1]]
+        staff = (pd.Series(_df["GenericClinic"].iloc[-1], name="Staff_Count")
+                 .rename_axis("key").reset_index())
+        staff[["Facility_ID", "Officer_Type"]] = staff["key"].str.extract(r"FacilityID_(\d+)_Officer_(.*)")
+        staff["Facility_ID"] = staff["Facility_ID"].astype(int)
+        staff = restrict_to_tlm(staff.loc[staff["Officer_Type"] != "DCSA"])
+        staff["cadre_grp"] = staff["Officer_Type"].map(CADRE_GROUPS).fillna("Other")
+        return staff.groupby(["Facility_Level", "cadre_grp"])["Staff_Count"].sum()
+
     def get_patient_mix_counts(_df):
         """Patient counts by (category, subgroup, level); one record per person, facility,
         service area and day, consistent with the TLM daily data collection."""
@@ -636,6 +659,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         pd.DataFrame({"tlo_worker_days": tlo_wd, "tlo_share": tlo_wd / tlo_wd.sum()}) \
             .rename_axis("level").round(2).to_csv(output_folder / "tlo_level_composition.csv")
 
+        # TLO cadre mix by level (input for the Stata cadre weights, sensitivity analysis (4))
+        staff_cadre = extract_draw0("tlo.methods.healthsystem.summary", "number_of_hcw_staff",
+                                    get_staff_by_level_cadre, do_scaling=False)
+        cadre_mix = staff_cadre.mean(axis=1).rename("n_staff").reset_index()
+        cadre_mix = cadre_mix.loc[cadre_mix["Facility_Level"].isin(LEVELS)]
+        cadre_mix["tlo_share"] = (cadre_mix["n_staff"]
+                                  / cadre_mix.groupby("Facility_Level")["n_staff"].transform("sum"))
+        cadre_mix.rename(columns={"Facility_Level": "fac_lvl"}).round(2).to_csv(
+            output_folder / "tlo_cadre_mix_by_level.csv", index=False)
+
         def compare_load(tlm_file, weights_file):
             if reweight:
                 w = read_level_weights(tlm_folder / weights_file)["Overall"]
@@ -650,10 +683,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
             tlm = tlm.loc[tlm["group"].isin(["Overall"] + [f"Level {lvl}" for lvl in LEVELS])]
             return tlm[["group", "tlm_est", "tlm_lower", "tlm_upper"]].merge(tlo, on="group", how="left")
 
-        cmp_load_tms = compare_load(TLM_FILES["load_tms"], TLM_FILES["w_tms"])
+        cmp_load_tms = compare_load(tms_file, TLM_FILES["w_tms"])
         cmp_load_clinic = compare_load(TLM_FILES["load_clinic"], TLM_FILES["w_clinic"])
-        pd.concat([cmp_load_tms.assign(tlm_source="time-and-motion"),
-                   cmp_load_clinic.assign(tlm_source="clinic records")]).to_csv(
+        pd.concat([cmp_load_clinic.assign(tlm_source="clinic records"),
+                   cmp_load_tms.assign(tlm_source="time-and-motion")]).to_csv(
             output_folder / "comparison_patient_load.csv", index=False)
         plot_patient_load(cmp_load_tms, cmp_load_clinic, output_folder / "fig_patient_load.png")
 
@@ -813,7 +846,7 @@ if __name__ == "__main__":
     parser.add_argument("--tlm-results-folder", type=Path, default=None,
                         help="Folder with the Stata output CSVs (default: the TLM_2024 resource folder)")
     parser.add_argument("--analysis", choices=list(ANALYSES), default="main",
-                        help="main, no_reweighting, no_blank_footprint or outpatient_meds")
+                        help="main, no_reweighting, no_blank_footprint, outpatient_meds, or cadre_reweighted_tms")
     args = parser.parse_args()
 
     apply(
@@ -824,5 +857,6 @@ if __name__ == "__main__":
         tlm_results_folder=args.tlm_results_folder,
         analysis=args.analysis,
     )
-# outputs/bshe@ic.ac.uk/scenario_patient_mix-2026-05-15T125453Z --tlm-results-folder resources/healthsystem/human_resources/TLM_2024
-# add --analysis no_reweighting | no_blank_footprint | outpatient_meds for the sensitivity analyses
+# outputs/bshe@ic.ac.uk/scenario_patient_mix-2026-05-15T125453Z
+# --tlm-results-folder resources/healthsystem/human_resources/TLM_2024
+# --analysis no_reweighting | no_blank_footprint | outpatient_meds | cadre_weighted_tms for the sensitivity analyses
