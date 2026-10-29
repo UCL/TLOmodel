@@ -75,6 +75,12 @@ SEX_LABELS = {"F": "Female", "M": "Male"}
 EDUC_LABELS = {1: "None", 2: "Some/Completed primary", 3: "Some/Completed secondary"}
 WEALTH_LABELS = {1: "Q1 (richest)", 2: "Q2", 3: "Q3", 4: "Q4", 5: "Q5 (poorest)"}
 AGE_TOP_GROUP = 75                    # age groups from 75 upwards merged into "75+"
+
+# Education and wealth: TLM respondents may be companions, so compare adults attending for own care
+ADULT_MIN_AGE = 20                                   # must match the threshold used for reason_attend_cat in Stata
+ADULT_ONLY_CATS = ("Education", "Wealth quintile")   # categories restricted to adults
+ADULT_GROUP = "Adults seeking care"                  # group name in tlm_pat_mix_weights.csv
+
 SERVICE_AREA_ORDER = [
     "Outpatient - General", "Outpatient - Maternity/Gynaecology", "CD clinic",
     "Inpatient - General", "Inpatient - Maternity/Gynaecology", "Emergency / Intensive care",
@@ -563,6 +569,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
             "Wealth quintile": _df["Wealth"].map(lambda x: code_label(x, WEALTH_LABELS)),
             "Service area": _df["loc_cat"],
         }
+        # education and wealth: adult patients only (TLM respondents may be companions)
+        age_start = pd.to_numeric(_df["Age_Range"].astype(str).str.split("-").str[0].str.rstrip("+"),
+                                  errors="coerce")
+        adult = age_start >= ADULT_MIN_AGE
+        for cat in ADULT_ONLY_CATS:
+            labels[cat] = labels[cat].where(adult)
+
         parts = []
         for cat, lab in labels.items():
             c = (_df.assign(subgroup=lab).dropna(subset=["subgroup"])
@@ -651,12 +664,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         mix_counts = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
                                    get_patient_mix_counts, do_scaling=False).fillna(0)
         mix_counts.index = mix_counts.index.set_names(["category", "subgroup", "Facility_Level"])
-        w_mix = read_level_weights(tlm_folder / TLM_FILES["w_mix"])["Overall"]
+        w_mix_groups = read_level_weights(tlm_folder / TLM_FILES["w_mix"])
+        assert ADULT_GROUP in w_mix_groups, f"'{ADULT_GROUP}' weights missing from {TLM_FILES['w_mix']}"
 
         mix_runs = {}
         for run in mix_counts.columns:
             props = []
             for cat, c_cat in mix_counts[run].groupby(level="category"):
+                # level weights of the TLM patients compared (adults for education and wealth)
+                w_mix = w_mix_groups[ADULT_GROUP if cat in ADULT_ONLY_CATS else "Overall"]
                 tab = (c_cat.droplevel("category").unstack("Facility_Level")
                        .reindex(columns=LEVELS).fillna(0))                  # subgroup x level
                 if reweight:
