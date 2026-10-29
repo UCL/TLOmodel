@@ -256,6 +256,12 @@ class DiabeticRetinopathy(Module):
             "Pathway by which DR/DMO was first diagnosed",
             categories=["none", "screening", "symptomatic"],
         ),
+        "dmo_last_treatment_modality": Property(
+            Types.CATEGORICAL,
+            "Last DMO treatment modality received "
+            "(none if never treated; otherwise, it is antivegf or focal_laser otherwise)",
+            categories=["none", "antivegf", "focal_laser"],
+        ),
 
     }
 
@@ -350,6 +356,7 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dmo_treatment_success"] = False
         df.loc[list(alive_diabetes_idx), "dmo_vision_improved"] = False
         df.loc[list(alive_diabetes_idx), "dr_dmo_diagnosis_pathway"] = "none"
+        df.loc[list(alive_diabetes_idx), "dmo_last_treatment_modality"] = "none"
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -534,6 +541,7 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, "dmo_treatment_success"] = False
         self.sim.population.props.at[child_id, "dmo_vision_improved"] = False
         self.sim.population.props.at[child_id, 'dr_dmo_diagnosis_pathway'] = 'none'
+        self.sim.population.props.at[child_id, 'dmo_last_treatment_modality'] = 'none'
 
     def on_simulation_end(self) -> None:
         pass
@@ -1311,6 +1319,7 @@ class HSI_Dr_Dmo_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
             # record date of diagnosis
             df.at[person_id, 'dmo_date_treatment'] = self.sim.date
             df.at[person_id, 'dmo_on_treatment'] = True
+            df.at[person_id, 'dmo_last_treatment_modality'] = 'focal_laser'
             # df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             # If consumables are available, add equipment used and run dx_test
             self.add_equipment({'Visual acuity chart', 'Opthalmic laser system',
@@ -1371,6 +1380,7 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
 
             df.at[person_id, 'dmo_date_treatment'] = self.sim.date
             df.at[person_id, 'dmo_on_treatment'] = True
+            df.at[person_id, 'dmo_last_treatment_modality'] = 'antivegf'
             # Increment the injection count
             df.at[person_id, 'dmo_antivegf_count'] = df.at[person_id, 'dmo_antivegf_count'] + 1
 
@@ -1499,11 +1509,22 @@ class HSI_Dr_Dmo_Review(HSI_Event, IndividualScopeEventMixin):
                 )
         if df.at[person_id, 'dmo_status'] == 'clinically_significant':
             if self.module.rng.random_sample() < p['prob_repeat_dmo_treatment']:
-                treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
-                    if self.module.rng.random_sample() < p[
-                    'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
+                modality = df.at[person_id, 'dmo_last_treatment_modality']
+                if modality == 'antivegf':
+                    repeat_hsi = HSI_Dr_Dmo_AntiVEGF
+                elif modality == 'focal_laser':
+                    repeat_hsi = HSI_Dr_Dmo_Focal_Laser
+                else:
+                    # No prior modality recorded (shouldn't normally happen);
+                    # fall back to the randomised first-line choice just in case
+                    repeat_hsi = (
+                        HSI_Dr_Dmo_AntiVEGF
+                        if self.module.rng.random_sample()
+                           < p['prob_antivegf_for_clinically_significant_dmo']
+                        else HSI_Dr_Dmo_Focal_Laser
+                    )
                 hs.schedule_hsi_event(
-                    hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
+                    hsi_event=repeat_hsi(module=self.module, person_id=person_id),
                     topen=self.sim.date,
                     priority=0
                 )
