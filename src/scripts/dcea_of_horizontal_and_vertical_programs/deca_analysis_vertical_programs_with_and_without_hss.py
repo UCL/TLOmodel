@@ -13,19 +13,28 @@ from tlo.analysis.utils import extract_draw_names, extract_results, get_scenario
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
-    scenario_info = get_scenario_info(results_folder)
-    draw_names = extract_draw_names(results_folder)
 
-    def set_draw_names_as_column_index_level_0(_df):
-        draws = _df.columns.levels[0]
-        missing_draws = set(draws) - draw_names.keys()
-        if missing_draws:
-            raise ValueError(f"No saved draw names for draws: {sorted(missing_draws)}")
-        names = [draw_names[draw] for draw in draws]
-        if len(names) != len(set(names)):
-            raise ValueError("Saved draw names must be unique to label result columns.")
-        _df.columns = _df.columns.set_levels(names, level=0)
+    def get_parameter_names_from_scenario_file() -> Tuple[str, ...]:
+        """Get scenario names from the Scenario class used to create the results."""
+        from scripts.dcea_of_horizontal_and_vertical_programs.dcea_scenario_vertical_programs_with_and_without_hss import (
+            HTMWithAndWithoutHSS,
+        )
+
+        scenario = HTMWithAndWithoutHSS()
+        return tuple(scenario._scenarios.keys())
+
+    def set_param_names_as_column_index_level_0(_df):
+        """Set the columns index (level 0) as the parameter names."""
+        ordered_param_names = {draw: name for draw, name in enumerate(param_names)}
+        names_of_columns_level_0 = [
+            ordered_param_names.get(draw) for draw in _df.columns.levels[0]
+        ]
+        assert len(names_of_columns_level_0) == len(_df.columns.levels[0])
+        assert None not in names_of_columns_level_0, "No scenario name found for one or more draw numbers."
+        _df.columns = _df.columns.set_levels(names_of_columns_level_0, level=0)
         return _df
+
+    param_names = get_parameter_names_from_scenario_file()
 
     def get_year_bounds():
         return TARGET_PERIOD[0].year, TARGET_PERIOD[1].year
@@ -189,6 +198,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .rename_axis(index=['li_wealth', 'li_urban', 'cause'])
         )
 
+    def get_dalys_per_wealth_cause_age_sex(_df):
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        cause_columns = find_cause_columns(_df)
+        if not cause_columns:
+            raise ValueError("No DALY cause columns found in the healthburden log.")
+        return (
+            _df.loc[_df.year.between(*years_needed)]
+            .groupby(['li_wealth', 'sex','age_range'])[cause_columns]
+            .sum()
+            .stack()
+            .rename_axis(index=['li_wealth', 'sex','age_range', 'cause'])
+        )
+
     dalys_key = "dalys_by_wealth_urban_region_stacked_by_age_and_time"
 
     dalys_per_wealth = extract_results(
@@ -197,7 +220,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_cause = extract_results(
         results_folder,
@@ -205,7 +228,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_cause,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_age = extract_results(
         results_folder,
@@ -213,7 +236,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_age,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_sex = extract_results(
         results_folder,
@@ -221,7 +244,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_sex,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_urban = extract_results(
         results_folder,
@@ -229,7 +252,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_urban,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_urban_age = extract_results(
         results_folder,
@@ -237,8 +260,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_urban_age,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
-
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_region = extract_results(
         results_folder,
@@ -246,7 +268,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_region,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_cause_age = extract_results(
         results_folder,
@@ -254,7 +276,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_cause_age,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_cause_sex = extract_results(
         results_folder,
@@ -262,7 +284,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_cause_sex,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     dalys_per_wealth_cause_urban = extract_results(
         results_folder,
@@ -270,7 +292,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=dalys_key,
         custom_generate_series=get_dalys_per_wealth_cause_urban,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    dalys_per_wealth_cause_age_sex = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key=dalys_key,
+        custom_generate_series=get_dalys_per_wealth_cause_age_sex,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
 
     # %% Population breakdowns
     def _get_population_long_from_wide(_df):
@@ -338,7 +369,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=pop_key,
         custom_generate_series=get_pop_per_wealth,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     pop_per_wealth_age = extract_results(
         results_folder,
@@ -346,7 +377,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=pop_key,
         custom_generate_series=get_pop_per_wealth_age,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     pop_per_wealth_sex = extract_results(
         results_folder,
@@ -354,7 +385,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=pop_key,
         custom_generate_series=get_pop_per_wealth_sex,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     pop_per_wealth_urban = extract_results(
         results_folder,
@@ -362,7 +393,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=pop_key,
         custom_generate_series=get_pop_per_wealth_urban,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     pop_per_wealth_region = extract_results(
         results_folder,
@@ -370,7 +401,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=pop_key,
         custom_generate_series=get_pop_per_wealth_region,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     pop_per_wealth_urban_age = extract_results(
         results_folder,
@@ -393,7 +424,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     dalys_per_wealth_cause_age.to_csv(output_folder / "dalys_per_wealth_cause_age.csv")
     dalys_per_wealth_cause_sex.to_csv(output_folder / "dalys_per_wealth_cause_sex.csv")
     dalys_per_wealth_cause_urban.to_csv(output_folder / "dalys_per_wealth_cause_urban.csv")
-
 
     pop_per_wealth.to_csv(output_folder / "population_per_wealth.csv")
     pop_per_wealth_age.to_csv(output_folder / "population_per_wealth_age.csv")
