@@ -18,6 +18,7 @@ Sensitivity analyses (choose with --analysis; outputs in <output folder>/tlm_val
   (2) no_blank_footprint: HSIs with a blank appointment footprint dropped (patient load and patient mix)
   (3) outpatient_meds:    medicine access restricted to outpatient service areas
   (4) cadre_reweighted_tms: TLM time-and-motion patient load standardised to the TLO cadre mix
+  (5) inpatient_days: TLO in-patient days added to patient load and to the inpatient service areas.
 
 The TLO simulation scenario is defined in src/scripts/calibration_analyses/scenarios/scenario_patient_mix.py.
 """
@@ -110,6 +111,8 @@ ANALYSES = {
     "outpatient_meds": "Sensitivity (3): medicine access restricted to outpatient service areas",
     "cadre_weighted_tms": "Sensitivity (4): TLM time-and-motion patient load standardised to the TLO "
                           "cadre mix within each facility level",
+    "inpatient_days": "Sensitivity (5): TLO in-patient days added to patient load and to the inpatient "
+                      "service areas in patient mix",
 }
 MEASURES_BY_ANALYSIS = {
     "main": {"load", "mix", "meds"},
@@ -117,6 +120,7 @@ MEASURES_BY_ANALYSIS = {
     "no_blank_footprint": {"load", "mix"},     # the Consumables log has no appointment footprint
     "outpatient_meds": {"meds"},
     "cadre_weighted_tms": {"load"},
+    "inpatient_days": {"load", "mix"},
 }
 # Outpatient service areas for sensitivity analysis (3); must match the Stata definition exactly
 OUTPATIENT_AREAS = ["Outpatient - General", "Outpatient - Maternity/Gynaecology", "CD clinic"]
@@ -438,6 +442,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
     keep_blank_footprint = KEEP_BLANK_FOOTPRINT_HSI and analysis != "no_blank_footprint"
     outpatient_only = analysis == "outpatient_meds"
     tms_file = TLM_FILES["load_tms_cadre" if analysis == "cadre_weighted_tms" else "load_tms"]
+    add_inpatient_days = analysis == "inpatient_days"
     run_measures = MEASURES_BY_ANALYSIS[analysis]
 
     TARGET_PERIOD = the_target_period
@@ -555,6 +560,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
     def get_patient_days_by_level(_df):
         """Sum over days and facilities of unique patients per facility-day, by level."""
         _df = filter_hsi(_df)
+        if add_inpatient_days:
+            _df = _df.loc[_df["Event_Name"] != "Inpatient_Care"]  # in-patient days are added separately
         daily = _df.groupby(["date", "Facility_ID"])["Person_ID"].nunique().rename("n").reset_index()
         daily = restrict_to_tlm(daily)
         return daily.groupby("Facility_Level")["n"].sum().reindex(LEVELS, fill_value=0)
@@ -644,11 +651,87 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
     renormalised = set()   # groups where TLO lacked data at a level with TLM weight
 
     # ------------------------------------------------------------------------------------------
+    # Allocation of TLO in-patient days (Inpatient_Care, logged at the regional referral hospital)
+    # to TLM districts, levels and inpatient service areas, in proportion to admissions weighted by
+    # (requested bed-days - 1); the service area is that of the admitting HSI
+    # ------------------------------------------------------------------------------------------
+    INPATIENT_AREAS = ["Inpatient - General", "Inpatient - Maternity/Gynaecology"]
+    BED_DAYS_OVERRIDE = {
+        ("HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare", "DeliveryCare_Comprehensive"): 1,
+        ("HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare", "PostnatalCare_Comprehensive"): 1,
+        ("HSI_Alri_Treatment", "Alri_Pneumonia_Treatment_Inpatient"): 7,
+        ("HSI_Alri_Treatment", "Alri_Pneumonia_Treatment_Inpatient_Followup"): 7,
+        ("HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare", "AntenatalCare_Inpatient"): 1,
+    }  # (event, treatment); None = all treatments of the event
+
+    # requested bed-days from hsi_web, e.g. "general_bed (15 days)" -> 15
+    bd = (web_hsi.set_index(["Event", "Treatment"])["Bed days footprint"].fillna("").astype(str)
+          .str.findall(r"\(([\d.]+) days?\)")
+          .apply(lambda xs: sum(map(float, xs)) if isinstance(xs, list) and xs else np.nan).dropna())
+    bd_trt, bd_evt = bd.groupby(level=[0, 1]).max().to_dict(), bd.groupby(level=0).max().to_dict()
+    for (e, t), d in BED_DAYS_OVERRIDE.items():
+        if t is None:
+            bd_evt[e] = d
+        else:
+            bd_trt[(e, t)] = d
+
+    def region_level(_df):
+        """Region and harmonised level for all districts (as in restrict_to_tlm, without the district filter)."""
+        _df = merge_info_from_mfl(_df)
+        _df["Facility_Level"] = _df["Facility_Level"].astype(str)
+        _df.loc[_df["Facility_Level"] == "4", "Region"] = "Southern"     # ZMH, as in restrict_to_tlm
+        _df["Facility_Level"] = _df["Facility_Level"].replace({"4": "3", "1b": "2"})
+        return _df.loc[~_df["Facility_Level"].isin(["0", "5"])]
+
+    def get_inpatient_days_allocated(_df):
+        """In-patient days allocated to TLM levels and inpatient service areas:
+        days(l, a) = sum over regions r of days(r) x weighted admissions(TLM districts in r, l, a)
+                                                    / weighted admissions(r)"""
+        _df = filter_hsi(_df)
+        # actual in-patient days by region
+        ip = _df.loc[_df["Event_Name"] == "Inpatient_Care"].copy()
+        ip["days"] = ip["Number_By_Appt_Type_Code"].apply(lambda d: d.get("InpatientDays", 0))
+        days_r = region_level(ip).groupby("Region")["days"].sum()
+        # admissions weighted by expected in-patient days (requested bed-days - 1)
+        adm = _df.loc[_df["Number_By_Appt_Type_Code"].apply(lambda d: "IPAdmission" in d)].copy()
+        los = pd.Series([bd_trt.get((e, t), bd_evt.get(e, np.nan))
+                         for e, t in zip(adm["Event_Name"], adm["TREATMENT_ID"])], index=adm.index, dtype=float)
+        adm["w"] = (los.fillna(los.mean()) - 1).clip(lower=0)
+        # inpatient service area of the admitting HSI (any other area is counted as Inpatient - General)
+        adm["area"] = pd.MultiIndex.from_frame(adm[["Event_Name", "TREATMENT_ID"]]).map(hsi_loc_cat_map)
+        adm.loc[~adm["area"].isin(INPATIENT_AREAS), "area"] = "Inpatient - General"
+        w_r = region_level(adm).groupby("Region")["w"].sum()                                    # all districts
+        w_rla = restrict_to_tlm(adm).groupby(["Region", "Facility_Level", "area"])["w"].sum()   # TLM districts
+        # allocate each region's days to TLM levels and areas, then sum over regions
+        share = w_rla.div(w_r, level="Region").fillna(0)
+        alloc = share.mul(days_r, level="Region").fillna(0)
+        days_la = (alloc.groupby(level=["area", "Facility_Level"]).sum()
+                   .reindex(pd.MultiIndex.from_product([INPATIENT_AREAS, LEVELS]), fill_value=0.0))
+        days_la.index = days_la.index.set_names(["key1", "key2"])
+
+        def pad(s):   # one-level series -> (key1, "") so all items share the same index depth
+            return pd.Series(s.to_numpy(), index=pd.MultiIndex.from_arrays([s.index, [""] * len(s)],
+                                                                           names=["key1", "key2"]))
+        return pd.concat({
+            "inpatient_days": days_la,
+            "tlm_share_of_region": pad(share.groupby(level="Region").sum()),     # check: between 0 and 1
+            "days_region": pad(days_r.astype(float)),
+            "share_admissions_no_bed_days": pad(pd.Series({"all": float(los.isna().mean()) if len(los) else 0.0})),
+        }, names=["item"])
+
+    # ------------------------------------------------------------------------------------------
     # 1. Patient load
     # ------------------------------------------------------------------------------------------
     if "load" in run_measures:
         pat_days = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
                                  get_patient_days_by_level, do_scaling=True).reindex(LEVELS).fillna(0.0)
+        if add_inpatient_days:
+            # sensitivity analysis (5): add in-patient days (both inpatient areas) to patient-days, per run
+            ip_load = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
+                                    get_inpatient_days_allocated, do_scaling=True)
+            ip_load = (ip_load.xs("inpatient_days", level="item").groupby(level="key2").sum()
+                       .reindex(LEVELS).fillna(0.0))
+            pat_days = pat_days + ip_load[pat_days.columns]
         staff = extract_draw0("tlo.methods.healthsystem.summary", "number_of_hcw_staff",
                               get_staff_by_level, do_scaling=False).reindex(LEVELS)
         # patients per staff on duty per day, by level and run
@@ -700,6 +783,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         w_mix_groups = read_level_weights(tlm_folder / TLM_FILES["w_mix"])
         assert ADULT_GROUP in w_mix_groups, f"'{ADULT_GROUP}' weights missing from {TLM_FILES['w_mix']}"
 
+        # sensitivity analysis (5): in-patient days allocated to levels and inpatient areas, per run
+        if add_inpatient_days:
+            ip_alloc = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
+                                     get_inpatient_days_allocated, do_scaling=False)
+            # check two rows: share_admissions_no_bed_days should be about 0,
+            # and each tlm_share_of_region should be between 0 and 1.
+            ip_alloc.mean(axis=1).rename("mean_across_runs").to_csv(output_folder / "tlo_inpatient_days_allocation.csv")
+            ip_days = ip_alloc.xs("inpatient_days", level="item")  # (area, level) x run
+
         mix_runs = {}
         for run in mix_counts.columns:
             props = []
@@ -708,6 +800,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
                 w_mix = w_mix_groups[ADULT_GROUP if cat in ADULT_ONLY_CATS else "Overall"]
                 tab = (c_cat.droplevel("category").unstack("Facility_Level")
                        .reindex(columns=LEVELS).fillna(0))                  # subgroup x level
+                if add_inpatient_days and cat == "Service area":
+                    # add this run's in-patient days to each inpatient area, by level
+                    tab = tab.astype(float)
+                    for area in INPATIENT_AREAS:
+                        if area not in tab.index:
+                            tab.loc[area] = 0.0
+                        tab.loc[area] += ip_days[run].xs(area, level="key1").reindex(LEVELS).to_numpy()
                 if reweight:
                     share = tab / tab.sum(axis=0)                              # shares within level
                     w = w_mix.where(tab.sum(axis=0) > 0, 0.0)
@@ -846,7 +945,8 @@ if __name__ == "__main__":
     parser.add_argument("--tlm-results-folder", type=Path, default=None,
                         help="Folder with the Stata output CSVs (default: the TLM_2024 resource folder)")
     parser.add_argument("--analysis", choices=list(ANALYSES), default="main",
-                        help="main, no_reweighting, no_blank_footprint, outpatient_meds, or cadre_reweighted_tms")
+                        help="main, no_reweighting, no_blank_footprint, outpatient_meds, cadre_weighted_tms, "
+                             "or inpatient_days")
     args = parser.parse_args()
 
     apply(
@@ -859,4 +959,4 @@ if __name__ == "__main__":
     )
 # outputs/bshe@ic.ac.uk/scenario_patient_mix-2026-05-15T125453Z
 # --tlm-results-folder resources/healthsystem/human_resources/TLM_2024
-# --analysis no_reweighting | no_blank_footprint | outpatient_meds | cadre_weighted_tms for the sensitivity analyses
+# --analysis no_reweighting | no_blank_footprint | outpatient_meds | cadre_weighted_tms | inpatient_days for the sensitivity analyses
