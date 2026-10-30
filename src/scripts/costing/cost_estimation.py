@@ -284,6 +284,7 @@ def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path,
                                      suspended_results_folder: Path = None,
+                                     scaling_factor: Optional[float] = None,
                                      _draws: Optional[list[int]] = None,
                                      _runs: Optional[list[int]] = None,
                                      summarize: bool = False,
@@ -304,6 +305,9 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         Path to the directory containing suspended simulation output files (using the suspend and resume functionality),
         This is used to extract the scaling_factor to scale result to actual population size. If None, then the
         'scaling_factor' is obtained from the results_folder.
+    scaling_factor: float, optional
+        Scaling factor used to scale results to actual population size. If provided, this is used in place of the
+        scaling_factor logged in the suspended_results_folder or results_folder.
     _draws : list, optional
         Specific draws to include in the cost estimation. Defaults to all available draws.
     _runs : list, optional
@@ -550,6 +554,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     available_staff_count_by_facid_and_officertype = extract_results(
         Path(results_folder),
         suspended_results_folder=suspended_results_folder,
+        scaling_factor=scaling_factor,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
@@ -636,6 +641,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     annual_capacity_used_by_cadre_and_level = extract_results(
         Path(results_folder),
         suspended_results_folder=suspended_results_folder,
+        scaling_factor=scaling_factor,
         module='tlo.methods.healthsystem.summary',
         key='Capacity_By_FacID_and_Officer',
         custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
@@ -852,6 +858,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         cons_req = extract_results(
             results_folder,
             suspended_results_folder=suspended_results_folder,
+            scaling_factor=scaling_factor,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
             custom_generate_series=get_counts_of_items_requested,
@@ -1063,6 +1070,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     list_of_equipment_used_by_draw_and_run = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
+        scaling_factor=scaling_factor,
         module='tlo.methods.healthsystem.summary',
         key='EquipmentEverUsed_ByFacilityID',
         custom_generate_series=get_equipment_used_by_district_and_facility,
@@ -1072,44 +1081,41 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         list_of_equipment_used_by_draw_and_run[col] = list_of_equipment_used_by_draw_and_run[col].apply(
             ast.literal_eval)
 
-    # Initialize an empty DataFrame
-    equipment_cost_across_sim = pd.DataFrame()
+    # Collect equipment cost for each draw and run, then concatenate once
+    equipment_cost_frames = []
 
     # Extract equipment cost for each draw and run
     for d in _draws:
         for r in _runs:
             print(f"Processing draw {d} and run {r} of equipment costs")
             # Extract a list of equipment which was used at each facility level within each district
-            equipment_used = {district: {level: [] for level in fac_levels} for district in list(
-                district_dict.values())}  # create a dictionary with a key for each district and facility level
-            list_of_equipment_used_by_current_draw_and_run = list_of_equipment_used_by_draw_and_run[
-                (d, r)].reset_index()
-            for dist in list(district_dict.values()):
-                for level in fac_levels:
-                    equipment_used_subset = list_of_equipment_used_by_current_draw_and_run[
-                        (list_of_equipment_used_by_current_draw_and_run['District'] == dist) & (
-                                    list_of_equipment_used_by_current_draw_and_run['Facility_Level'] == level)]
-                    equipment_used_subset.columns = ['District', 'Facility_Level', 'EquipmentEverUsed']
-                    equipment_used[dist][level] = set().union(*equipment_used_subset['EquipmentEverUsed'])
-            equipment_used = pd.concat({
-                k: pd.DataFrame.from_dict(v, 'index') for k, v in equipment_used.items()},
-                axis=0)
-            full_list_of_equipment_used = set(equipment_used.values.flatten())
-            full_list_of_equipment_used = set(filter(pd.notnull, full_list_of_equipment_used))
-
-            equipment_df = pd.DataFrame()
-            equipment_df.index = equipment_used.index
-            for item in full_list_of_equipment_used:
-                equipment_df[str(item)] = 0
-                for dist_fac_index in equipment_df.index:
-                    equipment_df.loc[equipment_df.index == dist_fac_index, str(item)] = equipment_used[
-                        equipment_used.index == dist_fac_index].isin([item]).any(axis=1)
-            # equipment_df.to_csv('./outputs/equipment_use.csv')
-
-            equipment_df = equipment_df.reset_index().rename(
-                columns={'level_0': 'District', 'level_1': 'Facility_Level'})
-            equipment_df = pd.melt(equipment_df, id_vars=['District', 'Facility_Level']).rename(
-                columns={'variable': 'Item_code', 'value': 'whether_item_was_used'})
+            equipment_series = list_of_equipment_used_by_draw_and_run[(d, r)]
+            districts = list(district_dict.values())
+            levels = list(fac_levels)
+            district_set = set(districts)
+            used_records = [
+                (district, level, item)
+                for (district, level), items in equipment_series.items()
+                if district in district_set and level in fac_levels
+                for item in items
+                if pd.notna(item)
+            ]
+            used_membership = pd.DataFrame(
+                used_records, columns=['District', 'Facility_Level', 'Item_code']
+            ).drop_duplicates()
+            all_items = used_membership['Item_code'].drop_duplicates()
+            equipment_df = pd.MultiIndex.from_product(
+                [districts, levels, all_items],
+                names=['District', 'Facility_Level', 'Item_code'],
+            ).to_frame(index=False)
+            equipment_df = equipment_df.merge(
+                used_membership.assign(whether_item_was_used=True),
+                on=['District', 'Facility_Level', 'Item_code'],
+                how='left', validate='1:1',
+            )
+            equipment_df['whether_item_was_used'] = (
+                equipment_df['whether_item_was_used'].eq(True)
+            )
             equipment_df['Item_code'] = pd.to_numeric(equipment_df['Item_code'])
             # Merge the count of facilities by district and level
             equipment_df = equipment_df.merge(mfl[['District', 'Facility_Level', 'Facility_Count']],
@@ -1119,16 +1125,24 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             # Because levels 1b and 2 are collapsed together, we assume that the same equipment is used by level 1b as
             #   that recorded for level 2
             def update_itemuse_for_level1b_using_level2_data(_df):
-                # Create a list of District and Item_code combinations for which use == True
-                list_of_equipment_used_at_level2 = \
-                _df[(_df.Facility_Level == '2') & (_df['whether_item_was_used'] is True)][['District', 'Item_code']]
-                # Now update the 'whether_item_was_used' for 'Facility_Level' == '1b' to match that of level '2'
-                _df.loc[
-                    (_df['Facility_Level'] == '1b') &
-                    (_df[['District', 'Item_code']].apply(tuple, axis=1).isin(
-                        list_of_equipment_used_at_level2.apply(tuple, axis=1))),
-                    'whether_item_was_used'
-                ] = True
+                level2_items = pd.MultiIndex.from_frame(
+                    _df.loc[
+                        _df["Facility_Level"].eq("2")
+                        & _df["whether_item_was_used"].eq(True),
+                        ["District", "Item_code"],
+                    ]
+                )
+
+                row_items = pd.MultiIndex.from_frame(
+                    _df[["District", "Item_code"]]
+                )
+
+                copy_use = (
+                    _df["Facility_Level"].eq("1b")
+                    & row_items.isin(level2_items)
+                )
+
+                _df.loc[copy_use, "whether_item_was_used"] = True
 
                 return _df
 
@@ -1150,19 +1164,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                                                   equipment_cost['Quantity'] * equipment_cost[
                                                                       'Facility_Count']
             equipment_cost['year'] = max(years) - 1
-            if equipment_cost_across_sim.empty:
-                equipment_cost_across_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[
-                    [item + '_annual_total' for item in categories_of_equipment_cost]].sum()
-                equipment_cost_across_sim['draw'] = d
-                equipment_cost_across_sim['run'] = r
-            else:
-                equipment_cost_for_current_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[
-                    [item + '_annual_total' for item in categories_of_equipment_cost]].sum()
-                equipment_cost_for_current_sim['draw'] = d
-                equipment_cost_for_current_sim['run'] = r
-                # Concatenate the results
-                equipment_cost_across_sim = pd.concat([equipment_cost_across_sim, equipment_cost_for_current_sim],
-                                                      axis=0)
+            equipment_cost_for_current_sim = equipment_cost.groupby(
+                ['year', 'Facility_Level', 'Equipment_tlo']
+            )[[item + '_annual_total' for item in categories_of_equipment_cost]].sum()
+            equipment_cost_frames.append(equipment_cost_for_current_sim.assign(draw=d, run=r))
+
+    equipment_cost_across_sim = pd.concat(equipment_cost_frames, axis=0)
 
     equipment_costs = pd.melt(equipment_cost_across_sim.reset_index(),
                               id_vars=['draw', 'run', 'Facility_Level', 'Equipment_tlo'],  # Columns to keep

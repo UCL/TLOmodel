@@ -296,6 +296,7 @@ def extract_results(results_folder: Path,
                     custom_generate_series=None,
                     do_scaling: bool = False,
                     suspended_results_folder: Path = None,
+                    scaling_factor: Optional[float] = None,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -309,7 +310,11 @@ def extract_results(results_folder: Path,
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
     If the suspend-and-resume functionality is used, scaling factor may be available in the folder where the logs
-    of the suspended run are stored.
+    of the suspended run are stored. If the 'scaling_factor' is provided, this value will be used for scaling.
+    Otherwise, if suspended_results_folder is provided, the scaling_factor will be extracted from the demography log
+    of this suspended results folder. If neither is provided, the function will attempt to extract this from the
+    demography log of the (resume) results folder - this contains the scaling_factor only if suspend-and-resume
+    functionality is NOT used.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
@@ -356,7 +361,9 @@ def extract_results(results_folder: Path,
                     'Custom command does not generate a pd.Series'
                 )
                 if do_scaling:
-                    if suspended_results_folder is not None:
+                    if scaling_factor is not None:
+                        res[draw_run] = output_from_eval * scaling_factor
+                    elif suspended_results_folder is not None:
                         res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
                     else:
                         res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
