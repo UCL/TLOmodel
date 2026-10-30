@@ -17,7 +17,7 @@ Sensitivity analyses (choose with --analysis; outputs in <output folder>/tlm_val
   (1) no_reweighting:     TLO estimates not reweighted to the TLM facility-level composition
   (2) no_blank_footprint: HSIs with a blank appointment footprint dropped (patient load and patient mix)
   (3) outpatient_meds:    medicine access restricted to outpatient service areas
-  (4) cadre_reweighted_tms: TLM time-and-motion patient load standardised to the TLO cadre mix
+  (4) cadre_weighted_tms: TLM time-and-motion patient load standardised to the TLO cadre mix
   (5) inpatient_days: TLO in-patient days added to patient load and to the inpatient service areas.
 
 The TLO simulation scenario is defined in src/scripts/calibration_analyses/scenarios/scenario_patient_mix.py.
