@@ -692,10 +692,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         ip = _df.loc[_df["Event_Name"] == "Inpatient_Care"].copy()
         ip["days"] = ip["Number_By_Appt_Type_Code"].apply(lambda d: d.get("InpatientDays", 0))
         days_r = region_level(ip).groupby("Region")["days"].sum()
-        # admissions weighted by expected in-patient days (requested bed-days - 1)
-        adm = _df.loc[_df["Number_By_Appt_Type_Code"].apply(lambda d: "IPAdmission" in d)].copy()
-        los = pd.Series([bd_trt.get((e, t), bd_evt.get(e, np.nan))
-                         for e, t in zip(adm["Event_Name"], adm["TREATMENT_ID"])], index=adm.index, dtype=float)
+        # admissions: HSIs that request bed-days (hsi_web.csv or BED_DAYS_OVERRIDE) or carry IPAdmission
+        # (IPAdmission is missing when an HSI returns its own actual footprint, e.g. deliveries)
+        keys = pd.MultiIndex.from_frame(_df[["Event_Name", "TREATMENT_ID"]])
+        los_all = pd.Series(keys.map(lambda k: bd_trt.get(k, bd_evt.get(k[0], np.nan))),
+                            index=_df.index, dtype=float)
+        is_adm = (los_all.notna() | _df["Number_By_Appt_Type_Code"].apply(lambda d: "IPAdmission" in d)) \
+                 & (_df["Event_Name"] != "Inpatient_Care")
+        adm = _df.loc[is_adm].copy()
+        los = los_all.loc[adm.index]
+        # weight = expected in-patient days (requested bed-days - 1)
         adm["w"] = (los.fillna(los.mean()) - 1).clip(lower=0)
         # inpatient service area of the admitting HSI (any other area is counted as Inpatient - General)
         adm["area"] = pd.MultiIndex.from_frame(adm[["Event_Name", "TREATMENT_ID"]]).map(hsi_loc_cat_map)
