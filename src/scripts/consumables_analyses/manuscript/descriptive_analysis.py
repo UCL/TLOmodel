@@ -201,6 +201,13 @@ def generate_heatmap(
         annot_data = display_df.astype(float)
 
     # 4) Plot
+    # Fix the colour scale to the full possible range of the underlying proportion (0-1, or
+    # 0-100 once rescaled for percentage annotation) rather than letting it auto-scale to each
+    # heatmap's own data range -- this keeps the colour scale comparable across separate calls
+    # to this function (e.g. facility levels 1a and 1b plotted as separate figures).
+    vmin = 0
+    vmax = 100 if as_pct else 1
+
     sns.set(font_scale=font_scale)
     fig, ax = plt.subplots(figsize=figsize)
     hm = sns.heatmap(
@@ -209,7 +216,9 @@ def generate_heatmap(
         cmap=cmap,
         cbar_kws={"label": cbar_label},
         ax=ax,
-        fmt=".2f"
+        fmt=".2f",
+        vmin=vmin,
+        vmax=vmax,
     )
 
     # Cell labels are left as plain numbers (no "%") when as_pct is True -- the colourbar ticks
@@ -426,7 +435,7 @@ for level in ['1a', '1b']:
         cmap="RdBu",
         round_decimals=4,
         cbar_label="Proportion of days on which consumable is available",
-        xlabel="Facility Level",
+        xlabel="Scenario",
         ylabel="Program",
         scenario_axis = True,  # if True, columns become scenarios
         scenario_cols = scenario_cols,
