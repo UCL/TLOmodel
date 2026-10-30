@@ -569,8 +569,14 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype[
         'Facility_ID'].map(facility_id_levels_dict)
     idx = pd.IndexSlice
-    available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(
-        columns=[idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
+    # Sum staff counts across facilities within each year, Facility_Level and OfficerType. The grouping keys are
+    # passed as Series and the (draw, run) value columns selected explicitly, because dropping labels from this
+    # unsorted column MultiIndex (which mixes strings and integers, so cannot be sorted) raises a PerformanceWarning
+    _staff_df = available_staff_count_by_facid_and_officertype
+    _key_cols = ['year', 'Facility_Level', 'OfficerType']
+    _value_cols = [col for col in _staff_df.columns if col[0] not in _key_cols + ['Facility_ID']]
+    available_staff_count_by_level_and_officer_type = _staff_df[_value_cols].groupby(
+        [_staff_df[(col, '')].rename(col) for col in _key_cols]).sum()
     available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(
         available_staff_count_by_level_and_officer_type.reset_index(),
         id_vars=['year', 'Facility_Level', 'OfficerType'])
@@ -972,8 +978,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                      _consumables_dict.items()}  # reverse dictionary to map names to codes
         new_df = _df.copy()
         new_df['item_code'] = new_df['consumable'].map(reversed_consumables_dict)
-        cost_of_consumables = new_df[~new_df['item_code'].isin(list_of_unique_medical_products)]
-        cost_of_separately_managed_medical_supplies = new_df[new_df['item_code'].isin(list_of_unique_medical_products)]
+        # Take explicit copies so that relabelling below modifies these dataframes and not a view of new_df
+        cost_of_consumables = new_df[~new_df['item_code'].isin(list_of_unique_medical_products)].copy()
+        cost_of_separately_managed_medical_supplies = new_df[
+            new_df['item_code'].isin(list_of_unique_medical_products)].copy()
         cost_of_separately_managed_medical_supplies['cost_subcategory'] = cost_of_separately_managed_medical_supplies[
             'cost_subcategory'].replace(
             {'consumables_dispensed': 'separately_managed_medical_supplies_dispensed',
