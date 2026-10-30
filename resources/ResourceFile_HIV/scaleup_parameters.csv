@@ -1,3 +1,11 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:f33aeada28bb68e7b2927659f5daef4920d77965c30243b9032d10d98d28acd2
-size 709
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+reduction_in_hiv_beta,0.9,scenario,1,0,vague prior,
+prob_prep_for_fsw_after_hiv_test,0.5,scenario,0,1,vague prior,
+prob_prep_for_agyw,0.1,scenario,0,1,vague prior,
+probability_of_being_retained_on_prep_every_3_months,0.75,scenario,0,1,vague prior,
+probability_of_being_retained_on_art_every_3_months,1,scenario,0,1,vague prior,
+prob_circ_after_hiv_test,0.25,scenario,0,1,vague prior,
+annual_testing_rate_adults,0.4,scenario,0,1,vague prior,
+prob_hiv_test_at_anc_or_delivery,0.95,scenario,0,1,vague prior,
+prob_hiv_test_for_newborn_infant,0.95,scenario,0,1,vague prior,
+virally_suppressed_on_art,95,scenario,0,100,vague prior,

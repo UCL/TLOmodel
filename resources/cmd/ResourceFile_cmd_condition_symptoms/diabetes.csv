@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e9620c5dc155a2af375b2d387ed0a7f0ef92e6b2a17e27cb7d0bac265b235f9e
-size 109
+parameter_name,value,param_label,prior_min,prior_max,prior_note
+diabetes_symptoms,0.09,local,0,1,vague prior

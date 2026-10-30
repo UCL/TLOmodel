@@ -1,17 +1,18 @@
 import pytest
-from test_module_dependencies import (
-    module_class_map,
-    parameterize_module_class,
-    register_modules_and_simulate,
-    resourcefilepath,
-)
-from test_module_dependencies import sim as get_simulation  # to silence unused import warning
 
 from tlo.dependencies import (
     get_all_dependencies,
     get_all_required_dependencies,
     get_dependencies_and_initialise,
 )
+
+from .test_module_dependencies import (
+    module_class_map,
+    parameterize_module_class,
+    register_modules_and_simulate,
+    resourcefilepath,
+)
+from .test_module_dependencies import sim as get_simulation  # to silence unused import warning
 
 sim = get_simulation   # pytest fixture
 

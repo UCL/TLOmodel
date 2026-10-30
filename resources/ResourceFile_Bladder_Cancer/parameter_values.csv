@@ -1,3 +1,45 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2e00332091bfb52e123add10c0ff68cdb6646ee8b256a521be4a2ce242874a37
-size 5058
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+init_prop_bladder_cancer_stage,"[0.00005, 0.00005, 0.00005]",local,"[0.0, 0.0, 0.0]","[1.0, 1.0, 1.0]",vague prior,Missing
+init_prop_blood_urine_bladder_cancer_by_stage,"[0.20, 0.50, 0.70]",local,"[0.0, 0.0, 0.0]","[1.0, 1.0, 1.0]",vague prior,Missing
+init_prop_pelvic_pain_bladder_cancer_by_stage,"[0.00,0.30,0.50]",local,"[0.0, 0.0, 0.0]","[1.0, 1.0, 1.0]",vague prior,Missing
+init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage,"[0.7,0.9,0.9]",local,"[0.0, 0.0, 0.0]","[1.0, 1.0, 1.0]",vague prior,Missing
+init_prop_with_pelvic_pain_diagnosed_bladder_cancer_by_stage,"[0.0,0.7,0.9]",local,"[0.0, 0.0, 0.0]","[1.0, 1.0, 1.0]",vague prior,Missing
+init_prop_treatment_status_bladder_cancer,"[0.05,0.05,0.05]",local,"[0.0, 0.0, 0.0]","[1.0, 1.0, 1.0]",vague prior,Missing
+r_tis_t1_bladder_cancer_none,1.00E-05,local,0,1,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rr_tis_t1_bladder_cancer_none_age3049,2,local,0.01,100,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rr_tis_t1_bladder_cancer_none_age5069,3,local,0.01,100,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rr_tis_t1_bladder_cancer_none_agege70,3,local,0.01,100,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rr_tis_t1_bladder_cancer_none_tobacco,3.5,universal,0.01,100,vague prior,"Cumberbatch MG et al. The Role of Tobacco Smoke in Bladder and Kidney Carcinogenesis: A Comparison of Exposures and Meta-analysis of Incidence and Mortality Risks.   DOI: 10.1016/j.eururo.2015.06.042   European urology , 2016, Vol.70(3), p.458-466"
+rr_tis_t1_bladder_cancer_none_schisto_h,5,universal,0.01,100,vague prior,Missing
+r_t2p_bladder_cancer_tis_t1,0.05,universal,0,1,vague prior,Missing
+rr_t2p_bladder_cancer_undergone_curative_treatment,0.1,universal,0.01,100,vague prior,Missing
+r_metastatic_t2p_bladder_cancer,0.05,universal,0,1,vague prior,Missing
+rr_metastatic_undergone_curative_treatment,0.2,universal,0.01,100,vague prior,Missing
+rate_palliative_care_metastatic,0.2,universal,0,1,vague prior,Missing
+r_death_bladder_cancer,0.05,universal,0,1,vague prior,Missing
+r_blood_urine_tis_t1_bladder_cancer,0.01,universal,0,1,vague prior,Missing
+rr_blood_urine_t2p_bladder_cancer,3,universal,0.01,100,vague prior,Missing
+rr_blood_urine_metastatic_bladder_cancer,3,universal,0.01,100,vague prior,Missing
+r_pelvic_pain_tis_t1_bladder_cancer,0.0003,universal,0,1,vague prior,Missing
+rr_pelvic_pain_t2p_bladder_cancer,200,universal,0.01,1000,vague prior,Missing
+rr_pelvic_pain_metastatic_bladder_cancer,300,universal,0.01,1000,vague prior,Missing
+rp_bladder_cancer_age3049,2,local,0.01,100,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rp_bladder_cancer_age5069,3,local,0.01,100,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rp_bladder_cancer_agege70,3,local,0.01,100,vague prior,"Chasimpha et al.  Three-year cancer incidence in Blantyre, Malawi (2008-2010).  Int. J. Cancer: 141, 694-700 (2017)."
+rp_bladder_cancer_tobacco,3.5,local,0.01,100,vague prior,"Cumberbatch MG et al. The Role of Tobacco Smoke in Bladder and Kidney Carcinogenesis: A Comparison of Exposures and Meta-analysis of Incidence and Mortality Risks.   DOI: 10.1016/j.eururo.2015.06.042   European urology , 2016, Vol.70(3), p.458-466"
+rp_bladder_cancer_schisto_h,5,local,0.01,100,vague prior,"Parkin DM et al.  Cancer in Sub-Saharan Africa.  International Agency for Research on Cancer Lyon, France 2018"
+sensitivity_of_cystoscopy_for_bladder_cancer_blood_urine,1,universal,0,1,vague prior,Missing
+sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain,1,universal,0,1,vague prior,Missing
+init_prob_palliative_care,0.95,local,0,1,vague prior,Missing
+odds_ratio_health_seeking_blood_urine,4,local,0.01,100,vague prior,Missing
+odds_ratio_health_seeking_pelvic_pain,4,local,0.01,100,vague prior,Missing
+initial_polling_start_months_palliative_care,1,undetermined,1,12,design decision,N/A
+initial_polling_start_delay_weeks_palliative_care,1,undetermined,1,52,design decision,N/A
+post_treatment_check_interval_months,12,local,1,20,vague prior,Missing
+post_treatment_followup_interval_months,1,local,1,20,vague prior,Missing
+palliative_care_repeat_interval_months,1,local,1,12,vague prior,Missing
+main_polling_frequency_months,1,undetermined,1,12,design decision,N/A
+delay_initial_main_polling_event_days,0,undetermined,0,6,design decision,N/A
+beddays_treatment,5,local,1,30,vague prior,Missing
+beddays_palliative_care,15,local,1,60,vague prior,Missing
+min_age_investigation,5,local,0,20,vague prior,Missing

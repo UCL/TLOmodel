@@ -1582,7 +1582,7 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
+            priority, topen, rand_queue, self.hsi_event_queue_counter, clinic_eligibility, tclose, hsi_event
         )
 
         # Add to queue:
@@ -1883,6 +1883,10 @@ class HealthSystem(Module):
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
+        # Do nothing if person is not alive
+        if not self.sim.population.props.at[hsi_event.target, 'is_alive']:
+            return
+
         # Invoke never ran function here
         hsi_event.never_ran()
 
@@ -2185,6 +2189,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         did_run=True,
                         priority=_priority,
+                        clinic=clinic
                     )
 
                 # if not ok_to_run
@@ -2207,6 +2212,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         did_run=False,
                         priority=_priority,
+                        clinic=clinic
                     )
 
         return _to_be_held_over
@@ -3023,6 +3029,10 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
 
         # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
         if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
+        
+            # Switch ignore_priority back to False
+            health_system.ignore_priority = False
+        
             # A place to store events with updated priority
             updated_events: List[HSIEventQueueItem | None] = [None] * len(health_system.HSI_EVENT_QUEUE)
             offset = 0
@@ -3041,11 +3051,11 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
                     event = HSIEventQueueItem(
-                        clinic_eligibility,
                         enforced_priority,
                         event.topen,
                         event.rand_queue_counter,
                         event.queue_counter,
+                        clinic_eligibility,
                         event.tclose,
                         event.hsi_event,
                     )

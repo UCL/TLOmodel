@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:5762a513d7d8db079826fa05ce113dd04faa57f442fa6f3f332b46abae8e8c2d
-size 683
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+sensitivity_of_assessment,1,universal,0,1,vague prior,
+medication_item_code,221,undetermined,NA,NA,definition,First line treatment (Hydrochlorothiazide 25mg_1000_CMST)
+pr_assessed_other_symptoms,0.05,local,0,1,vague prior,
+pr_treatment_works,0,local,0,1,vague prior,
+pr_diagnosed,0.3797,local,0,1,vague prior,"Price et al. Prevalence of obesity, hypertension, and diabetes, and cascade of care in sub-Saharan Africa: a cross-sectional, population-based study in rural and urban Malawi. The Lancet Diabetes and Endocrinology 2018:6 208-22."
+pr_seeking_further_appt_if_drug_not_available,0.8,local,0,1,vague prior,

@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:297dedcc993e20ea6d9f2c1b52f673c87a8a53d3a9561ecc0c70851163d70f69
-size 746
+﻿Facility_Level,Electricity,Water,Cleaning,Security,Building maintenance,Facility management,Vehicle maintenance,Ambulance fuel,Food for inpatient cases
+0,0,0,0,0,0,0,0,0,0
+1a,12215.8632,1828.932,1163.552304,1838.70012,5654.00244,1195.155024,5085.15492,4171.55052,0
+1b,11691.69,11436.69948,9308.83224,21061.1604,21116.5332,8278.09056,24541.4736,42668.2416,18999.0588
+2,51713.4372,30775.242,17375.7156,16046.1636,9285.435,16720.6788,18961.5936,39819.3456,32866.764
+3,174417.48,141679.716,65866.5996,52512.4164,163178.256,0,51755.3316,96163.8984,159441.036
+,,,,,,,,,
+Note: The above estimates are derived from TLM survey data and represent annual costs in 2023 USD,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,

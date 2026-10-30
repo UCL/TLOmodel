@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:8c3620db6bacee0dd600cd42949c8e92b84dd57acbe6689207be1dee7386ab06
-size 966
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+test_item_code,216,undetermined,NA,NA,definition,Blood glucose level test
+sensitivity_of_assessment,1,universal,0,1,vague prior,
+medication_item_code,233,undetermined,NA,NA,definition,First line treatment (Metformin hydrochloride 500mg_100_CMST)
+pr_assessed_other_symptoms,0.1,local,0,1,vague prior,
+pr_treatment_works,0.42,local,0,1,vague prior,"Prospective Diabetes Study (UKPDS) Group: Effect of intensive blood glucose control with metformin on complications in overweight patients with type 2 diabetes (UKPDS 34). Lancet. 1998, 352 (9131): 854-865."
+pr_diagnosed,0.3846,local,0,1,vague prior,"Price et al. Prevalence of obesity, hypertension, and diabetes, and cascade of care in sub-Saharan Africa: a cross-sectional, population-based study in rural and urban Malawi. The Lancet Diabetes and Endocrinology 2018:6 208-22."
+pr_seeking_further_appt_if_drug_not_available,0.8,local,0,1,vague prior,

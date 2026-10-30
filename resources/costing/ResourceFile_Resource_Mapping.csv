@@ -1,3 +1,87 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:26461a60cc15796c2bd3be47ced6255e1bac58d8c52cfb4d12eeb681545f367e
-size 12281
+﻿Cost Type,Cost Sub-Type,"Programmatic Intervention Level 2 [NEW]
+(when the disaggregated data had to rely upon intervention rather than cost sub-type)",Calibration_category,EXPENDITURE (USD) (Jul 2018 - Jun 2019),BUDGETS (USD) (Jul 2019 - Jun 2020),BUDGETS (USD) (Jul 2020 - Jun 2021),BUDGETS (USD) (Jul 2021 - Jun 2022)
+Drugs and Commodities,"Drugs, medical supplies, and commodities",,"Other Drugs, medical supplies, and commodities",37735051.33,33585891.65,69727962.89,4373929.058
+Exclude from calibration,All,Items recategorised as non-consumable costs even though the cost type was drugs and commodities,Program Management & Administration,16649853.76,6001427.872,3562765.51,3542670.515
+Drugs and Commodities,All,Beyond EHP,Non-EHP consumables,25178739.81,18706715.51,957210.23,851070.13
+Drugs and Commodities,All,Voluntary Male Medical Circumcision (VMMC),Voluntary Male Medical Circumcision,2891681,1730270.55,1801078.6,1832645.01
+Drugs and Commodities,All,Indoor Residual Spray (IRS),Indoor Residual Spray,7272001.18,12766844.17,13187549.04,13155261.5
+Drugs and Commodities,All,ITNs/LLIN (Bednets),Bednets,3552600,2807700,28061308.64,8002242.375
+Drugs and Commodities,All,ACTs (LA and ASAQ),Antimalarials,681848.59,201412.87,4001222.91,2338244.615
+Drugs and Commodities,All,Micro-nutrient Powder - Under 5s,Undernutrition commodities,527728.2,1241436.84,934561.73,600000
+Drugs and Commodities,All,Plumpy Peanut - Under 5s,Undernutrition commodities,120469,211117.57,0,0
+Drugs and Commodities,All,School Feeding Programs,Undernutrition commodities,87503.8,65312.75,57794.08,68513.69
+Drugs and Commodities,All,Vitamin A - Pregnant Women,"Other Drugs, medical supplies, and commodities",1356.72,191010.31,93975.37,93975.37
+Drugs and Commodities,All,Treatment of Undernutrition,Undernutrition commodities,177513.58,159150.6705,173928.6313,199995.5039
+Drugs and Commodities,All,Cervical Cancer Screening,"Other Drugs, medical supplies, and commodities",520131.97,851350.84,1384482.72,428059.72
+Drugs and Commodities,All,Cervical Cancer Treatment,"Other Drugs, medical supplies, and commodities",14740.35,197495.02,71332.69,7258.92
+Drugs and Commodities,All,Barrier Methods (e.g. condoms),Condoms and Lubricants,112375.97,6640083.82,1558317.15,1558317.15
+Drugs and Commodities,All,"Hormonal Methods (e.g. implants, injectables, IUD, the pill)",Other family planning commodities,12190873.76,15538449.2,4922990.5,5064869.02
+Drugs and Commodities,All,Screening and Diagnosis,TB Tests (including RDTs),599011.62,886710.81,2706005.42,2230863.7
+Drugs and Commodities,All,First Line Treatment,TB Treatment,1068701,2717468,0,0
+Drugs and Commodities,All,MDR-TB,TB Treatment,1269835.34,1691496,475056.42,368603.07
+Drugs and Commodities,All,"Polio, Rotavirus, Measles Rubella, Pentavalent, BCG, Tetatanus Toxoid, and Pneumoccal Vaccines",Vaccines,4200418.52,13209399.57,1112804.105,1214369.197
+Drugs and Commodities,All,Rapid Diagnostic Test (RDT),Malaria RDTs,1719000,2334561.125,3728967.96,2173892.617
+Drugs and Commodities,All,Community-Based Testing,HIV Screening/Diagnostic Tests,405156.32,337854.83,175603.95,975783.08
+Drugs and Commodities,All,Early Infant Diagnosis,HIV Screening/Diagnostic Tests,0,0,2713.41,2984.75
+Drugs and Commodities,All,Facility-Based Testing,HIV Screening/Diagnostic Tests,17101787.53,43055908.24,968741.85,40063479.18
+Drugs and Commodities,All,Index Testing including Voluntary Assisted Partner Notification,HIV Screening/Diagnostic Tests,0,5150.01,0,0
+Drugs and Commodities,All,Self-Testing,HIV Screening/Diagnostic Tests,5425,5336.82,58749.99,4492067.47
+Drugs and Commodities,Program Management & Administration not disaggregated,Items recategorised as non-consumable costs even though the cost type was drugs and commodities,Program Management & Administration,0,0,5743.325949,4677.920585
+Drugs and Commodities,Travel and Transporation,Items recategorised as non-consumable costs even though the cost type was drugs and commodities,Program Management & Administration,0,0.000509095,0,0
+Drugs and Commodities,Family Planning,,Other family planning commodities,132269.6,5514241.99,3350000.01,3350000.01
+Drugs and Commodities,IRS (in one district - Ntcheu),,Indoor Residual Spray,0,0,6948.786211,5677.98822
+Drugs and Commodities,TB Treatment,,TB Treatment,0,0,217362,276992
+Drugs and Commodities,Antimalarials (ACTs-LA),,Antimalarials,0,0,2013142.07,320675.5249
+Drugs and Commodities,Antimalarials (ASAQ),,Antimalarials,0,0,34093.29,5430.76
+Drugs and Commodities,Antimalarials (Injectable artesunate),,Antimalarials,0,0,2045598.38,325845.5357
+Drugs and Commodities,Malaria RDTs,,Malaria RDTs,0,0,1914467.96,304957.6172
+Drugs and Commodities,BCG Vaccine,,"Other Drugs, medical supplies, and commodities",290782.19,0,0,0
+Drugs and Commodities,Td vaccine,,"Other Drugs, medical supplies, and commodities",264785.1,0,0,0
+Drugs and Commodities,AD syringes,,"Other Drugs, medical supplies, and commodities",174838.04,0,0,0
+HIV Drugs and Commodities,Antiretrovirals,,Antiretrovirals,53796360.12,77506903.49,17561508.19,70061133.79
+HIV Drugs and Commodities,CD4 Tests,,HIV Screening/Diagnostic Tests,296760,277000,9635,0
+HIV Drugs and Commodities,Condoms and Lubricants,,Condoms and Lubricants,97937.86801,54904.84746,76848.98347,4571127.903
+HIV Drugs and Commodities,Diagnostic Tests for STI (including rapid testing),,"Other Drugs, medical supplies, and commodities",78542.52,93131.57977,0,0
+HIV Drugs and Commodities,Diagnostic Tests for TB (including rapid testing),,TB Tests (including RDTs),0,0,1419632.13,3989558.35
+HIV Drugs and Commodities,"Drugs, medical supplies, and commodities",,"Other Drugs, medical supplies, and commodities",0,0,0,5014531.74
+HIV Drugs and Commodities,Food and nutrients,,"Other Drugs, medical supplies, and commodities",393900.24,224721.6904,308179.2506,306105.3169
+HIV Drugs and Commodities,HIV Screening/Diagnostic Tests,,HIV Screening/Diagnostic Tests,6591239.4,9505086.21,69891.2,9334673.76
+HIV Drugs and Commodities,Other Reagents and Testing materials,,HIV Screening/Diagnostic Tests,10068675.88,33148137.61,273365.04,36031379.04
+HIV Drugs and Commodities,STI Drugs,,"Other Drugs, medical supplies, and commodities",0,0,203612.41,5002265.29
+HIV Drugs and Commodities,??,,"Other Drugs, medical supplies, and commodities",497757,464611,16160,0
+Human Resources for Health,Health Worker Salaries,,Health Worker Salaries,114418952.8,96289447.6,121614819.8,133228884.3
+Human Resources for Health,Health Worker Training - In-Service,,Health Worker Training - In-Service,12897136.55,13526727.32,17743710.12,13005517.82
+Human Resources for Health,Health Worker Training - Pre-Service,,Health Worker Training - Pre-Service,1277697.67,1443446.66,2665199.15,1441745.28
+Human Resources for Health,Mentorships & Supportive Supervision,,Mentorships & Supportive Supervision,55553332.8,66652165.02,40094104.47,18212349.51
+Infrastructure and Equipment,ICT Equipment and Connectivity,,Facility utility bills,5180629.881,4314681.338,2702409.349,2762060.733
+Infrastructure and Equipment,Infrastructure - New Builds,,Infrastructure - New Builds,29663284.53,4496146.709,6768215.83,5158459.586
+Infrastructure and Equipment,Infrastructure - Power & Water for Health Facilities,,Facility utility bills,556017.55,826846.2157,3464467.611,2617045.413
+Infrastructure and Equipment,Infrastructure - Rehabilitation,,Infrastructure - Rehabilitation,3586443.584,6782715.623,10177394.16,6833923.22
+Infrastructure and Equipment,Infrastructure - Rehabilitation,"Of the 'Infrastructure - Rehab' for Govt and CHAM, assume that 12.9% of govt exp and 7.3% of CHAM exp goes towards higher level local and central government admin rather than for health facilities. Source of admin %: https://gh.bmj.com/content/7/Suppl_1/e008317 (See table 2 - Administrative and Support Staff)",Program Management & Administration,531172.4711,1004558.341,1507329.33,1012142.475
+Infrastructure and Equipment,Infrastructure - Upgrades,,Infrastructure - Upgrades,8782296.75,7556835.828,8832821.371,1721579.063
+Infrastructure and Equipment,Medical Equipment - Maintenance,,Medical Equipment - Maintenance,2294331.38,16010435.79,16468941.94,729799.7752
+Infrastructure and Equipment,Medical Equipment - Purchase,,Medical Equipment - Purchase,3754149.89,6897681.165,19024579.29,2560323.293
+Infrastructure and Equipment,Vehicles - Purchase and Maintenance,,Vehicles - Fuel and Maintenance,1161704.41,1009615.048,746055.1,1418265.41
+Infrastructure and Equipment,Vehicles - Purchase and Maintenance,,Vehicles - Purchase,7744266.84,4606784.203,4535752.158,3253115.205
+Infrastructure and Equipment,Vehicles - Purchase and Maintenance,,Vehicles - Fuel and Maintenance,1590013.852,1377846.048,2227956.224,1437580.491
+Infrastructure and Equipment,Vehicles - Purchase and Maintenance,,Vehicles - Purchase,647931.648,471838.8702,539095.8541,336204.143
+Program Management & Administration,Administrative/Support Staff Salaries,,Program Management & Administration,24192554.5,24037791.15,26523690.62,19765382.08
+Program Management & Administration,Health Worker Salaries,,Program Management & Administration,1109191,0,0,0
+Program Management & Administration,Meeting Costs,,Program Management & Administration,4432881.163,6746368.804,8331545.052,4184240.754
+Program Management & Administration,Office Rents,,Program Management & Administration,233229.3842,180375.503,20586.6663,33273.39701
+Program Management & Administration,Office Supplies,,Program Management & Administration,6533157.844,2437965.433,1789616.249,1283029.631
+Program Management & Administration,"Office Utilities (electricity, water, heating, etc.)",,Facility utility bills,6406060.55,8508379.558,7459340.455,23815959.6
+Program Management & Administration,Program Management & Administration not disaggregated,,Program Management & Administration,76286561.89,80112918.41,88020806.59,79180165.51
+Program Management & Administration,Promotional/Information Materials and Printing,,Program Management & Administration,5470061.04,6574128.75,6477016.358,1981892.293
+Program Management & Administration,Travel and Transporation,This is the 'Travel and Transport' for all financing sources Government and CHAM,Vehicles - Fuel and Maintenance,11618372.36,3920058.128,6219018.901,5235795.126
+Program Management & Administration,Travel and Transporation,"Of the 'Vehicle-Fuel and Maintenance' for Govt and CHAM, assume that 12.9% of govt exp and 7.3% of CHAM exp goes towards higher level local and central government admin rather than for health facilities. Source of admin %: https://gh.bmj.com/content/7/Suppl_1/e008317 (See table 2 - Administrative and Support Staff)",Program Management & Administration,1714561.441,573369.0917,916384.9305,775232.6424
+Program Management & Administration,Travel and Transporation,This is the 'Travel and Transport' for all financing sources other than Government and CHAM,Vehicles - Fuel and Maintenance (Beyond Government and CHAM),8309105.9,8334574.65,21629947.92,3526722.085
+Supply Chain,Procurement (excluding Drug/Commodity Costs),,Supply Chain,9918093.144,9261444.666,10137233.97,14287066.31
+Supply Chain,Warehousing & Distribution,,Supply Chain,8824388.095,7931021.788,8012147.355,18794789.71
+Supply Chain,Procurement (excluding Drug/Commodity Costs) - non EHP consumables,"We estimate this as the percentage of drug exp composed of non-EHP consumables multiplied by total Procurement expenditure as per RM -  ($11,293,315.25 	 $10,545,617.26 	 $11,542,841.69 	 $16,268,081.12 )",Supply Chain - non-EHP consumables,1375222.106,1284172.598,1405607.716,1981014.811
+Supply Chain,Warehousing & Distribution - non EHP consumables,"We estimate this as the percentage of drug exp composed of non-EHP consumables multiplied by total warehousing and distribution expenditure as per RM -  ( $10,047,959.34 	 $9,030,720.73 	 $9,123,094.99 	 $21,400,836.05  )",Supply Chain - non-EHP consumables,1223571.245,1099698.937,1110947.639,2606046.336
+(blank),(blank),,Unclassified,0,3622078.57,0,0
+Grand Total,,,,624054026.6,689820411.3,616418054,605723734.1
+,,,,,,,
+,,,,,,,
+Categories from Resource Mapping Round 7,Categories from Resource Mapping Round 7,Categories from Resource Mapping Round 7,Categories defined for model,,,,

@@ -1,3 +1,134 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c6df4a42409b22d0b10d56ec077f6f4b5ccbed0f16f570fedbfd397e100063a9
-size 8471
+District,Facility_Level,Region,Facility_ID,Facility_Name,Facility_Count,Proportion_owned_by_government,Proportion_located_in_urban_area
+Balaka,0,Southern,0,Facility_Level_0_Balaka,4.0,0.75,0.0
+Balaka,1a,Southern,1,Facility_Level_1a_Balaka,13.0,0.5384615384615384,0.07692307692307693
+Balaka,1b,Southern,2,Facility_Level_1b_Balaka,0.0,,
+Balaka,2,Southern,3,Facility_Level_2_Balaka,1.0,1.0,1.0
+Blantyre,0,Southern,4,Facility_Level_0_Blantyre,0.0,,
+Blantyre,1a,Southern,5,Facility_Level_1a_Blantyre,33.0,0.8484848484848485,0.48484848484848486
+Blantyre,1b,Southern,6,Facility_Level_1b_Blantyre,2.0,0.0,1.0
+Blantyre,2,Southern,7,Facility_Level_2_Blantyre,0.0,,
+Blantyre City,0,Southern,8,Facility_Level_0_Blantyre City,0.0,,
+Blantyre City,1a,Southern,9,Facility_Level_1a_Blantyre City,0.0,,
+Blantyre City,1b,Southern,10,Facility_Level_1b_Blantyre City,0.0,,
+Blantyre City,2,Southern,11,Facility_Level_2_Blantyre City,0.0,,
+Chikwawa,0,Southern,12,Facility_Level_0_Chikwawa,9.0,1.0,0.0
+Chikwawa,1a,Southern,13,Facility_Level_1a_Chikwawa,18.0,0.8888888888888888,0.05555555555555555
+Chikwawa,1b,Southern,14,Facility_Level_1b_Chikwawa,2.0,0.5,0.0
+Chikwawa,2,Southern,15,Facility_Level_2_Chikwawa,1.0,1.0,1.0
+Chiradzulu,0,Southern,16,Facility_Level_0_Chiradzulu,2.0,1.0,0.0
+Chiradzulu,1a,Southern,17,Facility_Level_1a_Chiradzulu,11.0,0.9090909090909091,0.0
+Chiradzulu,1b,Southern,18,Facility_Level_1b_Chiradzulu,1.0,0.0,0.0
+Chiradzulu,2,Southern,19,Facility_Level_2_Chiradzulu,1.0,1.0,0.0
+Chitipa,0,Northern,20,Facility_Level_0_Chitipa,18.0,1.0,0.0
+Chitipa,1a,Northern,21,Facility_Level_1a_Chitipa,8.0,0.75,0.125
+Chitipa,1b,Northern,22,Facility_Level_1b_Chitipa,1.0,0.0,0.0
+Chitipa,2,Northern,23,Facility_Level_2_Chitipa,1.0,1.0,1.0
+Dedza,0,Central,24,Facility_Level_0_Dedza,4.0,1.0,0.0
+Dedza,1a,Central,25,Facility_Level_1a_Dedza,29.0,0.7241379310344828,0.06896551724137931
+Dedza,1b,Central,26,Facility_Level_1b_Dedza,2.0,0.0,0.5
+Dedza,2,Central,27,Facility_Level_2_Dedza,1.0,1.0,0.0
+Dowa,0,Central,28,Facility_Level_0_Dowa,1.0,1.0,1.0
+Dowa,1a,Central,29,Facility_Level_1a_Dowa,18.0,0.8888888888888888,0.05555555555555555
+Dowa,1b,Central,30,Facility_Level_1b_Dowa,3.0,0.3333333333333333,0.0
+Dowa,2,Central,31,Facility_Level_2_Dowa,0.0,,
+Karonga,0,Northern,32,Facility_Level_0_Karonga,12.0,1.0,0.0
+Karonga,1a,Northern,33,Facility_Level_1a_Karonga,14.0,0.8571428571428571,0.0
+Karonga,1b,Northern,34,Facility_Level_1b_Karonga,3.0,0.6666666666666666,0.0
+Karonga,2,Northern,35,Facility_Level_2_Karonga,1.0,1.0,1.0
+Kasungu,0,Central,36,Facility_Level_0_Kasungu,2.0,1.0,0.0
+Kasungu,1a,Central,37,Facility_Level_1a_Kasungu,32.0,0.875,0.0625
+Kasungu,1b,Central,38,Facility_Level_1b_Kasungu,2.0,0.5,0.0
+Kasungu,2,Central,39,Facility_Level_2_Kasungu,1.0,1.0,1.0
+Likoma,0,Northern,40,Facility_Level_0_Likoma,0.0,,
+Likoma,1a,Northern,41,Facility_Level_1a_Likoma,2.0,1.0,0.0
+Likoma,1b,Northern,42,Facility_Level_1b_Likoma,1.0,0.0,1.0
+Likoma,2,Northern,43,Facility_Level_2_Likoma,0.0,,
+Lilongwe,0,Central,44,Facility_Level_0_Lilongwe,5.0,0.6,1.0
+Lilongwe,1a,Central,45,Facility_Level_1a_Lilongwe,44.0,0.8863636363636364,0.20454545454545456
+Lilongwe,1b,Central,46,Facility_Level_1b_Lilongwe,10.0,0.3,0.4
+Lilongwe,2,Central,47,Facility_Level_2_Lilongwe,1.0,1.0,1.0
+Lilongwe City,0,Central,48,Facility_Level_0_Lilongwe City,0.0,,
+Lilongwe City,1a,Central,49,Facility_Level_1a_Lilongwe City,0.0,,
+Lilongwe City,1b,Central,50,Facility_Level_1b_Lilongwe City,0.0,,
+Lilongwe City,2,Central,51,Facility_Level_2_Lilongwe City,0.0,,
+Machinga,0,Southern,52,Facility_Level_0_Machinga,1.0,1.0,0.0
+Machinga,1a,Southern,53,Facility_Level_1a_Machinga,20.0,0.7,0.0
+Machinga,1b,Southern,54,Facility_Level_1b_Machinga,0.0,,
+Machinga,2,Southern,55,Facility_Level_2_Machinga,1.0,1.0,1.0
+Mangochi,0,Southern,56,Facility_Level_0_Mangochi,2.0,0.5,0.0
+Mangochi,1a,Southern,57,Facility_Level_1a_Mangochi,36.0,0.6666666666666666,0.027777777777777776
+Mangochi,1b,Southern,58,Facility_Level_1b_Mangochi,4.0,0.5,0.0
+Mangochi,2,Southern,59,Facility_Level_2_Mangochi,1.0,1.0,1.0
+Mchinji,0,Central,60,Facility_Level_0_Mchinji,7.0,1.0,0.0
+Mchinji,1a,Central,61,Facility_Level_1a_Mchinji,9.0,1.0,0.0
+Mchinji,1b,Central,62,Facility_Level_1b_Mchinji,4.0,0.25,0.0
+Mchinji,2,Central,63,Facility_Level_2_Mchinji,1.0,1.0,1.0
+Mulanje,0,Southern,64,Facility_Level_0_Mulanje,0.0,,
+Mulanje,1a,Southern,65,Facility_Level_1a_Mulanje,20.0,0.9,0.05
+Mulanje,1b,Southern,66,Facility_Level_1b_Mulanje,1.0,0.0,0.0
+Mulanje,2,Southern,67,Facility_Level_2_Mulanje,1.0,1.0,1.0
+Mwanza,0,Southern,68,Facility_Level_0_Mwanza,0.0,,
+Mwanza,1a,Southern,69,Facility_Level_1a_Mwanza,3.0,1.0,0.3333333333333333
+Mwanza,1b,Southern,70,Facility_Level_1b_Mwanza,0.0,,
+Mwanza,2,Southern,71,Facility_Level_2_Mwanza,1.0,1.0,1.0
+Mzimba,0,Northern,72,Facility_Level_0_Mzimba,1.0,,
+Mzimba,1a,Northern,73,Facility_Level_1a_Mzimba,52.0,,
+Mzimba,1b,Northern,74,Facility_Level_1b_Mzimba,6.0,,
+Mzimba,2,Northern,75,Facility_Level_2_Mzimba,1.0,,
+Mzuzu City,0,Northern,76,Facility_Level_0_Mzuzu City,0.0,,
+Mzuzu City,1a,Northern,77,Facility_Level_1a_Mzuzu City,0.0,,
+Mzuzu City,1b,Northern,78,Facility_Level_1b_Mzuzu City,0.0,,
+Mzuzu City,2,Northern,79,Facility_Level_2_Mzuzu City,0.0,,
+Neno,0,Southern,80,Facility_Level_0_Neno,0.0,,
+Neno,1a,Southern,81,Facility_Level_1a_Neno,8.0,0.5,0.125
+Neno,1b,Southern,82,Facility_Level_1b_Neno,1.0,1.0,0.0
+Neno,2,Southern,83,Facility_Level_2_Neno,1.0,1.0,0.0
+Nkhata Bay,0,Northern,84,Facility_Level_0_Nkhata Bay,1.0,1.0,0.0
+Nkhata Bay,1a,Northern,85,Facility_Level_1a_Nkhata Bay,17.0,0.8823529411764706,0.0
+Nkhata Bay,1b,Northern,86,Facility_Level_1b_Nkhata Bay,1.0,1.0,1.0
+Nkhata Bay,2,Northern,87,Facility_Level_2_Nkhata Bay,1.0,1.0,1.0
+Nkhotakota,0,Central,88,Facility_Level_0_Nkhotakota,1.0,1.0,0.0
+Nkhotakota,1a,Central,89,Facility_Level_1a_Nkhotakota,15.0,0.7333333333333333,0.0
+Nkhotakota,1b,Central,90,Facility_Level_1b_Nkhotakota,3.0,0.3333333333333333,0.3333333333333333
+Nkhotakota,2,Central,91,Facility_Level_2_Nkhotakota,1.0,1.0,1.0
+Nsanje,0,Southern,92,Facility_Level_0_Nsanje,6.0,1.0,0.0
+Nsanje,1a,Southern,93,Facility_Level_1a_Nsanje,10.0,0.9,0.1
+Nsanje,1b,Southern,94,Facility_Level_1b_Nsanje,2.0,0.0,0.0
+Nsanje,2,Southern,95,Facility_Level_2_Nsanje,1.0,1.0,1.0
+Ntcheu,0,Central,96,Facility_Level_0_Ntcheu,4.0,1.0,0.0
+Ntcheu,1a,Central,97,Facility_Level_1a_Ntcheu,36.0,0.6111111111111112,0.027777777777777776
+Ntcheu,1b,Central,98,Facility_Level_1b_Ntcheu,1.0,0.0,0.0
+Ntcheu,2,Central,99,Facility_Level_2_Ntcheu,1.0,1.0,1.0
+Ntchisi,0,Central,100,Facility_Level_0_Ntchisi,1.0,1.0,0.0
+Ntchisi,1a,Central,101,Facility_Level_1a_Ntchisi,11.0,0.8181818181818182,0.0
+Ntchisi,1b,Central,102,Facility_Level_1b_Ntchisi,0.0,,
+Ntchisi,2,Central,103,Facility_Level_2_Ntchisi,1.0,1.0,1.0
+Phalombe,0,Southern,104,Facility_Level_0_Phalombe,2.0,1.0,0.0
+Phalombe,1a,Southern,105,Facility_Level_1a_Phalombe,13.0,0.7692307692307693,0.0
+Phalombe,1b,Southern,106,Facility_Level_1b_Phalombe,1.0,0.0,0.0
+Phalombe,2,Southern,107,Facility_Level_2_Phalombe,0.0,,
+Rumphi,0,Northern,108,Facility_Level_0_Rumphi,4.0,0.75,0.0
+Rumphi,1a,Northern,109,Facility_Level_1a_Rumphi,11.0,0.6363636363636364,0.09090909090909091
+Rumphi,1b,Northern,110,Facility_Level_1b_Rumphi,4.0,0.75,0.25
+Rumphi,2,Northern,111,Facility_Level_2_Rumphi,1.0,1.0,1.0
+Salima,0,Central,112,Facility_Level_0_Salima,0.0,,
+Salima,1a,Central,113,Facility_Level_1a_Salima,15.0,0.6666666666666666,0.0
+Salima,1b,Central,114,Facility_Level_1b_Salima,0.0,,
+Salima,2,Central,115,Facility_Level_2_Salima,1.0,1.0,1.0
+Thyolo,0,Southern,116,Facility_Level_0_Thyolo,7.0,0.8571428571428571,0.0
+Thyolo,1a,Southern,117,Facility_Level_1a_Thyolo,20.0,0.7,0.05
+Thyolo,1b,Southern,118,Facility_Level_1b_Thyolo,3.0,0.3333333333333333,0.0
+Thyolo,2,Southern,119,Facility_Level_2_Thyolo,1.0,1.0,1.0
+Zomba,0,Southern,120,Facility_Level_0_Zomba,0.0,,
+Zomba,1a,Southern,121,Facility_Level_1a_Zomba,31.0,0.7741935483870968,0.22580645161290322
+Zomba,1b,Southern,122,Facility_Level_1b_Zomba,5.0,0.6,0.4
+Zomba,2,Southern,123,Facility_Level_2_Zomba,0.0,,
+Zomba City,0,Southern,124,Facility_Level_0_Zomba City,0.0,,
+Zomba City,1a,Southern,125,Facility_Level_1a_Zomba City,0.0,,
+Zomba City,1b,Southern,126,Facility_Level_1b_Zomba City,0.0,,
+Zomba City,2,Southern,127,Facility_Level_2_Zomba City,0.0,,
+,3,Southern,128,Referral Hospital_Southern,1.0,1.0,
+,3,Northern,129,Referral Hospital_Northern,1.0,1.0,
+,3,Central,130,Referral Hospital_Central,1.0,1.0,
+,4,,131,Zomba Mental Hospital,1.0,1.0,
+,5,,132,Headquarter,1.0,1.0,

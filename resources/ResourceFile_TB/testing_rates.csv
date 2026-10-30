@@ -1,3 +1,42 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ee52c1e343b0e634c05c2eb281f925174fe951b356856acaede2435e8f543d94
-size 1016
+year,testing_rate_active_cases,treatment_coverage,source
+2010,45,45,assumed
+2011,45,45,assumed
+2012,47,47,who_reports_treatment_coverage
+2013,44,44,who_reports_treatment_coverage
+2014,45,45,who_reports_treatment_coverage
+2015,50,50,who_reports_treatment_coverage
+2016,58,58,who_reports_treatment_coverage
+2017,71,71,who_reports_treatment_coverage
+2018,75,75,assumed
+2019,75,75,assumed
+2020,75,75,assumed
+2021,75,75,assumed
+2022,75,75,assumed
+2023,75,75,assumed
+2024,75,75,assumed
+2025,75,75,assumed
+2026,75,75,assumed
+2027,75,75,assumed
+2028,75,75,assumed
+2029,75,75,assumed
+2030,75,75,assumed
+2031,75,75,assumed
+2032,75,75,assumed
+2033,75,75,assumed
+2034,75,75,assumed
+2035,75,75,assumed
+2036,75,75,assumed
+2037,75,75,assumed
+2038,75,75,assumed
+2039,75,75,assumed
+2040,75,75,assumed
+2041,75,75,assumed
+2042,75,75,assumed
+2043,75,75,assumed
+2044,75,75,assumed
+2045,75,75,assumed
+2046,75,75,assumed
+2047,75,75,assumed
+2048,75,75,assumed
+2049,75,75,assumed
+2050,75,75,assumed

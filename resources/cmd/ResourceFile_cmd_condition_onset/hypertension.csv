@@ -1,3 +1,68 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:353705a1d740b5eb31316aae9d049f1133303a6503d6d3ca3644be0911f2fb61
-size 5657
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+baseline_annual_probability,0.0045,local,0,1,vague prior,
+rr_male,0.95,universal,0,100,vague prior,
+rr_0_4,0,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_5_9,0,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_10_14,0,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_15_19,0,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_20_24,0.337837838,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_25_29,1.003378378,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_30_34,1.003378378,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_35_39,1,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_40_44,1,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_45_49,1.652027027,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_50_54,1.652027027,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_55_59,2.135135135,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_60_64,2.135135135,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_65_69,2.385135135,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_70_74,2.385135135,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_75_79,2.679054054,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_80_84,2.679054054,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_85_89,2.679054054,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_90_94,2.679054054,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_95_99,2.679054054,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_100,2.679054054,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_urban,,local,0,100,vague prior,
+rr_wealth_1,1,local,0,100,vague prior,"Coyle et al., 2019, English GP Data"
+rr_wealth_2,1.03960396,local,0,100,vague prior,"Coyle et al., 2019, English GP Data"
+rr_wealth_3,1.069306931,local,0,100,vague prior,"Coyle et al., 2019, English GP Data"
+rr_wealth_4,1.03960396,local,0,100,vague prior,"Coyle et al., 2019, English GP Data"
+rr_wealth_5,0.99009901,local,0,100,vague prior,"Coyle et al., 2019, English GP Data"
+rr_bmi_1,0.526315789,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_bmi_2,1,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_bmi_3,1.689473684,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_bmi_4,1.721052632,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_bmi_5,2.205263158,universal,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_low_exercise,1.16,universal,0,100,vague prior,"Andriolo et al., 2019, EPIC-Potsdam Study"
+rr_high_salt,1.88,universal,0,100,vague prior,"Chen et al., 2018, Taiwan, Genetic Study"
+rr_high_sugar,1.03,universal,0,100,vague prior,Estimate from Ed Greg
+rr_tobacco,1.04,universal,0,100,vague prior,"Andriolo et al., 2019, EPIC-Potsdam Study"
+rr_alcohol,1.31,universal,0,100,vague prior,"Pajak et al., 2013, HAPIEE Study, Russia Poland Czech"
+rr_marital_status_1,1,local,0,100,vague prior,Estimate from Ed Greg
+rr_marital_status_2,1.449,local,0,100,vague prior,Estimate from Ed Greg
+rr_marital_status_3,1.03,local,0,100,vague prior,Estimate from Ed Greg
+rr_in_education,1,local,0,100,vague prior,
+rr_current_education_level_1,1.34,local,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_current_education_level_2,1,local,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_current_education_level_3,1.42,local,0,100,vague prior,Health Survey for England Hypertension Prevalence Models
+rr_unimproved_sanitation,1,local,0,100,vague prior,
+rr_no_access_handwashing,1,local,0,100,vague prior,
+rr_no_clean_drinking_water,1,local,0,100,vague prior,
+rr_wood_burning_stove,1,local,0,100,vague prior,
+rr_diabetes,1.92,universal,0,100,vague prior,"Derakhshan et al., 2016, Iranian Study"
+rr_hypertension,1,universal,0,100,vague prior,
+rr_depression,1.42,local,0,100,vague prior,"Lin et al., 2012, Meta-Analysis Depression and Hypertension"
+rr_chronic_kidney_disease,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain,1,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease,1,universal,0,100,vague prior,
+rr_cancers,1,universal,0,100,vague prior,
+rr_hiv,1,universal,0,100,vague prior,
+rr_ever_stroke,1,universal,0,100,vague prior,
+rr_ever_heart_attack,1,universal,0,100,vague prior,
+rr_diabetes_on_medication,1,universal,0,100,vague prior,
+rr_hypertension_on_medication,1,universal,0,100,vague prior,
+rr_chronic_kidney_disease_on_medication,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain_on_medication,1,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease_on_medication,1,universal,0,100,vague prior,
+rr_stroke_on_medication,1,universal,0,100,vague prior,
+rr_heart_attack_on_medication,1,universal,0,100,vague prior,

@@ -1,3 +1,47 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:f9bb95649b9b8fbf76571b56617c1a4e590ccea40b7f9154565bafe28f4ba3e1
-size 5440
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference,notes
+init_pr_depr_m_age1519_no_cc_wealth123,0.06,local,0.01,1,vague prior,,
+init_rp_depr_f_not_rec_preg,1.5,local,0.01,100,vague prior,,
+init_rp_depr_f_rec_preg,3,local,0.01,100,vague prior,,
+init_rp_depr_age2059,1,local,0.01,100,vague prior,,
+init_rp_depr_agege60,3,local,0.01,100,vague prior,,
+init_rp_depr_cc,1,local,0.01,100,vague prior,,
+init_rp_depr_wealth45,1,local,0.01,100,vague prior,,
+init_rp_ever_depr_per_year_older_m,0.004,local,0.01,100,vague prior,,
+init_rp_ever_depr_per_year_older_f,0.006,local,0.01,100,vague prior,,
+init_pr_antidepr_curr_depr,0.11,local,0,1,vague prior,,
+init_rp_antidepr_ever_depr_not_curr,0.5,local,0.01,100,vague prior,,
+init_pr_ever_diagnosed_depression,0.2,local,0,1,vague prior,,
+init_pr_ever_talking_therapy_if_diagnosed,1,local,0,1,vague prior,,We assume that talking therapy happens as part of diagnosis
+init_pr_ever_self_harmed_if_ever_depr,0.004,local,0,1,vague prior,,consistent with rate of incident self harm
+base_3m_prob_depr,0.0021,undetermined,0,1,calibration,,"Rate is derived indirectly based on prevalence of depression that model produces as an output (Abas et al, 1997; Marwick et al, 2010; Udedi et al, 2014; This is much higher than incidence in Todd et al 1999 (approx 0.16 in 2 months) but that is inconsistent with prevalence unless extremely short duration. )"
+rr_depr_wealth45,3,local,0.01,100,vague prior,"Abas et al, 1997; Todd et al 1999; Chibanda et al, 2012;","Abas et al, 1997; Todd et al 1999; Chibanda et al, 2012;"
+rr_depr_cc,1.25,local,0.01,100,vague prior,,HIV:  Cohen et al Rwanda 2009; Brandt 2009; hypertension: no association in SA  Grimsrud et al 2009.  Likely the association is with chronic symptoms rather than diagnosis of a chronic condition.
+rr_depr_pregnancy,3,local,0.01,100,vague prior,,could not identify any estimates for African countries; although clear that pregnancy prevalence is relatively high in pregnancy and post-partum (it is clear the relative rate is > 1).  Suggest use value of 3 until we have more data.
+rr_depr_female,1.5,local,0.01,100,vague prior,Kohler et al 2017,Kohler et al 2017
+rr_depr_prev_epis,50,local,0.01,100,vague prior,,"No data identified from Malawi or other close countries, but likely to be a large person-specific effect.  Consider data on proportion of people with depression ever."
+rr_depr_on_antidepr,30,local,0.01,100,vague prior,,
+rr_depr_age1519,1,local,0.01,100,vague prior,Kim et al 2015,Kim et al 2015
+rr_depr_agege60,3,local,0.01,100,vague prior,Kohler et al 2017,Kohler et al 2017
+rr_depr_hiv,1.99,local,0.01,100,vague prior,Ciesla & Roberts 2001,Ciesla & Roberts 2001
+depr_resolution_rates,"[0.2, 0.3, 0.5, 0.7, 0.95]",local,"[0, 0, 0, 0, 0]","[1, 1, 1, 1, 1]",vague prior,"Abas et al, 1997; Dow et al 2014","Abas et al, 1997; Dow et al 2014"
+rr_resol_depr_cc,0.5,local,0.01,100,vague prior,,
+rr_resol_depr_on_antidepr,1.5,universal,0.01,100,vague prior,Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;,Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;
+rr_resol_depr_current_talk_ther,1.1,local,0.01,100,vague prior,,
+prob_3m_stop_antidepr,0.7,local,0,1,vague prior,,
+prob_3m_default_antidepr,0.2,local,0,1,vague prior,,
+prob_3m_suicide_depr_m,0.0005,local,0,1,vague prior,"Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015","Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015"
+rr_suicide_depr_f,0.333,local,0.01,100,vague prior,Chasimpha et al 2015,Chasimpha et al 2015
+prob_3m_selfharm_depr,0.0005,local,0,1,vague prior,,
+sensitivity_of_assessment_of_depression,0.75,universal,0,1,vague prior,,
+pr_assessed_for_depression_in_generic_appt_level1,0.01,local,0,1,vague prior,,"No available reference found, but co-calibrated with pr_assessed_for_depression_for_perinatal_female for a better Model/Data ratio on mental health service usage."
+anti_depressant_medication_item_code,267,local,1,1000,vague prior,,First line treatment (Amitriptyline 25mg_100_CMST)
+pr_assessed_for_depression_for_perinatal_female,0.01,local,0,1,vague prior,,"No available reference found, but co-calibrated with pr_assessed_for_depression_in_generic_appt_level1 for a better Model/Data ratio on mental health service usage."
+recently_pregnant_threshold_years,1,undetermined,1,5,design decision,,
+max_talking_therapy_sessions,5,local,1,20,vague prior,,
+talking_therapy_interval_months,6,local,1,24,vague prior,,
+antidepr_refill_interval_months,1,local,1,24,vague prior,,
+antidepr_refill_window_days,7,local,1,30,vague prior,,
+selfharm_suicide_event_max_days,90,undetermined,1,365,design decision,,
+depression_polling_frequency_months,3,undetermined,1,12,design decision,,
+age_threshold_adult_care,5,local,0,20,vague prior,,
+age_threshold_depression,15,local,5,20,vague prior,,

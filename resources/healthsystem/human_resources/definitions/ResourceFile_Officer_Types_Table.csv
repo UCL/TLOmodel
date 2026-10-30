@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0547de4a6d93a497848160014a8abccb1ea9a80a20760ff082214a6afd1f6cba
-size 736
+Officer_Type,Officer_Type_Code,Officer_Category
+Medical Officer / Specialist,M01,Clinical
+Clinical Officer / Technician,M02,Clinical
+Med. Assistant,M03,Clinical
+Nurse Officer,N01,Nursing_and_Midwifery
+Nurse Midwife Technician,N02,Nursing_and_Midwifery
+Pharmacist,P01,Pharmacy
+Pharm Technician,P02,Pharmacy
+Pharm Assistant,P03,Pharmacy
+Lab Officer,L01,Laboratory
+Lab Technician,L02,Laboratory
+Lab Assistant,L03,Laboratory
+DCSA,E01,DCSA
+Dental Officer,D01,Dental
+Dental Therapist,D02,Dental
+Dental Assistant,D03,Dental
+Mental Health Staff,C01,Mental
+Nutrition Staff,T01,Nutrition
+Radiographer,R01,Radiography
+Radiography Technician,R02,Radiography
+Sonographer,R03,Radiography
+Radiotherapy Technician,R04,Radiography

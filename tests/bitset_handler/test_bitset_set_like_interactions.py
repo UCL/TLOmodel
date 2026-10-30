@@ -4,6 +4,7 @@ Tests for set-like interactions with a pd.Series object of BitsetDtype.
 import operator
 from typing import Any, Callable, Iterable, List, Set
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -156,6 +157,8 @@ def test_series_operation_with_value(
 
     for operation in op:
         for r_v in r_values:
+            if operation in (operator.or_, operator.and_) and isinstance(r_v, (set, frozenset)):
+                r_v = np.array([r_v] * len(small_series), dtype=object)
             result = operation(small_series, r_v)
             assert (
                 expected == result

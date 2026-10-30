@@ -1,3 +1,108 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:157ea8c2b217032c3edcfdfa435a2d19f64a9acc33399d9e637e3231e35b850d
-size 3782
+Unnamed: 0,Unnamed: 1
+,
+,“Life(style)” characteristics
+,
+,
+,urban - rural
+,
+,baseline in 2018:
+,
+,17% urban
+,83% rural
+,
+,"assume this is time fixed and is allocated at birth to new births, with same status as mother"
+,
+,source: DHS 2015
+,
+,"Comment: Malawi is urbanising I think, so perhaps increase urban and reduce rural by 1% per year? We could use the 2018 census data – should be available end of this year / early next year to see what it is in 2018 and compare with 2008 census and 2010 and 2015 DHS to see trend i.e. whether 1% increase per year seems about right."
+,Response: according to world bank the recent proportion urban is increasing by just 0.25% per year.  I’m happy for us tp include this.  https://data.worldbank.org/indicator/SP.RUR.TOTL.ZS?locations=MW
+,
+,wealth level
+,(since recorded in DHS I suggest we use this instead of socio-economic status)
+,
+,(wealth level is initially based on wealth quintile from 2015 DHS but distribution will not remain uniform if fertility and death rate differ by wealth level)
+, 
+,baseline in 2018 (assuming not changed since 2015 DHS):
+,
+,if urban = 1 then
+,75% wealth_level = 1
+,16% wealth_level = 2
+,5% wealth_level = 3
+,2% wealth_level = 4
+,2% wealth_level = 5
+,
+,if urban = 0 then
+,11% wealth_level = 1
+,21% wealth_level = 2
+,23% wealth_level = 3
+,23% wealth_level = 4
+,23% wealth_level = 5
+,
+,source: DHS 2015
+,
+,assume this is time fixed and allocated at birth with same status as mother.
+,
+,
+,tobacco use
+,(much tobacco use is not in fact cigarettes)
+,
+,baseline in 2018:
+,
+,if age < 20 and male then percent using tobacco = 1% x wealth_level
+,(i.e. 5 times higher in lowest level)
+,if 20 <= age < 40 and male then percent using tobacco = 4% x wealth_level
+,if 40 <= age  and male then percent using tobacco = 6% x wealth_level
+,if female then percent using tobacco = 0.2% x wealth_level
+,
+,source: DHS 2015
+,
+,assume time varying with value allocted age 18 (1% x wealth level) but rate of initiating smoking for those assigned as non-smokers and rate of stopping for those assigned as tobacco users to initially be set at zero.
+,
+,
+,excess alcohol
+,
+,baseline in 2018:
+,
+,if age > 18 and male 15% drink excess_alcohol  
+,if age >  18 and female 1% drink excess_alcohol
+,
+,source: WHO 2014 report http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1
+,
+,no impact of urban / rural or wealth level
+,(if we can contact authors we may be able to see if wealth level has an independent influence)
+,
+,Msyamboza et al; 2012; WHO STEPS
+,
+,"assume time varying with value allocted age 18 (15% for men, 1% for women) but rate of initiating alcohol for those assigned as non-excess-drinkers and rate of stopping for those assigned as excess alcohol drinkers to initially be set at zero."
+,
+,
+,low exercise
+,(I suggest we create this variable for people aged 18 and over only)
+,
+,baseline in 2018:
+,
+,if urban and male 32% have low exercise
+,if urban and female 18% have low exercise
+,if rural and male  11% have low exercise
+,if rural and female 7% have low exercise
+,
+,Msyamboza et al; 2011; WHO STEPS
+,
+,(if we can contact authors we may be able to see if wealth level has an independent influence)
+,
+,"assume time varying with value allocted age 18 (25% for men, 9% for women) but rate of becoming low exercise for those assigned as having exercise and rate of starting exercise for those assigned as low exercise to initially be set at zero."
+,
+,
+,BMI
+,
+,"Informed by Price et al 2018  Prevalence of obesity, hypertension, and diabetes, and
+cascade of care in sub-Saharan Africa: a cross-sectional,
+population-based study in rural and urban Malawi  Lancet Diabetes Endocrinol"
+,
+,
+,marital status 
+,DHS 2015/2016  chapter 4
+,
+,
+,education
+,DHS 2015/2016   chapter 2 p 14-17

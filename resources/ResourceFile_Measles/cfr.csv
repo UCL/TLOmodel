@@ -1,3 +1,32 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ef6fc870cc755eed89574f8d55c29636aa0f9bbfa8d38046ff9f463ae09f5b3f
-size 1073
+age,probability,param_label,prior_min,prior_max,prior_note,reference
+0,0.03,local,0,1,,Missing
+1,0.03,local,0,1,,Missing
+2,0.03,local,0,1,,Missing
+3,0.03,local,0,1,,Missing
+4,0.03,local,0,1,,Missing
+5,0.01,local,0,1,,Missing
+6,0.01,local,0,1,,Missing
+7,0.01,local,0,1,,Missing
+8,0.01,local,0,1,,Missing
+9,0.01,local,0,1,,Missing
+10,0.003333333,local,0,1,,Missing
+11,0.003333333,local,0,1,,Missing
+12,0.003333333,local,0,1,,Missing
+13,0.003333333,local,0,1,,Missing
+14,0.003333333,local,0,1,,Missing
+15,0.003333333,local,0,1,,Missing
+16,0.003333333,local,0,1,,Missing
+17,0.003333333,local,0,1,,Missing
+18,0.003333333,local,0,1,,Missing
+19,0.003333333,local,0,1,,Missing
+20,0.003333333,local,0,1,,Missing
+21,0.003333333,local,0,1,,Missing
+22,0.003333333,local,0,1,,Missing
+23,0.003333333,local,0,1,,Missing
+24,0.003333333,local,0,1,,Missing
+25,0.003333333,local,0,1,,Missing
+26,0.003333333,local,0,1,,Missing
+27,0.003333333,local,0,1,,Missing
+28,0.003333333,local,0,1,,Missing
+29,0.003333333,local,0,1,,Missing
+30,0.003333333,local,0,1,,Missing

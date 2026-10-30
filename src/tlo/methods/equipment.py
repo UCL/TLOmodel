@@ -82,7 +82,6 @@ class Equipment:
         # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
         self._pkg_lookup = self._create_pkg_lookup()
-        self._all_item_descriptors = set(self._item_code_lookup.keys())
         self._all_item_codes = set(self._item_code_lookup.values())
         self._all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
 
@@ -134,35 +133,24 @@ class Equipment:
 
         return dat
 
-    def parse_items(self, items: Union[int, str, Iterable[int], Iterable[str]]) -> Set[int]:
+    def parse_items(self, items: Union[int, str, Iterable[Union[int, str]]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
-         item_codes or descriptors (but not a mix of the two), and return as a set of item_code (integers). For any
+         item_codes or descriptors (including a mix of the two), and return as a set of item_code (integers). For any
          item_code/descriptor not recognised, a ``UserWarning`` is issued."""
 
-        def check_item_codes_recognised(item_codes: set[int]):
-            if not item_codes.issubset(self._all_item_codes):
-                warnings.warn(f'At least one item code was unrecognised: "{item_codes}".')
+        items = [items] if isinstance(items, (str, int)) else items
 
-        def check_item_descriptors_recognised(item_descriptors: set[str]):
-            if not item_descriptors.issubset(self._all_item_descriptors):
-                warnings.warn(f'At least one item descriptor was unrecognised "{item_descriptors}".')
+        matched_items = set()
 
-        # Make into a set if it is not one already
-        if isinstance(items, (str, int)):
-            items = set([items])
-        else:
-            items = set(items)
+        for item in items:
+            if isinstance(item, int) and item in self._all_item_codes:
+                matched_items.add(item)
+            elif item in self._item_code_lookup:
+                matched_items.add(self._item_code_lookup[item])
+            else:
+                warnings.warn(f'Unrecognised item: "{item}".')
 
-        items_are_ints = all(isinstance(element, int) for element in items)
-
-        if items_are_ints:
-            check_item_codes_recognised(items)
-            # In the return, any unrecognised item_codes are silently ignored.
-            return items.intersection(self._all_item_codes)
-        else:
-            check_item_descriptors_recognised(items)  # Warn for any unrecognised descriptors
-            # In the return, any unrecognised descriptors are silently ignored.
-            return set(self._item_code_lookup[i] for i in items if i in self._item_code_lookup)
+        return matched_items
 
     def probability_all_equipment_available(
         self, facility_id: int, item_codes: Set[int]
