@@ -67,7 +67,7 @@ number_of_years_costed = relevant_period_for_costing[1] - 2026 + 1  # TODO chang
 
 discount_rate_health = 0
 chosen_metric = 'mean'
-chosen_cet = 65
+chosen_cet = 79.1
 
 # Scenarios
 cons_scenarios = {
@@ -903,7 +903,11 @@ def plot_heatmap_delta(delta_mean,
                        wrap_xticks=True,
                        wrap_width=20,
                        legend_label = None,
-                       average_row_label = None):
+                       average_row_label = None,
+                       average_column_label = None,
+                       average_column_values = None,
+                       title = "Change in consumable availability relative to baseline",
+                       ylabel = "Disease group"):
 
     df = delta_mean.copy()
 
@@ -930,12 +934,36 @@ def plot_heatmap_delta(delta_mean,
     # instead.
     df.index = df.index.map(lambda x: clean_category_names.get(x, x))
 
-    # Drop baseline
-    df = df.drop(columns=baseline_draw)
+    # Drop baseline, if present. Some callers (e.g. DALYs-averted-by-group, which is already a
+    # "delta relative to baseline" computed upstream with the comparator draw dropped) never
+    # have a baseline column to begin with, so this is skipped rather than raising a KeyError.
+    if baseline_draw in df.columns:
+        df = df.drop(columns=baseline_draw)
 
     # Rename scenarios if provided
     if scenario_labels:
         df = df.rename(columns=scenario_labels)
+
+    # Trailing "average across all scenarios" column.
+    if average_column_label is not None:
+        if average_column_values is not None:
+            # Precomputed elsewhere directly from raw (scenario, run) data -- e.g. via
+            # compute_delta_pooled_across_scenarios -- rather than derived here as a row-wise
+            # mean of the already-summarised per-scenario columns in df. Averaging those would
+            # be an average of an average (each column here is already a mean across runs for
+            # that one scenario); using precomputed values avoids that. Indexed on the same raw
+            # row labels as delta_mean's input, so it needs the same clean_category_names
+            # mapping applied to df.index above before it can be aligned.
+            values = average_column_values.copy()
+            values.index = values.index.map(lambda x: clean_category_names.get(x, x))
+            df[average_column_label] = df.index.map(values)
+        else:
+            # Fallback for callers with no raw data on hand: a plain row-wise mean over just the
+            # scenario columns actually shown above (computed after baseline has been dropped and
+            # scenarios renamed, so it isn't skewed by an all-zero baseline column that never
+            # appears) -- still an average of already-summarised values, so prefer passing
+            # average_column_values when the raw per-run data is available.
+            df[average_column_label] = df.mean(axis=1)
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -961,8 +989,8 @@ def plot_heatmap_delta(delta_mean,
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
     ax.set_xlabel("Scenario")
-    ax.set_ylabel("Disease group")
-    ax.set_title("Change in consumable availability relative to baseline")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
 
     # Visually separate a trailing "average across all consumables" row (if present) from the
     # per-programme rows above it, since it's a different kind of summary (a direct mean across
@@ -971,6 +999,13 @@ def plot_heatmap_delta(delta_mean,
         row_labels = list(df.index)
         if average_row_label in row_labels:
             ax.axhline(y=row_labels.index(average_row_label), color='black', linewidth=2)
+
+    # Same treatment for a trailing "average across all scenarios" column, if present: a
+    # vertical line separating it from the scenario columns it summarises.
+    if average_column_label is not None:
+        col_labels = list(df.columns)
+        if average_column_label in col_labels:
+            ax.axvline(x=col_labels.index(average_column_label), color='black', linewidth=2)
 
     plt.tight_layout()
     return fig, ax
@@ -1263,6 +1298,39 @@ def compute_delta_availability_from_baseline(summary_df, comparator_draw=0):
 
     return delta_mean
 
+def compute_delta_pooled_across_scenarios(raw_df, scenario_subset, comparator_draw=0):
+    """
+    For each row of raw_df (e.g. a consumables programme, or the "all consumables" pseudo-row),
+    compute a single "change relative to baseline, averaged across all scenarios" value by
+    pooling every individual (scenario, run) observation directly -- rather than by averaging
+    the already-per-scenario-summarised values shown elsewhere in the heatmap. Averaging those
+    already-averaged numbers would compound two rounds of averaging (across runs within a
+    scenario, then across already-averaged scenarios); pooling the raw runs instead means every
+    individual run across every scenario contributes to the average exactly once.
+
+    raw_df : DataFrame, index=row label, columns=MultiIndex(draw, run) -- the extract_results
+        output BEFORE any per-scenario summarisation (e.g. pct_available_by_program or
+        pct_available_overall).
+
+    scenario_subset : list of draws to pool over (the comparator draw is excluded automatically
+        even if included in this list).
+
+    Returns
+    -------
+    pd.Series indexed like raw_df.index.
+    """
+    draws_present = raw_df.columns.get_level_values('draw')
+
+    non_baseline_draws = [d for d in scenario_subset if d != comparator_draw and d in draws_present]
+    pooled_mean = raw_df.loc[:, draws_present.isin(non_baseline_draws)].mean(axis=1)
+
+    if comparator_draw in draws_present:
+        baseline_mean = raw_df.loc[:, draws_present == comparator_draw].mean(axis=1)
+    else:
+        baseline_mean = 0.0
+
+    return pooled_mean - baseline_mean
+
 def compute_national_availability_summary(summary_df, comparator_draw=0):
     """
     National (mean-across-programmes/groups) change in % available relative to baseline.
@@ -1291,6 +1359,182 @@ def reformat_with_draw_as_index_and_stat_as_column(_df):
     formatted = df.unstack("stat")
     formatted.columns = formatted.columns.droplevel(0)
     return formatted
+
+def build_dalys_averted_table_data(
+    by_group_abs_summarized,
+    by_group_pct_summarized,
+    total_abs_summarized,
+    total_pct_summarized,
+    scenario_labels: dict,
+    disease_group_order: list,
+    _chosen_metric: str = chosen_metric,
+):
+    """
+    Build the raw (mean, lower, upper) numbers behind the DALYs-averted-by-disease-and-total
+    table -- both the absolute count and the percentage change, for every scenario and disease
+    group (+ an overall 'Total' column). Kept as raw numeric tuples rather than pre-formatted
+    strings, so the CSV and LaTeX writers can each apply their own formatting (LaTeX needs a
+    two-line "mean" / "[CI]" stack per cell; CSV wants something that round-trips as plain text).
+
+    Returns
+    -------
+    (data, columns) where data is {scenario_name: {'Absolute': {col: (mean,lower,upper) | None},
+    'Percentage': {col: (mean,lower,upper) | None}}} and columns is the disease-group column
+    order (+ 'Total').
+
+    by_group_abs_summarized, by_group_pct_summarized : DataFrame, index=disease_group,
+        columns=MultiIndex(draw, stat) with stat in {_chosen_metric, 'lower', 'upper'} -- e.g.
+        the output of summarize_disaggregated_results_for_figure on the absolute and percentage
+        DALYs averted by disease group respectively.
+
+    total_abs_summarized, total_pct_summarized : DataFrame, index=draw,
+        columns=[_chosen_metric, 'lower', 'upper'] -- the overall total DALYs averted (absolute
+        and percentage), e.g. num_dalys_averted_summarized / num_dalys_averted_percent_summarized
+        from section 1. The 'Total' column is taken from here directly rather than summed from
+        the per-group columns, so it matches the main DALYs-averted bar plot exactly.
+
+    scenario_labels : dict {draw: scenario name}, defining both which draws to include and the
+        row order. Any draw with no entry in total_abs_summarized (e.g. the baseline/comparator
+        draw, which is dropped upstream since "DALYs averted vs. itself" is trivially zero) is
+        skipped, so no Baseline row appears.
+
+    disease_group_order : list of disease-group names, defining column order. Any group not
+        present in by_group_abs_summarized is silently dropped (not guessed at).
+    """
+
+    def _get(summarized_df, group, draw):
+        if (draw, _chosen_metric) not in summarized_df.columns:
+            return None
+        mean = summarized_df.loc[group, (draw, _chosen_metric)]
+        lower = summarized_df.loc[group, (draw, 'lower')]
+        upper = summarized_df.loc[group, (draw, 'upper')]
+        return (mean, lower, upper)
+
+    present_groups = [g for g in disease_group_order if g in by_group_abs_summarized.index]
+    columns = present_groups + ['Total']
+
+    data = {}
+    for draw, label in scenario_labels.items():
+        if draw not in total_abs_summarized.index:
+            continue
+
+        abs_row = {g: _get(by_group_abs_summarized, g, draw) for g in present_groups}
+        pct_row = {g: _get(by_group_pct_summarized, g, draw) for g in present_groups}
+
+        total_abs = total_abs_summarized.loc[draw]
+        abs_row['Total'] = (total_abs[_chosen_metric], total_abs['lower'], total_abs['upper'])
+
+        total_pct = total_pct_summarized.loc[draw]
+        pct_row['Total'] = (total_pct[_chosen_metric], total_pct['lower'], total_pct['upper'])
+
+        data[label] = {'Absolute': abs_row, 'Percentage': pct_row}
+
+    return data, columns
+
+def format_dalys_averted_table_as_csv_dataframe(data: dict, columns: list) -> pd.DataFrame:
+    """
+    Flatten the nested dict from build_dalys_averted_table_data into a plain DataFrame for
+    to_csv: one row per (scenario, metric) pair -- 'Absolute' then 'Percentage' directly below
+    it, matching the two-row-per-scenario layout of the LaTeX table -- with the mean and its 95%
+    CI as a single text cell (CI on its own line via an embedded newline, which Excel/Sheets/
+    pandas all render as a wrapped second line within the cell).
+    """
+    def _fmt(val, is_pct):
+        if val is None:
+            return "--"
+        mean, lower, upper = val
+        # A space around the range dash keeps it from running into a negative lower bound's own
+        # minus sign (e.g. avoids the ambiguous "-4.0%---2.0%" when the CI can span zero).
+        if is_pct:
+            return f"{mean * 100:.1f}%\n[{lower * 100:.1f}% -- {upper * 100:.1f}%]"
+        return f"{mean:,.0f}\n[{lower:,.0f} -- {upper:,.0f}]"
+
+    rows = {}
+    for scenario, metrics in data.items():
+        for metric_type in ('Absolute', 'Percentage'):
+            row = metrics[metric_type]
+            rows[(scenario, metric_type)] = {
+                col: _fmt(row.get(col), is_pct=(metric_type == 'Percentage'))
+                for col in columns
+            }
+
+    table = pd.DataFrame.from_dict(rows, orient='index', columns=columns)
+    table.index = pd.MultiIndex.from_tuples(table.index, names=['Scenario', 'Metric'])
+    return table
+
+def format_dalys_averted_table_as_latex(
+    data: dict,
+    columns: list,
+    caption: str,
+    label: str,
+) -> str:
+    """
+    Render the nested dict from build_dalys_averted_table_data as a self-contained LaTeX `table`
+    environment: booktabs rules, wrapped in \\resizebox so a wide table (many disease-group
+    columns) still fits the page width. Each scenario spans two rows -- absolute DALYs averted,
+    then the percentage change directly below it -- with the 95% CI on its own line within each
+    cell via \\shortstack (a LaTeX-kernel command, no extra package needed). A thin rule
+    (\\cmidrule, spanning only the data columns so it doesn't cut through the vertically-centred
+    scenario label) separates the absolute and percentage rows within a scenario; a thicker rule
+    (\\specialrule, from booktabs) separates one scenario's block from the next. Column headers
+    and scenario names are escaped for LaTeX special characters (e.g. "Mental & Neurological"
+    becomes "Mental \\& Neurological").
+    """
+    def _escape(s):
+        return (
+            str(s)
+            .replace("&", "\\&")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+
+    def _cell(val, is_pct):
+        if val is None:
+            return "--"
+        mean, lower, upper = val
+        # A space around the range dash keeps it from running into a negative lower bound's own
+        # minus sign (e.g. avoids the ambiguous "-4.0\%---2.0\%" when the CI can span zero).
+        if is_pct:
+            top = f"{mean * 100:.1f}\\%"
+            bottom = f"[{lower * 100:.1f}\\% -- {upper * 100:.1f}\\%]"
+        else:
+            top = f"{mean:,.0f}"
+            bottom = f"[{lower:,.0f} -- {upper:,.0f}]"
+        return f"\\shortstack{{{top}\\\\{{\\footnotesize {bottom}}}}}"
+
+    header_cols = [_escape(c) for c in columns]
+    col_format = "l" + "r" * len(columns)
+    # Data columns occupy positions 2..(len(columns)+1) of the tabular (column 1 is Scenario).
+    data_col_range = f"2-{len(columns) + 1}"
+
+    lines = [
+        "\\begin{table}[htbp]",
+        "\\centering",
+        f"\\caption{{{caption}}}",
+        f"\\label{{{label}}}",
+        "\\resizebox{\\textwidth}{!}{%",
+        f"\\begin{{tabular}}{{{col_format}}}",
+        "\\toprule",
+        "Scenario & " + " & ".join(header_cols) + " \\\\",
+        "\\midrule",
+    ]
+    scenario_names = list(data.keys())
+    for i, scenario in enumerate(scenario_names):
+        metrics = data[scenario]
+        abs_cells = " & ".join(_cell(metrics['Absolute'].get(c), is_pct=False) for c in columns)
+        pct_cells = " & ".join(_cell(metrics['Percentage'].get(c), is_pct=True) for c in columns)
+        lines.append(f"\\multirow{{2}}{{*}}{{{_escape(scenario)}}} & {abs_cells} \\\\")
+        lines.append(f"\\cmidrule(lr){{{data_col_range}}}")
+        lines.append(f" & {pct_cells} \\\\")
+        if i < len(scenario_names) - 1:
+            lines.append("\\specialrule{1.2pt}{2pt}{2pt}")
+    lines += [
+        "\\bottomrule",
+        "\\end{tabular}",
+        "}",
+        "\\end{table}",
+    ]
+    return "\n".join(lines)
 
 def get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing):
     def get_total_population_by_year(_df):
@@ -1477,6 +1721,69 @@ def generate_all_consumable_figures(
     fig.savefig(figurespath / "dalys_averted_by_disease_group.png", dpi=300)
     plt.close(fig)
 
+    # ---- Same data, as a heatmap (same formatting as the consumable-availability heatmap in
+    # section 6) -- one number per scenario/disease-group cell reads more easily than the
+    # overlapping error bars above, especially with this many scenarios and disease groups.
+    # num_dalys_averted_by_group_summarized is already a delta-relative-to-baseline (percentage),
+    # with the comparator draw dropped upstream, so there's no baseline column here to strip.
+    delta_mean_dalys_by_group_pct = num_dalys_averted_by_group_summarized.xs(
+        chosen_metric, level="stat", axis=1
+    )
+    plot_heatmap_delta(
+        delta_mean_dalys_by_group_pct,
+        scenario_labels=scenario_dict,
+        baseline_draw=comparator_draw,
+        legend_label="DALYs averted (% relative to Status Quo)",
+        title="DALYs averted by disease group relative to baseline",
+    )
+    plt.savefig(figurespath / "dalys_averted_by_disease_group_heatmap.png",
+                dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # ---- LaTeX-ready table: DALYs averted by disease group and total, one row per scenario ----
+    # Absolute counts and percentage change (the same percentage as the dot plot/heatmap above)
+    # are both included, as a pair of rows per scenario. The 'Total' column comes from
+    # num_dalys_averted_summarized / num_dalys_averted_percent_summarized (section 1) rather than
+    # being summed from the per-group columns here, so it matches the main DALYs-averted bar plot
+    # exactly.
+    num_dalys_averted_by_group_abs = (
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys_by_group,
+                comparison=comparator_draw,
+                scaled=False,
+                drop_comparison=True
+            )
+        )
+    )
+
+    num_dalys_averted_by_group_abs_summarized = summarize_disaggregated_results_for_figure(
+        num_dalys_averted_by_group_abs,
+        scenario_subset,
+        chosen_metric
+    )
+
+    dalys_averted_table_data, dalys_averted_table_columns = build_dalys_averted_table_data(
+        by_group_abs_summarized=num_dalys_averted_by_group_abs_summarized,
+        by_group_pct_summarized=num_dalys_averted_by_group_summarized,
+        total_abs_summarized=num_dalys_averted_summarized,
+        total_pct_summarized=num_dalys_averted_percent_summarized,
+        scenario_labels=scenario_dict,
+        disease_group_order=list(disease_groups.keys()),
+    )
+    format_dalys_averted_table_as_csv_dataframe(
+        dalys_averted_table_data, dalys_averted_table_columns
+    ).to_csv(figurespath / "dalys_averted_by_disease_and_total_table.csv")
+    with open(figurespath / "dalys_averted_by_disease_and_total_table.tex", "w") as f:
+        f.write(format_dalys_averted_table_as_latex(
+            dalys_averted_table_data,
+            dalys_averted_table_columns,
+            caption="DALYs averted by disease group and scenario, relative to baseline "
+                    "(absolute count and percentage change, each with 95\\% confidence interval).",
+            label="tab:dalys_averted_by_disease",
+        ))
+
 
     # --------------------------------------------------
     # 3) TOTAL SERVICES DELIVERED
@@ -1636,7 +1943,7 @@ def generate_all_consumable_figures(
     # value expressed as a % of projected health spending (blue) stacked directly beneath it.
     # Anchored via va='bottom'/va='top' at a shared y0 so the two blocks sit flush against each
     # other regardless of rendered font metrics.
-    label_offset = 0.3  # billions; gap between the bar's upper CI and the label block
+    label_offset = 0.6  # billions; gap between the bar's upper CI and the label block
     label_gap = 0.04     # billions; gap between the black (value) and blue (%) blocks
 
     for xpos, draw in zip(ax.get_xticks(), max_ability_to_pay_billions.index):
@@ -1773,9 +2080,25 @@ def generate_all_consumable_figures(
     )
     delta_mean_available_for_heatmap = pd.concat([delta_mean_available, delta_mean_available_overall])
 
+    # ---- "Average (all scenarios)" column for the heatmap ----
+    # Computed by pooling the raw (scenario, run) observations directly from pct_available_by_program
+    # / pct_available_overall (see compute_delta_pooled_across_scenarios), NOT by averaging the
+    # already-summarised per-scenario columns of delta_mean_available_for_heatmap -- the same
+    # avoid-averaging-an-average principle used for the "Average (all consumables)" row above.
+    average_column_values = pd.concat([
+        compute_delta_pooled_across_scenarios(
+            pct_available_by_program, scenario_subset, comparator_draw=comparator_draw
+        ),
+        compute_delta_pooled_across_scenarios(
+            pct_available_overall, scenario_subset, comparator_draw=comparator_draw
+        ),
+    ])
+
     plot_heatmap_delta(delta_mean_available_for_heatmap, scenario_labels=scenario_dict, baseline_draw=comparator_draw,
                        legend_label = "Change in % available (vs baseline)",
-                       average_row_label=AVERAGE_ROW_LABEL)
+                       average_row_label=AVERAGE_ROW_LABEL,
+                       average_column_label="Average (all scenarios)",
+                       average_column_values=average_column_values)
     plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
                 dpi=300, bbox_inches="tight")
 
