@@ -1,0 +1,20 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: osx-arm64
+# created-by: conda 25.5.1
+@EXPLICIT
+https://repo.anaconda.com/pkgs/main/osx-arm64/bzip2-1.0.8-h80987f9_5.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/ca-certificates-2024.3.11-hca03da5_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/libffi-3.4.4-hca03da5_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/ncurses-6.4-h313beb8_0.conda
+https://repo.anaconda.com/pkgs/main/noarch/tzdata-2024a-h04d1e81_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/xz-5.4.6-h80987f9_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/zlib-1.2.13-h5a0b063_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/openssl-3.0.13-h1a28f6b_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/readline-8.2-h1a28f6b_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/tk-8.6.12-hb8d0fd4_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/sqlite-3.41.2-h80987f9_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/python-3.11.9-hb885b13_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/setuptools-68.2.2-py311hca03da5_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/wheel-0.41.2-py311hca03da5_0.conda
+https://repo.anaconda.com/pkgs/main/osx-arm64/pip-23.3.1-py311hca03da5_0.conda
