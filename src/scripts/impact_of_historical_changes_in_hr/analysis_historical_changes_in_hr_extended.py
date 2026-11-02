@@ -198,8 +198,66 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
+    def extract_annual_treatment_volumes(results_folder):
+        """
+        Extract annual treatment volumes by TREATMENT_ID.
+
+        Returns a DataFrame where:
+            index   = year
+            columns = TREATMENT_ID
+            values  = number of treatments delivered
+        """
+
+        def get_treatment_volumes_yearly(df: pd.DataFrame):
+            df = df.copy()
+
+            if "year" not in df.columns:
+                df["year"] = pd.to_datetime(df["date"]).dt.year
+
+            rows = []
+
+            for _, row in df.iterrows():
+                treatment_dict = row["TREATMENT_ID"]
+
+                if not isinstance(treatment_dict, dict):
+                    continue
+
+                year = row["year"]
+
+                for treatment_id, count in treatment_dict.items():
+                    rows.append({"year": year, "treatment_id": treatment_id, "count": count, })
+
+            treatment_df = pd.DataFrame(rows)
+
+            if treatment_df.empty:
+                return pd.Series(dtype=float)
+
+            yearly = (
+                treatment_df
+                .groupby(["year", "treatment_id"])["count"]
+                .sum()
+            )
+
+            return yearly
+
+        return extract_results(
+            results_folder,
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",  # "HSI_Event_non_blank_appt_footprint",  # "Never_ran_HSI_Event", # "HSI_Event"
+            custom_generate_series=get_treatment_volumes_yearly,
+            do_scaling=True,
+        )
+
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
+
+    # get service volumes
+    annual_treatment_volumes = extract_annual_treatment_volumes(
+        results_folder
+    )
+    annual_treatment_volumes = set_param_names_as_column_index_level_0(
+        annual_treatment_volumes
+    )
 
     # Check HRH staff counts
     hcw_count = (extract_results(
