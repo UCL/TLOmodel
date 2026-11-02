@@ -203,29 +203,13 @@ def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     return folders
 
 
-def get_scenario_info(scenario_output_dir: Path, autodiscover: bool = False) -> dict:
+def get_scenario_info(scenario_output_dir: Path) -> dict:
     """Utility function to get the the number draws and the number of runs in a batch set.
 
     TODO: read the JSON file to get further information
     """
     info = dict()
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
-
-    if autodiscover:
-        draw_ids = sorted(int(f.name) for f in draw_folders)
-        runs_by_draw = {
-            draw: sorted(
-                int(f.name)
-                for f in os.scandir(scenario_output_dir / str(draw))
-                if f.is_dir()
-            )
-            for draw in draw_ids
-        }
-        info['draws'] = draw_ids
-        info['runs_by_draw'] = runs_by_draw
-        info['number_of_draws'] = len(draw_ids)
-        info['runs_per_draw'] = len(runs_by_draw[draw_ids[0]]) if draw_ids else 0
-        return info
 
     info['number_of_draws'] = len(draw_folders)
 
@@ -312,8 +296,7 @@ def extract_results(results_folder: Path,
                     custom_generate_series=None,
                     do_scaling: bool = False,
                     suspended_results_folder: Path = None,
-                    draw_runs: Optional[List[Tuple[int, int]]] = None,
-                    autodiscover: bool = False,
+                    scaling_factor: Optional[float] = None,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -326,8 +309,12 @@ def extract_results(results_folder: Path,
      `custom_generate_series`.
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
-    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log
-    of the suspended run are stored.
+    If the suspend-and-resume functionality is used, scaling factor may be available in the folder where the logs
+    of the suspended run are stored. If the 'scaling_factor' is provided, this value will be used for scaling.
+    Otherwise, if suspended_results_folder is provided, the scaling_factor will be extracted from the demography log
+    of this suspended results folder. If neither is provided, the function will attempt to extract this from the
+    demography log of the (resume) results folder - this contains the scaling_factor only if suspend-and-resume
+    functionality is NOT used.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
@@ -357,46 +344,35 @@ def extract_results(results_folder: Path,
         else:
             return custom_generate_series(dataframe)
 
-    if draw_runs is not None:
-        selected_draw_runs = draw_runs
-    elif autodiscover:
-        # get number of draws and numbers of runs
-        info = get_scenario_info(results_folder, autodiscover)
-        selected_draw_runs = [
-            (draw, run)
-            for draw in info['draws']
-            for run in info['runs_by_draw'][draw]
-        ]
-    else:
-        # Legacy default behaviour: infer ranges from scenario info.
-        info = get_scenario_info(results_folder)
-        selected_draw_runs = [
-            (draw, run)
-            for draw in range(info['number_of_draws'])
-            for run in range(info['runs_per_draw'])
-        ]
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
 
     # Collect results from each draw/run
     res = dict()
-    for draw, run in selected_draw_runs:
-        draw_run = (draw, run)
-        try:
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-            output_from_eval: pd.Series = generate_series(df)
-            assert isinstance(output_from_eval, pd.Series), (
-                'Custom command does not generate a pd.Series'
-            )
-            if do_scaling:
-                if suspended_results_folder is not None:
-                    res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
-                else:
-                    res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
-            else:
-                res[draw_run] = output_from_eval
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
 
-        except KeyError:
-            # Some logs could not be found - probably because this run failed.
-            res[draw_run] = None
+            draw_run = (draw, run)
+
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                output_from_eval: pd.Series = generate_series(df)
+                assert isinstance(output_from_eval, pd.Series), (
+                    'Custom command does not generate a pd.Series'
+                )
+                if do_scaling:
+                    if scaling_factor is not None:
+                        res[draw_run] = output_from_eval * scaling_factor
+                    elif suspended_results_folder is not None:
+                        res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
+                    else:
+                        res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
+                else:
+                    res[draw_run] = output_from_eval
+
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
 
     # Use pd.concat to compile results (skips dict items where the values is None)
     _concat = pd.concat(res, axis=1)
@@ -451,14 +427,14 @@ def reconstruct_individual_histories(df):
     # Collapse into 'entity', 'date', 'event_name', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
-            df.groupby(['entity', 'date', 'event_name'], sort=False)
+            df.groupby(['entity', 'date', 'event_name', 'event_tag'], sort=False)
               .apply(lambda g: dict(zip(g['attribute'], g['value'])))
               .reset_index(name='Info')
         )
 
     df_final = (
         df_collapsed
-            .sort_values(by=['entity', 'date'])
+            .sort_values(by=['entity', 'date', 'event_tag'])
             .reset_index(drop=True)
     )
 
@@ -468,8 +444,6 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-
-
 
     return df_final
 
@@ -482,7 +456,7 @@ def extract_individual_histories(results_folder: Path,
     format 'entity', 'date', 'event_name', 'Info' where 'Info' is a dictionary that combines
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.methods.individual_history'
+    module = 'tlo.methods.individual_history_tracker'
     key = 'individual_histories'
 
     # get number of draws and numbers of runs
@@ -522,8 +496,6 @@ def extract_individual_histories(results_folder: Path,
 
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-
-        res[0].to_csv('individual_histories.csv')
 
     return res
 
@@ -673,13 +645,13 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
+def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None, level: int = logging.INFO):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
-        outputs = parse_log_file(logfile)
+        outputs = parse_log_file(logfile, level)
         for key, output in outputs.items():
             if key.startswith("tlo."):
                 print(f" - Writing {key}.pickle")
@@ -703,7 +675,8 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
                 compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
+                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix) and
+                                                         x.endswith('.log.gz')
                 ][0]
                 logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
 
