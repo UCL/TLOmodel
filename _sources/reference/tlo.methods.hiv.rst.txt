@@ -303,9 +303,6 @@ tlo.methods.hiv module
         * - p_tdf_positive_given_not_suppressed
           - REAL
           - probability of a urine TDF test returning positive if person not virally suppressed
-        * - switch_vl_test_to_tdf
-          - BOOL
-          - whether TDF urine test is being used in place of VL testing
         * - injectable_prep_allowed
           - BOOL
           - whether injectable prep is allowed
@@ -538,15 +535,15 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Tb'}
+     ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x17366d750>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x17366f2d0>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x14a2dcdd0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x14a2dc2d0>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x17366e7d0>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x14a2de8d0>}
 
-     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'Lifestyle', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'Demography', 'SymptomManager', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -944,7 +941,7 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x17364f970>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x14a227790>
 
      __annotations__ : {}
 

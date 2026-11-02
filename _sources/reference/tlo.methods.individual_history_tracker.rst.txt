@@ -83,6 +83,8 @@ tlo.methods.individual_history_tracker module
 
      .. automethod:: on_event_post_run
 
+     .. automethod:: on_monthly_daly_report
+
      .. automethod:: mni_values_differ
 
      .. automethod:: compare_entire_mni_dicts

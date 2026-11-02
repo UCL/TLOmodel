@@ -70,6 +70,7 @@ Contraception
 Copd
 ****
 
+* ``Treatment`` at facility level 0 with appointment footprint: .
 * ``Treatment`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Treatment`` at facility level 1a with appointment footprint: ``Over5OPD`` and bed days footprint: ``general_bed`` (2 days).
 
@@ -135,6 +136,7 @@ Malaria
 *******
 
 * ``Prevention_Iptp`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Test`` at facility level 0 with appointment footprint: .
 * ``Test`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
 * ``Test`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Treatment`` at facility level 1a with appointment footprint: ``Over5OPD``.

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.scenario module &mdash; TLOmodel 0.1.dev2668+g2934b6310 documentation</title>
+  <title>tlo.scenario module &mdash; TLOmodel 0.1.dev2688+gcf210599c documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=d80d8eec"></script>
+      <script src="../_static/documentation_options.js?v=0aa5664d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -116,9 +116,9 @@ given draw describes the random variation in the simulation.</p>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">log_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;my_test_scenario&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;./outputs&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;custom_levels&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">}</span>
+            <span class="s1">'filename'</span><span class="p">:</span> <span class="s1">'my_test_scenario'</span><span class="p">,</span>
+            <span class="s1">'directory'</span><span class="p">:</span> <span class="s1">'./outputs'</span><span class="p">,</span>
+            <span class="s1">'custom_levels'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'*'</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">}</span>
         <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -129,8 +129,8 @@ given draw describes the random variation in the simulation.</p>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">draw_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;Lifestyle&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;init_p_urban&#39;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>
+            <span class="s1">'Lifestyle'</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">'init_p_urban'</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
 </pre></div>
@@ -201,7 +201,7 @@ overridden.</p>
 </dd>
 </dl>
 <p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--pop-size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Population size&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--pop-size'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Population size'</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -212,11 +212,11 @@ overridden.</p>
 <dd><p>Implementation must return a dictionary configuring logging.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="p">{</span>
-    <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;test_scenario&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;./outputs&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;custom_levels&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
-        <span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
+    <span class="s1">'filename'</span><span class="p">:</span> <span class="s1">'test_scenario'</span><span class="p">,</span>
+    <span class="s1">'directory'</span><span class="p">:</span> <span class="s1">'./outputs'</span><span class="p">,</span>
+    <span class="s1">'custom_levels'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'*'</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+        <span class="s1">'tlo.methods.demography'</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -235,7 +235,7 @@ register in the simulation.</p>
     <span class="n">healthsystem</span><span class="o">.</span><span class="n">HealthSystem</span><span class="p">(</span>
         <span class="n">resourcefilepath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">,</span>
         <span class="n">disable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">d</span>
-        <span class="n">service_availability</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+        <span class="n">service_availability</span><span class="o">=</span><span class="p">[</span><span class="s1">'*'</span><span class="p">]</span>
     <span class="p">),</span>
     <span class="o">...</span>
 <span class="p">]</span>
@@ -258,12 +258,12 @@ The argument <code class="docutils literal notranslate"><span class="pre">draw_n
 returns <code class="docutils literal notranslate"><span class="pre">None</span></code>. If no parameters are overridden, only one draw of the scenario is required.</p>
 <p>A full example for a scenario with 10 draws:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="p">{</span>
-    <span class="s1">&#39;Lifestyle&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;init_p_urban&#39;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>
+    <span class="s1">'Lifestyle'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'init_p_urban'</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>
     <span class="p">},</span>
-    <span class="s1">&#39;Labour&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;average_age_at_pregnancy&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">10</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
-        <span class="s1">&#39;some_other_parameter&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)[</span><span class="n">draw_number</span><span class="p">]</span>
+    <span class="s1">'Labour'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'average_age_at_pregnancy'</span><span class="p">:</span> <span class="o">-</span><span class="mi">10</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
+        <span class="s1">'some_other_parameter'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)[</span><span class="n">draw_number</span><span class="p">]</span>
     <span class="p">},</span>
 <span class="p">}</span>
 </pre></div>
@@ -420,12 +420,12 @@ parameters for a scenario draw.</p>
 <p>Example usage (in <code class="docutils literal notranslate"><span class="pre">BaseScenario.draw_parameters</span></code>):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="n">make_cartesian_parameter_grid</span><span class="p">(</span>
     <span class="p">{</span>
-        <span class="s2">&quot;Mockitis&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;numeric_parameter&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
-            <span class="s2">&quot;categorical_parameter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;category_a&quot;</span><span class="p">,</span> <span class="s2">&quot;category_b&quot;</span><span class="p">]</span>
+        <span class="s2">"Mockitis"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"numeric_parameter"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+            <span class="s2">"categorical_parameter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"category_a"</span><span class="p">,</span> <span class="s2">"category_b"</span><span class="p">]</span>
         <span class="p">},</span>
-        <span class="s2">&quot;HealthSystem&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;cons_availability&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">]</span>
+        <span class="s2">"HealthSystem"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"cons_availability"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"default"</span><span class="p">,</span> <span class="s2">"all"</span><span class="p">]</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">)[</span><span class="n">draw_number</span><span class="p">]</span>

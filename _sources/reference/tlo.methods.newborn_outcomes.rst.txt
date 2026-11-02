@@ -343,15 +343,15 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'Labour', 'PregnancySupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'Labour'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x173bb52d0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x173bb7a50>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x173bb58d0>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x173bb5710>, 'preterm_other': <tlo.methods.causes.Cause object at 0x173bb5450>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x173bb55d0>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x173bb5610>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x173bb5b50>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x173bb4710>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x173bb5510>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x173bb4690>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x14a2f69d0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x14a2f7810>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x14a2f6150>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x14a2f4450>, 'preterm_other': <tlo.methods.causes.Cause object at 0x14a2f6390>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x14a2f5f50>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x14a2f7850>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x14a2f4290>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x14a2f5890>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x14a2f4f50>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x14a2f5e50>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x173bb6150>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x173bb48d0>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x173bb5b90>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x173bb4650>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x14a2f5d50>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x14a2f5cd0>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x14a2f6310>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x14a2f7890>}
 
      INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

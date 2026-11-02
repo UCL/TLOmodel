@@ -132,13 +132,13 @@ tlo.methods.copd module
 
      ADDITIONAL_DEPENDENCIES : set()
 
-     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x1735a0810>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x1735a0790>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x1735a0d50>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x1735a0b90>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x1735a0bd0>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x1735a0110>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x1735a0350>}
+     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x13fdc8ad0>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x13fdcaf90>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x13fdc80d0>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x13fdca490>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x14a569710>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x14a56ad10>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x14a56b990>}
 
-     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x1735a0190>}
+     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x14a568b50>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Lifestyle', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'SymptomManager', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      __annotations__ : {}
 
@@ -232,6 +232,29 @@ tlo.methods.copd module
 
 
      **Functions (defined or overridden in class CopdDeath):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Copd_InhalerDispensation
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Copd_InhalerDispensation):**
 
      .. automethod:: __init__
 
