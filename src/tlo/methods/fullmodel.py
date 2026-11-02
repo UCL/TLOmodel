@@ -34,6 +34,7 @@ from tlo.methods import (
     simplified_births,
     stunting,
     symptommanager,
+    syphilis,
     tb,
     wasting,
 )
@@ -116,6 +117,7 @@ def fullmodel(
         copd.Copd,
         depression.Depression,
         epilepsy.Epilepsy,
+        syphilis.Syphilis,
     ]
     return [
         module_class(
