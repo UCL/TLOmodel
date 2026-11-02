@@ -4,6 +4,7 @@ General utility functions for TLO analysis
 import fileinput
 import gzip
 import json
+import math
 import os
 import pickle
 import warnings
@@ -13,6 +14,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
 
+import geopandas as gpd
 import git
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -365,6 +367,273 @@ def extract_results(results_folder: Path,
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
 
+
+def find_difference_relative_to_comparison_series(
+    _ser: pd.Series,
+    comparison: str,
+    scaled: bool = False,
+    drop_comparison: bool = True,
+):
+    return (
+        _ser.unstack(level=0)
+        .apply(
+            lambda x: (
+                (x - x[comparison]) /
+                (x[comparison] if scaled else 1.0)
+            ),
+            axis=1,
+        )
+        .drop(columns=([comparison] if drop_comparison else []))
+        .stack()
+    )
+
+
+def find_difference_relative_to_comparison_series_dataframe(
+    _df: pd.DataFrame,
+    **kwargs,
+):
+    return pd.concat(
+        {
+            idx: find_difference_relative_to_comparison_series(
+                row,
+                **kwargs,
+            )
+            for idx, row in _df.iterrows()
+        },
+        axis=1,
+    ).T
+
+
+# Logger keys and modules used for district-level DALYs and deaths.
+DISTRICT_DALY_LOGGER_MODULE = "tlo.methods.healthburden"
+DISTRICT_DALY_LOGGER_KEY = (
+    "dalys_stacked"
+)
+DISTRICT_DEATH_LOGGER_MODULE = "tlo.methods.demography"
+DISTRICT_DEATH_LOGGER_KEY = "death"
+
+
+def extract_dalys_by_district(
+    results_folder: Path,
+    start_year: Optional[int] = None,
+    end_year: Optional[int] = None,
+    do_scaling: bool = True,
+) -> pd.DataFrame:
+    """
+    Extract total DALYs by district from the healthburden logger.
+    The returned dataframe has:
+        Index: district_of_residence
+        Columns: MultiIndex of (draw, run)
+
+    Each value represents total DALYs for the selected time period,
+    summed across age, cause, wealth, urban/rural and region categories.
+
+    Parameters
+    ----------
+    results_folder:
+        Folder containing the scenario output folders.
+
+    start_year:
+        First year to include. If None, include all years.
+
+    end_year:
+        Last year to include. If None, include all years.
+
+    do_scaling:
+        Whether to multiply the DALYs by the population scaling factor.
+    """
+
+    def get_dalys_by_district(df: pd.DataFrame) -> pd.Series:
+        """Return total DALYs grouped by district."""
+        df = df.copy()
+
+        # Add year if not already present.
+        if "year" not in df.columns:
+            df["year"] = df["date"].dt.year
+
+        # Restrict to the requested period.
+        if start_year is not None:
+            df = df[df["year"] >= start_year]
+
+        if end_year is not None:
+            df = df[df["year"] <= end_year]
+
+        metadata_columns = {
+            "date",
+            "year",
+            "sex",
+            "age",
+            "age_range",
+            "li_wealth",
+            "urban",
+            "region_of_residence",
+            "district_of_residence",
+        }
+
+        daly_columns = [
+            column
+            for column in df.columns
+            if column not in metadata_columns
+            and pd.api.types.is_numeric_dtype(df[column])
+        ]
+
+        if not daly_columns:
+            raise ValueError(
+                "No numeric DALY columns found in the healthburden logger. "
+                f"Available columns: {list(df.columns)}"
+            )
+
+        # Sum all DALY categories for each row, then aggregate by district.
+        df["total_dalys"] = df[daly_columns].sum(axis=1)
+
+        return df.groupby("district_of_residence")["total_dalys"].sum()
+
+    return extract_results(
+        results_folder=results_folder,
+        module=DISTRICT_DALY_LOGGER_MODULE,
+        key=DISTRICT_DALY_LOGGER_KEY,
+        custom_generate_series=get_dalys_by_district,
+        do_scaling=do_scaling,
+    )
+
+
+def extract_deaths_by_district(
+    results_folder: Path,
+    start_year: Optional[int] = None,
+    end_year: Optional[int] = None,
+    do_scaling: bool = True,
+) -> pd.DataFrame:
+    """
+    Extract total deaths by district from the demography logger.
+    The returned dataframe has:
+        Index: district_of_residence
+        Columns: MultiIndex of (draw, run)
+
+    Each value represents the total number of deaths in the selected
+    time period, grouped by district.
+    """
+
+    def get_deaths_by_district(df: pd.DataFrame) -> pd.Series:
+        """Return total deaths grouped by district."""
+        df = df.copy()
+
+        # Add year if not already present.
+        if "year" not in df.columns:
+            df["year"] = df["date"].dt.year
+
+        # Restrict to the requested period.
+        if start_year is not None:
+            df = df[df["year"] >= start_year]
+
+        if end_year is not None:
+            df = df[df["year"] <= end_year]
+
+        # Count deaths by district.
+        return (
+            df.groupby("district_of_residence")
+            .size()
+            .rename("deaths")
+        )
+
+    return extract_results(
+        results_folder=results_folder,
+        module=DISTRICT_DEATH_LOGGER_MODULE,
+        key=DISTRICT_DEATH_LOGGER_KEY,
+        custom_generate_series=get_deaths_by_district,
+        do_scaling=do_scaling,
+    )
+
+
+def calculate_percent_dalys_averted_by_district(
+    dalys_by_district: pd.DataFrame,
+    baseline_scenario: str,
+):
+    """
+    Calculate percentage DALYs averted for each district and scenario
+    relative to the specified baseline scenario.
+
+    Positive values indicate fewer DALYs than the baseline.
+    Negative values indicate more DALYs than the baseline.
+
+    Returns
+    -------
+    dict
+        Dictionary keyed by scenario name. Each value is a DataFrame
+        containing mean, lower and upper summary statistics.
+    """
+
+    pct_diff = (
+        -100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            dalys_by_district,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    summarized = summarize(pct_diff)
+
+    results = {}
+
+    scenario_names = (summarized.columns.get_level_values(0).unique())
+
+    for scenario in scenario_names:
+        results[scenario] = pd.DataFrame(
+            {
+                "mean": summarized[(scenario, "mean")],
+                "lower": summarized[(scenario, "lower")],
+                "upper": summarized[(scenario, "upper")],
+            }
+        )
+
+    return results
+
+
+def calculate_percent_deaths_averted_by_district(
+    deaths_by_district: pd.DataFrame,
+    baseline_scenario: str,
+):
+    """
+    Calculate percentage deaths averted for each district and scenario
+    relative to the specified baseline scenario.
+
+    Positive values indicate fewer deaths than the baseline.
+    Negative values indicate more deaths than the baseline.
+
+    Returns
+    -------
+    dict
+        Dictionary keyed by scenario name. Each value is a DataFrame
+        containing mean, lower and upper summary statistics.
+    """
+
+    pct_diff = (
+        -100.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            deaths_by_district,
+            comparison=baseline_scenario,
+            scaled=True,
+        )
+    )
+
+    summarized = summarize(pct_diff)
+
+    results = {}
+
+    scenario_names = (summarized.columns.get_level_values(0).unique())
+
+    for scenario in scenario_names:
+        results[scenario] = pd.DataFrame(
+            {
+                "mean": summarized[(scenario, "mean")],
+                "lower": summarized[(scenario, "lower")],
+                "upper": summarized[(scenario, "upper")],
+            }
+        )
+
+    return results
+
+
 def check_info_value_changes(df):
 
     problems = {}  # store issues
@@ -386,7 +655,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-    
+
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 
@@ -1329,6 +1598,254 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, l
         l1 = ax.legend(_handles[:n_col], _labels[:n_col], loc=[1.01, 0.5])
         _ = plt.legend(n, dfall.keys(), loc=[1.01, 0.1])
         ax.add_artist(l1)
+
+
+
+def plot_district_maps_from_results(
+    district_results: pd.DataFrame,
+    district_shapefile: Path,
+    district_column: str = "ADM2_EN",
+    district_names: Optional[List[str]] = None,
+    title: str = "",
+    colorbar_label: str = "",
+    cmap: str = "coolwarm_r",
+    figsize: Tuple[float, float] = (15, 9),
+    ncols: int = 3,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+):
+    """
+    Plot district-level maps from a dataframe of district results.
+
+    Parameters
+    ----------
+    district_results:
+        Dataframe where:
+            - Index contains district names.
+            - Columns contain scenario names.
+            - Values are the quantities to plot.
+
+        Example:
+
+            district_results.columns = [
+                "Baseline",
+                "More Nurses",
+                "Fewer Nurses",
+            ]
+
+    district_shapefile:
+        Path to the Malawi district shapefile.
+
+    district_column:
+        Column in the shapefile containing district names.
+        Default is "ADM2_EN", matching your nurse analysis.
+
+    district_names:
+        Optional list of district names to plot. If None, use all districts
+        in the shapefile.
+
+    title:
+        Figure title.
+
+    colorbar_label:
+        Label for the shared colorbar.
+
+    cmap:
+        Matplotlib colormap. Default is "coolwarm_r".
+
+    figsize:
+        Figure size.
+
+    ncols:
+        Number of maps per row.
+
+    vmin, vmax:
+        Optional fixed colorbar limits. If not provided, use symmetric
+        limits based on the maximum absolute value across all scenarios.
+
+    Returns
+    -------
+    fig:
+        Matplotlib Figure.
+    """
+
+    # District codes used to label the maps
+    district_code_map = {
+        "Balaka": "BA",
+        "Blantyre": "BL",
+        "Chikwawa": "CK",
+        "Chiradzulu": "CR",
+        "Chitipa": "CT",
+        "Dedza": "DE",
+        "Dowa": "DO",
+        "Karonga": "KR",
+        "Kasungu": "KS",
+        "Likoma": "LK",
+        "Lilongwe": "LI",
+        "Machinga": "MH",
+        "Mangochi": "MG",
+        "Mchinji": "MC",
+        "Mulanje": "MU",
+        "Mwanza": "MW",
+        "Mzimba": "MZ",
+        "Neno": "NE",
+        "Nkhata Bay": "NB",
+        "Nkhotakota": "NK",
+        "Nsanje": "NS",
+        "Ntcheu": "NU",
+        "Ntchisi": "NI",
+        "Phalombe": "PH",
+        "Rumphi": "RU",
+        "Salima": "SA",
+        "Thyolo": "TH",
+        "Zomba": "ZO",
+    }
+
+    # Load district shapefile
+    district_map = gpd.read_file(district_shapefile)
+
+    if district_column not in district_map.columns:
+        raise ValueError(
+            f"District column '{district_column}' was not found in the "
+            f"shapefile. Available columns: {list(district_map.columns)}"
+        )
+
+    district_results = district_results.copy()
+    district_results.index.name = district_column
+
+    # Restrict to selected districts, if provided.
+    if district_names is not None:
+        district_results = district_results.loc[
+            district_results.index.intersection(district_names)
+        ]
+
+    # Merging results with the shapefile
+    gdf = district_map.merge(
+        district_results,
+        left_on=district_column,
+        right_index=True,
+        how="left",
+    )
+
+    # Determine common color scale
+    values = district_results.to_numpy(dtype=float)
+
+    if not np.isfinite(values).any():
+        raise ValueError("No finite values were found in district_results.")
+
+    max_abs_value = np.nanmax(np.abs(values))
+
+    if vmin is None:
+        vmin = -max_abs_value
+
+    if vmax is None:
+        vmax = max_abs_value
+
+    # Create subplots
+    scenario_names = list(district_results.columns)
+    nrows = math.ceil(len(scenario_names) / ncols)
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize, constrained_layout=True,)
+
+    # Ensure axes is always a flat array.
+    axes = np.atleast_1d(axes).flatten()
+
+    # Plot each district map
+    for ax, scenario in zip(axes, scenario_names):
+
+        # Plot district-level results.
+        gdf.plot(
+            column=scenario,
+            cmap=cmap,
+            edgecolor="black",
+            linewidth=0.4,
+            legend=False,
+            vmin=vmin,
+            vmax=vmax,
+            ax=ax,
+            missing_kwds={
+                "color": "lightgrey",
+                "edgecolor": "black",
+                "hatch": "///",
+            },
+        )
+
+        # Adding district codes directly to the map.
+        for _, district in gdf.iterrows():
+            district_name = district[district_column]
+
+            district_code = district_code_map.get(district_name)
+
+            # Skip districts whose names do not match the dictionary.
+            if district_code is None or district["geometry"] is None:
+                continue
+
+            if district["geometry"].is_empty:
+                continue
+
+            # Obtain a point guaranteed to lie within the district polygon.
+            # Plot district-level results.
+            gdf.plot(
+                column=scenario,
+                cmap=cmap,
+                edgecolor="black",
+                linewidth=0.4,
+                legend=False,
+                vmin=vmin,
+                vmax=vmax,
+                ax=ax,
+                missing_kwds={
+                    "color": "lightgrey",
+                    "edgecolor": "black",
+                    "hatch": "///",
+                },
+            )
+
+            for _, district in gdf.iterrows():
+                district_name = district[district_column]
+
+                district_code = district_code_map.get(district_name)
+
+                # Skip districts whose names do not match the dictionary.
+                if district_code is None or district["geometry"] is None:
+                    continue
+
+                if district["geometry"].is_empty:
+                    continue
+
+                # Obtain a point guaranteed to lie within the district polygon.
+                label_point = district["geometry"].representative_point()
+
+                ax.annotate(
+                    text=district_code,
+                    xy=(label_point.x, label_point.y),
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    fontweight="bold",
+                    color="black",
+                    bbox={
+                        "facecolor": "white",
+                        "edgecolor": "none",
+                        "alpha": 0.7,
+                        "pad": 1.2,
+                    },
+                    zorder=10,
+                )
+
+            ax.set_title(str(scenario), fontsize=12)
+            ax.axis("off")
+
+    # Hide unused subplot axes.
+    for ax in axes[len(scenario_names):]:
+        ax.axis("off")
+
+    # Adding shared colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax),)
+    sm.set_array([])
+
+    fig.colorbar(sm,ax=axes, location="right", shrink=0.85, pad=0.02, label=colorbar_label,)
+    fig.suptitle(title, fontsize=15)
+    return fig
 
 
 def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
