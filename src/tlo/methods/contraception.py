@@ -1162,6 +1162,13 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                         },
                         description='pregnancy following the failure of contraceptive method')
 
+            # When the logger is set to debug we capture the properties of all pregnant women
+            person = df.loc[w]
+
+            logger.debug(key='properties_of_pregnant_person',
+                         data=person.to_dict(),
+                         description='values of all properties at the time of pregnancy for newly pregnant persons')
+
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):

@@ -324,7 +324,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         #     {286: 1.0})
 
         # Schedule MDA events
-        if p['mda_execute']:
+        if p['mda_execute'] and self.sim.date.year == 2010:
             # update future mda strategy from default values
             self.prognosed_mda = self._create_mda_strategy()
 

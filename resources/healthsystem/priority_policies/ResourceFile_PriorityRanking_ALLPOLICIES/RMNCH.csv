@@ -49,6 +49,7 @@ DeliveryCare_Comprehensive,2,-1,-1,-1,-1
 PostnatalCare_Maternal,2,-1,-1,-1,-1
 PostnatalCare_Maternal_Inpatient,2,-1,-1,-1,-1
 PostnatalCare_Comprehensive,2,-1,-1,-1,-1
+PostnatalCare_Neonatal_Resus_ConsumableLog,2,-1,-1,-1,-1
 Malaria_Prevention_Iptp,5,-1,-1,-1,-1
 Malaria_Test,5,-1,-1,-1,-1
 Malaria_Treatment,5,-1,-1,-1,-1
