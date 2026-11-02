@@ -7,6 +7,11 @@
 #   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-06-10T104916Z \
 #   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined
 
+# python src/scripts/lcoa_inputs_from_tlo_analyses/combine_suspended_and_resumed_pickles.py \
+#   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-09T145410Z \
+#   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-15T115126Z \
+#   outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-new-runs-combined
+
 import argparse
 import pickle
 import warnings

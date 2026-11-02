@@ -3,9 +3,9 @@
 Run from the repository root, for example::
 
     python src/scripts/lcoa_inputs_from_tlo_analyses/sanity_checks.py \
-        outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-09T145410Z \
+        outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-new-runs-combined \
         outputs/generated_outputs \
-        --target-start=2010-01-01 --target-end=2025-12-31
+        --target-start=2010-01-01 --target-end=2040-12-31
 
 The output folder defaults to the results folder. Comparisons use the Nothing
 scenario; use --do-comparison=False for results without that scenario.

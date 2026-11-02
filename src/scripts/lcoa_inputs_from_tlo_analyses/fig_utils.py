@@ -587,7 +587,7 @@ def plot_hsi_counts_stacked_bar(_df: pd.DataFrame, plot_stat: str = "central"):
             y[mask.to_numpy()],
             values.loc[mask].to_numpy(),
             left=left[mask.to_numpy()],
-            color=_get_color_for_treatment_id_prefix(treatment_id),
+            color=_get_short_treatment_id_and_color(treatment_id)[1],
             label=str(treatment_id),
         )
         left[mask.to_numpy()] += values.loc[mask].to_numpy()
