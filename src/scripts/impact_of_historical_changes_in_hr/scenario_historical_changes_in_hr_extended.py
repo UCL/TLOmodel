@@ -33,7 +33,7 @@ class HistoricalChangesInHRH(BaseScenario):
         self.pop_size = 100_000  # <-- Local small run: 30; previous study run: 20_000; for publication: 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10  # for publication: 10
+        self.runs_per_draw = 5  # for publication: 10
 
     def log_configuration(self):
         return {
