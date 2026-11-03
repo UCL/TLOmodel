@@ -156,7 +156,8 @@ def apply_discounting_to_cost_data(_df: pd.DataFrame,
             # Compute the cumulative discount factor as the product of (1 + discount_rate) for all previous years
             discount_factor = 1
             for y in range(_initial_year + 1,
-                           year + 1):  # only starting from initial year + 1 as the discount factor for initial year should be 1
+                           year + 1):  # only starting from initial year + 1 as the discount factor for initial year
+                # should be 1
                 discount_factor *= (1 + _discount_rate.get(y, 0))  # Default to 0 if year not in dictionary
             return discount_factor
         else:
@@ -279,23 +280,18 @@ def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
 
     return cleaned
 
-# First-round performance refactor of the supplied function.
-# Keep the existing project imports for extract_results, metadata/unit-cost
-# loaders, unflatten_flattened_multi_index_in_logging, and discounting.
-# Consumables are now annual rows rather than daily rows labelled by year.
-# Existing costing formulas and the level-1b equipment behaviour are retained.
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path,
                                      suspended_results_folder: Path = None,
+                                     scaling_factor: Optional[float] = None,
                                      _draws: Optional[list[int]] = None,
                                      _runs: Optional[list[int]] = None,
                                      summarize: bool = False,
                                      _metric: Literal['mean', 'median'] = 'mean',
                                      _years: Optional[list[int]] = None,
                                      cost_only_used_staff: bool = True,
-                                     _discount_rate: Union[float, dict[int, float]] = 0,
-                                     alt_scaling_factor:Optional[float] = None) -> pd.DataFrame:
+                                     _discount_rate: Union[float, dict[int, float]] = 0) -> pd.DataFrame:
     """
     Estimate health system input costs for a given simulation.
 
@@ -309,6 +305,9 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         Path to the directory containing suspended simulation output files (using the suspend and resume functionality),
         This is used to extract the scaling_factor to scale result to actual population size. If None, then the
         'scaling_factor' is obtained from the results_folder.
+    scaling_factor: float, optional
+        Scaling factor used to scale results to actual population size. If provided, this is used in place of the
+        scaling_factor logged in the suspended_results_folder or results_folder.
     _draws : list, optional
         Specific draws to include in the cost estimation. Defaults to all available draws.
     _runs : list, optional
@@ -323,13 +322,14 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         If True, only costs for level-cadre combinations ever used in simulation are included.
     _discount_rate : float or dict of {int: float}, default 0
         Discount rate to apply to future costs. Can be a constant or year-specific dictionary.
-    alt_scaling_parameter: float, default None. If a float value is provided this is used as an alternative to the
-    scaling parameter logged by demography.
+
     Returns:
     -------
     pd.DataFrame
-        A dataframe containing discounted costs disaggregated by category, sub-category, category-specific subgroup, year, draw, and run.
-        Note that if a discount rate is used, the dataframe will provide cost as the NPV during the first year of the dataframe
+        A dataframe containing discounted costs disaggregated by category, sub-category, category-specific subgroup,
+        year, draw, and run.
+        Note that if a discount rate is used, the dataframe will provide cost as the NPV during the first year of the
+        dataframe
     """
 
     # Useful common functions
@@ -355,16 +355,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         _draws = range(0, info['number_of_draws'])
     if _runs is None:
         _runs = range(0, info['runs_per_draw'])
-
-    _draws = list(_draws)
-    _runs = list(_runs)
-
-    def select_requested_simulations(df):
-        mask = (
-            df.columns.get_level_values(0).isin(_draws)
-            & df.columns.get_level_values(1).isin(_runs)
-        )
-        return df.loc[:, mask]
+    if suspended_results_folder is None:
+        suspended_results_folder = results_folder
 
     # Load cost input files
     # ------------------------
@@ -376,7 +368,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
     fac_levels = set(mfl.Facility_Level)
 
-    # If variable discount rate is provided, use the average across the relevant years for the purpose of annuitization of HR and equipment costs
+    # If variable discount rate is provided, use the average across the relevant years for the purpose of annuitization
+    # of HR and equipment costs
     def calculate_annuitization_rate(_discount_rate, _years):
         if isinstance(_discount_rate, (int, float)):
             # Single discount rate, return as is
@@ -561,20 +554,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     available_staff_count_by_facid_and_officertype = extract_results(
         Path(results_folder),
         suspended_results_folder=suspended_results_folder,
+        scaling_factor=scaling_factor,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
-        # Use standard scaling factor if an alternative isnt provided
-        do_scaling=alt_scaling_factor is None,
+        do_scaling=True,
     )
-
-    available_staff_count_by_facid_and_officertype = select_requested_simulations(
-        available_staff_count_by_facid_and_officertype
-    )
-
-    # scale staff count by provided scaling factor
-    if alt_scaling_factor is not None:
-        available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype * alt_scaling_factor
 
     # Update above series to get staff count by Facility_Level
     available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(
@@ -584,8 +569,14 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype[
         'Facility_ID'].map(facility_id_levels_dict)
     idx = pd.IndexSlice
-    available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(
-        columns=[idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
+    # Sum staff counts across facilities within each year, Facility_Level and OfficerType. The grouping keys are
+    # passed as Series and the (draw, run) value columns selected explicitly, because dropping labels from this
+    # unsorted column MultiIndex (which mixes strings and integers, so cannot be sorted) raises a PerformanceWarning
+    _staff_df = available_staff_count_by_facid_and_officertype
+    _key_cols = ['year', 'Facility_Level', 'OfficerType']
+    _value_cols = [col for col in _staff_df.columns if col[0] not in _key_cols + ['Facility_ID']]
+    available_staff_count_by_level_and_officer_type = _staff_df[_value_cols].groupby(
+        [_staff_df[(col, '')].rename(col) for col in _key_cols]).sum()
     available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(
         available_staff_count_by_level_and_officer_type.reset_index(),
         id_vars=['year', 'Facility_Level', 'OfficerType'])
@@ -593,12 +584,13 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         'Facility_Level'].astype(str)  # make sure facility level is stored as string
     available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(
         available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type[
-                                                            'Facility_Level'] == '5'].index)  # drop headquarters because we're only concerned with staff engaged in service delivery
+                                                            'Facility_Level'] == '5'].index)  # drop headquarters
+    # because we're only concerned with staff engaged in service delivery
     available_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
 
     # Get list of cadres which were utilised in each run to get the count of staff used in the simulation
-    # Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run, and
-    # not the amount of time which was used
+    # Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run,
+    # and not the amount of time which was used
     def get_capacity_used_by_officer_type_and_facility_level(
         _df: pd.DataFrame
     ) -> pd.Series:
@@ -652,50 +644,51 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         # ---- 8. Return stacked format ----
         return _df.stack(["OfficerType", "FacilityLevel"])
 
-    if cost_only_used_staff:
-        annual_capacity_used_by_cadre_and_level = extract_results(
-            Path(results_folder),
-            suspended_results_folder=suspended_results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='Capacity_By_FacID_and_Officer',
-            custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
-            do_scaling=False,
-        )
+    annual_capacity_used_by_cadre_and_level = extract_results(
+        Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
+        scaling_factor=scaling_factor,
+        module='tlo.methods.healthsystem.summary',
+        key='Capacity_By_FacID_and_Officer',
+        custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
+        do_scaling=False,
+    )
 
-        annual_capacity_used_by_cadre_and_level = select_requested_simulations(
-            annual_capacity_used_by_cadre_and_level
-        )
+    # Prepare capacity used dataframe to be multiplied by staff count
+    average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(
+        ['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
+    # TODO see if cadre-level combinations should be chosen by year
+    average_capacity_used_by_cadre_and_level.reset_index(drop=True)  # Flatten multi=index column
+    average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(
+        id_vars=['OfficerType', 'FacilityLevel'],
+        var_name=['draw', 'run'],
+        value_name='capacity_used')
+    list_of_cadre_and_level_combinations_used = \
+    average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][
+        ['OfficerType', 'FacilityLevel', 'draw', 'run']]
+    print(
+        f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} "
+        f"cadre and level combinations available, "
+        f"{list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} "
+        f"are used across the simulations")
+    list_of_cadre_and_level_combinations_used = list_of_cadre_and_level_combinations_used.rename(
+        columns={'FacilityLevel': 'Facility_Level'})
 
-        # Prepare capacity used dataframe to be multiplied by staff count
-        average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(
-            ['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
-        # TODO see if cadre-level combinations should be chosen by year
-        average_capacity_used_by_cadre_and_level.reset_index(drop=True)  # Flatten multi=index column
-        average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(
-            id_vars=['OfficerType', 'FacilityLevel'],
-            var_name=['draw', 'run'],
-            value_name='capacity_used')
-        list_of_cadre_and_level_combinations_used = \
-        average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][
-            ['OfficerType', 'FacilityLevel', 'draw', 'run']]
-        print(
-            f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} cadre and level combinations available, {list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} are used across the simulations")
-        list_of_cadre_and_level_combinations_used = list_of_cadre_and_level_combinations_used.rename(
-            columns={'FacilityLevel': 'Facility_Level'})
-
-        # Subset scenario staffing level to only include cadre-level combinations used in the simulation
-        used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
-            list_of_cadre_and_level_combinations_used, on=['draw', 'run', 'OfficerType', 'Facility_Level'], how='right',
-            validate='m:m')
-        used_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
+    # Subset scenario staffing level to only include cadre-level combinations used in the simulation
+    used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
+        list_of_cadre_and_level_combinations_used, on=['draw', 'run', 'OfficerType', 'Facility_Level'], how='right',
+        validate='m:m')
+    used_staff_count_by_level_and_officer_type.rename(columns={'value': 'staff_count'}, inplace=True)
 
     if (cost_only_used_staff):
         print(
-            "The input for 'cost_only_used_staff' implies that only cadre-level combinations which have been used in the run are costed")
+            "The input for 'cost_only_used_staff' implies that only cadre-level combinations which have been used in "
+            "the run are costed")
         staff_size_chosen_for_costing = used_staff_count_by_level_and_officer_type
     else:
         print(
-            "The input for 'cost_only_used_staff' implies that all staff are costed regardless of the cadre-level combinations which have been used in the run are costed")
+            "The input for 'cost_only_used_staff' implies that all staff are costed regardless of the cadre-level "
+            "combinations which have been used in the run are costed")
         staff_size_chosen_for_costing = available_staff_count_by_level_and_officer_type
 
     # Calculate various components of HR cost
@@ -734,54 +727,46 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         if partial_year > 0:
             npv += annual_cost * partial_year * (1 + r) ** (1 + r)
 
-        # Add recruitment cost assuming this happens during the partial year or the year after graduation if partial year == 0
+        # Add recruitment cost assuming this happens during the partial year or the year after graduation if
+        # partial year == 0
         npv += row['recruitment_cost_per_person_recruited_usd'] * (1 + r)
 
         return npv
 
-    # Evaluate repeated training assumptions once, retaining the original formula.
-    training_parameter_columns = [
-        'average_annual_preservice_training_cost_for_cadre',
-        'preservice_training_duration',
-        'recruitment_cost_per_person_recruited_usd',
-    ]
-    training_parameters = preservice_training_cost[training_parameter_columns].drop_duplicates().copy()
-    training_parameters['npv_of_training_and_recruitment_cost'] = [
-        calculate_npv_past_training_expenses_by_row(row, r=annuitization_rate)
-        for row in training_parameters.to_dict('records')
-    ]
-    preservice_training_cost = preservice_training_cost.merge(
-        training_parameters, on=training_parameter_columns, how='left', validate='m:1'
-    )
+    # Calculate NPV for each row using iterrows and store in a new column
+    npv_values = []
+    for index, row in preservice_training_cost.iterrows():
+        npv = calculate_npv_past_training_expenses_by_row(row, r=annuitization_rate)
+        npv_values.append(npv)
 
-    preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit'] = preservice_training_cost[
-                                                                                       'npv_of_training_and_recruitment_cost'] * \
-                                                                                   (1 / (preservice_training_cost[
-                                                                                             'absorption_rate_of_students_into_public_workforce'] +
-                                                                                         preservice_training_cost[
-                                                                                             'proportion_of_workforce_recruited_from_abroad'])) * \
-                                                                                   (1 / preservice_training_cost[
-                                                                                       'graduation_rate']) * (1 /
-                                                                                                              preservice_training_cost[
-                                                                                                                  'licensure_exam_passing_rate'])
-    if _discount_rate == 0:  # if the discount rate is 0, then the pre-service + recruitment cost simply needs to be divided by the number of years in tenure
+    preservice_training_cost['npv_of_training_and_recruitment_cost'] = npv_values
+    preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit'] \
+        = (preservice_training_cost['npv_of_training_and_recruitment_cost'] *
+           (1 / (preservice_training_cost['absorption_rate_of_students_into_public_workforce'] +
+                 preservice_training_cost['proportion_of_workforce_recruited_from_abroad'])) *
+           (1 / preservice_training_cost['graduation_rate']) *
+           (1 /preservice_training_cost['licensure_exam_passing_rate']))
+    if _discount_rate == 0:  # if the discount rate is 0, then the pre-service + recruitment cost simply
+        # needs to be divided by the number of years in tenure
         preservice_training_cost['annuitisation_rate'] = preservice_training_cost[
             'average_length_of_tenure_in_the_public_sector']
     else:
         preservice_training_cost['annuitisation_rate'] = 1 + (1 - (1 + annuitization_rate) ** (
                     -preservice_training_cost[
                         'average_length_of_tenure_in_the_public_sector'] + 1)) / annuitization_rate
-    preservice_training_cost['annuitised_training_and_recruitment_cost_per_recruit'] = preservice_training_cost[
-                                                                                           'npv_of_training_and_recruitment_cost_per_recruit'] / \
-                                                                                       preservice_training_cost[
-                                                                                           'annuitisation_rate']
+    preservice_training_cost['annuitised_training_and_recruitment_cost_per_recruit'] = \
+        (preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit'] /
+         preservice_training_cost['annuitisation_rate'])
 
-    # Cost per student trained * 1/Rate of absorption from the local and foreign graduates * 1/Graduation rate * attrition rate
-    # the inverse of attrition rate is the average expected tenure; and the preservice training cost needs to be divided by the average tenure
+    # Cost per student trained * 1/Rate of absorption from the local and foreign graduates
+    #       * 1/Graduation rate * attrition rate
+    # the inverse of attrition rate is the average expected tenure; and the preservice training cost needs to
+    #       be divided by the average tenure
     preservice_training_cost['cost'] = preservice_training_cost[
                                            'annuitised_training_and_recruitment_cost_per_recruit'] * \
                                        preservice_training_cost['staff_count'] * preservice_training_cost[
-                                           'annual_attrition_rate']  # not multiplied with attrition rate again because this is already factored into 'Annual_cost_per_staff_recruited'
+                                           'annual_attrition_rate']  # not multiplied with attrition rate again
+                                            # because this is already factored into 'Annual_cost_per_staff_recruited'
     preservice_training_cost = preservice_training_cost[
         ['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'cost']]
 
@@ -815,7 +800,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Initialize HR with the salary data
     if (cost_only_used_staff):
         human_resource_costs = retain_relevant_column_subset(
-            label_rows_of_cost_dataframe(salary_for_staff, 'cost_subcategory', 'salary_for_cadres_used'), 'OfficerType')
+            label_rows_of_cost_dataframe(salary_for_staff, 'cost_subcategory', 'salary_for_cadres_used'),
+            'OfficerType')
         # Concatenate additional cost categories
         additional_costs = [
             (preservice_training_cost, 'preservice_training_and_recruitment_cost_for_attrited_workers'),
@@ -824,7 +810,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         ]
     else:
         human_resource_costs = retain_relevant_column_subset(
-            label_rows_of_cost_dataframe(salary_for_staff, 'cost_subcategory', 'salary_for_all_staff'), 'OfficerType')
+            label_rows_of_cost_dataframe(salary_for_staff, 'cost_subcategory', 'salary_for_all_staff'),
+            'OfficerType')
         # Concatenate additional cost categories
         additional_costs = [
             (preservice_training_cost, 'preservice_training_and_recruitment_cost_for_attrited_workers'),
@@ -853,61 +840,44 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     print("Now estimating Consumables costs...")
 
     def get_quantity_of_consumables_dispensed(results_folder):
-        def get_annual_counts_of_items_used(_df):
-            df = drop_outside_period(_df)
-            daily_used = defaultdict(lambda: defaultdict(float))
-            used_items, unavailable_items = set(), set()
-            used_dates, unavailable_dates = set(), set()
+        def get_counts_of_items_requested(_df):
+            _df = drop_outside_period(_df)
+            counts_of_used = defaultdict(lambda: defaultdict(int))
+            counts_of_not_available = defaultdict(lambda: defaultdict(int))
 
-            # Avoid iterrows and never build a dense item-by-date table.
-            for date, used, unavailable in zip(
-                df['date'], df['Item_Used'], df['Item_NotAvailable']
-            ):
-                for item, quantity in used.items():
-                    daily_used[date][item] += quantity
-                    used_items.add(item)
-                    used_dates.add(date)
-                # Only the support of unavailable quantities is needed: the
-                # original code discards their values but retains zero rows.
-                if unavailable:
-                    unavailable_items.update(unavailable)
-                    unavailable_dates.add(date)
+            for _, row in _df.iterrows():
+                date = row['date']
+                for item, num in row['Item_Used'].items():
+                    counts_of_used[date][item] += num
+                for item, num in row['Item_NotAvailable'].items():
+                    counts_of_not_available[date][item] += num
+            used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
+            not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename(
+                'Not_Available')
 
-            support = {
-                (item, date.year)
-                for item in used_items
-                for date in used_dates
-            }
-            support.update(
-                (item, date.year)
-                for item in unavailable_items
-                for date in unavailable_dates
-            )
-            annual = dict.fromkeys(support, 0)
-            for date, items in daily_used.items():
-                for item, quantity in items.items():
-                    # Original code truncates daily totals BEFORE scaling.
-                    annual[(item, date.year)] += int(quantity)
+            # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
+            combined_df = pd.concat([used_df, not_available_df], axis=1).fillna(0).astype(int)
 
-            index = pd.MultiIndex.from_tuples(
-                list(annual), names=['Item_Code', 'year']
-            )
-            return pd.Series(list(annual.values()), index=index, dtype=float).sort_index()
+            # Convert to a pd.Series, as expected by the custom_generate_series function
+            return combined_df.stack()
 
-        quantities = extract_results(
+        cons_req = extract_results(
             results_folder,
             suspended_results_folder=suspended_results_folder,
+            scaling_factor=scaling_factor,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
-            custom_generate_series=get_annual_counts_of_items_used,
-            do_scaling=alt_scaling_factor is None,
-        )
-        quantities = select_requested_simulations(quantities)
-        if alt_scaling_factor is not None:
-            quantities = quantities * alt_scaling_factor
-        return quantities
+            custom_generate_series=get_counts_of_items_requested,
+            do_scaling=True)
 
-    consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder).reset_index()
+        cons_dispensed = cons_req.xs("Used", level=2)  # only keep actual dispensed amount, i.e. when available
+        return cons_dispensed
+
+    consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
+    consumables_dispensed = consumables_dispensed.reset_index().rename(
+        columns={'level_0': 'Item_Code', 'level_1': 'year'})
+    consumables_dispensed[idx['year']] = pd.to_datetime(
+        consumables_dispensed[idx['year']]).dt.year  # Extract only year from date
     consumables_dispensed[idx['Item_Code']] = pd.to_numeric(consumables_dispensed[idx['Item_Code']])
     # Make a list of columns in the DataFrame pertaining to quantity dispensed
     quantity_columns = consumables_dispensed.columns.to_list()
@@ -916,7 +886,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # 2.1 Cost of consumables dispensed
     # ---------------------------------------------------------------------------------------------------------------
     # Multiply number of items needed by cost of consumable
-    # consumables_dispensed.columns = consumables_dispensed.columns.get_level_values(0).str() + "_" + consumables_dispensed.columns.get_level_values(1) # Flatten multi-level columns for pandas merge
+    # consumables_dispensed.columns = consumables_dispensed.columns.get_level_values(0).str() + "_" +
+    #       consumables_dispensed.columns.get_level_values(1) # Flatten multi-level columns for pandas merge
     unit_costs['consumables'].columns = pd.MultiIndex.from_arrays(
         [unit_costs['consumables'].columns, [''] * len(unit_costs['consumables'].columns)])
     cost_of_consumables_dispensed = consumables_dispensed.merge(unit_costs['consumables'], on=idx['Item_Code'],
@@ -950,8 +921,20 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                                                                   left_on='Item_Code',
                                                                                   right_on='item_code', validate='m:1',
                                                                                   how='left')
+    # Identify rows where excess_stock_proportion_of_dispensed is NaN
+    missing_excess_stock = (
+        cost_of_excess_consumables_stocked
+        ['excess_stock_proportion_of_dispensed']
+        .isna()
+    )
+
+    # Fill missing values with the average inflow-to-outflow ratio minus 1
+    fill_value = average_inflow_to_outflow_ratio_ratio - 1
+
     cost_of_excess_consumables_stocked.loc[
-        cost_of_excess_consumables_stocked.excess_stock_proportion_of_dispensed.isna(), 'excess_stock_proportion_of_dispensed'] = average_inflow_to_outflow_ratio_ratio - 1  # TODO disaggregate the average by program
+        missing_excess_stock,
+        'excess_stock_proportion_of_dispensed'
+    ] = fill_value  # TODO: disaggregate the average by program
     cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[
         quantity_columns].multiply(cost_of_excess_consumables_stocked[idx[price_column]], axis=0)
     cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[
@@ -969,7 +952,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     def melt_and_label_consumables_cost(_df, label):
         multi_index = pd.MultiIndex.from_tuples(_df.columns)
         _df.columns = multi_index
-        # Select 'Item_Code', 'year', and all columns where both levels of the MultiIndex are numeric (these are the (draw,run) columns with cost values)
+        # Select 'Item_Code', 'year', and all columns where both levels of the MultiIndex are numeric
+        #   (these are the (draw,run) columns with cost values)
         selected_columns = [col for col in _df.columns if
                             (col[0] in ['Item_Code', 'year']) or (isinstance(col[0], int) and isinstance(col[1], int))]
         _df = _df[selected_columns]  # Subset the dataframe with the selected columns
@@ -981,20 +965,23 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         melted_df['consumable'] = melted_df['Item_Code'].map(consumables_dict)
         melted_df['cost_subcategory'] = label
         melted_df[
-            'Facility_Level'] = 'all'  # TODO this is temporary until 'tlo.methods.healthsystem.summary' only logs consumable at the aggregate level
+            'Facility_Level'] = 'all'
+        # TODO this is temporary until 'tlo.methods.healthsystem.summary' only logs consumable at the aggregate level
         melted_df = melted_df.rename(columns={'value': 'cost'})
         return melted_df
 
     def disaggregate_separately_managed_medical_supplies_from_consumable_costs(_df,
                                                                                _consumables_dict,
-                                                                               # This is a dictionary mapping codes to names
+                                                                        # This is a dictionary mapping codes to names
                                                                                list_of_unique_medical_products):
         reversed_consumables_dict = {value: key for key, value in
                                      _consumables_dict.items()}  # reverse dictionary to map names to codes
         new_df = _df.copy()
         new_df['item_code'] = new_df['consumable'].map(reversed_consumables_dict)
-        cost_of_consumables = new_df[~new_df['item_code'].isin(list_of_unique_medical_products)]
-        cost_of_separately_managed_medical_supplies = new_df[new_df['item_code'].isin(list_of_unique_medical_products)]
+        # Take explicit copies so that relabelling below modifies these dataframes and not a view of new_df
+        cost_of_consumables = new_df[~new_df['item_code'].isin(list_of_unique_medical_products)].copy()
+        cost_of_separately_managed_medical_supplies = new_df[
+            new_df['item_code'].isin(list_of_unique_medical_products)].copy()
         cost_of_separately_managed_medical_supplies['cost_subcategory'] = cost_of_separately_managed_medical_supplies[
             'cost_subcategory'].replace(
             {'consumables_dispensed': 'separately_managed_medical_supplies_dispensed',
@@ -1003,24 +990,26 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             columns='item_code')
 
     separately_managed_medical_supplies = [127, 141, 161]  # Oxygen, Blood, IRS
-    cost_of_consumables_dispensed, cost_of_separately_managed_medical_supplies_dispensed = disaggregate_separately_managed_medical_supplies_from_consumable_costs(
+    cost_of_consumables_dispensed, cost_of_separately_managed_medical_supplies_dispensed = (
+        disaggregate_separately_managed_medical_supplies_from_consumable_costs(
         _df=retain_relevant_column_subset(
             melt_and_label_consumables_cost(cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'),
             'consumable'),
         _consumables_dict=consumables_dict,
-        list_of_unique_medical_products=separately_managed_medical_supplies)
-    cost_of_excess_consumables_stocked, cost_of_separately_managed_medical_supplies_excess_stock = disaggregate_separately_managed_medical_supplies_from_consumable_costs(
+        list_of_unique_medical_products=separately_managed_medical_supplies))
+    cost_of_excess_consumables_stocked, cost_of_separately_managed_medical_supplies_excess_stock = (
+        disaggregate_separately_managed_medical_supplies_from_consumable_costs(
         _df=retain_relevant_column_subset(
             melt_and_label_consumables_cost(cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'),
             'consumable'),
         _consumables_dict=consumables_dict,
-        list_of_unique_medical_products=separately_managed_medical_supplies)
+        list_of_unique_medical_products=separately_managed_medical_supplies))
 
     consumable_costs = pd.concat([cost_of_consumables_dispensed, cost_of_excess_consumables_stocked])
 
     # 2.4 Supply chain costs
     # ---------------------------------------------------------------------------------------------------------------
-    # Assume that the cost of procurement, warehousing and distribution is a fixed proportion of consumable purchase costs
+    # Assume that the cost of procurement,warehousing and distribution is a fixed proportion of consumable purchase
     # The fixed proportion is based on Resource Mapping Expenditure data from 2018
     resource_mapping_data = unit_costs['actual_expenditure_data']
     # Make sure values are numeric
@@ -1076,7 +1065,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # --------------------------------------------
     print("Now estimating Medical equipment costs...")
 
-    # Total cost of equipment required as per SEL (HSSP-III) only at facility IDs where it has been used in the simulation
+    # Total cost of equipment required as per SEL (HSSP-III) only at facility IDs where it has been used in the
+    #   simulation
     # Get list of equipment used in the simulation by district and level
     def get_equipment_used_by_district_and_facility(_df: pd.Series) -> pd.Series:
         """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
@@ -1088,6 +1078,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     list_of_equipment_used_by_draw_and_run = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
+        scaling_factor=scaling_factor,
         module='tlo.methods.healthsystem.summary',
         key='EquipmentEverUsed_ByFacilityID',
         custom_generate_series=get_equipment_used_by_district_and_facility,
@@ -1097,7 +1089,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         list_of_equipment_used_by_draw_and_run[col] = list_of_equipment_used_by_draw_and_run[col].apply(
             ast.literal_eval)
 
-    # Initialize an empty DataFrame
+    # Collect equipment cost for each draw and run, then concatenate once
     equipment_cost_frames = []
 
     # Extract equipment cost for each draw and run
@@ -1138,7 +1130,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                               on=['District', 'Facility_Level'], how='left')
             equipment_df.loc[equipment_df.Facility_Count.isna(), 'Facility_Count'] = 0
 
-            # Because levels 1b and 2 are collapsed together, we assume that the same equipment is used by level 1b as that recorded for level 2
+            # Because levels 1b and 2 are collapsed together, we assume that the same equipment is used by level 1b as
+            #   that recorded for level 2
             def update_itemuse_for_level1b_using_level2_data(_df):
                 level2_items = pd.MultiIndex.from_frame(
                     _df.loc[
@@ -1195,7 +1188,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # Assume that the annual costs are constant each year of the simulation
     equipment_costs = pd.concat([equipment_costs.assign(year=year) for year in years])
-    # TODO If the logger is updated to include year, we may wish to calculate equipment costs by year - currently we assume the same annuitised equipment cost each year
+    # TODO If the logger is updated to include year, we may wish to calculate equipment costs by year
+    # (currently we assume the same annuitised equipment cost each year)
     equipment_costs = equipment_costs.reset_index(drop=True)
     equipment_costs = equipment_costs.rename(columns={'Equipment_tlo': 'Equipment'})
     equipment_costs = prepare_cost_dataframe(equipment_costs, _category_specific_group='Equipment',
@@ -1262,12 +1256,11 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             # Define aggregation function based on _metric input (mean or median)
             agg_func = np.mean if _metric == 'mean' else np.median
 
-            grouped_cost = scenario_cost.groupby(by=groupby_cols, sort=False)['cost']
             scenario_cost = pd.concat(
                 {
-                    _metric: grouped_cost.agg(agg_func),
-                    'lower': grouped_cost.quantile(0.025),
-                    'upper': grouped_cost.quantile(0.975),
+                    _metric: scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].agg(agg_func),
+                    'lower': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.025),
+                    'upper': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.975),
                 },
                 axis=1
             )
@@ -1288,9 +1281,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                               _discount_rate=_discount_rate,
                                               _column_for_discounting='cost')
 
+
 # Define a function to summarize cost data from
-# Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
-# first unstack the dataframe and subsequently apply the summarize function
+# Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as
+# index, then first unstack the dataframe and subsequently apply the summarize function
 def summarize_cost_data(_df,
                         _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
     """
@@ -1346,8 +1340,8 @@ def estimate_projected_health_spending(resourcefilepath: Path,
     """
     Estimate total projected health spending for a simulation period.
 
-    Combines health spending per capita projections (Dieleman et al, 2019) with simulated population estimates to calculate
-    total health expenditure, optionally applying a discount rate and summarizing across runs.
+    Combines health spending per capita projections (Dieleman et al, 2019) with simulated population estimates to
+    calculate total health expenditure, optionally applying a discount rate and summarizing across runs.
 
     Parameters:
     ----------
@@ -1576,7 +1570,8 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         if (_disaggregate_by_subgroup is True):
             for name, df in dfs.items():
                 dfs[name] = df.copy()  # Choose the dataframe to modify
-                # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an 'other' category
+                # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an
+                #   'other' category
                 if (len(dfs[name]['cost_subgroup'].unique()) > 10):
                     # Calculate total cost per subgroup
                     subgroup_totals = dfs[name].groupby('cost_subgroup')['cost'].sum()
@@ -2022,7 +2017,8 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
     if (len(_df['cost_subgroup'].unique()) > 10):
         # Step 2: Group all other consumables into "Other"
         other_cost = _df.iloc[10:]["cost"].sum()
-        top_10 = pd.concat([top_10, pd.DataFrame([{"cost_subgroup": "Other", "cost": other_cost}])], ignore_index=True)
+        top_10 = pd.concat([top_10, pd.DataFrame([{"cost_subgroup": "Other", "cost": other_cost}])],
+                           ignore_index=True)
 
     # Prepare data for the treemap
     total_cost = top_10["cost"].sum()
@@ -2167,7 +2163,8 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         # Initialize an empty DataFrame to store values for each 'run'
         all_run_values = pd.DataFrame()
 
-        # Create an array of implementation costs ranging from 0 to the max value of max ability to pay for the current draw
+        # Create an array of implementation costs ranging from 0 to the max value of max ability to pay for the current
+        #   draw
         implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[draw_index].max(), 50)
         # Add fixed values for ROI ratio calculation
         additional_costs = np.array([1_000_000_000, 3_000_000_000])
@@ -2273,7 +2270,8 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
     # Replace specific x-ticks with % of health spending values
     if _projected_health_spending:
         xtick_labels[
-            1] = f'{xticks[1]:,.0f}\n({xticks[1] / (_projected_health_spending / 1e6) :.2%} of \n projected total \n health spend)'
+            1] = (f'{xticks[1]:,.0f}\n({xticks[1] / (_projected_health_spending / 1e6) :.2%} of \n projected total '
+                  f'\n health spend)')
         for i, tick in enumerate(xticks):
             if (i != 0) & (i != 1):  # Replace for 4000
                 xtick_labels[i] = f'{tick:,.0f}\n({tick / (_projected_health_spending / 1e6) :.2%})'
