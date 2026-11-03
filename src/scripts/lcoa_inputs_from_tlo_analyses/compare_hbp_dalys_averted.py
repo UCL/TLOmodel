@@ -135,7 +135,6 @@ def extract_dalys(
         key="dalys_stacked_by_age_and_time",
         custom_generate_series=get_dalys,
         do_scaling=True,
-        autodiscover=True,
     )
     if hbp_results:
         return dalys.pipe(set_hbp_names, parameter_names=parameter_names)

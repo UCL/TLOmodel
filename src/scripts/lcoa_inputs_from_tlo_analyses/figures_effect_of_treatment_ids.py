@@ -33,7 +33,7 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_fullresults.pkl --output_folder=figs10runs
 # python src/scripts/lcoa_inputs_from_tlo_analyses/figures_effect_of_treatment_ids.py outputs/generated_outputs/2040-12-31_sanity_checks.pkl --output_folder=figs-sanity-checks
 
-PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 1
+
 
 def load_results_files(results_files: list[Path]) -> dict[Path, dict]:
     loaded = {}
@@ -471,7 +471,6 @@ def apply(
     # Plot number of deaths and DALYS by cause for each parameter, with
     # confidence intervals, for the target period
     num_dalys_by_cause_label_implementation = undiscounted_dalys
-
 
     if undiscounted_dalys is not None:
         daly_draw_labels = undiscounted_dalys.columns.get_level_values(0).unique()

@@ -68,9 +68,7 @@ def get_periods_within_target_period(
 def get_parameter_names_from_scenario_file() -> tuple[str]:
     """Get tuple of scenario names from Scenario class used to create results."""
     e = EffectOfEachTreatment()
-    excluded = {"Only Hiv_Test_Selftest_*"}
-    # I think Hiv_test_Selftest has been added after I had submitted the draws, hence filtering it out.
-    return tuple(name for name in e._scenarios.keys() if name not in excluded)
+    return tuple(name for name in e._scenarios.keys())
 
 
 def format_scenario_name(_sn: str) -> str:
