@@ -1373,14 +1373,14 @@ input_costs_df = estimate_input_cost_of_scenarios(results_folder=results_folder,
                                     scaling_factor=p_scaling_factor,
                                      _draws=draws,
                                      _years=list_of_relevant_years_for_costing,
-                                     cost_only_used_staff=True)
+                                     cost_only_used_staff=False)
 
-input_costs_df_not_scaled = estimate_input_cost_of_scenarios(results_folder=results_folder,
-                                     resourcefilepath=resourcefilepath,
-                                     suspended_results_folder=results_folder,
-                                     _draws=draws,
-                                     _years=list_of_relevant_years_for_costing,
-                                     cost_only_used_staff=True)
+# input_costs_df_not_scaled = estimate_input_cost_of_scenarios(results_folder=results_folder,
+#                                      resourcefilepath=resourcefilepath,
+#                                      suspended_results_folder=results_folder,
+#                                      _draws=draws,
+#                                      _years=list_of_relevant_years_for_costing,
+#                                      cost_only_used_staff=True)
 
 input_costs_df.to_csv(f'{g_path}/input_costs.csv')
 input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
@@ -1407,7 +1407,7 @@ incremental_scenario_cost_no_adj = (pd.DataFrame(
         find_difference_relative_to_comparison(
             total_input_cost_no_adj,
             comparison=0,
-            scaled=True)  # sets the comparator to draw 0 which is the Actual scenario
+            scaled=False)  # sets the comparator to draw 0 which is the Actual scenario
     ).T.iloc[0].unstack()).T
 
 input_costs_no_adj_summ = summarize_cost_data(incremental_scenario_cost_no_adj)
@@ -1442,103 +1442,22 @@ fig, ax = plot_bars_with_uncertainty(
 )
 plt.show()
 
-
-
-
-
-
-def find_cost_diff_from_sq_and_sum(data):
-    def find_difference_relative_to_comparison(_ser: pd.Series,
-                                               comparison: str,
-                                               scaled: bool = False,
-                                               drop_comparison: bool = True,
-                                               ):
-        """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-        within the runs (level 1), relative to where draw = `comparison`.
-        The comparison is `X - COMPARISON`."""
-        return _ser \
-            .unstack(level=0) \
-            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-            .drop(columns=([comparison] if drop_comparison else [])) \
-            .stack()
-
-    incremental_scenario_cost_annual = (
-        find_difference_relative_to_comparison(
-            data,
-            comparison=0,
-        )
-        .swaplevel(0, 1)
-        .rename_axis(["draw", "run"])
-        .sort_index()
-        .to_frame()
-        .T
-    )
-
-    incremental_scenario_cost_annual.index = ["incremental_cost"]
-
-    incremental_scenario_cost_summarized = summarize_confidence_intervals(incremental_scenario_cost_annual)
-
-    return [incremental_scenario_cost_annual, incremental_scenario_cost_summarized]
-
-
-def plot_bars_with_uncertainty(df, ylabel="Incremental cost", title=None):
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    ax.bar(
-        np.arange(len(df)),
-        df["mean"],
-        yerr=np.vstack([
-            df["mean"] - df["lower"],
-            df["upper"] - df["mean"],
-        ]),
-        color="#4C6A92",
-        capsize=4,
-        error_kw={"elinewidth": 1},
-    )
-
-    ax.set_xticks(np.arange(len(df)), labels=df.index)
-    ax.set(xlabel="Scenario", ylabel=ylabel, title=title)
-    ax.axhline(0, color="black", linewidth=0.8)
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-    fig.tight_layout()
-
-    return fig, ax
-
-fig, ax = plot_bars_with_uncertainty(
-    input_costs_no_adj_summ,
-    ylabel="Incremental cost (USD)",
-)
-plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
 # -------------------------------------- Adjust costs as required... --------------------------------------------------
-# 1.) HRH
+# Output HCW time requirements by appointment type
 appointment_time_table = pd.read_csv(
     resourcefilepath
     / 'healthsystem'
     / 'human_resources'
     / 'definitions'
     / 'ResourceFile_Appt_Time_Table.csv',
-    index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
-)
-
+    index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"])
 appt_type_facility_level_officer_category_to_appt_time = (appointment_time_table.Time_Taken_Mins.to_dict())
 
+# List HCW types
 officer_categories = appointment_time_table.index.levels[appointment_time_table.index.names.index(
     "Officer_Category")].to_list()
 
+# Calculate HCW time use by treatment ID within each scenario
 hcw_time_by_treatment_id = bin_hsi_event_details(
         results_folder,
         lambda event_details, count: sum(
@@ -1575,7 +1494,8 @@ daily_mins = daily_mins.drop('Dental')
 daily_mins = daily_mins.drop('Nutrition')
 daily_mins = daily_mins.groupby(daily_mins.index).sum()
 
-# Next we calculate the average HCW capabilities assuming capabilities increase yearly in line with population growth
+# Next we calculate the average HCW capability
+# TODO: SHOULD WE ADJUST THIS FOR POPULATION GROWTH (SINCE WE'RE LOOKING AT 2026)
 yearly_mins = daily_mins * 365.25
 yearly_mins.rename(columns={'Total_Mins_Per_Day': 'mins_per_year'}, inplace=True)
 yearly_mins_sum = yearly_mins.sum(axis=0).to_frame().T
@@ -1585,9 +1505,7 @@ hcw_time_by_treatment_id_df = pd.DataFrame.from_dict(hcw_time_by_treatment_id)
 hcw_time_by_treatment_id_df = hcw_time_by_treatment_id_df.fillna(0)
 hcw_time_by_treatment_id_df.index.names = ['first', 'second']
 
-# Now we calculate the demand of HCW time by cadre relative to yearly HCW capabilities (adjusted for predicted
-# population growth)
-
+# Now we calculate the demand of HCW time by cadre relative to yearly HCW capabilities
 def get_hcw_time_use_ratios(df):
     """Get HCW time used/time available - compare that to the status QUO"""
     def get_hcw_time_fold_diff(df_for_diff):
@@ -1633,6 +1551,8 @@ def get_hcw_time_use_ratios(df):
 
 hcw_ratios_unadjusted = get_hcw_time_use_ratios(hcw_time_by_treatment_id_df)
 
+# Now using the relative difference in demand we adjust cost
+# TODO: determine if costs should even be adjusted "down" if less HCW time is used...
 def return_cost_adjusted_for_hcw_growth(cost_data, fold_change_cadre):
     adjusted = cost_data.copy()
 
@@ -1657,130 +1577,143 @@ def return_cost_adjusted_for_hcw_growth(cost_data, fold_change_cadre):
     total_input_cost = adjusted.groupby(["draw", "run"])["cost"].sum()
     return [total_input_cost, adjusted]
 
-input_costs_adjusted_hcw = return_cost_adjusted_for_hcw_growth(
-    input_costs,
-    hcw_ratios_unadjusted[3],
-)
+ratios_for_adjustment = hcw_ratios_unadjusted[3]
+input_costs_adjusted = return_cost_adjusted_for_hcw_growth(input_costs, ratios_for_adjustment)
 
 # ------------------------------------------ INCREMENTAL COSTS -------------------------------------------------------
-def find_cost_diff_from_sq_and_sum(data):
-    def find_difference_relative_to_comparison(_ser: pd.Series,
-                                               comparison: str,
-                                               scaled: bool = False,
-                                               drop_comparison: bool = True,
-                                               ):
-        """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-        within the runs (level 1), relative to where draw = `comparison`.
-        The comparison is `X - COMPARISON`."""
-        return _ser \
-            .unstack(level=0) \
-            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-            .drop(columns=([comparison] if drop_comparison else [])) \
-            .stack()
-
-    incremental_scenario_cost_annual = (
+incremental_scenario_adj = (pd.DataFrame(
         find_difference_relative_to_comparison(
-            data,
+            input_costs_adjusted[0],
             comparison=0,
-        )
-        .swaplevel(0, 1)
-        .rename_axis(["draw", "run"])
-        .sort_index()
-        .to_frame()
-        .T
-    )
+            scaled=False)  # sets the comparator to draw 0 which is the Actual scenario
+    ).T.iloc[0].unstack()).T
 
-    incremental_scenario_cost_annual.index = ["incremental_cost"]
+input_costs_adj_summ = summarize_cost_data(incremental_scenario_adj)
 
-    incremental_scenario_cost_summarized = summarize_confidence_intervals(incremental_scenario_cost_annual)
-
-    return [incremental_scenario_cost_annual, incremental_scenario_cost_summarized]
-
-incremental_scenario_costs = find_cost_diff_from_sq_and_sum(input_costs_adjusted_hcw[0])
-
-def dummy_fig_incremental_costs(
-    cost_summary,
-    draw_labels=draw_labels,
-    scale=1_000_000,
-    currency="USD",
-    save_path=g_path,
-):
-    """
-    Plot mean incremental costs and their lower–upper intervals.
-
-    cost_summary: DataFrame indexed by draw, with mean/lower/upper columns.
-    draw_labels:  Dictionary mapping draw numbers to scenario names.
-    scale:        Divide costs by this amount for display (default: millions).
-    """
-    draw_labels = draw_labels or {}
-
-    data = cost_summary.loc[
-        cost_summary.index != 0, ["mean", "lower", "upper"]
-    ].sort_index().copy()
-
-    if data.empty:
-        raise ValueError("No intervention draws found.")
-
-    values = data / scale
-    y = np.arange(len(values))
-
-    fig, ax = plt.subplots(
-        figsize=(10.5, max(5, 0.48 * len(values) + 1.5))
-    )
-
-    ax.axvline(0, color="#667085", linewidth=1.25, zorder=0)
-
-    ax.hlines(
-        y, values["lower"], values["upper"],
-        color="#8DA7BE", linewidth=2.4, zorder=1
-    )
-    ax.plot(
-        values["lower"], y, "|",
-        color="#8DA7BE", markersize=10, markeredgewidth=1.5
-    )
-    ax.plot(
-        values["upper"], y, "|",
-        color="#8DA7BE", markersize=10, markeredgewidth=1.5
-    )
-    ax.scatter(
-        values["mean"], y,
-        s=75, color="#115E87", edgecolor="white",
-        linewidth=1, zorder=3
-    )
-
-    ax.set_yticks(
-        y,
-        [draw_labels.get(draw, f"Draw {draw}") for draw in values.index],
-    )
-    ax.invert_yaxis()
-
-    unit = "millions" if scale == 1_000_000 else f"÷ {scale:g}"
-    ax.set_xlabel(f"Incremental cost ({currency}{unit})")
-    ax.set_title(
-        "Incremental cost by scenario",
-        loc="left", fontsize=16, weight="bold", pad=17
-    )
-    ax.text(
-        0, 1.015,
-        "Point = mean  •  line = lower–upper interval",
-        transform=ax.transAxes, fontsize=10, color="#475467"
-    )
-
-    ax.grid(axis="x", color="#E5EAF0", linewidth=0.8)
-    ax.set_axisbelow(True)
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    ax.tick_params(axis="both", length=0, pad=8)
-
-    fig.tight_layout()
-    plt.savefig(f'{g_path}/inc_costs.png', dpi=220, bbox_inches="tight")
-    plt.show()
-
-dummy_fig_incremental_costs(
-    incremental_scenario_costs[1],
-    draw_labels=draw_labels,
-    currency="$",  # change or omit as appropriate
+fig, ax = plot_bars_with_uncertainty(
+    input_costs_adj_summ,
+    ylabel="Incremental cost (USD)",
 )
+plt.show()
+
+# def find_cost_diff_from_sq_and_sum(data):
+#     def find_difference_relative_to_comparison(_ser: pd.Series,
+#                                                comparison: str,
+#                                                scaled: bool = False,
+#                                                drop_comparison: bool = True,
+#                                                ):
+#         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+#         within the runs (level 1), relative to where draw = `comparison`.
+#         The comparison is `X - COMPARISON`."""
+#         return _ser \
+#             .unstack(level=0) \
+#             .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+#             .drop(columns=([comparison] if drop_comparison else [])) \
+#             .stack()
+#
+#     incremental_scenario_cost_annual = (
+#         find_difference_relative_to_comparison(
+#             data,
+#             comparison=0,
+#         )
+#         .swaplevel(0, 1)
+#         .rename_axis(["draw", "run"])
+#         .sort_index()
+#         .to_frame()
+#         .T
+#     )
+#
+#     incremental_scenario_cost_annual.index = ["incremental_cost"]
+#
+#     incremental_scenario_cost_summarized = summarize_confidence_intervals(incremental_scenario_cost_annual)
+#
+#     return [incremental_scenario_cost_annual, incremental_scenario_cost_summarized]
+#
+# incremental_scenario_costs = find_cost_diff_from_sq_and_sum(input_costs_adjusted_hcw[0])
+#
+# def dummy_fig_incremental_costs(
+#     cost_summary,
+#     draw_labels=draw_labels,
+#     scale=1_000_000,
+#     currency="USD",
+#     save_path=g_path,
+# ):
+#     """
+#     Plot mean incremental costs and their lower–upper intervals.
+#
+#     cost_summary: DataFrame indexed by draw, with mean/lower/upper columns.
+#     draw_labels:  Dictionary mapping draw numbers to scenario names.
+#     scale:        Divide costs by this amount for display (default: millions).
+#     """
+#     draw_labels = draw_labels or {}
+#
+#     data = cost_summary.loc[
+#         cost_summary.index != 0, ["mean", "lower", "upper"]
+#     ].sort_index().copy()
+#
+#     if data.empty:
+#         raise ValueError("No intervention draws found.")
+#
+#     values = data / scale
+#     y = np.arange(len(values))
+#
+#     fig, ax = plt.subplots(
+#         figsize=(10.5, max(5, 0.48 * len(values) + 1.5))
+#     )
+#
+#     ax.axvline(0, color="#667085", linewidth=1.25, zorder=0)
+#
+#     ax.hlines(
+#         y, values["lower"], values["upper"],
+#         color="#8DA7BE", linewidth=2.4, zorder=1
+#     )
+#     ax.plot(
+#         values["lower"], y, "|",
+#         color="#8DA7BE", markersize=10, markeredgewidth=1.5
+#     )
+#     ax.plot(
+#         values["upper"], y, "|",
+#         color="#8DA7BE", markersize=10, markeredgewidth=1.5
+#     )
+#     ax.scatter(
+#         values["mean"], y,
+#         s=75, color="#115E87", edgecolor="white",
+#         linewidth=1, zorder=3
+#     )
+#
+#     ax.set_yticks(
+#         y,
+#         [draw_labels.get(draw, f"Draw {draw}") for draw in values.index],
+#     )
+#     ax.invert_yaxis()
+#
+#     unit = "millions" if scale == 1_000_000 else f"÷ {scale:g}"
+#     ax.set_xlabel(f"Incremental cost ({currency}{unit})")
+#     ax.set_title(
+#         "Incremental cost by scenario",
+#         loc="left", fontsize=16, weight="bold", pad=17
+#     )
+#     ax.text(
+#         0, 1.015,
+#         "Point = mean  •  line = lower–upper interval",
+#         transform=ax.transAxes, fontsize=10, color="#475467"
+#     )
+#
+#     ax.grid(axis="x", color="#E5EAF0", linewidth=0.8)
+#     ax.set_axisbelow(True)
+#     for spine in ax.spines.values():
+#         spine.set_visible(False)
+#     ax.tick_params(axis="both", length=0, pad=8)
+#
+#     fig.tight_layout()
+#     plt.savefig(f'{g_path}/inc_costs.png', dpi=220, bbox_inches="tight")
+#     plt.show()
+#
+# dummy_fig_incremental_costs(
+#     incremental_scenario_costs[1],
+#     draw_labels=draw_labels,
+#     currency="$",  # change or omit as appropriate
+# )
 
 # ------------------------------------ COST PER DALY/DEATH AVERTED ---------------------------------------------------
 # cost = incremental_scenario_costs[0]
