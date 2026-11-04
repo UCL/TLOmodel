@@ -1,6 +1,9 @@
 """
 Extract DALY totals and DALYs by wealth and cause, alongside population breakdowns,
 for TARGET_PERIOD and save them to CSV.
+
+Run locally with:
+python src/scripts/dcea_of_horizontal_and_vertical_programs/deca_analysis_vertical_programs_with_and_without_hss.py
 """
 
 from pathlib import Path
@@ -14,7 +17,7 @@ from tlo.analysis.utils import extract_draw_names, extract_results, get_scenario
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
 
-    def get_parameter_names_from_scenario_file() -> Tuple[str, ...]:
+    def get_parameter_names_from_scenario_file() -> tuple[str, ...]:
         """Get scenario names from the Scenario class used to create the results."""
         from scripts.dcea_of_horizontal_and_vertical_programs.dcea_scenario_vertical_programs_with_and_without_hss import (
             HTMWithAndWithoutHSS,
@@ -409,7 +412,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=pop_key,
         custom_generate_series=get_pop_per_wealth_urban_age,
         do_scaling=True
-    ).pipe(set_draw_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     # %% Save outputs
     output_folder.mkdir(parents=True, exist_ok=True)

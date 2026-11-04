@@ -84,22 +84,22 @@ class HTMWithAndWithoutHSS(BaseScenario):
             #     ),
 
            # # - - - Realistic HEALTH SYSTEM STRENGTHENING - - -
-            "HSS Package Realistic":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hss_package_realistic(),
-                ),
+           #  "HSS Package Realistic":
+           #      mix_scenarios(
+           #          scenario_definitions.baseline(),
+           #          scenario_definitions.hss_package_realistic(),
+           #      ),
 
             # **************************************************
             # VERTICAL PROGRAMS WITH AND WITHOUT THE HSS PACKAGE
             # **************************************************
 
            # # - - - HIV SCALE-UP WITHOUT HSS PACKAGE - - -
-            "HIV Programs Scale-up Without HSS":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                ),
+           #  "HIV Programs Scale-up Without HSS":
+           #      mix_scenarios(
+           #          scenario_definitions.baseline(),
+           #          scenario_definitions.hiv_scaleup(),
+           #      ),
             # # - - - HIV SCALE-UP *WITH* HSS PACKAGE - - -
             # "HIV Programs Scale-up WITH HSS PACKAGE":
             #     mix_scenarios(
@@ -115,19 +115,19 @@ class HTMWithAndWithoutHSS(BaseScenario):
             #         scenario_definitions.hss_package_normal_HCS(),
             #     ),
             # - - - HIV SCALE-UP *WITH* REALISTIC HSS PACKAGE - - -
-            "HIV Programs Scale-up With HSS Realistic":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.hss_package_realistic(),
-                ),
+            # "HIV Programs Scale-up With HSS Realistic":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hiv_scaleup(),
+            #         scenario_definitions.hss_package_realistic(),
+            #     ),
             #
             # # - - - TB SCALE-UP WITHOUT HSS PACKAGE - - -
-            "TB Programs Scale-up Without HSS":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.tb_scaleup(),
-                ),
+            # "TB Programs Scale-up Without HSS":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.tb_scaleup(),
+            #     ),
             # # - - - TB SCALE-UP *WITH* HSS PACKAGE - - -
             # "TB Programs Scale-up WITH HSS PACKAGE":
             #     mix_scenarios(
@@ -143,12 +143,12 @@ class HTMWithAndWithoutHSS(BaseScenario):
             #         scenario_definitions.hss_package_normal_HCS(),
             #     ),
             # - - - TB SCALE-UP *WITH* REALISTIC HSS PACKAGE - - -
-            "TB Programs Scale-up With HSS Realistic":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.hss_package_realistic(),
-                ),
+            # "TB Programs Scale-up With HSS Realistic":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.tb_scaleup(),
+            #         scenario_definitions.hss_package_realistic(),
+            #     ),
             #
             # # - - - MALARIA SCALE-UP WITHOUT HSS PACKAGE - - -
             "Malaria Programs Scale-up Without HSS":
@@ -171,21 +171,21 @@ class HTMWithAndWithoutHSS(BaseScenario):
             #         scenario_definitions.hss_package_normal_HCS(),
             #     ),
             # - - - MALARIA SCALE-UP *WITH* REALISTIC HSS PACKAGE - - -
-            "Malaria Programs Scale-up With HSS Realistic":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.hss_package_realistic(),
-                ),
+            # "Malaria Programs Scale-up With HSS Realistic":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.malaria_scaleup(),
+            #         scenario_definitions.hss_package_realistic(),
+            #     ),
             #
             # # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE - - -
-            "HTM Programs Scale-up Without HSS":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.malaria_scaleup(),
-                ),
+            # "HTM Programs Scale-up Without HSS":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hiv_scaleup(),
+            #         scenario_definitions.tb_scaleup(),
+            #         scenario_definitions.malaria_scaleup(),
+            #     ),
             # # - - - HIV & TB & MALARIA SCALE-UP *WITH* HSS PACKAGE - - -
             # "HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE":
             #     mix_scenarios(
@@ -205,14 +205,14 @@ class HTMWithAndWithoutHSS(BaseScenario):
             #         scenario_definitions.hss_package_normal_HCS(),
             #     ),
             # - - - HIV & TB & MALARIA SCALE-UP *WITH* REALISTIC HSS PACKAGE - - -
-            "HTM Programs Scale-up With HSS Realistic":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.hss_package_realistic(),
-                ),
+            # "HTM Programs Scale-up With HSS Realistic":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hiv_scaleup(),
+            #         scenario_definitions.tb_scaleup(),
+            #         scenario_definitions.malaria_scaleup(),
+            #         scenario_definitions.hss_package_realistic(),
+            #     ),
         }
 
 
