@@ -52,10 +52,16 @@ class DiabeticRetinopathy(Module):
                                                   "proliferative diabetic retinopathy"),
 
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
-        "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having "
-                                              "Diabetic Macular Oedema (DMO)"),
-        "rp_nc_hypertension": Parameter(
+        "init_prob_any_dmo": Parameter(Types.LIST, "Initial probabilities of clinically significant and "
+                                                   "non-clinically significant DMO among people with DR"),
+        "init_prob_any_vision_impairment": Parameter(
+            Types.LIST, "Initial probabilities of moderate vision impairment, severe vision impairment "
+                        "and blindness among people with DR or DMO"),
+
+        "rp_nc_hypertension_dr": Parameter(
             Types.REAL, "relative risk at baseline of diabetic retinopathy if person has hypertension"),
+        "rp_nc_hypertension_dmo": Parameter(
+            Types.REAL, "relative risk at baseline of diabetic macular oedema if person has hypertension"),
         # "prob_diabetes_controlled": Parameter(
         #     Types.REAL,
         #     "Probability that a person with mild DR has controlled diabetes"
@@ -333,10 +339,8 @@ class DiabeticRetinopathy(Module):
         # write to property:
         df.loc[df.is_alive & ~df.nc_diabetes, 'dr_status'] = 'none'
         df.loc[df.is_alive & ~df.nc_diabetes, 'dmo_status'] = 'none'
-
         df.loc[df.is_alive & df.nc_diabetes, 'dr_status'] = 'none'
         df.loc[df.is_alive & df.nc_diabetes, 'dmo_status'] = 'none'
-
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dmo_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
@@ -366,7 +370,7 @@ class DiabeticRetinopathy(Module):
         lm_init_dr_status_any_dr = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prob_any_dr']),
-            Predictor('nc_hypertension').when(True, p['rp_nc_hypertension']),
+            Predictor('nc_hypertension').when(True, p['rp_nc_hypertension_dr']),
         )
 
         # any_dr = \
@@ -396,44 +400,11 @@ class DiabeticRetinopathy(Module):
                 p=probs
             )
 
-        # Assign DMO for those with DR at baseline
-        self.update_dmo_status()
+        # Assign DMO for those with DR at baseline (using baseline init LinearModel)
+        self._initialise_dmo_status_at_baseline(dr_idx)
 
-        # dr_stage_probs = p["init_prob_any_dr"]
-        # Determine the stage of DR for those who have DM:
-        # if any_dr.sum():
-        #     categories = [cat for cat in df.dr_status.cat.categories if cat != 'none']
-        #
-        #     # Make sure we have the right number of probabilities
-        #     assert len(categories) == len(p['init_prob_any_dr'])
-        #
-        #     # Normalize probabilities
-        #     sum_probs = sum(p['init_prob_any_dr'])
-        #     prob_by_stage_of_dr_if_dr = [p / sum_probs for p in p['init_prob_any_dr']]
-        #
-        #     # Assign statuses
-        #     df.loc[any_dr, "dr_status"] = self.rng.choice(
-        #         categories,
-        #         size=any_dr.sum(),
-        #         p=prob_by_stage_of_dr_if_dr
-        #     )
-
-        # sum_probs = sum(p['init_prob_any_dr'])
-        # if sum_probs > 0:
-        #     prob_by_stage_of_dr_if_dr = [i / sum_probs for i in p['init_prob_any_dr']]
-        #     assert (sum(prob_by_stage_of_dr_if_dr) - 1.0) < 1e-10
-        #     # df.loc[any_dr, "dr_status"] = self.rng.choice(
-        #     #     dr_stage_probs[1:],  # exclude "none"
-        #     #     size=len(df.loc[any_dr]),
-        #     #     p=dr_stage_probs
-        #     # )
-        #     df.loc[any_dr, "dr_status"] = self.rng.choice(
-        #         [val for val in df.dr_status.cat.categories if val != 'none'],
-        #         size=any_dr.sum(),
-        #         p=prob_by_stage_of_dr_if_dr
-        #     )
-
-        # df.loc[~any_dr, "dr_status"] = "none"
+        # Assign vision status at baseline for those with DR/DMO
+        self._initialise_vision_status_at_baseline(dr_idx)
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """ This is where you should include all things you want to be happening during simulation
@@ -453,7 +424,7 @@ class DiabeticRetinopathy(Module):
             dilated_eye_exam_dr_dmo=DxTest(
                 property='dr_status',
                 sensitivity=self.parameters['sensitivity_of_dilated_eye_exam_dr_dmo'],
-                target_categories=["none", "mild_or_moderate", "severe", "proliferative"]
+                target_categories=["mild_or_moderate", "severe", "proliferative"]
             )
         )
 
@@ -896,6 +867,116 @@ class DiabeticRetinopathy(Module):
         self.dmo_incident_case_tracker = copy.deepcopy(self.dmo_incident_case_tracker_blank)
         self.vision_incident_case_tracker = copy.deepcopy(self.vision_incident_case_tracker_blank)
 
+    def _initialise_dmo_status_at_baseline(self, dr_idx: pd.Index) -> None:
+        """Set dmo_status at baseline for people with DR
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        init_dmo_probs = p['init_prob_any_dmo']
+        assert len(init_dmo_probs) == 2, (
+            "init_prob_any_dmo must contain probabilities for "
+            "clinically_significant and non_clinically_significant DMO."
+        )
+        assert all(0.0 <= prob <= 1.0 for prob in init_dmo_probs)
+        assert sum(init_dmo_probs) <= 1.0
+
+        # nobody has DMO at baseline
+        # df['dmo_status'] = 'none'
+
+        if len(dr_idx) == 0:
+            return
+
+        candidates = df.loc[dr_idx]
+
+        lm_init_dmo = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            sum(init_dmo_probs),
+            Predictor('nc_hypertension').when(True, p['rp_nc_hypertension_dmo']),
+        )
+
+        has_any_dmo = lm_init_dmo.predict(candidates, self.rng)
+        dmo_idx = has_any_dmo[has_any_dmo].index if has_any_dmo.any() else pd.Index([])
+
+        if dmo_idx.empty:
+            return
+
+        total_stage_prob = sum(init_dmo_probs)
+        assert total_stage_prob > 0, (
+            "init_prob_any_dmo has zero probability mass for any non-'none' DMO stage"
+        )
+        stage_probs = [x / total_stage_prob for x in init_dmo_probs]
+
+        df.loc[dmo_idx, 'dmo_status'] = self.rng.choice(
+            ['clinically_significant', 'non_clinically_significant'],
+            size=len(dmo_idx),
+            p=stage_probs,
+        )
+
+    def _initialise_vision_status_at_baseline(self, dr_idx: pd.Index) -> None:
+        """Set vision_status at baseline for people with DR and/or DMO. Must be called
+        after `_initialise_dmo_status_at_baseline`.
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        vision_categories = list(df.vision_status.cat.categories)
+        # Impaired categories in the same order as init_prob_any_vision_impairment
+        impairment_categories = vision_categories[1:]
+        init_prob_vision = p['init_prob_any_vision_impairment']
+
+        assert len(init_prob_vision) == len(impairment_categories), (
+            f"init_prob_any_vision_impairment must have {len(impairment_categories)} entries "
+            f"matching vision_status.cat.categories[1:] = {impairment_categories}"
+        )
+        assert all(0.0 <= prob <= 1.0 for prob in init_prob_vision)
+        assert sum(init_prob_vision) <= 1.0, (
+            "sum(init_prob_any_vision_impairment) must be <= 1.0"
+        )
+
+        dmo_idx = df.index[
+            df.dmo_status.isin(['clinically_significant', 'non_clinically_significant'])
+        ]
+        eye_disease_idx = dr_idx.union(dmo_idx)
+
+        if len(eye_disease_idx) == 0:
+            return
+
+        candidates = df.loc[eye_disease_idx]
+
+        lm_init_vision_impairment = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            sum(init_prob_vision),
+        )
+
+        has_any_impairment = lm_init_vision_impairment.predict(candidates, self.rng)
+        impaired_idx = (
+            has_any_impairment[has_any_impairment].index
+            if has_any_impairment.any()
+            else pd.Index([])
+        )
+
+        if impaired_idx.empty:
+            return
+
+        total_severity_prob = sum(init_prob_vision)
+        assert total_severity_prob > 0, (
+            "init_prob_any_vision_impairment has zero probability mass for any impaired state"
+        )
+        severity_probs = [x / total_severity_prob for x in init_prob_vision]
+
+        df.loc[impaired_idx, 'vision_status'] = self.rng.choice(
+            impairment_categories,
+            size=len(impaired_idx),
+            p=severity_probs,
+        )
+
+        # Flag vision loss attributable to DR where vision is impaired
+        impaired_mask = df.vision_status.isin(
+            ['moderate_vision_impairment', 'severe_vision_impairment', 'blindness']
+        )
+        df.loc[impaired_mask & df.nc_diabetes, 'vision_loss_due_to_dr'] = True
+
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Diabetes Retinopathy (DR) and logs current states. DR diagnosis
@@ -1022,7 +1103,6 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 topen=self.sim.date,
                 tclose=None)
 
-
         # ---------------- SELECTING INDIVIDUALS FOR SYMPTOM-DRIVEN PRESENTATIONS ----------------
         vision_impaired = df['vision_status'].isin([
             'moderate_vision_impairment',
@@ -1111,7 +1191,6 @@ class HSI_Dr_Dmo_Symptomatic_Presentation(HSI_Event, IndividualScopeEventMixin):
 
         if dx_result and is_cons_available:
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
-            df.at[person_id, 'dr_date_treatment'] = self.sim.date
             df.at[person_id, 'dr_date_last_screening'] = self.sim.date
             df.at[person_id, 'dr_diagnosed'] = True
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
@@ -1219,7 +1298,6 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
 
         if dx_result and is_cons_available:
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
-            df.at[person_id, 'dr_date_treatment'] = self.sim.date
             df.at[person_id, 'dr_date_last_screening'] = self.sim.date
             df.at[person_id, 'dr_diagnosed'] = True
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
