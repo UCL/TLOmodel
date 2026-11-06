@@ -972,7 +972,10 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
     for a specified WASH strategy and comparison. Points are coloured by
     cost-effectiveness based on the first threshold provided.
 
-    Multiple threshold lines are plotted if specified.
+    Multiple threshold lines are plotted if specified. All district points are
+    shown, but labels are limited to means outside the central interquartile
+    rectangle (25th to 75th percentiles on both axes). Labels that overlap an
+    accepted label or the legend, or extend outside the axes, are hidden.
     """
     try:
         dalys_sub = dalys_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
@@ -1007,16 +1010,7 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
                 markerfacecolor='white',
                 markeredgecolor='black'
             )
-            plt.text(
-                mean_dalys[district],
-                mean_costs[district],
-                district,
-                fontsize=9,
-                color='black',  # ensure label text is black
-                alpha=0.8,
-                ha='right',
-                va='bottom'
-            )
+
 
         # Axis limits
         x_min, x_max = mean_dalys.min(), mean_dalys.max()
@@ -1060,17 +1054,7 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
 
         mean_dalys = dalys_sub.mean(axis=1)
         mean_costs = costs_sub.mean(axis=1)
-        for district, x, y in zip(districts, mean_dalys, mean_costs):
-            plt.text(
-                x,
-                y,
-                district,
-                fontsize=9,
-                color='black',
-                alpha=0.8,
-                ha='right',
-                va='bottom'
-            )
+
 
         # Axis limits
         x_min, x_max = mean_dalys.min(), mean_dalys.max()
@@ -1099,8 +1083,43 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
     plt.ylabel('Incremental Costs (USD)')
     plt.title(f'{comparison}')
     plt.grid(True, linestyle='--', alpha=0.5)
+    # Label peripheral districts first, prioritising the most distant means.
+    means = pd.DataFrame({'dalys': mean_dalys, 'costs': mean_costs}).replace(
+        [np.inf, -np.inf], np.nan
+    ).dropna()
+    lower = means.quantile(0.25)
+    upper = means.quantile(0.75)
+    outside = ((means < lower) | (means > upper)).any(axis=1)
+    spread = (upper - lower).replace(0, np.nan)
+    spread = spread.fillna((means.max() - means.min()).replace(0, 1))
+    distance = ((means - means.median()) / spread).pow(2).sum(axis=1)
+    candidates = distance.loc[outside].sort_values(ascending=False, kind='stable')
+    ax = plt.gca()
+    labels = [
+        ax.annotate(str(district), means.loc[district], xytext=(4, 4),
+                    textcoords='offset points', fontsize=9, color='black',
+                    alpha=0.8, ha='left', va='bottom', annotation_clip=True)
+        for district in candidates.index
+    ]
+    for label in labels:
+        label.set_in_layout(False)
     plt.tight_layout()
-    plt.savefig(results_folder / f"cost_v_dalys_{wash_strategy}_{comparison}_{cost_category}.png", dpi=300)
+    figure = ax.figure
+    figure.canvas.draw()
+    renderer = figure.canvas.get_renderer()
+    legend = ax.get_legend()
+    occupied = [legend.get_window_extent(renderer)] if legend is not None else []
+    axes_box = ax.get_window_extent(renderer)
+    for label in labels:
+        box = label.get_window_extent(renderer).padded(3)
+        inside_axes = (axes_box.contains(box.x0, box.y0) and
+                       axes_box.contains(box.x1, box.y1))
+        if not inside_axes or any(box.overlaps(other) for other in occupied):
+            label.set_visible(False)
+        else:
+            occupied.append(box)
+    plt.savefig(results_folder / f"cost_v_dalys_{wash_strategy}_{comparison}_{cost_category}.tif", dpi=300,
+                pil_kwargs={"compression": "tiff_lzw"})
     plt.show()
 
 
