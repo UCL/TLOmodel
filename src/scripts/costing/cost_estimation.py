@@ -558,7 +558,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
-        do_scaling=True,
+        do_scaling=False,
     )
 
     # Update above series to get staff count by Facility_Level
