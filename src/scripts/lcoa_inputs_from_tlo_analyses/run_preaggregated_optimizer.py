@@ -64,9 +64,8 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
     # Replace non-significant DALY values with 0 to avoid optimizer issues
     mask1 = dalys_averted['lower'] < 0
     mask2 = dalys_averted['upper'] > 0
-    dalys_averted['central'][mask1 & mask2] = 0
-
-    ce_dalys = dalys_averted['central']
+    ce_dalys = dalys_averted['central'].copy()
+    ce_dalys.loc[mask1 & mask2] = 0
 
     incremental_cost = results.get('incremental_scenario_cost')
     ce_cost = incremental_cost['central']

@@ -5,26 +5,26 @@ It runs the full model under a set of scenario in which only a single TREATMENT_
 
 To check scenarios are generated correctly:
 ```
-tlo scenario-run --draw-only src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_treatment_ids.py
+tlo scenario-run --draw-only src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_hbps.py
 ```
 
 Run on the batch system using:
 
 ```
-tlo batch-submit src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_treatment_ids.py
+tlo batch-submit src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_hbps.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_treatment_ids.py
+tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_hbps.py
 ```
 
 """
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 from tlo import Date, logging
-from tlo.analysis.utils import get_filtered_treatment_ids, mix_scenarios, get_parameters_for_status_quo
+from tlo.analysis.utils import mix_scenarios, get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
@@ -68,11 +68,11 @@ class EffectOfEachHBP(BaseScenario):
         self.pop_size = 250_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            "filename": "effect_of_each_treatment_id",
+            "filename": "effect_of_each_hbp",
             "directory": Path("./outputs"),
             "custom_levels": {
                 "*": logging.WARNING,
@@ -104,7 +104,7 @@ class EffectOfEachHBP(BaseScenario):
         # service_availability.update(
         #   {f"Only {treatment}": [treatment] for treatment in treatments}
         # )
-        ehp_from_rwe = (
+        LIT_HBP = (
             ["Alri_Pneumonia_Treatment_Outpatient",
              "AntenatalCare_FollowUp",
              "AntenatalCare_Outpatient",
@@ -130,28 +130,22 @@ class EffectOfEachHBP(BaseScenario):
              "Tb_Treatment"]
         )
 
-        ehp_from_tlo = (
-             ["Alri_Pneumonia_Treatment_Outpatient_*",
-              "AntenatalCare_Outpatient_*",
-              "CardioMetabolicDisorders_Treatment_*",
-              "Contraception_Routine_*",
-              "Diarrhoea_Treatment_Inpatient_*",
-              "Diarrhoea_Treatment_Outpatient_*",
-              "Epi_Childhood_MeaslesRubella_*",
-              "Hiv_Prevention_Prep_*",
-              "Hiv_Treatment_*",
-              "Malaria_Treatment_*",
-              "Malaria_Treatment_Complicated_*",
-              "Measles_Treatment_*",
-              "Schisto_MDA_*",
-              "Undernutrition_Feeding_*",
-              "Undernutrition_Feeding_Inpatient_*",
-              "Undernutrition_Feeding_Outpatient_*",
-              "Undernutrition_Feeding_Supplementary_*"]
+        TLO_HBP = (
+             [
+              "Contraception_Routine",
+              "Epi_Childhood_MeaslesRubella",
+              "Hiv_Prevention_Infant",
+              "Hiv_Treatment",
+              "Malaria_Treatment_Complicated",
+              "Measles_Treatment",
+              "Schisto_MDA",
+              "Undernutrition_Feeding_Inpatient",
+              "Undernutrition_Feeding_Outpatient",
+              "Undernutrition_Feeding_Supplementary"]
         )
 
         scenario_definitions = ScenarioDefinitions()
-        service_availability = dict({"LCOA EHP from RWE": ehp_from_rwe, "LCOA EHP from TLO": ehp_from_tlo})
+        service_availability = dict({"LIT_HBP": LIT_HBP, "TLO_HBP": TLO_HBP})
 
         scenarios = {
             key: mix_scenarios(

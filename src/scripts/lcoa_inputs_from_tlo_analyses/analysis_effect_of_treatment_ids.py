@@ -386,7 +386,18 @@ def apply(
         .groupby(['OfficerType', 'year'])
         .sum()
     )
-    actual_capacity_used_by_cadre_2026 = actual_capacity_used_by_cadre.xs(YEAR_OF_SWITCH, level='year', axis=0)
+    actual_capacity_used_by_cadre_2026 = actual_capacity_used_by_cadre.xs(
+        YEAR_OF_SWITCH, level='year', axis=0
+    ).copy()
+    if len(zero_hsi_scenarios):
+        baseline_capacity = actual_capacity_used_by_cadre_2026.xs("Nothing", axis=1, level="draw")
+        for draw in zero_hsi_scenarios:
+            columns = actual_capacity_used_by_cadre_2026.columns[
+                actual_capacity_used_by_cadre_2026.columns.get_level_values("draw") == draw
+            ]
+            actual_capacity_used_by_cadre_2026.loc[:, columns] = baseline_capacity.loc[
+                :, columns.get_level_values("run")
+            ].to_numpy()
 
     results['actual_capacity_used_by_cadre_2026'] = (
         compute_summary_statistics(actual_capacity_used_by_cadre_2026, 'median')
@@ -442,26 +453,15 @@ def apply(
 
     actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.reset_index(drop=True)
     mask = actual_cost_by_cadre_and_level['year'] >= YEAR_OF_SWITCH
+    actual_cost_by_cadre_and_level = apply_discounting_to_cost_data(
+        actual_cost_by_cadre_and_level.loc[mask].copy(),
+        _discount_rate=discount_rate_cost,
+        _initial_year=min(list_of_relevant_years_for_costing),
+    )
     # Now combine with input_costs
     input_costs = input_costs[input_costs['cost_category'] != 'human resources for health']
-    input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level[mask]])
+    input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level])
 
-    # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
-    annual_cons_cost = input_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
-    mask = (
-        (annual_cons_cost.index.get_level_values('year') == YEAR_OF_SWITCH) &
-        (annual_cons_cost.index.get_level_values('cost_category') == 'medical consumables')
-    )
-    annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
-    results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026.to_frame().T, 'median')).T
-
-    # Overall costs in 2026
-    mask = (input_costs_with_proportional_hrh_costs['year'] == YEAR_OF_SWITCH)
-
-    annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs[mask].groupby(['draw', 'run'])['cost'].sum()
-    results['annual_scenario_cost_2026'] = (
-        compute_summary_statistics(annual_scenario_cost_2026.to_frame().T).iloc[0].unstack()
-    )
     # Because of Issue 1877 (fixed in PR 1880, not merged in feature branch),
     # the simulations for the Nothing scenario and scenarios with zero HSIs are
     # not identical, as they should be. Consequently the costs and dalys are
@@ -491,13 +491,22 @@ def apply(
             ],
             ignore_index=True,
         )
-        annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs.loc[
-            input_costs_with_proportional_hrh_costs["year"].eq(YEAR_OF_SWITCH)
-        ].groupby(["draw", "run"])["cost"].sum()
-        results["annual_scenario_cost_2026"] = compute_summary_statistics(
-            annual_scenario_cost_2026.to_frame().T
-        ).iloc[0].unstack()
+    # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
+    annual_cons_cost = input_costs_with_proportional_hrh_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
+    mask = (
+        (annual_cons_cost.index.get_level_values('year') == YEAR_OF_SWITCH) &
+        (annual_cons_cost.index.get_level_values('cost_category') == 'medical consumables')
+    )
+    annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
+    results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026.to_frame().T, 'median')).T
 
+    # Overall costs in 2026
+    mask = (input_costs_with_proportional_hrh_costs['year'] == YEAR_OF_SWITCH)
+
+    annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs[mask].groupby(['draw', 'run'])['cost'].sum()
+    results['annual_scenario_cost_2026'] = (
+        compute_summary_statistics(annual_scenario_cost_2026.to_frame().T).iloc[0].unstack()
+    )
     # Computing incremental costs
     if do_comparison:
         print("Computing incremental_scenario_cost...")
