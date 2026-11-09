@@ -78,6 +78,12 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
     hr_needs = capacity_used.xs("central", level="stat", axis=1).T
 
     interventions = sorted(set(ce_dalys.index).intersection(set(ce_cost.index)))
+    interventions = [
+        intervention for intervention in interventions
+        if not format_scenario_name(intervention).casefold().startswith(
+            ("firstattendance", "inpatient_care")
+        )
+    ]
     if not interventions:
         raise ValueError("No overlapping interventions found between DALYs and costs.")
 

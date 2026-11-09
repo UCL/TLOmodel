@@ -14,11 +14,10 @@ import pandas as pd
 
 
 from tlo import Date
-from tlo.methods.consumables import get_item_code_from_item_name
+
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     format_scenario_name,
-    get_counts_of_appts,
     get_counts_of_hsi_by_short_treatment_id,
     get_num_dalys_by_cause_label,
     get_num_deaths_by_cause_label,
@@ -95,43 +94,6 @@ def parse_bool(value: str) -> bool:
 
 # source: http://doi.org/https://doi.org/10.1016/j.vhri.2023.10.007
 MALAWI_CET = 65.8
-
-def extract_art_dispensed(results_folder, resourcefilepath, target_period_tuple):
-    """Extract population-scaled ART treatment-days by calendar year and run."""
-    lookup = pd.read_csv(
-        resourcefilepath / "healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv"
-    )
-    # Daily tablet quantities in HSI_Hiv_StartOrContinueTreatment.get_drugs.
-    tablets_per_day = {
-        get_item_code_from_item_name(lookup, name): daily_quantity
-        for name, daily_quantity in (
-            ("First-line ART regimen: adult", 1),
-            ("First line ART regimen: older child", 3),
-            ("First line ART regimen: young child", 2),
-        )
-    }
-    start_year, end_year = (date.year for date in target_period_tuple)
-
-    def treatment_days(log):
-        years = log["date"].dt.year
-        used = log.loc[years.between(start_year, end_year), "Item_Used"]
-        quantities = used.map(
-            lambda items: sum(
-                items.get(str(code), items.get(code, 0)) / daily_quantity
-                for code, daily_quantity in tablets_per_day.items()
-            )
-        )
-        return quantities.groupby(years).sum().rename_axis("year")
-
-    return extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem.summary",
-        key="Consumables",
-        custom_generate_series=treatment_days,
-        do_scaling=True,
-        suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
-    )
-
 
 def apply(
     results_folder: Path,
@@ -220,15 +182,6 @@ def apply(
         compute_summary_statistics(counts_of_hsi_by_period, 'median')
     )
 
-    print("Extracting ART treatment-days dispensed...")
-    results["art_treatment_days_dispensed"] = compute_summary_statistics(
-        extract_art_dispensed(results_folder, resourcefilepath, (parse_iso_date("2025-01-01"), parse_iso_date("2025-12-31")))
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-        .drop(columns=cols_to_drop, errors="ignore")
-        .sort_index(),
-        "median"
-    )
-
     print("Extracting DALYs by label...")
     dalys = (
         extract_results(
@@ -242,6 +195,38 @@ def apply(
     )
 
     dalys = dalys.drop(columns=cols_to_drop)
+
+    # Because of Issue 1877 (fixed in PR 1880, not merged in feature branch),
+    # the simulations for the Nothing scenario and scenarios with zero HSIs are
+    # not identical, as they should be. Consequently the costs and dalys are
+    # both diffrent across. As a temporary fix, we will use the costs and dalys
+    # from the Nothing scenario for zero-HSIs scenarios. We expect that this
+    # will not be needed when we have more runs, thereby achieving more stable
+    # results.
+
+    # Note that Appointments scheduled before the 2026 service switch can carry over into
+    # 2026 specifically CardioMetabolicDisorders_Prevention_WeightLoss and
+    # CervicalCancer_PalliativeCare but because these are triggered by other
+    # treatment ids (not available from 2026), we will see 0 HSIs from 2027
+    # onwards.
+    implementation_counts = counts_of_hsi_by_period.loc[
+        (counts_of_hsi_by_period.index.get_level_values("period").astype(int) >= YEAR_OF_SWITCH)
+        & ~counts_of_hsi_by_period.index.get_level_values("appt_type").str.startswith(
+            ("FirstAttendance_", "Inpatient_Care")
+        )
+    ]
+
+    zero_hsi_by_run = implementation_counts.eq(0).all()
+    zero_hsi_scenarios = zero_hsi_by_run.groupby(level="draw").all()
+    zero_hsi_scenarios = zero_hsi_scenarios.index[zero_hsi_scenarios].drop("Nothing", errors="ignore")
+    print(f"Zero HSI scenarios {zero_hsi_scenarios}")
+    if len(zero_hsi_scenarios):
+        baseline_dalys = dalys.xs("Nothing", axis=1, level="draw")
+        for draw in zero_hsi_scenarios:
+            columns = dalys.columns[dalys.columns.get_level_values("draw") == draw]
+            dalys.loc[:, columns] = baseline_dalys.loc[
+                :, columns.get_level_values("run")
+            ].to_numpy()
 
     if do_comparison and "Nothing" in dalys.columns.get_level_values("draw"):
         post_switch = dalys.index.get_level_values("period").astype(int) >= YEAR_OF_SWITCH
@@ -477,6 +462,41 @@ def apply(
     results['annual_scenario_cost_2026'] = (
         compute_summary_statistics(annual_scenario_cost_2026.to_frame().T).iloc[0].unstack()
     )
+    # Because of Issue 1877 (fixed in PR 1880, not merged in feature branch),
+    # the simulations for the Nothing scenario and scenarios with zero HSIs are
+    # not identical, as they should be. Consequently the costs and dalys are
+    # both diffrent across. As a temporary fix, we will use the costs and dalys
+    # from the Nothing scenario for zero-HSIs scenarios. We expect that this
+    # will not be needed when we have more runs, thereby achieving more stable
+    # results.
+
+    if len(zero_hsi_scenarios):
+        baseline_costs = input_costs_with_proportional_hrh_costs.loc[
+            input_costs_with_proportional_hrh_costs["draw"].eq("Nothing")
+        ]
+        replacements = []
+        for draw in zero_hsi_scenarios:
+            runs = input_costs_with_proportional_hrh_costs.loc[
+                input_costs_with_proportional_hrh_costs["draw"].eq(draw), "run"
+            ].unique()
+            if not set(runs).issubset(baseline_costs["run"].unique()):
+                raise ValueError(f"Missing Nothing cost runs for zero-HSI scenario {draw}.")
+            replacements.append(baseline_costs.loc[baseline_costs["run"].isin(runs)].assign(draw=draw))
+        input_costs_with_proportional_hrh_costs = pd.concat(
+            [
+                input_costs_with_proportional_hrh_costs.loc[
+                    ~input_costs_with_proportional_hrh_costs["draw"].isin(zero_hsi_scenarios)
+                ],
+                *replacements,
+            ],
+            ignore_index=True,
+        )
+        annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs.loc[
+            input_costs_with_proportional_hrh_costs["year"].eq(YEAR_OF_SWITCH)
+        ].groupby(["draw", "run"])["cost"].sum()
+        results["annual_scenario_cost_2026"] = compute_summary_statistics(
+            annual_scenario_cost_2026.to_frame().T
+        ).iloc[0].unstack()
 
     # Computing incremental costs
     if do_comparison:
