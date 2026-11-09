@@ -114,13 +114,11 @@ class DiabeticRetinopathy(Module):
         ),
         "prob_antivegf_success_clinically_significant": Parameter(
             Types.REAL,
-            "Probability that anti-VEGF treatment improves vision (transition from clinically_significant to "
-            "non_clinically_significant)"
+            "Probability that anti-VEGF treatment improves overall vision"
         ),
         "prob_focal_laser_success_clinically_significant": Parameter(
             Types.REAL,
-            "Probability that focal laser treatment improves vision (transition from clinically_significant to "
-            "non_clinically_significant)"
+            "Probability that focal laser treatment improves overall vision"
         ),
         "prob_laser_prp_success_proliferative": Parameter(
             Types.REAL,
@@ -157,9 +155,10 @@ class DiabeticRetinopathy(Module):
             "Probability that successful focal laser treatment improves vision from "
             "severe_vision_impairment directly to normal",
         ),
-        "rr_progression_after_treatment": Parameter(
+        "rr_progression_after_antivegf_treatment": Parameter(
             Types.REAL,
-            "Relative risk of progression to more severe stages after receiving treatment (applied multiplicatively)"
+            "Relative risk of progression to more severe stages after receiving Anti-VEGF "
+            "treatment (applied multiplicatively)"
         ),
         "vision_transition_matrix_non_sight_threatening": Parameter(
             Types.LIST,
@@ -531,7 +530,7 @@ class DiabeticRetinopathy(Module):
             LinearModelType.MULTIPLICATIVE,
             p['prob_mild_or_moderate_to_severe'],
             Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, p['rr_progression_after_treatment']),
+            .when(True, p['rr_progression_after_antivegf_treatment']),
             Predictor('diabetes_duration_greater_than_15_years', external=True)
             .when(True, p['rr_diabetes_duration_greater_than_15'])
         )
@@ -540,7 +539,7 @@ class DiabeticRetinopathy(Module):
             LinearModelType.MULTIPLICATIVE,
             p['prob_severe_to_proliferative'],
             Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, p['rr_progression_after_treatment']),
+            .when(True, p['rr_progression_after_antivegf_treatment']),
             Predictor('diabetes_duration_greater_than_15_years', external=True)
             .when(True, p['rr_diabetes_duration_greater_than_15'])
         )
@@ -1011,7 +1010,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         diabetes_duration_greater_than_15_years = diabetes_duration_years >= 15
 
         had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.dr_date_treatment) & \
+            df.is_alive & ~pd.isnull(df.dmo_date_treatment) & \
             (df.dr_status == df.dr_stage_at_which_treatment_given)
 
         diabetes_and_alive_nodr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'none')]
@@ -1193,7 +1192,6 @@ class HSI_Dr_Dmo_Symptomatic_Presentation(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
             df.at[person_id, 'dr_date_last_screening'] = self.sim.date
             df.at[person_id, 'dr_diagnosed'] = True
-            df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             df.at[person_id, 'dr_dmo_diagnosis_pathway'] = 'symptomatic'
 
             # Set diabetes ever diagnosed to true if not already set
@@ -1300,7 +1298,6 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
             df.at[person_id, 'dr_date_last_screening'] = self.sim.date
             df.at[person_id, 'dr_diagnosed'] = True
-            df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             df.at[person_id, 'dr_dmo_diagnosis_pathway'] = 'screening'
 
             # Set diabetes ever diagnosed to true if not already set
@@ -1461,6 +1458,7 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'dmo_last_treatment_modality'] = 'antivegf'
             # Increment the injection count
             df.at[person_id, 'dmo_antivegf_count'] = df.at[person_id, 'dmo_antivegf_count'] + 1
+            df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
 
             # Continue monthly injections until the course reaches 4 injections.
             if df.at[person_id, 'dmo_antivegf_count'] < 4:
@@ -1528,7 +1526,6 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
             if sessions % 2 == 1:
                 df.at[person_id, 'on_laser_pan_retinal_photocoagulation_treatment'] = True
                 df.at[person_id, 'dr_date_prp_treatment'] = self.sim.date
-                df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
 
                 # Schedule session 2 in 1 week
                 next_session_date = self.sim.date + pd.DateOffset(weeks=1)
