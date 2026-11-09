@@ -61,6 +61,11 @@ def _build_optimizer_inputs(results: dict[str, Any]) -> pd.DataFrame:
     # Use full-horizon incremental outcomes for the objective.
     # Use 2026-only snapshot for constraints
     dalys_averted = results.get('dalys_averted')
+    # Replace non-significant DALY values with 0 to avoid optimizer issues
+    mask1 = dalys_averted['lower'] < 0
+    mask2 = dalys_averted['upper'] > 0
+    dalys_averted['central'][mask1 & mask2] = 0
+
     ce_dalys = dalys_averted['central']
 
     incremental_cost = results.get('incremental_scenario_cost')

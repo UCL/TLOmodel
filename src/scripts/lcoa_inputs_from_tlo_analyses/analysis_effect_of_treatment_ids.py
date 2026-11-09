@@ -14,6 +14,7 @@ import pandas as pd
 
 
 from tlo import Date
+from tlo.methods.consumables import get_item_code_from_item_name
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
     format_scenario_name,
@@ -76,7 +77,7 @@ EXCLUDED_HSIs = [
 ]
 SUSPENDED_RESULTS_FOLDER = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-09T145410Z")
 RESUMED_RESULTS_FOLDER = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-15T115126Z")
-
+YEAR_OF_SWITCH = 2026
 
 def parse_iso_date(value: str) -> Date:
     parsed = date.fromisoformat(value)
@@ -94,6 +95,43 @@ def parse_bool(value: str) -> bool:
 
 # source: http://doi.org/https://doi.org/10.1016/j.vhri.2023.10.007
 MALAWI_CET = 65.8
+
+def extract_art_dispensed(results_folder, resourcefilepath, target_period_tuple):
+    """Extract population-scaled ART treatment-days by calendar year and run."""
+    lookup = pd.read_csv(
+        resourcefilepath / "healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv"
+    )
+    # Daily tablet quantities in HSI_Hiv_StartOrContinueTreatment.get_drugs.
+    tablets_per_day = {
+        get_item_code_from_item_name(lookup, name): daily_quantity
+        for name, daily_quantity in (
+            ("First-line ART regimen: adult", 1),
+            ("First line ART regimen: older child", 3),
+            ("First line ART regimen: young child", 2),
+        )
+    }
+    start_year, end_year = (date.year for date in target_period_tuple)
+
+    def treatment_days(log):
+        years = log["date"].dt.year
+        used = log.loc[years.between(start_year, end_year), "Item_Used"]
+        quantities = used.map(
+            lambda items: sum(
+                items.get(str(code), items.get(code, 0)) / daily_quantity
+                for code, daily_quantity in tablets_per_day.items()
+            )
+        )
+        return quantities.groupby(years).sum().rename_axis("year")
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem.summary",
+        key="Consumables",
+        custom_generate_series=treatment_days,
+        do_scaling=True,
+        suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
+    )
+
 
 def apply(
     results_folder: Path,
@@ -178,15 +216,17 @@ def apply(
         .sort_index()
     ).drop(columns=cols_to_drop)
 
-    # Preserve individual draw/run columns before computing summary statistics.
-    print("Retaining spurious-emergency HSI counts by draw, run and year...")
-    spurious_emergency_counts = counts_of_hsi_by_period.loc[
-        counts_of_hsi_by_period.index.get_level_values('appt_type')
-        == 'FirstAttendance_SpuriousEmergencyCare'
-    ].droplevel('appt_type')
-    spurious_emergency_counts.index = spurious_emergency_counts.index.astype(int).rename('year')
     results['counts_of_hsi_by_period'] = (
         compute_summary_statistics(counts_of_hsi_by_period, 'median')
+    )
+
+    print("Extracting ART treatment-days dispensed...")
+    results["art_treatment_days_dispensed"] = compute_summary_statistics(
+        extract_art_dispensed(results_folder, resourcefilepath, (parse_iso_date("2025-01-01"), parse_iso_date("2025-12-31")))
+        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        .drop(columns=cols_to_drop, errors="ignore")
+        .sort_index(),
+        "median"
     )
 
     print("Extracting DALYs by label...")
@@ -202,6 +242,17 @@ def apply(
     )
 
     dalys = dalys.drop(columns=cols_to_drop)
+
+    if do_comparison and "Nothing" in dalys.columns.get_level_values("draw"):
+        post_switch = dalys.index.get_level_values("period").astype(int) >= YEAR_OF_SWITCH
+        dalys_by_cause = dalys.loc[post_switch].groupby(level="label").sum(min_count=1)
+        dalys_by_cause.loc["All causes"] = dalys_by_cause.sum(min_count=1)
+        nothing = dalys_by_cause.xs("Nothing", axis=1, level="draw")
+        scenarios = dalys_by_cause.drop(columns="Nothing", level="draw")
+        matched_nothing = nothing.reindex(columns=scenarios.columns.get_level_values("run"))
+        matched_nothing.columns = scenarios.columns
+        results["dalys_averted_by_cause_by_run"] = matched_nothing - scenarios
+        results["dalys_ratio_by_cause_by_run"] = scenarios.div(matched_nothing.where(matched_nothing.ne(0)))
 
     print("Extracting deaths by cause and period...")
     num_deaths = (
@@ -254,7 +305,7 @@ def apply(
     print("Calculating costs...")
     discount_rate_cost = 0.03
     # Period relevant for costing
-    TARGET_PERIOD = (Date(2026, 1, 1), Date(2040, 12, 31))
+    TARGET_PERIOD = (Date(YEAR_OF_SWITCH, 1, 1), Date(2040, 12, 31))
     relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
     list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
     print("List of relevant years for costing:", list_of_relevant_years_for_costing)
@@ -278,10 +329,9 @@ def apply(
     input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     results['input_costs'] = input_costs
 
-
     # Capacity_By_FacID_and_Officer logs the fraction of time used per officer
     # type.
-    # To get the actual minutes, we need to multiply by the total available minutes.
+    # To get the actual minutes, we multiply by the total available minutes.
     print("Extracting capacity fractions with clinic and facility identifiers...")
     # Set do_scaling to False as this is a fraction calculated during runtime.
     avg_frac_capacity_used_by_clinic_and_facility = extract_results(
@@ -316,10 +366,11 @@ def apply(
     ).sum()
     print("Converted facility fractions to minutes and aggregated by year, cadre and level.")
 
-    # Uuse the Nothing baseline for capacity scaling.
+    # Use the Nothing baseline for capacity scalin
     baseline_fractions_2025 = avg_frac_capacity_used_by_clinic_and_facility.xs(
         'Nothing', level='draw', axis=1
     ).xs(2025, level='year')
+    print(f"Extracted baseline fractions for 2025 from the Nothing scenario: {baseline_fractions_2025}")
 
     results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
 
@@ -350,7 +401,7 @@ def apply(
         .groupby(['OfficerType', 'year'])
         .sum()
     )
-    actual_capacity_used_by_cadre_2026 = actual_capacity_used_by_cadre.xs(2026, level='year', axis=0)
+    actual_capacity_used_by_cadre_2026 = actual_capacity_used_by_cadre.xs(YEAR_OF_SWITCH, level='year', axis=0)
 
     results['actual_capacity_used_by_cadre_2026'] = (
         compute_summary_statistics(actual_capacity_used_by_cadre_2026, 'median')
@@ -377,8 +428,8 @@ def apply(
 
     # The costing script calculates the HRH costs for the total cadre, not for the strength used.
     # We will remove the HRH costs from the input_costs; this includes other things besides salary
-    # Then we will add to the remaining costs the salary costs calculated above. This will gives us
-    # the total input costs for the intervention. Note that for the moment, we are ignoring non-salary HRH costs.
+    # Then we will add to the remaining costs the salary costs calculated above. This gives us
+    # the total input costs for the intervention. Note that are ignoring non-salary HRH costs.
 
     # Wrangling to make the actual_cost_by_cadre_and_level the same same as input_costs
     actual_cost_by_cadre_and_level = (
@@ -405,8 +456,7 @@ def apply(
     ]]
 
     actual_cost_by_cadre_and_level = actual_cost_by_cadre_and_level.reset_index(drop=True)
-    # Excluding 2026 as some inpatient care extends into this year.
-    mask = actual_cost_by_cadre_and_level['year'] > 2026
+    mask = actual_cost_by_cadre_and_level['year'] >= YEAR_OF_SWITCH
     # Now combine with input_costs
     input_costs = input_costs[input_costs['cost_category'] != 'human resources for health']
     input_costs_with_proportional_hrh_costs = pd.concat([input_costs, actual_cost_by_cadre_and_level[mask]])
@@ -414,14 +464,14 @@ def apply(
     # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
     annual_cons_cost = input_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
     mask = (
-        (annual_cons_cost.index.get_level_values('year') == 2026) &
+        (annual_cons_cost.index.get_level_values('year') == YEAR_OF_SWITCH) &
         (annual_cons_cost.index.get_level_values('cost_category') == 'medical consumables')
     )
     annual_cons_cost_2026 = annual_cons_cost[mask].droplevel(['year', 'cost_category'])
     results['annual_cons_cost_2026'] = (compute_summary_statistics(annual_cons_cost_2026.to_frame().T, 'median')).T
 
     # Overall costs in 2026
-    mask = (input_costs_with_proportional_hrh_costs['year'] == 2026)
+    mask = (input_costs_with_proportional_hrh_costs['year'] == YEAR_OF_SWITCH)
 
     annual_scenario_cost_2026 = input_costs_with_proportional_hrh_costs[mask].groupby(['draw', 'run'])['cost'].sum()
     results['annual_scenario_cost_2026'] = (
@@ -432,6 +482,17 @@ def apply(
     if do_comparison:
         print("Computing incremental_scenario_cost...")
         total_input_cost = input_costs_with_proportional_hrh_costs.groupby(['draw', 'run'])['cost'].sum()
+        diagnostic_costs = (
+            input_costs_with_proportional_hrh_costs.loc[
+                input_costs_with_proportional_hrh_costs["year"] >= YEAR_OF_SWITCH
+            ].groupby(["draw", "run"])["cost"].sum(min_count=1).unstack("draw")
+        )
+        cost_baseline = diagnostic_costs["Nothing"]
+        cost_scenarios = diagnostic_costs.drop(columns="Nothing")
+        results["overall_cost_difference_by_run"] = cost_scenarios.sub(cost_baseline, axis=0).T
+        results["overall_cost_ratio_by_run"] = cost_scenarios.div(
+            cost_baseline.where(cost_baseline.ne(0)), axis=0
+        ).T
         incremental_scenario_cost = (pd.DataFrame(
             find_difference_relative_to_comparison(
                 total_input_cost,
@@ -470,6 +531,7 @@ def apply(
         )
 
         dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
+        mean_dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='mean').iloc[0].unstack()
 
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
@@ -479,6 +541,7 @@ def apply(
 
     results['dalys'] = compute_summary_statistics(dalys, 'median')
     results['dalys_averted'] = dalys_averted if do_comparison else None
+    results['mean_dalys_averted'] = mean_dalys_averted if do_comparison else None
     results['pc_dalys_averted'] = pc_dalys_averted if do_comparison else None
     results['net_health'] = net_health_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
@@ -522,7 +585,10 @@ def apply(
             | dalys_and_costs_from_lcoa["icer"].notna()
         )
     ]
-    dalys_and_costs_from_lcoa['net_health'] = dalys_and_costs_from_lcoa['overall_dalys'] - dalys_and_costs_from_lcoa['overall_costs'] / MALAWI_CET
+    dalys_and_costs_from_lcoa['net_health'] = (
+        dalys_and_costs_from_lcoa['overall_dalys'] -
+        dalys_and_costs_from_lcoa['overall_costs'] / MALAWI_CET
+    )
     results["dalys_and_costs_from_lcoa"] = dalys_and_costs_from_lcoa
 
     return results

@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     SHORT_TREATMENT_ID_TO_COLOR_MAP,
+    compute_summary_statistics,
 )
 
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
@@ -291,39 +292,39 @@ def apply(
         )
     )
     print(f"Comparison metrics available: {comparison_metrics_available}")
-    if input_costs is not None:
-        print("Plotting costs by subcategory over time (one figure per treatment ID).")
-        for draw in input_costs['draw'].dropna().unique():
-            try:
-                fig, ax = plot_cost_by_subcategory_over_time_for_draw(input_costs, draw)
-            except ValueError as exc:
-                print(f"Skipping cost-subcategory plot for draw '{draw}': {exc}")
-                continue
+    # if input_costs is not None:
+    #     print("Plotting costs by subcategory over time (one figure per treatment ID).")
+    #     for draw in input_costs['draw'].dropna().unique():
+    #         try:
+    #             fig, ax = plot_cost_by_subcategory_over_time_for_draw(input_costs, draw)
+    #         except ValueError as exc:
+    #             print(f"Skipping cost-subcategory plot for draw '{draw}': {exc}")
+    #             continue
 
-            name_of_plot = f"Cost by Subcategory Over Time for {draw}"
-            ax.set_title(name_of_plot)
-            outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-            fig.savefig(outfile, bbox_inches='tight')
-            plt.close(fig)
+    #         name_of_plot = f"Cost by Subcategory Over Time for {draw}"
+    #         ax.set_title(name_of_plot)
+    #         outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    #         fig.savefig(outfile, bbox_inches='tight')
+    #         plt.close(fig)
 
-    if input_costs is not None and 'Nothing' in input_costs['draw'].values:
-        draws = input_costs['draw'].unique()
-        cost_subcategories = list(input_costs['cost_subcategory'].unique())
-        for draw in draws:
-            if draw == "Nothing":
-                continue
-            print(f"Comparing costs by subcategory over time for Nothing and {draw}")
-            draw_pair = ('Nothing', draw)
-            fig, axes = plot_cost_subcategories_over_time_for_draw_pair(
-              input_costs,
-              draws=draw_pair,
-              cost_subcategories=cost_subcategories,)
-            name_of_plot = f"Cost by Subcategory Over Time for {draw_pair[0]} and {draw_pair[1]}"
-            fig.suptitle(name_of_plot)
-            fig.tight_layout(rect=(0, 0, 1, 0.98))
-            outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
-            fig.savefig(outfile, bbox_inches='tight')
-            plt.close(fig)
+    # if input_costs is not None and 'Nothing' in input_costs['draw'].values:
+    #     draws = input_costs['draw'].unique()
+    #     cost_subcategories = list(input_costs['cost_subcategory'].unique())
+    #     for draw in draws:
+    #         if draw == "Nothing":
+    #             continue
+    #         print(f"Comparing costs by subcategory over time for Nothing and {draw}")
+    #         draw_pair = ('Nothing', draw)
+    #         fig, axes = plot_cost_subcategories_over_time_for_draw_pair(
+    #           input_costs,
+    #           draws=draw_pair,
+    #           cost_subcategories=cost_subcategories,)
+    #         name_of_plot = f"Cost by Subcategory Over Time for {draw_pair[0]} and {draw_pair[1]}"
+    #         fig.suptitle(name_of_plot)
+    #         fig.tight_layout(rect=(0, 0, 1, 0.98))
+    #         outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
+    #         fig.savefig(outfile, bbox_inches='tight')
+    #         plt.close(fig)
 
     if isinstance(undiscounted_dalys, pd.DataFrame) and isinstance(discounted_dalys, pd.DataFrame):
         undiscounted_totals = undiscounted_dalys.sum(axis=0).unstack("stat")
@@ -756,13 +757,138 @@ def apply(
         plt.close(fig)
         print(f"Saved: {name_of_plot}")
 
-    # Sanity-check figures use only the corresponding entries in the pickle.
     def save_plot(fig, ax, title):
         ax.set_title(title)
         fig.savefig(output_folder / make_graph_file_name(title), bbox_inches="tight")
         plt.close(fig)
         print(f"Saved: {title}")
 
+    art_dispensed = primary_results.get("art_treatment_days_dispensed")
+    if art_dispensed is not None:
+        art_outfile = output_folder / "art_treatment_days_dispensed_by_year.csv"
+        art_dispensed.T.to_csv(art_outfile)
+        print(f"Saved: {art_outfile}")
+
+    if undiscounted_dalys is not None:
+        for cause in undiscounted_dalys.index.get_level_values("label").unique():
+            fig, ax = plot_deaths_by_period_for_cause(undiscounted_dalys, cause)
+            ax.set_ylabel("Median annual DALYs (undiscounted)")
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(
+                handles, labels, title="Scenario", loc="center left",
+                bbox_to_anchor=(1.02, 0.5), ncol=max(1, (len(labels) + 29) // 30), fontsize=8,
+            )
+            save_plot(fig, ax, f"Annual DALYs by Scenario for {cause}")
+
+    if counts_of_hsi is not None:
+        appt_types = counts_of_hsi.index.get_level_values("appt_type")
+        non_first_attendance = counts_of_hsi.loc[
+            ~appt_types.str.startswith(("FirstAttendance_", "Inpatient_Care"))
+        ].xs("central", axis=1, level="stat")
+        zero_count_draws = non_first_attendance.columns[non_first_attendance.eq(0).all()]
+
+        cause_differences = primary_results.get("dalys_averted_by_cause_by_run")
+        cause_ratios = primary_results.get("dalys_ratio_by_cause_by_run")
+        diagnostic_metrics = []
+        if cause_differences is not None and cause_ratios is not None:
+            diagnostic_metrics.append((
+                cause_differences, cause_ratios, "DALY", "DALYs averted (Nothing − scenario)",
+                "DALYs accrued (scenario / Nothing)",
+            ))
+        cost_differences = primary_results.get("overall_cost_difference_by_run")
+        cost_ratios = primary_results.get("overall_cost_ratio_by_run")
+        if cost_differences is not None and cost_ratios is not None:
+            diagnostic_metrics.append((
+                cost_differences.stack().to_frame("Overall costs").T,
+                cost_ratios.stack().to_frame("Overall costs").T,
+                "Cost", "Incremental costs (scenario − Nothing, USD)", "Overall costs (scenario / Nothing)",
+            ))
+        for cause_differences, cause_ratios, metric, difference_label, ratio_label in diagnostic_metrics:
+            selected = cause_differences.columns.get_level_values("draw").isin(zero_count_draws)
+            differences = cause_differences.loc[:, selected]
+            ratios = cause_ratios.reindex_like(differences)
+            draws = differences.columns.get_level_values("draw").unique()
+            positions = np.arange(len(draws))
+            runs = differences.columns.get_level_values("run").unique()
+            for cause, difference in differences.iterrows():
+                if not difference.notna().any():
+                    continue
+                fig, axes = plt.subplots(1, 2, sharey=True, figsize=(12, max(4, 0.35 * len(draws) + 2)))
+                for ax, values, reference, xlabel in (
+                    (axes[0], difference, 0, difference_label),
+                    (axes[1], ratios.loc[cause], 1, ratio_label),
+                ):
+                    for run, offset in zip(runs, np.linspace(-0.22, 0.22, len(runs)) if len(runs) > 1 else [0]):
+                        by_draw = values.xs(run, level="run").reindex(draws)
+                        ax.scatter(by_draw, positions + offset, label=f"Run {run}", s=20)
+                    ax.axvline(reference, color="grey", linestyle="--", linewidth=1)
+                    ax.set_xlabel(xlabel)
+                    ax.grid(axis="x", alpha=0.25)
+                    ax.set_axisbelow(True)
+                    ax.grid(axis="y", color="grey", alpha=0.2, linewidth=0.7)
+                axes[0].set_yticks(positions, draws)
+                axes[0].set_ylabel("Zero-appointment scenario")
+                axes[1].legend()
+                save_plot(fig, axes[0], f"Matched Run {metric} Comparisons for {cause}")
+
+        if art_dispensed is not None and 2025 in art_dispensed.index:
+            art_2025 = art_dispensed.loc[[2025]]
+            if "stat" not in art_2025.columns.names:
+                art_2025 = compute_summary_statistics(art_2025, central_measure="median")
+            art_by_draw = art_2025.loc[2025].unstack("stat")
+            selected_draws = art_by_draw.index.isin(zero_count_draws) | (art_by_draw.index == "Nothing")
+            art_by_draw = art_by_draw.loc[selected_draws, ["lower", "central", "upper"]].dropna()
+            if "Nothing" in art_by_draw.index:
+                baseline = art_by_draw.loc["Nothing", "central"]
+                art_by_draw = (art_by_draw.sort_values("central") - baseline) / 1e6
+                fig, ax = plt.subplots(figsize=(10, max(4, 0.3 * len(art_by_draw) + 2)))
+                central = art_by_draw["central"]
+                ax.errorbar(
+                    central, art_by_draw.index,
+                    xerr=[central - art_by_draw["lower"], art_by_draw["upper"] - central],
+                    fmt="o", capsize=3,
+                )
+                ax.axvline(0, color="grey", linestyle="--", linewidth=1)
+                ax.set_xlabel("Difference from Nothing (million population-scaled ART treatment-days)")
+                ax.set_ylabel("Scenario")
+                ax.grid(axis="x", alpha=0.25)
+                save_plot(fig, ax, "2025 ART Dispensing Difference from Nothing for Zero-Appointment Scenarios")
+            else:
+                print("Skipping 2025 ART difference plot: Nothing summary missing or incomplete.")
+
+        for statistic, summary in (
+            ("Mean", primary_results.get("mean_dalys_averted")),
+            ("Median", dalys_averted),
+        ):
+            if summary is None:
+                print(f"Skipping {statistic.lower()} DALY offset heatmap: summary missing.")
+                continue
+
+            effects = summary["central"]
+            offsets = effects.loc[effects.index.isin(zero_count_draws)]
+            other_effects = effects.loc[~effects.index.isin(zero_count_draws) & (effects.index != "Nothing")]
+            denominators = other_effects.where(other_effects.ne(0))
+            ratios = np.ma.masked_invalid(offsets.to_numpy()[:, None] / denominators.to_numpy())
+            print(f"*********** Ratios *******************")
+            print(f"{ratios}")
+            if ratios.count() == 0:
+                print(f"Skipping {statistic.lower()} DALY offset heatmap: no defined ratios.")
+                continue
+
+            width = max(10, 0.35 * len(other_effects) + 4)
+            height = max(4, 0.4 * len(offsets) + 3)
+            fig, ax = plt.subplots(figsize=(width, height))
+            limit = np.abs(ratios).max() or 1
+            cmap = plt.get_cmap("RdBu_r").with_extremes(bad="lightgrey")
+            heatmap = ax.imshow(ratios, aspect="auto", cmap=cmap, vmin=-limit, vmax=limit)
+            ax.set_xticks(np.arange(len(other_effects)), other_effects.index, rotation=90)
+            ax.set_yticks(np.arange(len(offsets)), offsets.index)
+            ax.set_xlabel("Treatment ID")
+            ax.set_ylabel("Zero-appointment scenario")
+            fig.colorbar(heatmap, ax=ax, label=f"Offset / {statistic.lower()} DALYs averted")
+            save_plot(fig, ax, f"{statistic} DALYs Averted Offset Ratios")
+
+    # Sanity-check figures use only the corresponding entries in the pickle.
     population = primary_results.get('total_population_by_year')
     if population is not None:
         fig, ax = plot_population_by_year(population)
