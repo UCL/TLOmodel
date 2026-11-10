@@ -183,7 +183,6 @@ class HistoricalChangesInHRH(BaseScenario):
                             'max_healthsystem_function': [False, False],
                         },
                         "HealthSystem": {
-                            "policy_name": "LCOA_EHP",
                             "cons_availability_postSwitch": "all",
                         }
                     }
@@ -197,7 +196,6 @@ class HistoricalChangesInHRH(BaseScenario):
                             'max_healthsystem_function': [False, False],
                         },
                         "HealthSystem": {
-                            "policy_name": "LCOA_EHP",
                             "cons_availability_postSwitch": "all",
                             "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
                         }
@@ -212,7 +210,6 @@ class HistoricalChangesInHRH(BaseScenario):
                             'max_healthsystem_function': [False, True],
                         },
                         "HealthSystem": {
-                            "policy_name": "LCOA_EHP",
                             "cons_availability_postSwitch": "all",
                         }
                     }
@@ -226,7 +223,6 @@ class HistoricalChangesInHRH(BaseScenario):
                             'max_healthsystem_function': [False, True],
                         },
                         "HealthSystem": {
-                            "policy_name": "LCOA_EHP",
                             "cons_availability_postSwitch": "all",
                             "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
                         }
