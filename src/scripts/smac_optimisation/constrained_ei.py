@@ -8,7 +8,7 @@ combination rules are provided, selected by a single parameter
 (`combination`, sourced from optimisation_parameters.CONSTRAINT_COMBINATION):
 
     "multiplicative":  acquisition(x) = EI(x) * prod_j P_j(x)
-    "additive":        acquisition(x) = EI(x) - alpha * sum_j pi_j(x)
+    "additive":        acquisition(x) = EI of the merit f_0(x) + alpha * sum_j pi_j(x)
 
 where P_j(x) is the probability that constraint j is satisfied at x and
 pi_j(x) is its expected budget overshoot. Both are defined below.
@@ -89,42 +89,60 @@ uncorrelated constraints. Consequences worth knowing:
     correlations is not known in advance.
   - It needs no calibration beyond xi.
 
-COMBINATION 2: "additive" (no independence assumption)
-------------------------------------------------------
-Each constraint instead contributes its own expected budget overshoot,
-the expected part of g_j that lies above a tolerance delta >= 0,
+COMBINATION 2: "additive" (merit-improvement form)
+--------------------------------------------------
+Each constraint contributes its own expected budget overshoot, the expected
+part of g_j that lies above a tolerance delta >= 0,
 
     pi_j(x) = E[ max(g_j(x) - delta, 0) ],   g_j(x) ~ N(mu_j, sigma_j^2)
             = (mu_j - delta) * Phi(z_j) + sigma_j * phi(z_j),
       z_j = (mu_j - delta) / sigma_j,                                     (5)
 
-which is the same rectified-normal integral as EI (Eq. 3), mirrored (EI is
-an expected gain below a threshold; pi_j an expected loss above one). The
-terms are summed and subtracted from EI,
+the same rectified-normal integral as EI (Eq. 3), mirrored. The overshoots
+are added to the objective with an exchange rate alpha (DALYs per unit, i.e.
+100%, of overshoot) to give a MERIT,
 
-    acquisition(x) = EI(x) - alpha * sum_j pi_j(x).                       (6)
+    M(x) = f_0(x) + alpha * sum_j max(g_j(x) - delta, 0),                 (6)
 
-Because each constraint is penalised on its own terms and the penalties
-are added, the rule makes no claim about the joint probability of
-feasibility and so does not depend on any assumption about how the
-constraints are correlated. Properties:
-  - pi_j is in units of fractional budget overshoot (0.10 = expected 10%
-    over budget in the worst year), so alpha has a direct meaning: DALYs
-    per unit (100%) of expected overshoot, i.e. an exchange rate between
-    the objective and budget. EI is in DALYs, so the two terms are
-    commensurable - but alpha must be set on the scale of the DALYs this
-    pipeline produces (derived in the pipeline from the baseline: see
-    optimisation_parameters.MERIT_DALYS_IMPROVEMENT_PCT).
-  - The penalty grows with the SIZE of the expected overshoot, not just its
-    likelihood, and it grows only linearly with the number of constraints.
-  - A constraint whose estimate is uncertain is penalised somewhat more than
-    a confident one with the same mean (pi_j increases with sigma_j).
+and the acquisition value is the expected improvement of M over the best
+merit eta_M found so far,
+
+    acquisition(x) = (eta_M - mu_M - xi) Phi(z) + sigma_M phi(z),         (7)
+    mu_M = mu_0 + alpha * sum_j pi_j,
+    sigma_M^2 = sigma_0^2 + alpha^2 * sum_j Var[max(g_j - delta, 0)],
+    z = (eta_M - mu_M - xi) / sigma_M,
+
+with Var[max(g - delta, 0)] = E[o^2] - E[o]^2 and
+E[o^2] = (d^2 + sigma^2) Phi(z) + d sigma phi(z), d = mu - delta.
+eta_M is the lowest predicted merit among the configs that are feasible by
+their median slack (all observed configs if none is feasible yet).
+
+Why this form: subtracting alpha * sum pi_j from EI (the previous form) did
+not shrink as EI shrank, so late in a run, when EI is tiny everywhere, the
+penalty dominated and the maximiser drifted to the safest, best-known
+region instead of the most promising one. Here the penalty enters INSIDE
+the improvement: a candidate scores only if its predicted DALYs, plus the
+price of its expected overshoot, beat the best feasible configuration.
+The value is non-negative and decays to zero as the achievable improvement
+vanishes, exactly like ordinary EI.
+Properties:
+  - alpha keeps its meaning: DALYs per unit (100%) of expected overshoot, an
+    exchange rate between objective and budget, derived in the pipeline from
+    the baseline (optimisation_parameters.MERIT_DALYS_IMPROVEMENT_PCT).
+  - The merit MEAN is exact whatever the correlations between constraints
+    (expectations add). Only the merit VARIANCE treats the objective and the
+    constraints as uncorrelated; that approximation affects exploration
+    weight, not the exchange rate. No product of probabilities is formed, so
+    the geometric discount of the multiplicative rule does not arise.
+  - The penalty grows with the SIZE of the expected overshoot and linearly
+    with the number of constraints; uncertain constraint estimates are
+    penalised somewhat more than confident ones (pi_j increases with sigma_j).
   - delta (MERIT_OVERSHOOT_TOLERANCE) ignores expected overshoot below that
-    fraction of the budget; 0 counts any expected overshoot. It only
-    softens the search penalty: feasibility of a reported answer is always
-    judged on g_j <= 0 directly.
-  - The penalty is not capped, so a candidate predicted to be far over
-    budget can score very negative; this is intended.
+    fraction of the budget; 0 counts any. It only softens the search:
+    feasibility of a reported answer is always judged on g_j <= 0 directly.
+  - Before any config is feasible, eta_M comes from all observed configs, so
+    the search minimises DALYs and overshoot together rather than exploring
+    the objective alone.
 
 In both modes only the choice of which configuration to evaluate NEXT is
 affected. Which configuration is finally reported depends only on the
@@ -282,6 +300,34 @@ def expected_overshoot(mean: np.ndarray, std: np.ndarray, tolerance: float) -> n
     return np.maximum(pi, 0.0)
 
 
+def overshoot_variance(mean: np.ndarray, std: np.ndarray, tolerance: float) -> np.ndarray:
+    """Variance of o = max(g - tolerance, 0) for g ~ N(mean, std^2):
+    E[o^2] - E[o]^2 with E[o^2] = (d^2 + std^2) Phi(z) + d std phi(z), d = mean - tolerance."""
+    d = mean - tolerance
+    z = d / std
+    second = (d * d + std * std) * norm.cdf(z) + d * std * norm.pdf(z)
+    first = d * norm.cdf(z) + std * norm.pdf(z)
+    return np.maximum(second - first * first, 0.0)
+
+
+def merit_moments(
+    mean_obj: np.ndarray,
+    std_obj: np.ndarray,
+    constraint_preds: Sequence[tuple[np.ndarray, np.ndarray]],
+    alpha: float,
+    tolerance: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Eq. (6): mean and std of the merit M = f_0 + alpha * sum_j max(g_j - tolerance, 0),
+    moment-matched to a Gaussian. The mean is exact (expectations add whatever the
+    correlations); the variance assumes the terms are uncorrelated."""
+    mean = mean_obj.copy()
+    var = std_obj ** 2
+    for mean_c, std_c in constraint_preds:
+        mean = mean + alpha * expected_overshoot(mean_c, std_c, tolerance)
+        var = var + alpha ** 2 * overshoot_variance(mean_c, std_c, tolerance)
+    return mean, np.maximum(np.sqrt(var), 1e-6)
+
+
 # --------------------------------------------------------------------------
 # 4. The constrained EI acquisition function
 # --------------------------------------------------------------------------
@@ -289,7 +335,7 @@ def expected_overshoot(mean: np.ndarray, std: np.ndarray, tolerance: float) -> n
 class ConstrainedEI(AbstractAcquisitionFunction):
     """
     acquisition(x) = EI(x) * prod_j P_j(x)           (combination="multiplicative")
-    acquisition(x) = EI(x) - alpha * sum_j pi_j(x)   (combination="additive")
+    acquisition(x) = EI of the merit M(x) = f_0 + alpha * sum_j pi_j  (combination="additive")
 
     See the module docstring for the definitions and the trade-off between
     the two rules.
@@ -329,7 +375,7 @@ class ConstrainedEI(AbstractAcquisitionFunction):
         combination: str = COMBINATION_MULTIPLICATIVE,  # HYPERPARAMETER: the single
                                        # switch between the two rules - "multiplicative"
                                        # (EI * prod P_j; assumes uncorrelated
-                                       # constraints) or "additive" (EI - alpha *
+                                       # constraints) or "additive" (EI of the merit f_0 + alpha *
                                        # sum pi_j; no such assumption). Sourced from
                                        # optimisation_parameters.CONSTRAINT_COMBINATION.
         alpha: float = 1.0,  # HYPERPARAMETER (additive only): derived from MERIT_DALYS_IMPROVEMENT_PCT/
@@ -408,12 +454,29 @@ class ConstrainedEI(AbstractAcquisitionFunction):
             rows[0]["config_object"] for rows in by_config.values()
             if all(float(np.median([r[c] for r in rows])) <= 0 for c in self._constraint_names)
         ]
-        if feasible_configs:
-            X_feasible = configs_to_array(feasible_configs)
-            mean_pred, _ = self._surrogate.predict(X_feasible)[self._objective_name]
-            self._eta = float(np.min(mean_pred))
+        if self._combination == COMBINATION_MULTIPLICATIVE:
+            if feasible_configs:
+                X_feasible = configs_to_array(feasible_configs)
+                mean_pred, _ = self._surrogate.predict(X_feasible)[self._objective_name]
+                self._eta = float(np.min(mean_pred))
+            else:
+                self._eta = None
         else:
-            self._eta = None
+            # Merit mode: eta is the best predicted MERIT (objective plus
+            # penalised expected overshoot, Eq. 6) among the median-feasible
+            # configs, so a candidate has to beat the best feasible
+            # configuration after paying for its own expected overshoot. If
+            # nothing is feasible yet, the best predicted merit over every
+            # observed config is used, which steers the search towards low
+            # DALYs and low overshoot together.
+            pool = feasible_configs or [rows[0]["config_object"] for rows in by_config.values()]
+            preds_pool = self._surrogate.predict(configs_to_array(pool))
+            mean_m, _ = merit_moments(
+                *preds_pool[self._objective_name],
+                [preds_pool[c] for c in self._constraint_names],
+                self._alpha, self._tolerance,
+            )
+            self._eta = float(np.min(mean_m))
         # If nothing feasible has been observed yet, self._eta stays None
         # and EI below falls back to pure exploration on the objective mean.
 
@@ -434,28 +497,27 @@ class ConstrainedEI(AbstractAcquisitionFunction):
         preds = self._surrogate.predict(X)
         mean_obj, std_obj = preds[self._objective_name]
 
-        # --- Expected Improvement on the objective (minimization) ---
-        if self._eta is None:
-            # No feasible point observed yet: pure exploration signal,
-            # so the search is pushed toward reducing predictive variance
-            # rather than chasing an EI target we can't define yet.
-            ei = std_obj
-        else:
-            ei = expected_improvement(mean_obj, std_obj, self._eta, self._xi)
-
-        # --- Combine with the constraints (module docstring Eqs. 4-6) ---
         if self._combination == COMBINATION_MULTIPLICATIVE:
+            # --- Expected Improvement on the objective (minimization) ---
+            if self._eta is None:
+                # No feasible point observed yet: pure exploration signal,
+                # so the search is pushed toward reducing predictive variance
+                # rather than chasing an EI target we can't define yet.
+                ei = std_obj
+            else:
+                ei = expected_improvement(mean_obj, std_obj, self._eta, self._xi)
             prob_feasible = np.ones(X.shape[0])
             for name in self._constraint_names:
                 mean_c, std_c = preds[name]
                 prob_feasible *= probability_feasible(mean_c, std_c)
             acquisition_value = ei * prob_feasible
         else:
-            total_overshoot = np.zeros(X.shape[0])
-            for name in self._constraint_names:
-                mean_c, std_c = preds[name]
-                total_overshoot += expected_overshoot(mean_c, std_c, self._tolerance)
-            acquisition_value = ei - self._alpha * total_overshoot
+            # --- Expected improvement of the merit (module docstring Eq. 6-7) ---
+            mean_m, std_m = merit_moments(
+                mean_obj, std_obj, [preds[c] for c in self._constraint_names],
+                self._alpha, self._tolerance,
+            )
+            acquisition_value = expected_improvement(mean_m, std_m, self._eta, self._xi)
 
         return acquisition_value.reshape(-1, 1)
 

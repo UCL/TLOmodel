@@ -137,11 +137,14 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #           constraints are statistically independent (uncorrelated); the
 #           product shrinks geometrically with the number of constraints.
 #           No extra parameters.
-#       "additive": acquisition = EI - alpha * sum_j E[max(
-#           g_j - MERIT_OVERSHOOT_TOLERANCE, 0)]. Makes no independence
-#           assumption; penalises the expected SIZE of the overshoot, and
-#           grows only linearly with the number of constraints. Needs
-#           the exchange rate (MERIT_DALYS_IMPROVEMENT_PCT /
+#       "additive": acquisition = expected improvement of the MERIT
+#           f_0 + alpha * sum_j max(g_j - MERIT_OVERSHOOT_TOLERANCE, 0)
+#           over the best feasible merit so far. The penalty enters inside
+#           the improvement, so the value stays >= 0 and shrinks with EI as
+#           the search converges. Penalises the expected SIZE of the
+#           overshoot, grows only linearly with the number of constraints,
+#           and the merit mean needs no independence assumption. Needs the
+#           exchange rate (MERIT_DALYS_IMPROVEMENT_PCT /
 #           MERIT_BUDGET_VIOLATION_PCT) chosen.
 #     Only steers which config is evaluated next; the reported answer is
 #     always chosen on the recorded g_j <= 0.
@@ -158,11 +161,12 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #         alpha = (X / Y) * baseline median DALYs
 #     (baseline median DALYs is read from BASELINE_SUMMARY_FILE, written by
 #     the baseline run). Example: X = 10, Y = 2 gives alpha = 5 * baseline
-#     DALYs, i.e. 1% of expected overshoot costs 5% of baseline DALYs of
-#     acquisition value. The same rate applies to all six constraints.
-#     Only X / Y matters. Larger X / Y = stricter on violations. Judge it
-#     against late-run EI values, which shrink as the search converges: a
-#     rate that is too strict will push the search away from the boundary.
+#     DALYs, i.e. a candidate with 1% of expected overshoot must be 5% of
+#     baseline DALYs better than the best feasible config to be worth trying. The same rate applies to all six constraints.
+#     Only X / Y matters. Larger X / Y = stricter on violations. Because the penalty
+#     sits inside the improvement, it no longer overwhelms a small late-run
+#     EI, but a rate that is too strict still keeps the search away from the
+#     boundary.
 #     Not used in multiplicative mode.
 #
 # MERIT_OVERSHOOT_TOLERANCE

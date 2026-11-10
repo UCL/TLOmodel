@@ -110,9 +110,9 @@ from optimisation_parameters import (
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
     SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
+    JOB_LOG_FILE,
 )
 import json
-JOB_LOG_FILE = Path("submitted_jobs.jsonl")
 
 
 def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hexsha: str) -> None:
@@ -1693,8 +1693,8 @@ acquisition_function = ConstrainedEI(
                        # actually tune it from here
     combination=CONSTRAINT_COMBINATION,  # single switch: "multiplicative"
                        # (EI * prod_j P(feasible_j); assumes uncorrelated
-                       # constraints) or "additive" (EI - alpha * sum_j
-                       # expected overshoot_j; no such assumption) - see
+                       # constraints) or "additive" (EI of the merit
+                       # f_0 + alpha * sum_j expected overshoot_j) - see
                        # optimisation_parameters.py's own description
     alpha=derive_merit_penalty_alpha(),  # additive mode only: DALYs per
                        # unit (100%) of expected budget overshoot, derived
