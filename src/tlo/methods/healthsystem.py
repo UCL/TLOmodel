@@ -1257,6 +1257,9 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         for clinic, clinic_cl in self._daily_capabilities.items():
+            # Factor actually applied to each facID_and_officer in this clinic (1.0 if not rescaled)
+            applied_rescaling_factors = {}
+
             for facID_and_officer in clinic_cl.keys():
                 rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
                     facID_and_officer=facID_and_officer, clinic=clinic
@@ -1269,6 +1272,27 @@ class HealthSystem(Module):
                     # daily patient facing time per day than contracted (or equivalently performing appts more
                     # efficiently).
                     self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
+
+                    applied_rescaling_factors[facID_and_officer] = float(rescaling_factor)
+                else:
+                    applied_rescaling_factors[facID_and_officer] = 1.0
+
+            # Log the factors applied in this clinic (one entry per clinic, same layout as
+            # 'Capacity_By_FacID_and_Officer')
+            logger_summary.info(
+                key="Capabilities_Rescaling_Factor_By_FacID_and_Officer",
+                description="The factor by which the daily capabilities of each officer type at each facility were "
+                "rescaled to capture effective capability (1.0 where no rescaling was applied).",
+                data=flatten_multi_index_series_into_dict_for_logging(
+                    pd.Series(
+                        index=pd.MultiIndex.from_tuples(
+                            [(clinic, key) for key in applied_rescaling_factors.keys()],
+                            names=["clinic", "facID_and_officer"],
+                        ),
+                        data=list(applied_rescaling_factors.values()),
+                    ).sort_index()
+                ),
+            )
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
