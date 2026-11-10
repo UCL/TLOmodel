@@ -438,7 +438,7 @@ def print_config_group_details(records: list[dict], only_multi: bool = True) -> 
         print()
 
 
-def load_baseline_summary(filepath: str = BASELINE_SUMMARY_FILE) -> dict | None:
+def load_baseline_summary(filepath: str | Path = BASELINE_SUMMARY_FILE) -> dict | None:
     """
     Reads the baseline run's summary (median DALYs, n_runs), written by
     postprocess_output.compute_and_save_baseline_budgets() the last time
@@ -456,7 +456,7 @@ def load_baseline_summary(filepath: str = BASELINE_SUMMARY_FILE) -> dict | None:
 
 def plot_dalys_by_completion_order(
     records: list[dict],
-    baseline_summary_path: str = BASELINE_SUMMARY_FILE,
+    baseline_summary_path: str | Path = BASELINE_SUMMARY_FILE,
     color_by: str = "intensification",
     order_by: str = "completion",
 ):

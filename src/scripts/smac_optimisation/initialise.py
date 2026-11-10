@@ -25,6 +25,8 @@ HIV-HRH and HIV-consumable.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
@@ -135,6 +137,13 @@ if not _postprocess_years.issubset(_period_years):
 # defined here) - see that file's own comment for why, and
 # postprocess_output.compute_and_save_baseline_budgets() for how this
 # file gets WRITTEN, if SUBMIT_BASELINE_RUN is True.
+if not Path(COST_LIMITS_FILE).exists():
+    raise FileNotFoundError(
+        f"{COST_LIMITS_FILE} not found. Precomputed budget limits live in the 'inputs' folder; "
+        "move an existing cost_limits_by_year.csv there, or generate it from a baseline run "
+        "(SUBMIT_BASELINE_RUN = True, which calls "
+        "postprocess_output.compute_and_save_baseline_budgets())."
+    )
 _limits_df = pd.read_csv(COST_LIMITS_FILE)
 HIV_HRH_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_hrh_budget"]))
 HIV_CONSUMABLE_BUDGET_BY_YEAR = dict(zip(_limits_df["year"], _limits_df["hiv_consumable_budget"]))
@@ -205,7 +214,7 @@ def bucket_peak_budget_slack(cost_by_year: dict, budget_by_year: dict) -> list[f
             if year not in _warned_zero_budget_years:
                 print(
                     f"[warning] budget for year {year} is {budget} (<= 0) - treating as "
-                    f"undefined and skipping, not dividing by it. Check cost_limits_by_year.csv - "
+                    f"undefined and skipping, not dividing by it. Check the cost-limits CSV in the inputs folder - "
                     f"this usually means the baseline run never recorded any cost for this "
                     f"year/category (see compute_and_save_baseline_budgets())."
                 )

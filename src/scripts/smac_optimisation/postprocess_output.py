@@ -38,7 +38,7 @@ from tlo.analysis.utils import load_pickled_dataframes
 from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from optimisation_parameters import (
     YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
-    BASELINE_BUDGET_COMPARISON_FILE, POP_SIZE,
+    BASELINE_BUDGET_COMPARISON_FILE, INPUTS_DIR, POP_SIZE,
 )
 
 # Malawi's real population, used as the numerator of the scaling-factor
@@ -311,6 +311,7 @@ def _report_budget_comparison(per_run_results: list, hrh_stats: dict, cons_stats
             f"[baseline] {category}: {n_breach_any}/{n_runs} baseline runs exceed the upper-95%-CI budget "
             f"in at least one year (0/{n_runs} under the max budget, by construction)."
         )
+    INPUTS_DIR.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(BASELINE_BUDGET_COMPARISON_FILE, index=False)
     for line in summary_lines:
         print(line)
@@ -433,6 +434,7 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
         for year in range(first_year, last_year + 1)
     ]
 
+    INPUTS_DIR.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(COST_LIMITS_FILE, index=False)
     print(f"[baseline] {COST_LIMITS_FILE} updated (budget = highest yearly cost across runs): {n_runs} run(s), years {first_year}-{last_year}.")
 
@@ -449,6 +451,7 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     # genuinely different computation from a plain aggregate DALYs
     # figure, not another instance of the same mean-vs-median choice.
     median_dalys = float(np.median([r["dalys"] for r in per_run_results]))
+    INPUTS_DIR.mkdir(parents=True, exist_ok=True)
     with open(BASELINE_SUMMARY_FILE, "w") as f:
         json.dump({"median_dalys": median_dalys, "n_runs": n_runs}, f, indent=2)
     print(f"[baseline] {BASELINE_SUMMARY_FILE} updated: median DALYs = {median_dalys:.4f} ({n_runs} runs).")

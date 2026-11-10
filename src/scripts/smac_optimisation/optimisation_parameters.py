@@ -1,3 +1,5 @@
+from pathlib import Path
+
 # --------------------------------------------------------------------------
 # TLO / hyperparameters
 # --------------------------------------------------------------------------
@@ -49,9 +51,14 @@ VALID_CHECKPOINT_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
 SUBMIT_BASELINE_RUN = False
-COST_LIMITS_FILE = "cost_limits_by_year.csv"
-BASELINE_SUMMARY_FILE = "baseline_summary.json"
-BASELINE_BUDGET_COMPARISON_FILE = "baseline_budget_comparison.csv"
+# All precomputed, baseline-derived files live in INPUTS_DIR (a folder named
+# "inputs" in the working directory), which is created here if missing so
+# that every reader and writer can rely on it existing.
+INPUTS_DIR = Path("inputs")
+INPUTS_DIR.mkdir(parents=True, exist_ok=True)
+COST_LIMITS_FILE = INPUTS_DIR / "cost_limits_by_year.csv"
+BASELINE_SUMMARY_FILE = INPUTS_DIR / "baseline_summary.json"
+BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
@@ -306,6 +313,15 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     single baseline run, and how many baseline runs would have exceeded
 #     a CI-based budget.
 
+
+# INPUTS_DIR, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE, BASELINE_BUDGET_COMPARISON_FILE
+#     Precomputed, baseline-derived files all live in INPUTS_DIR ("inputs",
+#     relative to the working directory). The folder is created automatically
+#     when optimisation_parameters is imported (and again before each write),
+#     so it never needs creating by hand. Logs (history_log.jsonl,
+#     submitted_jobs.jsonl) and downloaded run outputs ("outputs") are not
+#     inputs and stay where they were. An existing cost_limits_by_year.csv or
+#     baseline_summary.json must be moved into inputs/ once.
 
 # --- Initial design ----------------------------------------------------------
 # N_INIT jobs (N_INIT-1 randomly-sampled configs, plus the baseline
