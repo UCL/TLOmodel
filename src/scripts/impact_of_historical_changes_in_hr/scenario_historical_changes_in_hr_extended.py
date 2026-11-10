@@ -179,9 +179,6 @@ class HistoricalChangesInHRH(BaseScenario):
                 mix_scenarios(
                     self._common_baseline(),
                     {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, False],
-                        },
                         "HealthSystem": {
                             "cons_availability_postSwitch": "all",
                         }
@@ -192,9 +189,6 @@ class HistoricalChangesInHRH(BaseScenario):
                 mix_scenarios(
                     self._common_baseline(),
                     {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, False],
-                        },
                         "HealthSystem": {
                             "cons_availability_postSwitch": "all",
                             "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
