@@ -44,13 +44,13 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations)
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
-SUBMIT_SUSPEND_PART = False
+SUBMIT_SUSPEND_PART = True
 VALID_CHECKPOINT_COMMITS: list[str] = []
 
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = False
+SUBMIT_BASELINE_RUN = True
 # All precomputed, baseline-derived files live in INPUTS_DIR (a folder named
 # "inputs" in the working directory), which is created here if missing so
 # that every reader and writer can rely on it existing.
@@ -74,7 +74,7 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
 VALID_PRIOR_RUN_COMMITS: list[str] = []
-SUBMIT_INITIAL_DESIGN = False
+SUBMIT_INITIAL_DESIGN = True
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
 INITIAL_DESIGN_PERTURBATION_STD = 0.1
