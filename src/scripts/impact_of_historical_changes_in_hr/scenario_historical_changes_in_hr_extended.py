@@ -69,7 +69,7 @@ class HistoricalChangesInHRH(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "Main Counterfactual/No growth + Lower bound settings":
+            "Main Counterfactual":
             self._common_baseline(),
 
             "Main Actual":
@@ -115,7 +115,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "Historical growth + Low absorption rate/Historical growth + Lower bound settings":
+            "Historical growth + Low absorption rate":
             mix_scenarios(
                 self._hrh_growth_baseline(),
                 {
@@ -226,6 +226,56 @@ class HistoricalChangesInHRH(BaseScenario):
                             "cons_availability_postSwitch": "all",
                             "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
                         }
+                    }
+                ),
+
+            "No growth + Lower bound settings++":
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_expansion_absorption_rate": 0.5,
+                            "policy_name": "LCOA_EHP",
+                        }
+                    }
+                ),
+
+            "HRH growth + Lower bound settings++":
+                mix_scenarios(
+                    self._hrh_growth_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_expansion_absorption_rate": 0.5,
+                            "policy_name": "LCOA_EHP",
+                        }
+                    }
+                ),
+
+            "No growth + Lower bound settings":
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_expansion_absorption_rate": 0.5,
+                            "policy_name": "LCOA_EHP",
+                        },
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],
+                        },
+                    }
+                ),
+
+            "HRH growth + Lower bound settings":
+                mix_scenarios(
+                    self._hrh_growth_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_expansion_absorption_rate": 0.5,
+                            "policy_name": "LCOA_EHP",
+                        },
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],
+                        },
                     }
                 ),
 
