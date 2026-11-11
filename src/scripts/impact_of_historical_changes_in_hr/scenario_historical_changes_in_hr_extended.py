@@ -69,7 +69,7 @@ class HistoricalChangesInHRH(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "Main Counterfactual/No growth + Lower bound settings--":
+            "Main Counterfactual/No growth + Lower bound settings--/No growth + Lower bound settngs**":
             self._common_baseline(),
 
             "Main Actual":
@@ -85,7 +85,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Low absorption rate/Lower bound settings--":
+            "HRH growth + Low absorption rate/Lower bound settings--/Lower bound settings**":
                 mix_scenarios(
                     self._hrh_growth_baseline(),
                     {
@@ -155,7 +155,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Max HS performance":
+            "No growth + Max HS performance/No growth + Lower bound settngs^^":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -262,6 +262,74 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
+            "No growth + Upper bound settngs**":
+            # make LCOA policy and max hs performance as upper bound
+            # make naive policy and def hs performance as lower bound
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "cons_availability_postSwitch": "all",
+                            "policy_name": "LCOA_EHP",
+                        },
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],
+                        },
+                    }
+                ),
+
+            "HRH growth + Upper bound settings**":
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
+                            "cons_availability_postSwitch": "all",
+                            "policy_name": "LCOA_EHP",
+                        },
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],
+                        },
+                    }
+                ),
+
+            "No growth + Upper bound settngs^^":
+            # make LCOA policy and default hs performance as upper bound
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "cons_availability_postSwitch": "all",
+                            "policy_name": "LCOA_EHP",
+                        },
+                    }
+                ),
+
+            "HRH growth + Upper bound settings^^":
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
+                            "cons_availability_postSwitch": "all",
+                            "policy_name": "LCOA_EHP",
+                        },
+                    }
+                ),
+
+            "HRH growth + Lower bound settings^^":
+            # make naive policy and max hs performance as lower bound
+                mix_scenarios(
+                    self._hrh_growth_baseline(),
+                    {
+                        "HealthSystem": {
+                            "HR_expansion_absorption_rate": 0.5,
+                        },
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],
+                        },
+                    }
+                ),
         }
 
     def _hrh_growth_baseline(self) -> Dict:
