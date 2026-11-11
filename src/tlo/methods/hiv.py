@@ -1716,7 +1716,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 tclose=None,
             )
 
-            if "newborn_outcomes" not in self.sim.modules and (
+            if "NewbornOutcomes" not in self.sim.modules and (
                     self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
@@ -2030,7 +2030,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         key = (sub_group, year)
         try:
             lengths, probs = self._art_dispensation_lookup[key]
-            return np.random.choice(lengths, p=probs)
+            return self.rng.choice(lengths, p=probs)
         except KeyError:
             raise ValueError(f"No ART dispensation data for sub_group={sub_group} and year={year}")
 
