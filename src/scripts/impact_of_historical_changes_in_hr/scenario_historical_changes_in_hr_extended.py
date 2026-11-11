@@ -69,7 +69,7 @@ class HistoricalChangesInHRH(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "Main Counterfactual/No growth + Lower bound settings--/No growth + Lower bound settngs**":
+            "Main Counterfactual/No growth + Lower bound==/No growth + Lower bound**":
             self._common_baseline(),
 
             "Main Actual":
@@ -85,7 +85,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Low absorption rate/Lower bound settings--/Lower bound settings**":
+            "HRH growth + Low absorption rate/Lower bound==/Lower bound**":
                 mix_scenarios(
                     self._hrh_growth_baseline(),
                     {
@@ -95,7 +95,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + LCOA policy/Lower bound settings++":
+            "No growth + LCOA policy/Lower bound++":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -135,7 +135,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                ),
 
-            "No growth + Consumables (perfect)/Upper bound settings/Upper bound settings--":
+            "No growth + Consumables (perfect)/Upper bound--/Upper bound==":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -155,7 +155,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Max HS performance/No growth + Lower bound settngs^^":
+            "No growth + Max HS performance/No growth + Lower bound^^":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -175,7 +175,7 @@ class HistoricalChangesInHRH(BaseScenario):
                 }
             ),
 
-            "No growth + Upper bound settings++":  # treat Naive policy and max hs performance as upper bound
+            "No growth + Upper bound++":  # treat Naive policy and max hs performance as upper bound
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -188,7 +188,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Upper bound settings++":
+            "HRH growth + Upper bound++":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -202,7 +202,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Lower bound settings++":  # treat LCOA policy and default hs performance as lower bound
+            "HRH growth + Lower bound++":  # treat LCOA policy and default hs performance as lower bound
                 mix_scenarios(
                     self._hrh_growth_baseline(),
                     {
@@ -213,7 +213,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Upper bound settings":  # treat Naive policy and default hs performance as upper bound
+            "HRH growth + Upper bound--":  # treat Naive policy and default hs performance as upper bound
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -224,7 +224,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Lower bound settings":  # treat LCOA policy and max hs performance as lower bound
+            "No growth + Lower bound--":  # treat LCOA policy and max hs performance as lower bound
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -237,7 +237,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Lower bound settings":
+            "HRH growth + Lower bound--":
                 mix_scenarios(
                     self._hrh_growth_baseline(),
                     {
@@ -251,7 +251,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Upper bound settings--":  # make Naive policy and default hs performance fixed
+            "HRH growth + Upper bound==":  # make Naive policy and default hs performance fixed
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -262,7 +262,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Upper bound settngs**":
+            "No growth + Upper bound**":
             # make LCOA policy and max hs performance as upper bound
             # make naive policy and def hs performance as lower bound
                 mix_scenarios(
@@ -278,7 +278,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Upper bound settings**":
+            "HRH growth + Upper bound**":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -293,7 +293,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Upper bound settngs^^":
+            "No growth + Upper bound^^":
             # make LCOA policy and default hs performance as upper bound
                 mix_scenarios(
                     self._common_baseline(),
@@ -305,7 +305,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Upper bound settings^^":
+            "HRH growth + Upper bound^^":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -317,7 +317,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "HRH growth + Lower bound settings^^":
+            "HRH growth + Lower bound^^":
             # make naive policy and max hs performance as lower bound
                 mix_scenarios(
                     self._hrh_growth_baseline(),
