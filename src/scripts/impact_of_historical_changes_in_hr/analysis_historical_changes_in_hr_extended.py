@@ -251,13 +251,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
-    # get service volumes
-    annual_treatment_volumes = extract_annual_treatment_volumes(
-        results_folder
-    )
-    annual_treatment_volumes = set_param_names_as_column_index_level_0(
-        annual_treatment_volumes
-    )
+    # # get service volumes
+    # annual_treatment_volumes = extract_annual_treatment_volumes(
+    #     results_folder
+    # )
+    # annual_treatment_volumes = set_param_names_as_column_index_level_0(
+    #     annual_treatment_volumes
+    # )
 
     # Check HRH staff counts
     hcw_count = (extract_results(
