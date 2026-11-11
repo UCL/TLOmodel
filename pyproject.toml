@@ -26,8 +26,7 @@ dependencies = [
     "numpy",
     "pandas~=2.0",
     "scipy",
-     # Avoid https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1963
-    "openpyxl==3.1.0",
+    "openpyxl",
     # To submit jobs to Azure Batch
     "azure-batch",
     "azure-identity",

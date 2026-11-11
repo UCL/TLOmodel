@@ -11,11 +11,13 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
     individual_history_tracker,
     labour,
+    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
@@ -56,10 +58,12 @@ def test_individual_history_tracker(tmpdir, seed):
     sim.register(demography.Demography(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(),
+                 healthburden.HealthBurden(),
                  individual_history_tracker.IndividualHistoryTracker(),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  chronicsyndrome.ChronicSyndrome(),
+                 malaria.Malaria(),
                  contraception.Contraception(),
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
@@ -79,6 +83,14 @@ def test_individual_history_tracker(tmpdir, seed):
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
     individual_histories = reconstruct_individual_histories(
                             output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
+    
+    # Check that monthly daly reporting is included
+    assert (individual_histories['event_name'] == 'monthly_daly_report').sum() > 0
+    
+    # Cannot estimate how many monthly reports should be expected, since monthly report is only logged if individual
+    # experienced dalys that month, so check that at or below this max
+    max_monthly_reports = ((end_date.year - start_date.year) * 12 + (end_date.month - start_date.month))*popsize
+    assert (individual_histories['event_name'] == 'monthly_daly_report').sum() <= max_monthly_reports
 
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     #   and that this was logged at the start date
@@ -94,9 +106,10 @@ def test_individual_history_tracker(tmpdir, seed):
     # Assert that all HSI events that occurred were also collected in the event chains.
     # Do not include Inpatient_Care HSIs, as these
     # are not currently treated as being individual-specific
+    
     Num_of_HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
     Num_of_HSIs_in_hs_log = len(output['tlo.methods.healthsystem']['HSI_Event'].loc[
-    output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
+        output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
     assert Num_of_HSIs_in_individual_histories == Num_of_HSIs_in_hs_log
 
     # Check that aside from HSIs, StartOfSimulation, and Birth, other events were collected too

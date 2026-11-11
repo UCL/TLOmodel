@@ -236,7 +236,7 @@ def get_class_output_string(classinfo):
 
     my_attributes = []  # (name, value) pairs of class attributes.
 
-    ignored_attributes = ['__doc__', '__module__', '__weakref__']
+    ignored_attributes = ['__doc__', '__module__', '__weakref__', '__firstlineno__', '__static_attributes__']
 
     misc = []
 

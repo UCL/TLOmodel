@@ -34,8 +34,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pd.set_option('display.max_colwidth', None)
 
     individual_histories = extract_individual_histories(results_folder)
-    
-    individual_histories.to_csv("individual_histories.csv")
+    for draw in individual_histories.keys():
+        individual_histories[draw].to_csv(f"individual_histories_draw{draw}.csv")
     
 if __name__ == "__main__":
     rfp = Path('resources')
