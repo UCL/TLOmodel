@@ -95,7 +95,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + LCOA policy":
+            "No growth + LCOA policy/Lower bound settings++":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -135,7 +135,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                ),
 
-            "No growth + Consumables (perfect)/Upper bound settings--":
+            "No growth + Consumables (perfect)/Upper bound settings/Upper bound settings--":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -175,7 +175,7 @@ class HistoricalChangesInHRH(BaseScenario):
                 }
             ),
 
-            "No growth + Upper bound settings++":
+            "No growth + Upper bound settings++":  # treat Naive policy and max hs performance as upper bound
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -202,18 +202,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Lower bound settings++":
-                mix_scenarios(
-                    self._common_baseline(),
-                    {
-                        "HealthSystem": {
-                            "HR_expansion_absorption_rate": 0.5,  # only apply to HRH expansion
-                            "policy_name": "LCOA_EHP",
-                        }
-                    }
-                ),
-
-            "HRH growth + Lower bound settings++":
+            "HRH growth + Lower bound settings++":  # treat LCOA policy and default hs performance as lower bound
                 mix_scenarios(
                     self._hrh_growth_baseline(),
                     {
@@ -224,17 +213,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Upper bound settings":  # try max_hs_performance as a lower bound setting
-                mix_scenarios(
-                    self._common_baseline(),
-                    {
-                        "HealthSystem": {
-                            "cons_availability_postSwitch": "all",
-                        }
-                    }
-                ),
-
-            "Historical growth + Upper bound settings":
+            "Historical growth + Upper bound settings":  # treat Naive policy and default hs performance as upper bound
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -245,12 +224,11 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "No growth + Lower bound settings":  # try max_hs_performance as a lower bound setting
+            "No growth + Lower bound settings":  # treat LCOA policy and max hs performance as lower bound
                 mix_scenarios(
                     self._common_baseline(),
                     {
                         "HealthSystem": {
-                            "HR_expansion_absorption_rate": 0.5,
                             "policy_name": "LCOA_EHP",
                         },
                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
@@ -273,7 +251,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "Historical growth + Upper bound settings--":
+            "Historical growth + Upper bound settings--":  # make Naive policy and default hs performance fixed
                 mix_scenarios(
                     self._common_baseline(),
                     {
