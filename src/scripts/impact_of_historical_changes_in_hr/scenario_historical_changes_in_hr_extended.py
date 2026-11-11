@@ -85,7 +85,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "Historical growth + Low absorption rate":
+            "Historical growth + Low absorption rate/Lower bound settings--":
                 mix_scenarios(
                     self._hrh_growth_baseline(),
                     {
@@ -135,7 +135,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                ),
 
-            "No growth + Consumables (perfect)":
+            "No growth + Consumables (perfect)/Upper bound settings--":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -270,6 +270,17 @@ class HistoricalChangesInHRH(BaseScenario):
                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                             'max_healthsystem_function': [False, True],
                         },
+                    }
+                ),
+
+            "Historical growth + Upper bound settings--":
+                mix_scenarios(
+                    self._common_baseline(),
+                    {
+                        "HealthSystem": {
+                            "cons_availability_postSwitch": "all",
+                            "HR_scaling_by_year_and_officer_type_mode": "historical_cadre_mix",
+                        }
                     }
                 ),
 
