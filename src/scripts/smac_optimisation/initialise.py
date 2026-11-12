@@ -32,7 +32,7 @@ import pandas as pd
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
 from optimisation_parameters import (
     START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY,
-    COST_LIMITS_FILE,
+    YEAR_END_DATE, COST_LIMITS_FILE,
 )
 
 # NOTE: POSTPROCESS_TARGET_PERIOD is used EXACTLY as imported above, from
@@ -90,10 +90,21 @@ from optimisation_parameters import (
 # independently-chosen periods per category.
 # --------------------------------------------------------------------------
 
+# The NUMBER of periods is inferred from the boundary definitions in
+# optimisation_parameters.py: a period is only enforced if it starts on or
+# before YEAR_END_DATE. START_SECOND_BOUNDARY > YEAR_END_DATE gives ONE
+# period (START_FIRST_BOUNDARY..END_THIRD_BOUNDARY); only
+# START_THIRD_BOUNDARY > YEAR_END_DATE gives two; otherwise three. The
+# last enforced period always ends at END_THIRD_BOUNDARY.
+_starts = [START_FIRST_BOUNDARY]
+for _s in (START_SECOND_BOUNDARY, START_THIRD_BOUNDARY):
+    if _s <= YEAR_END_DATE:
+        _starts.append(_s)
+if _starts != sorted(set(_starts)):
+    raise ValueError(f"Period boundaries must be strictly increasing, got {_starts}.")
 PERIOD_BOUNDARIES = [
-    (START_FIRST_BOUNDARY, START_SECOND_BOUNDARY-1),  # period 1 -  edit these
-    (START_SECOND_BOUNDARY, START_THIRD_BOUNDARY-1),  # period 2   three (start_year, end_year) tuples to
-    (START_THIRD_BOUNDARY, END_THIRD_BOUNDARY),  # period 3   whatever periods you actually want enforced.
+    (_start, (_starts[_i + 1] - 1) if _i + 1 < len(_starts) else END_THIRD_BOUNDARY)
+    for _i, _start in enumerate(_starts)
 ]
 
 # Consistency check against postprocess_output.py: every YEAR ACTUALLY
@@ -230,12 +241,11 @@ def bucket_peak_budget_slack(cost_by_year: dict, budget_by_year: dict) -> list[f
     ]
 
 
-# Two constraint families (3 periods x 2 cost/budget categories: HIV-HRH
-# and HIV-consumable - NOT four; a category's cost and its budget are
-# the same $ measure, usage vs. limit, not two different constraints).
-# Names generated from PERIOD_BOUNDARIES's actual length rather than
-# hardcoded, so this stays correct if the number of periods is ever
-# changed, not just their boundaries.
+# Two constraint families, HIV-HRH and HIV-consumable (a category's cost and
+# its budget are the same $ measure, usage vs. limit, not two different
+# constraints), each with one constraint per period. Names are generated
+# from PERIOD_BOUNDARIES's actual length (1-3 periods, see above), so with
+# a single period there are 2 constraints in total.
 HIV_HRH_CONSTRAINT_NAMES = [f"hiv_hrh_violation_p{i + 1}" for i in range(len(PERIOD_BOUNDARIES))]
 HIV_CONSUMABLE_CONSTRAINT_NAMES = [f"hiv_consumable_violation_p{i + 1}" for i in range(len(PERIOD_BOUNDARIES))]
 CONSTRAINT_NAMES = HIV_HRH_CONSTRAINT_NAMES + HIV_CONSUMABLE_CONSTRAINT_NAMES

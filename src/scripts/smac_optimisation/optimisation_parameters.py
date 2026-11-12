@@ -36,7 +36,7 @@ POLL_INTERVAL_SECONDS = 10
 # --------------------------------------------------------------------------
 # Convergence-check hyperparameters (see convergence_monitoring.py)
 # --------------------------------------------------------------------------
-CONVERGENCE_WINDOW = 15
+CONVERGENCE_WINDOW = 30
 CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 
 # --------------------------------------------------------------------------
@@ -44,13 +44,13 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations)
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
-SUBMIT_SUSPEND_PART = True
-VALID_CHECKPOINT_COMMITS: list[str] = []
+SUBMIT_SUSPEND_PART = False
+VALID_CHECKPOINT_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47']
 
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = True
+SUBMIT_BASELINE_RUN = False
 # All precomputed, baseline-derived files live in INPUTS_DIR (a folder named
 # "inputs" in the working directory), which is created here if missing so
 # that every reader and writer can rely on it existing.
@@ -73,8 +73,8 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
-VALID_PRIOR_RUN_COMMITS: list[str] = []
-SUBMIT_INITIAL_DESIGN = True
+VALID_PRIOR_RUN_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47', '2d12ead5f49287557a4ee4c56060b1efe42dd4a5']
+SUBMIT_INITIAL_DESIGN = False
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
 INITIAL_DESIGN_PERTURBATION_STD = 0.1
@@ -114,9 +114,13 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     refits.
 #
 # EI_XI
-#     ConstrainedEI's exploration/exploitation trade-off - higher requires
-#     more expected improvement before a candidate is favoured; not yet
-#     tuned.
+#     (xi, in DALYs.) A candidate only earns expected improvement for
+#     beating the best feasible predicted DALYs by MORE than xi. 0 is plain
+#     EI (SMAC's default) and a sensible start; a positive value moves the
+#     search from exploiting towards exploring. It can be changed on any
+#     resume: postprocess_output.report_ei_xi_diagnostic() (printed at the
+#     end of a run) compares the recent improvement with the seed noise and
+#     says whether to raise it.
 #
 # MIN_SAMPLES_LEAF
 #     ConstrainedEI's underlying RandomForestRegressors' (one per
@@ -380,20 +384,19 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #
 # SUBMIT_INITIAL_DESIGN
 #     Plain user toggle, same philosophy as SUBMIT_SUSPEND_PART/
-#     SUBMIT_BASELINE_RUN - set True when you want this step to actually
-#     run, False to skip it (e.g. once it's already been done and its
-#     results are already recoverable from JOB_LOG_FILE under an
-#     acceptable commit).
+#     SUBMIT_BASELINE_RUN - set True when you want this step to run. Even
+#     when True, the step is SKIPPED automatically on a resume: if
+#     JOB_LOG_FILE already holds at least N_INIT distinct configs (current
+#     commit or VALID_PRIOR_RUN_COMMITS), the warm start exists. If it holds
+#     fewer (e.g. a crash part-way through), a full initial design is
+#     submitted again.
 #
 # N_INIT
-#     Total initial-design jobs, INCLUDING the baseline - so N_INIT-1 are
-#     randomly sampled from configspace. Must be <= MAX_CONFIG_CALLS + 1:
-#     seeds are drawn from CHECKPOINT_SEEDS (so each job can genuinely use
-#     suspend/resume, and stays comparable to anything SMAC's own
-#     intensifier later draws the same seed for), a pool of exactly
-#     MAX_CONFIG_CALLS distinct values - N_INIT random configs need
-#     N_INIT-1 of those seeds (one each, the baseline takes the last
-#     slot).
+#     Number of initial-design CONFIGS, including the baseline: N_INIT-1
+#     are sampled, each run on ONE seed (CHECKPOINT_SEEDS[0]), and the
+#     baseline config runs on ALL MAX_CONFIG_CALLS seeds, so the first
+#     incumbent is measured on the full comparison set. Total initial jobs
+#     = (N_INIT-1) + MAX_CONFIG_CALLS.
 #
 # INITIAL_DESIGN_NEAR_BASELINE_FRACTION
 #     Of the N_INIT-1 randomly-sampled configs, this fraction (0.0-1.0)

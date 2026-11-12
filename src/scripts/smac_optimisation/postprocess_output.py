@@ -39,6 +39,7 @@ from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from optimisation_parameters import (
     YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
     BASELINE_BUDGET_COMPARISON_FILE, INPUTS_DIR, POP_SIZE,
+    HISTORY_LOG_FILE, MAX_CONFIG_CALLS, CONVERGENCE_WINDOW, EI_XI,
 )
 
 # Malawi's real population, used as the numerator of the scaling-factor
@@ -455,6 +456,75 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     with open(BASELINE_SUMMARY_FILE, "w") as f:
         json.dump({"median_dalys": median_dalys, "n_runs": n_runs}, f, indent=2)
     print(f"[baseline] {BASELINE_SUMMARY_FILE} updated: median DALYs = {median_dalys:.4f} ({n_runs} runs).")
+
+
+def report_ei_xi_diagnostic(history_file: Path = HISTORY_LOG_FILE) -> None:
+    """
+    Prints a short diagnostic on whether EI_XI should be changed before the
+    next resume, from the results logged in `history_file`.
+
+    EI_XI (xi) is in DALYs: a candidate only earns expected improvement for
+    beating the best feasible predicted DALYs by MORE than xi. xi = 0
+    gives plain EI (SMAC's default); a positive xi shifts the search from
+    exploiting towards exploring.
+
+    The yardstick is the seed-to-seed noise of a config's DALYs, which is
+    what limits how small a real improvement can be resolved:
+      noise_sd = pooled within-config standard deviation (configs with >= 2 seeds)
+      noise_se = noise_sd / sqrt(MAX_CONFIG_CALLS)   (error of a fully-confirmed config)
+    and it compares that with the improvement of the best feasible DALYs
+    over the last CONVERGENCE_WINDOW results. Heuristic, not a test:
+      - improvement > noise_se: the search is still finding resolvable
+        gains, keep xi at 0.
+      - improvement <= noise_se: gains are within the noise; a xi of about
+        noise_se stops the search chasing differences it cannot resolve.
+    """
+    if not Path(history_file).exists():
+        print(f"[EI_XI] no history log at {history_file} - nothing to diagnose.")
+        return
+    entries = [json.loads(line) for line in open(history_file) if line.strip()]
+    keys = sorted({k for e in entries for k in e if "_violation" in k})
+    if len(entries) < 2 * CONVERGENCE_WINDOW:
+        print(f"[EI_XI] only {len(entries)} results (< {2 * CONVERGENCE_WINDOW}) - too early to judge; keep EI_XI = {EI_XI}.")
+        return
+
+    def cfg_key(e):
+        return json.dumps(e["config_object"], sort_keys=True)
+
+    # within-config noise
+    by_cfg: dict[str, list[float]] = {}
+    for e in entries:
+        by_cfg.setdefault(cfg_key(e), []).append(float(e["dalys"]))
+    variances = [np.var(v, ddof=1) for v in by_cfg.values() if len(v) >= 2]
+    if not variances:
+        print("[EI_XI] no config has >= 2 seeds yet, so the noise cannot be estimated; keep EI_XI as is.")
+        return
+    noise_se = float(np.sqrt(np.mean(variances))) / np.sqrt(MAX_CONFIG_CALLS)
+
+    # running best feasible (by config median), in trial order
+    seen: dict[str, list[dict]] = {}
+    best_over_time: list[float | None] = []
+    for e in entries:
+        seen.setdefault(cfg_key(e), []).append(e)
+        best = None
+        for rows in seen.values():
+            if all(np.median([r[k] for r in rows if k in r]) <= 0 for k in keys):
+                d = float(np.median([r["dalys"] for r in rows]))
+                best = d if best is None or d < best else best
+        best_over_time.append(best)
+    now, before = best_over_time[-1], best_over_time[-1 - CONVERGENCE_WINDOW]
+    if now is None:
+        print("[EI_XI] no feasible config yet; EI_XI is not the limiting factor. Keep as is.")
+        return
+    improvement = (before - now) if before is not None else float("inf")
+    print(
+        f"[EI_XI] seed noise of a {MAX_CONFIG_CALLS}-seed config (SE) = {noise_se:.4g} DALYs; "
+        f"best-feasible improvement over the last {CONVERGENCE_WINDOW} results = {improvement:.4g}."
+    )
+    if improvement > noise_se:
+        print(f"[EI_XI] gains are larger than the noise: keep EI_XI = {EI_XI} (or lower).")
+    else:
+        print(f"[EI_XI] gains are within the noise: consider raising EI_XI to about {noise_se:.4g} before resuming.")
 
 
 def _get_hiv_dalys(log: dict) -> float:

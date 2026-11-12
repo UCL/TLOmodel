@@ -95,7 +95,7 @@ from smac_scenario_baseline import TloCheckpointScenario as TloBaselineScenario 
     # runs would reintroduce the exact ordering bug this project's
     # baseline-run submission was specifically restructured to avoid.
 from constrained_ei import ConstrainedEI  # the module built earlier
-from postprocess_output import postprocess_run, compute_and_save_baseline_budgets
+from postprocess_output import postprocess_run, compute_and_save_baseline_budgets, report_ei_xi_diagnostic
 from checkpoint_seeds import checkpoint_job_id, CHECKPOINT_SEEDS
 from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
@@ -908,12 +908,13 @@ def submit_initial_design_jobs() -> None:
     same underlying status-quo scenario, but currently share no code or
     data. Kept deliberately separate for now.
 
-    Submits N_INIT jobs (optimisation_parameters.py) BEFORE the main
-    ask-tell loop starts - N_INIT-1 configs, plus the baseline's own
-    config (BASELINE_CONFIG_VALUES, imported from initialise.py alongside
-    PRIOR_RUNS) - each submitted with exactly ONE seed (no intensification
-    at this stage; that's SMAC's own intensifier's job, later, once the
-    main loop is running).
+    Submits N_INIT CONFIGS (optimisation_parameters.py) BEFORE the main
+    ask-tell loop starts: N_INIT-1 sampled configs, each with exactly ONE
+    seed, plus the baseline's own config (BASELINE_CONFIG_VALUES, imported
+    from initialise.py alongside PRIOR_RUNS) on ALL MAX_CONFIG_CALLS
+    seeds - (N_INIT-1) + MAX_CONFIG_CALLS jobs in total. No intensification
+    happens at this stage; that's SMAC's own intensifier's job, later, once
+    the main loop is running.
 
     Of the N_INIT-1 configs, a fraction (INITIAL_DESIGN_NEAR_BASELINE_
     FRACTION) are sampled as LOCAL PERTURBATIONS of the baseline itself
@@ -945,8 +946,8 @@ def submit_initial_design_jobs() -> None:
     that already apply to every other recovered job apply here too,
     automatically.
 
-    ALL jobs here - every random config AND the baseline - share the
-    SAME SINGLE seed: CHECKPOINT_SEEDS[0]. An earlier version of this
+    Every sampled config shares the SAME SINGLE seed, CHECKPOINT_SEEDS[0]
+    (the baseline additionally runs on the remaining seeds, see above). An earlier version of this
     function gave each job its OWN, distinct seed, on the assumption
     that seed diversity was needed for these jobs to be meaningfully
     different from each other - WRONG: this genuinely replicates how
@@ -997,15 +998,22 @@ def submit_initial_design_jobs() -> None:
         for config in near_configs + global_configs:
             configs_and_seeds.append((config, shared_seed))
 
+    # The baseline is submitted on EVERY seed SMAC's intensifier can draw
+    # (CHECKPOINT_SEEDS[:MAX_CONFIG_CALLS]): it is the likeliest first
+    # incumbent, so it starts with the full comparison set and a challenger
+    # is never judged against an incumbent measured on a single lucky seed.
+    # Total jobs = (N_INIT - 1) + MAX_CONFIG_CALLS.
     baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
-    configs_and_seeds.append((baseline_config, shared_seed))
+    for baseline_seed in CHECKPOINT_SEEDS[:MAX_CONFIG_CALLS]:
+        configs_and_seeds.append((baseline_config, baseline_seed))
 
     jobs: list[AzureJobHandle] = []
     for config, seed in configs_and_seeds:
         jobs.append(submit_azure_job(config, seed))
     print(
-        f"[initial design] submitted {len(jobs)} job(s) ({n_near} near-baseline + "
-        f"{n_global} global random + 1 baseline), all under seed {shared_seed}."
+        f"[initial design] submitted {len(jobs)} job(s): {n_near} near-baseline + "
+        f"{n_global} global random configs (seed {shared_seed} each) + the baseline on "
+        f"{MAX_CONFIG_CALLS} seeds."
     )
 
     still_waiting = set(range(len(jobs)))
@@ -1023,6 +1031,28 @@ def submit_initial_design_jobs() -> None:
                 print(f"[initial design] WARNING: {job.job_id} finished but FAILED - skipping it.")
         if still_waiting and not made_progress:
             time.sleep(POLL_INTERVAL_SECONDS)
+
+
+def count_logged_configs() -> int:
+    """
+    Number of DISTINCT configs in JOB_LOG_FILE submitted under the current
+    commit or a commit in VALID_PRIOR_RUN_COMMITS - i.e. the configs that
+    recover_from_job_log() would consider. Used to skip the initial design
+    when resuming: if at least N_INIT configs are already logged, the
+    warm start exists and submitting another is wasted compute. Counts
+    submissions, not completions: a logged job that later failed still
+    counts (it will simply not be recovered).
+    """
+    if not JOB_LOG_FILE.exists():
+        return 0
+    accepted = {_get_commit(), *VALID_PRIOR_RUN_COMMITS}
+    keys = set()
+    with open(JOB_LOG_FILE) as f:
+        for line in f:
+            record = json.loads(line)
+            if record.get("commit") in accepted:
+                keys.add(json.dumps(record["config"], sort_keys=True))
+    return len(keys)
 
 
 def azure_job_exists(job_id: str) -> bool:
@@ -1378,7 +1408,14 @@ from initialise import (
 # few lines down) already does that, for these jobs exactly as it
 # already does for every other one.
 if SUBMIT_INITIAL_DESIGN:
-    submit_initial_design_jobs()
+    _n_logged_configs = count_logged_configs()
+    if _n_logged_configs >= N_INIT:
+        print(
+            f"[initial design] skipped: {_n_logged_configs} distinct config(s) already in "
+            f"{JOB_LOG_FILE.name} (>= N_INIT = {N_INIT}) - resuming."
+        )
+    else:
+        submit_initial_design_jobs()
 
 history: list[dict] = []  # raw, disaggregated results - the source of truth
 
@@ -2022,3 +2059,6 @@ else:
         dict(closest["config_object"]), "DALYs:", closest["dalys"],
         "worst slack:", max(closest[name] for name in CONSTRAINT_NAMES),
     )
+
+# Advice on EI_XI for the next resume, from the logged results.
+report_ei_xi_diagnostic()
