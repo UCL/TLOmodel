@@ -527,6 +527,65 @@ def report_ei_xi_diagnostic(history_file: Path = HISTORY_LOG_FILE) -> None:
         print(f"[EI_XI] gains are within the noise: consider raising EI_XI to about {noise_se:.4g} before resuming.")
 
 
+def report_false_rejection_diagnostic(history_file: Path = HISTORY_LOG_FILE, flag_threshold: int = 3) -> None:
+    """
+    Prints whether the intensifier's penalty floor
+    (INTENSIFIER_FLOOR_PENALTY_MULTIPLIER) looks too strict, from the results logged in `history_file`.
+
+    Flags configs that (1) have fewer than MAX_CONFIG_CALLS seeds, (2) are
+    feasible on their MEDIAN over the seeds they have (every constraint's
+    median slack <= 0) and (3) have median DALYs below the best CONFIRMED
+    feasible config (>= MAX_CONFIG_CALLS seeds): configs the final rule
+    could have accepted and that would have been a new best, yet which
+    received no further seeds. Rejection is not logged, so "stopped early"
+    is the proxy; configs seen within the last CONVERGENCE_WINDOW results
+    are skipped as they may still be waiting for seeds. A flagged config is
+    a candidate for a false rejection, not proof (medians of 1-2 seeds are
+    noisy). With flag_threshold or more candidates the floor is suggested
+    to be lowered.
+    """
+    if not Path(history_file).exists():
+        print(f"[penalty] no history log at {history_file} - nothing to diagnose.")
+        return
+    entries = [json.loads(line) for line in open(history_file) if line.strip()]
+    keys = sorted({k for e in entries for k in e if "_violation" in k})
+    cfgs: dict[str, list[dict]] = {}
+    last_seen: dict[str, int] = {}
+    for i, e in enumerate(entries):
+        k = json.dumps(e["config_object"], sort_keys=True)
+        cfgs.setdefault(k, []).append(e)
+        last_seen[k] = i
+
+    def median_feasible(rows):
+        return all(np.median([r[k] for r in rows if k in r]) <= 0 for k in keys)
+
+    confirmed = [
+        float(np.median([r["dalys"] for r in rows]))
+        for rows in cfgs.values() if len(rows) >= MAX_CONFIG_CALLS and median_feasible(rows)
+    ]
+    if not confirmed:
+        print("[penalty] no confirmed feasible config yet; nothing to compare against.")
+        return
+    best_confirmed = min(confirmed)
+    settled_before = len(entries) - CONVERGENCE_WINDOW
+    flagged = [
+        (float(np.median([r["dalys"] for r in rows])), len(rows))
+        for k, rows in cfgs.items()
+        if len(rows) < MAX_CONFIG_CALLS and last_seen[k] < settled_before
+        and median_feasible(rows) and float(np.median([r["dalys"] for r in rows])) < best_confirmed
+    ]
+    print(
+        f"[penalty] {len(flagged)} config(s) stopped before {MAX_CONFIG_CALLS} seeds, median-feasible, "
+        f"with median DALYs below the best confirmed ({best_confirmed:.6g})."
+    )
+    for dalys, n in sorted(flagged)[:5]:
+        print(f"[penalty]   DALYs {dalys:.6g} on {n} seed(s)")
+    if len(flagged) >= flag_threshold:
+        print("[penalty] several candidate false rejections: consider lowering INTENSIFIER_FLOOR_PENALTY_MULTIPLIER (e.g. to 3).")
+    else:
+        print("[penalty] few or none: keep the penalty parameters.")
+
+
 def _get_hiv_dalys(log: dict) -> float:
     """
     HIV/AIDS-specific DALYs (stacked), summed over TARGET_PERIOD, from

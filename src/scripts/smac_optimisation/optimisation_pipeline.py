@@ -95,15 +95,15 @@ from smac_scenario_baseline import TloCheckpointScenario as TloBaselineScenario 
     # runs would reintroduce the exact ordering bug this project's
     # baseline-run submission was specifically restructured to avoid.
 from constrained_ei import ConstrainedEI  # the module built earlier
-from postprocess_output import postprocess_run, compute_and_save_baseline_budgets, report_ei_xi_diagnostic
+from postprocess_output import postprocess_run, compute_and_save_baseline_budgets, report_ei_xi_diagnostic, report_false_rejection_diagnostic
 from checkpoint_seeds import checkpoint_job_id, CHECKPOINT_SEEDS
 from convergence_monitoring import (
     append_history_to_file, config_key, get_best_feasible_dalys, check_convergence,
     json_safe_config,
 )
 from optimisation_parameters import (
-    N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, PENALTY_COEFFICIENT_MULTIPLIER,
-    INFEASIBILITY_FLOOR_MULTIPLIER,
+    N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, MIN_SAMPLES_LEAF_FLOOR, INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER,
+    INTENSIFIER_FLOOR_PENALTY_MULTIPLIER,
     CONSTRAINT_COMBINATION, MERIT_DALYS_IMPROVEMENT_PCT, MERIT_BUDGET_VIOLATION_PCT,
     MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
@@ -1474,15 +1474,15 @@ def record_result(
 
     append_history_to_file({**history[-1], "job_id": job_id, "commit": commit})
 
-    K = PENALTY_COEFFICIENT_MULTIPLIER * dalys  # penalty coefficient - rough, not load-bearing
-    # for search quality now that ConstrainedEI does the real steering,
-    # but keeps smac.incumbent / logging / terminate_cost_threshold sane.
+    K = INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER * dalys  # proportional penalty: ranks infeasible
+    # trials by overspend. This scalar feeds ONLY SMAC's intensifier
+    # (see optimisation_parameters.py); ConstrainedEI uses the raw history.
     total_violation = sum(max(0.0, entry[name]) for name in CONSTRAINT_NAMES)  # clipped: the
     # stored values are signed slack, and negative slack (headroom) must not
     # cancel another constraint's overspend in SMAC's own scalar cost
     penalty = K * total_violation
     if total_violation > 0:
-        # See optimisation_parameters.INFEASIBILITY_FLOOR_MULTIPLIER's own
+        # See optimisation_parameters.INTENSIFIER_FLOOR_PENALTY_MULTIPLIER's own
         # comment for why this floor is necessary - without it, a trial
         # with a small enough total_violation barely moves cost above its
         # own raw dalys, letting it look "better" than a genuinely
@@ -1490,7 +1490,7 @@ def record_result(
         # (which, unlike ConstrainedEI, has no separate awareness of
         # feasibility at all) - confirmed as the actual cause of a real
         # observed case where an infeasible config got intensified.
-        penalty += INFEASIBILITY_FLOOR_MULTIPLIER * dalys
+        penalty += INTENSIFIER_FLOOR_PENALTY_MULTIPLIER * dalys
     return TrialValue(cost=dalys + penalty)
 
 
@@ -1723,6 +1723,7 @@ acquisition_function = ConstrainedEI(
                        # refitting is cheap relative to simulation cost,
                        # so there's no reason to tolerate staleness
                        # (see earlier discussion)
+    min_samples_leaf_bounds=(MIN_SAMPLES_LEAF_FLOOR, MAX_CONFIG_CALLS),
     min_samples_leaf=MIN_SAMPLES_LEAF,  # an earlier version of this
                        # call never passed this at all, silently relying
                        # on MultiSurrogateModel's own hardcoded default
@@ -2060,5 +2061,7 @@ else:
         "worst slack:", max(closest[name] for name in CONSTRAINT_NAMES),
     )
 
-# Advice on EI_XI for the next resume, from the logged results.
+# Advice for the next resume, from the logged results: EI_XI, and whether the
+# intensifier's penalty floor is too strict.
 report_ei_xi_diagnostic()
+report_false_rejection_diagnostic()

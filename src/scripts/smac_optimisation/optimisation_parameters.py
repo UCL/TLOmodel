@@ -19,9 +19,10 @@ N_TRIALS = 10
 MAX_CONFIG_CALLS = 3
 RETRAIN_EVERY = 1
 EI_XI = 0.0
-MIN_SAMPLES_LEAF = 3
-PENALTY_COEFFICIENT_MULTIPLIER = 3
-INFEASIBILITY_FLOOR_MULTIPLIER = 100
+MIN_SAMPLES_LEAF = "auto"
+MIN_SAMPLES_LEAF_FLOOR = 3
+INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER = 10
+INTENSIFIER_FLOOR_PENALTY_MULTIPLIER = 5
 CONSTRAINT_COMBINATION = "multiplicative"  # "multiplicative" or "additive"
 MERIT_DALYS_IMPROVEMENT_PCT = 10.0         # additive mode only: X in "X% DALYs ...
 MERIT_BUDGET_VIOLATION_PCT = 2.0           # ... is worth Y% budget violation" (Y)
@@ -123,14 +124,21 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     says whether to raise it.
 #
 # MIN_SAMPLES_LEAF
-#     ConstrainedEI's underlying RandomForestRegressors' (one per
-#     objective/constraint) own noise-smoothing strength - higher requires
-#     more samples per leaf before the surrogate will split further,
-#     trading sensitivity to real signal for robustness against per-seed
-#     simulation stochasticity (relevant directly to how noisy DALYs/cost
-#     are at small POP_SIZE - a smaller pop_size means noisier per-seed
-#     results, which argues for a HIGHER min_samples_leaf to compensate,
-#     not a lower one).
+#     Minimum number of (config, seed) results per leaf in every forest
+#     (one per objective/constraint). Higher = smoother predictions and a
+#     wider, more honest sigma, but a coarser model; lower = follows noisy
+#     individual results and makes sigma overconfident. Either a positive
+#     int, or "auto" (the default), which recomputes it at every refit as
+#         round(n_results / (2 * n_parameters)),
+#     clipped to [MIN_SAMPLES_LEAF_FLOOR, MAX_CONFIG_CALLS]: about two leaves
+#     per tuned parameter per tree. With few results the floor applies;
+#     the cap stops a leaf being filled by one config's seeds. A heuristic
+#     of this pipeline, not a published rule. The value in use is printed
+#     whenever it changes.
+#
+# MIN_SAMPLES_LEAF_FLOOR
+#     Lower bound for "auto"; keeps every leaf able to give a scatter
+#     estimate for sigma.
 #
 # CONSTRAINT_COMBINATION
 #     The single switch for how ConstrainedEI combines the objective's
@@ -180,42 +188,36 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     expected overshoot. Does not change feasibility, which is always
 #     g_j <= 0.
 #
-# PENALTY_COEFFICIENT_MULTIPLIER
-#     K = PENALTY_COEFFICIENT_MULTIPLIER * dalys, the penalty coefficient
-#     in record_result()'s TrialValue - rough, not load-bearing for search
-#     quality (ConstrainedEI does the real steering), just keeps
-#     smac.incumbent/logging sane.
-#
-# INFEASIBILITY_FLOOR_MULTIPLIER
-#     ANY infeasibility (total violation > 0, however small) adds a FLAT
-#     INFEASIBILITY_FLOOR_MULTIPLIER * dalys on top of the existing
-#     proportional K * total_violation penalty above - confirmed necessary
-#     directly from a real case: with a small enough total violation,
-#     K * total_violation barely moves cost above the trial's own raw
-#     dalys, meaning a trivially-infeasible config can still look "better"
-#     (lower cost) than a genuinely feasible config with higher dalys -
-#     and SMAC's OWN intensifier (deciding whether to confirm an
-#     already-proposed challenger with another seed, and whether it beats
-#     the incumbent) has NO separate awareness of feasibility at all,
-#     unlike ConstrainedEI (used only for choosing NEW candidates) - it
-#     relies purely on this scalar, so without this floor it can end up
-#     spending extra seeds confirming an infeasible config. Self-scaling
-#     (multiplies THIS trial's own dalys, not a fixed constant) so it
-#     stays proportionate regardless of the objective's actual scale.
-#     WHY THE FLOOR CAN STAY HIGH even though the intensifier compares means
-#     on few seeds: the intensifier is only the search's gatekeeper, never
-#     the source of the reported answer. (1) Its strictness costs little: a
-#     config wrongly rejected on one noisy seed is a lost candidate, not a
-#     wrong result, and ConstrainedEI, which steers proposals from ALL
-#     observations rather than from the intensifier's verdicts, can propose
-#     nearby configs again. (2) A low floor would be worse: infeasible
-#     configs could win comparisons and be promoted and topped up. (3) The
-#     final answer ignores SMAC's incumbent entirely: it needs at least
-#     MAX_CONFIG_CALLS seeds, the MEDIAN over seeds, and every median slack
-#     <= 0, so a config the intensifier over-rejected can never be reported
-#     and one it over-promoted must still pass that test. (4) The EI
-#     incumbent eta is also independent of the floor: it is the best
-#     surrogate-predicted mean over configs that are feasible by median.
+# INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER, INTENSIFIER_FLOOR_PENALTY_MULTIPLIER
+#     Shape the scalar cost SMAC's INTENSIFIER sees for each trial:
+#         cost = dalys + K * v + [v > 0] * FLOOR * dalys,
+#     K = INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER * dalys, v = total clipped slack.
+#     The intensifier has no notion of feasibility beyond this number. The
+#     scalar is NOT used by ConstrainedEI (which reads the raw history) nor
+#     by the reported answer.
+#       - FLOOR: any violation, however small, adds FLOOR * dalys. Without
+#         it a barely infeasible config with lower DALYs looks better than
+#         a feasible one (the real failure that motivated it), and the
+#         intensifier spends seeds confirming it. A jump, not a slope.
+#       - K: ranks infeasible trials by overspend (a 10% overspend adds
+#         K*0.1), mainly before a feasible incumbent exists.
+#     Defaults 5 and 10: 5 makes a config violating on ~20% of its seeds
+#     lose to a feasible incumbent (cost ~2x its DALYs) yet does not let one
+#     violating seed sink an otherwise good config, so the intensifier is
+#     closer to the MEDIAN rule of the final answer; 10 makes a 50% overspend
+#     (K*0.5 = 5*dalys) cost about as much as the floor, so the two terms are
+#     comparable over realistic violations. Comparing both configs on the
+#     same seeds cancels shocks common to both. Tuned on resume with
+#     postprocess_output.report_false_rejection_diagnostic(): if many
+#     median-feasible, better-DALYs configs stopped before MAX_CONFIG_CALLS
+#     seeds, lower the floor (e.g. 3).
+#     Why this strictness is safe: the intensifier is the search's
+#     gatekeeper, never the source of the reported answer. A config wrongly
+#     rejected is a lost candidate; ConstrainedEI proposes from ALL
+#     observations and can propose nearby configs again. The final answer
+#     needs at least MAX_CONFIG_CALLS seeds, the MEDIAN over seeds and every
+#     median slack <= 0, so neither over-rejection nor over-promotion can
+#     change what is reported. The EI's eta is independent of both terms.
 #     Deliberately NOT np.inf (used elsewhere for genuinely CRASHED
 #     trials, which SMAC's own runhistory encoder explicitly excludes
 #     from surrogate training via considered_states) - a
