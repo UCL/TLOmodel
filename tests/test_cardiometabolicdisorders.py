@@ -141,6 +141,14 @@ def test_basic_run_with_high_incidence_hypertension(seed):
 
     p['hypertension_onset']["baseline_annual_probability"] = float('inf')
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = float('inf')
+
+    # Set all relative risks for onset of these two conditions to 1, so that the probability of onset is 1 for
+    # everyone (otherwise some individuals have a probability < 1 and may not acquire the condition by chance)
+    for condition_onset in ('hypertension_onset', 'chronic_ischemic_hd_onset'):
+        for param_name in list(p[condition_onset].keys()):
+            if param_name.startswith('rr_'):
+                p[condition_onset][param_name] = 1.0
+
     p['diabetes_onset'] *= 0.0
     p['chronic_lower_back_pain_onset'] *= 0.0
     p['chronic_kidney_disease_onset'] *= 0.0
