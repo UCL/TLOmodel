@@ -7,10 +7,39 @@ YEAR_START_DATE = 2010
 YEAR_END_DATE = 2014
 CONFIG_YEAR_START_DATE = 2011
 POP_SIZE = 1000
+
+# Constraint periods (absolute calendar years, inclusive). Each period runs
+# from its START to the year before the next START; the last period in use
+# always ends at YEAR_END_DATE. Set START_SECOND_BOUNDARY (and
+# START_THIRD_BOUNDARY) to None to use fewer periods. Checked on import:
+# every start must satisfy CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE,
+# starts must increase strictly, and START_THIRD_BOUNDARY may only be set if
+# START_SECOND_BOUNDARY is.
+#   three periods: START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = 2013
+#   two periods:   START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = None
+#   one period:    START_SECOND_BOUNDARY = None, START_THIRD_BOUNDARY = None
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
 START_SECOND_BOUNDARY = 2012
 START_THIRD_BOUNDARY = 2013
-END_THIRD_BOUNDARY = 2014
+
+
+def _build_period_boundaries() -> list[tuple[int, int]]:
+    if START_SECOND_BOUNDARY is None and START_THIRD_BOUNDARY is not None:
+        raise ValueError("START_THIRD_BOUNDARY is set but START_SECOND_BOUNDARY is None: "
+                         "set the second boundary first, or set both to None.")
+    starts = [s for s in (START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY) if s is not None]
+    for start in starts:
+        if not (CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE):
+            raise ValueError(f"Period start {start} must satisfy CONFIG_YEAR_START_DATE "
+                             f"({CONFIG_YEAR_START_DATE}) <= start < YEAR_END_DATE ({YEAR_END_DATE}); "
+                             f"use None for a period you do not want.")
+    if any(later <= earlier for earlier, later in zip(starts, starts[1:])):
+        raise ValueError(f"Period starts must be strictly increasing, got {starts}.")
+    return [(start, (starts[i + 1] - 1) if i + 1 < len(starts) else YEAR_END_DATE)
+            for i, start in enumerate(starts)]
+
+
+PERIOD_BOUNDARIES = _build_period_boundaries()  # e.g. [(2011, 2014)] for one period
 
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters

@@ -108,7 +108,7 @@ from optimisation_parameters import (
     MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
-    SUBMIT_BASELINE_RUN, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY,
+    SUBMIT_BASELINE_RUN, PERIOD_BOUNDARIES,
     SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
     JOB_LOG_FILE,
 )
@@ -1391,7 +1391,7 @@ if SUBMIT_BASELINE_RUN:
         )
     print(f"[baseline] {baseline_job.job_id} confirmed ready - computing budget CIs.")
     baseline_draw_dir = download_run_outputs(baseline_job)
-    compute_and_save_baseline_budgets(baseline_draw_dir, START_FIRST_BOUNDARY, END_THIRD_BOUNDARY)
+    compute_and_save_baseline_budgets(baseline_draw_dir, PERIOD_BOUNDARIES[0][0], PERIOD_BOUNDARIES[-1][1])
 
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,

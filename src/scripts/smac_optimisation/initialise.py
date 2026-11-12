@@ -31,8 +31,7 @@ import pandas as pd
 
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
 from optimisation_parameters import (
-    START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY, END_THIRD_BOUNDARY,
-    YEAR_END_DATE, COST_LIMITS_FILE,
+    PERIOD_BOUNDARIES, COST_LIMITS_FILE,
 )
 
 # NOTE: POSTPROCESS_TARGET_PERIOD is used EXACTLY as imported above, from
@@ -90,22 +89,9 @@ from optimisation_parameters import (
 # independently-chosen periods per category.
 # --------------------------------------------------------------------------
 
-# The NUMBER of periods is inferred from the boundary definitions in
-# optimisation_parameters.py: a period is only enforced if it starts on or
-# before YEAR_END_DATE. START_SECOND_BOUNDARY > YEAR_END_DATE gives ONE
-# period (START_FIRST_BOUNDARY..END_THIRD_BOUNDARY); only
-# START_THIRD_BOUNDARY > YEAR_END_DATE gives two; otherwise three. The
-# last enforced period always ends at END_THIRD_BOUNDARY.
-_starts = [START_FIRST_BOUNDARY]
-for _s in (START_SECOND_BOUNDARY, START_THIRD_BOUNDARY):
-    if _s <= YEAR_END_DATE:
-        _starts.append(_s)
-if _starts != sorted(set(_starts)):
-    raise ValueError(f"Period boundaries must be strictly increasing, got {_starts}.")
-PERIOD_BOUNDARIES = [
-    (_start, (_starts[_i + 1] - 1) if _i + 1 < len(_starts) else END_THIRD_BOUNDARY)
-    for _i, _start in enumerate(_starts)
-]
+# PERIOD_BOUNDARIES (1-3 periods) is built in optimisation_parameters.py from
+# the START_*_BOUNDARY settings: a start of None drops that period, and the
+# last period in use always ends at YEAR_END_DATE.
 
 # Consistency check against postprocess_output.py: every YEAR ACTUALLY
 # SIMULATED (postprocess_output.py's TARGET_PERIOD) must fall into AT
