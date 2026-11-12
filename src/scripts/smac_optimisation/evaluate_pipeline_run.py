@@ -32,7 +32,7 @@ from pathlib import Path
 import pandas as pd
 
 from convergence_monitoring import config_key, get_best_feasible_dalys, get_best_dalys_regardless_of_feasibility
-from optimisation_parameters import BASELINE_SUMMARY_FILE, VALID_PRIOR_RUN_COMMITS
+from optimisation_parameters import BASELINE_SUMMARY_FILE, HISTORY_LOG_FILE, VALID_PRIOR_RUN_COMMITS
 from postprocess_output import TARGET_PERIOD  # the SAME authoritative period
     # every "dalys" value in history_log.jsonl is already computed over -
     # imported directly (matching initialise.py's own convention) rather
@@ -89,7 +89,7 @@ def _get_current_commit_for_filtering() -> str | None:
 
 
 def load_history_log(
-    filepath: str = "history_log.jsonl",
+    filepath: str | Path = HISTORY_LOG_FILE,
     filter_by_commit: bool = True,
 ) -> list[dict]:
     """
@@ -442,10 +442,10 @@ def load_baseline_summary(filepath: str | Path = BASELINE_SUMMARY_FILE) -> dict 
     """
     Reads the baseline run's summary (median DALYs, n_runs), written by
     postprocess_output.compute_and_save_baseline_budgets() the last time
-    SUBMIT_BASELINE_RUN was True. Returns None if the file doesn't exist
+    SUBMIT_BUDGET_RUN was True. Returns None if the file doesn't exist
     yet (no baseline run has ever been submitted) - callers should treat
     that as "no baseline to compare against" rather than an error, since
-    SUBMIT_BASELINE_RUN is entirely optional.
+    SUBMIT_BUDGET_RUN is entirely optional.
     """
     path = Path(filepath)
     if not path.exists():
@@ -778,7 +778,7 @@ def check_between_vs_within_config_variance(records: list[dict]) -> dict:
         interpretation = (
             f"Between-config spread (p={p_value:.4f}) is NOT clearly distinguishable from "
             f"seed noise yet - apparent differences between configs' DALYs may just be within "
-            f"the noise floor. More seeds per config (higher MAX_CONFIG_CALLS), a larger "
+            f"the noise floor. More seeds per config (higher MAX_CONFIG_RUNS), a larger "
             f"pop_size, or more distinct configs evaluated would all help resolve this either way."
         )
 
@@ -800,7 +800,7 @@ def check_between_vs_within_config_variance(records: list[dict]) -> dict:
 # --------------------------------------------------------------------------
 
 def run_all_checks(
-    filepath: str = "history_log.jsonl",
+    filepath: str | Path = HISTORY_LOG_FILE,
     window: int = 10,
     intensified_threshold: int = 3,
     verbose: bool = True,
@@ -948,5 +948,5 @@ def run_all_checks(
 
 
 if __name__ == "__main__":
-    log_path = sys.argv[1] if len(sys.argv) > 1 else "history_log.jsonl"
+    log_path = sys.argv[1] if len(sys.argv) > 1 else HISTORY_LOG_FILE
     run_all_checks(log_path, plot_color_by="config", plot_order_by="submission")

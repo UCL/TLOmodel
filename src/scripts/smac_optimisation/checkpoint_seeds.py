@@ -70,7 +70,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from optimisation_parameters import MAX_CONFIG_CALLS  # SHARED with
+from optimisation_parameters import MAX_CONFIG_RUNS  # SHARED with
     # optimisation_pipeline.py's get_intensifier(max_config_calls=...) - both
     # import this SAME value now, rather than being set independently (as
     # this file used to do) and relying on a comment to keep them in sync.
@@ -83,13 +83,13 @@ from optimisation_parameters import MAX_CONFIG_CALLS  # SHARED with
 # checkpoints for - NOT used for path construction, which is derived
 # directly from a given seed instead (see checkpoint_job_id() below).
 CHECKPOINT_SEEDS = [
-    int(s) for s in np.random.RandomState(0).randint(low=0, high=2**31 - 1, size=MAX_CONFIG_CALLS)
+    int(s) for s in np.random.RandomState(0).randint(low=0, high=2**31 - 1, size=MAX_CONFIG_RUNS)
 ]
 _CHECKPOINT_SEEDS_SET = set(CHECKPOINT_SEEDS)  # O(1) membership check, see is_known_checkpoint_seed()
 
 
 def is_known_checkpoint_seed(seed: int) -> bool:
-    """True if `seed` is one of the MAX_CONFIG_CALLS precomputed values a
+    """True if `seed` is one of the MAX_CONFIG_RUNS precomputed values a
     checkpoint should exist for."""
     return seed in _CHECKPOINT_SEEDS_SET
 
@@ -130,8 +130,8 @@ def checkpoint_job_id(seed: int, commit: str) -> str:
     """
     if not is_known_checkpoint_seed(seed):
         raise ValueError(
-            f"seed {seed} is not among the {MAX_CONFIG_CALLS} precomputed checkpoint "
-            f"seeds {CHECKPOINT_SEEDS}. Either MAX_CONFIG_CALLS needs increasing, or "
+            f"seed {seed} is not among the {MAX_CONFIG_RUNS} precomputed checkpoint "
+            f"seeds {CHECKPOINT_SEEDS}. Either MAX_CONFIG_RUNS needs increasing, or "
             f"the RandomState(0) replication has desynchronized from SMAC's actual "
             f"seed sequence for this run."
         )

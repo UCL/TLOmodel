@@ -102,13 +102,13 @@ from convergence_monitoring import (
     json_safe_config,
 )
 from optimisation_parameters import (
-    N_TRIALS, MAX_CONFIG_CALLS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, MIN_SAMPLES_LEAF_FLOOR, INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER,
+    OUTPUTS_DIR, N_TOTAL_RUNS, MAX_CONFIG_RUNS, RETRAIN_EVERY, EI_XI, MIN_SAMPLES_LEAF, MIN_SAMPLES_LEAF_FLOOR, INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER,
     INTENSIFIER_FLOOR_PENALTY_MULTIPLIER,
     CONSTRAINT_COMBINATION, MERIT_DALYS_IMPROVEMENT_PCT, MERIT_BUDGET_VIOLATION_PCT,
     MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
-    SUBMIT_BASELINE_RUN, PERIOD_BOUNDARIES,
+    SUBMIT_BUDGET_RUN, START_FIRST_BOUNDARY, YEAR_END_DATE,
     SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
     JOB_LOG_FILE,
 )
@@ -177,7 +177,7 @@ CONFIG_FILE = "tlo.conf"
 # mechanism) - ensure_checkpoints_ready() only confirms readiness.
 #
 # There is no longer a single shared "SUSPENDED_JOB_ID": each of the
-# MAX_CONFIG_CALLS checkpoints is its OWN separate Azure job, now also
+# MAX_CONFIG_RUNS checkpoints is its OWN separate Azure job, now also
 # scoped by commit (see VALID_CHECKPOINT_COMMITS in
 # optimisation_parameters.py). Each checkpoint must be submitted as a
 # single-run job (sample_number=0) with scenario.seed set DIRECTLY to
@@ -911,8 +911,8 @@ def submit_initial_design_jobs() -> None:
     Submits N_INIT CONFIGS (optimisation_parameters.py) BEFORE the main
     ask-tell loop starts: N_INIT-1 sampled configs, each with exactly ONE
     seed, plus the baseline's own config (BASELINE_CONFIG_VALUES, imported
-    from initialise.py alongside PRIOR_RUNS) on ALL MAX_CONFIG_CALLS
-    seeds - (N_INIT-1) + MAX_CONFIG_CALLS jobs in total. No intensification
+    from initialise.py alongside PRIOR_RUNS) on ALL MAX_CONFIG_RUNS
+    seeds - (N_INIT-1) + MAX_CONFIG_RUNS jobs in total. No intensification
     happens at this stage; that's SMAC's own intensifier's job, later, once
     the main loop is running.
 
@@ -999,12 +999,12 @@ def submit_initial_design_jobs() -> None:
             configs_and_seeds.append((config, shared_seed))
 
     # The baseline is submitted on EVERY seed SMAC's intensifier can draw
-    # (CHECKPOINT_SEEDS[:MAX_CONFIG_CALLS]): it is the likeliest first
+    # (CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS]): it is the likeliest first
     # incumbent, so it starts with the full comparison set and a challenger
     # is never judged against an incumbent measured on a single lucky seed.
-    # Total jobs = (N_INIT - 1) + MAX_CONFIG_CALLS.
+    # Total jobs = (N_INIT - 1) + MAX_CONFIG_RUNS.
     baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
-    for baseline_seed in CHECKPOINT_SEEDS[:MAX_CONFIG_CALLS]:
+    for baseline_seed in CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS]:
         configs_and_seeds.append((baseline_config, baseline_seed))
 
     jobs: list[AzureJobHandle] = []
@@ -1013,7 +1013,7 @@ def submit_initial_design_jobs() -> None:
     print(
         f"[initial design] submitted {len(jobs)} job(s): {n_near} near-baseline + "
         f"{n_global} global random configs (seed {shared_seed} each) + the baseline on "
-        f"{MAX_CONFIG_CALLS} seeds."
+        f"{MAX_CONFIG_RUNS} seeds."
     )
 
     still_waiting = set(range(len(jobs)))
@@ -1231,10 +1231,10 @@ def download_run_outputs(job: AzureJobHandle) -> Path:
     )
 
     remote_root = f"{username}/{job.job_id}"
-    local_root = Path("outputs", remote_root)
+    local_root = Path(OUTPUTS_DIR, remote_root)
 
     def walk(dir_name: str):
-        local_root_dir = Path("outputs", dir_name)
+        local_root_dir = Path(OUTPUTS_DIR, dir_name)
         os.makedirs(local_root_dir, exist_ok=True)
         for item in share_client.list_directories_and_files(dir_name):
             if item["is_directory"]:
@@ -1347,7 +1347,7 @@ configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
 #     than needlessly serialising checkpoint generation after the
 #     baseline run's own wait below.
 #
-#     SUBMIT_SUSPEND_PART / SUBMIT_BASELINE_RUN are both plain user
+#     SUBMIT_SUSPEND_PART / SUBMIT_BUDGET_RUN are both plain user
 #     toggles (optimisation_parameters.py) - NOT derived from checking
 #     what's already on Azure or already in COST_LIMITS_FILE. Checkpoint
 #     generation is NOT waited on here (see "2b (continued)" below,
@@ -1378,7 +1378,7 @@ if SUBMIT_SUSPEND_PART:
 if USE_SUSPEND_RESUME:
     ensure_checkpoints_ready()
 
-if SUBMIT_BASELINE_RUN:
+if SUBMIT_BUDGET_RUN:
     baseline_job = submit_baseline_job()
     print(f"[baseline] waiting for {baseline_job.job_id} to finish (10 runs)...")
     while not azure_job_is_finished(baseline_job):
@@ -1387,11 +1387,11 @@ if SUBMIT_BASELINE_RUN:
         raise RuntimeError(
             f"Baseline job {baseline_job.job_id} finished but FAILED - cannot "
             f"derive budget constraints from it. Investigate and resubmit "
-            f"(SUBMIT_BASELINE_RUN=True) before proceeding."
+            f"(SUBMIT_BUDGET_RUN=True) before proceeding."
         )
     print(f"[baseline] {baseline_job.job_id} confirmed ready - computing budget CIs.")
     baseline_draw_dir = download_run_outputs(baseline_job)
-    compute_and_save_baseline_budgets(baseline_draw_dir, PERIOD_BOUNDARIES[0][0], PERIOD_BOUNDARIES[-1][1])
+    compute_and_save_baseline_budgets(baseline_draw_dir, START_FIRST_BOUNDARY, YEAR_END_DATE)
 
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
@@ -1574,7 +1574,7 @@ def recover_from_job_log() -> list[dict]:
                 )
                 continue
 
-            draw_dir = Path("outputs", username, record["job_id"], "0")
+            draw_dir = Path(OUTPUTS_DIR, username, record["job_id"], "0")
 
             if not draw_dir.exists() or not any(draw_dir.iterdir()):
                 # not downloaded yet - check whether it's actually
@@ -1664,7 +1664,7 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
 #    bookkeeping, even though you're driving the loop yourself)
 # --------------------------------------------------------------------------
 
-scenario = Scenario(configspace, n_trials=N_TRIALS, deterministic=False)  # total trial budget -
+scenario = Scenario(configspace, n_trials=N_TOTAL_RUNS, deterministic=False)  # total trial budget -
                                                                         # remember max_config_calls
                                                                         # means this isn't the same
                                                                         # as "number of distinct
@@ -1672,15 +1672,15 @@ scenario = Scenario(configspace, n_trials=N_TRIALS, deterministic=False)  # tota
 
 # max_config_calls caps how many seeds the intensifier will use to
 # confirm any single config (default is 3). Set (via
-# optimisation_parameters.MAX_CONFIG_CALLS) to match the "N seeds for
+# optimisation_parameters.MAX_CONFIG_RUNS) to match the "N seeds for
 # true convergence" threshold - a config can still be discarded early on
 # fewer seeds if it's clearly uncompetitive, but nothing gets promoted
-# to incumbent-quality trust on fewer than MAX_CONFIG_CALLS
+# to incumbent-quality trust on fewer than MAX_CONFIG_RUNS
 # confirmations. Combined with the noisy-EI correction in ConstrainedEI,
 # this makes the adaptive sampling trustworthy rather than just
 # efficient. SAME value checkpoint_seeds.py uses for CHECKPOINT_SEEDS -
 # see optimisation_parameters.py's own comment on why these must match.
-intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_config_calls=MAX_CONFIG_CALLS)
+intensifier = HyperparameterOptimizationFacade.get_intensifier(scenario, max_config_calls=MAX_CONFIG_RUNS)
 
 def derive_merit_penalty_alpha() -> float:
     """
@@ -1699,7 +1699,7 @@ def derive_merit_penalty_alpha() -> float:
         raise FileNotFoundError(
             f"{BASELINE_SUMMARY_FILE} not found: the additive constraint combination "
             "derives its penalty weight from the baseline run's median DALYs. Run the "
-            "baseline first (SUBMIT_BASELINE_RUN) or use CONSTRAINT_COMBINATION='multiplicative'."
+            "baseline first (SUBMIT_BUDGET_RUN) or use CONSTRAINT_COMBINATION='multiplicative'."
         )
     with open(path) as f:
         baseline_dalys = float(json.load(f)["median_dalys"])
@@ -1723,7 +1723,7 @@ acquisition_function = ConstrainedEI(
                        # refitting is cheap relative to simulation cost,
                        # so there's no reason to tolerate staleness
                        # (see earlier discussion)
-    min_samples_leaf_bounds=(MIN_SAMPLES_LEAF_FLOOR, MAX_CONFIG_CALLS),
+    min_samples_leaf_bounds=(MIN_SAMPLES_LEAF_FLOOR, MAX_CONFIG_RUNS),
     min_samples_leaf=MIN_SAMPLES_LEAF,  # an earlier version of this
                        # call never passed this at all, silently relying
                        # on MultiSurrogateModel's own hardcoded default
@@ -1835,7 +1835,7 @@ def _safe_ask(max_retries: int = 3, retry_delay_seconds: float = 5.0) -> TrialIn
 
 pending: list[tuple[TrialInfo, AzureJobHandle]] = []
 
-n_completed = 0  # N_TRIALS is a budget for NEW trials only - warm-started
+n_completed = 0  # N_TOTAL_RUNS is a budget for NEW trials only - warm-started
     # runs (recovered, PRIOR_RUNS, N_INIT) don't count against it,
     # regardless of n_seeded.
 n_in_flight = 0  # jobs submitted and not yet resolved (success or failure)
@@ -2027,10 +2027,10 @@ for entries in grouped.values():
         agg[name] = float(np.median([e[name] for e in entries]))
     aggregated.append(agg)
 
-# A reported answer must be CONFIRMED: evaluated on at least MAX_CONFIG_CALLS
+# A reported answer must be CONFIRMED: evaluated on at least MAX_CONFIG_RUNS
 # seeds (the intensifier's own cap), so that neither its median DALYs nor its
 # median slack rests on a lucky single realisation.
-confirmed = [a for a in aggregated if a["n_seeds_evaluated"] >= MAX_CONFIG_CALLS]
+confirmed = [a for a in aggregated if a["n_seeds_evaluated"] >= MAX_CONFIG_RUNS]
 feasible = [a for a in confirmed if all(a[name] <= 0 for name in CONSTRAINT_NAMES)]  # signed slack: <= 0
 if feasible:
     best = min(feasible, key=lambda a: a["dalys"])
@@ -2044,13 +2044,13 @@ else:
     # run - but it is NOT a valid answer: it violates the budget.
     unconfirmed_feasible = [
         a for a in aggregated
-        if a["n_seeds_evaluated"] < MAX_CONFIG_CALLS and all(a[name] <= 0 for name in CONSTRAINT_NAMES)
+        if a["n_seeds_evaluated"] < MAX_CONFIG_RUNS and all(a[name] <= 0 for name in CONSTRAINT_NAMES)
     ]
     if unconfirmed_feasible:
         u = min(unconfirmed_feasible, key=lambda a: a["dalys"])
         print(
             f"[no confirmed feasible config] No feasible configuration has been evaluated on "
-            f"{MAX_CONFIG_CALLS} seeds. Best UNCONFIRMED feasible (fewer seeds, NOT a reported answer):",
+            f"{MAX_CONFIG_RUNS} seeds. Best UNCONFIRMED feasible (fewer seeds, NOT a reported answer):",
             dict(u["config_object"]), "DALYs:", u["dalys"], f"({u['n_seeds_evaluated']} seed(s))",
         )
     closest = min(aggregated, key=lambda a: max(a[name] for name in CONSTRAINT_NAMES))

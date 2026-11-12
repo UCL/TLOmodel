@@ -31,7 +31,8 @@ import pandas as pd
 
 from postprocess_output import TARGET_PERIOD as POSTPROCESS_TARGET_PERIOD
 from optimisation_parameters import (
-    PERIOD_BOUNDARIES, COST_LIMITS_FILE,
+    START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY,
+    CONFIG_YEAR_START_DATE, YEAR_END_DATE, COST_LIMITS_FILE,
 )
 
 # NOTE: POSTPROCESS_TARGET_PERIOD is used EXACTLY as imported above, from
@@ -89,9 +90,29 @@ from optimisation_parameters import (
 # independently-chosen periods per category.
 # --------------------------------------------------------------------------
 
-# PERIOD_BOUNDARIES (1-3 periods) is built in optimisation_parameters.py from
-# the START_*_BOUNDARY settings: a start of None drops that period, and the
-# last period in use always ends at YEAR_END_DATE.
+# PERIOD_BOUNDARIES (1-3 periods) is built here from the START_*_BOUNDARY
+# settings in optimisation_parameters.py. A start of None drops that period,
+# and the last period in use always ends at YEAR_END_DATE. Checked on import:
+# every start must satisfy CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE,
+# starts must increase strictly, and START_THIRD_BOUNDARY may only be set if
+# START_SECOND_BOUNDARY is.
+def _build_period_boundaries() -> list[tuple[int, int]]:
+    if START_SECOND_BOUNDARY is None and START_THIRD_BOUNDARY is not None:
+        raise ValueError("START_THIRD_BOUNDARY is set but START_SECOND_BOUNDARY is None: "
+                         "set the second boundary first, or set both to None.")
+    starts = [s for s in (START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY) if s is not None]
+    for start in starts:
+        if not (CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE):
+            raise ValueError(f"Period start {start} must satisfy CONFIG_YEAR_START_DATE "
+                             f"({CONFIG_YEAR_START_DATE}) <= start < YEAR_END_DATE ({YEAR_END_DATE}); "
+                             f"use None for a period you do not want.")
+    if any(later <= earlier for earlier, later in zip(starts, starts[1:])):
+        raise ValueError(f"Period starts must be strictly increasing, got {starts}.")
+    return [(start, (starts[i + 1] - 1) if i + 1 < len(starts) else YEAR_END_DATE)
+            for i, start in enumerate(starts)]
+
+
+PERIOD_BOUNDARIES = _build_period_boundaries()  # e.g. [(2011, 2014)] for one period
 
 # Consistency check against postprocess_output.py: every YEAR ACTUALLY
 # SIMULATED (postprocess_output.py's TARGET_PERIOD) must fall into AT
@@ -133,12 +154,12 @@ if not _postprocess_years.issubset(_period_years):
 # COST_LIMITS_FILE itself now lives in optimisation_parameters.py (not
 # defined here) - see that file's own comment for why, and
 # postprocess_output.compute_and_save_baseline_budgets() for how this
-# file gets WRITTEN, if SUBMIT_BASELINE_RUN is True.
+# file gets WRITTEN, if SUBMIT_BUDGET_RUN is True.
 if not Path(COST_LIMITS_FILE).exists():
     raise FileNotFoundError(
         f"{COST_LIMITS_FILE} not found. Precomputed budget limits live in the 'inputs' folder; "
         "move an existing cost_limits_by_year.csv there, or generate it from a baseline run "
-        "(SUBMIT_BASELINE_RUN = True, which calls "
+        "(SUBMIT_BUDGET_RUN = True, which calls "
         "postprocess_output.compute_and_save_baseline_budgets())."
     )
 _limits_df = pd.read_csv(COST_LIMITS_FILE)
@@ -270,7 +291,7 @@ PRIOR_RUNS = [
 #    (SUBMIT_INITIAL_DESIGN toggle) - submitted through the STANDARD
 #    smac_scenario.py path (suspend/resume, single seed), NOT through
 #    smac_scenario_baseline.py's own separate, 10-run submission
-#    (submit_baseline_job(), SUBMIT_BASELINE_RUN toggle, used only to
+#    (submit_baseline_job(), SUBMIT_BUDGET_RUN toggle, used only to
 #    derive the budget) - see that function's own docstring for the
 #    known, deliberately-not-yet-unified overlap between the two.
 # --------------------------------------------------------------------------

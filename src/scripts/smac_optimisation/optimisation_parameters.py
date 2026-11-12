@@ -8,10 +8,11 @@ YEAR_END_DATE = 2014
 CONFIG_YEAR_START_DATE = 2011
 POP_SIZE = 1000
 
-# Constraint periods (absolute calendar years, inclusive). Each period runs
-# from its START to the year before the next START; the last period in use
-# always ends at YEAR_END_DATE. Set START_SECOND_BOUNDARY (and
-# START_THIRD_BOUNDARY) to None to use fewer periods. Checked on import:
+# Constraint periods (absolute calendar years, inclusive; built and checked in
+# initialise.py as PERIOD_BOUNDARIES). Each period runs from its START to the
+# year before the next START; the last period in use always ends at
+# YEAR_END_DATE. Set START_SECOND_BOUNDARY (and START_THIRD_BOUNDARY) to None
+# to use fewer periods. Checked on import of initialise.py:
 # every start must satisfy CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE,
 # starts must increase strictly, and START_THIRD_BOUNDARY may only be set if
 # START_SECOND_BOUNDARY is.
@@ -19,33 +20,15 @@ POP_SIZE = 1000
 #   two periods:   START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = None
 #   one period:    START_SECOND_BOUNDARY = None, START_THIRD_BOUNDARY = None
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
-START_SECOND_BOUNDARY = 2012
+START_SECOND_BOUNDARY = None
 START_THIRD_BOUNDARY = 2013
 
-
-def _build_period_boundaries() -> list[tuple[int, int]]:
-    if START_SECOND_BOUNDARY is None and START_THIRD_BOUNDARY is not None:
-        raise ValueError("START_THIRD_BOUNDARY is set but START_SECOND_BOUNDARY is None: "
-                         "set the second boundary first, or set both to None.")
-    starts = [s for s in (START_FIRST_BOUNDARY, START_SECOND_BOUNDARY, START_THIRD_BOUNDARY) if s is not None]
-    for start in starts:
-        if not (CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE):
-            raise ValueError(f"Period start {start} must satisfy CONFIG_YEAR_START_DATE "
-                             f"({CONFIG_YEAR_START_DATE}) <= start < YEAR_END_DATE ({YEAR_END_DATE}); "
-                             f"use None for a period you do not want.")
-    if any(later <= earlier for earlier, later in zip(starts, starts[1:])):
-        raise ValueError(f"Period starts must be strictly increasing, got {starts}.")
-    return [(start, (starts[i + 1] - 1) if i + 1 < len(starts) else YEAR_END_DATE)
-            for i, start in enumerate(starts)]
-
-
-PERIOD_BOUNDARIES = _build_period_boundaries()  # e.g. [(2011, 2014)] for one period
 
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TRIALS = 10
-MAX_CONFIG_CALLS = 3
+N_TOTAL_RUNS = 10
+MAX_CONFIG_RUNS = 3
 RETRAIN_EVERY = 1
 EI_XI = 0.0
 MIN_SAMPLES_LEAF = "auto"
@@ -80,25 +63,7 @@ VALID_CHECKPOINT_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
-SUBMIT_BASELINE_RUN = False
-# All precomputed, baseline-derived files live in INPUTS_DIR (a folder named
-# "inputs" in the working directory), which is created here if missing so
-# that every reader and writer can rely on it existing.
-# Logs (history_log.jsonl, submitted_jobs.jsonl) are written to a "logs"
-# folder inside the directory holding the pipeline code (this file is
-# expected to sit in the same directory as optimisation_pipeline.py),
-# regardless of the directory the pipeline is launched from. The folder is
-# created here if it does not exist.
-LOG_DIR = Path(__file__).resolve().parent / "logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-HISTORY_LOG_FILE = LOG_DIR / "history_log.jsonl"
-JOB_LOG_FILE = LOG_DIR / "submitted_jobs.jsonl"
-
-INPUTS_DIR = Path("inputs")
-INPUTS_DIR.mkdir(parents=True, exist_ok=True)
-COST_LIMITS_FILE = INPUTS_DIR / "cost_limits_by_year.csv"
-BASELINE_SUMMARY_FILE = INPUTS_DIR / "baseline_summary.json"
-BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
+SUBMIT_BUDGET_RUN = False
 
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
@@ -108,6 +73,33 @@ SUBMIT_INITIAL_DESIGN = False
 N_INIT = 5
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
 INITIAL_DESIGN_PERTURBATION_STD = 0.1
+
+# --------------------------------------------------------------------------
+# Paths (rarely changed)
+# --------------------------------------------------------------------------
+# Everything below is anchored to the directory holding this file (expected
+# to be the same directory as optimisation_pipeline.py), NOT to the directory
+# the pipeline is launched from - so launching from a parent directory
+# (e.g. the repository root) still finds and writes the same folders.
+#   inputs/   precomputed, baseline-derived files (budgets etc.). OVERWRITTEN
+#             whenever SUBMIT_BUDGET_RUN is True.
+#   logs/     history_log.jsonl, submitted_jobs.jsonl. APPENDED to, never
+#             overwritten.
+#   outputs/  run outputs downloaded from Azure.
+# Each folder is created here if it does not exist.
+CODE_DIR = Path(__file__).resolve().parent
+LOG_DIR = CODE_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+HISTORY_LOG_FILE = LOG_DIR / "history_log.jsonl"
+JOB_LOG_FILE = LOG_DIR / "submitted_jobs.jsonl"
+
+INPUTS_DIR = CODE_DIR / "inputs"
+INPUTS_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUTS_DIR = CODE_DIR / "outputs"
+OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+COST_LIMITS_FILE = INPUTS_DIR / "cost_limits_by_year.csv"
+BASELINE_SUMMARY_FILE = INPUTS_DIR / "baseline_summary.json"
+BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 
 # ============================================================================
 # PARAMETER DESCRIPTIONS
@@ -132,10 +124,10 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 
 # --- SMAC / search hyperparameters ------------------------------------------
 #
-# N_TRIALS
+# N_TOTAL_RUNS
 #     Total trial budget.
 #
-# MAX_CONFIG_CALLS
+# MAX_CONFIG_RUNS
 #     Caps how many seeds the intensifier will use to confirm any single
 #     config.
 #
@@ -159,7 +151,7 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     individual results and makes sigma overconfident. Either a positive
 #     int, or "auto" (the default), which recomputes it at every refit as
 #         round(n_results / (2 * n_parameters)),
-#     clipped to [MIN_SAMPLES_LEAF_FLOOR, MAX_CONFIG_CALLS]: about two leaves
+#     clipped to [MIN_SAMPLES_LEAF_FLOOR, MAX_CONFIG_RUNS]: about two leaves
 #     per tuned parameter per tree. With few results the floor applies;
 #     the cap stops a leaf being filled by one config's seeds. A heuristic
 #     of this pipeline, not a published rule. The value in use is printed
@@ -238,13 +230,13 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     comparable over realistic violations. Comparing both configs on the
 #     same seeds cancels shocks common to both. Tuned on resume with
 #     postprocess_output.report_false_rejection_diagnostic(): if many
-#     median-feasible, better-DALYs configs stopped before MAX_CONFIG_CALLS
+#     median-feasible, better-DALYs configs stopped before MAX_CONFIG_RUNS
 #     seeds, lower the floor (e.g. 3).
 #     Why this strictness is safe: the intensifier is the search's
 #     gatekeeper, never the source of the reported answer. A config wrongly
 #     rejected is a lost candidate; ConstrainedEI proposes from ALL
 #     observations and can propose nearby configs again. The final answer
-#     needs at least MAX_CONFIG_CALLS seeds, the MEDIAN over seeds and every
+#     needs at least MAX_CONFIG_RUNS seeds, the MEDIAN over seeds and every
 #     median slack <= 0, so neither over-rejection nor over-promotion can
 #     change what is reported. The EI's eta is independent of both terms.
 #     Deliberately NOT np.inf (used elsewhere for genuinely CRASHED
@@ -324,7 +316,7 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 # docstring in optimisation_pipeline.py for the full picture. Kept
 # deliberately separate for now.
 #
-# SUBMIT_BASELINE_RUN
+# SUBMIT_BUDGET_RUN
 #     Plain user toggle, same philosophy as SUBMIT_SUSPEND_PART - NOT
 #     derived from checking what's already in COST_LIMITS_FILE. Defaults
 #     to False (unlike SUBMIT_SUSPEND_PART) since this is a genuinely
@@ -333,44 +325,6 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     already-good budget file already in place - set True only when you
 #     actually want the budgets (re)derived from a fresh baseline run.
 #
-# COST_LIMITS_FILE
-#     One row per year, columns year,hiv_dalys,hiv_hrh_budget,
-#     hiv_consumable_budget - read by initialise.py, WRITTEN by
-#     postprocess_output.compute_and_save_baseline_budgets() when
-#     SUBMIT_BASELINE_RUN is True. Lives here (not in initialise.py, where
-#     it used to be defined) so postprocess_output.py can import it too,
-#     without creating a circular import (initialise.py already imports
-#     FROM postprocess_output.py).
-#
-# BASELINE_SUMMARY_FILE
-#     Small JSON summary of the baseline run's own results, written
-#     alongside COST_LIMITS_FILE by compute_and_save_baseline_budgets() -
-#     specifically the baseline's median HIV DALYs (same TARGET_PERIOD
-#     metric every real trial's own "dalys" field already is), since that
-#     value has no other persistent home otherwise - the baseline job's
-#     own Azure output isn't kept around once postprocessed. Used by
-#     evaluate_pipeline_run.py's plotting to draw the baseline comparison
-#     line - read from disk, independently, matching that file's own
-#     "never touches the live process" design.
-#
-# BASELINE_BUDGET_COMPARISON_FILE
-#     CSV written by compute_and_save_baseline_budgets(): per year and
-#     category, the baseline mean, the adopted budget (max across runs) and
-#     the upper 95% CI of the mean, plus the gap between the two. For
-#     inspection only - nothing reads it back. The same function prints,
-#     per category, the summed yearly budget against the most expensive
-#     single baseline run, and how many baseline runs would have exceeded
-#     a CI-based budget.
-
-
-# INPUTS_DIR, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE, BASELINE_BUDGET_COMPARISON_FILE
-#     Precomputed, baseline-derived files all live in INPUTS_DIR ("inputs",
-#     relative to the working directory). The folder is created automatically
-#     when optimisation_parameters is imported (and again before each write),
-#     so it never needs creating by hand. Logs (history_log.jsonl,
-#     submitted_jobs.jsonl) and downloaded run outputs ("outputs") are not
-#     inputs and stay where they were. An existing cost_limits_by_year.csv or
-#     baseline_summary.json must be moved into inputs/ once.
 
 # --- Initial design ----------------------------------------------------------
 # N_INIT jobs (N_INIT-1 randomly-sampled configs, plus the baseline
@@ -387,7 +341,7 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 # TODO / KNOWN AWKWARDNESS, worth consolidating later: this function's own
 # baseline point (BASELINE_CONFIG_VALUES, initialise.py) is submitted
 # through the STANDARD smac_scenario.py path (suspend/resume, single
-# seed) - a SEPARATE mechanism from SUBMIT_BASELINE_RUN above (10-run,
+# seed) - a SEPARATE mechanism from SUBMIT_BUDGET_RUN above (10-run,
 # non-suspend/resume, used only to derive the budget). Both represent the
 # same underlying status-quo scenario, but currently share no code or
 # data. Kept deliberately separate for now.
@@ -415,7 +369,7 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #
 # SUBMIT_INITIAL_DESIGN
 #     Plain user toggle, same philosophy as SUBMIT_SUSPEND_PART/
-#     SUBMIT_BASELINE_RUN - set True when you want this step to run. Even
+#     SUBMIT_BUDGET_RUN - set True when you want this step to run. Even
 #     when True, the step is SKIPPED automatically on a resume: if
 #     JOB_LOG_FILE already holds at least N_INIT distinct configs (current
 #     commit or VALID_PRIOR_RUN_COMMITS), the warm start exists. If it holds
@@ -425,9 +379,9 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 # N_INIT
 #     Number of initial-design CONFIGS, including the baseline: N_INIT-1
 #     are sampled, each run on ONE seed (CHECKPOINT_SEEDS[0]), and the
-#     baseline config runs on ALL MAX_CONFIG_CALLS seeds, so the first
+#     baseline config runs on ALL MAX_CONFIG_RUNS seeds, so the first
 #     incumbent is measured on the full comparison set. Total initial jobs
-#     = (N_INIT-1) + MAX_CONFIG_CALLS.
+#     = (N_INIT-1) + MAX_CONFIG_RUNS.
 #
 # INITIAL_DESIGN_NEAR_BASELINE_FRACTION
 #     Of the N_INIT-1 randomly-sampled configs, this fraction (0.0-1.0)
@@ -461,3 +415,44 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 #     there's no natural notion of a "small" change to a binary switch,
 #     so near-baseline samples keep the baseline's own value for both,
 #     unchanged, every time.
+
+# --- Paths (rarely changed) --------------------------------------------------
+# COST_LIMITS_FILE
+#     One row per year, columns year,hiv_dalys,hiv_hrh_budget,
+#     hiv_consumable_budget - read by initialise.py, WRITTEN by
+#     postprocess_output.compute_and_save_baseline_budgets() when
+#     SUBMIT_BUDGET_RUN is True. Lives here (not in initialise.py, where
+#     it used to be defined) so postprocess_output.py can import it too,
+#     without creating a circular import (initialise.py already imports
+#     FROM postprocess_output.py).
+#
+# BASELINE_SUMMARY_FILE
+#     Small JSON summary of the baseline run's own results, written
+#     alongside COST_LIMITS_FILE by compute_and_save_baseline_budgets() -
+#     specifically the baseline's median HIV DALYs (same TARGET_PERIOD
+#     metric every real trial's own "dalys" field already is), since that
+#     value has no other persistent home otherwise - the baseline job's
+#     own Azure output isn't kept around once postprocessed. Used by
+#     evaluate_pipeline_run.py's plotting to draw the baseline comparison
+#     line - read from disk, independently, matching that file's own
+#     "never touches the live process" design.
+#
+# BASELINE_BUDGET_COMPARISON_FILE
+#     CSV written by compute_and_save_baseline_budgets(): per year and
+#     category, the baseline mean, the adopted budget (max across runs) and
+#     the upper 95% CI of the mean, plus the gap between the two. For
+#     inspection only - nothing reads it back. The same function prints,
+#     per category, the summed yearly budget against the most expensive
+#     single baseline run, and how many baseline runs would have exceeded
+#     a CI-based budget.
+
+
+# INPUTS_DIR, OUTPUTS_DIR, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE, BASELINE_BUDGET_COMPARISON_FILE
+#     Precomputed, baseline-derived files all live in INPUTS_DIR (an "inputs"
+#     folder next to this file, whatever directory the pipeline is launched
+#     from). OUTPUTS_DIR ("outputs", same place) holds run outputs downloaded
+#     from Azure. The folder is created automatically
+#     when optimisation_parameters is imported (and again before each write),
+#     so it never needs creating by hand. Logs (history_log.jsonl,
+#     submitted_jobs.jsonl) live in LOG_DIR ("logs", same place). An existing cost_limits_by_year.csv or
+#     baseline_summary.json must be moved into inputs/ once.

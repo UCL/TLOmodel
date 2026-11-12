@@ -39,7 +39,7 @@ from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from optimisation_parameters import (
     YEAR_END_DATE, CONFIG_YEAR_START_DATE, COST_LIMITS_FILE, BASELINE_SUMMARY_FILE,
     BASELINE_BUDGET_COMPARISON_FILE, INPUTS_DIR, POP_SIZE,
-    HISTORY_LOG_FILE, MAX_CONFIG_CALLS, CONVERGENCE_WINDOW, EI_XI,
+    HISTORY_LOG_FILE, MAX_CONFIG_RUNS, CONVERGENCE_WINDOW, EI_XI,
 )
 
 # Malawi's real population, used as the numerator of the scaling-factor
@@ -471,7 +471,7 @@ def report_ei_xi_diagnostic(history_file: Path = HISTORY_LOG_FILE) -> None:
     The yardstick is the seed-to-seed noise of a config's DALYs, which is
     what limits how small a real improvement can be resolved:
       noise_sd = pooled within-config standard deviation (configs with >= 2 seeds)
-      noise_se = noise_sd / sqrt(MAX_CONFIG_CALLS)   (error of a fully-confirmed config)
+      noise_se = noise_sd / sqrt(MAX_CONFIG_RUNS)   (error of a fully-confirmed config)
     and it compares that with the improvement of the best feasible DALYs
     over the last CONVERGENCE_WINDOW results. Heuristic, not a test:
       - improvement > noise_se: the search is still finding resolvable
@@ -499,7 +499,7 @@ def report_ei_xi_diagnostic(history_file: Path = HISTORY_LOG_FILE) -> None:
     if not variances:
         print("[EI_XI] no config has >= 2 seeds yet, so the noise cannot be estimated; keep EI_XI as is.")
         return
-    noise_se = float(np.sqrt(np.mean(variances))) / np.sqrt(MAX_CONFIG_CALLS)
+    noise_se = float(np.sqrt(np.mean(variances))) / np.sqrt(MAX_CONFIG_RUNS)
 
     # running best feasible (by config median), in trial order
     seen: dict[str, list[dict]] = {}
@@ -518,7 +518,7 @@ def report_ei_xi_diagnostic(history_file: Path = HISTORY_LOG_FILE) -> None:
         return
     improvement = (before - now) if before is not None else float("inf")
     print(
-        f"[EI_XI] seed noise of a {MAX_CONFIG_CALLS}-seed config (SE) = {noise_se:.4g} DALYs; "
+        f"[EI_XI] seed noise of a {MAX_CONFIG_RUNS}-seed config (SE) = {noise_se:.4g} DALYs; "
         f"best-feasible improvement over the last {CONVERGENCE_WINDOW} results = {improvement:.4g}."
     )
     if improvement > noise_se:
@@ -532,10 +532,10 @@ def report_false_rejection_diagnostic(history_file: Path = HISTORY_LOG_FILE, fla
     Prints whether the intensifier's penalty floor
     (INTENSIFIER_FLOOR_PENALTY_MULTIPLIER) looks too strict, from the results logged in `history_file`.
 
-    Flags configs that (1) have fewer than MAX_CONFIG_CALLS seeds, (2) are
+    Flags configs that (1) have fewer than MAX_CONFIG_RUNS seeds, (2) are
     feasible on their MEDIAN over the seeds they have (every constraint's
     median slack <= 0) and (3) have median DALYs below the best CONFIRMED
-    feasible config (>= MAX_CONFIG_CALLS seeds): configs the final rule
+    feasible config (>= MAX_CONFIG_RUNS seeds): configs the final rule
     could have accepted and that would have been a new best, yet which
     received no further seeds. Rejection is not logged, so "stopped early"
     is the proxy; configs seen within the last CONVERGENCE_WINDOW results
@@ -561,7 +561,7 @@ def report_false_rejection_diagnostic(history_file: Path = HISTORY_LOG_FILE, fla
 
     confirmed = [
         float(np.median([r["dalys"] for r in rows]))
-        for rows in cfgs.values() if len(rows) >= MAX_CONFIG_CALLS and median_feasible(rows)
+        for rows in cfgs.values() if len(rows) >= MAX_CONFIG_RUNS and median_feasible(rows)
     ]
     if not confirmed:
         print("[penalty] no confirmed feasible config yet; nothing to compare against.")
@@ -571,11 +571,11 @@ def report_false_rejection_diagnostic(history_file: Path = HISTORY_LOG_FILE, fla
     flagged = [
         (float(np.median([r["dalys"] for r in rows])), len(rows))
         for k, rows in cfgs.items()
-        if len(rows) < MAX_CONFIG_CALLS and last_seen[k] < settled_before
+        if len(rows) < MAX_CONFIG_RUNS and last_seen[k] < settled_before
         and median_feasible(rows) and float(np.median([r["dalys"] for r in rows])) < best_confirmed
     ]
     print(
-        f"[penalty] {len(flagged)} config(s) stopped before {MAX_CONFIG_CALLS} seeds, median-feasible, "
+        f"[penalty] {len(flagged)} config(s) stopped before {MAX_CONFIG_RUNS} seeds, median-feasible, "
         f"with median DALYs below the best confirmed ({best_confirmed:.6g})."
     )
     for dalys, n in sorted(flagged)[:5]:

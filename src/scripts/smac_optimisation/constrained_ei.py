@@ -207,6 +207,18 @@ def configs_to_array(configs: Sequence[Configuration]) -> np.ndarray:
 # 2. Multi-surrogate manager: one RF per target, with ensemble-based std
 # --------------------------------------------------------------------------
 
+def auto_min_samples_leaf(n_samples: int, n_dims: int, lower: int, upper: int) -> int:
+    """
+    Rule of thumb for the forests' leaf size: about 2 leaves per tuned
+    parameter per tree, i.e. min_samples_leaf ~ n_samples / (2 * n_dims),
+    clipped to [lower, upper]. The floor keeps every leaf able to give a
+    usable scatter estimate for sigma; the cap (MAX_CONFIG_RUNS) stops a
+    leaf being dominated by one config's seeds. A heuristic, not a
+    published rule.
+    """
+    return int(min(max(round(n_samples / (2 * n_dims)), lower), upper))
+
+
 class MultiSurrogateModel:
     """
     Holds one RandomForestRegressor per target (the objective and each
@@ -221,32 +233,32 @@ class MultiSurrogateModel:
         target_names: Sequence[str],
         n_estimators: int = 100,       # HYPERPARAMETER: more trees = smoother/
                                           # more stable mean+std, linear compute cost
-        min_samples_leaf: int = 3,     # HYPERPARAMETER: noise-smoothing strength -
-                                          # see the grouped-CV + leave-one-seed-out
-                                          # validation approach discussed earlier.
-                                          # In real pipeline use this value comes
-                                          # from ConstrainedEI's own constructor
-                                          # (which sources it from
-                                          # optimisation_parameters.MIN_SAMPLES_LEAF),
-                                          # not this class's own default here - this
-                                          # default only matters if MultiSurrogateModel
-                                          # is constructed directly/standalone.
+        min_samples_leaf: int | str = 3,  # int, or "auto" to recompute at every fit
+                                          # with auto_min_samples_leaf() from the number
+                                          # of training rows and parameters
+        min_samples_leaf_bounds: tuple[int, int] = (3, 10),  # (floor, cap) for "auto"
         random_state: int = 0,         # reproducibility seed, not a tunable hyperparameter
     ):
         self.target_names = list(target_names)
-        self._rf_kwargs = dict(
-            n_estimators=n_estimators,
-            min_samples_leaf=min_samples_leaf,
-            random_state=random_state,
-        )
+        if min_samples_leaf != "auto" and not (isinstance(min_samples_leaf, int) and min_samples_leaf >= 1):
+            raise ValueError(f'min_samples_leaf must be a positive int or "auto", got {min_samples_leaf!r}.')
+        self._rf_kwargs = dict(n_estimators=n_estimators, random_state=random_state)
+        self._min_samples_leaf_setting = min_samples_leaf
+        self._min_samples_leaf_bounds = min_samples_leaf_bounds
+        self.min_samples_leaf_used: int | None = None  # value used at the latest fit
         self.models: dict[str, RandomForestRegressor] = {}
         self.n_fitted_points: int = 0
 
     def fit(self, X: np.ndarray, targets: dict[str, np.ndarray]) -> None:
         """targets: dict mapping target name -> 1D array, same length as X."""
+        if self._min_samples_leaf_setting == "auto":
+            leaf = auto_min_samples_leaf(X.shape[0], X.shape[1], *self._min_samples_leaf_bounds)
+        else:
+            leaf = self._min_samples_leaf_setting
+        self.min_samples_leaf_used = leaf
         for name in self.target_names:
             y = targets[name]
-            rf = RandomForestRegressor(**self._rf_kwargs)
+            rf = RandomForestRegressor(min_samples_leaf=leaf, **self._rf_kwargs)
             rf.fit(X, y)
             self.models[name] = rf
         self.n_fitted_points = X.shape[0]
@@ -366,12 +378,13 @@ class ConstrainedEI(AbstractAcquisitionFunction):
                                     # accumulate before the surrogate refits -
                                     # see the earlier discussion on retrain
                                     # cadence and its interaction with N_CONCURRENT
-        min_samples_leaf: int = 3,  # HYPERPARAMETER: passed straight through to
-                                       # MultiSurrogateModel's own RandomForestRegressors
-                                       # (see that class's own docstring/comment) -
-                                       # sourced from optimisation_parameters.py's
-                                       # own MIN_SAMPLES_LEAF, matching every other
-                                       # hyperparameter in this pipeline.
+        min_samples_leaf: int | str = "auto",  # HYPERPARAMETER: an int, or "auto" to
+                                       # recompute at every refit as
+                                       # n_results / (2 * n_params), clipped to
+                                       # min_samples_leaf_bounds (see
+                                       # auto_min_samples_leaf()); sourced from
+                                       # optimisation_parameters.MIN_SAMPLES_LEAF
+        min_samples_leaf_bounds: tuple[int, int] = (3, 10),  # (floor, cap) used by "auto"
         combination: str = COMBINATION_MULTIPLICATIVE,  # HYPERPARAMETER: the single
                                        # switch between the two rules - "multiplicative"
                                        # (EI * prod P_j; assumes uncorrelated
@@ -408,6 +421,7 @@ class ConstrainedEI(AbstractAcquisitionFunction):
         self._surrogate = MultiSurrogateModel(
             target_names=[objective_name, *self._constraint_names],
             min_samples_leaf=min_samples_leaf,
+            min_samples_leaf_bounds=min_samples_leaf_bounds,
         )
         self._eta: float | None = None  # best feasible objective value seen so far
 
@@ -428,8 +442,12 @@ class ConstrainedEI(AbstractAcquisitionFunction):
             name: np.array([h[name] for h in history], dtype=float)
             for name in self._surrogate.target_names
         }
+        previous_leaf = self._surrogate.min_samples_leaf_used
         self._surrogate.fit(X, targets)
         self._last_fit_n = len(history)
+        if self._surrogate.min_samples_leaf_used != previous_leaf:
+            print(f"[surrogate] min_samples_leaf = {self._surrogate.min_samples_leaf_used} "
+                  f"({X.shape[0]} results, {X.shape[1]} parameters).")
 
         # NOISY-EI CORRECTION: eta is the best-so-far target that EI tries
         # to improve on. Using the raw observed DALYs at the best feasible
