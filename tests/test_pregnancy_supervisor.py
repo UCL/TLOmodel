@@ -30,9 +30,11 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    syphilis,
     tb,
     wasting,
 )
+from tlo.methods.hsi_event import FacilityInfo
 
 # The resource files
 try:
@@ -99,12 +101,322 @@ def register_modules(sim):
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
+                 syphilis.Syphilis(),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
                  labour.Labour(),
                  postnatal_supervisor.PostnatalSupervisor(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  hiv.DummyHivModule(),
                  )
+
+
+def setup_pregnant_mother_for_syphilis_test(sim):
+    df = sim.population.props
+    ps = sim.modules['PregnancySupervisor']
+    mother_id = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)].index[0]
+
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
+    df.at[mother_id, 'ps_ectopic_pregnancy'] = 'none'
+    pregnancy_helper_functions.update_mni_dictionary(ps, mother_id)
+
+    return df, ps.mother_and_newborn_info, ps, mother_id
+
+
+def test_late_latent_syphilis_is_detected_and_treated_at_anc(seed):
+    """ANC syphilis screening should detect untreated late latent infection and trigger curative treatment."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    cw = sim.modules['CareOfWomenDuringPregnancy']
+    cw.parameters['sensitivity_blood_test_syphilis'] = [1.0, 1.0]
+    cw.parameters['specificity_blood_test_syphilis'] = [1.0, 1.0]
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df, mni, _, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+
+    df.at[mother_id, 'ps_syphilis_state'] = 'late_latent'
+    cw.current_parameters['prob_intervention_delivered_syph_test'] = 1.0
+
+    hsi_event = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
+        module=cw, person_id=mother_id)
+    hsi_event.facility_info = FacilityInfo(id=1, name='Facility_Level_1a_Balaka', level='1a', region='Southern')
+
+    cw.syphilis_screening_and_treatment(hsi_event)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'none'
+    assert df.at[mother_id, 'ps_syphilis_treated']
+    assert mni[mother_id]['syphilis_treatment_date'] == sim.date
+    assert pd.isnull(mni[mother_id]['syphilis_next_progression_date'])
+
+
+def test_pre_existing_syphilis_at_pregnancy_entry_can_include_latent_infection(seed):
+    """Pregnancy entry can seed calibrated pre-existing maternal syphilis, including latent stages."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df, mni, ps, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+
+    syph.current_parameters['prob_pre_existing_syphilis_at_pregnancy_start'] = 1.0
+    syph.current_parameters['pre_existing_syphilis_stage_distribution'] = [0.0, 0.0, 1.0, 0.0]
+
+    syph.initialise_pre_existing_syphilis_for_pregnancy(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'early_latent'
+    assert not df.at[mother_id, 'ps_syphilis_treated']
+    assert mni[mother_id]['syphilis_infection_origin'] == 'pre_existing'
+    assert mni[mother_id]['syphilis_stage_onset_date'] <= sim.date
+    assert not pd.isnull(mni[mother_id]['syphilis_next_progression_date'])
+
+
+def test_maternal_syphilis_does_not_directly_increase_background_stillbirth_risk(seed):
+    """Maternal syphilis stillbirth risk should be mediated through fetal congenital infection."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    mother_id = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)].index[0]
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 27
+    df.at[mother_id, 'ps_syphilis_state'] = 'none'
+
+    params = sim.modules['PregnancySupervisor'].current_parameters
+    params['rr_still_birth_maternal_syphilis'] = 100.0
+    model = sim.modules['PregnancySupervisor'].ps_linear_models['antenatal_stillbirth']
+
+    baseline_risk = model.predict(df.loc[[mother_id]])[mother_id]
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
+    syphilis_risk = model.predict(df.loc[[mother_id]])[mother_id]
+
+    assert syphilis_risk == baseline_risk
+
+
+def test_congenital_syphilis_stillbirth_risk_is_drawn_once_at_transmission(seed):
+    """Changing congenital stillbirth risk after infection should not create later repeated draws."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+    ps = sim.modules['PregnancySupervisor']
+    syph = sim.modules['Syphilis']
+    mother_id = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)].index[0]
+
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
+    df.at[mother_id, 'ps_congenital_syphilis'] = False
+    pregnancy_helper_functions.update_mni_dictionary(ps, mother_id)
+    turn_off_antenatal_pregnancy_loss(sim)
+
+    params = syph.current_parameters
+    params['prob_congenital_transmission_primary'] = 1.0
+    params['prob_stillbirth_from_congenital_syphilis'] = 0.0
+
+    syph.apply_risk_of_congenital_syphilis(gestation_of_interest=22)
+
+    assert df.at[mother_id, 'ps_congenital_syphilis']
+    assert mni[mother_id]['congenital_syphilis_stillbirth_week'] is None
+
+    params['prob_stillbirth_from_congenital_syphilis'] = 1.0
+    for gestational_age in [27, 31, 35, 40]:
+        df.at[mother_id, 'ps_gestational_age_in_weeks'] = gestational_age
+        ps.apply_risk_of_still_birth(gestation_of_interest=gestational_age)
+
+    assert df.at[mother_id, 'is_pregnant']
+    assert ps.mnh_outcome_counter['antenatal_stillbirth'] == 0
+    assert ps.mnh_outcome_counter['congenital_syphilis_stillbirth'] == 0
+
+
+def test_assigned_congenital_syphilis_stillbirth_is_applied_at_next_checkpoint(seed):
+    """A congenital syphilis stillbirth assigned at infection should be applied at the next stillbirth checkpoint."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+    ps = sim.modules['PregnancySupervisor']
+    syph = sim.modules['Syphilis']
+    mother_id = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)].index[0]
+
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
+    df.at[mother_id, 'ps_congenital_syphilis'] = False
+    pregnancy_helper_functions.update_mni_dictionary(ps, mother_id)
+    turn_off_antenatal_pregnancy_loss(sim)
+
+    params = syph.current_parameters
+    params['prob_congenital_transmission_primary'] = 1.0
+    params['prob_stillbirth_from_congenital_syphilis'] = 1.0
+
+    syph.apply_risk_of_congenital_syphilis(gestation_of_interest=22)
+
+    assert mni[mother_id]['congenital_syphilis_stillbirth_week'] == 27
+
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 27
+    ps.apply_risk_of_still_birth(gestation_of_interest=27)
+
+    assert not df.at[mother_id, 'is_pregnant']
+    assert ps.mnh_outcome_counter['antenatal_stillbirth'] == 1
+    assert ps.mnh_outcome_counter['congenital_syphilis_stillbirth'] == 1
+
+
+def test_syphilis_module_vertical_transmission_updates_expected_state(seed):
+    """The Syphilis module owns vertical transmission and congenital stillbirth assignment."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df, mni, ps, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
+    df.at[mother_id, 'ps_congenital_syphilis'] = False
+    syph.current_parameters['prob_congenital_transmission_primary'] = 1.0
+    syph.current_parameters['prob_stillbirth_from_congenital_syphilis'] = 1.0
+
+    syph.apply_risk_of_congenital_syphilis(gestation_of_interest=22)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'primary'
+    assert not df.at[mother_id, 'ps_syphilis_treated']
+    assert df.at[mother_id, 'ps_congenital_syphilis']
+    assert mni[mother_id]['congenital_syphilis_stillbirth_week'] == 27
+    assert ps.mnh_outcome_counter['congenital_syphilis_infection'] == 1
+
+
+def test_incident_syphilis_does_not_progress_at_next_pregnancy_checkpoint(seed):
+    """Incident syphilis should progress by scheduled duration, not by pregnancy checkpoint polling."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df, mni, ps, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+
+    mni[mother_id]['pred_syph_infect'] = sim.date
+    syphilis_onset = syphilis.SyphilisInPregnancyEvent(syph, mother_id)
+    syphilis_onset.apply(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'primary'
+    assert mni[mother_id]['syphilis_next_progression_date'] == sim.date + pd.Timedelta(
+        weeks=syph.current_parameters['duration_primary_weeks'])
+
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
+    syph.apply_risk_of_congenital_syphilis(gestation_of_interest=22)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'primary'
+
+def test_incident_syphilis_resets_previous_treatment_status(seed):
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df, mni, _, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+
+    df.at[mother_id, 'ps_syphilis_state'] = 'none'
+    df.at[mother_id, 'ps_syphilis_treated'] = True
+    mni[mother_id]['syphilis_treatment_date'] = sim.date - pd.Timedelta(days=7)
+    mni[mother_id]['pred_syph_infect'] = sim.date
+
+    event = syphilis.SyphilisInPregnancyEvent(syph, mother_id)
+    event.apply(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'primary'
+    assert not df.at[mother_id, 'ps_syphilis_treated']
+
+
+def test_syphilis_progression_event_does_not_jump_multiple_stages(seed):
+    """One syphilis progression event should advance at most one disease stage."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df, mni, ps, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
+    mni[mother_id]['syphilis_infection_origin'] = 'incident_pregnancy'
+    mni[mother_id]['syphilis_stage_onset_date'] = sim.date - pd.Timedelta(
+        weeks=syph.current_parameters['duration_primary_weeks'])
+    mni[mother_id]['syphilis_next_progression_date'] = sim.date
+
+    progression = syphilis.SyphilisProgressionEvent(
+        syph, mother_id, from_stage='primary', to_stage='secondary')
+    progression.apply(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'secondary'
+    assert ps.mnh_outcome_counter['syphilis_progression_primary_secondary'] == 1
+    assert ps.mnh_outcome_counter['syphilis_progression_secondary_latent'] == 0
+    assert mni[mother_id]['syphilis_next_progression_date'] == sim.date + pd.Timedelta(
+        weeks=syph.current_parameters['duration_secondary_weeks'])
+
+
+def test_syphilis_treatment_prevents_later_progression(seed):
+    """Scheduled syphilis progression should not change state after treatment has cured infection."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df, mni, ps, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
+    df.at[mother_id, 'ps_syphilis_treated'] = True
+    mni[mother_id]['syphilis_infection_origin'] = 'incident_pregnancy'
+    mni[mother_id]['syphilis_stage_onset_date'] = sim.date - pd.Timedelta(
+        weeks=syph.current_parameters['duration_primary_weeks'])
+    mni[mother_id]['syphilis_next_progression_date'] = sim.date
+
+    progression = syphilis.SyphilisProgressionEvent(
+        syph, mother_id, from_stage='primary', to_stage='secondary')
+    progression.apply(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'primary'
+    assert ps.mnh_outcome_counter['syphilis_progression_primary_secondary'] == 0
+
+
+def test_pre_existing_latent_syphilis_can_progress_to_late_latent_but_incident_latent_cannot(seed):
+    """Late latent progression during pregnancy requires evidence that infection pre-dates pregnancy."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df, mni, ps, mother_id = setup_pregnant_mother_for_syphilis_test(sim)
+    syph = sim.modules['Syphilis']
+
+    df.at[mother_id, 'ps_syphilis_state'] = 'early_latent'
+    mni[mother_id]['syphilis_infection_origin'] = 'incident_pregnancy'
+    mni[mother_id]['syphilis_stage_onset_date'] = sim.date - pd.Timedelta(
+        weeks=syph.current_parameters['duration_early_latent_weeks'])
+    mni[mother_id]['syphilis_next_progression_date'] = sim.date
+
+    progression = syphilis.SyphilisProgressionEvent(
+        syph, mother_id, from_stage='early_latent', to_stage='late_latent')
+    progression.apply(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'early_latent'
+    assert ps.mnh_outcome_counter['syphilis_progression_late_latent'] == 0
+
+    mni[mother_id]['syphilis_infection_origin'] = 'pre_existing'
+    mni[mother_id]['syphilis_next_progression_date'] = sim.date
+    progression.apply(mother_id)
+
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'late_latent'
+    assert ps.mnh_outcome_counter['syphilis_progression_late_latent'] == 1
 
 
 @pytest.mark.slow
@@ -117,7 +429,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy(seed, tmpdir):
 
     register_modules(sim)
     sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2011, 2, 1))   # run to ensure ParameterUpdateEvent is called and works
+    sim.simulate(end_date=Date(2011, 2, 1))  # run to ensure ParameterUpdateEvent is called and works
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
@@ -167,6 +479,7 @@ def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
                  healthsystem.HealthSystem(mode_appt_constraints=2, cons_availability='all'),
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
+                 syphilis.Syphilis(),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
                  labour.Labour(),
                  postnatal_supervisor.PostnatalSupervisor(),
@@ -204,6 +517,7 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
+                 syphilis.Syphilis(),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
                  labour.Labour(),
                  postnatal_supervisor.PostnatalSupervisor(),
@@ -661,7 +975,11 @@ def test_run_all_births_end_ectopic_no_care_seeking(seed):
     # We force all pregnancies to be ectopic, never trigger care seeking, always lead to rupture and death
     params = sim.modules['PregnancySupervisor'].current_parameters
     params['prob_ectopic_pregnancy'] = 1.0
+    # Never seek care before ectopic rupture
+    params['prob_care_seeking_ectopic_pre_rupture'] = 0.0
+    # Never seek care after rupture
     params['prob_seek_care_pregnancy_loss'] = 0.0
+    # Ensure ruptured ectopic pregnancy leads to death
     params['prob_ectopic_pregnancy_death'] = 1.0
     params['treatment_effect_ectopic_pregnancy_treatment'] = 1.0
 
@@ -1091,7 +1409,6 @@ def test_pregnancy_supervisor_gdm(seed):
         pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], woman)
 
         sim.modules['PregnancySupervisor'].mother_and_newborn_info[woman]['delivery_setting'] = 'home_birth'
-
 
     # Run pregnancy supervisor event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
