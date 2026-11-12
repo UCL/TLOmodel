@@ -4,31 +4,18 @@ from pathlib import Path
 # TLO / hyperparameters
 # --------------------------------------------------------------------------
 YEAR_START_DATE = 2010
-YEAR_END_DATE = 2014
-CONFIG_YEAR_START_DATE = 2011
-POP_SIZE = 1000
-
-# Constraint periods (absolute calendar years, inclusive; built and checked in
-# initialise.py as PERIOD_BOUNDARIES). Each period runs from its START to the
-# year before the next START; the last period in use always ends at
-# YEAR_END_DATE. Set START_SECOND_BOUNDARY (and START_THIRD_BOUNDARY) to None
-# to use fewer periods. Checked on import of initialise.py:
-# every start must satisfy CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE,
-# starts must increase strictly, and START_THIRD_BOUNDARY may only be set if
-# START_SECOND_BOUNDARY is.
-#   three periods: START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = 2013
-#   two periods:   START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = None
-#   one period:    START_SECOND_BOUNDARY = None, START_THIRD_BOUNDARY = None
+CONFIG_YEAR_START_DATE = 2020
+YEAR_END_DATE = 2025
+POP_SIZE = 8000
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
 START_SECOND_BOUNDARY = None
-START_THIRD_BOUNDARY = 2013
-
+START_THIRD_BOUNDARY = None
 
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TOTAL_RUNS = 10
-MAX_CONFIG_RUNS = 3
+N_TOTAL_RUNS = 50
+MAX_CONFIG_RUNS = 5
 RETRAIN_EVERY = 1
 EI_XI = 0.0
 MIN_SAMPLES_LEAF = "auto"
@@ -43,7 +30,7 @@ MERIT_OVERSHOOT_TOLERANCE = 0.0            # additive mode only
 # --------------------------------------------------------------------------
 # Operational (Azure submission / polling) hyperparameters
 # --------------------------------------------------------------------------
-N_CONCURRENT = 3
+N_CONCURRENT = 20
 POLL_INTERVAL_SECONDS = 10
 
 # --------------------------------------------------------------------------
@@ -57,20 +44,20 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations)
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
-SUBMIT_SUSPEND_PART = False
-VALID_CHECKPOINT_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47']
+SUBMIT_SUSPEND_PART = True
+VALID_CHECKPOINT_COMMITS: list[str] = []
 
 # --------------------------------------------------------------------------
 # Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
-SUBMIT_BUDGET_RUN = False
+SUBMIT_BUDGET_RUN = True
 
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
-VALID_PRIOR_RUN_COMMITS: list[str] = ['ff2ce522d88a6844d8e7ea865e81d497755862b0', '58d44ab52a811fb644b3a90be34b12167a1d6a47', '2d12ead5f49287557a4ee4c56060b1efe42dd4a5']
-SUBMIT_INITIAL_DESIGN = False
-N_INIT = 5
+VALID_PRIOR_RUN_COMMITS: list[str] = []
+SUBMIT_INITIAL_DESIGN = True
+N_INIT = 8
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
 INITIAL_DESIGN_PERTURBATION_STD = 0.1
 
@@ -121,6 +108,18 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #
 # POP_SIZE
 #     Population size simulated
+#
+# Constraint periods (absolute calendar years, inclusive; built and checked in
+# initialise.py as PERIOD_BOUNDARIES). Each period runs from its START to the
+# year before the next START; the last period in use always ends at
+# YEAR_END_DATE. Set START_SECOND_BOUNDARY (and START_THIRD_BOUNDARY) to None
+# to use fewer periods. Checked on import of initialise.py:
+# every start must satisfy CONFIG_YEAR_START_DATE <= start < YEAR_END_DATE,
+# starts must increase strictly, and START_THIRD_BOUNDARY may only be set if
+# START_SECOND_BOUNDARY is.
+#   three periods: START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = 2013
+#   two periods:   START_SECOND_BOUNDARY = 2012, START_THIRD_BOUNDARY = None
+#   one period:    START_SECOND_BOUNDARY = None, START_THIRD_BOUNDARY = None
 
 # --- SMAC / search hyperparameters ------------------------------------------
 #
