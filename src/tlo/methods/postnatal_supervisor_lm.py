@@ -97,7 +97,7 @@ def predict_anaemia_after_pregnancy(self, df, rng=None, **externals):
     result[df.la_iron_folic_acid_postnatal] *= p['treatment_effect_iron_folic_acid_anaemia']
 
     if 'Hiv' in self.module.sim.modules:
-        result[df.hv_inf & (df.hv_art != "not")] *= p['rr_anaemia_hiv_no_art']
+        result[df.hv_inf & (df.hv_art == "not")] *= p['rr_anaemia_hiv_no_art']
 
     if 'Malaria' in self.module.sim.modules:
         result[df.ma_is_infected] *= p['rr_anaemia_maternal_malaria']
