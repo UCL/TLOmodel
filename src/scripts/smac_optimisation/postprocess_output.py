@@ -334,7 +334,7 @@ def compute_and_save_baseline_budgets(
     submitted through the standard trial path, one per seed). Each gets
     postprocessed via the SAME postprocess_run() every real trial's own
     output goes through, so these cost figures are computed identically to
-    a trial's own costs. expected_runs (N_BASELINE_RUNS) only triggers a
+    a trial's own costs. expected_runs (MAX_CONFIG_RUNS) only triggers a
     warning if fewer runs were found.
 
     BUDGET = HIGHEST COST ACROSS THE BASELINE RUNS, per year and category:
@@ -381,7 +381,7 @@ def compute_and_save_baseline_budgets(
     if expected_runs is not None and len(run_dirs) != expected_runs:
         print(
             f"[warning] budgets derived from {len(run_dirs)} baseline run(s), not the expected "
-            f"{expected_runs} (N_BASELINE_RUNS): the maximum over fewer seeds is a tighter budget."
+            f"{expected_runs} (MAX_CONFIG_RUNS): the maximum over fewer seeds is a tighter budget."
         )
 
     per_run_results = [postprocess_run(run_dir) for run_dir in run_dirs]

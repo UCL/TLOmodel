@@ -97,11 +97,10 @@ from optimisation_parameters import (
     MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
     N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
-    N_BASELINE_RUNS, START_FIRST_BOUNDARY, YEAR_END_DATE,
+    START_FIRST_BOUNDARY, YEAR_END_DATE,
     SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
     JOB_LOG_FILE,
 )
-SMAC_SEEDS = set(CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS])  # the seeds SMAC's intensifier can draw
 import json
 
 
@@ -751,7 +750,7 @@ def submit_initial_design_jobs() -> None:
     """
     Submits N_INIT sampled CONFIGS (optimisation_parameters.py) BEFORE the
     main ask-tell loop starts, each with exactly ONE seed. The baseline is
-    NOT part of this: it is run separately, on N_BASELINE_RUNS seeds, by
+    NOT part of this: it is run separately, on MAX_CONFIG_RUNS seeds, by
     ensure_baseline_runs() (which also derives the budgets). No
     intensification happens at this stage; that's SMAC's own
     intensifier's job, later, once the main loop is running.
@@ -921,7 +920,7 @@ def job_draw_dir(job: AzureJobHandle) -> Path:
 def ensure_baseline_runs() -> list[Path]:
     """
     Makes sure the baseline config has a finished, successful run on every
-    seed in CHECKPOINT_SEEDS[:N_BASELINE_RUNS], and returns the local
+    seed in CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS], and returns the local
     directory of each run (one per seed) for the budget derivation.
 
     Nothing is toggled; the job log decides. For each seed, a baseline run
@@ -940,7 +939,7 @@ def ensure_baseline_runs() -> list[Path]:
     Must be called after the checkpoints are ready (ensure_checkpoints_ready())
     and before initialise.py is imported.
     """
-    seeds = CHECKPOINT_SEEDS[:N_BASELINE_RUNS]
+    seeds = CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS]
     baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
 
     by_seed: dict[int, list[dict]] = {}
@@ -963,8 +962,8 @@ def ensure_baseline_runs() -> list[Path]:
             n_reused += 1
         jobs[seed] = chosen
     print(
-        f"[baseline] {N_BASELINE_RUNS} run(s) needed: {n_reused} reused from the job log, "
-        f"{N_BASELINE_RUNS - n_reused} submitted."
+        f"[baseline] {MAX_CONFIG_RUNS} run(s) needed: {n_reused} reused from the job log, "
+        f"{MAX_CONFIG_RUNS - n_reused} submitted."
     )
 
     still_waiting = set(seeds)
@@ -985,7 +984,7 @@ def ensure_baseline_runs() -> list[Path]:
             f"Baseline run(s) finished but FAILED: {failed}. The budgets need every baseline seed - "
             f"investigate, then start again (failed runs are resubmitted automatically)."
         )
-    print(f"[baseline] all {N_BASELINE_RUNS} run(s) finished.")
+    print(f"[baseline] all {MAX_CONFIG_RUNS} run(s) finished.")
 
     return [run_dir for seed in seeds for run_dir in sorted(job_draw_dir(jobs[seed]).iterdir())]
 
@@ -1276,7 +1275,7 @@ configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
 #          checkpoint under the current commit or VALID_CHECKPOINT_COMMITS
 #          is submitted now; then wait until all have finished. Every run
 #          below, baseline included, resumes from one.
-#       2. Baseline runs: the baseline config on N_BASELINE_RUNS seeds,
+#       2. Baseline runs: the baseline config on MAX_CONFIG_RUNS seeds,
 #          through the normal trial path (ensure_baseline_runs()). Existing
 #          runs in the job log are reused, missing or failed ones are
 #          submitted, then wait.
@@ -1292,7 +1291,7 @@ if USE_SUSPEND_RESUME:
     ensure_checkpoints_ready()
 
 _baseline_run_dirs = ensure_baseline_runs()
-compute_and_save_baseline_budgets(_baseline_run_dirs, START_FIRST_BOUNDARY, YEAR_END_DATE, N_BASELINE_RUNS)
+compute_and_save_baseline_budgets(_baseline_run_dirs, START_FIRST_BOUNDARY, YEAR_END_DATE, MAX_CONFIG_RUNS)
 
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
@@ -1546,12 +1545,6 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
         value = record_result(config, seed, run, job_id=run.get("job_id"), commit=run.get("commit"),
                               role=run.get("role"))
         n_seeded += 1
-        if run.get("role") == "baseline" and seed not in SMAC_SEEDS:
-            # A baseline seed beyond the intensifier's pool (N_BASELINE_RUNS >
-            # MAX_CONFIG_RUNS): feeds the budget and the history only. Told to
-            # SMAC, it would leave the incumbent with seeds no challenger can
-            # ever be run on, so no challenger could be promoted past it.
-            continue
         info = TrialInfo(config=config, seed=seed)
         smac.tell(info, value)
     return n_seeded
