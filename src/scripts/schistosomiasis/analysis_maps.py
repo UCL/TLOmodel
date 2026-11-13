@@ -181,8 +181,8 @@ fig, axs = plt.subplots(1, 3, figsize=(15, 8))
 # Define maps and their respective columns and titles
 maps = [
     (map_with_nhb_diffs_ephp, 'mean_x', "Net Health Benefit", 'viridis'),
-    (map_with_nhb_diffs_ephp, 'year_ephp_haem', "Elimination Year: S. Haematobium", 'plasma'),
-    (map_with_nhb_diffs_ephp, 'year_ephp_mansoni', "Elimination Year: S. Mansoni", 'plasma'),
+    (map_with_nhb_diffs_ephp, 'year_ephp_haem', "Threshold Year: S. Haematobium", 'plasma'),
+    (map_with_nhb_diffs_ephp, 'year_ephp_mansoni', "Threshold Year: S. Mansoni", 'plasma'),
 ]
 
 # Align CRS for all datasets
@@ -311,7 +311,8 @@ plt.show()
 #---------------- plot set of maps for each draw
 
 continue_wash_all_strategy = read_csv(
-    results_folder / f'nhb_district_vs_noMDA_financial_costs_88_2024-2050.csv')
+    results_folder / f'nhb_district_vs_noMDA_financial_costs_88_2024-2050.csv',
+    encoding="mac_roman")
 
 
 # Merge to get year_ephp for the best strategy under Continue WASH
@@ -380,8 +381,8 @@ def plot_3x3_maps(
     ),
     target_crs: str = "EPSG:4326",
     nhb_col: str = "mean",
-    haem_col: str = "year_ephp_haem",
-    mansoni_col: str = "year_ephp_mansoni",
+    haem_col: str = "year_ephp_haem_x",
+    mansoni_col: str = "year_ephp_mansoni_x",
     nhb_cmap: str = "viridis",
     nhb_pct_cmap: str = "RdBu_r",
     year_cmap: str = "plasma",
@@ -508,14 +509,14 @@ def plot_3x3_maps(
 
             elif c == 1:
                 col = haem_col
-                title = "Elimination Year: S. Haematobium"
+                title = "Threshold Year: S. Haematobium"
                 cmap = year_cmap
                 vmin, vmax = year_vmin, year_vmax
                 treat_minus99 = True
                 is_pct_panel = False
             else:
                 col = mansoni_col
-                title = "Elimination Year: S. Mansoni"
+                title = "Threshold Year: S. Mansoni"
                 cmap = year_cmap
                 vmin, vmax = year_vmin, year_vmax
                 treat_minus99 = True
