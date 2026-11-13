@@ -4,9 +4,9 @@ from pathlib import Path
 # TLO / hyperparameters
 # --------------------------------------------------------------------------
 YEAR_START_DATE = 2010
-CONFIG_YEAR_START_DATE = 2020
-YEAR_END_DATE = 2025
-POP_SIZE = 8000
+CONFIG_YEAR_START_DATE = 2026
+YEAR_END_DATE = 2050
+POP_SIZE = 100000
 START_FIRST_BOUNDARY = CONFIG_YEAR_START_DATE
 START_SECOND_BOUNDARY = None
 START_THIRD_BOUNDARY = None
@@ -14,8 +14,8 @@ START_THIRD_BOUNDARY = None
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TOTAL_RUNS = 50
-MAX_CONFIG_RUNS = 5
+N_TOTAL_RUNS = 400
+MAX_CONFIG_RUNS = 8
 RETRAIN_EVERY = 1
 EI_XI = 0.0
 MIN_SAMPLES_LEAF = "auto"
@@ -31,7 +31,7 @@ MERIT_OVERSHOOT_TOLERANCE = 0.0            # additive mode only
 # Operational (Azure submission / polling) hyperparameters
 # --------------------------------------------------------------------------
 N_CONCURRENT = 20
-POLL_INTERVAL_SECONDS = 10
+POLL_INTERVAL_SECONDS = 120
 
 # --------------------------------------------------------------------------
 # Convergence-check hyperparameters (see convergence_monitoring.py)
@@ -47,16 +47,11 @@ USE_SUSPEND_RESUME = True
 VALID_CHECKPOINT_COMMITS: list[str] = []
 
 # --------------------------------------------------------------------------
-# Baseline runs (see ensure_baseline_runs(), compute_and_save_baseline_budgets())
-# --------------------------------------------------------------------------
-N_BASELINE_RUNS = 10
-
-# --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
 # --------------------------------------------------------------------------
 VALID_PRIOR_RUN_COMMITS: list[str] = []
 SUBMIT_INITIAL_DESIGN = True
-N_INIT = 8
+N_INIT = 15
 INITIAL_DESIGN_NEAR_BASELINE_FRACTION = 0.2
 INITIAL_DESIGN_PERTURBATION_STD = 0.1
 
@@ -293,7 +288,7 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 
 # --- Baseline runs -------------------------------------------------------------
 # The baseline config (BASELINE_CONFIG_VALUES, baseline_config.py) is run
-# once per seed on N_BASELINE_RUNS seeds, through the SAME path as every
+# once per seed on MAX_CONFIG_RUNS seeds, through the SAME path as every
 # trial (smac_scenario.py, checkpoints included). That single set of runs
 # gives both:
 #   - the BUDGETS: per year and cost category, the HIGHEST cost across the
@@ -309,21 +304,13 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 # finished baseline runs; a commit not listed in VALID_PRIOR_RUN_COMMITS
 # does resubmit them (and rebuilds the budgets).
 #
-# N_BASELINE_RUNS
-#     Number of seeds the baseline config is run on: CHECKPOINT_SEEDS[:N].
-#     Must be >= MAX_CONFIG_RUNS (checked in checkpoint_seeds.py). The
-#     first MAX_CONFIG_RUNS seeds are the ones SMAC's intensifier can draw,
-#     so the baseline is told to SMAC on exactly those seeds (the
-#     incumbent starts with the full comparison set). Any further seeds
-#     feed the budget and the history only, NOT SMAC: a challenger can
-#     never be run on a seed outside the intensifier's pool, so telling
-#     SMAC about them would stop any challenger being promoted past the
-#     baseline. The budget is the per-year MAXIMUM over all N runs, so it
-#     grows with N (10 keeps the earlier definition). Because the budget is
-#     the maximum over the same seeds the baseline is judged on, the
-#     baseline is feasible on every one of its seeds by construction.
-#     Costs N baseline runs, plus checkpoints for any seed beyond
-#     MAX_CONFIG_RUNS.
+# There is no separate parameter for the number of baseline runs: the
+# baseline is run on exactly MAX_CONFIG_RUNS seeds (CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS]),
+# the same seeds SMAC's intensifier draws, so the incumbent starts with its
+# full comparison set. The budget is the per-year MAXIMUM over those runs, so
+# it grows with MAX_CONFIG_RUNS (a larger value gives a looser budget), and,
+# because it is the maximum over the same seeds the baseline is judged on, the
+# baseline is feasible on every one of its seeds by construction.
 #
 # --- Initial design ----------------------------------------------------------
 # N_INIT sampled configs (ONE seed each, in addition to the baseline runs
@@ -370,7 +357,7 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #
 # N_INIT
 #     Number of initial-design configs, all sampled (the baseline is NOT
-#     among them: it is run separately on N_BASELINE_RUNS seeds). Each is
+#     among them: it is run separately on MAX_CONFIG_RUNS seeds). Each is
 #     run on ONE seed (CHECKPOINT_SEEDS[0]). Total initial jobs = N_INIT.
 #
 # INITIAL_DESIGN_NEAR_BASELINE_FRACTION
