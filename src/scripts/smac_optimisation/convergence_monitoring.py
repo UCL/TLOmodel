@@ -24,16 +24,15 @@ import numpy as np
 
 from ConfigSpace import Configuration
 
-from optimisation_parameters import CONVERGENCE_WINDOW, CONVERGENCE_MIN_RELATIVE_IMPROVEMENT
+from optimisation_parameters import CONVERGENCE_WINDOW, CONVERGENCE_MIN_RELATIVE_IMPROVEMENT, HISTORY_LOG_FILE
 
 
 # --------------------------------------------------------------------------
 # 1. Live history logging
 # --------------------------------------------------------------------------
 
-HISTORY_LOG_FILE = Path("history_log.jsonl")  # append-only, one line per
-                                                # result - tail -f this file
-                                                # to inspect progress live
+# HISTORY_LOG_FILE (append-only, one line per result; tail -f it to inspect
+# progress live) is defined in optimisation_parameters.py, next to the pipeline.
 
 
 def json_safe_config(config) -> dict:

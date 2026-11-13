@@ -48,7 +48,6 @@ from optimisation_parameters import (
 # scaling factor of MALAWI_REAL_POPULATION / POP_SIZE, rather than
 # silently leaving the run unscaled (scale factor 1.0).
 MALAWI_REAL_POPULATION = 14_539_609
-from smac_scenario_baseline import BASELINE_RUNS_PER_DRAW
 
 
 # TARGET_PERIOD: adjust to match the evaluation window your simulation
@@ -319,27 +318,24 @@ def _report_budget_comparison(per_run_results: list, hrh_stats: dict, cons_stats
     print(f"[baseline] per-year comparison saved to {BASELINE_BUDGET_COMPARISON_FILE}.")
 
 
-def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, last_year: int) -> None:
+def compute_and_save_baseline_budgets(
+    run_dirs: list[Path], first_year: int, last_year: int, expected_runs: int | None = None,
+) -> None:
     """
-    Computes the upper 95% CI (across all runs found in baseline_draw_dir)
-    of HIV-HRH cost and HIV-consumable cost, YEAR BY YEAR, over
-    [first_year, last_year] inclusive, and OVERWRITES COST_LIMITS_FILE
-    with the result - this is what optimisation_pipeline.py's real
-    trials then get checked against as their budget constraint. Call
-    this ONCE, before initialise.py is ever imported (that file reads
-    COST_LIMITS_FILE at import time) - see
-    optimisation_pipeline.submit_baseline_job() for the submission this
-    is meant to be paired with.
+    Derives the budgets from the baseline runs and OVERWRITES
+    COST_LIMITS_FILE (and BASELINE_SUMMARY_FILE and the comparison CSV)
+    with the result - COST_LIMITS_FILE is what optimisation_pipeline.py's
+    real trials then get checked against as their budget constraint. Call
+    this before initialise.py is imported (that file reads COST_LIMITS_FILE
+    at import time) - see optimisation_pipeline.ensure_baseline_runs().
 
-    baseline_draw_dir is expected to be draw 0 of a MULTI-RUN (10 runs,
-    differently seeded - see smac_scenario_baseline.py's own
-    runs_per_draw=10) baseline submission of a FULL, non-suspend/resume
-    scenario - i.e. exactly what download_run_outputs() returns for
-    such a job. Each run subdirectory gets postprocessed via the SAME
-    postprocess_run() every real trial's own output goes through, so
-    these cost figures are computed identically to how a real trial's
-    own costs are computed - just aggregated across 10 independent runs
-    instead of 1.
+    run_dirs: one directory per baseline run (the run subdirectories of
+    each baseline job's draw 0 - every baseline job is a single-run job
+    submitted through the standard trial path, one per seed). Each gets
+    postprocessed via the SAME postprocess_run() every real trial's own
+    output goes through, so these cost figures are computed identically to
+    a trial's own costs. expected_runs (N_BASELINE_RUNS) only triggers a
+    warning if fewer runs were found.
 
     BUDGET = HIGHEST COST ACROSS THE BASELINE RUNS, per year and category:
     for each year, the maximum of that year's cost over all runs found in
@@ -364,7 +360,7 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     by initialise.py but not currently used as a constraint (DALYs
     remains the optimisation OBJECTIVE, not a budget) - see
     initialise.py's own comment on this. The baseline's ACTUAL DALYs
-    (mean across the 10 runs, over TARGET_PERIOD - the same period and
+    (median across the runs, over TARGET_PERIOD - the same period and
     metric every real trial's own "dalys" field already is) gets
     persisted separately, to BASELINE_SUMMARY_FILE - see below.
 
@@ -379,20 +375,13 @@ def compute_and_save_baseline_budgets(baseline_draw_dir: Path, first_year: int, 
     simply never accumulate any data, which is harmless" behaviour for
     PERIOD_BOUNDARIES extending past TARGET_PERIOD).
     """
-    run_dirs = sorted(baseline_draw_dir.iterdir(), key=lambda p: int(p.name))
+    run_dirs = sorted(run_dirs)
     if not run_dirs:
-        raise RuntimeError(f"{baseline_draw_dir} has no run subdirectories - nothing to compute CIs from.")
-    if len(run_dirs) != BASELINE_RUNS_PER_DRAW:
+        raise RuntimeError("No baseline run directories given - nothing to derive budgets from.")
+    if expected_runs is not None and len(run_dirs) != expected_runs:
         print(
-            f"[warning] baseline run at {baseline_draw_dir} has {len(run_dirs)} run "
-            f"subdirector{'y' if len(run_dirs) == 1 else 'ies'}, not the expected "
-            f"{BASELINE_RUNS_PER_DRAW} (smac_scenario_baseline.py's own runs_per_draw). "
-            f"Proceeding anyway, but the resulting budgets are derived from fewer "
-            f"independent seeds than intended - CIs will be wider/less reliable than "
-            f"expected. This usually means some of the baseline job's tasks hadn't "
-            f"actually finished (or had failed) when this was called - confirm "
-            f"azure_job_is_finished()/azure_task_succeeded() in optimisation_pipeline.py "
-            f"are checking ALL of the job's tasks, not just the first."
+            f"[warning] budgets derived from {len(run_dirs)} baseline run(s), not the expected "
+            f"{expected_runs} (N_BASELINE_RUNS): the maximum over fewer seeds is a tighter budget."
         )
 
     per_run_results = [postprocess_run(run_dir) for run_dir in run_dirs]

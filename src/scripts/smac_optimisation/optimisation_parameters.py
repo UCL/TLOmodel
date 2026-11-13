@@ -44,13 +44,12 @@ CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 # (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations)
 # --------------------------------------------------------------------------
 USE_SUSPEND_RESUME = True
-SUBMIT_SUSPEND_PART = True
 VALID_CHECKPOINT_COMMITS: list[str] = []
 
 # --------------------------------------------------------------------------
-# Baseline run (see submit_baseline_job(), compute_and_save_baseline_budgets())
+# Baseline runs (see ensure_baseline_runs(), compute_and_save_baseline_budgets())
 # --------------------------------------------------------------------------
-SUBMIT_BUDGET_RUN = True
+N_BASELINE_RUNS = 10
 
 # --------------------------------------------------------------------------
 # Initial design (see submit_initial_design_jobs())
@@ -69,7 +68,7 @@ INITIAL_DESIGN_PERTURBATION_STD = 0.1
 # the pipeline is launched from - so launching from a parent directory
 # (e.g. the repository root) still finds and writes the same folders.
 #   inputs/   precomputed, baseline-derived files (budgets etc.). OVERWRITTEN
-#             whenever SUBMIT_BUDGET_RUN is True.
+#             at every start, from the baseline runs.
 #   logs/     history_log.jsonl, submitted_jobs.jsonl. APPENDED to, never
 #             overwritten.
 #   outputs/  run outputs downloaded from Azure.
@@ -270,19 +269,13 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 # (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations)
 #
 # USE_SUSPEND_RESUME
-#     Whether REAL trials resume from a pre-resume checkpoint (see
-#     submit_azure_job()) - if False, every trial runs a full, fresh
-#     simulation, completely independent of SUBMIT_SUSPEND_PART below.
-#
-# SUBMIT_SUSPEND_PART
-#     Whether to submit the checkpoint-generation jobs (the "first part"
-#     of suspend/resume) THIS run - a plain user-controlled toggle, not
-#     derived from checking what's already present on Azure: set True
-#     when you actually want checkpoints (re)generated, False otherwise.
-#     Set this and USE_SUSPEND_RESUME independently - e.g. True/False to
-#     generate checkpoints without yet using them for real trials, or
-#     False/True to use already-generated checkpoints without
-#     regenerating them.
+#     Whether EVERY run (baseline runs and trials alike, see
+#     submit_azure_job()) resumes from a pre-resume checkpoint. If False,
+#     every run is a full, fresh simulation and no checkpoints are made.
+#     Checkpoints are never submitted by hand: at startup, any checkpoint
+#     that does not exist under the current commit or a commit in
+#     VALID_CHECKPOINT_COMMITS is submitted automatically (one per seed in
+#     CHECKPOINT_SEEDS), and the pipeline waits for all of them to finish.
 #
 # VALID_CHECKPOINT_COMMITS
 #     Full (or 12+ char) commit hashes whose ALREADY-GENERATED checkpoints
@@ -298,36 +291,43 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #     related but DELIBERATELY SEPARATE commit-list used when recovering
 #     completed real trials instead of checkpoints.
 
-# --- Baseline run ------------------------------------------------------------
-# A standard (non-suspend/resume), 10-differently-seeded-run submission of
-# smac_scenario_baseline.py, used ONLY to derive the budget constraint
-# values themselves (per year, the HIGHEST cost across those 10 runs, of
-# HIV-HRH and HIV-consumable cost) - written into COST_LIMITS_FILE before the real
-# optimisation loop starts. See
-# postprocess_output.compute_and_save_baseline_budgets() and
-# optimisation_pipeline.submit_baseline_job().
+# --- Baseline runs -------------------------------------------------------------
+# The baseline config (BASELINE_CONFIG_VALUES, baseline_config.py) is run
+# once per seed on N_BASELINE_RUNS seeds, through the SAME path as every
+# trial (smac_scenario.py, checkpoints included). That single set of runs
+# gives both:
+#   - the BUDGETS: per year and cost category, the HIGHEST cost across the
+#     baseline runs, written to COST_LIMITS_FILE (see
+#     postprocess_output.compute_and_save_baseline_budgets()); and
+#   - the baseline config's own results, recorded in the history exactly
+#     like any trial, one entry per seed, flagged role = "baseline" in
+#     submitted_jobs.jsonl and history_log.jsonl.
+# Nothing is toggled: at every start the pipeline looks for baseline runs
+# under the current commit or VALID_PRIOR_RUN_COMMITS, submits only the
+# seeds that have none (or whose run failed), waits for all of them, and
+# re-derives the budgets from them. A resume therefore never resubmits
+# finished baseline runs; a commit not listed in VALID_PRIOR_RUN_COMMITS
+# does resubmit them (and rebuilds the budgets).
 #
-# TODO / KNOWN AWKWARDNESS, worth consolidating later: this is one of TWO
-# genuinely separate "baseline" mechanisms this project currently has,
-# which don't share any code or data with each other despite both
-# representing the same underlying status-quo scenario - see the OTHER
-# one, SUBMIT_INITIAL_DESIGN below, and submit_baseline_job()'s own
-# docstring in optimisation_pipeline.py for the full picture. Kept
-# deliberately separate for now.
+# N_BASELINE_RUNS
+#     Number of seeds the baseline config is run on: CHECKPOINT_SEEDS[:N].
+#     Must be >= MAX_CONFIG_RUNS (checked in checkpoint_seeds.py). The
+#     first MAX_CONFIG_RUNS seeds are the ones SMAC's intensifier can draw,
+#     so the baseline is told to SMAC on exactly those seeds (the
+#     incumbent starts with the full comparison set). Any further seeds
+#     feed the budget and the history only, NOT SMAC: a challenger can
+#     never be run on a seed outside the intensifier's pool, so telling
+#     SMAC about them would stop any challenger being promoted past the
+#     baseline. The budget is the per-year MAXIMUM over all N runs, so it
+#     grows with N (10 keeps the earlier definition). Because the budget is
+#     the maximum over the same seeds the baseline is judged on, the
+#     baseline is feasible on every one of its seeds by construction.
+#     Costs N baseline runs, plus checkpoints for any seed beyond
+#     MAX_CONFIG_RUNS.
 #
-# SUBMIT_BUDGET_RUN
-#     Plain user toggle, same philosophy as SUBMIT_SUSPEND_PART - NOT
-#     derived from checking what's already in COST_LIMITS_FILE. Defaults
-#     to False (unlike SUBMIT_SUSPEND_PART) since this is a genuinely
-#     costly step (10 full, non-resumed runs) you don't want repeated
-#     every time you just want to re-run the optimisation loop with an
-#     already-good budget file already in place - set True only when you
-#     actually want the budgets (re)derived from a fresh baseline run.
-#
-
 # --- Initial design ----------------------------------------------------------
-# N_INIT jobs (N_INIT-1 randomly-sampled configs, plus the baseline
-# itself, ONE seed each) submitted and waited on BEFORE the main ask-tell
+# N_INIT sampled configs (ONE seed each, in addition to the baseline runs
+# above) submitted and waited on BEFORE the main ask-tell
 # loop starts, when SUBMIT_INITIAL_DESIGN is True - giving ConstrainedEI's
 # surrogates and SMAC's own runhistory real, diverse data to work with
 # from trial one, rather than starting from nothing. See
@@ -337,14 +337,6 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 # previously-submitted job (same commit-matching, same
 # restart-deduplication) - no separate loading path.
 #
-# TODO / KNOWN AWKWARDNESS, worth consolidating later: this function's own
-# baseline point (BASELINE_CONFIG_VALUES, initialise.py) is submitted
-# through the STANDARD smac_scenario.py path (suspend/resume, single
-# seed) - a SEPARATE mechanism from SUBMIT_BUDGET_RUN above (10-run,
-# non-suspend/resume, used only to derive the budget). Both represent the
-# same underlying status-quo scenario, but currently share no code or
-# data. Kept deliberately separate for now.
-#
 # VALID_PRIOR_RUN_COMMITS
 #     Full (or 12+ char) commit hashes whose ALREADY-SUBMITTED real trial
 #     jobs (in submitted_jobs.jsonl) are still considered safe to recover
@@ -352,6 +344,8 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #     DIFFERENT (e.g. newer) commit - see
 #     optimisation_pipeline.recover_from_job_log(). The CURRENT commit is
 #     always checked first, automatically - only list PAST commits here.
+#     Baseline runs follow the same rule: baseline runs from an unlisted
+#     commit are not reused, so they are resubmitted and the budgets rebuilt.
 #
 #     DELIBERATELY SEPARATE from VALID_CHECKPOINT_COMMITS ("Suspend/
 #     resume toggles" above), despite the identical structure/usage
@@ -367,23 +361,20 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #     that's not true in general.
 #
 # SUBMIT_INITIAL_DESIGN
-#     Plain user toggle, same philosophy as SUBMIT_SUSPEND_PART/
-#     SUBMIT_BUDGET_RUN - set True when you want this step to run. Even
+#     Plain user toggle - set True when you want this step to run. Even
 #     when True, the step is SKIPPED automatically on a resume: if
-#     JOB_LOG_FILE already holds at least N_INIT distinct configs (current
-#     commit or VALID_PRIOR_RUN_COMMITS), the warm start exists. If it holds
-#     fewer (e.g. a crash part-way through), a full initial design is
-#     submitted again.
+#     JOB_LOG_FILE already holds at least N_INIT distinct NON-baseline
+#     configs (current commit or VALID_PRIOR_RUN_COMMITS), the warm start
+#     exists. If it holds fewer (e.g. a crash part-way through), a full
+#     initial design is submitted again.
 #
 # N_INIT
-#     Number of initial-design CONFIGS, including the baseline: N_INIT-1
-#     are sampled, each run on ONE seed (CHECKPOINT_SEEDS[0]), and the
-#     baseline config runs on ALL MAX_CONFIG_RUNS seeds, so the first
-#     incumbent is measured on the full comparison set. Total initial jobs
-#     = (N_INIT-1) + MAX_CONFIG_RUNS.
+#     Number of initial-design configs, all sampled (the baseline is NOT
+#     among them: it is run separately on N_BASELINE_RUNS seeds). Each is
+#     run on ONE seed (CHECKPOINT_SEEDS[0]). Total initial jobs = N_INIT.
 #
 # INITIAL_DESIGN_NEAR_BASELINE_FRACTION
-#     Of the N_INIT-1 randomly-sampled configs, this fraction (0.0-1.0)
+#     Of the N_INIT sampled configs, this fraction (0.0-1.0)
 #     are sampled as LOCAL PERTURBATIONS of the baseline's own values
 #     (BASELINE_CONFIG_VALUES) rather than uniformly across the full
 #     search space - see sample_near_baseline_configs() in
@@ -420,7 +411,7 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #     One row per year, columns year,hiv_dalys,hiv_hrh_budget,
 #     hiv_consumable_budget - read by initialise.py, WRITTEN by
 #     postprocess_output.compute_and_save_baseline_budgets() when
-#     SUBMIT_BUDGET_RUN is True. Lives here (not in initialise.py, where
+#     the baseline runs finish. Lives here (not in initialise.py, where
 #     it used to be defined) so postprocess_output.py can import it too,
 #     without creating a circular import (initialise.py already imports
 #     FROM postprocess_output.py).

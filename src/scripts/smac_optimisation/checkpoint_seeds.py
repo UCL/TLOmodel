@@ -70,7 +70,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from optimisation_parameters import MAX_CONFIG_RUNS  # SHARED with
+from optimisation_parameters import MAX_CONFIG_RUNS, N_BASELINE_RUNS  # SHARED with
     # optimisation_pipeline.py's get_intensifier(max_config_calls=...) - both
     # import this SAME value now, rather than being set independently (as
     # this file used to do) and relying on a comment to keep them in sync.
@@ -83,13 +83,26 @@ from optimisation_parameters import MAX_CONFIG_RUNS  # SHARED with
 # checkpoints for - NOT used for path construction, which is derived
 # directly from a given seed instead (see checkpoint_job_id() below).
 CHECKPOINT_SEEDS = [
-    int(s) for s in np.random.RandomState(0).randint(low=0, high=2**31 - 1, size=MAX_CONFIG_RUNS)
+    int(s) for s in np.random.RandomState(0).randint(low=0, high=2**31 - 1, size=N_BASELINE_RUNS)
 ]
+# The baseline config is run on all N_BASELINE_RUNS seeds (budget + baseline
+# results), so checkpoints exist for all of them; SMAC's intensifier only
+# ever draws the first MAX_CONFIG_RUNS. The seed stream is sequential, so
+# the first MAX_CONFIG_RUNS values do not depend on the size requested -
+# asserted below rather than assumed.
+if N_BASELINE_RUNS < MAX_CONFIG_RUNS:
+    raise ValueError(
+        f"N_BASELINE_RUNS ({N_BASELINE_RUNS}) must be >= MAX_CONFIG_RUNS ({MAX_CONFIG_RUNS}): "
+        "the baseline needs every seed SMAC's intensifier can draw."
+    )
+assert CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS] == [
+    int(s) for s in np.random.RandomState(0).randint(low=0, high=2**31 - 1, size=MAX_CONFIG_RUNS)
+], "seed stream is not prefix-stable; SMAC's seeds would no longer match the checkpoints"
 _CHECKPOINT_SEEDS_SET = set(CHECKPOINT_SEEDS)  # O(1) membership check, see is_known_checkpoint_seed()
 
 
 def is_known_checkpoint_seed(seed: int) -> bool:
-    """True if `seed` is one of the MAX_CONFIG_RUNS precomputed values a
+    """True if `seed` is one of the precomputed CHECKPOINT_SEEDS values a
     checkpoint should exist for."""
     return seed in _CHECKPOINT_SEEDS_SET
 

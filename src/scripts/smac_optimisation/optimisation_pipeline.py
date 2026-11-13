@@ -79,21 +79,10 @@ from smac_scenario_suspend import TloCheckpointScenario  # used ONLY for checkpo
     # generation, never real trials - see generate_checkpoint_job(). Genuinely
     # different class name from smac_scenario.py's own TloOptimisationScenario now,
     # so no import alias is needed to avoid a collision.
-from smac_scenario_baseline import TloCheckpointScenario as TloBaselineScenario  # ALIASED:
-    # smac_scenario_baseline.py's class is ALSO literally named
-    # TloCheckpointScenario (same name as smac_scenario_suspend.py's own class) -
-    # used ONLY for the one-off baseline run (see submit_baseline_job()), never
-    # for checkpoints or real trials. runs_per_draw=10 is hardcoded in that
-    # file's own __init__ - this scenario always produces 10 differently-seeded
-    # full (non-suspend/resume) runs per submission. BASELINE_CONFIG_VALUES
-    # (the baseline's own genuine values for the 13 configspace parameters)
-    # is imported from initialise.py further down instead, NOT from here -
-    # it must NOT be imported at module top-level: initialise.py's own
-    # module-level code reads COST_LIMITS_FILE at import time, which the
-    # baseline-run block below is what actually WRITES, so importing
-    # initialise.py (for ANY name) any earlier than that block already
-    # runs would reintroduce the exact ordering bug this project's
-    # baseline-run submission was specifically restructured to avoid.
+from baseline_config import BASELINE_CONFIG_VALUES  # the baseline config itself - NOT imported
+    # from initialise.py, which reads COST_LIMITS_FILE at import time, while the
+    # baseline runs (submitted below, before initialise is imported) are what
+    # produce that file.
 from constrained_ei import ConstrainedEI  # the module built earlier
 from postprocess_output import postprocess_run, compute_and_save_baseline_budgets, report_ei_xi_diagnostic, report_false_rejection_diagnostic
 from checkpoint_seeds import checkpoint_job_id, CHECKPOINT_SEEDS
@@ -106,16 +95,18 @@ from optimisation_parameters import (
     INTENSIFIER_FLOOR_PENALTY_MULTIPLIER,
     CONSTRAINT_COMBINATION, MERIT_DALYS_IMPROVEMENT_PCT, MERIT_BUDGET_VIOLATION_PCT,
     MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
-    N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, SUBMIT_SUSPEND_PART,
+    N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
-    SUBMIT_BUDGET_RUN, START_FIRST_BOUNDARY, YEAR_END_DATE,
+    N_BASELINE_RUNS, START_FIRST_BOUNDARY, YEAR_END_DATE,
     SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
     JOB_LOG_FILE,
 )
+SMAC_SEEDS = set(CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS])  # the seeds SMAC's intensifier can draw
 import json
 
 
-def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hexsha: str) -> None:
+def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hexsha: str,
+                       role: str = "trial") -> None:
     """
     Appends one line per submission, immediately after a job is
     successfully created on Azure. JSON Lines format specifically
@@ -128,7 +119,9 @@ def _log_submitted_job(job_id: str, config: Configuration, seed: int, commit_hex
     between pipeline runs, so a recovered result can always be traced
     back to the code that actually produced it.
     """
-    record = {"job_id": job_id, "config": json_safe_config(config), "seed": seed, "commit": commit_hexsha}
+    record = {"job_id": job_id, "config": json_safe_config(config), "seed": seed, "commit": commit_hexsha,
+              "role": role}  # "baseline" | "initial_design" | "trial" - lets baseline runs
+                             # be told apart from any other job; older logs have no role
     with open(JOB_LOG_FILE, "a") as f:
         f.write(json.dumps(record) + "\n")
 
@@ -147,20 +140,10 @@ CHECKPOINT_SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario_suspend.
     # generate_checkpoint_job()) - PATH ASSUMED to match SCENARIO_FILE's own
     # convention (same directory); confirm this is actually where the file
     # lives/will be committed.
-BASELINE_SCENARIO_FILE = "src/scripts/smac_optimisation/smac_scenario_baseline.py"  # the
-    # scenario used ONLY for the one-off baseline run (see
-    # submit_baseline_job()) - NOT the same file as CHECKPOINT_SCENARIO_FILE,
-    # despite both files' classes being literally named TloCheckpointScenario
-    # (see the aliased import above) - this one hardcodes runs_per_draw=10
-    # and never gets suspended, and its own module docstring currently
-    # says "Committed once at .../smac_scenario_suspend.py" (a leftover
-    # copy-paste from when this file was cloned from that one) - worth
-    # fixing in smac_scenario_baseline.py itself, though harmless here
-    # since we never actually read that docstring.
 CONFIG_FILE = "tlo.conf"
 
 # --- Suspend/resume (https://github.com/UCL/TLOmodel/wiki/Suspend-and-resume-simulations) ---
-# USE_SUSPEND_RESUME / SUBMIT_SUSPEND_PART now live in
+# USE_SUSPEND_RESUME now lives in
 # optimisation_parameters.py (imported above), alongside every other
 # pipeline hyperparameter, rather than being defined here.
 #
@@ -258,7 +241,7 @@ class AzureJobHandle:
     commit_hexsha: str  # which commit this job was submitted under
 
 
-def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
+def submit_azure_job(config: Configuration, seed: int, role: str = "trial") -> AzureJobHandle:
     """
     Builds a TloOptimisationScenario in-process (config values set as
     real Python attributes - no serialization to CLI strings and back),
@@ -267,6 +250,10 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
     batch_submit's Click command does internally, minus the CLI-parsing
     and scenario-file-loading steps we don't need since we're already
     holding the class in Python.
+
+    `role` only labels the job in JOB_LOG_FILE ("baseline" for the baseline
+    runs, "initial_design", or the default "trial"); it changes nothing
+    about how the job runs.
 
     `seed` is SMAC's own info.seed, and IS passed straight through to
     scenario.seed - this is the point of setting deterministic=False on
@@ -509,7 +496,7 @@ def submit_azure_job(config: Configuration, seed: int) -> AzureJobHandle:
         container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
     )
     add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", tlo_scenario, command)
-    _log_submitted_job(job_id, config, seed, commit_hexsha)   # <-- add this line
+    _log_submitted_job(job_id, config, seed, commit_hexsha, role)
 
     print(f"[submitted] job_id={job_id}")
 
@@ -695,164 +682,27 @@ def generate_checkpoint_job(seed: int) -> AzureJobHandle:
     return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
 
 
-def generate_all_checkpoints() -> None:
+def submit_missing_checkpoints() -> None:
     """
-    Submits one checkpoint job for EVERY seed in CHECKPOINT_SEEDS,
-    unconditionally - controlled purely by the SUBMIT_SUSPEND_PART
-    hyperparameter (optimisation_parameters.py) at the call site, NOT by
-    checking Azure for what already exists. An earlier version of this
-    function checked whether a job already existed first and skipped
-    anything already present - deliberately removed: whether to
-    (re)generate checkpoints this run is now entirely a user decision
-    (set SUBMIT_SUSPEND_PART), not something inferred from Azure state.
-    If you don't want to regenerate existing checkpoints, set
-    SUBMIT_SUSPEND_PART = False.
+    Submits a checkpoint job for every seed in CHECKPOINT_SEEDS that has NO
+    checkpoint under the current commit or any commit in
+    VALID_CHECKPOINT_COMMITS (find_checkpoint_commit_for_seed()), and
+    nothing else. Checkpoints that already exist are reused, so a resume
+    never regenerates them, while a new, unlisted commit regenerates all of
+    them (the checkpoint job id includes the commit). No toggle is needed.
 
-    Call this ONCE, before the main ask-tell loop, whenever
-    SUBMIT_SUSPEND_PART is True - and wait for all of them to finish
-    (e.g. via azure_job_is_finished polling) before letting the main
-    loop submit any real trial that might reference one of these
-    checkpoints.
+    Call ONCE, at startup, when USE_SUSPEND_RESUME is True, then wait with
+    ensure_checkpoints_ready() before submitting any run that resumes from
+    one.
     """
-    for seed in CHECKPOINT_SEEDS:
+    missing = [seed for seed in CHECKPOINT_SEEDS if find_checkpoint_commit_for_seed(seed) is None]
+    if not missing:
+        print(f"[checkpoint] all {len(CHECKPOINT_SEEDS)} checkpoint(s) already exist - none submitted.")
+        return
+    print(f"[checkpoint] {len(missing)}/{len(CHECKPOINT_SEEDS)} checkpoint(s) missing under the current "
+          f"commit or VALID_CHECKPOINT_COMMITS - submitting them.")
+    for seed in missing:
         generate_checkpoint_job(seed)
-
-
-def submit_baseline_job() -> AzureJobHandle:
-    """
-    TODO / KNOWN AWKWARDNESS, worth consolidating later: this is one of
-    TWO genuinely separate "baseline" mechanisms in this file, which
-    currently don't share any code or data with each other, despite
-    both representing the same underlying status-quo scenario:
-      1. THIS function - smac_scenario_baseline.py's own scenario
-         ('type_of_scaleup': 'none'), 10 non-suspend/resume runs, used
-         ONLY to derive the budget (compute_and_save_baseline_budgets()).
-      2. submit_initial_design_jobs() below - BASELINE_CONFIG_VALUES
-         (initialise.py) submitted through the STANDARD smac_scenario.py
-         path instead (suspend/resume, single seed), as one of the
-         initial-design points SMAC's own search gets warm-started with.
-    Kept deliberately separate for now (simpler to reason about while
-    this is still being iterated on) rather than unifying them into one
-    submission path - a reasonable thing to revisit once both have
-    proven out, not before.
-
-    Submits ONE standard (non-suspend/resume) Azure job running
-    smac_scenario_baseline.py's TloBaselineScenario, which hardcodes
-    runs_per_draw=10 - i.e. this single submission produces 10 FULL,
-    INDEPENDENTLY-SEEDED, complete simulation runs (draw_0-run_0
-    through draw_0-run_9), each a genuine, unmodified end-to-end run -
-    no --suspend-date, no --resume-simulation, nothing baked into
-    run_json beyond the scenario's own fixed, no-scale-up parameters.
-
-    Deliberately does NOT use CHECKPOINT_SEEDS or any seed-matching
-    logic at all - unlike a real trial or a checkpoint, this run's own
-    seeds don't need to match anything else in the pipeline. TLO's own
-    scenario-execution machinery assigns each of the 10 runs its own
-    seed internally (via low_bias_32(scenario_seed + sample_number),
-    sample_number = 0..9) - we never need to know or control those
-    individual values, only that they're genuinely different from each
-    other, which runs_per_draw=10 alone guarantees.
-
-    Closely mirrors generate_checkpoint_job()'s general submission
-    mechanics (build scenario, save_draws, upload, create_job,
-    add_tasks) - see that function and submit_azure_job() for the fully
-    commented version of each step; comments here focus only on what's
-    different for the baseline case.
-    """
-    commit_hexsha = _get_commit()
-    tlo_config = _get_config()
-
-    tlo_scenario = TloBaselineScenario()  # smac_scenario_baseline.py's class -
-        # aliased on import to avoid colliding with smac_scenario_suspend.py's
-        # own, differently-behaved TloCheckpointScenario. number_of_draws=1/
-        # runs_per_draw=10 already correctly set in its own __init__ - NOT
-        # overridden here, unlike generate_checkpoint_job()'s defensive
-        # re-assignment, since 10 runs is the entire point of this submission.
-    tlo_scenario.scenario_path = Path(BASELINE_SCENARIO_FILE)
-
-    # No parse_arguments() call at all - this is a full, ordinary run,
-    # not suspend/resume, so there's nothing to bake into run_json beyond
-    # what TloBaselineScenario's own draw_parameters() already provides.
-    run_json = tlo_scenario.save_draws(commit=commit_hexsha)
-
-    file_share_mount_point = "mnt"
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-    job_id = tlo_scenario.get_log_config()["filename"] + "-baseline-" + timestamp
-    azure_directory = f"{tlo_config['DEFAULT']['USERNAME']}/{job_id}"
-
-    batch_client = _get_batch_client()
-    create_file_share(tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"])
-    for idx in range(len(os.path.split(azure_directory))):
-        create_directory(
-            tlo_config["STORAGE"]["CONNECTION_STRING"], tlo_config["STORAGE"]["FILESHARE"],
-            "/".join(os.path.split(azure_directory)[: idx + 1]),
-        )
-    upload_local_file(
-        tlo_config["STORAGE"]["CONNECTION_STRING"], run_json,
-        tlo_config["STORAGE"]["FILESHARE"], azure_directory + "/" + os.path.basename(run_json),
-    )
-
-    pool_node_count = tlo_scenario.number_of_draws * tlo_scenario.runs_per_draw  # 1 * 10 = 10
-    auto_user = batch_models.AutoUserSpecification(
-        elevation_level=batch_models.ElevationLevel.admin, scope=batch_models.AutoUserScope.task,
-    )
-    user_identity = batch_models.UserIdentity(auto_user=auto_user)
-    azure_file_url = "https://{}.file.core.windows.net/{}".format(
-        tlo_config["STORAGE"]["NAME"], tlo_config["STORAGE"]["FILESHARE"],
-    )
-    container_registry = batch_models.ContainerRegistry(
-        registry_server=tlo_config["REGISTRY"]["SERVER"],
-        user_name=tlo_config["REGISTRY"]["NAME"], password=tlo_config["REGISTRY"]["KEY"],
-    )
-    image_name = f"{tlo_config['REGISTRY']['SERVER']}/{tlo_config['REGISTRY']['IMAGE']}:{tlo_config['REGISTRY']['DEFAULT_TAG']}"
-    container_conf = batch_models.ContainerConfiguration(
-        type="dockerCompatible", container_image_names=[image_name], container_registries=[container_registry],
-    )
-    azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
-        account_name=tlo_config["STORAGE"]["NAME"], azure_file_url=azure_file_url,
-        account_key=tlo_config["STORAGE"]["KEY"], relative_mount_path=file_share_mount_point,
-        mount_options="-o rw",
-    )
-    mount_configuration = batch_models.MountConfiguration(
-        azure_file_share_configuration=azure_file_share_configuration,
-    )
-
-    remote_azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
-    azure_run_json = f"{remote_azure_directory}/{os.path.basename(run_json)}"
-    working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
-    task_dir = "${{AZ_BATCH_TASK_DIR}}"
-
-    # Standard command - no sed patch needed (nothing suspend/resume-related
-    # baked into run_json for this submission), diagnostic env line kept
-    # for consistency with the other two submission functions.
-    command_template = Template("""
-    git fetch origin $commit_hexsha
-    git checkout $commit_hexsha
-    pip install -r requirements/base.txt
-    env | grep "^AZ_" | while read line; do echo "$$line"; done
-    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run $azure_run_json $working_dir {draw_number} {run_number}
-    tlo --config-file tlo.example.conf parse-log $working_dir/{draw_number}/{run_number}
-    cp $task_dir/std*.txt $working_dir/{draw_number}/{run_number}/.
-    gzip $working_dir/{draw_number}/{run_number}/*.{{txt,log}}
-    cp -r $working_dir/* $remote_azure_directory/.
-    """)
-    command = command_template.substitute(
-        commit_hexsha=commit_hexsha,
-        azure_run_json=azure_run_json,
-        working_dir=working_dir,
-        task_dir=task_dir,
-        remote_azure_directory=remote_azure_directory,
-    )
-    command = f"/bin/bash -c '{command}'"
-
-    create_job(
-        batch_client, tlo_config["BATCH"]["POOL_VM_SIZE"], pool_node_count, job_id,
-        container_conf, [mount_configuration], False, tlo_config["BATCH"]["SUBNET_ID"],
-    )
-    add_tasks(batch_client, user_identity, job_id, image_name, "--rm --workdir /TLOmodel", tlo_scenario, command)
-
-    print(f"[baseline submitted] job_id={job_id} (10 runs)")
-    return AzureJobHandle(job_id=job_id, submitted_at=time.time(), commit_hexsha=commit_hexsha)
 
 
 def sample_near_baseline_configs(n: int) -> list[Configuration]:
@@ -899,24 +749,14 @@ def sample_near_baseline_configs(n: int) -> list[Configuration]:
 
 def submit_initial_design_jobs() -> None:
     """
-    TODO / KNOWN AWKWARDNESS, worth consolidating later - see
-    submit_baseline_job()'s own docstring above: this function's own
-    use of BASELINE_CONFIG_VALUES (submitted through the standard
-    smac_scenario.py path, suspend/resume, single seed) is a SEPARATE
-    mechanism from submit_baseline_job()'s own 10-run, non-suspend/
-    resume smac_scenario_baseline.py submission - both represent the
-    same underlying status-quo scenario, but currently share no code or
-    data. Kept deliberately separate for now.
+    Submits N_INIT sampled CONFIGS (optimisation_parameters.py) BEFORE the
+    main ask-tell loop starts, each with exactly ONE seed. The baseline is
+    NOT part of this: it is run separately, on N_BASELINE_RUNS seeds, by
+    ensure_baseline_runs() (which also derives the budgets). No
+    intensification happens at this stage; that's SMAC's own
+    intensifier's job, later, once the main loop is running.
 
-    Submits N_INIT CONFIGS (optimisation_parameters.py) BEFORE the main
-    ask-tell loop starts: N_INIT-1 sampled configs, each with exactly ONE
-    seed, plus the baseline's own config (BASELINE_CONFIG_VALUES, imported
-    from initialise.py alongside PRIOR_RUNS) on ALL MAX_CONFIG_RUNS
-    seeds - (N_INIT-1) + MAX_CONFIG_RUNS jobs in total. No intensification
-    happens at this stage; that's SMAC's own intensifier's job, later, once
-    the main loop is running.
-
-    Of the N_INIT-1 configs, a fraction (INITIAL_DESIGN_NEAR_BASELINE_
+    Of the N_INIT configs, a fraction (INITIAL_DESIGN_NEAR_BASELINE_
     FRACTION) are sampled as LOCAL PERTURBATIONS of the baseline itself
     (sample_near_baseline_configs(), above) rather than uniformly across
     the whole search space (configspace.sample_configuration()) - see
@@ -947,7 +787,7 @@ def submit_initial_design_jobs() -> None:
     automatically.
 
     Every sampled config shares the SAME SINGLE seed, CHECKPOINT_SEEDS[0]
-    (the baseline additionally runs on the remaining seeds, see above). An earlier version of this
+    (the baseline runs on all of its seeds, see ensure_baseline_runs()). An earlier version of this
     function gave each job its OWN, distinct seed, on the assumption
     that seed diversity was needed for these jobs to be meaningfully
     different from each other - WRONG: this genuinely replicates how
@@ -969,12 +809,11 @@ def submit_initial_design_jobs() -> None:
     of how large N_INIT is).
 
     A failed initial-design job is WARNED about, not raised on - unlike
-    the baseline's own submission (which the real budget derivation
-    depends on), these are exploratory warm-start jobs the pipeline can
+    the baseline runs (which the budget derivation depends on), these are exploratory warm-start jobs the pipeline can
     perfectly well proceed without; a failure here just means one fewer
     initial-design point gets picked up by recover_from_job_log() below.
     """
-    n_random = N_INIT - 1
+    n_random = N_INIT
     shared_seed = CHECKPOINT_SEEDS[0]
 
     configs_and_seeds: list[tuple[Configuration, int]] = []
@@ -998,22 +837,12 @@ def submit_initial_design_jobs() -> None:
         for config in near_configs + global_configs:
             configs_and_seeds.append((config, shared_seed))
 
-    # The baseline is submitted on EVERY seed SMAC's intensifier can draw
-    # (CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS]): it is the likeliest first
-    # incumbent, so it starts with the full comparison set and a challenger
-    # is never judged against an incumbent measured on a single lucky seed.
-    # Total jobs = (N_INIT - 1) + MAX_CONFIG_RUNS.
-    baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
-    for baseline_seed in CHECKPOINT_SEEDS[:MAX_CONFIG_RUNS]:
-        configs_and_seeds.append((baseline_config, baseline_seed))
-
     jobs: list[AzureJobHandle] = []
     for config, seed in configs_and_seeds:
-        jobs.append(submit_azure_job(config, seed))
+        jobs.append(submit_azure_job(config, seed, role="initial_design"))
     print(
         f"[initial design] submitted {len(jobs)} job(s): {n_near} near-baseline + "
-        f"{n_global} global random configs (seed {shared_seed} each) + the baseline on "
-        f"{MAX_CONFIG_RUNS} seeds."
+        f"{n_global} global random configs (seed {shared_seed} each)."
     )
 
     still_waiting = set(range(len(jobs)))
@@ -1033,26 +862,132 @@ def submit_initial_design_jobs() -> None:
             time.sleep(POLL_INTERVAL_SECONDS)
 
 
-def count_logged_configs() -> int:
-    """
-    Number of DISTINCT configs in JOB_LOG_FILE submitted under the current
-    commit or a commit in VALID_PRIOR_RUN_COMMITS - i.e. the configs that
-    recover_from_job_log() would consider. Used to skip the initial design
-    when resuming: if at least N_INIT configs are already logged, the
-    warm start exists and submitting another is wasted compute. Counts
-    submissions, not completions: a logged job that later failed still
-    counts (it will simply not be recovered).
-    """
+def _accepted_job_records() -> list[dict]:
+    """Every record in JOB_LOG_FILE submitted under the current commit or a
+    commit in VALID_PRIOR_RUN_COMMITS, in log order (empty if no log yet)."""
     if not JOB_LOG_FILE.exists():
-        return 0
+        return []
     accepted = {_get_commit(), *VALID_PRIOR_RUN_COMMITS}
-    keys = set()
+    records = []
     with open(JOB_LOG_FILE) as f:
         for line in f:
             record = json.loads(line)
             if record.get("commit") in accepted:
-                keys.add(json.dumps(record["config"], sort_keys=True))
+                records.append(record)
+    return records
+
+
+def _baseline_config_key() -> str:
+    return json.dumps(json_safe_config(Configuration(configspace, values=BASELINE_CONFIG_VALUES)), sort_keys=True)
+
+
+def _is_baseline_record(record: dict) -> bool:
+    """A baseline run: role == "baseline", or - for logs written before roles
+    existed - a job whose config is exactly the baseline config."""
+    role = record.get("role")
+    if role is not None:
+        return role == "baseline"
+    return json.dumps(record["config"], sort_keys=True) == _baseline_config_key()
+
+
+def count_logged_configs() -> int:
+    """
+    Number of DISTINCT NON-baseline configs in JOB_LOG_FILE submitted under
+    the current commit or a commit in VALID_PRIOR_RUN_COMMITS - i.e. the
+    configs recover_from_job_log() would consider, minus the baseline. Used
+    to skip the initial design when resuming: if at least N_INIT such
+    configs are already logged, the warm start exists and submitting
+    another is wasted compute. Counts submissions, not completions: a
+    logged job that later failed still counts (it will simply not be
+    recovered).
+    """
+    keys = set()
+    for record in _accepted_job_records():
+        if not _is_baseline_record(record):
+            keys.add(json.dumps(record["config"], sort_keys=True))
     return len(keys)
+
+
+def job_draw_dir(job: AzureJobHandle) -> Path:
+    """Local directory holding draw 0 of a finished job: the copy already
+    downloaded into OUTPUTS_DIR if there is one, otherwise downloaded now."""
+    username = _get_config()["DEFAULT"]["USERNAME"]
+    draw_dir = Path(OUTPUTS_DIR, username, job.job_id, "0")
+    if draw_dir.exists() and any(draw_dir.iterdir()):
+        return draw_dir
+    return download_run_outputs(job)
+
+
+def ensure_baseline_runs() -> list[Path]:
+    """
+    Makes sure the baseline config has a finished, successful run on every
+    seed in CHECKPOINT_SEEDS[:N_BASELINE_RUNS], and returns the local
+    directory of each run (one per seed) for the budget derivation.
+
+    Nothing is toggled; the job log decides. For each seed, a baseline run
+    (role "baseline", under the current commit or VALID_PRIOR_RUN_COMMITS)
+    is reused if it is still running or succeeded; a seed with no such run,
+    or only failed ones, gets a fresh submission through submit_azure_job()
+    - the same path every trial takes, checkpoints included. So a resume
+    never repeats finished baseline runs, and a failed one is retried by
+    simply starting again. Every submission is logged with role "baseline",
+    so the runs are identifiable, and recover_from_job_log() later loads
+    their results into the history like any other job.
+
+    Blocks until all runs have finished. Raises RuntimeError if any failed
+    (the budgets need every seed).
+
+    Must be called after the checkpoints are ready (ensure_checkpoints_ready())
+    and before initialise.py is imported.
+    """
+    seeds = CHECKPOINT_SEEDS[:N_BASELINE_RUNS]
+    baseline_config = Configuration(configspace, values=BASELINE_CONFIG_VALUES)
+
+    by_seed: dict[int, list[dict]] = {}
+    for record in _accepted_job_records():
+        if _is_baseline_record(record):
+            by_seed.setdefault(record["seed"], []).append(record)
+
+    jobs: dict[int, AzureJobHandle] = {}
+    n_reused = 0
+    for seed in seeds:
+        chosen = None
+        for record in reversed(by_seed.get(seed, [])):  # newest first
+            handle = AzureJobHandle(job_id=record["job_id"], submitted_at=0.0, commit_hexsha=record["commit"])
+            if not azure_job_is_finished(handle) or azure_task_succeeded(handle):
+                chosen = handle
+                break
+        if chosen is None:
+            chosen = submit_azure_job(baseline_config, seed, role="baseline")
+        else:
+            n_reused += 1
+        jobs[seed] = chosen
+    print(
+        f"[baseline] {N_BASELINE_RUNS} run(s) needed: {n_reused} reused from the job log, "
+        f"{N_BASELINE_RUNS - n_reused} submitted."
+    )
+
+    still_waiting = set(seeds)
+    failed = []
+    while still_waiting:
+        made_progress = False
+        for seed in list(still_waiting):
+            if not azure_job_is_finished(jobs[seed]):
+                continue
+            made_progress = True
+            still_waiting.discard(seed)
+            if not azure_task_succeeded(jobs[seed]):
+                failed.append(jobs[seed].job_id)
+        if still_waiting and not made_progress:
+            time.sleep(POLL_INTERVAL_SECONDS)
+    if failed:
+        raise RuntimeError(
+            f"Baseline run(s) finished but FAILED: {failed}. The budgets need every baseline seed - "
+            f"investigate, then start again (failed runs are resubmitted automatically)."
+        )
+    print(f"[baseline] all {N_BASELINE_RUNS} run(s) finished.")
+
+    return [run_dir for seed in seeds for run_dir in sorted(job_draw_dir(jobs[seed]).iterdir())]
 
 
 def azure_job_exists(job_id: str) -> bool:
@@ -1062,10 +997,8 @@ def azure_job_exists(job_id: str) -> bool:
     search across candidate commits for an existing, reusable checkpoint
     - a genuine LOOKUP, not (per the earlier design decision) something
     used to silently skip a submission the user asked for.
-    generate_all_checkpoints()/generate_checkpoint_job() still submit
-    unconditionally, controlled purely by SUBMIT_SUSPEND_PART - see
-    that function's own docstring - this function is never called from
-    there.
+    submit_missing_checkpoints() uses it to submit only the checkpoints
+    that do not exist yet.
     """
     batch_client = _get_batch_client()
     try:
@@ -1117,7 +1050,7 @@ def ensure_checkpoints_ready() -> None:
 
     ALL seeds are polled CONCURRENTLY each pass (same pattern as the
     main ask-tell loop's pending/still_pending) - since
-    generate_all_checkpoints() submits every checkpoint job at once,
+    submit_missing_checkpoints() submits every missing checkpoint job at once,
     they're all running concurrently on Azure, and waiting on them
     strictly sequentially would mean only ever checking on one job at a
     time while others might already be sitting finished, unnoticed.
@@ -1134,8 +1067,7 @@ def ensure_checkpoints_ready() -> None:
             raise RuntimeError(
                 f"No checkpoint job found for seed {seed} under the current commit "
                 f"or any commit in VALID_CHECKPOINT_COMMITS (optimisation_parameters.py). "
-                f"Run with SUBMIT_SUSPEND_PART=True first, or add an appropriate "
-                f"commit to VALID_CHECKPOINT_COMMITS."
+                f"Call submit_missing_checkpoints() first."
             )
         jobs_by_seed[seed] = AzureJobHandle(job_id=checkpoint_job_id(seed, commit), submitted_at=0.0, commit_hexsha=commit)
         print(f"[checkpoint] waiting for {jobs_by_seed[seed].job_id} (seed={seed}) to finish...")
@@ -1155,9 +1087,10 @@ def ensure_checkpoints_ready() -> None:
             if not azure_task_succeeded(job):
                 raise RuntimeError(
                     f"Checkpoint job {job.job_id} (seed={seed}) finished but FAILED - "
-                    f"cannot proceed with USE_SUSPEND_RESUME=True until this is resolved "
-                    f"(regenerate it, or remove this commit from VALID_CHECKPOINT_COMMITS "
-                    f"if it's no longer trusted)."
+                    f"cannot proceed with USE_SUSPEND_RESUME=True until this is resolved. "
+                    f"Its job id is fixed by seed and commit, so it cannot be resubmitted "
+                    f"as is: delete the failed Azure job, or commit a change so a new "
+                    f"checkpoint is generated under the new commit."
                 )
 
             print(f"[checkpoint] {job.job_id} confirmed ready.")
@@ -1335,72 +1268,40 @@ configspace.add(Categorical("targeted_adherence_monitoring", [True, False]))
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
-# 2b. Checkpoint-generation AND baseline-run SUBMISSION, kicked off
-#     together here (both fire-and-forget submissions, running
-#     concurrently on Azure) - BEFORE initialise.py gets imported below,
-#     since that import reads COST_LIMITS_FILE at MODULE IMPORT TIME, and
-#     the baseline run's whole purpose is to (re)derive that file's
-#     contents before the real constraint setup ever happens. Checkpoint
-#     generation doesn't strictly need to move this early too - it has
-#     no COST_LIMITS_FILE dependency at all - but is moved here anyway so
-#     both submissions genuinely overlap on Azure ("alongside"), rather
-#     than needlessly serialising checkpoint generation after the
-#     baseline run's own wait below.
+# 2b. Startup sequence, BEFORE initialise.py is imported (that import reads
+#     COST_LIMITS_FILE at MODULE IMPORT TIME, and the baseline runs are what
+#     produce it):
 #
-#     SUBMIT_SUSPEND_PART / SUBMIT_BUDGET_RUN are both plain user
-#     toggles (optimisation_parameters.py) - NOT derived from checking
-#     what's already on Azure or already in COST_LIMITS_FILE. Checkpoint
-#     generation is NOT waited on here (see "2b (continued)" below,
-#     right before "3. Build SMAC" - unchanged from before) - only the
-#     baseline run is, since ITS result is needed before initialise.py's
-#     import, a few lines down, can safely proceed.
+#       1. Checkpoints (only when USE_SUSPEND_RESUME): any seed without a
+#          checkpoint under the current commit or VALID_CHECKPOINT_COMMITS
+#          is submitted now; then wait until all have finished. Every run
+#          below, baseline included, resumes from one.
+#       2. Baseline runs: the baseline config on N_BASELINE_RUNS seeds,
+#          through the normal trial path (ensure_baseline_runs()). Existing
+#          runs in the job log are reused, missing or failed ones are
+#          submitted, then wait.
+#       3. Budgets: derived from those same runs and written to
+#          COST_LIMITS_FILE (and BASELINE_SUMMARY_FILE), at every start.
+#
+#     Nothing here is a toggle: the job log and Azure decide what is
+#     missing, so a resume repeats none of it.
 # --------------------------------------------------------------------------
 
-# Called once, here, before ANYTHING submits a real trial - blocks
-# (polls) until every needed checkpoint has actually finished on Azure
-# and succeeded. No local download involved - see ensure_checkpoints_
-# ready()'s own docstring for why, and submit_azure_job() for where the
-# actual --resume-simulation job-id reference gets constructed.
-#
-# MUST happen here, right after generate_all_checkpoints() itself, and
-# BEFORE submit_initial_design_jobs() below - an earlier version of
-# this file left this call much later (see the "2b." section comment
-# further down, which still explains the reasoning for WHY it can
-# safely live outside the COST_LIMITS_FILE/initialise.py ordering
-# constraint) on the assumption that nothing would submit a real trial
-# before that later point - true until submit_initial_design_jobs()
-# was added, which DOES submit real, suspend/resume-using trials, via
-# the exact same submit_azure_job() every real trial uses. If the
-# checkpoint for CHECKPOINT_SEEDS[0] isn't actually finished and
-# confirmed ready yet, those jobs have nothing to resume from.
-if SUBMIT_SUSPEND_PART:
-    generate_all_checkpoints()
 if USE_SUSPEND_RESUME:
+    submit_missing_checkpoints()
     ensure_checkpoints_ready()
 
-if SUBMIT_BUDGET_RUN:
-    baseline_job = submit_baseline_job()
-    print(f"[baseline] waiting for {baseline_job.job_id} to finish (10 runs)...")
-    while not azure_job_is_finished(baseline_job):
-        time.sleep(POLL_INTERVAL_SECONDS)
-    if not azure_task_succeeded(baseline_job):
-        raise RuntimeError(
-            f"Baseline job {baseline_job.job_id} finished but FAILED - cannot "
-            f"derive budget constraints from it. Investigate and resubmit "
-            f"(SUBMIT_BUDGET_RUN=True) before proceeding."
-        )
-    print(f"[baseline] {baseline_job.job_id} confirmed ready - computing budget CIs.")
-    baseline_draw_dir = download_run_outputs(baseline_job)
-    compute_and_save_baseline_budgets(baseline_draw_dir, START_FIRST_BOUNDARY, YEAR_END_DATE)
+_baseline_run_dirs = ensure_baseline_runs()
+compute_and_save_baseline_budgets(_baseline_run_dirs, START_FIRST_BOUNDARY, YEAR_END_DATE, N_BASELINE_RUNS)
 
 from initialise import (
     PERIOD_BOUNDARIES, HIV_HRH_BUDGET_BY_YEAR, HIV_CONSUMABLE_BUDGET_BY_YEAR,
     bucket_peak_budget_slack, HIV_HRH_CONSTRAINT_NAMES,
-    HIV_CONSUMABLE_CONSTRAINT_NAMES, CONSTRAINT_NAMES, PRIOR_RUNS, BASELINE_CONFIG_VALUES,
+    HIV_CONSUMABLE_CONSTRAINT_NAMES, CONSTRAINT_NAMES, PRIOR_RUNS,
 )
 
-# Initial design: N_INIT-1 random configs + the baseline, ONE seed each,
-# submitted and waited on BEFORE recover_from_job_log() runs below - so
+# Initial design: N_INIT random configs, ONE seed each (the baseline is
+# already covered by the baseline runs above), submitted and waited on BEFORE recover_from_job_log() runs below - so
 # that mechanism picks them up naturally, the same way it already
 # handles any other previously-submitted job. See
 # submit_initial_design_jobs()'s own docstring for the full picture -
@@ -1422,7 +1323,7 @@ history: list[dict] = []  # raw, disaggregated results - the source of truth
 
 def record_result(
     config: Configuration, seed: int, result: dict,
-    job_id: str | None = None, commit: str | None = None,
+    job_id: str | None = None, commit: str | None = None, role: str | None = None,
 ) -> TrialValue:
     """
     Turns a raw Azure result into (a) a history entry with full detail,
@@ -1441,7 +1342,8 @@ def record_result(
     together (see the feasible/best selection logic at the bottom of
     this file).
 
-    `job_id`/`commit` are provenance only, for monitoring - they're
+    `job_id`/`commit`/`role` are provenance only, for monitoring (role is
+    "baseline" for the baseline runs, so they can be told apart in the log) - they're
     merged into the on-disk history_log.jsonl record below, but
     deliberately kept OUT of `history` itself, so ConstrainedEI's
     surrogates never see them as if they were real features.
@@ -1472,7 +1374,7 @@ def record_result(
         entry[name] = v
     history.append(entry)
 
-    append_history_to_file({**history[-1], "job_id": job_id, "commit": commit})
+    append_history_to_file({**history[-1], "job_id": job_id, "commit": commit, "role": role})
 
     K = INTENSIFIER_PROPORTIONAL_PENALTY_MULTIPLIER * dalys  # proportional penalty: ranks infeasible
     # trials by overspend. This scalar feeds ONLY SMAC's intensifier
@@ -1601,6 +1503,7 @@ def recover_from_job_log() -> list[dict]:
             recovered.append({
                 "config": record["config"], "seed": record["seed"],
                 "job_id": record["job_id"], "commit": record["commit"],
+                "role": "baseline" if _is_baseline_record(record) else record.get("role"),
                 **result,
             })
 
@@ -1640,10 +1543,17 @@ def seed_history_with_prior_runs(prior_runs: list[dict], smac) -> int:
         # provenance in SMAC's runhistory); fall back to the enumeration
         # index only when it's genuinely unknown.
         seed = run.get("seed", i)
-        value = record_result(config, seed, run, job_id=run.get("job_id"), commit=run.get("commit"))
+        value = record_result(config, seed, run, job_id=run.get("job_id"), commit=run.get("commit"),
+                              role=run.get("role"))
+        n_seeded += 1
+        if run.get("role") == "baseline" and seed not in SMAC_SEEDS:
+            # A baseline seed beyond the intensifier's pool (N_BASELINE_RUNS >
+            # MAX_CONFIG_RUNS): feeds the budget and the history only. Told to
+            # SMAC, it would leave the incumbent with seeds no challenger can
+            # ever be run on, so no challenger could be promoted past it.
+            continue
         info = TrialInfo(config=config, seed=seed)
         smac.tell(info, value)
-        n_seeded += 1
     return n_seeded
 
 
@@ -1699,7 +1609,7 @@ def derive_merit_penalty_alpha() -> float:
         raise FileNotFoundError(
             f"{BASELINE_SUMMARY_FILE} not found: the additive constraint combination "
             "derives its penalty weight from the baseline run's median DALYs. Run the "
-            "baseline first (SUBMIT_BUDGET_RUN) or use CONSTRAINT_COMBINATION='multiplicative'."
+            "baseline runs first (they write it at startup) or use CONSTRAINT_COMBINATION='multiplicative'."
         )
     with open(path) as f:
         baseline_dalys = float(json.load(f)["median_dalys"])

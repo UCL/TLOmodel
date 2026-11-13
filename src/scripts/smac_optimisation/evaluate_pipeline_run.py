@@ -32,6 +32,7 @@ from pathlib import Path
 import pandas as pd
 
 from convergence_monitoring import config_key, get_best_feasible_dalys, get_best_dalys_regardless_of_feasibility
+from baseline_config import BASELINE_CONFIG_VALUES
 from optimisation_parameters import BASELINE_SUMMARY_FILE, HISTORY_LOG_FILE, VALID_PRIOR_RUN_COMMITS
 from postprocess_output import TARGET_PERIOD  # the SAME authoritative period
     # every "dalys" value in history_log.jsonl is already computed over -
@@ -44,6 +45,17 @@ from postprocess_output import TARGET_PERIOD  # the SAME authoritative period
 # --------------------------------------------------------------------------
 # Loading
 # --------------------------------------------------------------------------
+
+BASELINE_COLOR = "black"  # the baseline config's own colour in every plot
+
+
+def _is_baseline_rec(rec: dict) -> bool:
+    """A baseline-config record: role == "baseline" (written by the current
+    pipeline), or - for older logs without a role - a config equal to
+    BASELINE_CONFIG_VALUES."""
+    if rec.get("role") is not None:
+        return rec["role"] == "baseline"
+    return config_key(rec["config_object"]) == config_key(BASELINE_CONFIG_VALUES)
 
 def _get_current_commit_for_filtering() -> str | None:
     """
@@ -442,10 +454,10 @@ def load_baseline_summary(filepath: str | Path = BASELINE_SUMMARY_FILE) -> dict 
     """
     Reads the baseline run's summary (median DALYs, n_runs), written by
     postprocess_output.compute_and_save_baseline_budgets() the last time
-    SUBMIT_BUDGET_RUN was True. Returns None if the file doesn't exist
+    the baseline runs were done. Returns None if the file doesn't exist
     yet (no baseline run has ever been submitted) - callers should treat
     that as "no baseline to compare against" rather than an error, since
-    SUBMIT_BUDGET_RUN is entirely optional.
+    the baseline summary is entirely optional.
     """
     path = Path(filepath)
     if not path.exists():
@@ -557,6 +569,8 @@ def plot_dalys_by_completion_order(
         # call, not per point, so points are grouped into (at most)
         # four calls rather than plotted one at a time.
         style = {
+            ("baseline", "feasible"):    dict(color=BASELINE_COLOR, marker="o", label="Baseline config (feasible)"),
+            ("baseline", "infeasible"):  dict(color=BASELINE_COLOR, marker="x", label="Baseline config (infeasible)"),
             ("new", "feasible"):         dict(color="cornflowerblue",  marker="o", label="New config (feasible)"),
             ("new", "infeasible"):       dict(color="cornflowerblue",  marker="x", label="New config (infeasible)"),
             ("intensify", "feasible"):   dict(color="mediumblue", marker="o", label="Intensified (feasible)"),
@@ -572,7 +586,8 @@ def plot_dalys_by_completion_order(
 
             feasible = all(rec[c] <= 0 for c in violation_cols)
 
-            bucket = ("new" if is_new else "intensify", "feasible" if feasible else "infeasible")
+            kind = "baseline" if _is_baseline_rec(rec) else ("new" if is_new else "intensify")
+            bucket = (kind, "feasible" if feasible else "infeasible")
             xs, ys = points[bucket]
             xs.append(i)
             ys.append(rec["dalys"])
@@ -599,14 +614,22 @@ def plot_dalys_by_completion_order(
         # (odd) slots, means the first 10 distinct configs get 10
         # genuinely different hues before any hue is ever reused.
         cmap = plt.colormaps["tab20"]
-        color_order = list(range(0, cmap.N, 2)) + list(range(1, cmap.N, 2))
+        color_order = [i for i in list(range(0, cmap.N, 2)) + list(range(1, cmap.N, 2))
+                       if i not in (14, 15)]  # tab20's greys: kept free for the legend's marker proxies
+        baseline_key = config_key(BASELINE_CONFIG_VALUES)
         config_colors: dict[tuple, tuple] = {}
         config_points: dict[tuple, tuple[list, list]] = {}
 
         for i, rec in enumerate(records):
             key = config_key(rec["config_object"])
+            if _is_baseline_rec(rec):
+                key = baseline_key  # every baseline record is one config, drawn in its own colour
             if key not in config_colors:
-                config_colors[key] = cmap(color_order[len(config_colors) % cmap.N])
+                if key == baseline_key:
+                    config_colors[key] = BASELINE_COLOR
+                else:
+                    n_other = sum(1 for k in config_colors if k != baseline_key)
+                    config_colors[key] = cmap(color_order[n_other % len(color_order)])
                 config_points[key] = ([], [])
             config_points[key][0].append(i)
             config_points[key][1].append(rec["dalys"])
@@ -622,7 +645,7 @@ def plot_dalys_by_completion_order(
                 ax.plot(xs, ys, color=color, linewidth=1, alpha=0.5, zorder=1)
 
         for i, rec in enumerate(records):
-            key = config_key(rec["config_object"])
+            key = baseline_key if _is_baseline_rec(rec) else config_key(rec["config_object"])
             feasible = all(rec[c] <= 0 for c in violation_cols)
             ax.scatter(
                 i, rec["dalys"], color=config_colors[key],
@@ -652,6 +675,11 @@ def plot_dalys_by_completion_order(
         # a circle vs an x means. Generic grey proxy markers, not tied
         # to any specific config's own colour.
         from matplotlib.lines import Line2D
+        if baseline_key in config_colors:
+            legend_handles.append(
+                Line2D([0], [0], marker="s", color="none", markerfacecolor=BASELINE_COLOR,
+                       markeredgecolor=BASELINE_COLOR, label="Baseline config (all seeds)")
+            )
         legend_handles += [
             Line2D([0], [0], marker="o", color="none", markerfacecolor="grey",
                    markeredgecolor="grey", label="Feasible"),
