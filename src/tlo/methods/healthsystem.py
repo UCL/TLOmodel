@@ -3029,6 +3029,10 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
 
         # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
         if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
+        
+            # Switch ignore_priority back to False
+            health_system.ignore_priority = False
+        
             # A place to store events with updated priority
             updated_events: List[HSIEventQueueItem | None] = [None] * len(health_system.HSI_EVENT_QUEUE)
             offset = 0
