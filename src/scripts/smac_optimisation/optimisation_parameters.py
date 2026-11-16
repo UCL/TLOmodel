@@ -85,9 +85,7 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 
 # ============================================================================
 # PARAMETER DESCRIPTIONS
-# Full explanation for every parameter above, in the same order - moved down
-# here so the top of the file stays a quick, scannable overview. Search for
-# a parameter's name to jump straight to its own description.
+# Full explanation for every parameter above, in the same order. 
 # ============================================================================
 
 # --- TLO / hyperparameters -------------------------------------------------
