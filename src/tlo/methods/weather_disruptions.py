@@ -18,8 +18,7 @@ logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
 # HSI modules with hard clinical deadlines — delay must never push topen past tclose
-TIME_SENSITIVE_MODULES = {'Labour', 'PostnatalCare', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy'}
-
+TIME_SENSITIVE_MODULES = {'Labour', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes'}
 
 class WeatherDisruptions(Module):
     """
