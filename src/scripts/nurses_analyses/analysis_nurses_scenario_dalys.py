@@ -18,6 +18,56 @@ from tlo.analysis.utils import extract_results, load_pickled_dataframes, summari
 DALY_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
 
 
+# Group individual causes into broader health areas.
+CAUSE_GROUP = {
+    "AIDS": "HIV/AIDS",
+    "TB (non-AIDS)": "TB (non-AIDS)",
+    "Malaria": "Malaria",
+    "Childhood Diarrhoea": "RMNCH",
+    "Congenital birth defects": "RMNCH",
+    "Lower respiratory infections": "RMNCH",
+    "Maternal Disorders": "RMNCH",
+    "Measles": "RMNCH",
+    "Neonatal Disorders": "RMNCH",
+    "Schistosomiasis": "RMNCH",
+    "COPD": "NCDs",
+    "Cancer (Bladder)": "NCDs",
+    "Cancer (Breast)": "NCDs",
+    "Cancer (Oesophagus)": "NCDs",
+    "Cancer (Other)": "NCDs",
+    "Cancer (Prostate)": "NCDs",
+    "Depression / Self-harm": "NCDs",
+    "Diabetes": "NCDs",
+    "Epilepsy": "NCDs",
+    "Heart Disease": "NCDs",
+    "Kidney Disease": "NCDs",
+    "Lower Back Pain": "NCDs",
+    "Stroke": "NCDs",
+    "Transport Injuries": "Transport Injuries",
+    "Other": "Other",
+}
+
+CAUSE_GROUP_ORDER = [
+    "HIV/AIDS",
+    "TB (non-AIDS)",
+    "Malaria",
+    "RMNCH",
+    "NCDs",
+    "Transport Injuries",
+    "Other",
+]
+
+CAUSE_GROUP_COLOR = {
+    "HIV/AIDS": "deepskyblue",
+    "TB (non-AIDS)": "mediumslateblue",
+    "Malaria": "khaki",
+    "RMNCH": "mediumaquamarine",
+    "NCDs": "violet",
+    "Transport Injuries": "lightsalmon",
+    "Other": "dimgrey",
+}
+
+
 def prepare_plot_data_for_excel(data, category_name="Category"):
     """
     Prepare the mean and error-bar values used in a plot
@@ -455,6 +505,47 @@ def extract_dalys_by_cause(results_folder):
         custom_generate_series=get_dalys_by_cause,
         do_scaling=True,
     )
+
+
+def aggregate_causes_by_health_area(data):
+    """
+    Aggregate individual causes into broader health areas.
+    """
+
+    data = data.copy()
+
+    # Identify causes not explicitly included in the mapping
+    unmapped_causes = [
+        cause for cause in data.index
+        if cause not in CAUSE_GROUP
+    ]
+
+    if unmapped_causes:
+        print(
+            "WARNING: The following causes were not explicitly "
+            "mapped and will be assigned to Other:",
+            unmapped_causes,
+        )
+
+    # Mapping individual causes to broader health areas
+    data.index = data.index.map(
+        lambda cause: CAUSE_GROUP.get(cause, "Other")
+    )
+
+    # Summing individual causes belonging to the same health area
+    data = data.groupby(level=0).sum()
+
+    # Keep only health areas that actually exist in the data,
+    # while preserving the desired order
+    available_groups = [
+        group
+        for group in CAUSE_GROUP_ORDER
+        if group in data.index
+    ]
+
+    data = data.reindex(available_groups)
+    return data
+
 
 
 # Extract DALYs by age group
@@ -923,34 +1014,44 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
     return fig_default, ax_default, fig_improved, ax_improved
 
 
-
-# Shared plotting function for percentage DALYs/deaths averted by cause
+# Shared plotting function for percentage DALYs/deaths averted by health area
 def _plot_percent_averted_by_cause(
     default_df,
     improved_df,
-    cause_order,
     outcome_label,
-    top_n=30,
 ):
     """
-    Plot percentage DALYs or deaths averted by cause.
-
-    Causes are on the x-axis and percentage averted is on the y-axis.
-    Default and Improved Healthsystem figures are plotted separately.
+    Plot percentage DALYs or deaths averted by health area
     """
 
-    # Keep the existing cause order and limit the number of causes plotted.
-    available_causes = [
-        cause
-        for cause in cause_order
-        if cause in default_df["Fewer Nurses / Default Healthsystem Function"].index
-        and cause in improved_df["Fewer Nurses / Improved Healthsystem Function"].index
-    ]
+    # Health areas available in the results.
+    # health_areas = [
+    #     group
+    #     for group in CAUSE_GROUP_ORDER
+    #     if group in default_df[
+    #         "Fewer Nurses / Default Healthsystem Function"
+    #     ].index
+    #     and group in improved_df[
+    #         "Fewer Nurses / Improved Healthsystem Function"
+    #     ].index
+    # ]
 
-    available_causes = sorted(available_causes, key=str.lower)
-    causes = available_causes[:top_n]
+    health_areas = sorted(
+        [
+            area
+            for area in CAUSE_GROUP_ORDER
+            if area != "Other"
+               and area in default_df[
+                   "Fewer Nurses / Default Healthsystem Function"
+               ].index
+               and area in improved_df[
+                   "Fewer Nurses / Improved Healthsystem Function"
+               ].index
+        ],
+        key=str.lower,
+    )
 
-    # Scenario order and colours
+    # Scenario order and colours.
     scenarios = [
         ("Fewer nurses", "Fewer Nurses", "indianred"),
         ("More nurses", "More Nurses", "steelblue"),
@@ -959,86 +1060,107 @@ def _plot_percent_averted_by_cause(
         ("More CNP by district", "More CNP staff by District", "orange"),
     ]
 
-    # Make each figure wider as the number of causes increases.
-    # A larger width also makes the individual bars easier to distinguish.
-    figure_width = max(20, len(causes) * 0.8)
-    figure_height = 10
+    # Figure dimensions.
+    figure_width = 15
+    figure_height = max(10, len(health_areas) * 1.8)
 
-    # Total width allocated to the five bars for each cause.
-    group_width = 0.95
-    bar_width = group_width / len(scenarios)
+    # Spacing between health areas.
+    group_spacing = 1.5
 
-    x = np.arange(len(causes))
+    y = np.arange(len(health_areas)) * group_spacing
+
+    # Width/height allocated to the five scenario bars.
+    bar_height = 0.14
+
     offsets = (
         np.arange(len(scenarios))
         - (len(scenarios) - 1) / 2
-    ) * bar_width
+    ) * bar_height
 
     def plot_healthsystem(data, healthsystem):
+
         fig, ax = plt.subplots(
             figsize=(figure_width, figure_height)
         )
 
         for i, (label, scenario_prefix, color) in enumerate(scenarios):
             scenario_name = (
-                f"{scenario_prefix} / {healthsystem} Healthsystem Function"
+                f"{scenario_prefix} / "
+                f"{healthsystem} Healthsystem Function"
             )
 
-            # Retrieve values and put causes in the intended order.
-            scenario_df = data[scenario_name].reindex(causes)
+            # Retrieve values in the intended health-area order.
+            scenario_df = data[scenario_name].reindex(
+                health_areas
+            )
 
             means = scenario_df["mean"].to_numpy()
             lower = scenario_df["lower"].to_numpy()
             upper = scenario_df["upper"].to_numpy()
 
-            # Draw vertical bars, with causes on the x-axis.
-            xpos = x + offsets[i]
+            # Position of each scenario bar.
+            ypos = y + offsets[i]
 
-            ax.bar(
-                xpos,
+            # Draw horizontal bars.
+            ax.barh(
+                ypos,
                 means,
-                width=bar_width * 0.95,
+                height=bar_height * 0.9,
                 color=color,
                 label=label,
-                yerr=np.vstack([
+                xerr=np.vstack([
                     means - lower,
                     upper - means,
                 ]),
-                capsize=2,
-                error_kw={"elinewidth": 0.8},
+                capsize=3,
+                error_kw={
+                    "elinewidth": 0.9,
+                    "capthick": 0.9,
+                },
             )
 
-        ax.axhline(0, color="black", linewidth=1)
+        # Reference line at zero.
+        ax.axvline(0, color="black", linewidth=1,)
 
-        ax.set_xticks(x)
-        ax.set_xticklabels(
-            causes,
-            rotation=60,
-            ha="right",
-            rotation_mode="anchor",
-        )
+        # Health-area labels.
+        ax.set_yticks(y)
+        ax.set_yticklabels(health_areas)
 
-        ax.set_xlabel("", labelpad=10)
-        ax.set_ylabel(f"% {outcome_label} averted")
-        ax.grid(axis="y", alpha=0.3)
+        # Colour health-area labels according to their groups.
+        for tick, group in zip(
+            ax.get_yticklabels(),
+            health_areas,
+        ):
+            tick.set_color(CAUSE_GROUP_COLOR[group])
+            tick.set_fontweight("bold")
+
+        # Separate health areas with dashed horizontal lines.
+        for i in range(len(health_areas) - 1):
+            separator_position = (
+                y[i] + y[i + 1]
+            ) / 2
+
+            ax.axhline(separator_position, color="grey", linestyle="--", linewidth=1, alpha=0.7,)
+
+        # Put the first health area at the top.
+        ax.invert_yaxis()
+
+        # Axis labels.
+        ax.set_xlabel(f"% {outcome_label} averted", fontsize=12,)
+        ax.set_ylabel("Health area", fontsize=12,)
+
+        # Grid and formatting.
+        ax.grid(axis="x", alpha=0.3,)
+
         ax.set_axisbelow(True)
-
-        # Put the legend below the x-axis label.
-        ax.legend(
-            loc="upper center",
-            bbox_to_anchor=(0.5, -0.28),
-            ncol=5,
-            frameon=True,
-        )
-
-        # Leave room for long cause labels and the bottom legend.
-        fig.subplots_adjust(
-            left=0.06,
-            right=0.99,
-            top=0.97,
-            bottom=0.30,
-        )
-
+        ax.tick_params(axis="y", labelsize=11, length=0, pad=12,)
+        ax.tick_params(axis="x", labelsize=10,)
+        ax.set_yticks(y)
+        ax.set_yticklabels(health_areas)
+        ax.tick_params(axis="y", labelcolor="black")
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=5, frameon=True,)
+        # Leave space for labels and legend
+        fig.subplots_adjust(left=0.20, right=0.98, top=0.97, bottom=0.15,)
         return fig, ax
 
     # Produce separate figures for each healthsystem.
@@ -1052,36 +1174,35 @@ def _plot_percent_averted_by_cause(
         "Improved",
     )
 
-    return fig_default, ax_default, fig_improved, ax_improved
-
-
-# Plot % DALYs averted by cause
-def plot_percent_dalys_averted_by_cause(
-    default_df,
-    improved_df,
-    top_n=30,
-):
-    return _plot_percent_averted_by_cause(
-        default_df=default_df,
-        improved_df=improved_df,
-        cause_order=cause_order,
-        outcome_label="DALYs",
-        top_n=top_n,
+    return (
+        fig_default,
+        ax_default,
+        fig_improved,
+        ax_improved,
     )
 
 
-# Plot % deaths averted by cause
-def plot_percent_deaths_averted_by_cause(
+# Plot % DALYs averted by health area
+def plot_percent_dalys_averted_by_cause(
     default_df,
     improved_df,
-    top_n=30,
 ):
     return _plot_percent_averted_by_cause(
         default_df=default_df,
         improved_df=improved_df,
-        cause_order=death_order,
+        outcome_label="DALYs",
+    )
+
+
+# Plot % deaths averted by health area
+def plot_percent_deaths_averted_by_cause(
+    default_df,
+    improved_df,
+):
+    return _plot_percent_averted_by_cause(
+        default_df=default_df,
+        improved_df=improved_df,
         outcome_label="Deaths",
-        top_n=top_n,
     )
 
 
@@ -1647,8 +1768,10 @@ if __name__ == "__main__":
     assert (total_deaths.index == total_deaths_cause.index).all()
     assert (abs(total_deaths.values - total_deaths_cause.values) < 1e-7).all()
 
+    # Aggregate individual causes into broader health areas.
+    deaths_by_cause = aggregate_causes_by_health_area(deaths_by_cause)
     # Alphabetical order of causes
-    death_order = sorted(deaths_by_cause.index.tolist(), key=str.lower, reverse=True)
+    # death_order = sorted(deaths_by_cause.index.tolist(), key=str.lower, reverse=True)
 
     deaths_by_cause_default = (
         deaths_by_cause.loc[
@@ -1686,7 +1809,6 @@ if __name__ == "__main__":
         plot_percent_deaths_averted_by_cause(
             percent_deaths_by_cause_default,
             percent_deaths_by_cause_improved,
-            top_n=30,
         )
     )
 
@@ -1756,8 +1878,12 @@ if __name__ == "__main__":
     assert (total_dalys.index == total_dalys_cause.index).all()
     assert (abs(total_dalys.values - total_dalys_cause.values) < 1e-7).all()
 
+    # Aggregate individual causes into broader health areas.
+    dalys_by_cause = aggregate_causes_by_health_area(
+        dalys_by_cause
+    )
     # Alphabetical order of causes
-    cause_order = sorted(dalys_by_cause.index.tolist(), key=str.lower, reverse=True)
+    # cause_order = sorted(dalys_by_cause.index.tolist(), key=str.lower, reverse=True)
 
     # Default Healthsystem
     dalys_by_cause_default = (
@@ -1797,7 +1923,6 @@ if __name__ == "__main__":
         plot_percent_dalys_averted_by_cause(
             percent_by_cause_default,
             percent_by_cause_improved,
-            top_n=30,
         )
     )
 
