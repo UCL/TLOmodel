@@ -386,10 +386,10 @@ class WeatherDisruptions(Module):
                     continue
 
                 precip_m = precip_monthly.iloc[t_idx, fac_idx]
-                precip_5d = precip_5day.iloc[t_idx, fac_idx]
+                precip_5d = precip_5day.at[t_idx, fac]
+                lag_1_5d  = lag_1_5day.at[t_idx, fac]
                 lag_4m = lag_4month_monthly.iloc[t_idx, fac_idx]
                 lag_9m = lag_9month_monthly.iloc[t_idx, fac_idx]
-                lag_1_5d = lag_1_5day.iloc[t_idx, fac_idx]
 
                 rows.append({
                     'RealFacility_ID': fac,
