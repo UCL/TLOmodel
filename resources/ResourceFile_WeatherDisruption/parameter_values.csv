@@ -8,6 +8,7 @@ scale_factor_reseeking_healthcare_post_disruption,1,undetermined,0,,Structural a
 scale_factor_prob_disruption,1,undetermined,0,,Structural assumption,
 scale_factor_severity_disruption_and_delay,1,undetermined,0,,Structural assumption,
 prop_supply_side_disruptions,0.3,undetermined,0,,Structural assumption,
+scale_factor_appointment_urgency,1,undetermined,0,,Structural assumption,
 baseline_coef_year,0.002102417,local,0.00205256,0.002152274,95% confidence interval,"Murray-Watson et al, 2025'"
 baseline_coef_month,0.0047,local,,,95% confidence interval,"Murray-Watson et al, 2025'"
 baseline_coef_altitude,0.0000551,local,1.28E-06,0.00010902,95% confidence interval,"Murray-Watson et al, 2025'"
