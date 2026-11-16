@@ -1165,10 +1165,13 @@ def fit_indicator(indicator, panel_path, spline_df=None):
         ),
         "_wbgt_support": WBGT_SUPPORT,
         "_nb_rows": nb_data[["facility", "date"]].copy(),
+        "_nb_rows": nb_data[["facility", "date"]].copy(),
+        "_nb_data": nb_data,
     }
+
 # ===========================================================================
 # MAIN
-# ===========================================================================
+# ===========================================================================a
 if __name__ == "__main__":
     print("=" * 60)
     print("Two-Model Poisson QMLE Analysis (pyfixest fepois, absorbed FE)")
