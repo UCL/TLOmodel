@@ -662,8 +662,11 @@ class WeatherDisruptions(Module):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        hsi_event_item.hsi_event.never_ran()
-
+        self.sim.modules["HealthSystem"].call_and_record_never_ran_hsi_event(
+            hsi_event=hsi_event_item.hsi_event,
+            priority=hsi_event_item.priority,
+            clinic=hsi_event_item.clinic_eligibility,
+        )
         logger_summary.info(
             key="Weather_cancelled_HSI_Event_full_info",
             data={

@@ -1918,13 +1918,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         hsi_event_item=item,
                         current_date=self.sim.date
                     )
-
-                if climate_disrupted:
-                    self.module.call_and_record_never_ran_hsi_event(
-                        hsi_event=item.hsi_event,
-                        priority=item.priority,
-                        clinic=item.clinic_eligibility,
-                    )
+                    # Logging is handled in module
                     continue
 
                 if not item.hsi_event.is_all_declared_equipment_available:
@@ -2001,11 +1995,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     if capabilities_monitor[event_clinic][officer] <= 0:
                                         capabilities_still_available.discard(officer)
 
-                            self.module.call_and_record_never_ran_hsi_event(  # added
-                                hsi_event=event,
-                                priority=_priority,
-                                clinic=event_clinic,
-                            )
+                            # Logging is handled in module
                             continue
 
                     # Not climate disrupted: check resources and run event.
