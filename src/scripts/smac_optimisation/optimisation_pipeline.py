@@ -95,7 +95,7 @@ from optimisation_parameters import (
     INTENSIFIER_FLOOR_PENALTY_MULTIPLIER,
     CONSTRAINT_COMBINATION, MERIT_DALYS_IMPROVEMENT_PCT, MERIT_BUDGET_VIOLATION_PCT,
     MERIT_OVERSHOOT_TOLERANCE, BASELINE_SUMMARY_FILE,
-    N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME,
+    N_CONCURRENT, POLL_INTERVAL_SECONDS, USE_SUSPEND_RESUME, USE_CONVERGENCE_CHECK,
     VALID_CHECKPOINT_COMMITS, VALID_PRIOR_RUN_COMMITS, CONFIG_YEAR_START_DATE,
     START_FIRST_BOUNDARY, YEAR_END_DATE,
     SUBMIT_INITIAL_DESIGN, N_INIT, INITIAL_DESIGN_NEAR_BASELINE_FRACTION, INITIAL_DESIGN_PERTURBATION_STD,
@@ -1877,7 +1877,7 @@ try:
             if current_best is not None:
                 best_dalys_over_time.append(current_best)
 
-            if not converged and check_convergence(best_dalys_over_time):
+            if USE_CONVERGENCE_CHECK and not converged and check_convergence(best_dalys_over_time):
                 converged = True
                 print(f"Stopping new submissions; draining {len(pending) - 1} pending job(s).")
 

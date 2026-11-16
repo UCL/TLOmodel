@@ -36,6 +36,7 @@ POLL_INTERVAL_SECONDS = 120
 # --------------------------------------------------------------------------
 # Convergence-check hyperparameters (see convergence_monitoring.py)
 # --------------------------------------------------------------------------
+USE_CONVERGENCE_CHECK = False
 CONVERGENCE_WINDOW = 30
 CONVERGENCE_MIN_RELATIVE_IMPROVEMENT = 0.01
 
@@ -252,6 +253,10 @@ BASELINE_BUDGET_COMPARISON_FILE = INPUTS_DIR / "baseline_budget_comparison.csv"
 #     SMAC seeing it.
 
 # --- Convergence-check hyperparameters (see convergence_monitoring.py) -----
+#
+# USE_CONVERGENCE_CHECK
+#     If False, the run never stops early: it submits until N_TOTAL_RUNS is
+#     used. CONVERGENCE_WINDOW is still used by the end-of-run diagnostics.
 #
 # CONVERGENCE_WINDOW
 #     How many completed trials back to compare against.
