@@ -225,7 +225,7 @@ class WeatherDisruptions(Module):
         )
 
         precip_5day = precip_5day.iloc[:, 1:]
-        precip_monthly = monthly_file.iloc[:, 1:]
+        precip_monthly = monthly_file
 
         precip_monthly = precip_monthly.drop(columns=precip_monthly.columns[precip_monthly.sum() == 0])
         precip_5day = precip_5day.drop(columns=precip_5day.columns[precip_5day.sum() == 0])
