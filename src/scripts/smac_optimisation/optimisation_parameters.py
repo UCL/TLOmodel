@@ -14,7 +14,7 @@ START_THIRD_BOUNDARY = None
 # --------------------------------------------------------------------------
 # SMAC / search hyperparameters
 # --------------------------------------------------------------------------
-N_TOTAL_RUNS = 400
+N_TOTAL_RUNS = 500
 MAX_CONFIG_RUNS = 8
 RETRAIN_EVERY = 1
 EI_XI = 0.0
