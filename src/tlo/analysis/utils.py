@@ -386,7 +386,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-
+    
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 
@@ -430,8 +430,8 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-
-
+        
+    
 
     return df_final
 
@@ -594,7 +594,6 @@ def summarize(
         central_measure='mean',
         only_central=only_mean,
         collapse_columns=collapse_columns,
-        use_standard_error=True,
     )
     # rename 'central' to 'mean' if needed
     if isinstance(output, pd.DataFrame):
