@@ -147,6 +147,9 @@ class WeatherDisruptions(Module):
         self.arg_scale_factor_severity = scale_factor_severity_disruption_and_delay
         self.arg_scale_factor_appointment_urgency = scale_factor_appointment_urgency
         self.arg_prop_supply_side = prop_supply_side_disruptions
+        self._hsi_checked_count = 0
+        self._hsi_checked_by_district: Dict[str, int] = {}
+        self._hsi_checked_by_facility_treatment: Dict[str, int] = {}
 
         self._reset_monthly_counters_internal()
 
@@ -223,8 +226,6 @@ class WeatherDisruptions(Module):
             resourcefilepath / 'ResourceFile_WeatherDisruption',
             files=f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_monthly_prediction_weather_by_facility.csv"
         )
-
-        precip_5day = precip_5day.iloc[:, 1:]
         precip_monthly = monthly_file
 
         precip_monthly = precip_monthly.drop(columns=precip_monthly.columns[precip_monthly.sum() == 0])
