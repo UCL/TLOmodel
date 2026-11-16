@@ -481,10 +481,17 @@ class WeatherDisruptions(Module):
         fac_level = hsi_event_item.hsi_event.facility_info.level
         person_id = hsi_event_item.hsi_event.target
         facility_used = self.sim.population.props.at[person_id, f"level_{fac_level}"]
+        district = self.sim.population.props.at[person_id, "district_of_residence"]
+        treatment_id = getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown")
 
         if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
             return False, False
+        self._hsi_checked_count += 1
 
+        self._increment_district_counter(self._hsi_checked_by_district, str(district))
+        self._increment_facility_treatment_counter(
+            self._hsi_checked_by_facility_treatment, str(facility_used), str(treatment_id)
+        )
         prob_disruption = self._get_disruption_probability(
             facility_id=facility_used,
             year=year,
@@ -495,8 +502,6 @@ class WeatherDisruptions(Module):
         if self.rng.binomial(1, prob_disruption) == 0:
             return False, False
 
-        district = self.sim.population.props.at[person_id, "district_of_residence"]
-        treatment_id = getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown")
 
         is_supply_side = self._handle_disruption(
             hsi_event_item=hsi_event_item,

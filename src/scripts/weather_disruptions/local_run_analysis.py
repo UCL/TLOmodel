@@ -93,9 +93,7 @@ cancelled_events = log_df["tlo.methods.weather_disruptions.summary"].get(
 #  DERIVED QUANTITIES
 
 monthly["total_disrupted"] = monthly["cancelled"] + monthly["delayed"]
-monthly["disruption_rate"] = (
-    monthly["total_disrupted"] / (monthly["hsi_total"] + monthly["total_disrupted"])
-).clip(upper=1.0)
+monthly["disruption_rate"] = (monthly["total_disrupted"] / monthly["hsi_checked"]).clip(upper=1.0)
 
 cumulative_cancelled = monthly["cancelled"].cumsum()
 cumulative_delayed = monthly["delayed"].cumsum()
@@ -108,9 +106,7 @@ annual = monthly.resample("YE").agg(
     delayed=("delayed", "sum"),
     total_disrupted=("total_disrupted", "sum"),
 )
-annual["disruption_rate"] = (
-    annual["total_disrupted"] / (annual["hsi_total"] + annual["total_disrupted"])
-).clip(upper=1.0)
+annual["disruption_rate"] = (annual["total_disrupted"] / annual["hsi_checked"]).clip(upper=1.0)
 
 # Per-treatment-type breakdown from event logs (top N most common)
 TOP_N = 15
