@@ -222,11 +222,10 @@ class WeatherDisruptions(Module):
             resourcefilepath / 'ResourceFile_WeatherDisruption',
             files=f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_window_prediction_weather_by_facility.csv"
         )
-        monthly_file = read_csv_files(
+        precip_monthly = read_csv_files(
             resourcefilepath / 'ResourceFile_WeatherDisruption',
             files=f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_monthly_prediction_weather_by_facility.csv"
         )
-        precip_monthly = monthly_file
 
         precip_monthly = precip_monthly.drop(columns=precip_monthly.columns[precip_monthly.sum() == 0])
         precip_5day = precip_5day.drop(columns=precip_5day.columns[precip_5day.sum() == 0])
@@ -676,7 +675,7 @@ class WeatherDisruptions(Module):
                 priority=hsi_event_item.priority,
                 clinic=hsi_event_item.clinic_eligibility,
             )
-            logger_summary.info(
+        logger_summary.info(
                 key="Weather_cancelled_HSI_Event_full_info",
                 data={
                     "TREATMENT_ID": getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown"),
