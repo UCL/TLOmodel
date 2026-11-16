@@ -549,8 +549,9 @@ class WeatherDisruptions(Module):
                                                        treatment_id)
 
         will_reschedule = self._determine_rescheduling(hsi_event_item)
+        reschedule_refused = will_reschedule and (hsi_event_item.hsi_event.did_not_run() is False)
 
-        if will_reschedule:
+        if will_reschedule and not reschedule_refused:
             delay_days = self._calculate_delay(hsi_event_item, prob_disruption, current_date)
             new_topen = current_date + DateOffset(days=delay_days)
 
@@ -566,7 +567,9 @@ class WeatherDisruptions(Module):
             self._increment_district_counter(self._delayed_by_district, district)
             self._increment_facility_treatment_counter(self._delayed_by_facility_treatment, facility_id, treatment_id)
         else:
-            self._log_cancelled_hsi(hsi_event_item, facility_id=facility_id)
+            self._log_cancelled_hsi(
+                hsi_event_item, facility_id=facility_id, call_never_ran=not reschedule_refused
+            )
             self._disruptions_cancelled_count += 1
             self._increment_district_counter(self._cancelled_by_district, district)
             self._increment_facility_treatment_counter(self._cancelled_by_facility_treatment, facility_id, treatment_id)
@@ -641,8 +644,7 @@ class WeatherDisruptions(Module):
         """Log an HSI that was delayed due to weather.
         The event has already been rescheduled — call did_not_run()
         """
-        hsi_event_item.hsi_event.did_not_run()
-
+        # in _handle_disruption
         logger_summary.info(
             key="Weather_delayed_HSI_Event_full_info",
             data={
@@ -654,7 +656,8 @@ class WeatherDisruptions(Module):
             description="record of each HSI event delayed due to weather",
         )
 
-    def _log_cancelled_hsi(self, hsi_event_item: HSIEventQueueItem, facility_id: Optional[str] = None):
+    def _log_cancelled_hsi(self, hsi_event_item: HSIEventQueueItem, facility_id: Optional[str] = None,
+                           call_never_ran: bool = True):
         """Log an HSI that was cancelled due to weather.
         The event will not be rescheduled — call never_ran().
         """
@@ -662,21 +665,22 @@ class WeatherDisruptions(Module):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.sim.modules["HealthSystem"].call_and_record_never_ran_hsi_event(
-            hsi_event=hsi_event_item.hsi_event,
-            priority=hsi_event_item.priority,
-            clinic=hsi_event_item.clinic_eligibility,
-        )
-        logger_summary.info(
-            key="Weather_cancelled_HSI_Event_full_info",
-            data={
-                "TREATMENT_ID": getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown"),
-                "Person_ID": person_id,
-                "priority": hsi_event_item.priority,
-                "RealFacility_ID": facility_id if facility_id is not None else "unknown",
-            },
-            description="record of each HSI event cancelled due to weather",
-        )
+        if call_never_ran:
+            self.sim.modules["HealthSystem"].call_and_record_never_ran_hsi_event(
+                hsi_event=hsi_event_item.hsi_event,
+                priority=hsi_event_item.priority,
+                clinic=hsi_event_item.clinic_eligibility,
+            )
+            logger_summary.info(
+                key="Weather_cancelled_HSI_Event_full_info",
+                data={
+                    "TREATMENT_ID": getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown"),
+                    "Person_ID": person_id,
+                    "priority": hsi_event_item.priority,
+                    "RealFacility_ID": facility_id if facility_id is not None else "unknown",
+                },
+                description="record of each HSI event cancelled due to weather",
+            )
 
 class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
     """Monthly logger for weather disruptions — overall, by district, and by facility×treatment."""
