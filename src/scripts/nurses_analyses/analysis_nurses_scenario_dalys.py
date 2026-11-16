@@ -1283,13 +1283,13 @@ def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
     fig_default, ax_default = plt.subplots(figsize=(12, 10))
     y_default = np.arange(len(scenarios_default[0][1]))
 
-    offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    offsets = [0.32, 0.16, 0.0, -0.16, -0.32]
 
     for offset, (label, df, color) in zip(offsets, scenarios_default):
         ax_default.barh(
             y_default + offset,
             df["mean"],
-            height=0.18,
+            height=0.20,
             color=color,
             label=label,
         )
@@ -1321,7 +1321,7 @@ def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
         labels_default,
         loc="upper center",
         bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
+        ncol=5,
         frameon=True,
     )
 
@@ -1379,7 +1379,7 @@ def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
         labels_improved,
         loc="upper center",
         bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
+        ncol=5,
         frameon=True,
     )
 
@@ -1465,13 +1465,13 @@ def plot_percent_deaths_averted_by_age_group(default_df,improved_df,):
     fig_default, ax_default = plt.subplots(figsize=(12, 10))
     y_default = np.arange(len(scenarios_default[0][1]))
 
-    offsets = [-0.32, -0.16, 0.0, 0.16, 0.32]
+    offsets = [0.32, 0.16, 0.0, -0.16, -0.32]
 
     for offset, (label, df, color) in zip(offsets, scenarios_default):
         ax_default.barh(
             y_default + offset,
             df["mean"],
-            height=0.18,
+            height=0.20,
             color=color,
             label=label,
         )
@@ -1503,7 +1503,7 @@ def plot_percent_deaths_averted_by_age_group(default_df,improved_df,):
         labels_default,
         loc="upper center",
         bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
+        ncol=5,
         frameon=True,
     )
 
@@ -1561,7 +1561,7 @@ def plot_percent_deaths_averted_by_age_group(default_df,improved_df,):
         labels_improved,
         loc="upper center",
         bbox_to_anchor=(0.5, -0.12),
-        ncol=3,
+        ncol=5,
         frameon=True,
     )
 

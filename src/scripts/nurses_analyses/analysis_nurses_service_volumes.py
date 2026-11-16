@@ -690,6 +690,10 @@ def plot_percent_service_area_volume_change(
     }
 
     # Get service areas
+    summarized_percent_change = summarized_percent_change.drop(
+        index=["DeliveryCare", "PostnatalCare"],
+        errors="ignore",
+    )
     service_areas = summarized_percent_change.index
 
     # Get scenario names
