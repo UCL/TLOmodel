@@ -58,10 +58,11 @@ class DiabeticRetinopathy(Module):
             Types.LIST, "Initial probabilities of moderate vision impairment, severe vision impairment "
                         "and blindness among people with DR or DMO"),
 
-        "rp_nc_hypertension_dr": Parameter(
+        "rr_nc_hypertension_dr": Parameter(
             Types.REAL, "relative risk at baseline of diabetic retinopathy if person has hypertension"),
-        "rp_nc_hypertension_dmo": Parameter(
-            Types.REAL, "relative risk at baseline of diabetic macular oedema if person has hypertension"),
+        "rr_nc_hypertension_dmo": Parameter(
+            Types.REAL, "relative risk multiplier at baseline for the presence of diabetic macular oedema "
+                        "in individuals with hypertension compared with those without hypertension."),
         # "prob_diabetes_controlled": Parameter(
         #     Types.REAL,
         #     "Probability that a person with mild DR has controlled diabetes"
@@ -110,7 +111,8 @@ class DiabeticRetinopathy(Module):
         ),
         "rr_diabetes_duration_greater_than_15": Parameter(
             Types.REAL,
-            "Relative risk multiplier for diabetic retinopathy when diabetes duration > 15 years"
+            "Relative risk multiplier for sight threatening diabetic retinopathy when "
+            "diabetes duration > 15 years"
         ),
         "prob_antivegf_success_clinically_significant": Parameter(
             Types.REAL,
@@ -369,7 +371,7 @@ class DiabeticRetinopathy(Module):
         lm_init_dr_status_any_dr = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prob_any_dr']),
-            Predictor('nc_hypertension').when(True, p['rp_nc_hypertension_dr']),
+            Predictor('nc_hypertension').when(True, p['rr_nc_hypertension_dr']),
         )
 
         # any_dr = \
@@ -891,7 +893,7 @@ class DiabeticRetinopathy(Module):
         lm_init_dmo = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(init_dmo_probs),
-            Predictor('nc_hypertension').when(True, p['rp_nc_hypertension_dmo']),
+            Predictor('nc_hypertension').when(True, p['rr_nc_hypertension_dmo']),
         )
 
         has_any_dmo = lm_init_dmo.predict(candidates, self.rng)
