@@ -22,6 +22,8 @@ import numpy as np
 
 module_of_interest ='CervicalCancer'
 N_param_combo = 10
+# Parameters (by name) to exclude from parameter variation; these keep their resource-file value
+parameters_to_ignore = ['main_polling_frequency_months'] # This should be excluded as design decision anyway, but additional safety check
 
 def detect_and_convert(value):
     # try float
@@ -112,6 +114,8 @@ def sample_param_combo(seed):
         # Select undetermined parameters which were not design decisions
         p = p.loc[p['param_label']=='undetermined']
         p = p.drop(p[p['prior_note'] == 'design decision'].index)
+        # Exclude parameters explicitly listed to be ignored
+        p = p.loc[~p['parameter_name'].isin(parameters_to_ignore)]
         # Parse values
         p['value'] = p['value'].apply(parse_value)
         
