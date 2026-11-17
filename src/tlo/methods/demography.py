@@ -312,6 +312,8 @@ class Demography(Module):
 
         self.initial_model_to_data_popsize_ratio_district = \
             self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
+            
+        df.loc[df.sex == 'M', 'is_alive'] = False
 
     def initialise_simulation(self, sim):
         """
@@ -404,6 +406,8 @@ class Demography(Module):
                   'mother_age': _mother_age_at_birth,
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
         )
+        
+        df.loc[df.sex == 'M', 'is_alive'] = False
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
