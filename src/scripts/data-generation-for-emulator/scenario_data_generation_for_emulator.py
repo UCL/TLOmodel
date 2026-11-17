@@ -16,7 +16,6 @@ from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get
 from tlo.methods import individual_history_tracker, cervical_cancer, demography, enhanced_lifestyle, symptommanager, healthsystem, healthburden, healthseekingbehaviour, epi, hiv, tb, simplified_births
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
-import random
 import re
 import ast
 import numpy as np
@@ -96,7 +95,7 @@ def parse_value(value):
     return value
 
 
-def sample_param_combo():
+def sample_param_combo(seed):
 
         # For each N_param_combo, which will constitute a draw, the plan is to create a param combination, that will include "service_availability" to be passed to the HealthSystem and param rescaling to be passed to the module
         # keys: draw number, value = dictionary where key: parameter name, value: new parameter value
@@ -118,27 +117,29 @@ def sample_param_combo():
         
         # For all param combos/draws, create a dictionary of parameter combinations
         for draw in range(N_param_combo):
+            # Independent, reproducible random stream per draw (stable if N_param_combo changes)
+            rng = np.random.default_rng([seed, draw])
             parameter_draws[draw] = {}
-            
+
             # 1. Select services included with 50/50 probability
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
-            # REVIEW: better handle on random seed here
-            # selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
+            # selected_treatments = [x for x in treatments_in_module if rng.random() < 0.5]
             # parameter_draws[draw]['HealthSystem'] = {'Service_Availability': selected_treatments}
 
             # 2. Resample parameters
             parameter_draws[draw].setdefault(module_of_interest, {})
             for idx, row in p.iterrows():
-                r = random.random()
-                
+                r = rng.random()
+
                 if isinstance(row['value'], (pd.Series, list, tuple, np.ndarray)):
-                    val = to_array(row['value'])
                     prior_max = to_array(row['prior_max'])
                     prior_min = to_array(row['prior_min'])
-                    new_val = r*(prior_max - prior_min)
+                    new_val = prior_min + r*(prior_max - prior_min)
                     new_val = new_val.tolist()
                 else:
-                    new_val = r*(float(row['prior_max']) - float(row['prior_min']))
+                    prior_max = float(row['prior_max'])
+                    prior_min = float(row['prior_min'])
+                    new_val = prior_min + r*(prior_max - prior_min)
                 
                 parameter_draws[draw][module_of_interest][row['parameter_name']] = new_val
 
@@ -201,7 +202,7 @@ class TrackIndividualHistories(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         
-        module_parameter_and_services_samples = sample_param_combo()
+        module_parameter_and_services_samples = sample_param_combo(self.seed)
         scenarios = {}
         for i in range(N_param_combo):
             scenarios[str(i)] = mix_scenarios(
