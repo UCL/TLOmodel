@@ -19,11 +19,12 @@ from tlo.scenario import BaseScenario
 import re
 import ast
 import numpy as np
+from scipy.stats import qmc
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 10
+N_param_combo = 512  # number of draws; must be a power of 2 (Sobol design)
 # Parameters (by name) to exclude from parameter variation; these keep their resource-file value
-parameters_to_ignore = ['main_polling_frequency_months'] # This should be excluded as design decision anyway, but additional safety check
+parameters_to_ignore = []
 
 def detect_and_convert(value):
     # try float
@@ -114,26 +115,36 @@ def sample_param_combo(seed):
         # Select undetermined parameters which were not design decisions
         p = p.loc[p['param_label']=='undetermined']
         p = p.drop(p[p['prior_note'] == 'design decision'].index)
-        # Exclude parameters explicitly listed to be ignored
-        p = p.loc[~p['parameter_name'].isin(parameters_to_ignore)]
+        p = p.reset_index(drop=True)
         # Parse values
         p['value'] = p['value'].apply(parse_value)
-        
+
+        # Sobol design: one row per draw, one column per candidate parameter, values in [0, 1).
+        # The design is built over ALL candidate parameters (before applying parameters_to_ignore), so that
+        # ignoring a parameter does not change the values sampled for the others.
+        # The first 2^k rows of a larger design equal the 2^k-row design, so draws can be extended later.
+        n_draws_log2 = int(np.log2(N_param_combo))
+        assert 2 ** n_draws_log2 == N_param_combo, "N_param_combo must be a power of 2 for Sobol sampling"
+        sobol_design = qmc.Sobol(d=len(p), scramble=True, seed=seed).random_base2(m=n_draws_log2)
+
+        # Exclude parameters explicitly listed to be ignored (their Sobol columns are simply unused)
+        p = p.loc[~p['parameter_name'].isin(parameters_to_ignore)]
+
         # For all param combos/draws, create a dictionary of parameter combinations
         for draw in range(N_param_combo):
-            # Independent, reproducible random stream per draw (stable if N_param_combo changes)
-            rng = np.random.default_rng([seed, draw])
             parameter_draws[draw] = {}
 
             # 1. Select services included with 50/50 probability
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
-            # selected_treatments = [x for x in treatments_in_module if rng.random() < 0.5]
+            # NOTE: if re-enabled, add extra columns to the Sobol design for this rather than using a separate RNG
+            # selected_treatments = [x for x in treatments_in_module if <uniform draw> < 0.5]
             # parameter_draws[draw]['HealthSystem'] = {'Service_Availability': selected_treatments}
 
             # 2. Resample parameters
             parameter_draws[draw].setdefault(module_of_interest, {})
             for idx, row in p.iterrows():
-                r = rng.random()
+                # idx is the parameter's column in the Sobol design
+                r = sobol_design[draw, idx]
 
                 if isinstance(row['value'], (pd.Series, list, tuple, np.ndarray)):
                     prior_max = to_array(row['prior_max'])
@@ -157,6 +168,9 @@ class TrackIndividualHistories(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 42
+        # Give each draw its own simulation seed (independent population per draw).
+        # Requires the opt-in change to SampleRunner.get_sample in src/tlo/scenario.py; ignored otherwise.
+        self.unique_seed_per_draw = True
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=20)
         self.pop_size = 6000
