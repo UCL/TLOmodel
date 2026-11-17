@@ -23,7 +23,7 @@ from scipy.stats import qmc
 
 module_of_interest ='CervicalCancer'
 N_param_combo = 512  # total number of draws across all batches; must be a power of 2 (Sobol design)
-# Draws per submission; must be a power of 2 that divides N_param_combo. Each aligned batch of a Sobol design is
+# Draws per submission; must be a power of 2 that divides N_param_combo. Each aligned batch of asim Sobol design is
 # itself evenly spread over the parameter space. Do not change once batches have been submitted.
 BATCH_SIZE = 32
 assert N_param_combo % BATCH_SIZE == 0 and (BATCH_SIZE & (BATCH_SIZE - 1)) == 0
@@ -190,8 +190,8 @@ class TrackIndividualHistories(BaseScenario):
         # Requires the opt-in change to SampleRunner.get_sample in src/tlo/scenario.py; ignored otherwise.
         self.unique_seed_per_draw = True
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=20)
-        self.pop_size = 6000
+        self.end_date = self.start_date + pd.DateOffset(years=1) #20)
+        self.pop_size = 500 #6000
         self.number_of_draws = self.batch_size
         self.runs_per_draw = 1
         self.generate_event_chains = True
@@ -251,7 +251,7 @@ class TrackIndividualHistories(BaseScenario):
             epi.Epi(),
             healthsystem.HealthSystem(),
             hiv.DummyHivModule(),
-            simplified_births.SimplifiedBirths(),
+            #simplified_births.SimplifiedBirths(),
             individual_history_tracker.IndividualHistoryTracker(),
             ]
             )
