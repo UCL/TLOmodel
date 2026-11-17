@@ -123,7 +123,11 @@ class IndividualHistoryTracker(Module):
         pop.loc[pop.is_alive & (pop.sex == "M"), "iht_track_history"] = False
 
     def on_birth(self, mother, child):
-        self.sim.population.props.at[child, "iht_track_history"] = True
+        pop = self.sim.population.props
+        if pop.at[child, "sex"] == "F":
+            pop.at[child, "iht_track_history"] = True
+        else:
+            pop.at[child, "iht_track_history"] = False
         return
         
     def copy_of_pop_dataframe(self):
