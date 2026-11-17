@@ -389,7 +389,14 @@ class SampleRunner:
         # Instead of using the random number generator to create a seed for the simulation, we use an integer hash
         # function to get an integer based on the sum of the scenario seed and sample_number. This means the
         # seed can be created independently and out-of-order (i.e. instead of sampling a seed for each sample in order)
-        sample["simulation_seed"] = SampleRunner.low_bias_32(self.run_config["scenario_seed"] + sample_number)
+        
+        # Optionally give each draw its own seed (opt-in via `self.unique_seed_per_draw = True` in the scenario).
+        # Default behaviour is unchanged: run k of every draw shares a seed.
+        offset = sample_number
+        if getattr(self.scenario, "unique_seed_per_draw", False):
+            offset += draw["draw_number"] * self.run_config["runs_per_draw"]
+        sample["simulation_seed"] = SampleRunner.low_bias_32(self.run_config["scenario_seed"] + offset)
+        
         return sample
 
     def run_sample_by_number(self, output_directory, draw_number, sample_number):
