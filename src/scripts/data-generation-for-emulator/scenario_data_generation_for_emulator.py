@@ -22,7 +22,11 @@ import numpy as np
 from scipy.stats import qmc
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 512  # number of draws; must be a power of 2 (Sobol design)
+N_param_combo = 512  # total number of draws across all batches; must be a power of 2 (Sobol design)
+# Draws per submission; must be a power of 2 that divides N_param_combo. Each aligned batch of a Sobol design is
+# itself evenly spread over the parameter space. Do not change once batches have been submitted.
+BATCH_SIZE = 32
+assert N_param_combo % BATCH_SIZE == 0 and (BATCH_SIZE & (BATCH_SIZE - 1)) == 0
 # Parameters (by name) to exclude from parameter variation; these keep their resource-file value
 parameters_to_ignore = []
 
@@ -165,23 +169,63 @@ def sample_param_combo(seed):
 
 
 class TrackIndividualHistories(BaseScenario):
+    """Submitted in batches: the full Sobol design has N_param_combo draws (global draw numbers
+    0 .. N_param_combo-1); each submission runs one batch of BATCH_SIZE consecutive global draws, chosen with
+    the command-line argument --batch-number (default 0), e.g.
+
+        tlo batch-submit <this_file> --batch-number 3
+
+    Within a submission TLO numbers draws 0 .. BATCH_SIZE-1 (local draw number); the global draw number is
+        global_draw = batch_number * BATCH_SIZE + local_draw
+    and is recorded as the draw name (in the draws JSON and in each run's log under 'draw_name').
+    Running all batches gives exactly the same parameters and simulation seeds as one 512-draw submission.
+    """
     def __init__(self):
         super().__init__()
-        self.seed = 42
+        # Top-level seed: controls the Sobol design and (via the `seed` property) the simulation seeds
+        self.base_seed = 42
+        self.batch_size = BATCH_SIZE
+        self.batch_number = 0  # overridden by --batch-number
         # Give each draw its own simulation seed (independent population per draw).
         # Requires the opt-in change to SampleRunner.get_sample in src/tlo/scenario.py; ignored otherwise.
         self.unique_seed_per_draw = True
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=20)
         self.pop_size = 6000
-        self._scenarios = self._get_scenarios()
-        self.number_of_draws = len(self._scenarios)
+        self.number_of_draws = self.batch_size
         self.runs_per_draw = 1
         self.generate_event_chains = True
+        self._parameter_draws = None  # full Sobol design, computed lazily (only when draws are generated)
+
+    @property
+    def seed(self):
+        # Offset the seed by the number of runs in earlier batches. With unique_seed_per_draw, TLO then gives
+        # run k of local draw d the seed  hash(base_seed + global_draw * runs_per_draw + k),  i.e. the same seed it
+        # would get if all draws were submitted together. Unique across all batches.
+        if self.base_seed is None:
+            return None
+        return self.base_seed + self.batch_number * self.batch_size * self.runs_per_draw
+
+    @seed.setter
+    def seed(self, value):
+        # BaseScenario.__init__ assigns self.seed; route it to base_seed
+        self.base_seed = value
+
+    def add_arguments(self, parser):
+        parser.add_argument('--batch-number', type=int, help='Which batch of draws to submit (0-based)')
+
+    def global_draw_number(self, draw_number):
+        n_batches = N_param_combo // self.batch_size
+        assert 0 <= self.batch_number < n_batches, \
+            f"batch_number must be between 0 and {n_batches - 1} (N_param_combo={N_param_combo}, BATCH_SIZE={self.batch_size})"
+        return self.batch_number * self.batch_size + draw_number
+
+    def draw_name(self, draw_number):
+        return f"global_draw_{self.global_draw_number(draw_number)}"
 
     def log_configuration(self):
         return {
-            'filename': 'track_individual_histories',
+            'filename': f'track_individual_histories_batch{self.batch_number}',  # batch number appears in job ID
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -213,25 +257,19 @@ class TrackIndividualHistories(BaseScenario):
             )
 
     def draw_parameters(self, draw_number, rng):
-        if draw_number < self.number_of_draws:
-            return list(self._scenarios.values())[draw_number]
-        else:
+        if draw_number >= self.number_of_draws:
             return
-
-    def _get_scenarios(self) -> Dict[str, Dict]:
-        
-        module_parameter_and_services_samples = sample_param_combo(self.seed)
-        scenarios = {}
-        for i in range(N_param_combo):
-            scenarios[str(i)] = mix_scenarios(
-                                    self._baseline(),
-                                    {
-                                       #'HealthSystem': module_parameter_and_services_samples[i]['HealthSystem'],
-                                        module_of_interest: module_parameter_and_services_samples[i][module_of_interest]
-                                    }
-                                )
-
-        return scenarios
+        if self._parameter_draws is None:
+            # Sobol design over ALL N_param_combo global draws, seeded with base_seed (same for every batch)
+            self._parameter_draws = sample_param_combo(self.base_seed)
+        i = self.global_draw_number(draw_number)
+        return mix_scenarios(
+            self._baseline(),
+            {
+                #'HealthSystem': self._parameter_draws[i]['HealthSystem'],
+                module_of_interest: self._parameter_draws[i][module_of_interest]
+            }
+        )
 
 
     def _baseline(self) -> Dict:
