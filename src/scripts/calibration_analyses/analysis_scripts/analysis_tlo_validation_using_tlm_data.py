@@ -31,6 +31,7 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
@@ -297,6 +298,7 @@ def forest_plot(cmp: pd.DataFrame, sections, series, xlabel: str, path: Path,
     fig_height = 0.42 * height + 1.6
     fig, ax = plt.subplots(figsize=(width, fig_height))
     draw_forest(ax, cmp, sections, series, xlabel, xlim=xlim, band=band, label_map=label_map)
+    ax.xaxis.set_major_locator(MultipleLocator(10))
     fig.tight_layout()
 
     # legend below the figure, clear of the x-axis label
@@ -343,6 +345,7 @@ def plot_patient_load(cmp_tms: pd.DataFrame, cmp_clinic: pd.DataFrame, path: Pat
     # shared x-axis from 0 to just beyond the largest upper bound in either panel
     xmax = max(pd.concat([c[["tlm_upper", "tlo_upper"]] for c in (cmp_tms, cmp_clinic)]).max().max(), 1)
     axes[0].set_xlim(0, xmax * 1.05)
+    axes[0].xaxis.set_major_locator(MultipleLocator(10))
     axes[0].set_yticks(tick_pos)
     axes[0].set_yticklabels(tick_lab)
     for tick, is_bold in zip(axes[0].get_yticklabels(), tick_bold):
@@ -412,6 +415,7 @@ def plot_patient_mix(cmp_mix: pd.DataFrame, path: Path):
     ax_c = fig.add_subplot(gs[1, 1])      # service area
 
     draw_forest(ax_a, idx, sections_a, series, "Share of patients (%)", xlim=(0, xmax_a))
+    ax_a.xaxis.set_major_locator(MultipleLocator(10))
     # wrap long service-area labels onto two lines so they do not run into panel (a)
     wrap_b = {a: a.replace(" - ", " -\n", 1) if len(a) > 22 else a for a in areas}
     draw_age_profile(ax_b, cmp_mix.loc[cmp_mix["category"] == "Age group"])
@@ -786,6 +790,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         mix_counts = extract_draw0("tlo.methods.healthsystem", "HSI_Event",
                                    get_patient_mix_counts, do_scaling=False).fillna(0)
         mix_counts.index = mix_counts.index.set_names(["category", "subgroup", "Facility_Level"])
+
+        # check: TLO patients by subgroup and level, not reweighted (unscaled counts, mean across runs);
+        # shares are within each category and level, and for all levels pooled (TLO's own level mix)
+        pooled = mix_counts.groupby(level=["category", "subgroup"]).sum()
+        pooled = pd.concat({"All (no reweighting)": pooled}, names=["Facility_Level"]) \
+            .reorder_levels(["category", "subgroup", "Facility_Level"])
+        counts = pd.concat([mix_counts, pooled])
+        chk = counts.mean(axis=1).rename("n_mean").to_frame()
+        chk["n_min_run"] = counts.min(axis=1)
+        chk["share_pct"] = 100 * chk["n_mean"] / chk.groupby(
+            level=["category", "Facility_Level"])["n_mean"].transform("sum")
+        chk.sort_index().round(2).to_csv(output_folder / "tlo_patient_mix_by_level.csv")
+
         w_mix_groups = read_level_weights(tlm_folder / TLM_FILES["w_mix"])
         assert ADULT_GROUP in w_mix_groups, f"'{ADULT_GROUP}' weights missing from {TLM_FILES['w_mix']}"
 
