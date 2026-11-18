@@ -584,23 +584,50 @@ def apply(
         axes[2].set_title("Net Health")
         axes[2].set_xlabel("Net Health (/1000)")
 
+        facet_overlay = pd.DataFrame({"draw": facet_order})
+        facet_overlay["treatment_id"] = facet_overlay["draw"].str.replace(r"_\*$", "", regex=True)
+        for metric, summary in (
+            ("dalys", dalys_averted.reindex(facet_order)),
+            ("costs", costs_facet),
+            ("net_health", nh_facet),
+        ):
+            facet_overlay[f"tlo_{metric}"] = summary["central"].to_numpy()
+            for bound in ("lower", "upper"):
+                facet_overlay[f"tlo_{metric}_{bound}"] = summary[bound].to_numpy()
+
+        lcoa_csv_columns = {
+            "overall_dalys": "lcoa_dalys_averted",
+            "overall_costs": "lcoa_incremental_cost_usd",
+            "net_health": "lcoa_net_health",
+        }
         if isinstance(dalys_and_costs_from_lcoa, pd.DataFrame):
             lcoa_overlay = (
-                dalys_and_costs_from_lcoa[["treatment_id", "overall_dalys", "overall_costs", "net_health"]]
+                dalys_and_costs_from_lcoa[["treatment_id", *lcoa_csv_columns]]
                 .dropna(subset=["treatment_id"])
                 .drop_duplicates(subset=["treatment_id"], keep="first")
                 .set_index("treatment_id")
             )
-            facet_overlay = pd.DataFrame({"draw": facet_order})
-            facet_overlay["treatment_id"] = facet_overlay["draw"].str.replace(r"_\*$", "", regex=True)
             facet_overlay = facet_overlay.join(lcoa_overlay, on="treatment_id")
+
+        csv_columns = {"treatment_id": "treatment_id"}
+        for metric, label in (
+            ("dalys", "dalys_averted"),
+            ("costs", "incremental_cost_usd"),
+            ("net_health", "net_health"),
+        ):
+            csv_columns[f"tlo_{metric}"] = f"model_{label}"
+            for bound in ("lower", "upper"):
+                csv_columns[f"tlo_{metric}_{bound}"] = f"model_{label}_{bound}"
+        csv_columns.update(lcoa_csv_columns)
+        csv_outfile = (output_folder / make_graph_file_name(name_of_plot)).with_suffix(".csv")
+        facet_overlay.reindex(columns=list(csv_columns)).rename(columns=csv_columns).to_csv(csv_outfile, index=False)
+        print(f"Saved: {csv_outfile}")
+
+        if isinstance(dalys_and_costs_from_lcoa, pd.DataFrame):
             facet_overlay["short_treatment_id"] = facet_overlay["draw"].str.split("_").str[0] + "*"
             facet_overlay["color"] = (
                 facet_overlay["short_treatment_id"].map(SHORT_TREATMENT_ID_TO_COLOR_MAP).fillna("grey")
             )
-            facet_overlay["tlo_dalys"] = (dalys_facet["central"] * 1e3).to_numpy()
-            facet_overlay["tlo_costs"] = costs_facet["central"].to_numpy()
-            facet_overlay["tlo_net_health"] = nh_facet["central"].to_numpy()
 
             daly_overlay = facet_overlay["overall_dalys"].notna()
             if daly_overlay.any():

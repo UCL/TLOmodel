@@ -33,7 +33,7 @@ HBP_DALY_COMPARISON_FILE = Path(__file__).resolve().parent / "hbp_dalys_averted_
 
 # Transcribed from hbp_from_literature-derived_or_tlo-derived_inputs.png.
 # Treatments in the intersection belong to both packages.
-ehp_based_on_lcoa_included_treatment_ids = [
+lit_hbp = [
     "Alri_Pneumonia_Treatment_Outpatient",
     "AntenatalCare_Outpatient",
     "Contraception_Routine",
@@ -59,25 +59,17 @@ ehp_based_on_lcoa_included_treatment_ids = [
     "Tb_Treatment",
 ]
 
-hnb_with_scaled_down_costs_included_treatment_ids = [
-    "Alri_Pneumonia_Treatment_Outpatient",
-    "AntenatalCare_Outpatient",
+tlo_hbp = [
     "Contraception_Routine",
     "Epi_Childhood_MeaslesRubella",
-    "Malaria_Treatment",
-    "Malaria_Treatment_Complicated",
-    "CardioMetabolicDisorders_Treatment",
-    "CardioMetabolicDisorders_Treatment_Haemodialysis",
-    "Diarrhoea_Treatment_Inpatient",
-    "Diarrhoea_Treatment_Outpatient",
-    "Hiv_Prevention_Prep",
+    "Hiv_Prevention_Infant",
     "Hiv_Treatment",
+    "Malaria_Treatment_Complicated",
     "Measles_Treatment",
     "Schisto_MDA",
-    "Undernutrition_Feeding",
     "Undernutrition_Feeding_Inpatient",
     "Undernutrition_Feeding_Outpatient",
-    "Undernutrition_Feeding_Supplementary",
+    "Undernutrition_Feeding_Supplementary"
 ]
 
 
@@ -574,7 +566,7 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
     print("Plotting overlap between the two HBP sources with Fisher's exact test.")
     treatment_id_universe = get_filtered_treatment_ids(depth=None)
     fig, ax = plot_hbp_overlap_with_fisher_test(
-        first_package=ehp_based_on_lcoa_included_treatment_ids,
+        first_package=lit_hbp,
         second_package=hnb_with_scaled_down_costs_included_treatment_ids,
         treatment_id_universe=treatment_id_universe,
     )
