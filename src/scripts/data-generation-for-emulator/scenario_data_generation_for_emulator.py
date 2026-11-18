@@ -190,8 +190,8 @@ class TrackIndividualHistories(BaseScenario):
         # Requires the opt-in change to SampleRunner.get_sample in src/tlo/scenario.py; ignored otherwise.
         self.unique_seed_per_draw = True
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=1) #20)
-        self.pop_size = 500 #6000
+        self.end_date = self.start_date + pd.DateOffset(years=30)
+        self.pop_size = 6000
         self.number_of_draws = self.batch_size
         self.runs_per_draw = 1
         self.generate_event_chains = True
