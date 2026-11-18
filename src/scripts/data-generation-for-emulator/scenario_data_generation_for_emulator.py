@@ -109,8 +109,8 @@ def sample_param_combo(seed):
         parameter_draws = {}
         
         # First collect all module-specific treatments
-        treatments = get_filtered_treatment_ids(depth=2)
-        treatments_in_module = [item for item in treatments if module_of_interest in item]
+        #treatments = get_filtered_treatment_ids(depth=2)
+        #treatments_in_module = [item for item in treatments if module_of_interest in item]
             
         # Retreive module parameters which are not scenario or design decisions
         # REVIEW: is this best way to access module parameters?
