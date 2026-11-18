@@ -39,6 +39,28 @@ DHIS2_WIDE_PATH = ("/Users/rachelmurray-watson/Documents/Heat_data/"
                    "DHIS2_Malawi/combined/dhis2_panel_wide_facility_month.csv")
 DHIS2_FACILITY_COL = "facility"
 DHIS2_PERIOD_COL = "period_parsed"
+
+## DHIS2 org-unit metadata (UID, code, coordinates, district) — joined by name.
+## Coordinates drive WBGT extraction; district guards the registry fuzzy-match.
+ORG_META_CSV = ("/Users/rachelmurray-watson/Documents/Heat_data/DHIS2_Malawi/"
+                "combined/facility_org_metadata.csv")
+USE_DHIS2_COORDS = True
+org_meta = pd.read_csv(ORG_META_CSV)
+coord_by_fac = {r["facility"]: (float(r["lat"]), float(r["lon"]))
+                for _, r in org_meta.iterrows()
+                if pd.notna(r["lat"]) and pd.notna(r["lon"])}
+rep_district = {r["facility"]: str(r["district"]).strip()
+                for _, r in org_meta.iterrows() if pd.notna(r["district"])}
+print(f"Org metadata: {len(coord_by_fac)} with coords, {len(rep_district)} with district")
+
+def _norm_dist(d):
+    d = str(d).lower().strip()
+    d = re.sub(r"[-_]", " ", d)            # hyphens/underscores -> space
+    d = re.sub(r"\s+", " ", d).strip()
+    d = re.sub(r"\s*\bdho\b$", "", d).strip()   # drop trailing 'dho' (District Health Office)
+    return {"blanytyre": "blantyre", "nkhatabay": "nkhata bay",
+            "mzimba north": "mzimba", "mzimba south": "mzimba"}.get(d, d)
+
 # Which indicator columns to process. None = every column except the two
 # structural columns above. Set a list to restrict, e.g. ["anc1_coverage"].
 INDICATORS = None
@@ -82,7 +104,7 @@ OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/In
 COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
                   "Ftype", "A109__Latitude", "A109__Longitude"]
 
-FUZZY_CUTOFF = 0.70
+FUZZY_CUTOFF = 0.9
 
 # Stub — populate from real mismatches in the unmatched list, not assumptions.
 ABBREVIATIONS = {
@@ -272,8 +294,25 @@ for reporting_facility in all_reporting_facilities:
 
     facility_row = facilities_with_lat_long[
         facilities_with_lat_long["Fname"] == original_facility_name].iloc[0]
-    lat_for_facility = facility_row["A109__Latitude"]
-    long_for_facility = facility_row["A109__Longitude"]
+
+    # --- District guard: reject a FUZZY match whose registry district
+    #     disagrees with the facility's own DHIS2 district -------------------
+    is_fuzzy = reporting_clean not in facilities_clean
+    reg_dist = _norm_dist(facility_row.get("Dist"))
+    rep_dist = _norm_dist(rep_district.get(reporting_facility)) if reporting_facility in rep_district else None
+    if is_fuzzy and rep_dist and reg_dist and rep_dist != reg_dist:
+        unmatched_facilities.append(reporting_facility)
+        match_stats["failed"] += 1
+        print(f"✗ DISTRICT MISMATCH: '{reporting_facility}' ~ '{original_facility_name}' "
+              f"({rep_dist} vs registry {reg_dist}) — rejected")
+        continue
+
+    # --- Coordinates: prefer the facility's OWN DHIS2 coordinates ----------
+    if USE_DHIS2_COORDS and reporting_facility in coord_by_fac:
+        lat_for_facility, long_for_facility = coord_by_fac[reporting_facility]
+    else:
+        lat_for_facility = facility_row["A109__Latitude"]
+        long_for_facility = facility_row["A109__Longitude"]
 
     if pd.isna(lat_for_facility) or pd.isna(long_for_facility):
         unmatched_facilities.append(reporting_facility)
@@ -283,11 +322,12 @@ for reporting_facility in all_reporting_facilities:
     matched_facilities.append(reporting_facility)
     facility_name_mapping[reporting_facility] = original_facility_name
 
-    index_for_x = ((long_data - long_for_facility) ** 2).argmin()
-    index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
-    facility_grid_id[reporting_facility] = f"{int(index_for_y)}_{int(index_for_x)}"  # NEW
-    for var in WBGT_VARS:
-        wbgt_data_by_facility[var][reporting_facility] = wbgt_data[var][:, index_for_y, index_for_x].tolist()
+    # Nearest cell on the single WBGT/precip grid; all vars share it.
+    iy = int(((lat_data - float(lat_for_facility)) ** 2).argmin())
+    ix = int(((long_data - float(long_for_facility)) ** 2).argmin())
+    facility_grid_id[reporting_facility] = f"{iy}_{ix}"
+    for v in WBGT_VARS:
+        wbgt_data_by_facility[v][reporting_facility] = wbgt_data[v][:, iy, ix].tolist()
 
 print(f"\nMatched {len(matched_facilities)}/{len(all_reporting_facilities)} "
       f"(exact {match_stats['exact']}, fuzzy {match_stats['fuzzy']}, "
@@ -329,7 +369,9 @@ facility_info_full["Dist"] = facility_info_full["Dist"].replace(
      "Mzimba South": "Mzimba"})
 
 # minimum distance uses the FULL matched set (nearest neighbour among all
-# matched facilities, not just one indicator's reporters)
+# matched facilities, not just one indicator's reporters).
+# NOTE: distances use the registry coordinates (A109__Latitude/Longitude),
+# while exposure above uses DHIS2 coordinates — they differ only slightly.
 coords = facility_info_full[
     ["A109__Latitude", "A109__Longitude"]].astype(float).values
 dmat = cdist(coords, coords, metric="euclidean")
@@ -339,6 +381,15 @@ dmat[np.isnan(dmat)] = np.inf
 min_dist = dmat.min(axis=1)
 facility_info_full["minimum_distance"] = np.where(
     np.isfinite(min_dist), min_dist, np.nan)
+
+# distance to nearest CLINIC (candidate columns restricted to Ftype == 'Clinic';
+# a clinic gets its nearest *other* clinic via the inf diagonal already set)
+is_clinic = (facility_info_full["Ftype"].astype(str).str.strip() == "Clinic").values
+dmat_clinic = dmat.copy()
+dmat_clinic[:, ~is_clinic] = np.inf
+min_dist_clinic = dmat_clinic.min(axis=1)
+facility_info_full["distance_nearest_clinic"] = np.where(
+    np.isfinite(min_dist_clinic), min_dist_clinic, np.nan)
 
 for var in WBGT_VARS:
     facility_info_full[f"average_{var}"] = facility_info_full.index.map(
@@ -398,7 +449,7 @@ for indicator in indicator_cols:
     panel = pd.merge(wbgt_long, indicator_long,
                      on=["facility", "date"], how="left")
 
-    static_cols = COVARIATE_COLS + ["minimum_distance", "grid_id"]
+    static_cols = COVARIATE_COLS + ["minimum_distance", "distance_nearest_clinic", "grid_id"]
     panel = pd.merge(
         panel,
         facility_info_full[static_cols].reset_index(),   # index = facility
@@ -497,9 +548,11 @@ if CF_ENABLED:
                                  f"inconsistent with ({len(cf_lat)}, {len(cf_lon)})")
 
         # ---- extract at each matched facility ------------------------------
+        # Use the SAME coordinate source as the historical pass (DHIS2 coords
+        # when available) so the counterfactual contrast is at the identical
+        # grid cell — only the climate changes, not the location.
         # Skip special-case facilities: their historical exposure uses a
-        # district grid rule, not lat/lon; keeping counterfactual on the same
-        # rule would need a CF-aware grid cache. Small in number, warned below.
+        # district grid rule, not lat/lon.
         cf_by_facility = {v: {} for v in cf_all_vars}
         skipped_special, skipped_nocoord = [], []
 
@@ -510,13 +563,16 @@ if CF_ENABLED:
                 skipped_special.append(reporting_facility)
                 continue
 
-            frow = facilities_with_lat_long[
-                facilities_with_lat_long["Fname"] == registry_name]
-            if frow.empty:
-                skipped_nocoord.append(reporting_facility)
-                continue
-            lat_f = frow.iloc[0]["A109__Latitude"]
-            lon_f = frow.iloc[0]["A109__Longitude"]
+            if USE_DHIS2_COORDS and reporting_facility in coord_by_fac:
+                lat_f, lon_f = coord_by_fac[reporting_facility]
+            else:
+                frow = facilities_with_lat_long[
+                    facilities_with_lat_long["Fname"] == registry_name]
+                if frow.empty:
+                    skipped_nocoord.append(reporting_facility)
+                    continue
+                lat_f = frow.iloc[0]["A109__Latitude"]
+                lon_f = frow.iloc[0]["A109__Longitude"]
             if pd.isna(lat_f) or pd.isna(lon_f):
                 skipped_nocoord.append(reporting_facility)
                 continue
@@ -532,7 +588,7 @@ if CF_ENABLED:
                   f"{skipped_special}")
         if skipped_nocoord:
             print(f"  ⚠ CF skipped {len(skipped_nocoord)} facilities with no coords "
-                  f"in registry (unexpected — they matched historical): "
+                  f"(unexpected — they matched historical): "
                   f"{skipped_nocoord[:10]}")
 
         cf_facilities = list(cf_by_facility[CF_MONTHLY_VARS[0]].keys())
