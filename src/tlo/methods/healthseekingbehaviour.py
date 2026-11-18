@@ -203,7 +203,7 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             result[df.sex == 'F'] *= p[f'odds_ratio_{subgroup}_sex_Female']
             result[df.region_of_residence == 'Central'] *= p[f'odds_ratio_{subgroup}_region_Central']
             result[df.region_of_residence == 'Southern'] *= p[f'odds_ratio_{subgroup}_region_Southern']
-            result[(df.li_wealth == 4) | (df.li_wealth == 5)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
+            result[(df.li_wealth == 1) | (df.li_wealth == 2)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
             # Predict for symptom-specific odd ratios
             for symptom, odds in care_seeking_odds_ratios.items():
                 result[df[f'sy_{symptom}'] > 0] *= odds
