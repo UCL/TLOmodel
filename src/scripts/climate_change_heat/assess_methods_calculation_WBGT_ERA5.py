@@ -339,6 +339,16 @@ min_dist = dmat.min(axis=1)
 facility_info_full["minimum_distance"] = np.where(
     np.isfinite(min_dist), min_dist, np.nan)
 
+# distance to nearest CLINIC (restrict candidate columns to Ftype == "Clinic";
+# rows stay all facilities, so every facility gets its nearest clinic, and a
+# clinic gets its nearest *other* clinic via the inf diagonal already set above)
+is_clinic = (facility_info_full["Ftype"].astype(str).str.strip() == "Clinic").values
+dmat_clinic = dmat.copy()                 # dmat already has inf on the diagonal + NaNs->inf
+dmat_clinic[:, ~is_clinic] = np.inf        # only clinic columns are valid targets
+min_dist_clinic = dmat_clinic.min(axis=1)
+facility_info_full["distance_nearest_clinic"] = np.where(
+    np.isfinite(min_dist_clinic), min_dist_clinic, np.nan)
+
 for var in ALL_VARS:
     facility_info_full[f"average_{var}"] = facility_info_full.index.map(
         {fac: np.nanmean(vals)
@@ -405,7 +415,7 @@ for indicator in indicator_cols:
     panel = pd.merge(wbgt_long, indicator_long,
                      on=["facility", "date"], how="left")
 
-    static_cols = COVARIATE_COLS + ["minimum_distance"]
+    static_cols = COVARIATE_COLS + ["minimum_distance", "distance_nearest_clinic"]
     panel = pd.merge(
         panel,
         facility_info_full[static_cols].reset_index(),   # index = facility

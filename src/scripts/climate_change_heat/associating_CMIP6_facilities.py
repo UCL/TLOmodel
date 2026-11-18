@@ -49,7 +49,7 @@ RESTRICT_TO_FACILITIES_FILE = None
 
 OUTPUT_DIR = ("/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices")
 
-COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude",
+COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A114", "A109__Altitude",
                   "Ftype", "A109__Latitude", "A109__Longitude"]
 
 
@@ -359,6 +359,12 @@ dmat = cdist(coords, coords, metric="euclidean")
 np.fill_diagonal(dmat, np.inf)
 min_dist = dmat.min(axis=1)
 info["minimum_distance"] = np.where(np.isfinite(min_dist), min_dist, np.nan)
+
+is_clinic = (info["Ftype"].astype(str).str.strip() == "Clinic").values
+dmat_clinic = dmat.copy()
+dmat_clinic[:, ~is_clinic] = np.inf
+mind_clinic = dmat_clinic.min(axis=1)
+info["distance_nearest_clinic"] = np.where(np.isfinite(mind_clinic), mind_clinic, np.nan)
 
 for var in ALL_VARS:
     info[f"average_{var}"] = [
