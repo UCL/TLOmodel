@@ -923,7 +923,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         set_of_symptoms_indicative_of_schisto = {'ss_sm_moderate',
                                                  'ss_sm_heavy',
                                                  'ss_sh_moderate',
-                                                 'ss_sm_heavy'}
+                                                 'ss_sh_heavy'}
 
         if set_of_symptoms_indicative_of_schisto.intersection(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
