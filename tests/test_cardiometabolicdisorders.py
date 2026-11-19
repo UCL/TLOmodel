@@ -181,11 +181,6 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     df = df[df['diff_years'] >= 20]
     df = df[df.is_alive]
 
-    _chk = df.loc[
-        df.is_alive & ~df.nc_hypertension, ["age_years", "sex", "li_bmi", "li_wealth", "li_urban"]
-    ].value_counts("li_bmi")
-
-
     # check that everyone has hypertension and CIHD by end
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_hypertension.all()
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_chronic_ischemic_hd.all()
