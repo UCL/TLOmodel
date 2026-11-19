@@ -1081,10 +1081,10 @@ class LifestyleModels:
                              .when('>= 50', self.params['init_or_higher_bmi_agege50'] ** bmi_power),
                              Predictor('li_tob').when(True, self.params['init_or_higher_bmi_tob'] ** bmi_power),
                              Predictor('li_wealth').when(2, (
-                                 self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** bmi_power)
-                             .when(3, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** bmi_power)
-                             .when(4, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** bmi_power)
-                             .when(5, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** bmi_power)
+                                 self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 1) ** bmi_power)
+                             .when(3, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** bmi_power)
+                             .when(4, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** bmi_power)
+                             .when(5, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** bmi_power)
                              )
 
         return bmi_lm
