@@ -515,4 +515,3 @@ def test_transition_year_logic(seed):
             (screened_by_via["ce_xpert_hpv_ever_pos"])
         )
     ).all(), "Some rows violate the VIA/Xpert date conditions."
-
