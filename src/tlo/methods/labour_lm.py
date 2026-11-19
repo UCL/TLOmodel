@@ -486,7 +486,7 @@ def predict_postnatal_check(self, df, rng=None, **externals):
     Population level to allow for scaling at the initialisation of the simulation. This model predicts an
     individuals probability of receiving postnatal care following their delivery. This model is logistic
     as the parameters are odds and odds ratios and the result is returned as a probability. Odds of PNC are higher in
-    older women, lower in rural women, lower in the poorest women, higher in women with ANC4+, higher in those
+    older women, lower in rural women, higher in women with ANC4+, higher in those
     delivering in a facility and via caeasrean section and lower in women with higher parity
     """
     params = self.parameters
@@ -496,8 +496,6 @@ def predict_postnatal_check(self, df, rng=None, **externals):
     result[(df.age_years >= 36)] *= params['or_pnc_age_>35']
 
     result[~df.li_urban] *= params['or_pnc_rural']
-
-    result[df.li_wealth == 5] *= params['or_pnc_wealth_level_1']
 
     result[(df.la_parity > 4)] *= params['or_pnc_parity_>4']
 
