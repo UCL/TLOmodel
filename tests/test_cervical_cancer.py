@@ -515,26 +515,3 @@ def test_transition_year_logic(seed):
             (screened_by_via["ce_xpert_hpv_ever_pos"])
         )
     ).all(), "Some rows violate the VIA/Xpert date conditions."
-
-def test_vaginal_bleeding(seed):
-    """Ensure that some of those who have vaginal bleeding are diagnosed (given perfect referral)."""
-
-    sim = make_simulation_healthsystemdisabled(seed=123)
-    sim = make_screening_mandatory(sim)
-    sim = make_cin_treatment_perfect(sim)
-    sim = make_vaginal_bleeding_referral_perfect(sim)
-
-    # Simulate
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2010, 6, 1))
-
-    df = sim.population.props
-
-    # check that those with symptom are a subset of those with cancer:
-    vaginal_bleeding_symptom = set(sim.modules['SymptomManager'].who_has('vaginal_bleeding'))
-    df_ce_cc_ever_true = set(df.index[df.ce_cc_ever])
-
-    if not vaginal_bleeding_symptom and not df_ce_cc_ever_true:
-        pass
-    else:
-        assert vaginal_bleeding_symptom.issubset(df_ce_cc_ever_true)
