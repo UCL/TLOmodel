@@ -497,7 +497,7 @@ def predict_postnatal_check(self, df, rng=None, **externals):
 
     result[~df.li_urban] *= params['or_pnc_rural']
 
-    result[df.li_wealth == 1] *= params['or_pnc_wealth_level_1']
+    result[df.li_wealth == 5] *= params['or_pnc_wealth_level_1']
 
     result[(df.la_parity > 4)] *= params['or_pnc_parity_>4']
 
