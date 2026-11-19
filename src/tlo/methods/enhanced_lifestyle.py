@@ -1854,10 +1854,10 @@ class LifestyleModels:
             eff_rate_higher_bmi[df.age_years.between(30, 49)] *= p['rr_higher_bmi_age3049']
             eff_rate_higher_bmi[df.age_years >= 50] *= p['rr_higher_bmi_agege50']
             eff_rate_higher_bmi[df.li_tob] *= p['rr_higher_bmi_tob']
-            eff_rate_higher_bmi[df.li_wealth == 2] *= p['rr_higher_bmi_per_higher_wealth'] ** 2
-            eff_rate_higher_bmi[df.li_wealth == 3] *= p['rr_higher_bmi_per_higher_wealth'] ** 3
-            eff_rate_higher_bmi[df.li_wealth == 4] *= p['rr_higher_bmi_per_higher_wealth'] ** 4
-            eff_rate_higher_bmi[df.li_wealth == 5] *= p['rr_higher_bmi_per_higher_wealth'] ** 5
+            eff_rate_higher_bmi[df.li_wealth == 2] *= p['rr_higher_bmi_per_higher_wealth'] ** 1
+            eff_rate_higher_bmi[df.li_wealth == 3] *= p['rr_higher_bmi_per_higher_wealth'] ** 2
+            eff_rate_higher_bmi[df.li_wealth == 4] *= p['rr_higher_bmi_per_higher_wealth'] ** 3
+            eff_rate_higher_bmi[df.li_wealth == 5] *= p['rr_higher_bmi_per_higher_wealth'] ** 4
             eff_rate_higher_bmi[df.li_high_sugar] *= p['rr_higher_bmi_high_sugar']
 
             random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
