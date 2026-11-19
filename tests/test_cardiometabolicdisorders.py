@@ -138,8 +138,12 @@ def test_basic_run_with_high_incidence_hypertension(seed):
 
     # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
     # other conditions to 0
-
-    p['hypertension_onset']["baseline_annual_probability"] = float('inf')
+    hypertension_onset = p['hypertension_onset']
+    for age_group in ['rr_0_4', 'rr_5_9', 'rr_10_14', 'rr_15_19', 'rr_20_24', 'rr_25_29', 'rr_30_34',
+                      'rr_35_39', 'rr_40_44', 'rr_45_49', 'rr_50_54', 'rr_55_59', 'rr_60_64', 'rr_65_69',
+                      'rr_70_74', 'rr_75_79', 'rr_80_84', 'rr_85_89', 'rr_90_94', 'rr_95_99', 'rr_100']:
+        hypertension_onset[age_group] = float('inf')
+    hypertension_onset["baseline_annual_probability"] = float('inf')
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = float('inf')
     p['diabetes_onset'] *= 0.0
     p['chronic_lower_back_pain_onset'] *= 0.0
@@ -147,13 +151,6 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     p['diabetes_initial_prev'] *= 0.0
     p['chronic_lower_back_pain_initial_prev'] *= 0.0
     p['chronic_kidney_disease_initial_prev'] *= 0.0
-
-    # Ensure that everyone >=20yo has hypertension
-    hpt_onset = p['hypertension_onset']
-    for age_group in ['rr_20_24', 'rr_25_29', 'rr_30_34', 'rr_35_39', 'rr_40_44', 'rr_45_49', 'rr_50_54',
-                      'rr_55_59', 'rr_60_64', 'rr_65_69', 'rr_70_74', 'rr_75_79', 'rr_80_84', 'rr_85_89',
-                      'rr_90_94', 'rr_95_99', 'rr_100']:
-        hpt[age_group] = float('inf')
 
     # Increase RR of heart disease very high if individual has hypertension
     p['chronic_ischemic_hd_onset']["rr_hypertension"] = float('inf')
