@@ -148,6 +148,15 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     p['chronic_lower_back_pain_initial_prev'] *= 0.0
     p['chronic_kidney_disease_initial_prev'] *= 0.0
 
+    # force hypertension guaranteed
+    # the parameter values in the resource file is:
+    # rr_bmi_1,0.526315789
+    # rr_bmi_2,1
+    # rr_bmi_3,1.689473684
+    # rr_bmi_4,1.721052632
+    # rr_bmi_5,2.205263158
+    p["hypertension_onset"]["rr_bmi_1"] = 1.0
+
     # Increase RR of heart disease very high if individual has hypertension
     p['chronic_ischemic_hd_onset']["rr_hypertension"] = float('inf')
 
@@ -171,6 +180,11 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     df['diff_years'] = age_at_date(df.start_date, df.date_of_birth)
     df = df[df['diff_years'] >= 20]
     df = df[df.is_alive]
+
+    _chk = df.loc[
+        df.is_alive & ~df.nc_hypertension, ["age_years", "sex", "li_bmi", "li_wealth", "li_urban"]
+    ].value_counts("li_bmi")
+
 
     # check that everyone has hypertension and CIHD by end
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_hypertension.all()
