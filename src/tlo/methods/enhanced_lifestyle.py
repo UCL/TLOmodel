@@ -1007,7 +1007,8 @@ class LifestyleModels:
         wealth level/status. Finally, we return a no access to hand-washing linear model """
 
         # get baseline odds for individuals with no access to hand-washing
-        odds_no_access_hand_washing: float = 1 / (1 - self.params['init_p_no_access_handwashing_wealth1'])
+        p = self.params['init_p_no_access_handwashing_wealth1']
+        odds_no_access_hand_washing: float = p / (1 - p)
 
         # create linear model for no access to hand-washing
         no_access_hand_washing_lm = LinearModel(LinearModelType.LOGISTIC,
@@ -1304,7 +1305,7 @@ class LifestyleModels:
             # start tobacco use
             eff_p_tob = pd.Series(data=p['r_tob'], index=adults_not_tob, dtype=float)
             eff_p_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= p['rr_tob_age2039']
-            eff_p_tob.loc[(df.sex == 'M') & df.age_years >= 40] *= p['rr_tob_agege40']
+            eff_p_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= p['rr_tob_agege40']
             eff_p_tob.loc[df.sex == 'F'] *= p['rr_tob_f']
             eff_p_tob *= p['rr_tob_wealth'] ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
@@ -1744,7 +1745,7 @@ class LifestyleModels:
             # select individuals who are not high salt and make some to be high salt
             not_high_salt_idx = df.index[~df.li_high_salt & df.is_alive]
             eff_rate_high_salt = pd.Series(data=p['r_high_salt_urban'], index=not_high_salt_idx, dtype=float)
-            eff_rate_high_salt[df.li_urban] *= p['rr_high_salt_rural']
+            eff_rate_high_salt[~df.li_urban] *= p['rr_high_salt_rural']
             random_draw = rng.random_sample(len(not_high_salt_idx))
             newly_high_salt = random_draw < eff_rate_high_salt
             newly_high_salt_idx = not_high_salt_idx[newly_high_salt]
@@ -1869,7 +1870,7 @@ class LifestyleModels:
             # possible decrease in category of bmi
             bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.isin(range(3, 6)) & (df.age_years >= 15)]
             eff_rate_lower_bmi = pd.Series(data=p['r_lower_bmi'], index=bmi_cat_3_to_5_idx, dtype=float)
-            eff_rate_lower_bmi[df.li_urban] *= p['rr_lower_bmi_tob']
+            eff_rate_lower_bmi[df.li_tob] *= p['rr_lower_bmi_tob']
             eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= p['rr_lower_bmi_pop_advice_weight']
             random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
             newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
