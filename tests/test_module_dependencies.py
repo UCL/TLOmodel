@@ -82,7 +82,10 @@ def register_modules_and_initialise(sim, modules, **register_kwargs):
 def register_modules_and_simulate(sim, modules, **register_kwargs):
     sim.register(*modules, **register_kwargs)
     sim.make_initial_population(n=simulation_initial_population)
-    sim.simulate(end_date=simulation_end_date)
+    # sim.simulate(end_date=simulation_end_date)
+    sim.simulate(
+        end_date=sim.start_date + (simulation_end_date - simulation_start_date)
+    )
 
 
 @parameterize_module_class
