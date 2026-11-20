@@ -303,6 +303,18 @@ class DiabeticRetinopathy(Module):
 
         self.vision_incident_case_tracker_blank = copy.deepcopy(self.vision_incident_case_tracker)
 
+        # Vision-loss incidence split by diagnosis status at the time of onset
+        self.vision_loss_diagnosis_status_tracker = {
+            'inc_vision_loss_severe_diagnosed': [],
+            'inc_vision_loss_severe_undiagnosed': [],
+            'inc_vision_loss_blindness_diagnosed': [],
+            'inc_vision_loss_blindness_undiagnosed': [],
+        }
+
+        self.vision_loss_diagnosis_status_tracker_blank = copy.deepcopy(
+            self.vision_loss_diagnosis_status_tracker
+        )
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Read all parameters and define symptoms (if any)"""
         self.load_parameters_from_dataframe(
@@ -406,6 +418,26 @@ class DiabeticRetinopathy(Module):
 
         # Assign vision status at baseline for those with DR/DMO
         self._initialise_vision_status_at_baseline(dr_idx)
+
+        # Diagnostic: baseline DR prevalence immediately after initialisation
+        diabetes_mask = df.is_alive & df.nc_diabetes
+
+        print("\n--- DR BASELINE DIAGNOSTIC ---")
+        print("init_prob_any_dr:", p['init_prob_any_dr'])
+        print("Sum of init_prob_any_dr:", sum(p['init_prob_any_dr']))
+        print("Hypertension RR:", p['rr_nc_hypertension_dr'])
+        print("Number of alive individuals with diabetes:", diabetes_mask.sum())
+        print("Number with DR:", (diabetes_mask & (df.dr_status != 'none')).sum())
+        print(
+            "Baseline DR prevalence:",
+            (diabetes_mask & (df.dr_status != 'none')).sum() / diabetes_mask.sum()
+            if diabetes_mask.sum() > 0 else 0
+        )
+        print("\nDR status distribution:")
+        print(df.loc[diabetes_mask, 'dr_status'].value_counts(dropna=False))
+        print("\nHypertension distribution among people with diabetes:")
+        print(df.loc[diabetes_mask, 'nc_hypertension'].value_counts(dropna=False))
+        print("--- END DR BASELINE DIAGNOSTIC ---\n")
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """ This is where you should include all things you want to be happening during simulation
@@ -830,6 +862,50 @@ class DiabeticRetinopathy(Module):
                     [self.sim.date] * count
                 )
 
+        # Track new severe vision impairment and blindness,
+        # split by DR diagnosis status at the time of onset
+
+        # Newly transitioned to severe vision impairment
+        new_severe_vision_loss = (
+            alive_diabetes
+            & (old_vision != 'severe_vision_impairment')
+            & (df.vision_status == 'severe_vision_impairment')
+            & df.vision_loss_due_to_dr
+        )
+
+        # Newly transitioned to blindness
+        new_blindness = (
+            alive_diabetes
+            & (old_vision != 'blindness')
+            & (df.vision_status == 'blindness')
+            & df.vision_loss_due_to_dr
+        )
+
+        # Split severe vision impairment by diagnosis status
+        severe_diagnosed = new_severe_vision_loss & df.dr_diagnosed
+        severe_undiagnosed = new_severe_vision_loss & ~df.dr_diagnosed
+
+        # Split blindness by diagnosis status
+        blindness_diagnosed = new_blindness & df.dr_diagnosed
+        blindness_undiagnosed = new_blindness & ~df.dr_diagnosed
+
+        # Record the incident cases
+        self.vision_loss_diagnosis_status_tracker[
+            'inc_vision_loss_severe_diagnosed'
+        ].extend([self.sim.date] * int(severe_diagnosed.sum()))
+
+        self.vision_loss_diagnosis_status_tracker[
+            'inc_vision_loss_severe_undiagnosed'
+        ].extend([self.sim.date] * int(severe_undiagnosed.sum()))
+
+        self.vision_loss_diagnosis_status_tracker[
+            'inc_vision_loss_blindness_diagnosed'
+        ].extend([self.sim.date] * int(blindness_diagnosed.sum()))
+
+        self.vision_loss_diagnosis_status_tracker[
+            'inc_vision_loss_blindness_undiagnosed'
+        ].extend([self.sim.date] * int(blindness_undiagnosed.sum()))
+
         # Add symptom when vision deteriorates
         # newly_impaired = (
         #     df.is_alive & df.nc_diabetes & ~df.dr_diagnosed
@@ -867,6 +943,7 @@ class DiabeticRetinopathy(Module):
         self.dr_incident_case_tracker = copy.deepcopy(self.dr_incident_case_tracker_blank)
         self.dmo_incident_case_tracker = copy.deepcopy(self.dmo_incident_case_tracker_blank)
         self.vision_incident_case_tracker = copy.deepcopy(self.vision_incident_case_tracker_blank)
+        self.vision_loss_diagnosis_status_tracker = copy.deepcopy(self.vision_loss_diagnosis_status_tracker_blank)
 
     def _initialise_dmo_status_at_baseline(self, dr_idx: pd.Index) -> None:
         """Set dmo_status at baseline for people with DR
@@ -1733,9 +1810,17 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             for k, v in self.module.vision_incident_case_tracker.items()
         }
 
+        # Severe vision impairment and blindness incidence,
+        # split by diagnosis status at the time of onset
+        vision_loss_diagnosis_status_inc = {
+            k: len(v)
+            for k, v in self.module.vision_loss_diagnosis_status_tracker.items()
+        }
+
         out.update(dr_inc)
         out.update(dmo_inc)
         out.update(vision_inc)
+        out.update(vision_loss_diagnosis_status_inc)
 
         logger.info(key='summary_stats', data=out)
 
