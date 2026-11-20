@@ -256,6 +256,189 @@ def extract_staff_counts(results_folder):
     )
 
 
+
+def extract_population_by_district(results_folder):
+    """
+    Extract annual population counts by district.
+    """
+
+    def get_population_by_district(df):
+        df = df.copy()
+        df["year"] = df["date"].dt.year
+
+        # Keep only 2026 and 2027.
+        df = df[df["year"].isin([2026, 2027])]
+
+        # All columns other than date and year represent districts.
+        district_cols = [
+            col for col in df.columns
+            if col not in ["date", "year"]
+        ]
+
+        # Get the last available annual population observation
+        # for each year.
+        population = (
+            df.groupby("year")[district_cols]
+            .last()
+        )
+
+        # Convert district columns into an index.
+        return population.stack()
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="population_by_district",
+        custom_generate_series=get_population_by_district,
+        do_scaling=False,
+    )
+
+
+def calculate_staff_density(
+    staff_counts_summary,
+    population_by_district,
+    param_names,
+):
+    """
+    Calculate clinicians, nurses and pharmacists per
+    1,000 population by district, scenario and year.
+    Staff and population are both model-scale counts.
+    """
+
+    staff_counts = staff_counts_summary
+
+    # Extract mean staff counts across runs.
+    staff_mean = staff_counts.xs(
+        "mean",
+        axis=1,
+        level=1,
+    )
+
+    # Extract mean population counts across runs.
+    population_mean = population_by_district.xs(
+        "mean",
+        axis=1,
+        level=1,
+    )
+
+    # Cadres of interest.
+    cadres = {
+        "Clinical": "Clinical",
+        "Nursing_and_Midwifery": "Nursing_and_Midwifery",
+        "Pharmacy": "Pharmacy",
+    }
+
+    rows = []
+
+    for scenario in staff_mean.columns.get_level_values(0).unique():
+        scenario_staff = staff_mean[scenario]
+        for cadre, staff_type in cadres.items():
+
+            cadre_staff = scenario_staff.xs(
+                cadre,
+                level="Cadre",
+            )
+
+            # Keep 2026 and 2027.
+            cadre_staff = cadre_staff.loc[
+                cadre_staff.index.get_level_values("year").isin(
+                    [2026, 2027]
+                )
+            ]
+
+            for (district, year), staff_number in cadre_staff.items():
+
+                if (year, district) not in population_mean.index:
+                    continue
+
+                population = population_mean.loc[(year, district)]
+
+                if population <= 0:
+                    continue
+
+                density = (
+                    staff_number / population
+                ) * 100000
+
+                rows.append({
+                    "Scenario": scenario,
+                    "District": district,
+                    "Year": year,
+                    "Staff_Type": staff_type,
+                    "Staff_Count": staff_number,
+                    "Population": population,
+                    "Staff_per_1000": density,
+                })
+
+    return pd.DataFrame(rows)
+
+
+
+def plot_staff_density_by_district(
+    density_df,
+    district_order,
+):
+    """
+    Create one figure per scenario, with three panels:
+    Clinical, Nursing_and_Midwifery and Pharmacy per 1,000 population.
+    Each district has two bars: 2026 and 2027.
+    """
+
+    cadres = [
+        "Clinical",
+        "Nursing_and_Midwifery",
+        "Pharmacy",
+    ]
+
+    figures = {}
+
+    for scenario in density_df["Scenario"].unique():
+
+        scenario_df = density_df[
+            density_df["Scenario"] == scenario
+        ].copy()
+
+        fig, axes = plt.subplots(3, 1,figsize=(16, 16),sharex=True)
+
+        for ax, cadre in zip(axes, cadres):
+            cadre_df = scenario_df[scenario_df["Staff_Type"] == cadre]
+            plot_data = cadre_df.pivot(index="District", columns="Year", values="Staff_per_1000")
+            plot_data = plot_data.reindex(district_order)
+            x = np.arange(len(district_order))
+            width = 0.38
+
+            ax.bar(
+                x - width / 2,
+                plot_data[2026],
+                width,
+                label="2026",
+                color="steelblue",
+            )
+
+            ax.bar(
+                x + width / 2,
+                plot_data[2027],
+                width,
+                label="2027",
+                color="darkorange",
+            )
+
+            ax.set_ylabel(f"{cadre}\nper 1,000 population")
+            ax.set_title(cadre)
+            ax.grid(axis="y", alpha=0.3)
+            ax.legend()
+
+        axes[-1].set_xticks(np.arange(len(district_order)))
+        axes[-1].set_xticklabels(district_order, rotation=90)
+
+        fig.suptitle(f"Health worker density by district\n{scenario}", fontsize=14)
+        fig.tight_layout()
+        figures[scenario] = fig
+
+    return figures
+
+
+
 # Plot: Annual DALYs over time
 def plot_annual_dalys(summarized_annual_dalys):
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -1152,6 +1335,56 @@ if __name__ == "__main__":
     )
     staff_counts_summary = summarize(staff_counts)
 
+    # Staff density by district: 2026 vs 2027
+
+    # Extract district population counts
+    population_counts = extract_population_by_district(
+        results_folder
+    )
+
+    # Rename draw numbers to scenario names
+    population_counts = set_param_names_as_column_index_level_0(
+        population_counts,
+        param_names,
+    )
+
+    # Summarise population across runs
+    population_summary = summarize(population_counts)
+
+    # Calculate staff density
+    staff_density = calculate_staff_density(
+        staff_counts_summary=staff_counts_summary,
+        population_by_district=population_summary,
+        param_names=param_names,
+    )
+
+    # Keep the same district ordering as the other district plots.
+    staff_density = staff_density[
+        staff_density["District"].isin(district_order)
+    ].copy()
+
+    staff_density["District"] = pd.Categorical(
+        staff_density["District"],
+        categories=district_order,
+        ordered=True,
+    )
+
+    staff_density = staff_density.sort_values(
+        ["Scenario", "Staff_Type", "District", "Year"]
+    )
+
+    # Export underlying numerical results to Excel.
+    staff_density.to_excel(
+        results_folder / "district_staff_density_2026_2027.xlsx",
+        index=False,
+    )
+
+    # Generate figures.
+    staff_density_figures = plot_staff_density_by_district(
+        staff_density,
+        district_order,
+    )
+
     # Staff scale-up factors for all districts
     # Use mean staff counts
     nurses_all_mean = staff_counts_summary.xs("mean", axis=1, level=1)
@@ -1857,6 +2090,22 @@ if __name__ == "__main__":
             dpi=300,
             bbox_inches="tight",
         )
+
+        # Save staff density figures for all scenarios.
+        for scenario, fig in staff_density_figures.items():
+            safe_scenario_name = (
+                scenario
+                .replace(" / ", "_")
+                .replace(" ", "_")
+            )
+
+            fig.savefig(
+                results_folder /
+                f"staff_density_2026_2027_{safe_scenario_name}.pdf",
+                dpi=300,
+                bbox_inches="tight",
+            )
+
         validation_file = (
             results_folder /
             "district_vs_national_validation.xlsx"
