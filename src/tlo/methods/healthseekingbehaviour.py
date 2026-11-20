@@ -61,8 +61,8 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
-                                                                             ' and not in the wealth categories 4 or '
-                                                                             '5'),
+                                                                             ' and not in the wealth categories 1 or '
+                                                                             '2'),
         'odds_ratio_children_sex_Female': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if sex'
                                                                 ' is Female'),
         'odds_ratio_children_age_5to14': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if aged'
@@ -74,11 +74,11 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
         'odds_ratio_children_region_Southern': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
                                                                      ' region is Southern'),
         'odds_ratio_children_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if '
-                                                                   'wealth is in categories 4 or 5'),
+                                                                   'wealth is in categories 1 or 2'),
         'baseline_odds_of_healthcareseeking_adults': Parameter(Types.REAL, 'odds of health-care seeking (adults: 15+) '
                                                                            'if male, 15-34 year-olds, living in a rural'
                                                                            ' setting in the Northern region, and not in'
-                                                                           ' the wealth categories 4 or 5.'),
+                                                                           ' the wealth categories 1 or 2.'),
         'odds_ratio_adults_sex_Female': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if sex is'
                                                               ' Female'),
         'odds_ratio_adults_age_35to59': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if aged'
@@ -92,7 +92,7 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
         'odds_ratio_adults_region_Southern': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if '
                                                                    'region is Southern'),
         'odds_ratio_adults_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if wealth'
-                                                                 ' is in categories 4 or 5'),
+                                                                 ' is in categories 1 or 2'),
         'max_days_delay_to_generic_HSI_after_symptoms': Parameter(Types.INT,
                                                                   'Maximum days delay between symptom onset and first'
                                                                   'generic HSI. Actual delay is sample between 0 and '
@@ -203,7 +203,7 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             result[df.sex == 'F'] *= p[f'odds_ratio_{subgroup}_sex_Female']
             result[df.region_of_residence == 'Central'] *= p[f'odds_ratio_{subgroup}_region_Central']
             result[df.region_of_residence == 'Southern'] *= p[f'odds_ratio_{subgroup}_region_Southern']
-            result[(df.li_wealth == 4) | (df.li_wealth == 5)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
+            result[(df.li_wealth == 1) | (df.li_wealth == 2)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
             # Predict for symptom-specific odd ratios
             for symptom, odds in care_seeking_odds_ratios.items():
                 result[df[f'sy_{symptom}'] > 0] *= odds
