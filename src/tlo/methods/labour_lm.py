@@ -475,7 +475,7 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
     result[df.li_wealth == 3] *= params['rrr_hb_delivery_wealth_3']
     result[df.li_wealth == 4] *= params['rrr_hb_delivery_wealth_4']
 
-    result[df.li_mar_stat == 3] *= params['rrr_hb_delivery_married']
+    result[df.li_mar_stat == 2] *= params['rrr_hb_delivery_married']
 
     result = result / (1 + result)
     return result

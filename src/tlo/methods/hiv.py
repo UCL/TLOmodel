@@ -883,7 +883,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         conditional_predictors = [
             Predictor().when(
-                '(ss_sh_infection_status == "High-infection") &'
+                '(ss_sh_infection_status == "Heavy-infection") &'
                 '(sex == "F")',
                 p["rr_schisto"]
             ),
@@ -3974,7 +3974,7 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
-        if df.at[person_id, "hv_art"] == "virally_suppressed":
+        if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return hs.get_blank_appt_footprint()
 
         logger.debug(
