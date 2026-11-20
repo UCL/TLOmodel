@@ -527,10 +527,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
         ),
-        "switch_vl_test_to_tdf": Parameter(
-            Types.BOOL,
-            "whether TDF urine test is being used in place of VL testing"
-        ),
         "injectable_prep_allowed": Parameter(
             Types.BOOL,
             "whether injectable prep is allowed"
@@ -1716,7 +1712,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 tclose=None,
             )
 
-            if "newborn_outcomes" not in self.sim.modules and (
+            if "NewbornOutcomes" not in self.sim.modules and (
                     self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(

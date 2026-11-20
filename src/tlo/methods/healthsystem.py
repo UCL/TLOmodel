@@ -1582,7 +1582,7 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
+            priority, topen, rand_queue, self.hsi_event_queue_counter, clinic_eligibility, tclose, hsi_event
         )
 
         # Add to queue:
@@ -2189,6 +2189,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         did_run=True,
                         priority=_priority,
+                        clinic=clinic
                     )
 
                 # if not ok_to_run
@@ -2211,6 +2212,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         did_run=False,
                         priority=_priority,
+                        clinic=clinic
                     )
 
         return _to_be_held_over
@@ -2463,14 +2465,34 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Add the event to the queue:
                             hp.heappush(hold_over, next_event_tuple)
 
-                        # Log that the event did not run
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            did_run=False,
-                            priority=_priority,
-                            clinic=event_clinic,
-                        )
+                            # Log that the event did not run
+                            self.module.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                did_run=False,
+                                priority=_priority,
+                                clinic=event_clinic,
+                            )
+                        else:
+                        # If rtn_from_did_not_run is False, the event is not added to the hold-over
+                        # queue and therefore it will never ran. Log this here.
+                            if event.facility_info is not None:
+                                # Fully-defined HSI Event
+                                self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
+                                    event_details=event.as_namedtuple(),
+                                    person_id=event.target,
+                                    facility_id=event.facility_info.id,
+                                    priority=_priority,
+                                    clinic=event_clinic,
+                                )
+                            else:
+                                self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
+                                    event_details=event.as_namedtuple(),
+                                    person_id=-1,
+                                    facility_id=-1,
+                                    priority=_priority,
+                                    clinic=event_clinic
+                                )
 
                     # Have enough capabilities left to run event
                     else:
@@ -2609,14 +2631,34 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Add the event to the queue:
                     hp.heappush(hold_over, next_event_tuple)
 
-                # Log that the event did not run
-                self.module.record_hsi_event(
-                    hsi_event=event,
-                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                    did_run=False,
-                    priority=next_event_tuple.priority,
-                    clinic=next_event_tuple.clinic_eligibility,
-                )
+                    # Log that the event did not run
+                    self.module.record_hsi_event(
+                        hsi_event=event,
+                        actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                        did_run=False,
+                        priority=next_event_tuple.priority,
+                        clinic=next_event_tuple.clinic_eligibility,
+                    )
+                else:
+                    # If rtn_from_did_not_run is False, the event is not added to the hold-over
+                    # queue and therefore it will never ran. Log this here.
+                    if event.facility_info is not None:
+                        # Fully-defined HSI Event
+                        self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
+                            event_details=event.as_namedtuple(),
+                            person_id=event.target,
+                            facility_id=event.facility_info.id,
+                            priority=_priority,
+                            clinic=event_clinic,
+                        )
+                    else:
+                        self.sim.modules['HealthSystem'].write_to_never_ran_hsi_log(
+                            event_details=event.as_namedtuple(),
+                            person_id=-1,
+                            facility_id=-1,
+                            priority=_priority,
+                            clinic=event_clinic
+                        )
 
         # add events from the list_of_events_not_due_today back into the queue
         while len(list_of_events_not_due_today) > 0:
@@ -2657,9 +2699,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     did_run=True,
                 )
 
-        # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
+        # Restart the total footprint of all calls - and across all clinics - today.
         # Important: Here we assign all inpatient bed-days to the GenericClinic
+        self.module.running_total_footprint = defaultdict(Counter)
         self.module.running_total_footprint["GenericClinic"] = inpatient_footprints
+        
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
@@ -3027,6 +3071,10 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
 
         # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
         if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
+        
+            # Switch ignore_priority back to False
+            health_system.ignore_priority = False
+        
             # A place to store events with updated priority
             updated_events: List[HSIEventQueueItem | None] = [None] * len(health_system.HSI_EVENT_QUEUE)
             offset = 0
@@ -3045,11 +3093,11 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
                     event = HSIEventQueueItem(
-                        clinic_eligibility,
                         enforced_priority,
                         event.topen,
                         event.rand_queue_counter,
                         event.queue_counter,
+                        clinic_eligibility,
                         event.tclose,
                         event.hsi_event,
                     )

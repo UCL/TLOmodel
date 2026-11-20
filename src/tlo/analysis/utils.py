@@ -413,14 +413,14 @@ def reconstruct_individual_histories(df):
     # Collapse into 'entity', 'date', 'event_name', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
-            df.groupby(['entity', 'date', 'event_name'], sort=False)
+            df.groupby(['entity', 'date', 'event_name', 'event_tag'], sort=False)
               .apply(lambda g: dict(zip(g['attribute'], g['value'])))
               .reset_index(name='Info')
         )
 
     df_final = (
         df_collapsed
-            .sort_values(by=['entity', 'date'])
+            .sort_values(by=['entity', 'date', 'event_tag'])
             .reset_index(drop=True)
     )
 
@@ -430,8 +430,6 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-        
-    
 
     return df_final
 
@@ -444,7 +442,7 @@ def extract_individual_histories(results_folder: Path,
     format 'entity', 'date', 'event_name', 'Info' where 'Info' is a dictionary that combines
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.methods.individual_history'
+    module = 'tlo.methods.individual_history_tracker'
     key = 'individual_histories'
 
     # get number of draws and numbers of runs
@@ -484,8 +482,6 @@ def extract_individual_histories(results_folder: Path,
 
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-
-        res[0].to_csv('individual_histories.csv')
 
     return res
 
@@ -635,13 +631,13 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
+def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None, level: int = logging.INFO):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
-        outputs = parse_log_file(logfile)
+        outputs = parse_log_file(logfile, level)
         for key, output in outputs.items():
             if key.startswith("tlo."):
                 print(f" - Writing {key}.pickle")
@@ -665,7 +661,8 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
                 compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
+                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix) and
+                                                         x.endswith('.log.gz')
                 ][0]
                 logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
 
