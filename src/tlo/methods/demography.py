@@ -815,20 +815,6 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-
-        # Log annual population counts by district.
-        population_by_district = (
-            df.loc[df["is_alive"]]
-            .groupby("district_of_residence")
-            .size()
-        )
-
-        logger.info(
-            key="population_by_district",
-            data=population_by_district.to_dict(),
-            description="Annual population counts by district"
-        )
-
         # 1) Update internal storage of the total population size each year.
         self.module.popsize_by_year[self.sim.date.year] = df.is_alive.sum()
 
