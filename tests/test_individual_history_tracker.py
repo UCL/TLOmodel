@@ -22,6 +22,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    syphilis,
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -71,6 +72,7 @@ def test_individual_history_tracker(tmpdir, seed):
                  labour.Labour(),
                  postnatal_supervisor.PostnatalSupervisor(),
                  hiv.DummyHivModule(),
+                 syphilis.Syphilis(),
                  )
 
     # Run the simulation

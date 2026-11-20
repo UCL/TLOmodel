@@ -102,7 +102,7 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
                 ('ps_anaemia_in_pregnancy', 'moderate', 'hb_test', 'point_of_care_hb_test'),
                 ('ps_anaemia_in_pregnancy', 'moderate', 'full_blood_count', 'full_blood_count_hb'),
                 ('ps_gest_diab', 'uncontrolled', 'gdm_test', 'blood_test_glucose'),
-                ('ps_syphilis', True, 'syphilis_test', 'blood_test_syphilis'),
+                ('ps_syphilis_state', 'primary', 'syphilis_test', 'blood_test_syphilis'),
                 ('pn_anaemia_following_pregnancy', 'moderate', 'full_blood_count', 'full_blood_count_hb_pn')]
 
     for test in dx_tests:
@@ -354,7 +354,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(days=2)
     df.at[mother_id, 'li_bmi'] = 1
     df.at[mother_id, 'la_parity'] = 0
-    df.at[mother_id, 'ps_syphilis'] = True
+    df.at[mother_id, 'ps_syphilis_state'] = 'primary'
 
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
@@ -401,7 +401,8 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     assert df.at[mother_id, 'ac_receiving_iron_folic_acid']
     assert df.at[mother_id, 'ac_receiving_bep_supplements']
     assert df.at[mother_id, 'ac_receiving_calcium_supplements']
-    assert not df.at[mother_id, 'ps_syphilis']
+    assert df.at[mother_id, 'ps_syphilis_state'] == 'none'
+    assert df.at[mother_id, 'ps_syphilis_treated']
 
 
 def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed):

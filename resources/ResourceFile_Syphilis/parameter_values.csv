@@ -1,0 +1,12 @@
+parameter_name,value,Primary Source (or calibration data) ,Unnamed: 3
+prob_syphilis_during_pregnancy,"[0.028, 0.028]",Malawi Integrated HIV Program Reports,
+prob_pre_existing_syphilis_at_pregnancy_start,"[0.0, 0.0]",Requires calibration to Malawi ANC syphilis prevalence,
+pre_existing_syphilis_stage_distribution,"[[0.05, 0.15, 0.55, 0.25], [0.05, 0.15, 0.55, 0.25]]","Assumption pending calibration: primary, secondary, early latent, late latent",
+duration_primary_weeks,3,,
+duration_secondary_weeks,6,,
+duration_early_latent_weeks,52,,
+prob_congenital_transmission_primary,"[0.80, 0.80]",,
+prob_congenital_transmission_secondary,"[0.70, 0.70]",,
+prob_congenital_transmission_early_latent,"[0.20, 0.20]",,
+prob_congenital_transmission_late_latent,"[0.01, 0.01]",,
+prob_stillbirth_from_congenital_syphilis,"[0.30, 0.30]",,
