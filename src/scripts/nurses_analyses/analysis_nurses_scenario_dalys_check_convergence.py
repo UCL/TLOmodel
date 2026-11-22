@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import to_rgba
+from matplotlib.lines import Line2D
 
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
@@ -2808,6 +2809,78 @@ def plot_dalys_by_run(dalys_by_run, ylabel, title=None):
     return plot_averted_by_run(dalys_by_run, ylabel, title=title, zero_line=False)
 
 
+def plot_dalys_by_run_by_district(area_by_district, ylabel, title=None, ncols=6, zero_line=False):
+    """
+    DALYs in each run for each district: one panel per district (own y-axis),
+    one column of dots per scenario (each dot one run, baseline first in black),
+    black dash = mean across runs. Scenario colours are given in the legend.
+
+    area_by_district: DALYs for one health area and one health system,
+        rows District, columns (scenario, run). Also used for DALYs averted
+        by district and run (see plot_averted_by_run_by_district).
+    zero_line: draw a horizontal line at zero.
+    """
+    style = {"Baseline Nurses": ("Baseline", "black"), **CONVERGENCE_SCENARIO_STYLE}
+    order = list(style)
+    scenarios = sorted(
+        area_by_district.columns.unique(level=0),
+        key=lambda s: order.index(s.split(" / ")[0]) if s.split(" / ")[0] in order else len(order),
+    )
+    districts = sorted(area_by_district.index, key=str.lower)
+
+    nrows = int(np.ceil(len(districts) / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(3.2 * ncols, 2.6 * nrows), squeeze=False)
+
+    for ax, district in zip(axes.flat, districts):
+        district_values = area_by_district.loc[district]
+        for i, scenario in enumerate(scenarios):
+            color = style.get(scenario.split(" / ")[0], (scenario, "gray"))[1]
+            values = district_values.xs(scenario, level=0)
+            ax.scatter([i] * len(values), values, color=color, s=10, zorder=3)
+            ax.plot([i - 0.3, i + 0.3], [values.mean()] * 2, color="black", linewidth=1.2)
+
+        if zero_line:
+            ax.axhline(0, color="black", linewidth=0.8)
+        ax.set_title(district, fontsize=9, fontweight="bold")
+        ax.set_xticks([])
+        ax.set_xlim(-0.6, len(scenarios) - 0.4)
+        ax.grid(axis="y", alpha=0.3)
+        ax.tick_params(axis="y", labelsize=7)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+
+    for ax in axes.flat[len(districts):]:
+        ax.set_visible(False)
+
+    fig.supylabel(ylabel)
+    if title is not None:
+        fig.suptitle(title)
+
+    handles = [
+        Line2D([], [], marker="o", linestyle="", color=style.get(s.split(" / ")[0], (s, "gray"))[1],
+               label=style.get(s.split(" / ")[0], (s, None))[0])
+        for s in scenarios
+    ]
+    handles.append(Line2D([], [], color="black", linewidth=1.2, label="Mean across runs"))
+    fig.tight_layout(rect=[0.01, 0.04, 1, 1])
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.0),
+               ncol=len(handles), frameon=False)
+
+    return fig, axes
+
+
+def plot_averted_by_run_by_district(averted_by_district_and_run, ylabel, title=None, ncols=6):
+    """
+    DALYs averted (baseline - scenario, same run) in each run for each district,
+    in the same format as plot_dalys_by_run_by_district, with a line at zero.
+
+    averted_by_district_and_run: rows District, columns (Scenario, run),
+        from run_level_tables.
+    """
+    return plot_dalys_by_run_by_district(
+        averted_by_district_and_run, ylabel, title=title, ncols=ncols, zero_line=True
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Analyse DALYs/Deaths across nurse staffing scenarios"
@@ -3255,6 +3328,26 @@ if __name__ == "__main__":
                 title=f"{area} DALYs in each run, {hs_label.capitalize()} Healthsystem Function",
             )
             run_level_figures[f"{area_slug}_dalys_by_run_{hs_label}"] = fig_dalys_runs
+
+            # DALYs in each run, district by district.
+            fig_district_runs, _ = plot_dalys_by_run_by_district(
+                hs_area_by_district,
+                ylabel=f"{area} DALYs (2027–2034)",
+                title=f"{area} DALYs in each run by district, {hs_label.capitalize()} Healthsystem Function",
+            )
+            run_level_figures[f"{area_slug}_dalys_by_district_and_run_{hs_label}"] = fig_district_runs
+            run_level_tables_out[f"{area_slug}_dalys_by_district_and_run_{hs_label}"] = hs_area_by_district
+
+            # DALYs averted vs baseline in each run, district by district.
+            fig_district_averted, _ = plot_averted_by_run_by_district(
+                averted_by_district_and_run,
+                ylabel=f"{area} DALYs averted (2027–2034)",
+                title=f"{area} DALYs averted in each run by district, "
+                      f"{hs_label.capitalize()} Healthsystem Function",
+            )
+            run_level_figures[f"{area_slug}_dalys_averted_by_district_and_run_{hs_label}"] = (
+                fig_district_averted
+            )
 
             print(f"\n{area} DALYs (2027–2034) in each run, {hs_label.capitalize()}:")
             print(dalys_by_run.round(0).to_string())
