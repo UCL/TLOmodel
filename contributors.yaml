@@ -300,3 +300,26 @@
   website: "https://www.kuhes.ac.mw/prof-victor-mwapasa/"
   contributions:
     - Clinical process modelling
+- given-names: Watipaso
+  family-names: Mulwafu
+  orcid: "https://orcid.org/0000-0002-1962-8258"
+  affiliation: "Kamuzu University of Health Sciences"
+  website: "https://www.linkedin.com/in/watipaso-mulwafu-85a51a180/"
+  github-username: thewati
+  contributions:
+    - Software development
+- given-names: Naomi
+  family-names: Fuller
+  orcid: "https://orcid.org/0000-0003-4026-5591"
+  affiliation: "Imperial College London"
+  github-username: nmfuller
+  contributions:
+    - Epidemiology and modelling
+- given-names: Sangeeta
+  family-names: Bhatia
+  orcid: "https://orcid.org/0000-0001-6525-101X"
+  affiliation: "Imperial College London"
+  github-username: sangeetabhatia03
+  contributions:
+    - Epidemiology and modelling
+    - Software development

@@ -923,9 +923,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         set_of_symptoms_indicative_of_schisto = {'ss_sm_moderate',
                                                  'ss_sm_heavy',
                                                  'ss_sh_moderate',
-                                                 'ss_sm_heavy'}
+                                                 'ss_sh_heavy'}
 
-        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
+        if set_of_symptoms_indicative_of_schisto.intersection(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
                 module=self, person_id=person_id
             )
@@ -967,7 +967,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         n_to_reduce = int(p['rr_WASH'] * len(susceptible_no_sanitation))
 
         if n_to_reduce > 0:
-            selected_change_susceptibility = np.random.choice(susceptible_no_sanitation, size=n_to_reduce,
+            selected_change_susceptibility = self.rng.choice(susceptible_no_sanitation, size=n_to_reduce,
                                                               replace=False)
             df.loc[selected_change_susceptibility, species_column] = 0
 
