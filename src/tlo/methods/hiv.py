@@ -871,10 +871,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_windex_poorer"])
+            .when(4, p["rr_windex_poorer"])
             .when(3, p["rr_windex_middle"])
-            .when(4, p["rr_windex_richer"])
-            .when(5, p["rr_windex_richest"]),
+            .when(2, p["rr_windex_richer"])
+            .when(1, p["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
             .when(2, p["rr_edlevel_primary"])
             .when(3, p["rr_edlevel_secondary"]),
@@ -1073,10 +1073,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("li_urban").when(False, params["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, params["rr_windex_poorer"])
+            .when(4, params["rr_windex_poorer"])
             .when(3, params["rr_windex_middle"])
-            .when(4, params["rr_windex_richer"])
-            .when(5, params["rr_windex_richest"]),
+            .when(2, params["rr_windex_richer"])
+            .when(1, params["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
             .when(2, params["rr_edlevel_primary"])
             .when(3, params["rr_edlevel_secondary"]),
