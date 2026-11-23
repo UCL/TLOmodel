@@ -490,7 +490,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
                 p['rr_dysphagia_low_grade_dysp'] * p['r_dysphagia_stage1']
             )
             .when(
-                'high_grade_dysplaisa',
+                'high_grade_dysplasia',
                 p['rr_dysphagia_high_grade_dysp'] * p['r_dysphagia_stage1']
             )
             .when('stage1', p['r_dysphagia_stage1'])

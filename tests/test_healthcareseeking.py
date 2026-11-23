@@ -1683,8 +1683,8 @@ def test_custom_function_is_equivalent_to_linear_model(seed):
                       ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
             .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
             Predictor('li_wealth', conditions_are_mutually_exclusive=True
-                      ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
-            .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
+                      ).when(1, p[f'odds_ratio_{subgroup}_wealth_higher'])
+            .when(2, p[f'odds_ratio_{subgroup}_wealth_higher']),
 
             # Second set of predictors are the symptom-specific odd ratios
             *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())

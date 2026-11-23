@@ -871,10 +871,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_windex_poorer"])
+            .when(4, p["rr_windex_poorer"])
             .when(3, p["rr_windex_middle"])
-            .when(4, p["rr_windex_richer"])
-            .when(5, p["rr_windex_richest"]),
+            .when(2, p["rr_windex_richer"])
+            .when(1, p["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
             .when(2, p["rr_edlevel_primary"])
             .when(3, p["rr_edlevel_secondary"]),
@@ -883,7 +883,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         conditional_predictors = [
             Predictor().when(
-                '(ss_sh_infection_status == "High-infection") &'
+                '(ss_sh_infection_status == "Heavy-infection") &'
                 '(sex == "F")',
                 p["rr_schisto"]
             ),
@@ -1073,10 +1073,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("li_urban").when(False, params["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, params["rr_windex_poorer"])
+            .when(4, params["rr_windex_poorer"])
             .when(3, params["rr_windex_middle"])
-            .when(4, params["rr_windex_richer"])
-            .when(5, params["rr_windex_richest"]),
+            .when(2, params["rr_windex_richer"])
+            .when(1, params["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
             .when(2, params["rr_edlevel_primary"])
             .when(3, params["rr_edlevel_secondary"]),
@@ -3974,7 +3974,7 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
-        if df.at[person_id, "hv_art"] == "virally_suppressed":
+        if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return hs.get_blank_appt_footprint()
 
         logger.debug(

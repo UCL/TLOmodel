@@ -5506,7 +5506,7 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
             '10-15': [range(10, 16), self.prob_death_iss_10_15],
             '16-24': [range(16, 25), self.prob_death_iss_16_24],
             '25-35': [range(25, 36), self.prob_death_iss_25_35],
-            '35-75': [range(25, 76), self.prob_death_iss_35_plus]
+            '36-75': [range(36, 76), self.prob_death_iss_35_plus]
         }
         # Schedule death for those who died from their injuries despite medical intervention
         if df.loc[person_id, 'cause_of_death'] == 'Other':

@@ -716,6 +716,13 @@ def test_mode_2_clinics(seed, tmpdir):
     if GenericClinic capabilities are not available;
     """
 
+    def count_never_ran_by_clinic(output) -> pd.Series:
+        """Number of HSI events logged as never ran, by clinic (0 for clinics with none)."""
+        hs_logs = output["tlo.methods.healthsystem"]
+        if "Never_ran_HSI_Event" not in hs_logs:
+            return pd.Series(dtype=int)
+        return hs_logs["Never_ran_HSI_Event"]["Clinic"].value_counts()
+
     # Create a dummy HSI event class
     class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id, appt_type, level, treatment_id):
@@ -912,7 +919,8 @@ def test_mode_2_clinics(seed, tmpdir):
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
     ## No GenericClinic events should have run, but all Clinic1 ones should have
     assert Nevents.loc[("Clinic1", True)] == tot_population // 2, "Unexpected count of Clinic1 events"
-    assert Nevents.loc[("GenericClinic", False)] == tot_population // 2, "Unexpected count of GenericClinic events"
+    Nevents_never_ran = count_never_ran_by_clinic(output)
+    assert Nevents_never_ran.get("GenericClinic", 0) == tot_population // 2, "Unexpected count of GenericClinic events"
 
     ## Test 3: Events requiring Clinic1 capabilities do not run if those capabilities are unavailable
     ## Mirror of test 2 above
@@ -933,7 +941,8 @@ def test_mode_2_clinics(seed, tmpdir):
     assert hs_output["did_run"].sum() == tot_population // 2, "Half of the events ran"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
     ## No more non-fungible events should have run, but all GenericClinic ones should have
-    assert Nevents.loc[("Clinic1", False)] == tot_population // 2
+    Nevents_never_ran = count_never_ran_by_clinic(output)
+    assert Nevents_never_ran.get("Clinic1", False) == tot_population // 2
     assert Nevents.loc[("GenericClinic", True)] == tot_population // 2
 
     ## Test 4: Queue up GenericClinic/Clinic1/GenericClinic; have Clinic1 capabilities run out
@@ -958,5 +967,6 @@ def test_mode_2_clinics(seed, tmpdir):
     assert hs_output["did_run"].sum() == tot_population // 2, "Unexpected number of events"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
     ## No more non-fungible events should have run, but all GenericClinic ones should have
-    assert Nevents.loc[("Clinic1", False)] == tot_population // 2, "No additional NonFungible events ran"
+    Nevents_never_ran = count_never_ran_by_clinic(output)
+    assert Nevents_never_ran.get("Clinic1", False) == tot_population // 2, "No additional NonFungible events ran"
     assert Nevents.loc[("GenericClinic", True)] == tot_population // 2, "Scheduled GenericClinic events ran"
