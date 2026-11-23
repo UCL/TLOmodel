@@ -172,7 +172,7 @@ MIN_OBS = 24
 MIN_OBS_COVERAGE = 0.85
 # COVID and closures
 COVID_WINDOW = ("2020-04-01", "2021-12-01")
-CLUSTER_COL = "district"#"grid_id"
+CLUSTER_COL = "grid_id"#"grid_id"
 USE_PRECIP = True
 PRECIP_COL = "precip_month"
 
