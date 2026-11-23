@@ -308,3 +308,18 @@
   github-username: thewati
   contributions:
     - Software development
+- given-names: Naomi
+  family-names: Fuller
+  orcid: "https://orcid.org/0000-0003-4026-5591"
+  affiliation: "Imperial College London"
+  github-username: nmfuller
+  contributions:
+    - Epidemiology and modelling
+- given-names: Sangeeta
+  family-names: Bhatia
+  orcid: "https://orcid.org/0000-0001-6525-101X"
+  affiliation: "Imperial College London"
+  github-username: sangeetabhatia03
+  contributions:
+    - Epidemiology and modelling
+    - Software development
