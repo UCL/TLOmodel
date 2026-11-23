@@ -368,6 +368,233 @@ MIN_OBS_BY_INDICATOR: dict[str, int] = {
 }
 
 # ===========================================================================
+# Export TLO Parameters
+# ===========================================================================
+
+def export_tlo_parameters(
+    model_wx,
+    indicator,
+    spline_cols,
+    design_info,
+    wbgt_shift,
+    reference_wbgt,
+    wbgt_support,
+    out_dir,
+):
+    """
+    Export the WBGT-attributable relative service response for TLO.
+
+    The exported response is a within-facility climate contrast: all
+    non-WBGT terms are held fixed and therefore cancel. It is NOT the
+    original two-model baseline-vs-weather prediction contrast.
+
+    TLO combines:
+      1. spline_log_effect interpolated from tlo_spline_{indicator}.csv;
+      2. the exported lag coefficients applied to (lagged WBGT -
+         reference_wbgt).
+
+    TLO then calculates:
+        log_rate_ratio = spline_log_effect(current WBGT)
+                         + sum(beta_lag * (lagged WBGT - reference WBGT))
+        rate_ratio = exp(log_rate_ratio)
+        disruption_fraction = clip(1 - rate_ratio, 0, 1)
+    """
+
+    import json
+    import numpy as np
+    import pandas as pd
+    import patsy
+
+    if INCLUDE_WBGT_INTERACTIONS:
+        raise NotImplementedError(
+            "TLO export currently assumes a common WBGT response across facilities. "
+            "Set INCLUDE_WBGT_INTERACTIONS=False or extend the export to include "
+            "modifier-specific WBGT response functions."
+        )
+
+    coef = model_wx.coef()
+
+    # Confirm the reference and operational support are compatible with the
+    # fitted Patsy spline boundaries.
+    lo = float(wbgt_support["p_lo"])
+    hi = float(wbgt_support["p_hi"])
+    reference_wbgt = float(reference_wbgt)
+    wbgt_shift = float(wbgt_shift)
+
+    if not (lo <= reference_wbgt <= hi):
+        raise ValueError(
+            f"Reference WBGT ({reference_wbgt:.4f}) is outside the exported "
+            f"support [{lo:.4f}, {hi:.4f}]."
+        )
+
+    # Preserve the full fitted spline basis order, assigning zero to any
+    # basis term dropped by the fitted model for collinearity.
+    retained_spline = [c for c in spline_cols if c in coef.index]
+    if not retained_spline:
+        raise ValueError("No WBGT spline coefficients were retained by the model.")
+
+    retained_indices = [spline_cols.index(c) for c in retained_spline]
+    beta_spline = coef.loc[retained_spline].to_numpy(dtype=float)
+
+    # Dense lookup table. Include the reference explicitly so its exported
+    # log effect is exactly zero (up to floating-point precision).
+    grid = np.unique(
+        np.concatenate([np.linspace(lo, hi, 1001), np.array([reference_wbgt])])
+    )
+
+    B_grid = np.asarray(
+        patsy.build_design_matrices(
+            [design_info], {"x": grid - wbgt_shift}
+        )[0],
+        dtype=float,
+    )
+    B_ref = np.asarray(
+        patsy.build_design_matrices(
+            [design_info], {"x": np.array([reference_wbgt - wbgt_shift])}
+        )[0],
+        dtype=float,
+    )
+
+    if B_grid.shape[1] != len(spline_cols):
+        raise ValueError(
+            f"Spline basis has {B_grid.shape[1]} columns but model metadata "
+            f"contains {len(spline_cols)} spline columns."
+        )
+
+    spline_log_effect = (
+        B_grid[:, retained_indices] - B_ref[:, retained_indices]
+    ) @ beta_spline
+
+    spline_rate_ratio = np.exp(spline_log_effect)
+    spline_only_disruption = np.clip(1.0 - spline_rate_ratio, 0.0, 1.0)
+
+    spline_table = pd.DataFrame({
+        "wbgt": grid,
+        "spline_log_effect": spline_log_effect,
+        "spline_rate_ratio": spline_rate_ratio,
+        "spline_only_disruption_fraction": spline_only_disruption,
+    })
+
+    # Numerical integrity check: the reference exposure must imply RR=1
+    # and zero disruption before any lag contribution is added.
+    ref_row = spline_table.loc[
+        np.isclose(spline_table["wbgt"].to_numpy(), reference_wbgt)
+    ]
+    if len(ref_row) != 1 or not np.isclose(
+        float(ref_row["spline_log_effect"].iloc[0]), 0.0, atol=1e-10
+    ):
+        raise RuntimeError("Spline lookup failed its reference-WBGT validation.")
+
+    spline_filename = f"tlo_spline_{indicator}_{WBGT_VAR}{SUFFIX}.csv"
+    spline_table.to_csv(f"{out_dir}/{spline_filename}", index=False)
+
+    # Lag coefficients are exported separately because their contribution
+    # depends on the facility's actual lagged WBGT history in TLO.
+    lag_coefficients = {}
+    lag_coefficient_status = {}
+    if SA_LAG:
+        for lag in LAG_MONTHS:
+            col = f"{WBGT_VAR}_lag{lag}_c"
+            is_retained = col in coef.index
+            lag_coefficients[str(lag)] = float(coef[col]) if is_retained else 0.0
+            lag_coefficient_status[str(lag)] = (
+                "estimated" if is_retained else "not_retained_or_not_estimable"
+            )
+
+    parameters = {
+        "schema_version": 2,
+        "indicator": indicator,
+        "wbgt_variable": WBGT_VAR,
+        "response_type": "wbgt_attributable_relative_service_response",
+        "reference_wbgt": reference_wbgt,
+        "wbgt_shift_used_in_fitted_spline": wbgt_shift,
+        "wbgt_support": {
+            k: float(v) for k, v in wbgt_support.items()
+        },
+        "operational_wbgt_clip": {
+            "enabled": bool(CLIP_PROJECTION_TO_SUPPORT),
+            "lower": lo,
+            "upper": hi,
+            "applies_to": "current and lagged WBGT values",
+        },
+        "spline": {
+            "basis": "Patsy bs(x, df=SPLINE_DF) - 1",
+            "df_basis": int(len(spline_cols)),
+            "all_columns": list(spline_cols),
+            "retained_columns": retained_spline,
+            "coefficients": {
+                c: float(coef[c]) for c in retained_spline
+            },
+            "lookup_file": spline_filename,
+            "lookup_columns": [
+                "wbgt",
+                "spline_log_effect",
+                "spline_rate_ratio",
+                "spline_only_disruption_fraction",
+            ],
+            "lookup_points": int(len(grid)),
+            "interpolation": "linear interpolation on wbgt",
+        },
+        "lags": {
+            "enabled": bool(SA_LAG),
+            "months": list(LAG_MONTHS) if SA_LAG else [],
+            "coefficients": lag_coefficients,
+            "coefficient_status": lag_coefficient_status,
+            "reference_wbgt": reference_wbgt,
+            "input_units": "degrees_Celsius",
+            "formula": (
+                "sum(beta_lag[k] * (lagged_wbgt[k] - reference_wbgt))"
+            ),
+        },
+        "tlo_calculation": {
+            "log_rate_ratio": (
+                "interpolate spline_log_effect at current WBGT + "
+                "sum(beta_lag[k] * (lagged_wbgt[k] - reference_wbgt))"
+            ),
+            "rate_ratio": "exp(log_rate_ratio)",
+            "disruption_fraction": "clip(1 - rate_ratio, 0, 1)",
+            "interpretation": (
+                "Proportional reduction in expected service counts attributable "
+                "to WBGT relative to a reference climate in which current and "
+                "lagged WBGT all equal reference_wbgt. This is a service-loss "
+                "fraction, not a directly estimated probability that a discrete "
+                "disruption event occurs. Positive estimated service effects are "
+                "not treated as disruptions."
+            ),
+        },
+        "scope_and_assumptions": {
+            "is_original_two_model_contrast": False,
+            "non_wbgt_covariates_held_fixed": True,
+            "month_and_zone_year_fixed_effects_cancel": True,
+            "facility_main_effects_cancel": True,
+            "common_wbgt_response_across_facilities": True,
+            "facility_characteristic_main_effects_exported": False,
+            "reason": (
+                "The TLO export is a within-facility WBGT contrast. Precipitation, "
+                "COVID, year, month, zone-year and facility main effects are held "
+                "constant between the observed and reference-WBGT counterfactual "
+                "and therefore cancel. The current fitted specification does not "
+                "include WBGT-by-facility-characteristic interactions."
+            ),
+            "not_equivalent_to": (
+                "The in-sample deficit calculated by subtracting predictions "
+                "from the separately fitted baseline and weather models."
+            ),
+        },
+    }
+
+    json_filename = f"tlo_parameters_{indicator}_{WBGT_VAR}{SUFFIX}.json"
+    with open(f"{out_dir}/{json_filename}", "w") as f:
+        json.dump(parameters, f, indent=2)
+
+    print(
+        f"[{indicator}] Exported TLO WBGT response "
+        f"(reference={reference_wbgt:.2f}°C; "
+        f"support={lo:.2f}–{hi:.2f}°C; lags={lag_coefficients})"
+    )
+
+
+# ===========================================================================
 # Year fixed effect
 # ===========================================================================
 
@@ -1461,7 +1688,17 @@ def fit_indicator(indicator, panel_path, spline_df=None):
     _aic_wx = _poisson_pseudo_aic(model_wx, nb_data)
     _aic_base = _poisson_pseudo_aic(model_base, nb_data)
     _n_retained = len([c for c in spline_cols if c in model_wx.coef().index])
-
+    if spline_df is None:   # primary pipeline only — skip during the df sweep
+        export_tlo_parameters(
+            model_wx=model_wx,
+            indicator=indicator,
+            spline_cols=spline_cols,
+            design_info=DESIGN[WBGT_VAR],
+            wbgt_shift=SHIFTS[WBGT_VAR],
+            reference_wbgt=reference_wbgt,
+            wbgt_support=WBGT_SUPPORT,
+            out_dir=OUT_DIR,
+        )
     return {
         "indicator": indicator,
         "label": INDICATOR_LABELS.get(indicator, indicator),
