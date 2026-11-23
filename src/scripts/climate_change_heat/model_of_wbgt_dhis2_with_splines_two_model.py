@@ -742,6 +742,7 @@ def fit_indicator(indicator, panel_path):
     f_wx = f"y_int ~ {' + '.join(weather_rhs)} + {FE}"
 
     alpha = estimate_alpha_robust(nb_data, indicator=indicator)
+    print(alpha)
     print(f"  [{indicator}] Alpha: {alpha:.4f}")
 
     try:
