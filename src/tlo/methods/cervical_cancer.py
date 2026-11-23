@@ -522,7 +522,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -536,7 +536,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('hpv', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -554,7 +554,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('cin1', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -568,7 +568,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('cin2', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -582,7 +582,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('cin3', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -596,7 +596,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('stage1', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -610,7 +610,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('stage2a', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -624,7 +624,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('stage2b', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -638,7 +638,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('ce_hpv_cc_status').when('stage3', 1.0).otherwise(0.0),
             Predictor().when(
                 'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
+                '(hv_art == "on_not_VL_suppressed")',
                 (p['rr_progress_cc_hiv'])),
             Predictor().when(
                 'hv_inf & '
@@ -1681,7 +1681,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                               & df['va_hpv']).sum()
 
         n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] >= 15)
-                                    & (((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not'))
+                                    & (((df['hv_art'] == 'on_not_VL_suppressed') | (df['hv_art'] == 'not'))
                                        & (df['hv_inf']))).sum()
 
         n_via_cin_ever_detected = ((df['is_alive']) & (df['ce_via_cin_ever_detected'])).sum()
