@@ -1917,8 +1917,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         current_date=self.sim.date
                     )
                     # Logging is handled in module
-                    continue
-
+                    if climate_disrupted:
+                        continue
                 if not item.hsi_event.is_all_declared_equipment_available:
                     self.module.call_and_record_never_ran_hsi_event(
                         hsi_event=item.hsi_event,
