@@ -36,7 +36,7 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.contraception": logging.INFO,
+                'tlo.methods.contraception': logging.INFO,
                 'tlo.methods.hiv': logging.INFO,
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.malaria': logging.INFO,
