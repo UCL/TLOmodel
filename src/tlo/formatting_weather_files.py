@@ -7,15 +7,15 @@ climate-health regression and in the TLO WeatherDisruptions module.
 
 Pipeline
 --------
-1. Read the facility registry and keep facilities with coordinates.
-2. Restrict to the facility NAMES used by the TLO simulation
-   (``ResourceFile_Facility_Characteristics.csv``), so the panel keys match the
-   ``level_0..level_3`` values Demography assigns at runtime.
-3. For each CMIP6 model x scenario: find the facility's nearest grid cell, extract
+1. Read the facility registry (the TLO demography characteristics file itself) and
+   keep facilities with coordinates. Because this is the file Demography loads, the
+   panel keys already match the ``level_0..level_3`` values the simulation assigns at
+   runtime — no separate name-restriction step is needed.
+2. For each CMIP6 model x scenario: find the facility's nearest grid cell, extract
    the daily WBGT series, aggregate to monthly mean and monthly extreme indices
    (WBGTx = monthly max; WBGT5x = monthly max of the within-month 5-day rolling
    mean), and attach the matching monthly precipitation.
-4. Write one "mean" panel and one "extreme" panel (with lags) per model x scenario,
+3. Write one "mean" panel and one "extreme" panel (with lags) per model x scenario,
    plus a single facility covariate table.
 
 Outputs (in ``OUTPUT_DIR``)
@@ -42,7 +42,30 @@ from scipy.spatial.distance import cdist
 # ===========================================================================
 # CONFIG
 # ===========================================================================
-WBGT_DIRECTORY = "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/NASA_GDDP_CMIP6_Split/"
+# Paths are anchored to the repo so nothing is tied to a particular machine.
+# The root is found by walking up for a marker, not by counting directories, so this
+# works wherever the checkout lives AND wherever the script sits within it.
+def _find_repo_root(start: Path) -> Path:
+    """Walk up from this file to the TLOmodel root, identified by a pyproject.toml
+    sitting next to a resources/ directory. Fails loudly if run outside a checkout."""
+    for p in (start, *start.parents):
+        if (p / "pyproject.toml").is_file() and (p / "resources").is_dir():
+            return p
+    raise RuntimeError(
+        f"Could not locate the TLOmodel root above {start} "
+        "(expected a pyproject.toml next to a resources/ directory).")
+
+
+REPO_ROOT = _find_repo_root(Path(__file__).resolve())
+RESOURCES = REPO_ROOT / "resources"
+RWD = RESOURCES / "ResourceFile_WeatherDisruption"
+
+# Big external climate inputs (raw daily NEX-GDDP netCDFs) and all outputs. These
+# default into the repo, but a collaborator who keeps the raw files elsewhere can
+# override either without editing the script (WBGT_RAW_DIR / WBGT_OUTPUT_DIR).
+WBGT_DIRECTORY = Path(os.environ.get("WBGT_RAW_DIR", RWD / "raw_wbgt_files"))
+OUTPUT_DIR = Path(os.environ.get("WBGT_OUTPUT_DIR", RWD))
+
 WBGT_SCENARIOS = ["ssp126", "ssp245", "ssp585"]
 WBGT_FILE_PREFIX = "wbgt_daynight_"
 
@@ -61,37 +84,24 @@ EXCLUDE_MODELS = {"GISS-E2-1-G"}   # all-NaN WBGT; excluded from ensemble
 DISTANCE_GUARD_KM = 30.0
 ROLLING_WINDOW_DAYS = 5            # window for the WBGT5x index
 
-# Facility registry (projection coordinates + characteristics)
-FACILITIES_CSV = (
-    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/"
-    "climate_change_impacts/facilities_with_lat_long_region.csv"
-)
+# Facility registry = the TLO demography characteristics file (the authoritative set
+# of facility NAMES the simulation assigns, with coordinates + covariates). Demography
+# loads this file index_col=0 then transposes, so facility names are the (transposed)
+# index and every column below is a characteristic. Using this file for both the name
+# set and the covariates makes the panel keys match the simulation by construction.
+FACILITIES_CSV = RESOURCES / "demography" / "ResourceFile_Facility_Characteristics.csv"
 FACILITY_NAME_COL = "Fname"
-FACILITY_LAT_COL = "A109__Latitude"
-FACILITY_LON_COL = "A109__Longitude"
-
-# TLO facility registry — the authoritative set of facility NAMES the simulation
-# assigns people to. Demography loads this file (index_col=0, transposed) and uses
-# the facility name 'Fname' as the level_0..level_3 category, so population.props
-# level_X holds a facility NAME, not a numeric id. The exposure output must be keyed
-# by these exact names so WeatherDisruptions can match facility_used -> disruption.
-TLO_FACILITY_CHARACTERISTICS_CSV = (
-    "/Users/rachelmurray-watson/PycharmProjects/TLOmodel/resources/demography/"
-    "ResourceFile_Facility_Characteristics.csv"
-)
-RESTRICT_TO_TLO_FACILITIES = True
+FACILITY_LAT_COL = "Latitude"
+FACILITY_LON_COL = "Longitude"
 
 RESTRICT_TO_FACILITIES_FILE = None   # optional: a historical panel to restrict to
 
-OUTPUT_DIR = "/Users/rachelmurray-watson/Documents/Heat_data/Thermofeel_WBGT/Indices"
+COVARIATE_COLS = ["zone", "urban_rural", "district", "ownership",
+                  "altitude", "facility_type", "Latitude", "Longitude"]
 
-COVARIATE_COLS = ["Zonename", "Resid", "Dist", "A105", "A114", "A109__Altitude",
-                  "Ftype", "A109__Latitude", "A109__Longitude"]
-
-# Registry district-name corrections -> canonical names
+# District collapse to match TLO's district set. The characteristics file is already
+# clean (no spelling fixes needed); only the Mzimba North/South merge remains.
 DISTRICT_NAME_FIXES = {
-    "Blanytyre": "Blantyre",
-    "Nkhatabay": "Nkhata Bay",
     "Mzimba North": "Mzimba",
     "Mzimba South": "Mzimba",
 }
@@ -162,21 +172,20 @@ def find_model_files(base_dir, scenario):
 # ===========================================================================
 # Facility registry
 # ===========================================================================
-def load_tlo_facility_names(path):
-    """Return the set of facility NAMES the TLO simulation assigns people to.
-    Demography loads this file index_col=0 then transposes, so facility names are
-    the (transposed) index."""
-    tlo = pd.read_csv(path, index_col=0).T
-    tlo.index.name = "Fname"
-    return set(tlo.index.astype(str).str.strip())
-
-
 def load_facilities():
-    """Load the projection facility registry: drop duplicates and facilities without
-    coordinates, optionally restrict to a historical panel, and (by default) align
-    the set to the TLO facility NAMES so every emitted key is one the simulation can
-    assign. Returns (facilities_df, names, lats, lons)."""
-    facilities = pd.read_csv(FACILITIES_CSV).drop_duplicates(FACILITY_NAME_COL)
+    """Load the facility registry from the TLO characteristics file (read transposed,
+    so facility names are the index). Drop duplicates and facilities without
+    coordinates, optionally restrict to a historical panel. Because this IS the file
+    Demography loads, every emitted key is already one the simulation can assign, so
+    no separate TLO-name restriction is needed. Returns (facilities_df, names, lats,
+    lons)."""
+    facilities = pd.read_csv(FACILITIES_CSV, index_col=0).T
+    facilities.index.name = FACILITY_NAME_COL
+    facilities = facilities.reset_index().drop_duplicates(FACILITY_NAME_COL)
+
+    # The transpose makes every column object dtype; coerce the numeric ones.
+    for col in (FACILITY_LAT_COL, FACILITY_LON_COL, "altitude"):
+        facilities[col] = pd.to_numeric(facilities[col], errors="coerce")
 
     if RESTRICT_TO_FACILITIES_FILE:
         hist = pd.read_csv(RESTRICT_TO_FACILITIES_FILE, index_col=0)
@@ -189,21 +198,6 @@ def load_facilities():
     has_coords = facilities[FACILITY_LAT_COL].notna() & facilities[FACILITY_LON_COL].notna()
     facilities = facilities[has_coords].reset_index(drop=True)
 
-    if RESTRICT_TO_TLO_FACILITIES:
-        tlo_names = load_tlo_facility_names(TLO_FACILITY_CHARACTERISTICS_CSV)
-        reg_names = set(facilities[FACILITY_NAME_COL].astype(str).str.strip())
-
-        facilities = facilities[
-            facilities[FACILITY_NAME_COL].astype(str).str.strip().isin(tlo_names)
-        ].reset_index(drop=True)
-
-    n_dropped = len(reg_names - tlo_names)
-    n_missing = len(tlo_names - reg_names)
-    if n_dropped or n_missing:
-        print(
-            f"facility name alignment: {n_dropped} registry facilities not in TLO set (dropped); "
-            f"{n_missing} TLO facilities absent from registry (no WBGT)"
-        )
     names = facilities[FACILITY_NAME_COL].tolist()
     lats = facilities[FACILITY_LAT_COL].astype(float).values
     lons = facilities[FACILITY_LON_COL].astype(float).values
@@ -356,16 +350,16 @@ def build_covariate_table(facilities, avg_accum):
     facility_info_projection.csv."""
     info = facilities.set_index(FACILITY_NAME_COL)[COVARIATE_COLS].copy()
     info.index.name = "facility"
-    info["Dist"] = info["Dist"].replace(DISTRICT_NAME_FIXES)
+    info["district"] = info["district"].replace(DISTRICT_NAME_FIXES)
 
-    coords = info[["A109__Latitude", "A109__Longitude"]].astype(float).values
+    coords = info[["Latitude", "Longitude"]].astype(float).values
     dmat = cdist(coords, coords, metric="euclidean")
     np.fill_diagonal(dmat, np.inf)
 
     min_dist = dmat.min(axis=1)
     info["minimum_distance"] = np.where(np.isfinite(min_dist), min_dist, np.nan)
 
-    is_clinic = (info["Ftype"].astype(str).str.strip() == "Clinic").values
+    is_clinic = (info["facility_type"].astype(str).str.strip() == "Clinic").values
     dmat_clinic = dmat.copy()
     dmat_clinic[:, ~is_clinic] = np.inf
     mind_clinic = dmat_clinic.min(axis=1)
