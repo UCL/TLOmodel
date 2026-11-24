@@ -347,13 +347,13 @@ def test_disruption_probabilities_vary_by_facility():
 
 
 def test_disruption_probabilities_vary_by_month():
-    """Ensures linear model is returning different probabilities for each month"""
+    """Ensures linear model returns different probabilities across months."""
     sim = _make_weather_disruptions_sim_for_probs()
     wd = sim.modules["WeatherDisruptions"]
     df = wd.parameters["projected_precip_disruptions"]
-    first_facility = df["RealFacility_ID"].iloc[0]
-    fac_df = df[(df["RealFacility_ID"] == first_facility) & (df["year"] == 2025)]
-    assert fac_df["disruption"].nunique() > 1
+    d25 = df[df["year"] == 2025]
+    varies = d25.groupby("RealFacility_ID")["disruption"].nunique()
+    assert (varies > 1).any(), "no facility varies by month — monthly signal missing"
 
 
 def test_disruption_probabilities_cover_all_months():
@@ -621,7 +621,7 @@ def _run_mode2_sim_with_disruption_type(seed, tmpdir, prop_supply_side, n_pop=20
 
 
 def test_mode_2_supply_side_reduces_logged_capacity(seed, tmp_path):
-    """Supply-side disruptions should increase logged capacity utilisation compared
+    """Supply-side disruptions should reduce logged capacity utilisation compared
     to demand-side disruptions, because supply-side updates running_total_footprint."""
 
     supply_dir = tmp_path / "supply"
