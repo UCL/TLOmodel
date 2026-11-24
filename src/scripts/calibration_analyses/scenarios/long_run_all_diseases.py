@@ -21,8 +21,8 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 20_000
+        self.end_date = Date(2019, 1, 1)  # The simulation will stop before reaching this date.
+        self.pop_size = 150_000
         self.number_of_draws = 1
         self.runs_per_draw = 10
 
@@ -37,7 +37,16 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                "tlo.methods.contraception": logging.INFO,
+                'tlo.methods.contraception": logging.INFO,
+                'tlo.methods.hiv': logging.INFO,
+                'tlo.methods.tb': logging.INFO,
+                'tlo.methods.malaria': logging.INFO,
+                'tlo.methods.labour': logging.INFO,
+                'tlo.methods.labour.detail': logging.INFO,
+                'tlo.methods.newborn_outcomes': logging.INFO,
+                'tlo.methods.care_of_women_during_pregnancy': logging.INFO,
+                'tlo.methods.pregnancy_supervisor': logging.INFO,
+                'tlo.methods.postnatal_supervisor': logging.INFO,
             }
         }
 
