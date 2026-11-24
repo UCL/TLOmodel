@@ -463,6 +463,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
                                    / "ResourceFile_Consumables_Item_Designations.csv")
     medicine_lookup = item_is_medicine.set_index("Item_Code")["is_medicine"]
     medicine_lookup.loc[2678] = True  # one missing item (Isoniazid/Rifapentine)
+    # medicine_lookup.loc[[127, 160]] = False  # oxygen, Insecticide-treated net, and other non-medicine items
 
     # TLM districts
     common_districts = sorted(TLM_DISTRICTS)
@@ -651,6 +652,65 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         out = _df.groupby(["loc_cat", "Facility_Level"])[["n"] + TLO_MEDS_ACCESS_MEASURES].sum().stack()
         out.index = out.index.set_names(["loc_cat", "Facility_Level", "stat"])
         return out
+
+    # ------------------------------------------------------------------------------------------
+    # Check: low medicine access in outpatient maternity care (main analysis only)
+    # ------------------------------------------------------------------------------------------
+    MATERNAL_OP = "Outpatient - Maternity/Gynaecology"
+
+    def _meds_records(_df, area=None):
+        """Consumables records in one service area (all areas if area is None), keeping medicine items only
+        (same period, districts, levels and service-area mapping as get_meds_access_sums)."""
+        _df = _df.loc[pd.to_datetime(_df["date"]).between(*TARGET_PERIOD)].copy()
+        _df = _df.rename(columns={"event_name": "Event_Name", "facility_id": "Facility_ID",
+                                  "person_id": "Person_ID"})
+        _df = add_loc_cat(restrict_to_tlm(_df))
+        if area is not None:
+            _df = _df.loc[_df["loc_cat"] == area].copy()
+        for col in ("Item_NotAvailable", "Item_Available"):
+            _df[col] = _df[col].apply(
+                lambda d: [c for c in ast.literal_eval(d) if bool(medicine_lookup.get(c, False))])
+        return _df
+
+    def get_meds_maternal_op_by_hsi(_df):
+        """Visits (person, facility, day, as in get_meds_access_sums) with >= 1 medicine requested,
+        and those with no medicine / not all medicines available, by HSI(s) on that day and level."""
+        _df = _meds_records(_df, MATERNAL_OP)
+        v = (_df.groupby(["date", "Person_ID", "Facility_ID", "Facility_Level"])
+             .agg(hsi=("Event_Name", lambda x: " + ".join(sorted(set(x)))),
+                  av=("Item_Available", lambda x: [i for lst in x for i in lst]),
+                  na=("Item_NotAvailable", lambda x: [i for lst in x for i in lst]))
+             .reset_index())
+        v["n_req"] = v["av"].apply(len) + v["na"].apply(len)
+        v = v.loc[v["n_req"] > 0].copy()
+        v["none_available"] = v["av"].apply(len) == 0
+        v["not_all_available"] = v["na"].apply(len) > 0
+        return (v.groupby(["hsi", "Facility_Level"])
+                .agg(n_visits=("n_req", "size"), n_none_available=("none_available", "sum"),
+                     n_not_all_available=("not_all_available", "sum"), sum_meds_requested=("n_req", "sum"))
+                .astype(float).stack())
+
+    def get_meds_items(_df, area=None):
+        """Times each medicine was requested and found available / unavailable,
+        by service area, HSI, treatment and level (one service area, or all if area is None)."""
+        _df = _meds_records(_df, area)
+        parts = []
+        for col, available in (("Item_Available", 1), ("Item_NotAvailable", 0)):
+            parts.append(_df[["loc_cat", "Event_Name", "TREATMENT_ID", "Facility_Level", col]]
+                         .explode(col).dropna(subset=[col])
+                         .rename(columns={col: "item"}).assign(available=available))
+        it = pd.concat(parts)
+        it["item"] = it["item"].astype(int)
+        return (it.groupby(["loc_cat", "Event_Name", "TREATMENT_ID", "Facility_Level", "item", "available"])
+                .size().astype(float))
+
+    def get_meds_maternal_op_by_item(_df):
+        """Outpatient maternity only (as before, now also by service area and treatment)."""
+        return get_meds_items(_df, MATERNAL_OP)
+
+    def get_meds_items_all_areas(_df):
+        """All service areas."""
+        return get_meds_items(_df)
 
     renormalised = set()   # groups where TLO lacked data at a level with TLM weight
 
@@ -924,6 +984,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
             print("Medicine access groups found in only one source (check labels):\n", unmatched)
         cmp_meds = cmp_meds.drop(columns="_merge")
         cmp_meds.to_csv(output_folder / "comparison_medicine_access.csv", index=False)
+
+        # check: low medicine access in outpatient maternity care and other health areas (main analysis only)
+        if analysis == "main":
+            # by HSI: visits with no medicine / all medicines available, and medicines per visit
+            chk_meds = extract_draw0("tlo.methods.healthsystem", "Consumables", get_meds_maternal_op_by_hsi,
+                                     do_scaling=False).fillna(0).mean(axis=1).unstack()
+            chk_meds["pct_none_available"] = 100 * chk_meds["n_none_available"] / chk_meds["n_visits"]
+            chk_meds["pct_all_available"] = 100 * (1 - chk_meds["n_not_all_available"] / chk_meds["n_visits"])
+            chk_meds["mean_meds_requested"] = chk_meds["sum_meds_requested"] / chk_meds["n_visits"]
+            chk_meds.sort_values("n_none_available", ascending=False).round(1).to_csv(
+                output_folder / "check_meds_maternal_op_by_hsi.csv")
+
+            # by medicine, all service areas (one read of the Consumables log)
+            det = extract_draw0("tlo.methods.healthsystem", "Consumables", get_meds_items_all_areas,
+                                do_scaling=False).fillna(0).mean(axis=1)
+            det = det.unstack("available").reindex(columns=[1, 0], fill_value=0)
+            det.columns = ["n_available", "n_unavailable"]
+            det["n_requested"] = det.sum(axis=1)
+            det["pct_unavailable"] = 100 * det["n_unavailable"] / det["n_requested"]
+            det = det.reset_index()
+
+            item_names = (pd.read_csv(resourcefilepath / "healthsystem" / "consumables"
+                                      / "ResourceFile_Consumables_Items_and_Packages.csv")
+                          [["Item_Code", "Items"]].drop_duplicates("Item_Code")
+                          .rename(columns={"Item_Code": "item", "Items": "item_name"}))
+            item_info = item_is_medicine[["Item_Code", "item_category", "is_drug_or_vaccine"]] \
+                .rename(columns={"Item_Code": "item"})
+            det = det.merge(item_names, on="item", how="left").merge(item_info, on="item", how="left")
+            det.round(1).to_csv(output_folder / "check_meds_items_all_areas_detail.csv", index=False)
+
+            # by medicine, outpatient maternity only (same rows as before, taken from the all-areas table)
+            det.loc[det["loc_cat"] == MATERNAL_OP].sort_values("n_unavailable", ascending=False).round(1).to_csv(
+                output_folder / "check_meds_maternal_op_by_item.csv", index=False)
+
+            # by medicine, all areas combined
+            by_item = (det.groupby(["item", "item_name"], dropna=False)
+                       .agg(n_requested=("n_requested", "sum"), n_unavailable=("n_unavailable", "sum"),
+                            service_areas=("loc_cat", lambda x: "; ".join(sorted(set(x)))),
+                            hsis=("Event_Name", lambda x: "; ".join(sorted(set(x)))),
+                            treatments=("TREATMENT_ID", lambda x: "; ".join(sorted(set(x)))))
+                       .reset_index())
+            by_item["pct_unavailable"] = 100 * by_item["n_unavailable"] / by_item["n_requested"]
+            by_item.sort_values("n_requested", ascending=False).round(1).to_csv(
+                output_folder / "check_meds_items_all_areas_by_item.csv", index=False)
 
         meds_idx = cmp_meds.set_index(["category", "subgroup"])
         areas = [a for a in SERVICE_AREA_ORDER if ("Service area", a) in meds_idx.index]
