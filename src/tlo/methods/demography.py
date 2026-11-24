@@ -523,6 +523,7 @@ class Demography(Module):
         # - log the line-list of summary information about each death
         data_to_log_for_each_death = {
             'age': person['age_years'],
+            'age_days': person['age_days'],
             'sex': person['sex'],
             'cause': str(cause),
             'label': self.causes_of_death[cause].label,
@@ -534,6 +535,7 @@ class Demography(Module):
             # If possible, append to the log additional information about pregnancy:
             data_to_log_for_each_death.update({
                 'pregnancy': person['is_pregnant'],
+                'postpartum': person['la_is_postpartum'],
             })
 
         logger.info(key='death', data=data_to_log_for_each_death)
