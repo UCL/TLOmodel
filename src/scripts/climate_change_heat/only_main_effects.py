@@ -587,11 +587,28 @@ def export_tlo_parameters(
         },
     }
 
-    json_filename = f"ResourceFile_WBGT_Parameters_{indicator}.json"
-    with open(f"{out_dir}/{json_filename}", "w") as f:
-        json.dump(parameters, f, indent=2)
-    with open(f"{TLO_RESOURCE_DIR}/{json_filename}", "w") as f:
-        json.dump(parameters, f, indent=2)
+    param_rows = [
+        {"parameter_name": "wbgt_reference", "value": reference_wbgt, "param_label": "structural"},
+        {"parameter_name": "wbgt_clip_lo", "value": lo, "param_label": "structural"},
+        {"parameter_name": "wbgt_clip_hi", "value": hi, "param_label": "structural"},
+    ]
+    if SA_LAG:
+        for lag in LAG_MONTHS:
+            col = f"{WBGT_VAR}_lag{lag}_c"
+            param_rows.append(
+                {
+                    "parameter_name": f"wbgt_coef_lag{lag}",
+                    "value": float(coef[col]) if col in coef.index else 0.0,
+                    "param_label": "local",
+                }
+            )
+
+    params_df = pd.DataFrame(param_rows)
+    params_df["indicator"] = indicator
+    params_df["reference"] = "Murray-Watson et al, 2025"
+    params_csv = f"ResourceFile_WBGT_Parameters_{indicator}.csv"
+    params_df.to_csv(f"{out_dir}/{params_csv}", index=False)
+    params_df.to_csv(f"{TLO_RESOURCE_DIR}/{params_csv}", index=False)
 
     print(
         f"[{indicator}] Exported TLO WBGT response "
