@@ -463,7 +463,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
                                    / "ResourceFile_Consumables_Item_Designations.csv")
     medicine_lookup = item_is_medicine.set_index("Item_Code")["is_medicine"]
     medicine_lookup.loc[2678] = True  # one missing item (Isoniazid/Rifapentine)
-    # medicine_lookup.loc[[127, 160]] = False  # oxygen, Insecticide-treated net, and other non-medicine items
+    medicine_lookup.loc[160] = False  # Insecticide-treated net
+    # medicine_lookup.loc[[127, ...]] = False  # oxygen and other non-medicine items
 
     # TLM districts
     common_districts = sorted(TLM_DISTRICTS)
@@ -996,38 +997,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
             chk_meds.sort_values("n_none_available", ascending=False).round(1).to_csv(
                 output_folder / "check_meds_maternal_op_by_hsi.csv")
 
-            # by medicine, all service areas (one read of the Consumables log)
+            # by medicine: one row per service area, HSI, treatment, level and item (one read of the log);
+            # the all-areas file and the outpatient-maternity file have the same columns
+            COLS = ["loc_cat", "Event_Name", "TREATMENT_ID", "Facility_Level", "item", "n_available", "n_unavailable",
+                    "n_requested", "pct_unavailable", "item_name", "item_category", "is_drug_or_vaccine"]
             det = extract_draw0("tlo.methods.healthsystem", "Consumables", get_meds_items_all_areas,
                                 do_scaling=False).fillna(0).mean(axis=1)
-            det = det.unstack("available").reindex(columns=[1, 0], fill_value=0)
+            det = det.unstack("available", fill_value=0).reindex(columns=[1, 0], fill_value=0)
             det.columns = ["n_available", "n_unavailable"]
             det["n_requested"] = det.sum(axis=1)
             det["pct_unavailable"] = 100 * det["n_unavailable"] / det["n_requested"]
             det = det.reset_index()
-
             item_names = (pd.read_csv(resourcefilepath / "healthsystem" / "consumables"
                                       / "ResourceFile_Consumables_Items_and_Packages.csv")
                           [["Item_Code", "Items"]].drop_duplicates("Item_Code")
                           .rename(columns={"Item_Code": "item", "Items": "item_name"}))
             item_info = item_is_medicine[["Item_Code", "item_category", "is_drug_or_vaccine"]] \
                 .rename(columns={"Item_Code": "item"})
-            det = det.merge(item_names, on="item", how="left").merge(item_info, on="item", how="left")
-            det.round(1).to_csv(output_folder / "check_meds_items_all_areas_detail.csv", index=False)
-
-            # by medicine, outpatient maternity only (same rows as before, taken from the all-areas table)
-            det.loc[det["loc_cat"] == MATERNAL_OP].sort_values("n_unavailable", ascending=False).round(1).to_csv(
+            det = det.merge(item_names, on="item", how="left").merge(item_info, on="item", how="left")[COLS]
+            det = det.sort_values("n_unavailable", ascending=False).round(1)
+            det.to_csv(output_folder / "check_meds_items_all_areas_by_item.csv", index=False)
+            det.loc[det["loc_cat"] == MATERNAL_OP].to_csv(
                 output_folder / "check_meds_maternal_op_by_item.csv", index=False)
 
-            # by medicine, all areas combined
-            by_item = (det.groupby(["item", "item_name"], dropna=False)
+            # summary: one row per item across all areas (where and by which HSIs/treatments it is requested)
+            summary = (det.groupby(["item", "item_name"], dropna=False)
                        .agg(n_requested=("n_requested", "sum"), n_unavailable=("n_unavailable", "sum"),
                             service_areas=("loc_cat", lambda x: "; ".join(sorted(set(x)))),
+                            facility_levels=("Facility_Level", lambda x: "; ".join(sorted(set(map(str, x))))),
                             hsis=("Event_Name", lambda x: "; ".join(sorted(set(x)))),
                             treatments=("TREATMENT_ID", lambda x: "; ".join(sorted(set(x)))))
                        .reset_index())
-            by_item["pct_unavailable"] = 100 * by_item["n_unavailable"] / by_item["n_requested"]
-            by_item.sort_values("n_requested", ascending=False).round(1).to_csv(
-                output_folder / "check_meds_items_all_areas_by_item.csv", index=False)
+            summary["pct_unavailable"] = 100 * summary["n_unavailable"] / summary["n_requested"]
+            summary.sort_values("n_requested", ascending=False).round(1).to_csv(
+                output_folder / "check_meds_items_all_areas_summary.csv", index=False)
 
         meds_idx = cmp_meds.set_index(["category", "subgroup"])
         areas = [a for a in SERVICE_AREA_ORDER if ("Service area", a) in meds_idx.index]
