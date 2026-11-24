@@ -22,14 +22,19 @@ logger_summary.setLevel(logging.INFO)
 # HSI modules with hard clinical deadlines — delay must never push topen past tclose
 TIME_SENSITIVE_MODULES = {'Labour', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes'}
 
-# --- WBGT-driver configuration -------------------------------------------------
-# The WBGT response is read from the regression export (a spline lookup + lag
-# coefficients), applied to a per-facility-month WBGT exposure series. These must
-# match the export (WBGT_VAR, SUFFIX) and the facility-projection output.
+# Seed TREATMENT_ID -> weather service mapping (overridable via parameter/constructor).
+# IPD and the PostnatalWard PNC/IPD overlap are intentionally unresolved — see notes.
+DEFAULT_TREATMENT_SERVICE_MAPPING = {
+    "AntenatalCare_Outpatient": "ANC",
+    "PostnatalCare_Maternal": "PNC",
+    "Contraception_Routine": "FP",
+    "FirstAttendance_NonEmergency": "OPD",
+    "CervicalCancer_Screening_VIA": "CervicalScreening",
+    "CervicalCancer_Screening_Xpert": "CervicalScreening",
+}
+
 WBGT_VAR = "wbgt5x_day"
 WBGT_EXPORT_SUFFIX = "_meonly"     # must match SUFFIX used by export_tlo_parameters
-# tier (ensemble model) -> CMIP6 model id used in the exposure filenames, matching
-# PRECIP_FILE_BY_TIER in the regression pipeline. Keep in sync.
 TIER_TO_MODEL = {
     "lowest": "MPI-ESM1-2-HR",
     "median": "MIROC6",
@@ -41,19 +46,12 @@ class WeatherDisruptions(Module):
     """
     Module to handle climate-mediated disruptions to healthcare services.
 
-    Supports two interchangeable disruption drivers, selected by the
-    ``disruption_driver`` parameter:
-      * "precip" — two linear models (baseline, precipitation) evaluated from
-        explicit coefficients (original behaviour).
-      * "wbgt"   — a WBGT->service response read from the regression export
-        (spline lookup + lag coefficients) applied to a WBGT exposure series.
-    Both drivers populate the same ``projected_precip_disruptions`` table, so all
-    runtime handling (checking HSIs, rescheduling/cancelling, logging) is shared
-    and identical across drivers.
-
-    Note: the WBGT regression controls for precipitation, but that control is held
-    fixed in the exported contrast and cancels, so the "wbgt" driver is heat-only
-    at runtime and does not consume a precipitation coefficient.
+    Two interchangeable disruption drivers, selected by ``disruption_driver``:
+      * "precip" — baseline and precipitation linear models evaluated from coefficients.
+      * "wbgt"   — a per-service WBGT->service response (spline lookup + lag coefficients)
+        applied to a WBGT exposure series.
+    Both populate ``projected_precip_disruptions`` (keyed by facility, year, month, service),
+    so all runtime handling is shared across drivers.
     """
 
     INIT_DEPENDENCIES = {"Demography", "HealthSeekingBehaviour"}
@@ -62,67 +60,65 @@ class WeatherDisruptions(Module):
 
     PARAMETERS = {
         "projected_precip_disruptions": Parameter(
-            Types.REAL, "Disruption probabilities by facility, year and month (whichever driver is active)."
+            Types.REAL, "Disruption probabilities by facility, year, month and service."
         ),
         "disruption_driver": Parameter(
             Types.STRING, "Which climate driver generates disruptions. Options: 'precip', 'wbgt'."
         ),
         "wbgt_response_indicator": Parameter(
             Types.STRING,
-            "For the 'wbgt' driver: which fitted indicator's exported WBGT response to apply "
-            "(selects the tlo_spline_/tlo_parameters_ files), e.g. 'opd_attendance'."
+            "For the 'wbgt' driver: default fitted indicator's exported WBGT response to apply "
+            "when no per-service mapping is given, e.g. 'opd_attendance'."
         ),
         "detailed_disruption_logging": Parameter(
             Types.BOOL,
             "If True, each delayed/cancelled HSI is logged with district, driver, supply/demand "
-            "flag, the scaled disruption probability, and the weather value and model outputs "
-            "that caused it. If False, only the minimal per-event fields are logged."
+            "flag, the scaled disruption probability, and the weather value and model outputs."
         ),
         "scale_factor_prob_disruption": Parameter(
-            Types.REAL,
-            "Due to unknown behaviours (from patient and health practitioner), broken chains of events, etc, which "
-            "cause discrepancies between the estimated disruptions and those modelled in TLO, rescale the original "
-            "probability of disruption.",
+            Types.REAL, "Rescaling of the original probability of disruption."
         ),
         "climate_ssp": Parameter(
-            Types.STRING,
-            "Which future shared socioeconomic pathway (determines degree of warming) is under consideration. "
-            "Options are ssp126, ssp245, and ssp585, in terms of increasing severity.",
+            Types.STRING, "Future SSP under consideration. Options: ssp126, ssp245, ssp585."
         ),
         "climate_model_ensemble_model": Parameter(
-            Types.STRING,
-            "Which model from the model ensemble for each climate ssp is under consideration. "
-            "Options are lowest, mean/median, and highest.",
+            Types.STRING, "Which ensemble member. Options: lowest, mean/median, highest."
         ),
         "year_effective_climate_disruptions": Parameter(
             Types.INT, "Minimum year from which there can be climate disruptions. Minimum is 2025"
         ),
         "services_affected_precip": Parameter(
-            Types.STRING, "Which modelled services can be affected by weather. Options are all, none"
+            Types.STRING, "Master switch for whether services can be affected by weather. Options: all, none"
         ),
         "delay_in_seeking_care_weather": Parameter(
-            Types.REAL,
-            "If faced with a climate disruption, and it is determined the individual will "
-            "reseek healthcare, the number of days of delay in seeking healthcare. "
-            "Scale factor makes it proportional to the urgency.",
+            Types.REAL, "Base number of days of delay in reseeking care after a disruption."
         ),
         "scale_factor_reseeking_healthcare_post_disruption": Parameter(
-            Types.REAL,
-            "If faced with a climate disruption, and it is determined the individual will "
-            "reseek healthcare, scaling of their original probability of seeking care.",
+            Types.REAL, "Scaling of the original probability of seeking care after a disruption."
         ),
         "scale_factor_appointment_urgency": Parameter(
             Types.REAL, "Scale factor in seeking healthcare for how urgent a HSI is."
         ),
         "scale_factor_severity_disruption_and_delay": Parameter(
-            Types.REAL,
-            "Scale factor that changes the delay in reseeking healthcare to the severity of disruption "
-            "(as measured by probability of disruption)",
+            Types.REAL, "Scales the delay in reseeking care to the severity of disruption."
         ),
         "prop_supply_side_disruptions": Parameter(
             Types.REAL,
             "Probability that a climate disruption is supply-side (consumes capabilities in mode 2) "
             "vs demand-side (frees up capabilities in mode 2)."
+        ),
+        "treatment_service_mapping": Parameter(
+            Types.DICT, "Maps HSI TREATMENT_ID -> weather service label used for disruption lookup."
+        ),
+        "wbgt_service_indicators": Parameter(
+            Types.DICT,
+            "For the 'wbgt' driver: {service_label: exported indicator name}, selecting the "
+            "tlo_spline_/tlo_parameters_ files to apply for each service."
+        ),
+        "default_disruption_service": Parameter(
+            Types.STRING,
+            "Service label applied to any TREATMENT_ID not in treatment_service_mapping. "
+            "If empty/None, unmapped treatments are never disrupted."
         ),
         # Baseline model coefficients (precip driver)
         "baseline_coef_intercept": Parameter(Types.REAL, "Baseline model intercept"),
@@ -177,11 +173,13 @@ class WeatherDisruptions(Module):
         scale_factor_severity_disruption_and_delay: Optional[float] = None,
         scale_factor_appointment_urgency: Optional[float] = None,
         prop_supply_side_disruptions: Optional[float] = None,
+        treatment_service_mapping: Optional[dict] = None,
+        wbgt_service_indicators: Optional[dict] = None,
+        default_disruption_service: Optional[str] = None,
     ):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # Constructor arguments are parked here so they can override CSV defaults in read_parameters
         self.arg_disruption_driver = disruption_driver
         self.arg_wbgt_response_indicator = wbgt_response_indicator
         self.arg_detailed_logging = detailed_disruption_logging
@@ -196,6 +194,10 @@ class WeatherDisruptions(Module):
         self.arg_scale_factor_severity = scale_factor_severity_disruption_and_delay
         self.arg_scale_factor_appointment_urgency = scale_factor_appointment_urgency
         self.arg_prop_supply_side = prop_supply_side_disruptions
+        self.arg_treatment_service_mapping = treatment_service_mapping
+        self.arg_wbgt_service_indicators = wbgt_service_indicators
+        self.arg_default_disruption_service = default_disruption_service
+
         self._hsi_checked_count = 0
         self._hsi_checked_by_district: Dict[str, int] = {}
         self._hsi_checked_by_facility_treatment: Dict[str, int] = {}
@@ -203,7 +205,7 @@ class WeatherDisruptions(Module):
         self._reset_monthly_counters_internal()
 
     def _reset_monthly_counters_internal(self):
-        """Initialise or reset all monthly counters (overall, per-district, per-facility×treatment)."""
+        """Initialise or reset all monthly counters."""
         self._disruptions_cancelled_count = 0
         self._disruptions_delayed_count = 0
         self._disruptions_hsi_total_count = 0
@@ -265,6 +267,25 @@ class WeatherDisruptions(Module):
         if self.arg_prop_supply_side is not None:
             self.parameters["prop_supply_side_disruptions"] = self.arg_prop_supply_side
 
+        if self.arg_treatment_service_mapping is not None:
+            self.parameters["treatment_service_mapping"] = self.arg_treatment_service_mapping
+        elif not self.parameters.get("treatment_service_mapping"):
+            self.parameters["treatment_service_mapping"] = dict(DEFAULT_TREATMENT_SERVICE_MAPPING)
+
+        if self.arg_wbgt_service_indicators is not None:
+            self.parameters["wbgt_service_indicators"] = self.arg_wbgt_service_indicators
+
+        if self.arg_default_disruption_service is not None:
+            self.parameters["default_disruption_service"] = self.arg_default_disruption_service
+
+        self._treatment_to_service = dict(self.parameters["treatment_service_mapping"])
+        _d = self.parameters.get("default_disruption_service")
+        self._default_disruption_service = None if _d in ("", None) else _d
+        self._services = sorted(
+            set(self._treatment_to_service.values())
+            | ({self._default_disruption_service} if self._default_disruption_service else set())
+        )
+
         year_param = self.parameters.get("year_effective_climate_disruptions")
         if year_param is None or pd.isna(year_param) or year_param < 2025:
             self.parameters["year_effective_climate_disruptions"] = 2025
@@ -279,12 +300,7 @@ class WeatherDisruptions(Module):
             self._read_wbgt_inputs(resourcefilepath)
 
     def _read_precip_inputs(self, resourcefilepath) -> None:
-        """Load the precipitation model coefficients, exposure files and facility
-        characteristics (precip driver)."""
-        # Precip model coefficients live in their own resource file — symmetric with the
-        # WBGT driver (whose coefficients live in the exported JSON), keeping parameter_values
-        # to the shared behavioural parameters only. Loaded here (precip driver only) into the
-        # same baseline_coef_*/precipitation_coef_* parameter keys build_linear_models reads.
+        """Load precipitation coefficients, exposure files and facility characteristics."""
         self.load_parameters_from_dataframe(
             read_csv_files(
                 resourcefilepath / 'ResourceFile_WeatherDisruption',
@@ -316,24 +332,29 @@ class WeatherDisruptions(Module):
         )
 
     def _read_wbgt_inputs(self, resourcefilepath) -> None:
-        """Load the exported WBGT response (spline lookup + metadata) and the WBGT
-        exposure series for the selected scenario/tier (wbgt driver)."""
+        """Load the exported per-service WBGT responses and the WBGT exposure series."""
         ssp = self.parameters["climate_ssp"]
         tier = self.parameters["climate_model_ensemble_model"]
-        indicator = self.parameters["wbgt_response_indicator"]
 
         rf_dir = resourcefilepath / 'ResourceFile_WeatherDisruption'
 
-        spline_path = rf_dir / f"tlo_spline_{indicator}_{WBGT_VAR}{WBGT_EXPORT_SUFFIX}.csv"
-        params_path = rf_dir / f"tlo_parameters_{indicator}_{WBGT_VAR}{WBGT_EXPORT_SUFFIX}.json"
-        if not spline_path.exists():
-            raise FileNotFoundError(f"WBGT spline lookup not found: {spline_path}")
-        if not params_path.exists():
-            raise FileNotFoundError(f"WBGT parameters JSON not found: {params_path}")
+        service_indicators = self.parameters.get("wbgt_service_indicators") or {
+            s: self.parameters["wbgt_response_indicator"] for s in self._services
+        }
 
-        self._wbgt_spline_lookup = pd.read_csv(spline_path)
-        with open(params_path) as f:
-            self._wbgt_export = json.load(f)
+        self._wbgt_spline_lookup = {}
+        self._wbgt_export = {}
+        for service, indicator in service_indicators.items():
+            spline_path = rf_dir / f"tlo_spline_{indicator}_{WBGT_VAR}{WBGT_EXPORT_SUFFIX}.csv"
+            params_path = rf_dir / f"tlo_parameters_{indicator}_{WBGT_VAR}{WBGT_EXPORT_SUFFIX}.json"
+            if not spline_path.exists():
+                raise FileNotFoundError(f"WBGT spline lookup not found for {service}: {spline_path}")
+            if not params_path.exists():
+                raise FileNotFoundError(f"WBGT parameters JSON not found for {service}: {params_path}")
+            self._wbgt_spline_lookup[service] = pd.read_csv(spline_path)
+            with open(params_path) as f:
+                self._wbgt_export[service] = json.load(f)
+        self._wbgt_service_indicators = service_indicators
 
         model_id = TIER_TO_MODEL.get(tier, tier)
         exposure_path = rf_dir / f"wbgt_extreme_indices_facility_{model_id}_{ssp}.csv"
@@ -410,7 +431,6 @@ class WeatherDisruptions(Module):
         else:
             self._build_wbgt_disruptions()
 
-    # Linear model construction (precip driver)
     def build_linear_models(self):
         p = self.parameters
 
@@ -460,6 +480,7 @@ class WeatherDisruptions(Module):
         )
 
     def _build_precip_disruptions(self):
+        """Precip driver: single response replicated across all services for a uniform lookup."""
         p = self.parameters
         self.build_linear_models()
 
@@ -562,29 +583,29 @@ class WeatherDisruptions(Module):
         deficit = pred_baseline - pred_precip
         prob_disruption = np.where(
             pred_baseline > 0,
-            np.clip(deficit / pred_baseline, 0, 1),  # clipped in ANC paper as not interested in increase
+            np.clip(deficit / pred_baseline, 0, 1),  # deficits only
             0,
         )
 
-        facility_month_df['service'] = p["services_affected_precip"]
-        facility_month_df['disruption'] = prob_disruption
-        facility_month_df['pred_baseline'] = pred_baseline
-        facility_month_df['pred_precip'] = pred_precip
-        facility_month_df['driver_value'] = facility_month_df['precip_monthly']  # weather value for logging
+        base = facility_month_df[["RealFacility_ID", "year", "month"]].copy()
+        base["disruption"] = prob_disruption
+        base["pred_baseline"] = pred_baseline
+        base["pred_precip"] = pred_precip
+        base["driver_value"] = facility_month_df["precip_monthly"].values
 
-        self.parameters["projected_precip_disruptions"] = facility_month_df[[
-            'RealFacility_ID', 'year', 'month', 'service', 'disruption',
-            'pred_baseline', 'pred_precip', 'driver_value'
-        ]].copy()
+        services = self._services or [p["services_affected_precip"]]
+        self.parameters["projected_precip_disruptions"] = pd.concat(
+            [base.assign(service=s) for s in services], ignore_index=True
+        )[[
+            "RealFacility_ID", "year", "month", "service", "disruption",
+            "pred_baseline", "pred_precip", "driver_value"
+        ]]
 
     def _build_wbgt_disruptions(self):
-        """WBGT driver: apply the exported spline/lag response to the WBGT exposure
-        series to produce a deficits-only disruption fraction per facility-month."""
+        """WBGT driver: apply each service's exported spline/lag response to the WBGT
+        exposure series, producing a deficits-only disruption fraction per facility-month-service."""
         p = self.parameters
         exposure = p["wbgt_exposure_data"].copy()
-        export = self._wbgt_export
-        lookup = self._wbgt_spline_lookup
-
         lag1_col = f"{WBGT_VAR}_lag1"
         required = ["facility", "date", WBGT_VAR, lag1_col]
         missing = [c for c in required if c not in exposure.columns]
@@ -598,56 +619,53 @@ class WeatherDisruptions(Module):
             exposure["year"] >= int(p["year_effective_climate_disruptions"])
         ].reset_index(drop=True)
 
+        frames = []
+        for service in self._wbgt_service_indicators:
+            disruption, rate_ratio, wbgt_now = self._wbgt_response(
+                exposure, self._wbgt_export[service], self._wbgt_spline_lookup[service]
+            )
+            out = exposure[["facility", "year", "month"]].rename(columns={"facility": "RealFacility_ID"}).copy()
+            out["service"] = service
+            out["disruption"] = disruption
+            out["pred_baseline"] = np.nan   # not defined for the within-weather WBGT contrast
+            out["pred_precip"] = rate_ratio  # exported rate ratio, for audit
+            out["driver_value"] = wbgt_now
+            frames.append(out)
+
+        self.parameters["projected_precip_disruptions"] = pd.concat(frames, ignore_index=True)[[
+            "RealFacility_ID", "year", "month", "service", "disruption",
+            "pred_baseline", "pred_precip", "driver_value"
+        ]]
+
+    def _wbgt_response(self, exposure, export, lookup):
+        """Return (disruption, rate_ratio, wbgt_now) arrays for one service's exported response."""
         reference_wbgt = float(export["reference_wbgt"])
-        clip_lo = float(export["operational_wbgt_clip"]["lower"])
-        clip_hi = float(export["operational_wbgt_clip"]["upper"])
-        clip_enabled = bool(export["operational_wbgt_clip"]["enabled"])
+        clip = export["operational_wbgt_clip"]
         lag_coefs = {int(k): float(v) for k, v in export["lags"]["coefficients"].items()}
 
         wbgt_now = exposure[WBGT_VAR].to_numpy(dtype=float)
-        wbgt_lag1 = exposure[lag1_col].to_numpy(dtype=float)
-        if clip_enabled:
-            wbgt_now = np.clip(wbgt_now, clip_lo, clip_hi)
-            wbgt_lag1 = np.clip(wbgt_lag1, clip_lo, clip_hi)
+        wbgt_lag1 = exposure[f"{WBGT_VAR}_lag1"].to_numpy(dtype=float)
+        if bool(clip["enabled"]):
+            wbgt_now = np.clip(wbgt_now, float(clip["lower"]), float(clip["upper"]))
+            wbgt_lag1 = np.clip(wbgt_lag1, float(clip["lower"]), float(clip["upper"]))
 
-        # Spline contribution: interpolate spline_log_effect on wbgt (np.interp clamps
-        # outside the lookup range, giving flat-beyond-support behaviour).
         grid_x = lookup["wbgt"].to_numpy(dtype=float)
         grid_y = lookup["spline_log_effect"].to_numpy(dtype=float)
         order = np.argsort(grid_x)
         grid_x, grid_y = grid_x[order], grid_y[order]
-        log_rr = np.interp(wbgt_now, grid_x, grid_y)
 
-        # Lag contribution: beta_lag * (lagged WBGT - reference); the fitted centring cancels.
-        beta_lag1 = lag_coefs.get(1, 0.0)
-        log_rr = log_rr + beta_lag1 * (wbgt_lag1 - reference_wbgt)
-
+        log_rr = np.interp(wbgt_now, grid_x, grid_y) + lag_coefs.get(1, 0.0) * (wbgt_lag1 - reference_wbgt)
         rate_ratio = np.exp(log_rr)
-        disruption = np.clip(1.0 - rate_ratio, 0.0, 1.0)  # deficits only
-
-        out = exposure[["facility", "year", "month"]].copy()
-        out = out.rename(columns={"facility": "RealFacility_ID"})
-        out["service"] = p["services_affected_precip"]
-        out["disruption"] = disruption
-        out["pred_baseline"] = np.nan   # not defined for the within-weather WBGT contrast
-        out["pred_precip"] = rate_ratio  # exported rate ratio, for audit
-        out["driver_value"] = wbgt_now  # WBGT value for logging
-
-        self.parameters["projected_precip_disruptions"] = out[[
-            "RealFacility_ID", "year", "month", "service", "disruption",
-            "pred_baseline", "pred_precip", "driver_value"
-        ]].copy()
+        return np.clip(1.0 - rate_ratio, 0.0, 1.0), rate_ratio, wbgt_now
 
     # ----------------------------------------------------------------------
     # Runtime — shared across drivers
     # ----------------------------------------------------------------------
-    def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date) -> bool:
+    def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date):
         """
         Check if an HSI event should be disrupted due to climate/weather conditions.
-        Returns True if the event was disrupted (and should not proceed), False otherwise.
-
-        Also checks if the disruption was supply- or demand-side. Returns False if demand side.
-        (Needed for Mode 2 Capabilities.)
+        Returns (disrupted, is_supply_side). disrupted is True if the event was disrupted
+        (and should not proceed); is_supply_side distinguishes supply- vs demand-side (mode 2).
         """
         year = current_date.year
         month = current_date.month
@@ -664,27 +682,27 @@ class WeatherDisruptions(Module):
         district = self.sim.population.props.at[person_id, "district_of_residence"]
         treatment_id = getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown")
 
+        service = self._treatment_to_service.get(treatment_id, self._default_disruption_service)
+        if service is None:
+            return False, False  # treatment not weather-affected
+
         if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
             return False, False
-        self._hsi_checked_count += 1
 
+        self._hsi_checked_count += 1
         self._increment_district_counter(self._hsi_checked_by_district, str(district))
         self._increment_facility_treatment_counter(
             self._hsi_checked_by_facility_treatment, str(facility_used), str(treatment_id)
         )
+
         prob_disruption = self._get_disruption_probability(
-            facility_id=facility_used,
-            year=year,
-            month=month,
-            service=self.parameters["services_affected_precip"],
+            facility_id=facility_used, year=year, month=month, service=service,
         )
 
         if self.rng.binomial(1, prob_disruption) == 0:
             return False, False
 
-        event_detail = self._get_event_detail(
-            facility_used, year, month, self.parameters["services_affected_precip"]
-        )
+        event_detail = self._get_event_detail(facility_used, year, month, service)
 
         is_supply_side = self._handle_disruption(
             hsi_event_item=hsi_event_item,
@@ -699,7 +717,7 @@ class WeatherDisruptions(Module):
         return True, is_supply_side
 
     def _get_disruption_probability(self, facility_id, year: int, month: int, service: str) -> float:
-        """Look up and scale the disruption probability for a given facility/year/month/service."""
+        """Look up and scale the disruption probability for a facility/year/month/service."""
         disruption_probs = self.parameters["projected_precip_disruptions"]
         mask = (
             (disruption_probs["RealFacility_ID"] == facility_id)
@@ -708,11 +726,12 @@ class WeatherDisruptions(Module):
             & (disruption_probs["service"] == service)
         )
         prob = disruption_probs.loc[mask, "disruption"]
+        if prob.empty:
+            return 0.0
         return min(float(prob.iloc[0]) * self.parameters["scale_factor_prob_disruption"], 1.0)
 
     def _get_event_detail(self, facility_id, year: int, month: int, service: str) -> Dict:
-        """Extra per-event fields (weather value + model outputs) for detailed logging.
-        Returns {} if detailed logging is off or the row is absent."""
+        """Extra per-event fields for detailed logging. Returns {} if off or row absent."""
         if not self.parameters.get("detailed_disruption_logging", False):
             return {}
         t = self.parameters["projected_precip_disruptions"]
@@ -744,7 +763,7 @@ class WeatherDisruptions(Module):
         treatment_id: str,
         event_detail: Optional[Dict] = None,
     ):
-        """Handle a disruption: determine supply/demand side, rescheduled, or cancelled """
+        """Handle a disruption: determine supply/demand side, then reschedule or cancel."""
         event_detail = dict(event_detail or {})
         is_supply_side = bool(self.rng.binomial(1, self.parameters["prop_supply_side_disruptions"]))
 
@@ -762,7 +781,6 @@ class WeatherDisruptions(Module):
             self._increment_facility_treatment_counter(self._demand_side_by_facility_treatment, facility_id,
                                                        treatment_id)
 
-        # Fields attached to each event when detailed logging is on
         if event_detail:
             event_detail.update({
                 "district": district,
@@ -837,11 +855,8 @@ class WeatherDisruptions(Module):
         prob_disruption: float,
         current_date: Date,
     ) -> int:
-        """
-        Calculate the delay in days for rescheduling after a disruption.
-        For time-sensitive modules the delay is capped so that the new topen never
-        exceeds the original tclose.
-        """
+        """Days of delay for rescheduling. For time-sensitive modules the delay is capped
+        so the new topen never exceeds the original tclose."""
         base_delay = int(
             max(self.parameters["scale_factor_appointment_urgency"] * hsi_event_item.priority, 1)
             * prob_disruption
@@ -849,8 +864,6 @@ class WeatherDisruptions(Module):
             * self.parameters["delay_in_seeking_care_weather"]
         )
 
-        # Add the original appointment window width so the reschedule opens after the
-        # disrupted window closes rather than potentially overlapping with it
         window_days = (hsi_event_item.tclose - hsi_event_item.topen).days
         delay_days = max(0, base_delay + window_days)
 
