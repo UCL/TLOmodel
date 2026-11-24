@@ -126,9 +126,12 @@ HARD_CEILINGS = { # based on visual inspection of data
 
     "vmmc_first_visits": 7000,
 }
+# --- for saving model design and coefficients ---
+TLO_RESOURCE_DIR = "/Users/rachelmurray-watson/Desktop/tlo_wbgt_resources"
+os.makedirs(TLO_RESOURCE_DIR, exist_ok=True)
 
 # --- Only-deficits toggle --------------------------------------------------
-ONLY_DEFICITS = False
+ONLY_DEFICITS = True
 SUFFIX = "_onlydeficits" if ONLY_DEFICITS else ""
 
 # --- Spline df sensitivity sweep ------------------------------------------
@@ -485,8 +488,9 @@ def export_tlo_parameters(
     ):
         raise RuntimeError("Spline lookup failed its reference-WBGT validation.")
 
-    spline_filename = f"tlo_spline_{indicator}_{WBGT_VAR}{SUFFIX}.csv"
+    spline_filename = f"ResourceFile_WBGT_Spline_{indicator}.csv"
     spline_table.to_csv(f"{out_dir}/{spline_filename}", index=False)
+    spline_table.to_csv(f"{TLO_RESOURCE_DIR}/{spline_filename}", index=False)
 
     # Lag coefficients are exported separately because their contribution
     # depends on the facility's actual lagged WBGT history in TLO.
@@ -583,8 +587,10 @@ def export_tlo_parameters(
         },
     }
 
-    json_filename = f"tlo_parameters_{indicator}_{WBGT_VAR}{SUFFIX}.json"
+    json_filename = f"ResourceFile_WBGT_Parameters_{indicator}.json"
     with open(f"{out_dir}/{json_filename}", "w") as f:
+        json.dump(parameters, f, indent=2)
+    with open(f"{TLO_RESOURCE_DIR}/{json_filename}", "w") as f:
         json.dump(parameters, f, indent=2)
 
     print(
