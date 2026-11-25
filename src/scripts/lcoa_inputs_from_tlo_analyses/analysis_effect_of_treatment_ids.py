@@ -1,72 +1,29 @@
 """Extract LCOA inputs and sanity-check calculations into one results pickle."""
 
-import warnings
-from time import perf_counter
-from pandas.errors import (
-    PerformanceWarning,
-    SettingWithCopyWarning
-)
 import argparse
-from datetime import date
 import pickle
+from datetime import date
 from pathlib import Path
+
 import pandas as pd
 
-
-from tlo import Date
-
-
+from scripts.costing.cost_estimation import apply_discounting_to_cost_data, estimate_input_cost_of_scenarios
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
-    format_scenario_name,
-    get_counts_of_hsi_by_short_treatment_id,
-    get_num_dalys_by_cause_label,
-    get_num_deaths_by_cause_label,
-    get_parameter_names_from_scenario_file,
-    get_periods_within_target_period,
-    get_total_num_dalys_by_agegrp_and_label,
-    get_total_num_death_by_agegrp_and_label,
-    get_total_population_by_year,
-    make_get_num_dalys_by_cause_label_and_period,
-    make_get_num_deaths_by_cause_label_and_period,
-    make_get_counts_of_appts_by_period,
-    make_get_counts_of_hsis_by_period,
-    set_param_names_as_column_index_level_0,
-    target_period,
     find_difference_extra_relative_to_comparison,
     find_difference_relative_to_comparison,
-    get_staff_count_by_facid_and_officer_type,
+    format_scenario_name,
     get_capacity_used_by_officer_type_and_facility_level,
-    melt_model_output_draws_and_runs
+    get_counts_of_hsi_by_short_treatment_id,
+    get_parameter_names_from_scenario_file,
+    get_total_population_by_year,
+    make_get_counts_of_hsis_by_period,
+    make_get_num_dalys_by_cause_label_and_period,
+    make_get_num_deaths_by_cause_label_and_period,
+    set_param_names_as_column_index_level_0,
 )
-
-from scripts.costing.cost_estimation import (
-    apply_discounting_to_cost_data,
-    do_line_plot_of_cost,
-    do_stacked_bar_plot_of_cost_by_category,
-    estimate_input_cost_of_scenarios,
-    estimate_projected_health_spending,
-    extract_roi_at_specific_implementation_costs,
-    generate_multiple_scenarios_roi_plot,
-    load_unit_cost_assumptions,
-    summarize_cost_data,
-    tabulate_roi_estimates,
-)
-from tlo.analysis.utils import (
-    compute_summary_statistics,
-    extract_results,
-    get_color_short_treatment_id,
-    make_age_grp_lookup,
-    summarize,
-)
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z figs/ --target-start=2010-01-01 --target-end=2025-12-31
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z figs/ --target-start=2025-01-01 --target-end=2041-01-01
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-04-01T130709Z --target-start=2010-01-01 --target-end=2041-01-01 --do-comparison=False
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-combined outputs/generated_outputs --target-start=2026-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=True
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-10-runs-combined outputs/generated_outputs --target-start=2010-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=10runstest --load-input-costs-from-checkpoint=True
-#python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z outputs/generated_outputs --target-start=2026-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=resumed-runs-only --load-input-costs-from-checkpoint=False
-#python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-09-12T063913Z --target-start=2026-01-01 --target-end=2040-01-01 --do-comparison=False
-# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-15T115126Z outputs/generated_outputs --target-start=2026-01-01 --target-end=2040-12-31 --cost-checkpoint-profile=baseline --load-input-costs-from-checkpoint=False
-
+from tlo import Date
+from tlo.analysis.utils import compute_summary_statistics, extract_results
+# python src/scripts/lcoa_inputs_from_tlo_analyses/analysis_effect_of_treatment_ids.py outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-15T115126Z outputs/generated_outputs --target-start=2026-01-01 --target-end=2040-12-31
 # Do not exclude FirstAttendance_SpuriousEmergencyCare as it has non-blank
 # appointment footprint
 EXCLUDED_HSIs = [
@@ -75,8 +32,9 @@ EXCLUDED_HSIs = [
     "Inpatient_Care"
 ]
 SUSPENDED_RESULTS_FOLDER = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-09T145410Z")
-RESUMED_RESULTS_FOLDER = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-10-15T115126Z")
 YEAR_OF_SWITCH = 2026
+COST_END_YEAR = 2040
+DISCOUNT_RATE = 0.03
 
 def parse_iso_date(value: str) -> Date:
     parsed = date.fromisoformat(value)
@@ -95,21 +53,60 @@ def parse_bool(value: str) -> bool:
 # source: http://doi.org/https://doi.org/10.1016/j.vhri.2023.10.007
 MALAWI_CET = 65.8
 
-def apply(
+def analysis_metadata(target_period_tuple):
+    return {
+        "target_period": tuple(date.isoformat() for date in target_period_tuple),
+        "discount_rate": DISCOUNT_RATE,
+        "cost_years": (YEAR_OF_SWITCH, COST_END_YEAR),
+        "cost_effectiveness_threshold": MALAWI_CET,
+    }
+
+
+def match_baseline(scenarios: pd.DataFrame, baseline: pd.DataFrame) -> pd.DataFrame:
+    """Broadcast the Nothing draw to scenario columns by original run ID."""
+    matched = baseline.reindex(index=scenarios.index, columns=scenarios.columns.get_level_values("run"))
+    return matched.set_axis(scenarios.columns, axis=1)
+
+
+def process_scenarios(
     results_folder: Path,
-    output_folder: Path,
     resourcefilepath: Path,
     target_period_tuple: tuple[Date, Date],
+    param_names: tuple[str, ...],
     do_comparison: bool = True,
+    *,
+    nothing_by_run: dict | None = None,
+    runs: set[int] | None = None,
+    suspended_results_folder: Path = SUSPENDED_RESULTS_FOLDER,
 ):
-    """Process results to produce objects needed for LCOA analysis."""
-    _, age_grp_lookup = make_age_grp_lookup()
+    """Extract and summarise scenario metrics using an internal or exported baseline."""
+    run_ids = sorted(runs) if runs is not None else None
+
+    def extract(**kwargs):
+        data = extract_results(
+            results_folder, suspended_results_folder=suspended_results_folder, run_ids=run_ids, **kwargs
+        )
+        data = set_param_names_as_column_index_level_0(data, param_names)
+        if runs is not None:
+            expected = pd.MultiIndex.from_product(
+                ([format_scenario_name(name) for name in param_names], run_ids), names=["draw", "run"]
+            )
+            missing = expected.difference(data.columns)
+            if len(missing):
+                raise ValueError(f"Missing {kwargs['key']} data for draw/run pairs {missing.tolist()}.")
+            data = data.reindex(columns=expected)
+        return data
+
+    def with_nothing(data, key, *, fill_value=None):
+        if nothing_by_run is None:
+            return data
+        baseline = nothing_by_run[key].loc[:, run_ids]
+        combined = pd.concat([data, pd.concat({"Nothing": baseline}, axis=1, names=["draw"])], axis=1)
+        return combined.fillna(fill_value) if fill_value is not None else combined
 
     # Extract districts and facility levels from the Master Facility List
     mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
     facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
-
-    param_names = get_parameter_names_from_scenario_file()
 
     get_num_dalys_by_cause_label_and_period = (
         make_get_num_dalys_by_cause_label_and_period(target_period_tuple,)
@@ -124,14 +121,12 @@ def apply(
     # Get total population by year
     print("Extracting population data...")
     total_population_by_year = (
-        extract_results(
-            results_folder,
+        extract(
             module='tlo.methods.demography',
             key='population',
             custom_generate_series=lambda _df: get_total_population_by_year(_df, target_period_tuple),
             do_scaling=True,
-            suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        )
     )
 
     cols_to_drop = [
@@ -142,56 +137,53 @@ def apply(
     print(f"Dropping columns from total_population_by_year: {cols_to_drop}")
     total_population_by_year.drop(columns=cols_to_drop, inplace=True)
 
+    total_population_by_year = with_nothing(total_population_by_year, "total_population_by_year")
     results['total_population_by_year'] = (
         compute_summary_statistics(total_population_by_year, central_measure='median')
     )
 
     print("Extracting HSI event counts...")
     counts_of_hsi_by_short_treatment_id = (
-        extract_results(
-            results_folder,
+        extract(
             module="tlo.methods.healthsystem.summary",
             key="HSI_Event",
             custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, target_period_tuple),
             do_scaling=True,
-            suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
         )
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
         .sort_index()
     ).drop(EXCLUDED_HSIs, errors='ignore')
 
+    counts_of_hsi_by_short_treatment_id = with_nothing(
+        counts_of_hsi_by_short_treatment_id, "counts_of_hsi_by_short_treatment_id", fill_value=0.0
+    )
     results['counts_of_hsi_by_short_treatment_id'] = (
         compute_summary_statistics(counts_of_hsi_by_short_treatment_id, 'median')
     )
     counts_of_hsi_by_period = (
-        extract_results(
-            results_folder,
+        extract(
             module="tlo.methods.healthsystem.summary",
             key="HSI_Event",
             custom_generate_series=lambda _df: get_num_hsi_by_period(_df),
             do_scaling=True,
-            suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
         )
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
         .sort_index()
     ).drop(columns=cols_to_drop)
 
+    counts_of_hsi_by_period = with_nothing(counts_of_hsi_by_period, "counts_of_hsi_by_period", fill_value=0.0)
     results['counts_of_hsi_by_period'] = (
         compute_summary_statistics(counts_of_hsi_by_period, 'median')
     )
 
     print("Extracting DALYs by label...")
     dalys = (
-        extract_results(
-            results_folder,
+        extract(
             module="tlo.methods.healthburden",
             key="dalys_stacked_by_age_and_time",
             custom_generate_series=get_num_dalys_by_cause_label_and_period,
             do_scaling=True,
-            suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        )
     )
 
     dalys = dalys.drop(columns=cols_to_drop)
@@ -209,17 +201,19 @@ def apply(
     # CervicalCancer_PalliativeCare but because these are triggered by other
     # treatment ids (not available from 2026), we will see 0 HSIs from 2027
     # onwards.
-    implementation_counts = counts_of_hsi_by_period.loc[
-        (counts_of_hsi_by_period.index.get_level_values("period").astype(int) >= YEAR_OF_SWITCH)
-        & ~counts_of_hsi_by_period.index.get_level_values("appt_type").str.startswith(
-            ("FirstAttendance_", "Inpatient_Care")
-        )
-    ]
+    zero_hsi_scenarios = []
+    if nothing_by_run is None:
+        implementation_counts = counts_of_hsi_by_period.loc[
+            (counts_of_hsi_by_period.index.get_level_values("period").astype(int) >= YEAR_OF_SWITCH)
+            & ~counts_of_hsi_by_period.index.get_level_values("appt_type").str.startswith(
+                ("FirstAttendance_", "Inpatient_Care")
+            )
+        ]
 
-    zero_hsi_by_run = implementation_counts.eq(0).all()
-    zero_hsi_scenarios = zero_hsi_by_run.groupby(level="draw").all()
-    zero_hsi_scenarios = zero_hsi_scenarios.index[zero_hsi_scenarios].drop("Nothing", errors="ignore")
-    print(f"Zero HSI scenarios {zero_hsi_scenarios}")
+        zero_hsi_by_run = implementation_counts.eq(0).all()
+        zero_hsi_scenarios = zero_hsi_by_run.groupby(level="draw").all()
+        zero_hsi_scenarios = zero_hsi_scenarios.index[zero_hsi_scenarios].drop("Nothing", errors="ignore")
+        print(f"Zero HSI scenarios {zero_hsi_scenarios}")
     if len(zero_hsi_scenarios):
         baseline_dalys = dalys.xs("Nothing", axis=1, level="draw")
         for draw in zero_hsi_scenarios:
@@ -241,17 +235,16 @@ def apply(
 
     print("Extracting deaths by cause and period...")
     num_deaths = (
-        extract_results(
-            results_folder,
+        extract(
             module="tlo.methods.demography",
             key="death",
             custom_generate_series=get_num_deaths_by_cause_label_and_period,
             do_scaling=True,
-            suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
+        )
     )
 
     num_deaths = num_deaths.drop(columns=cols_to_drop, errors='ignore')
+    num_deaths = with_nothing(num_deaths, "num_deaths", fill_value=0.0)
 
     if do_comparison:
         num_deaths_averted = compute_summary_statistics(
@@ -275,29 +268,49 @@ def apply(
     results['num_deaths_averted'] = num_deaths_averted
     results['pc_deaths_averted'] = pc_deaths_averted
 
-    discount_rate_dalys = 0.03
+    discount_rate_dalys = DISCOUNT_RATE
     dalys_years = dalys.index.get_level_values("period").astype(int)
-    discount_base_year = dalys_years.min()
+    discount_base_year = (
+        dalys_years.min() if nothing_by_run is None else nothing_by_run["daly_discount_base_year"]
+    )
     discounted_dalys = dalys.div(
         (1.0 + discount_rate_dalys) ** (dalys_years - discount_base_year),
         axis=0,
     )
+
+    discounted_dalys = with_nothing(discounted_dalys, "discounted_dalys")
+    if nothing_by_run is not None:
+        by_cause = discounted_dalys.groupby(level="label").sum(min_count=1)
+        scenario_causes = by_cause.drop(columns="Nothing", level="draw")
+        baseline_causes = by_cause.xs("Nothing", axis=1, level="draw")
+        matched_causes = match_baseline(scenario_causes, baseline_causes)
+        cause_differences = matched_causes - scenario_causes
+        results["dalys_averted_by_cause"] = compute_summary_statistics(cause_differences, "median")
+        cause_ratios = scenario_causes.div(matched_causes.where(matched_causes.ne(0)))
+        cause_differences.loc["All causes"] = cause_differences.sum(min_count=1)
+        baseline_totals = matched_causes.sum(min_count=1)
+        cause_ratios.loc["All causes"] = scenario_causes.sum(min_count=1).div(
+            baseline_totals.where(baseline_totals.ne(0))
+        )
+        results["dalys_averted_by_cause_by_run"] = cause_differences
+        results["dalys_ratio_by_cause_by_run"] = cause_ratios
 
     results['discounted_dalys'] = (
         compute_summary_statistics(discounted_dalys, central_measure='median'))
 
     # Costs calculation
     print("Calculating costs...")
-    discount_rate_cost = 0.03
+    discount_rate_cost = DISCOUNT_RATE
     # Period relevant for costing
-    TARGET_PERIOD = (Date(YEAR_OF_SWITCH, 1, 1), Date(2040, 12, 31))
+    TARGET_PERIOD = (Date(YEAR_OF_SWITCH, 1, 1), Date(COST_END_YEAR, 12, 31))
     relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
     list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
     print("List of relevant years for costing:", list_of_relevant_years_for_costing)
     input_costs = estimate_input_cost_of_scenarios(
         results_folder,
         resourcefilepath,
-        suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
+        suspended_results_folder=suspended_results_folder,
+        _runs=run_ids,
         _years=list_of_relevant_years_for_costing,
         cost_only_used_staff=True,
         _discount_rate=discount_rate_cost,
@@ -313,20 +326,27 @@ def apply(
     input_costs.drop(columns=["draw"], inplace=True)
     input_costs.rename(columns={"draw_name": "draw"}, inplace=True)
     results['input_costs'] = input_costs
+    if nothing_by_run is not None:
+        results["input_costs"] = pd.concat(
+            [input_costs, nothing_by_run["input_costs"].loc[lambda data: data["run"].isin(runs)]],
+            ignore_index=True,
+        )
 
     # Capacity_By_FacID_and_Officer logs the fraction of time used per officer
     # type.
     # To get the actual minutes, we multiply by the total available minutes.
     print("Extracting capacity fractions with clinic and facility identifiers...")
     # Set do_scaling to False as this is a fraction calculated during runtime.
-    avg_frac_capacity_used_by_clinic_and_facility = extract_results(
-        results_folder,
+    avg_frac_capacity_used_by_clinic_and_facility = extract(
         module='tlo.methods.healthsystem.summary',
         key='Capacity_By_FacID_and_Officer',
         custom_generate_series=lambda df: get_capacity_used_by_officer_type_and_facility_level(df, facility_id_levels_dict),
         do_scaling=False,
-        suspended_results_folder=SUSPENDED_RESULTS_FOLDER,
-    ).pipe(set_param_names_as_column_index_level_0, param_names=param_names).drop(columns=cols_to_drop)
+    ).drop(columns=cols_to_drop)
+
+    avg_frac_capacity_used_by_clinic_and_facility = with_nothing(
+        avg_frac_capacity_used_by_clinic_and_facility, "capacity_fractions"
+    )
 
     # Convert each facility's fraction using its own capacity before summing.
     daily_capacity_by_cadre_and_level = pd.read_csv(
@@ -351,11 +371,10 @@ def apply(
     ).sum()
     print("Converted facility fractions to minutes and aggregated by year, cadre and level.")
 
-    # Use the Nothing baseline for capacity scalin
+    # Use the Nothing baseline for capacity scaling.
     baseline_fractions_2025 = avg_frac_capacity_used_by_clinic_and_facility.xs(
         'Nothing', level='draw', axis=1
     ).xs(2025, level='year')
-    print(f"Extracted baseline fractions for 2025 from the Nothing scenario: {baseline_fractions_2025}")
 
     results['actual_annual_capacity_by_cadre'] = compute_summary_statistics(actual_capacity_used_by_cadre_and_level, 'median')
 
@@ -416,8 +435,10 @@ def apply(
         .rename_axis(index={'Facility_Level': 'FacilityLevel', 'Officer_Type_Code': 'OfficerType'})
     ).reorder_levels(['OfficerType', 'FacilityLevel'])
 
-    salary_aligned = (
-        salary_by_cadre_and_level.reindex(actual_capacity_used_by_cadre_and_level.index.droplevel("year"))
+    salary_aligned = salary_by_cadre_and_level.reindex(
+        actual_capacity_used_by_cadre_and_level.index.droplevel("year")
+    ).set_axis(
+        actual_capacity_used_by_cadre_and_level.index
     )
     actual_cost_by_cadre_and_level = actual_capacity_used_by_cadre_and_level.mul(salary_aligned, axis=0)
     print("Calculated salary costs with cadre/level, year, draw and run aligned.")
@@ -491,6 +512,16 @@ def apply(
             ],
             ignore_index=True,
         )
+    if nothing_by_run is not None:
+        final_costs = nothing_by_run["final_costs"]
+        input_costs_with_proportional_hrh_costs = pd.concat(
+            [
+                input_costs_with_proportional_hrh_costs.loc[lambda data: data["draw"].ne("Nothing")],
+                final_costs.loc[final_costs["run"].isin(runs)],
+            ],
+            ignore_index=True,
+        )
+
     # For LCOA we need annual consumables cost per intervention in the year of the switch i.e. 2026.
     annual_cons_cost = input_costs_with_proportional_hrh_costs.groupby(['draw', 'cost_category', 'year', 'run'])['cost'].sum()
     mask = (
@@ -534,7 +565,12 @@ def apply(
         incremental_scenario_cost_summarized = compute_summary_statistics(incremental_scenario_cost, 'median').iloc[0].unstack()
 
     if do_comparison:
-        dalys_2026 = dalys.xs('2026', level='period')
+        if nothing_by_run is None:
+            dalys_2026 = dalys.xs(str(YEAR_OF_SWITCH), level="period")
+        else:
+            dalys_2026 = discounted_dalys.xs(str(YEAR_OF_SWITCH), level="period") * (
+                (1.0 + DISCOUNT_RATE) ** (YEAR_OF_SWITCH - discount_base_year)
+            )
         dalys_averted_2026 = (
             -1.0 * pd.DataFrame(
                 find_difference_extra_relative_to_comparison(dalys_2026.sum(), comparison='Nothing'))
@@ -559,8 +595,23 @@ def apply(
             compute_summary_statistics(net_health, central_measure='median').iloc[0].unstack()
         )
 
-        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
+        if nothing_by_run is not None:
+            results["total_cost_by_run"] = total_input_cost
+            results["dalys_averted_by_run"] = dalys_averted.T
+            results["incremental_cost_by_run"] = incremental_scenario_cost
+            results["net_health_by_run"] = net_health
+            icer = incremental_scenario_cost.div(dalys_averted.T.where(dalys_averted.T.ne(0)))
+            results["icers_summarized"] = compute_summary_statistics(icer, "median").iloc[0].unstack()
+            results["annual_capacity_used_by_cadre_and_level"] = results["actual_annual_capacity_by_cadre"]
+            results["annual_cost_by_cadre"] = (
+                input_costs_with_proportional_hrh_costs.loc[lambda data: data["cost_category"].eq(
+                    "human resources for health"
+                )].groupby(["year", "cost_subgroup", "draw", "run"])["cost"].sum().unstack(["draw", "run"])
+                .pipe(compute_summary_statistics, "median")
+            )
+
         mean_dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='mean').iloc[0].unstack()
+        dalys_averted = compute_summary_statistics(dalys_averted.T, central_measure='median').iloc[0].unstack()
 
     # Add consumables budget to this dictionary so that we have everything in one place
     # USD 225,602,946 (203136642 from donors + 22466304 from the government)
@@ -575,6 +626,49 @@ def apply(
     results['net_health'] = net_health_summarized if do_comparison else None
     results['incremental_scenario_cost'] = incremental_scenario_cost_summarized if do_comparison else None
 
+    if nothing_by_run is None and "Nothing" in discounted_dalys.columns.get_level_values("draw"):
+        results["nothing_by_run"] = {
+            key: data.xs("Nothing", axis=1, level="draw")
+            for key, data in {
+                "total_population_by_year": total_population_by_year,
+                "counts_of_hsi_by_short_treatment_id": counts_of_hsi_by_short_treatment_id,
+                "counts_of_hsi_by_period": counts_of_hsi_by_period,
+                "num_deaths": num_deaths,
+                "discounted_dalys": discounted_dalys,
+                "capacity_fractions": avg_frac_capacity_used_by_clinic_and_facility,
+                "actual_annual_capacity_by_cadre": actual_capacity_used_by_cadre_and_level,
+                "actual_capacity_used_by_cadre_2026": actual_capacity_used_by_cadre_2026,
+            }.items()
+        }
+        results["nothing_by_run"].update(
+            input_costs=results["input_costs"].loc[lambda data: data["draw"].eq("Nothing")].copy(),
+            final_costs=input_costs_with_proportional_hrh_costs.loc[lambda data: data["draw"].eq("Nothing")].copy(),
+            daly_discount_base_year=int(discount_base_year),
+        )
+    accrued = discounted_dalys.sum(min_count=1).to_frame().T
+    if "Nothing" in accrued.columns.get_level_values("draw"):
+        scenarios = accrued.drop(columns="Nothing", level="draw")
+        matched = match_baseline(scenarios, accrued.xs("Nothing", axis=1, level="draw"))
+        results["discounted_daly_totals_by_run"] = {
+            "accrued": scenarios.iloc[0],
+            "averted": (matched - scenarios).iloc[0],
+        }
+    results["analysis_metadata"] = analysis_metadata(target_period_tuple)
+    return results
+
+
+def apply(
+    results_folder: Path,
+    output_folder: Path,
+    resourcefilepath: Path,
+    target_period_tuple: tuple[Date, Date],
+    do_comparison: bool = True,
+):
+    """Process treatment-ID results and attach the intervention-level LCOA inputs."""
+    results = process_scenarios(
+        results_folder, resourcefilepath, target_period_tuple,
+        get_parameter_names_from_scenario_file(), do_comparison,
+    )
     # Extract DALYs and costs from the LCOA input workbook (EHP_BasedOnLCOA sheet).
     lcoa_workbook_path = Path(__file__).resolve().parent / "ResourceFile_PriorityRanking_ALLPOLICIES_EHP_dalys_costs.xlsx"
     lcoa_df = pd.read_excel(lcoa_workbook_path, sheet_name="EHP_BasedOnLCOA")
@@ -643,6 +737,7 @@ if __name__ == "__main__":
         parser.error("--target-start must be earlier than --target-end.")
 
     out = args.output_folder if args.output_folder is not None else args.results_folder
+    out.mkdir(parents=True, exist_ok=True)
     results = apply(
         results_folder=args.results_folder,
         output_folder=out,

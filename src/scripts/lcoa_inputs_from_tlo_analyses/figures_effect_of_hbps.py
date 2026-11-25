@@ -2,7 +2,6 @@
 import argparse
 import os
 import pickle
-from fnmatch import fnmatchcase
 from pathlib import Path
 
 import matplotlib
@@ -13,8 +12,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle, Rectangle
-from scipy.stats import fisher_exact
-from scripts.lcoa_inputs_from_tlo_analyses.scenario_effect_of_hbps import EffectOfEachHBP
 
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     make_graph_file_name,
@@ -25,95 +22,18 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_hsi_counts_by_period_for_draw,
     plot_population_by_year,
 )
-from tlo.analysis.utils import CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP, get_filtered_treatment_ids
+from tlo.analysis.utils import CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
 
 ANALYSIS_UNIT_LABEL = "Health Benefit Package"
-HBP_DRAW_DISPLAY_LABELS = {"LCOA EHP from RWE": "LIT-HBP", "LCOA EHP from TLO": "TLO-HBP"}
-HBP_DALY_COMPARISON_FILE = Path(__file__).resolve().parent / "hbp_dalys_averted_comparison.csv"
-
-# Transcribed from hbp_from_literature-derived_or_tlo-derived_inputs.png.
-# Treatments in the intersection belong to both packages.
-lit_hbp = [
-    "Alri_Pneumonia_Treatment_Outpatient",
-    "AntenatalCare_Outpatient",
-    "Contraception_Routine",
-    "Epi_Childhood_MeaslesRubella",
-    "Malaria_Treatment",
-    "Malaria_Treatment_Complicated",
-    "AntenatalCare_FollowUp",
-    "DeliveryCare_Basic",
-    "Epi_Childhood_DtpHibHep",
-    "Epi_Childhood_Rota",
-    "Epi_Pregnancy_Td",
-    "Hiv_Prevention_Circumcision",
-    "Hiv_Prevention_Infant",
-    "Hiv_Test",
-    "Hiv_Test_Selftest",
-    "Malaria_Prevention_Iptp",
-    "PostnatalCare_Maternal",
-    "PostnatalCare_Maternal_Inpatient",
-    "PostnatalCare_Neonatal",
-    "PostnatalCare_Neonatal_Inpatient",
-    "PostnatalCare_TreatmentForObstetricFistula",
-    "Tb_Prevention_Ipt",
-    "Tb_Treatment",
-]
-
-tlo_hbp = [
-    "Contraception_Routine",
-    "Epi_Childhood_MeaslesRubella",
-    "Hiv_Prevention_Infant",
-    "Hiv_Treatment",
-    "Malaria_Treatment_Complicated",
-    "Measles_Treatment",
-    "Schisto_MDA",
-    "Undernutrition_Feeding_Inpatient",
-    "Undernutrition_Feeding_Outpatient",
-    "Undernutrition_Feeding_Supplementary"
-]
 
 
-def expand_treatment_id_patterns(patterns, universe) -> set[str]:
-    """Expand exact and ``_*`` treatment-ID patterns over a common universe."""
-    normalized_patterns = [
-        candidate
-        for pattern in patterns
-        for candidate in [pattern, pattern if pattern.endswith("_*") else f"{pattern}_*"]
-    ]
-    return {
-        treatment_id
-        for treatment_id in universe
-        if any((fnmatchcase(treatment_id, pattern) for pattern in normalized_patterns))
-    }
-
-
-def calculate_hbp_overlap_and_fisher_test(
-    first_package, second_package, treatment_id_universe
-) -> tuple[dict[str, int], float, float]:
-    """Return Venn counts and a two-sided Fisher test of package membership.\n\n    Each package is expanded against the same universe so that wildcard\n    treatment IDs are handled consistently and the test includes treatments\n    present in neither package.\n"""
-    universe = set(treatment_id_universe)
-    first = expand_treatment_id_patterns(first_package, universe)
-    second = expand_treatment_id_patterns(second_package, universe)
-    counts = {
-        "first_only": len(first - second),
-        "both": len(first & second),
-        "second_only": len(second - first),
-        "neither": len(universe - (first | second)),
-    }
-    odds_ratio, p_value = fisher_exact(
-        [[counts["both"], counts["first_only"]], [counts["second_only"], counts["neither"]]], alternative="two-sided"
-    )
-    return (counts, float(odds_ratio), float(p_value))
-
-
-def plot_hbp_overlap_with_fisher_test(
-    first_package, second_package, treatment_id_universe, set_labels=("LIT-HBP", "TLO-HBP")
-):
-    """Plot package overlap and annotate it with Fisher\'s exact-test results."""
-    universe = set(treatment_id_universe)
-    first = expand_treatment_id_patterns(first_package, universe)
-    second = expand_treatment_id_patterns(second_package, universe)
-    counts, odds_ratio, p_value = calculate_hbp_overlap_and_fisher_test(first_package, second_package, universe)
+def plot_hbp_overlap_with_fisher_test(overlap):
+    """Plot the analysed package memberships and Fisher test."""
+    set_labels = tuple(overlap["members"])
+    first, second = overlap["members"].values()
+    counts = overlap["counts"]
+    odds_ratio = overlap["odds_ratio"]
+    p_value = overlap["p_value"]
 
     def format_treatment_ids(treatment_ids):
         return "\n".join((treatment_id.removesuffix("_*") for treatment_id in sorted(treatment_ids)))
@@ -132,7 +52,7 @@ def plot_hbp_overlap_with_fisher_test(
     ax.text(
         0.55,
         0.1,
-        f"Fisher's exact test (two-sided): odds ratio = {odds_ratio_text}, p {p_value_text}\nNeither package: {counts['neither']} of {len(universe)} model-defined treatment IDs",
+        f"Fisher's exact test (two-sided): odds ratio = {odds_ratio_text}, p {p_value_text}\nNeither package: {counts['neither']} of {overlap['universe_size']} model-defined treatment IDs",
         ha="center",
         va="center",
         fontsize=10,
@@ -141,23 +61,6 @@ def plot_hbp_overlap_with_fisher_test(
     ax.axis("off")
     fig.tight_layout()
     return (fig, ax)
-
-
-def format_hbp_scenario_name(scenario_name: str) -> str:
-    """Return scenario name in the same draw-label style used in processed results."""
-    if scenario_name == "Nothing":
-        return "Nothing"
-    else:
-        if scenario_name.startswith("Only "):
-            return scenario_name.removeprefix("Only ")
-        else:
-            return scenario_name
-
-
-def get_hbp_parameter_names_from_scenario_file() -> tuple[str, ...]:
-
-    scenario = EffectOfEachHBP()
-    return tuple(scenario._scenarios.keys())
 
 
 def get_draw_color_map(draw_labels: list[str]) -> dict[str, tuple[float, float, float, float]]:
@@ -342,7 +245,6 @@ def plot_dalys_by_cause_label_over_time_for_hbp_draws(
                                 color="black",
                                 linestyle=draw_linestyle_map[draw],
                                 linewidth=2,
-                                label=HBP_DRAW_DISPLAY_LABELS.get(str(draw), str(draw)),
                             )
                             for draw in ordered_draws
                         ]
@@ -417,7 +319,7 @@ def plot_dalys_averted_by_cause_stacked_by_draw(
     if draw_labels is not None:
         ordered_draws = []
         for draw in draw_labels:
-            display_draw = HBP_DRAW_DISPLAY_LABELS.get(str(draw), str(draw))
+            display_draw = draw
             for candidate in (draw, display_draw):
                 if candidate in plot_df.index and candidate not in ordered_draws:
                     ordered_draws.append(candidate)
@@ -450,7 +352,7 @@ def plot_dalys_averted_by_cause_stacked_by_draw(
     missing_additive_draws = [
         draw
         for draw in plot_df.index
-        if HBP_DRAW_DISPLAY_LABELS.get(str(draw), str(draw)) not in additive_dalys_averted.index
+        if draw not in additive_dalys_averted.index
     ]
     if missing_additive_draws:
         raise ValueError(
@@ -458,8 +360,7 @@ def plot_dalys_averted_by_cause_stacked_by_draw(
             f"{missing_additive_draws}"
         )
     for position, draw in zip(x, plot_df.index):
-        comparison_label = HBP_DRAW_DISPLAY_LABELS.get(str(draw), str(draw))
-        additive_estimate = additive_dalys_averted.loc[comparison_label]
+        additive_estimate = additive_dalys_averted.loc[draw]
         lower = float(additive_estimate["lower"])
         upper = float(additive_estimate["upper"])
         ax.add_patch(
@@ -475,7 +376,7 @@ def plot_dalys_averted_by_cause_stacked_by_draw(
             )
         )
         ax.hlines(
-            y=float(additive_estimate["median"]),
+            y=float(additive_estimate["central"]),
             xmin=position - 0.4,
             xmax=position + 0.4,
             color="black",
@@ -491,12 +392,9 @@ def plot_dalys_averted_by_cause_stacked_by_draw(
 
     ax.axhline(0.0, color="black", linewidth=0.8)
     ax.set_xticks(x)
-    ax.set_xticklabels(
-        [HBP_DRAW_DISPLAY_LABELS.get(str(draw), str(draw)) for draw in plot_df.index],
-        ha="right",
-    )
+    ax.set_xticklabels(plot_df.index)
     ax.set_xlabel("")
-    ax.set_ylabel("DALYs averted")
+    ax.set_ylabel("Discounted DALYs averted")
     ax.grid(axis="y")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -533,13 +431,13 @@ def plot_dalys_costs_and_icers_by_hbp(
         fig, axes = plt.subplots(1, 3, figsize=(20, fig_height), sharey=True)
         do_barh_plot_with_ci_by_draw(dalys_facet, axes[0], draw_color_map)
         axes[0].set_title("DALYs")
-        axes[0].set_xlabel("DALYs averted (/1000)")
+        axes[0].set_xlabel("Discounted DALYs averted (/1000)")
         do_barh_plot_with_ci_by_draw(costs_facet, axes[1], draw_color_map)
         axes[1].set_title("Costs")
         axes[1].set_xlabel("Incremental cost (USD)")
         do_barh_plot_with_ci_by_draw(icers_facet, axes[2], draw_color_map)
         axes[2].set_title("ICERs")
-        axes[2].set_xlabel("ICER (USD per DALY averted)")
+        axes[2].set_xlabel("ICER (discounted USD per discounted DALY averted)")
         for ax in axes:
             ax.grid(axis="x")
             ax.spines["top"].set_visible(False)
@@ -557,44 +455,22 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
     """Produce standard plots describing effect of each health benefit package."""
     print(f"Output folder: {output_folder}")
     output_folder.mkdir(parents=True, exist_ok=True)
-    param_names = get_hbp_parameter_names_from_scenario_file()
-    draw_labels = [format_hbp_scenario_name(param) for param in param_names]
-    non_baseline_draw_labels = [draw for draw in draw_labels if draw != "Nothing"]
-    draw_color_map = get_draw_color_map(draw_labels)
-    draw_linestyle_map = get_draw_linestyle_map(draw_labels)
-    print(f"Loaded HBP scenario names: {len(param_names)}")
+    with results_file.open("rb") as file:
+        results = pickle.load(file)
+    print(f"Using primary results from: {results_file}")
+    non_baseline_draw_labels = list(results["hbp_draw_labels"])
+    draw_labels = ["Nothing", *non_baseline_draw_labels]
+    draw_color_map = get_draw_color_map([*non_baseline_draw_labels, "Nothing"])
+    draw_linestyle_map = get_draw_linestyle_map(non_baseline_draw_labels)
     print("Plotting overlap between the two HBP sources with Fisher's exact test.")
-    treatment_id_universe = get_filtered_treatment_ids(depth=None)
-    fig, ax = plot_hbp_overlap_with_fisher_test(
-        first_package=lit_hbp,
-        second_package=hnb_with_scaled_down_costs_included_treatment_ids,
-        treatment_id_universe=treatment_id_universe,
-    )
+    fig, ax = plot_hbp_overlap_with_fisher_test(results["hbp_overlap"])
     name_of_plot = "HBP from literature-derived or TLO-derived inputs"
     ax.set_title(name_of_plot)
     outfile = os.path.join(output_folder, make_graph_file_name(name_of_plot))
     fig.savefig(outfile, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved: {name_of_plot}")
-    with open(results_file, "rb") as f:
-        results = pickle.load(f)
-    print(f"Using primary results from: {results_file}")
-    hbp_daly_comparison = pd.read_csv(HBP_DALY_COMPARISON_FILE, index_col="hbp")
-    additive_dalys_averted = hbp_daly_comparison[
-        [
-            "sum_intervention_dalys_averted_median",
-            "sum_intervention_dalys_averted_lower_95_ui",
-            "sum_intervention_dalys_averted_upper_95_ui",
-        ]
-    ].rename(
-        columns={
-            "sum_intervention_dalys_averted_median": "median",
-            "sum_intervention_dalys_averted_lower_95_ui": "lower",
-            "sum_intervention_dalys_averted_upper_95_ui": "upper",
-        }
-    )
-    additive_dalys_averted = additive_dalys_averted.apply(pd.to_numeric, errors="raise")
-    print(f"Using additive DALYs-averted estimates from: {HBP_DALY_COMPARISON_FILE}")
+    additive_dalys_averted = results["additive_dalys_summary"]["additive_averted"]
     num_deaths_averted = results.get("num_deaths_averted")
     pc_deaths_averted = results.get("pc_deaths_averted")
     dalys_averted = results.get("dalys_averted")
@@ -669,7 +545,7 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
     print("Prepared deaths and DALYs by cause for plotting.")
     print("Plotting DALYs by cause label over time for each draw.")
     fig, axes = plot_dalys_by_cause_label_over_time_for_hbp_draws(
-        num_dalys_by_cause_label_implementation / 1000.0, draw_labels=draw_labels, draw_linestyle_map=draw_linestyle_map
+        num_dalys_by_cause_label_implementation / 1000.0, draw_labels=non_baseline_draw_labels, draw_linestyle_map=draw_linestyle_map
     )
     name_of_plot = "DALYs by Cause Label Over Time by HBP"
     fig.suptitle(name_of_plot, y=1.002)
@@ -681,7 +557,7 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
     fig, ax = plot_dalys_averted_by_cause_stacked_by_draw(
         results["dalys_averted_by_cause"],
         additive_dalys_averted=additive_dalys_averted,
-        draw_labels=draw_labels,
+        draw_labels=non_baseline_draw_labels,
     )
     name_of_plot = "DALYs Averted by Cause for each HBP"
     ax.set_title(name_of_plot)
@@ -728,7 +604,7 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
         name_of_plot = f"DALYS Averted by Each {ANALYSIS_UNIT_LABEL}"
         do_barh_plot_with_ci_by_draw(dalys_averted_sorted, ax, draw_color_map)
         ax.set_title(name_of_plot)
-        ax.set_xlabel("DALYs averted (/1000)")
+        ax.set_xlabel("Discounted DALYs averted (/1000)")
         ax.grid(axis="x")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -773,7 +649,7 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
         name_of_plot = f"Percentage DALYs Averted by Each {ANALYSIS_UNIT_LABEL}"
         do_barh_plot_with_ci_by_draw(pc_dalys_averted_sorted, ax, draw_color_map)
         ax.set_title(name_of_plot)
-        ax.set_xlabel("Percentage of DALYs averted")
+        ax.set_xlabel("Percentage of discounted DALYs averted")
         ax.grid(axis="x")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -789,7 +665,7 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
         name_of_plot = f"ICERs for Each {ANALYSIS_UNIT_LABEL}"
         do_barh_plot_with_ci_by_draw(icers_sorted, ax, draw_color_map)
         ax.set_title(name_of_plot)
-        ax.set_xlabel("ICER (USD per DALY averted)")
+        ax.set_xlabel("ICER (discounted USD per discounted DALY averted)")
         ax.grid(axis="x")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)

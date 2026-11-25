@@ -118,7 +118,8 @@ class EffectOfEachHBP(BaseScenario):
              "Hiv_Test",
              "DeliveryCare_Basic",
              "DeliveryCare_Comprehensive",
-             "DeliveryCare_Neonatal",
+             ## Excluded because DeliveryCare_Neonatal is unused in TLO.
+             ## "DeliveryCare_Neonatal",
              "PostnatalCare_Maternal_Inpatient",
              "PostnatalCare_Maternal",
              "Malaria_Prevention_Iptp",
