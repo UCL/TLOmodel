@@ -403,7 +403,6 @@ def export_tlo_parameters(
         disruption_fraction = clip(1 - rate_ratio, 0, 1)
     """
 
-    import json
     import numpy as np
     import pandas as pd
     import patsy
@@ -505,116 +504,71 @@ def export_tlo_parameters(
                 "estimated" if is_retained else "not_retained_or_not_estimable"
             )
 
-    parameters = {
-        "schema_version": 2,
-        "indicator": indicator,
-        "wbgt_variable": WBGT_VAR,
-        "response_type": "wbgt_attributable_relative_service_response",
-        "reference_wbgt": reference_wbgt,
-        "wbgt_shift_used_in_fitted_spline": wbgt_shift,
-        "wbgt_support": {
-            k: float(v) for k, v in wbgt_support.items()
-        },
-        "operational_wbgt_clip": {
-            "enabled": bool(CLIP_PROJECTION_TO_SUPPORT),
-            "lower": lo,
-            "upper": hi,
-            "applies_to": "current and lagged WBGT values",
-        },
-        "spline": {
-            "basis": "Patsy bs(x, df=SPLINE_DF) - 1",
-            "df_basis": int(len(spline_cols)),
-            "all_columns": list(spline_cols),
-            "retained_columns": retained_spline,
-            "coefficients": {
-                c: float(coef[c]) for c in retained_spline
-            },
-            "lookup_file": spline_filename,
-            "lookup_columns": [
-                "wbgt",
-                "spline_log_effect",
-                "spline_rate_ratio",
-                "spline_only_disruption_fraction",
-            ],
-            "lookup_points": int(len(grid)),
-            "interpolation": "linear interpolation on wbgt",
-        },
-        "lags": {
-            "enabled": bool(SA_LAG),
-            "months": list(LAG_MONTHS) if SA_LAG else [],
-            "coefficients": lag_coefficients,
-            "coefficient_status": lag_coefficient_status,
-            "reference_wbgt": reference_wbgt,
-            "input_units": "degrees_Celsius",
-            "formula": (
-                "sum(beta_lag[k] * (lagged_wbgt[k] - reference_wbgt))"
-            ),
-        },
-        "tlo_calculation": {
-            "log_rate_ratio": (
-                "interpolate spline_log_effect at current WBGT + "
-                "sum(beta_lag[k] * (lagged_wbgt[k] - reference_wbgt))"
-            ),
-            "rate_ratio": "exp(log_rate_ratio)",
-            "disruption_fraction": "clip(1 - rate_ratio, 0, 1)",
-            "interpretation": (
-                "Proportional reduction in expected service counts attributable "
-                "to WBGT relative to a reference climate in which current and "
-                "lagged WBGT all equal reference_wbgt. This is a service-loss "
-                "fraction, not a directly estimated probability that a discrete "
-                "disruption event occurs. Positive estimated service effects are "
-                "not treated as disruptions."
-            ),
-        },
-        "scope_and_assumptions": {
-            "is_original_two_model_contrast": False,
-            "non_wbgt_covariates_held_fixed": True,
-            "month_and_zone_year_fixed_effects_cancel": True,
-            "facility_main_effects_cancel": True,
-            "common_wbgt_response_across_facilities": True,
-            "facility_characteristic_main_effects_exported": False,
-            "reason": (
-                "The TLO export is a within-facility WBGT contrast. Precipitation, "
-                "COVID, year, month, zone-year and facility main effects are held "
-                "constant between the observed and reference-WBGT counterfactual "
-                "and therefore cancel. The current fitted specification does not "
-                "include WBGT-by-facility-characteristic interactions."
-            ),
-            "not_equivalent_to": (
-                "The in-sample deficit calculated by subtracting predictions "
-                "from the separately fitted baseline and weather models."
-            ),
-        },
-    }
-
+    ref_txt = "Murray-Watson et al, 2025"
     param_rows = [
         {"parameter_name": "wbgt_reference", "value": reference_wbgt, "param_label": "structural"},
         {"parameter_name": "wbgt_clip_lo", "value": lo, "param_label": "structural"},
         {"parameter_name": "wbgt_clip_hi", "value": hi, "param_label": "structural"},
     ]
-    if SA_LAG:
-        for lag in LAG_MONTHS:
-            col = f"{WBGT_VAR}_lag{lag}_c"
-            param_rows.append(
-                {
-                    "parameter_name": f"wbgt_coef_lag{lag}",
-                    "value": float(coef[col]) if col in coef.index else 0.0,
-                    "param_label": "local",
-                }
-            )
-
+    for lag, value in lag_coefficients.items():
+        param_rows.append({"parameter_name": f"wbgt_coef_lag{lag}", "value": value, "param_label": "local"})
     params_df = pd.DataFrame(param_rows)
     params_df["indicator"] = indicator
-    params_df["reference"] = "Murray-Watson et al, 2025"
-    params_csv = f"ResourceFile_WBGT_Parameters_{indicator}.csv"
-    params_df.to_csv(f"{out_dir}/{params_csv}", index=False)
-    params_df.to_csv(f"{TLO_RESOURCE_DIR}/{params_csv}", index=False)
+    params_df["reference"] = ref_txt
+
+    params_filename = f"ResourceFile_WBGT_Parameters_{indicator}.csv"
+    params_df.to_csv(f"{out_dir}/{params_filename}", index=False)
+    params_df.to_csv(f"{TLO_RESOURCE_DIR}/{params_filename}", index=False)
 
     print(
         f"[{indicator}] Exported TLO WBGT response "
         f"(reference={reference_wbgt:.2f}°C; "
         f"support={lo:.2f}–{hi:.2f}°C; lags={lag_coefficients})"
     )
+
+
+def export_two_model_for_tlo(model_base, model_wx, indicator, spline_cols, design_info,
+                             shifts, wbgt_support, levels):
+    """Write one CSV with everything TLO needs to rebuild the baseline and WBGT models."""
+    rows = []
+
+    # 1. Settings shared by both models
+    rows.append(["shared", "wbgt_clip_lo", "", wbgt_support["p_lo"]])
+    rows.append(["shared", "wbgt_clip_hi", "", wbgt_support["p_hi"]])
+    rows.append(["shared", "wbgt_shift", "", shifts[WBGT_VAR]])
+    rows.append(["shared", "precip_shift", "", shifts.get("precip", 0.0)])
+    if levels is not None:
+        for col, spec in levels.items():
+            if spec["kind"] == "continuous":
+                rows.append(["shared", "center_" + col, "", spec["center"]])
+
+    # 2. Coefficients and fixed effects for each model
+    for model_name, model in [("baseline", model_base), ("wbgt", model_wx)]:
+        for term, value in model.coef().items():
+            rows.append([model_name, term, "", value])
+        for fe_name, fe_values in model.fixef().items():
+            for level, value in fe_values.items():
+                rows.append([model_name, fe_name, level, value])
+
+    # 3. WBGT spline (wbgt model only), every 0.1 degrees across the clip range
+    wbgt_grid = np.append(np.arange(wbgt_support["p_lo"], wbgt_support["p_hi"], 0.1),
+                          wbgt_support["p_hi"])
+    basis = np.asarray(
+        patsy.build_design_matrices([design_info], {"x": wbgt_grid - shifts[WBGT_VAR]})[0]
+    )
+    coef = model_wx.coef()
+    for i, wbgt in enumerate(wbgt_grid):
+        spline_value = 0.0
+        for j, col in enumerate(spline_cols):
+            if col in coef.index:
+                spline_value += basis[i, j] * coef[col]
+        rows.append(["wbgt", "spline", round(wbgt, 3), spline_value])
+
+    df = pd.DataFrame(rows, columns=["model", "parameter_name", "level", "value"])
+    df["indicator"] = indicator
+    df["reference"] = "Murray-Watson et al, 2025"
+    df.to_csv(f"{TLO_RESOURCE_DIR}/ResourceFile_WBGT_TwoModel_{indicator}.csv", index=False)
+    print(f"[{indicator}] wrote ResourceFile_WBGT_TwoModel_{indicator}.csv")
 
 
 # ===========================================================================
@@ -1721,6 +1675,16 @@ def fit_indicator(indicator, panel_path, spline_df=None):
             reference_wbgt=reference_wbgt,
             wbgt_support=WBGT_SUPPORT,
             out_dir=OUT_DIR,
+        )
+        export_two_model_for_tlo(
+            model_base=model_base,
+            model_wx=model_wx,
+            indicator=indicator,
+            spline_cols=spline_cols,
+            design_info=DESIGN[WBGT_VAR],
+            shifts=SHIFTS,
+            wbgt_support=WBGT_SUPPORT,
+            levels=LEVELS,
         )
     return {
         "indicator": indicator,
