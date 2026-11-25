@@ -32,9 +32,14 @@ DEFAULT_TREATMENT_SERVICE_MAPPING = {
     "CervicalCancer_Screening_VIA": "CervicalScreening",
     "CervicalCancer_Screening_Xpert": "CervicalScreening",
 }
-
+DEFAULT_WBGT_SERVICE_INDICATORS = {
+    "ANC": "anc_total_visits",
+    "PNC": "pnc_within_2wks",
+    "FP":  "fp_total_clients",
+    "OPD": "opd_attendance",
+    "CervicalScreening": "cervical_screening_total",
+}
 WBGT_VAR = "wbgt5x_day"
-WBGT_EXPORT_SUFFIX = "_meonly"     # must match SUFFIX used by export_tlo_parameters
 TIER_TO_MODEL = {
     "lowest": "MPI-ESM1-2-HR",
     "median": "MIROC6",
@@ -46,7 +51,7 @@ class WeatherDisruptions(Module):
     """
     Module to handle climate-mediated disruptions to healthcare services.
 
-    Two interchangeable disruption drivers, selected by ``disruption_driver``:
+    Two interchangeable disruption drivers, selected by ``weather_event``:
       * "precip" — baseline and precipitation linear models evaluated from coefficients.
       * "wbgt"   — a per-service WBGT->service response (spline lookup + lag coefficients)
         applied to a WBGT exposure series.
@@ -62,7 +67,7 @@ class WeatherDisruptions(Module):
         "projected_precip_disruptions": Parameter(
             Types.REAL, "Disruption probabilities by facility, year, month and service."
         ),
-        "disruption_driver": Parameter(
+        "weather_event": Parameter(
             Types.STRING, "Which climate driver generates disruptions. Options: 'precip', 'wbgt'."
         ),
         "wbgt_response_indicator": Parameter(
@@ -159,7 +164,7 @@ class WeatherDisruptions(Module):
         self,
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
-        disruption_driver: Optional[str] = None,
+        weather_event: Optional[str] = None,
         wbgt_response_indicator: Optional[str] = None,
         detailed_disruption_logging: Optional[bool] = None,
         climate_ssp: Optional[str] = None,
@@ -180,7 +185,7 @@ class WeatherDisruptions(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.arg_disruption_driver = disruption_driver
+        self.arg_weather_event = weather_event
         self.arg_wbgt_response_indicator = wbgt_response_indicator
         self.arg_detailed_logging = detailed_disruption_logging
         self.arg_climate_ssp = climate_ssp
@@ -238,10 +243,12 @@ class WeatherDisruptions(Module):
             read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files='parameter_values')
         )
 
-        if self.arg_disruption_driver is not None:
-            self.parameters["disruption_driver"] = self.arg_disruption_driver
-        if self.arg_wbgt_response_indicator is not None:
-            self.parameters["wbgt_response_indicator"] = self.arg_wbgt_response_indicator
+        if self.arg_weather_event is not None:
+            self.parameters["weather_event"] = self.arg_weather_event
+        if self.arg_wbgt_service_indicators is not None:
+            self.parameters["wbgt_service_indicators"] = self.arg_wbgt_service_indicators
+        elif not self.parameters.get("wbgt_service_indicators"):
+            self.parameters["wbgt_service_indicators"] = dict(DEFAULT_WBGT_SERVICE_INDICATORS)
         if self.arg_detailed_logging is not None:
             self.parameters["detailed_disruption_logging"] = self.arg_detailed_logging
         if self.arg_climate_ssp is not None:
@@ -290,9 +297,9 @@ class WeatherDisruptions(Module):
         if year_param is None or pd.isna(year_param) or year_param < 2025:
             self.parameters["year_effective_climate_disruptions"] = 2025
 
-        driver = self.parameters.get("disruption_driver", "precip")
+        driver = self.parameters.get("weather_event", "precip")
         if driver not in ("precip", "wbgt"):
-            raise ValueError(f"disruption_driver must be 'precip' or 'wbgt', got {driver!r}")
+            raise ValueError(f"weather_event must be 'precip' or 'wbgt', got {driver!r}")
 
         if driver == "precip":
             self._read_precip_inputs(resourcefilepath)
@@ -336,24 +343,24 @@ class WeatherDisruptions(Module):
         ssp = self.parameters["climate_ssp"]
         tier = self.parameters["climate_model_ensemble_model"]
 
-        rf_dir = resourcefilepath / 'ResourceFile_WeatherDisruption'
+        rf_dir = resourcefilepath / "ResourceFile_WeatherDisruption"
 
         service_indicators = self.parameters.get("wbgt_service_indicators") or {
             s: self.parameters["wbgt_response_indicator"] for s in self._services
         }
 
         self._wbgt_spline_lookup = {}
-        self._wbgt_export = {}
+        self._wbgt_params = {}
         for service, indicator in service_indicators.items():
-            spline_path = rf_dir / f"tlo_spline_{indicator}_{WBGT_VAR}{WBGT_EXPORT_SUFFIX}.csv"
-            params_path = rf_dir / f"tlo_parameters_{indicator}_{WBGT_VAR}{WBGT_EXPORT_SUFFIX}.json"
+            spline_path = rf_dir / f"ResourceFile_WBGT_Spline_{indicator}.csv"
+            params_path = rf_dir / f"ResourceFile_WBGT_Parameters_{indicator}.csv"
             if not spline_path.exists():
                 raise FileNotFoundError(f"WBGT spline lookup not found for {service}: {spline_path}")
             if not params_path.exists():
-                raise FileNotFoundError(f"WBGT parameters JSON not found for {service}: {params_path}")
+                raise FileNotFoundError(f"WBGT parameters file not found for {service}: {params_path}")
             self._wbgt_spline_lookup[service] = pd.read_csv(spline_path)
-            with open(params_path) as f:
-                self._wbgt_export[service] = json.load(f)
+            params_df = pd.read_csv(params_path)
+            self._wbgt_params[service] = dict(zip(params_df["parameter_name"], params_df["value"]))
         self._wbgt_service_indicators = service_indicators
 
         model_id = TIER_TO_MODEL.get(tier, tier)
@@ -425,7 +432,7 @@ class WeatherDisruptions(Module):
     # Disruption-probability build (dispatches on driver)
     # ----------------------------------------------------------------------
     def build_disruption_probabilities(self):
-        driver = self.parameters.get("disruption_driver", "precip")
+        driver = self.parameters.get("weather_event", "precip")
         if driver == "precip":
             self._build_precip_disruptions()
         else:
@@ -622,7 +629,7 @@ class WeatherDisruptions(Module):
         frames = []
         for service in self._wbgt_service_indicators:
             disruption, rate_ratio, wbgt_now = self._wbgt_response(
-                exposure, self._wbgt_export[service], self._wbgt_spline_lookup[service]
+                exposure, self._wbgt_params[service], self._wbgt_spline_lookup[service]
             )
             out = exposure[["facility", "year", "month"]].rename(columns={"facility": "RealFacility_ID"}).copy()
             out["service"] = service
@@ -637,17 +644,19 @@ class WeatherDisruptions(Module):
             "pred_baseline", "pred_precip", "driver_value"
         ]]
 
-    def _wbgt_response(self, exposure, export, lookup):
+    def _wbgt_response(self, exposure, params, lookup):
         """Return (disruption, rate_ratio, wbgt_now) arrays for one service's exported response."""
-        reference_wbgt = float(export["reference_wbgt"])
-        clip = export["operational_wbgt_clip"]
-        lag_coefs = {int(k): float(v) for k, v in export["lags"]["coefficients"].items()}
+        reference_wbgt = float(params["wbgt_reference"])
+        clip_lo = float(params["wbgt_clip_lo"])
+        clip_hi = float(params["wbgt_clip_hi"])
+        lag_coefs = {
+            int(k.replace("wbgt_coef_lag", "")): float(v)
+            for k, v in params.items()
+            if str(k).startswith("wbgt_coef_lag")
+        }
 
-        wbgt_now = exposure[WBGT_VAR].to_numpy(dtype=float)
-        wbgt_lag1 = exposure[f"{WBGT_VAR}_lag1"].to_numpy(dtype=float)
-        if bool(clip["enabled"]):
-            wbgt_now = np.clip(wbgt_now, float(clip["lower"]), float(clip["upper"]))
-            wbgt_lag1 = np.clip(wbgt_lag1, float(clip["lower"]), float(clip["upper"]))
+        wbgt_now = np.clip(exposure[WBGT_VAR].to_numpy(dtype=float), clip_lo, clip_hi)
+        wbgt_lag1 = np.clip(exposure[f"{WBGT_VAR}_lag1"].to_numpy(dtype=float), clip_lo, clip_hi)
 
         grid_x = lookup["wbgt"].to_numpy(dtype=float)
         grid_y = lookup["spline_log_effect"].to_numpy(dtype=float)
@@ -746,7 +755,7 @@ class WeatherDisruptions(Module):
             return {}
         r = sub.iloc[0]
         return {
-            "driver": self.parameters.get("disruption_driver", "precip"),
+            "driver": self.parameters.get("weather_event", "precip"),
             "driver_value": float(r["driver_value"]) if "driver_value" in r else float("nan"),
             "pred_baseline": float(r["pred_baseline"]) if "pred_baseline" in r else float("nan"),
             "pred_precip": float(r["pred_precip"]) if "pred_precip" in r else float("nan"),
