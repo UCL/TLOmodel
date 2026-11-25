@@ -152,7 +152,8 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 
 def find_model_files(base_dir, scenario):
-    """Discover (model_id, path) for {model}/{scenario}/{prefix}*.nc."""
+    """Discover (model_id, [paths]) for {model}/{scenario}/{prefix}*.nc.
+    All matching files are kept (e.g. a 2024 file and a 2025-2100 file) and joined later."""
     found = []
     for model_dir in sorted(Path(base_dir).iterdir()):
         if not model_dir.is_dir():
@@ -165,7 +166,7 @@ def find_model_files(base_dir, scenario):
         matches = sorted(scenario_dir.glob(f"{WBGT_FILE_PREFIX}*.nc"))
         if not matches:
             continue
-        found.append((model_dir.name, matches[0]))
+        found.append((model_dir.name, matches))
     return found
 
 
@@ -214,6 +215,16 @@ def open_cftime_dataset(path):
         return xr.open_dataset(path, decode_times=time_coder)
     except AttributeError:
         return xr.open_dataset(path, use_cftime=True)
+
+
+def open_and_join(paths):
+    """Open one or more netCDFs and join them along time (e.g. 2024 + 2025-2100)."""
+    datasets = [open_cftime_dataset(p) for p in sorted(paths)]
+    ds = xr.concat(datasets, dim=WBGT_TIME_COORD).sortby(WBGT_TIME_COORD)
+    times = ds[WBGT_TIME_COORD].values
+    if len(set(times)) != len(times):
+        raise ValueError(f"Overlapping dates when joining {[Path(p).name for p in paths]}")
+    return ds
 
 
 def nearest_cell_indices(lat_data, lon_data, facility_lats, facility_lons):
@@ -290,10 +301,10 @@ def long_frame(monthly, var_list, dates, source_name):
     return df
 
 
-def process_model(model_id, path, scenario, facility_names, facility_lats, facility_lons, avg_accum):
+def process_model(model_id, paths, scenario, facility_names, facility_lats, facility_lons, avg_accum):
     """Extract, aggregate and write the mean and extreme panels for one model x scenario."""
-
-    ds = open_cftime_dataset(path)
+    path = paths[0]  # used for the folder and in messages
+    ds = open_and_join(paths)
     missing = [v for v in WBGT_VARS if v not in ds]
     if missing:
         ds.close()
@@ -306,10 +317,12 @@ def process_model(model_id, path, scenario, facility_names, facility_lats, facil
     date_keys = get_time_index(times)
 
     ix, iy, dist, far = nearest_cell_indices(lat_data, lon_data, facility_lats, facility_lons)
-    precip_path = path.parent / f"{PRECIP_FILE_PREFIX}{model_id}_{scenario}.nc"
-    if not precip_path.exists():
-        raise FileNotFoundError(f"missing precip file for {model_id}: {precip_path}")
-    ds_pr = open_cftime_dataset(precip_path)
+    # all precip files in the same folder (e.g. 2024 + 2025-2100), joined along time
+    precip_paths = sorted(path.parent.glob(f"{PRECIP_FILE_PREFIX}*.nc"))
+    if not precip_paths:
+        raise FileNotFoundError(f"missing precip file(s) for {model_id} in {path.parent}")
+    precip_path = precip_paths[0]  # used in messages
+    ds_pr = open_and_join(precip_paths)
     assert np.array_equal(ds_pr[WBGT_LAT_COORD].values, lat_data), \
         f"{model_id}: precip lat grid differs from WBGT lat grid"
     assert np.array_equal(ds_pr[WBGT_LON_COORD].values, lon_data), \
@@ -393,8 +406,8 @@ def main():
             raise FileNotFoundError(
                 f"No '{WBGT_FILE_PREFIX}*.nc' under {WBGT_DIRECTORY}/*/{scenario}/")
 
-        for model_id, path in model_files:
-            process_model(model_id, path, scenario,
+        for model_id, paths in model_files:
+            process_model(model_id, paths, scenario,
                           facility_names, facility_lats, facility_lons, avg_accum)
 
     build_covariate_table(facilities, avg_accum)

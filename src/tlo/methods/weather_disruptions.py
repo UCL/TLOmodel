@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import json
+import re
 
 import numpy as np
 import pandas as pd
@@ -40,11 +41,28 @@ DEFAULT_WBGT_SERVICE_INDICATORS = {
     "CervicalScreening": "cervical_screening_total",
 }
 WBGT_VAR = "wbgt5x_day"
+WBGT_PRECIP_VAR = "precip_month"
+WBGT_REFERENCE_YEAR = 2024  # zone_year is held at 2024, as in the projections
+MONTH_FE_NAME = "C(month)"
+ZONE_YEAR_FE_NAME = "C(zone_year)"
+
+# column name in the fitted model -> column name in ResourceFile_Facility_Characteristics
+WBGT_CHARACTERISTIC_COLUMNS = {
+    "A105": "ownership",
+    "Resid": "urban_rural",
+    "A109__Altitude": "altitude",
+    "distance_nearest_clinic": "min_distance_to_clinic",
+}
 TIER_TO_MODEL = {
     "lowest": "MPI-ESM1-2-HR",
     "median": "MIROC6",
     "highest": "CanESM5",
 }
+
+
+def _safe_name(s):
+    # same cleaning as in the fitting script, so category names match the coefficient names
+    return re.sub(r"[^0-9A-Za-z_]+", "_", str(s)).strip("_")
 
 
 class WeatherDisruptions(Module):
@@ -349,31 +367,20 @@ class WeatherDisruptions(Module):
             s: self.parameters["wbgt_response_indicator"] for s in self._services
         }
 
-        self._wbgt_spline_lookup = {}
-        self._wbgt_params = {}
-        self._wbgt_baseline = {}
+        # one file per indicator, written by export_two_model_for_tlo in the fitting script
+        self._wbgt_two_model = {}
         for service, indicator in service_indicators.items():
-            spline_path = rf_dir / f"ResourceFile_WBGT_Spline_{indicator}.csv"
-            params_path = rf_dir / f"ResourceFile_WBGT_Parameters_{indicator}.csv"
-            baseline_path = rf_dir / f"ResourceFile_WBGT_Baseline_{indicator}.csv"
-            for path, what in ((spline_path, "spline lookup"), (params_path, "parameters file"),
-                               (baseline_path, "M0/M1 baseline file")):
-                if not path.exists():
-                    raise FileNotFoundError(f"WBGT {what} not found for {service}: {path}")
-            self._wbgt_spline_lookup[service] = pd.read_csv(spline_path)
-            params_df = pd.read_csv(params_path)
-            self._wbgt_params[service] = dict(zip(params_df["parameter_name"], params_df["value"]))
-            # Per facility x calendar month: non-WBGT linear predictor of M0 and of M1
-            # (absorbed FE + non-WBGT covariates), exported from the fepois script.
-            baseline = pd.read_csv(baseline_path)
-            need = {"facility", "month", "log_mu0_fixed", "log_mu1_fixed"}
-            if not need.issubset(baseline.columns):
-                raise KeyError(f"{baseline_path} missing columns {need - set(baseline.columns)}")
-            baseline["facility"] = baseline["facility"].astype(str).str.strip()
-            if baseline.duplicated(["facility", "month"]).any():
-                raise ValueError(f"{baseline_path} has duplicate facility-month rows")
-            self._wbgt_baseline[service] = baseline[list(need)]
+            path = rf_dir / f"ResourceFile_WBGT_TwoModel_{indicator}.csv"
+            if not path.exists():
+                raise FileNotFoundError(f"WBGT two-model file not found for {service}: {path}")
+            self._wbgt_two_model[service] = pd.read_csv(path)
         self._wbgt_service_indicators = service_indicators
+
+        # facility characteristics (same file as the precip driver)
+        self.parameters["facility_characteristics"] = read_csv_files(
+            resourcefilepath / 'demography',
+            files="ResourceFile_Facility_Characteristics.csv"
+        )
 
         model_id = TIER_TO_MODEL.get(tier, tier)
         exposure_path = rf_dir / f"wbgt_extreme_indices_facility_{model_id}_{ssp}.csv"
@@ -631,84 +638,134 @@ class WeatherDisruptions(Module):
         ]]
 
     def _build_wbgt_disruptions(self):
-        """WBGT driver: apply each service's exported spline/lag response to the WBGT
-        exposure series, producing a deficits-only disruption fraction per facility-month-service."""
+        """Disruption = (baseline - wbgt) / baseline, using the two fitted models.
+        Only reductions count, so it is clipped to [0, 1]."""
         p = self.parameters
-        exposure = p["wbgt_exposure_data"].copy()
-        lag1_col = f"{WBGT_VAR}_lag1"
-        required = ["facility", "date", WBGT_VAR, lag1_col]
-        missing = [c for c in required if c not in exposure.columns]
-        if missing:
-            raise KeyError(f"WBGT exposure file missing columns {missing}; has {list(exposure.columns)}")
 
-        exposure["facility"] = exposure["facility"].astype(str).str.strip()
+        exposure = p["wbgt_exposure_data"].copy()
+        for col in ["facility", "date", WBGT_VAR, WBGT_VAR + "_lag1", WBGT_PRECIP_VAR]:
+            if col not in exposure.columns:
+                raise KeyError(f"WBGT exposure file is missing column {col}")
+        exposure["facility"] = exposure["facility"].astype(str)
         exposure["year"] = exposure["date"].dt.year
         exposure["month"] = exposure["date"].dt.month
-        exposure = exposure[
-            exposure["year"] >= int(p["year_effective_climate_disruptions"])
-        ].reset_index(drop=True)
+        exposure = exposure[exposure["year"] >= p["year_effective_climate_disruptions"]]
+        exposure = exposure.reset_index(drop=True)
 
-        frames = []
-        for service in self._wbgt_service_indicators:
-            exp_s = exposure.merge(self._wbgt_baseline[service], on=["facility", "month"], how="inner")
-            n_dropped = exposure["facility"].nunique() - exp_s["facility"].nunique()
-            if exp_s.empty:
-                raise ValueError(f"No exposure facilities match the M0/M1 baseline file for {service}")
-            if n_dropped:
-                logger.warning(
-                    key="message",
-                    data=f"WBGT {service}: {n_dropped} exposure facilities have no fitted M0/M1 "
-                         f"baseline and will not be disrupted for this service.",
-                )
-            disruption, mu0, mu1, wbgt_now = self._wbgt_response(
-                exp_s, self._wbgt_params[service], self._wbgt_spline_lookup[service]
-            )
-            out = exp_s[["facility", "year", "month"]].rename(columns={"facility": "RealFacility_ID"}).copy()
-            out["service"] = service
-            out["disruption"] = disruption
-            out["pred_baseline"] = mu0   # M0 (no WBGT)
-            out["pred_precip"] = mu1     # M1 (with WBGT)
-            out["driver_value"] = wbgt_now
-            frames.append(out)
+        # add each facility's characteristics to the exposure rows
+        chars = p["facility_characteristics"].copy()
+        chars.index = ['zone', 'urban_rural', 'district', 'ownership', 'altitude',
+                       'facility_type', 'Latitude', 'Longitude', 'min_distance_to_clinic']
+        chars = chars.T
+        missing = [f for f in exposure["facility"].unique() if f not in chars.index]
+        if missing:
+            raise KeyError(f"No facility characteristics for {len(missing)} facilities, e.g. {missing[:10]}")
+        exposure = exposure.join(chars, on="facility")
 
-        self.parameters["projected_precip_disruptions"] = pd.concat(frames, ignore_index=True)[[
-            "RealFacility_ID", "year", "month", "service", "disruption",
-            "pred_baseline", "pred_precip", "driver_value"
-        ]]
+        results = []
+        for service, table in self._wbgt_two_model.items():
+            self._log_reference_categories(service, table, exposure)
 
-    def _wbgt_response(self, exposure, params, lookup):
-        """Two-model deficit for one service: (mu0 - mu1) / mu0, deficits only.
-        mu0 = exp(log_mu0_fixed); mu1 = exp(log_mu1_fixed + f(WBGT) + sum_k b_k * WBGT_lag_k).
-        The spline lookup must hold M1's raw (uncentred) fitted spline contribution, i.e. on the
-        same scale as the M1 fixed effects. Returns (disruption, mu0, mu1, wbgt_now)."""
-        clip_lo = float(params["wbgt_clip_lo"])
-        clip_hi = float(params["wbgt_clip_hi"])
-        lag_coefs = {
-            int(k.replace("wbgt_coef_lag", "")): float(v)
-            for k, v in params.items()
-            if str(k).startswith("wbgt_coef_lag")
-        }
+            mu_baseline = np.exp(self._wbgt_log_mu(exposure, table, "baseline"))
+            mu_wbgt = np.exp(self._wbgt_log_mu(exposure, table, "wbgt"))
+            disruption = np.clip((mu_baseline - mu_wbgt) / mu_baseline, 0, 1)
+            if np.isnan(disruption).any():
+                raise ValueError(f"NaN in WBGT disruption for {service}")
 
-        wbgt_now = np.clip(exposure[WBGT_VAR].to_numpy(dtype=float), clip_lo, clip_hi)
+            out = pd.DataFrame({
+                "RealFacility_ID": exposure["facility"],
+                "year": exposure["year"],
+                "month": exposure["month"],
+                "service": service,
+                "disruption": disruption,
+                "pred_baseline": mu_baseline,
+                "pred_precip": mu_wbgt,
+                "driver_value": exposure[WBGT_VAR],
+            })
+            results.append(out)
 
-        grid_x = lookup["wbgt"].to_numpy(dtype=float)
-        grid_y = lookup["spline_log_effect"].to_numpy(dtype=float)
-        order = np.argsort(grid_x)
-        grid_x, grid_y = grid_x[order], grid_y[order]
+        p["projected_precip_disruptions"] = pd.concat(results, ignore_index=True)
 
-        log_mu1 = exposure["log_mu1_fixed"].to_numpy(dtype=float) + np.interp(wbgt_now, grid_x, grid_y)
-        for k, b in lag_coefs.items():
-            col = f"{WBGT_VAR}_lag{k}"
-            if col not in exposure.columns:
-                raise KeyError(f"Lag coefficient wbgt_coef_lag{k} exported but exposure has no column {col}")
-            log_mu1 += b * np.clip(exposure[col].to_numpy(dtype=float), clip_lo, clip_hi)
+    def _wbgt_log_mu(self, df, table, model):
+        """log(mu) for every row of df, for one model ("baseline" or "wbgt")."""
+        shared = table[table["model"] == "shared"]
+        shared = dict(zip(shared["parameter_name"], shared["value"].astype(float)))
+        rows = table[table["model"] == model]
 
-        mu0 = np.exp(exposure["log_mu0_fixed"].to_numpy(dtype=float))
-        mu1 = np.exp(log_mu1)
-        disruption = np.clip((mu0 - mu1) / mu0, 0.0, 1.0)
-        if np.isnan(disruption).any():
-            raise ValueError("NaN in WBGT two-model disruption — check exposure/baseline inputs")
-        return disruption, mu0, mu1, wbgt_now
+        log_mu = np.zeros(len(df))
+
+        # month fixed effect
+        month_rows = rows[rows["parameter_name"] == MONTH_FE_NAME]
+        month_fe = dict(zip(month_rows["level"].astype(float).astype(int), month_rows["value"]))
+        log_mu += df["month"].map(month_fe).values
+
+        # zone fixed effect, using 2024
+        zone_rows = rows[rows["parameter_name"] == ZONE_YEAR_FE_NAME]
+        zone_fe = dict(zip(zone_rows["level"].astype(str), zone_rows["value"]))
+        zone_values = (df["zone"].astype(str) + "_" + str(WBGT_REFERENCE_YEAR)).map(zone_fe)
+        if zone_values.isna().any():
+            raise KeyError(f"No zone fixed effect for zones {sorted(df.loc[zone_values.isna(), 'zone'].unique())}")
+        log_mu += zone_values.values
+
+        # coefficients
+        wbgt_lo = shared["wbgt_clip_lo"]
+        wbgt_hi = shared["wbgt_clip_hi"]
+        coefs = rows[rows["level"].isna()]
+        for term, b in zip(coefs["parameter_name"], coefs["value"].astype(float)):
+            if term.startswith("year_fe_") or term == "covid":
+                continue  # these are 0 in 2024
+            elif term.startswith(WBGT_VAR + "_s"):
+                continue  # spline columns, added below from the lookup
+            elif term == "precip_c":
+                log_mu += b * (df[WBGT_PRECIP_VAR].values - shared["precip_shift"])
+            elif term.startswith(WBGT_VAR + "_lag"):
+                lag_col = term[:-2]  # e.g. wbgt5x_day_lag1_c -> wbgt5x_day_lag1
+                lag = np.clip(df[lag_col].values.astype(float), wbgt_lo, wbgt_hi)
+                log_mu += b * (lag - shared["wbgt_shift"])
+            elif term.startswith("me_"):
+                log_mu += b * self._wbgt_characteristic(df, term, shared)
+            else:
+                raise KeyError(f"Unknown term in WBGT file: {term}")
+
+        # spline (wbgt model only)
+        if model == "wbgt":
+            spline = rows[rows["parameter_name"] == "spline"].copy()
+            spline["level"] = spline["level"].astype(float)
+            spline = spline.sort_values("level")
+            wbgt = np.clip(df[WBGT_VAR].values.astype(float), wbgt_lo, wbgt_hi)
+            log_mu += np.interp(wbgt, spline["level"], spline["value"])
+
+        return log_mu
+
+    def _wbgt_characteristic(self, df, term, shared):
+        """Values of one facility characteristic term (me_...), coded the same way as in the fit."""
+        for model_col, tlo_col in WBGT_CHARACTERISTIC_COLUMNS.items():
+            # continuous: centred, negative altitude treated as missing
+            if term == "me_" + model_col:
+                x = pd.to_numeric(df[tlo_col], errors="coerce")
+                if model_col == "A109__Altitude":
+                    x = x.where(x >= 0)
+                center = shared["center_" + model_col]
+                return (x.fillna(center) - center).values
+
+            # categorical: 1 if the facility has this level
+            if term.startswith("me_" + model_col + "_"):
+                level = term[len("me_" + model_col + "_"):].lower()
+                return np.array([1.0 if _safe_name(v).lower() == level else 0.0 for v in df[tlo_col]])
+
+        raise KeyError(f"No TLO column for {term}")
+
+    def _log_reference_categories(self, service, table, df):
+        # categories with no coefficient are treated as the reference level,
+        # so this should only list the reference levels (e.g. Government, Rural)
+        terms = list(table.loc[table["model"] == "wbgt", "parameter_name"].astype(str))
+        for model_col, tlo_col in WBGT_CHARACTERISTIC_COLUMNS.items():
+            prefix = "me_" + model_col + "_"
+            levels = [t[len(prefix):].lower() for t in terms if t.startswith(prefix)]
+            if levels:
+                not_matched = sorted(set(str(v) for v in df[tlo_col] if _safe_name(v).lower() not in levels))
+                logger.warning(key="message",
+                               data=f"WBGT {service}: {tlo_col} treated as reference: {not_matched}")
 
     # ----------------------------------------------------------------------
     # Runtime — shared across drivers
@@ -780,7 +837,10 @@ class WeatherDisruptions(Module):
         prob = disruption_probs.loc[mask, "disruption"]
         if prob.empty:
             return 0.0
-        return min(float(prob.iloc[0]) * self.parameters["scale_factor_prob_disruption"], 1.0)
+        p = float(prob.iloc[0]) * self.parameters["scale_factor_prob_disruption"]
+        if np.isnan(p) or p < 0:
+            raise ValueError(f"Bad disruption probability {p} for {facility_id}, {year}-{month}, {service}")
+        return min(p, 1.0)
 
     def _get_event_detail(self, facility_id, year: int, month: int, service: str) -> Dict:
         """Extra per-event fields for detailed logging. Returns {} if off or row absent."""
