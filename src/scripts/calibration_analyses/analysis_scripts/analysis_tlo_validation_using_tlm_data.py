@@ -1083,7 +1083,7 @@ if __name__ == "__main__":
         results_folder=args.results_folder,  # outputs/bshe@ic.ac.uk/scenario_patient_mix-2026-05-15T125453Z
         output_folder=Path("./outputs"),
         resourcefilepath=Path("./resources"),
-        the_target_period=(Date(2024, 1, 1), Date(2024, 5, 31)),
+        the_target_period=(Date(2024, 1, 29), Date(2024, 5, 10)),
         tlm_results_folder=args.tlm_results_folder,
         analysis=args.analysis,
     )
