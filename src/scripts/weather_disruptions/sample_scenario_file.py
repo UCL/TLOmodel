@@ -1,21 +1,11 @@
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
+from tlo.methods import weather_disruptions
 
 YEAR_OF_CHANGE = 2025
 
 baseline_params = {
-    "WeatherDisruptions": {
-        "climate_ssp": "ssp245",
-        "climate_model_ensemble_model": "mean",
-        "year_effective_climate_disruptions": 2025,
-        "services_affected_precip": "all",
-        "delay_in_seeking_care_weather": 28.0,
-        "scale_factor_reseeking_healthcare_post_disruption": 1.0,
-        "scale_factor_prob_disruption": 1.0,
-        "scale_factor_severity_disruption_and_delay": 1.0,
-        "prop_supply_side_disruptions": 0.3,
-    },
     "HealthSystem": {
         "mode_appt_constraints": 1,
         "mode_appt_constraints_postSwitch": 1,
@@ -64,7 +54,15 @@ class ClimateDisruptionScenario(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel()
+        return fullmodel() + [
+            weather_disruptions.WeatherDisruptions(
+                weather_event="wbgt",
+                climate_ssp="ssp245",
+                climate_model_ensemble_model="median",
+                services_affected_precip="all",
+                year_effective_climate_disruptions=2025,
+            )
+        ]
 
     def draw_parameters(self, draw_number, rng):
         return self._parameter_grid  # [draw_number]
