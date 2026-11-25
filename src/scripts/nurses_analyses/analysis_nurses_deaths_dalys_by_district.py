@@ -3,13 +3,14 @@ This script plots maps for the Nurse Shortages analysis at district level:
 """
 
 import argparse
+import math
 from pathlib import Path
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import math
+from matplotlib.colors import to_rgba
 
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
@@ -264,32 +265,32 @@ def extract_staff_counts(results_folder):
 
 def calculate_staff_counts(staff_counts_summary):
     """
-    Extract mean staff counts for clinical, nurse_and_midwifery and pharmacy
-    by district, scenario and year.
+    Extract mean staff counts for Clinical, Nursing_and_Midwifery
+    and Pharmacy by district, scenario and year.
     """
 
     # Extract mean staff counts across runs.
-    staff_mean = staff_counts_summary.xs(
-        "mean",
-        axis=1,
-        level=1,
-    )
+    staff_mean = staff_counts_summary.xs("mean", axis=1, level=1)
 
-    cadres = {
-        "Clinical": "Clinical",
-        "Nursing_and_Midwifery": "Nursing_and_Midwifery",
-        "Pharmacy": "Pharmacy",
-    }
+    cadres = [
+        "Clinical",
+        "Nursing_and_Midwifery",
+        "Pharmacy",
+    ]
 
     rows = []
 
     for scenario in staff_mean.columns:
         scenario_staff = staff_mean[scenario]
 
-        for cadre, staff_type in cadres.items():
-            cadre_staff = scenario_staff.xs(cadre,level="Cadre")
+        for cadre in cadres:
 
-            # Keep 2026 and 2027.
+            cadre_staff = scenario_staff.xs(
+                cadre,
+                level="Cadre",
+            )
+
+            # Keep 2026 and 2027
             cadre_staff = cadre_staff.loc[
                 cadre_staff.index.get_level_values("year").isin(
                     [2026, 2027]
@@ -300,85 +301,164 @@ def calculate_staff_counts(staff_counts_summary):
 
                 rows.append({
                     "Scenario": scenario,
+                    "Cadre": cadre,
                     "District": district,
                     "Year": int(year),
-                    "Staff_Type": staff_type,
-                    "Staff_Count": staff_number,
+                    "Staff": staff_number,
                 })
 
     return pd.DataFrame(rows)
 
 
-def plot_staff_counts_by_district(
-    staff_counts_df,
+# Scenario/cadre combinations to plot
+# The order here determines the legend order
+CHANGE_LINE_COMBINATIONS = [
+    ("Baseline Nurses", "Nursing_and_Midwifery", "Baseline nurses", "black"),
+    ("Fewer Nurses", "Nursing_and_Midwifery", "Fewer nurses", "indianred"),
+    ("More Nurses", "Nursing_and_Midwifery", "More nurses", "steelblue"),
+    ("More CNP staff", "Clinical", "More CNP - Clinical", "darkgreen"),
+    ("More CNP staff", "Pharmacy", "More CNP - Pharmacy", "darkorange"),
+    ("More Nurses by District", "Nursing_and_Midwifery", "More nurses by district", "mediumpurple"),
+    ("More CNP staff by District", "Clinical", "More CNP by district - Clinical", "limegreen"),
+    ("More CNP staff by District", "Pharmacy", "More CNP by district - Pharmacy", "gold"),
+]
+
+
+def plot_staff_change_lines_by_district(
+    staff_df,
     district_order,
+    healthsystem="Default",
+    year_before=2026,
+    year_after=2027,
+    combinations=CHANGE_LINE_COMBINATIONS,
+    symlog_threshold=20,
+    connect_points="faint",
+    line_style="--",
+    title=None,
 ):
     """
-    Create one figure per scenario, with three panels:
-    clinical, nurse_and_midwifery and pharmacy.
+    Plot change in workforce size (year_after - year_before)
+    by cadre and district.
+    One series represents each scenario/cadre combination.
     """
 
-    cadres = {
-        "Clinical": "Clinical",
-        "Nursing_and_Midwifery": "Nursing_and_Midwifery",
-        "Pharmacy": "Pharmacy",
-    }
+    suffix = f" / {healthsystem} Healthsystem Function"
 
-    figures = {}
+    # Use the same district order as the other district plots.
+    districts = district_order
+    x = np.arange(len(districts))
 
-    for scenario in staff_counts_df["Scenario"].unique():
+    fig, ax = plt.subplots(figsize=(16, 8))
 
-        scenario_df = staff_counts_df[
-            staff_counts_df["Scenario"] == scenario
-        ].copy()
+    for prefix, cadre, label, color in combinations:
+        scen_df = staff_df[
+            (staff_df["Scenario"] == f"{prefix}{suffix}")
+            & (staff_df["Cadre"] == cadre)
+        ]
 
-        fig, axes = plt.subplots(
-            3,
-            1,
-            figsize=(16, 16),
-            sharex=True,
+        if scen_df.empty:
+            continue
+
+        by_year = scen_df.pivot_table(
+            index="District",
+            columns="Year",
+            values="Staff",
+            aggfunc="sum",
+        ).reindex(
+            index=districts,
+            columns=[year_before, year_after],
         )
 
-        for ax, (cadre, label) in zip(axes, cadres.items()):
+        # Calculate the absolute change in staff numbers
+        change = by_year[year_after] - by_year[year_before]
 
-            cadre_df = scenario_df[scenario_df["Staff_Type"] == cadre]
-            plot_data = cadre_df.pivot(index="District", columns="Year", values="Staff_Count")
-
-            # Ensure all districts and both years appear in the
-            # same order in every scenario
-            plot_data = plot_data.reindex(index=district_order, columns=[2026, 2027])
-            x = np.arange(len(district_order))
-            width = 0.38
-
-            ax.bar(
-                x - width / 2,
-                plot_data[2026],
-                width,
-                label="2026",
-                color="steelblue",
+        if connect_points == "faint":
+            ax.plot(
+                x,
+                change,
+                color=to_rgba(
+                    color,
+                    0.3 if line_style == "-" else 0.5,
+                ),
+                linewidth=0.8,
+                linestyle=line_style,
+                marker="o",
+                markersize=5,
+                markerfacecolor=to_rgba(color, 0.85),
+                markeredgecolor=to_rgba(color, 0.85),
+                label=label,
             )
 
-            ax.bar(
-                x + width / 2,
-                plot_data[2027],
-                width,
-                label="2027",
-                color="darkorange",
+        else:
+            ax.plot(
+                x,
+                change,
+                color=color,
+                marker="o",
+                linestyle=line_style if connect_points else "none",
+                linewidth=1.2,
+                markersize=5,
+                label=label,
+                alpha=0.7,
             )
 
-            ax.set_ylabel("Number of staff")
-            ax.set_title(label)
-            ax.grid(axis="y", alpha=0.3)
-            ax.legend()
+    # Reference line: no change in workforce size
+    ax.axhline(0, linestyle="--", linewidth=1)
 
-        axes[-1].set_xticks(np.arange(len(district_order)))
-        axes[-1].set_xticklabels(district_order, rotation=90)
+    # Symmetrical logarithmic scale
+    if symlog_threshold is not None:
+        ax.set_yscale("symlog", linthresh=symlog_threshold, linscale=0.8)
 
-        fig.suptitle(f"Number of health workers by district\n{scenario}", fontsize=14)
-        fig.tight_layout()
-        figures[scenario] = fig
+        ticks = [
+            -500, -200, -100, -50, -20, -10, -5,
+            0,
+            5, 10, 20, 50, 100, 200, 500,
+        ]
 
-    return figures
+        low, high = ax.get_ylim()
+
+        ax.set_yticks([t for t in ticks if low <= t <= high])
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+        ax.yaxis.set_minor_locator(plt.NullLocator())
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(districts, rotation=90)
+
+    ax.set_xlabel("District")
+    ax.set_ylabel(f"Change in number of staff ({year_after} - {year_before})")
+    ax.grid(axis="y", alpha=0.3)
+
+    if title is None:
+        title = (
+            f"Change in workforce size by cadre and district, "
+            f"{year_before} to {year_after}"
+        )
+
+    ax.set_title(title)
+
+    # Legend below the plot, arranged in two rows
+    ncol = 4
+    handles, labels = ax.get_legend_handles_labels()
+
+    order = [
+        i
+        for c in range(ncol)
+        for i in range(c, len(labels), ncol)
+    ]
+
+    ax.legend(
+        [handles[i] for i in order],
+        [labels[i] for i in order],
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.32),
+        ncol=ncol,
+        numpoints=1,
+        handlelength=2.5,
+        frameon=False,
+    )
+
+    fig.subplots_adjust(bottom=0.38, right=0.98)
+    return fig, ax
 
 
 # Plot: Annual DALYs over time
@@ -1297,19 +1377,22 @@ if __name__ == "__main__":
     )
 
     staff_counts_by_district = staff_counts_by_district.sort_values(
-        ["Scenario", "Staff_Type", "District", "Year"]
+        ["Scenario", "Cadre", "District", "Year"]
     )
 
-    # Export underlying numerical results to Excel.
+    # Export underlying staff counts to Excel.
     staff_counts_by_district.to_excel(
         results_folder / "district_staff_counts_2026_2027.xlsx",
         index=False,
     )
 
-    # Generate figures.
-    staff_counts_figures = plot_staff_counts_by_district(
-        staff_counts_by_district,
-        district_order,
+    # Plot change in workforce size by district and cadre
+    fig_staff_change_default, ax_staff_change_default = (
+        plot_staff_change_lines_by_district(
+            staff_counts_by_district,
+            district_order,
+            healthsystem="Default",
+        )
     )
 
     # Staff scale-up factors for all districts
@@ -2018,20 +2101,13 @@ if __name__ == "__main__":
             bbox_inches="tight",
         )
 
-        # Save staff count figures for all scenarios.
-        for scenario, fig in staff_counts_figures.items():
-            safe_scenario_name = (
-                scenario
-                .replace(" / ", "_")
-                .replace(" ", "_")
-            )
-
-            fig.savefig(
-                results_folder /
-                f"district_staff_counts_2026_2027_{safe_scenario_name}.pdf",
-                dpi=300,
-                bbox_inches="tight",
-            )
+        # Save workforce change figures
+        fig_staff_change_default.savefig(
+            results_folder /
+            "staff_change_by_district_default_healthsystem.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
 
         validation_file = (
             results_folder /
