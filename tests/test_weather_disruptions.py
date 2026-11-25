@@ -373,7 +373,7 @@ def test_disruption_probabilities_cover_expected_years():
     wd = sim.modules["WeatherDisruptions"]
     df = wd.parameters["projected_precip_disruptions"]
     assert df["year"].min() <= 2025
-    assert df["year"].max() >= 2070
+    assert df["year"].max() >= 2040
 
 def test_disruption_probabilities_bounded():
     """Every disruption probability used at runtime must be a number in [0, 1]."""

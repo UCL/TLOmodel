@@ -646,11 +646,20 @@ class WeatherDisruptions(Module):
         for col in ["facility", "date", WBGT_VAR, WBGT_VAR + "_lag1", WBGT_PRECIP_VAR]:
             if col not in exposure.columns:
                 raise KeyError(f"WBGT exposure file is missing column {col}")
-        exposure["facility"] = exposure["facility"].astype(str)
+        exposure["facility"] = exposure["facility"].astype(str)  # keep names exactly as in the characteristics file
         exposure["year"] = exposure["date"].dt.year
         exposure["month"] = exposure["date"].dt.month
         exposure = exposure[exposure["year"] >= p["year_effective_climate_disruptions"]]
         exposure = exposure.reset_index(drop=True)
+
+        # the first month of the series has no lag1 (there is no earlier month in the file),
+        # so those facility-months are left out and will not be disrupted
+        no_lag = exposure[WBGT_VAR + "_lag1"].isna()
+        if no_lag.any():
+            months = sorted(exposure.loc[no_lag, "date"].dt.strftime("%Y-%m").unique())
+            logger.warning(key="message",
+                           data=f"WBGT: {no_lag.sum()} facility-months have no lag1 ({months}), not disrupted")
+            exposure = exposure[~no_lag].reset_index(drop=True)
 
         # add each facility's characteristics to the exposure rows
         chars = p["facility_characteristics"].copy()
@@ -670,7 +679,10 @@ class WeatherDisruptions(Module):
             mu_wbgt = np.exp(self._wbgt_log_mu(exposure, table, "wbgt"))
             disruption = np.clip((mu_baseline - mu_wbgt) / mu_baseline, 0, 1)
             if np.isnan(disruption).any():
-                raise ValueError(f"NaN in WBGT disruption for {service}")
+                cols = ["facility", "date", WBGT_VAR, WBGT_VAR + "_lag1", WBGT_PRECIP_VAR, "month", "zone"]
+                bad = exposure.loc[np.isnan(disruption), cols]
+                raise ValueError(f"NaN in WBGT disruption for {service} in {len(bad)} rows "
+                                 f"({bad['facility'].nunique()} facilities):\n{bad.head(10)}")
 
             out = pd.DataFrame({
                 "RealFacility_ID": exposure["facility"],
