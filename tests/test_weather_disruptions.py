@@ -111,6 +111,17 @@ def weather_disruption_sim(seed, tmpdir):
     return sim
 
 
+def test_disruption_probabilities_bounded():
+    """Every disruption probability used at runtime must be a number in [0, 1]."""
+    sim = _make_weather_disruptions_sim_for_probs()
+    wd = sim.modules["WeatherDisruptions"]
+    df = wd.parameters["projected_precip_disruptions"]
+
+    prob = df["disruption"] * wd.parameters["scale_factor_prob_disruption"]
+    bad = df[prob.isna() | (prob < 0)]
+
+    assert bad.empty, f"{len(bad)} invalid rows:\n{bad.head(20)}"
+
 def _make_always_disrupted_once(sim):
     """Ensures that with high p(disruptions), there is only one
     HSI disrupted (otherwise it is always delayed and never runs)"""
@@ -374,6 +385,16 @@ def test_disruption_probabilities_cover_expected_years():
     assert df["year"].min() <= 2025
     assert df["year"].max() >= 2070
 
+def test_disruption_probabilities_bounded():
+    """Every disruption probability used at runtime must be a number in [0, 1]."""
+    sim = _make_weather_disruptions_sim_for_probs()
+    wd = sim.modules["WeatherDisruptions"]
+    df = wd.parameters["projected_precip_disruptions"]
+
+    prob = df["disruption"] * wd.parameters["scale_factor_prob_disruption"]
+    bad = df[prob.isna() | (prob < 0)]
+
+    assert bad.empty, f"{len(bad)} invalid rows:\n{bad.head(20)}"
 
 # Test parameter setting and delays
 def _make_scale_factor_sim(seed, scale_factor, n_pop=1000):
