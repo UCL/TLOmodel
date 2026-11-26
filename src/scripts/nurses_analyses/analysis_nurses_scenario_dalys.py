@@ -669,6 +669,83 @@ def calculate_percent_deaths_averted(
     return pd.DataFrame(results).T
 
 
+
+def calculate_dalys_averted(
+    annual_dalys,
+    baseline_scenario,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Calculate absolute DALYs averted using run-to-run differences.
+    """
+    years = annual_dalys.index.astype(int)
+    year_mask = np.isin(years, list(comparison_years))
+
+    annual_dalys = annual_dalys.loc[year_mask]
+    annual_dalys_agg = annual_dalys.sum(axis=0)
+
+    dalys_diff = pd.DataFrame(
+        -1.0
+        * find_difference_relative_to_comparison_series(
+            annual_dalys_agg,
+            comparison=baseline_scenario,
+            scaled=False,
+        )
+    ).T
+
+    summarized = summarize(dalys_diff)
+
+    results = {}
+    scenario_names = summarized.columns.get_level_values(0).unique()
+
+    for scenario in scenario_names:
+        results[scenario] = {
+            "mean": summarized[(scenario, "mean")].iloc[0],
+            "lower": summarized[(scenario, "lower")].iloc[0],
+            "upper": summarized[(scenario, "upper")].iloc[0],
+        }
+
+    return pd.DataFrame(results).T
+
+
+def calculate_deaths_averted(
+    annual_deaths,
+    baseline_scenario,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Calculate absolute deaths averted using run-to-run differences.
+    """
+    years = annual_deaths.index.astype(int)
+    year_mask = np.isin(years, list(comparison_years))
+
+    annual_deaths = annual_deaths.loc[year_mask]
+    annual_deaths_agg = annual_deaths.sum(axis=0)
+
+    deaths_diff = pd.DataFrame(
+        -1.0
+        * find_difference_relative_to_comparison_series(
+            annual_deaths_agg,
+            comparison=baseline_scenario,
+            scaled=False,
+        )
+    ).T
+
+    summarized = summarize(deaths_diff)
+
+    results = {}
+    scenario_names = summarized.columns.get_level_values(0).unique()
+
+    for scenario in scenario_names:
+        results[scenario] = {
+            "mean": summarized[(scenario, "mean")].iloc[0],
+            "lower": summarized[(scenario, "lower")].iloc[0],
+            "upper": summarized[(scenario, "upper")].iloc[0],
+        }
+
+    return pd.DataFrame(results).T
+
+
 # Calculate % deaths averted by cause
 def calculate_percent_deaths_averted_by_cause(
     deaths_by_cause,
@@ -788,7 +865,106 @@ def calculate_percent_deaths_averted_by_age_group(
     return results
 
 
-def plot_percent_dalys_averted_comparison(default_df, improved_df):
+
+def calculate_absolute_averted_by_category(
+    data,
+    baseline_scenario,
+):
+    """
+    Calculate absolute DALYs/deaths averted by cause or age group.
+    Uses run-to-run differences before summarising.
+    """
+
+    absolute_diff = (
+        -1.0
+        * find_difference_relative_to_comparison_series_dataframe(
+            data,
+            comparison=baseline_scenario,
+            scaled=False,
+        )
+    )
+
+    summarized = summarize(absolute_diff)
+
+    results = {}
+    scenario_names = summarized.columns.get_level_values(0).unique()
+
+    for scenario in scenario_names:
+        results[scenario] = pd.DataFrame({
+            "mean": summarized[(scenario, "mean")],
+            "lower": summarized[(scenario, "lower")],
+            "upper": summarized[(scenario, "upper")],
+        })
+
+    return results
+
+
+
+def annotate_averted_bars(
+    ax,
+    bars,
+    percent_df,
+    upper_values,
+    horizontal=False,
+    fontsize=7,
+):
+    """
+    Annotate absolute DALYs/deaths averted bars with
+    percentage change and its 95% CI.
+    """
+
+    for i, (bar, (_, row)) in enumerate(
+        zip(bars, percent_df.iterrows())
+    ):
+
+        pct_mean = row["mean"]
+        pct_lower = row["lower"]
+        pct_upper = row["upper"]
+
+        if horizontal:
+            annotation = (
+                f"{pct_mean:+.1f}% "
+                f"(95% CI: {pct_lower:+.1f} to {pct_upper:+.1f})"
+            )
+        else:
+            annotation = (
+                f"{pct_mean:+.1f}%\n"
+                f"95% CI: ({pct_lower:+.1f}%, {pct_upper:+.1f}%)"
+            )
+
+        # Position at the upper absolute confidence limit.
+        upper_limit = upper_values[i]
+
+        if horizontal:
+            y_position = bar.get_y() + bar.get_height() / 2
+
+            ax.annotate(
+                annotation,
+                xy=(upper_limit, y_position),
+                xytext=(6, 0),
+                textcoords="offset points",
+                ha="left",
+                va="center",
+                fontsize=fontsize,
+                annotation_clip=False,
+            )
+
+        else:
+            x_position = bar.get_x() + bar.get_width() / 2
+
+            ax.annotate(
+                annotation,
+                xy=(x_position, upper_limit),
+                xytext=(0, 6),
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                fontsize=fontsize,
+                annotation_clip=False,
+            )
+
+
+def plot_percent_dalys_averted_comparison(default_absolute, default_percent, improved_absolute, improved_percent):
     # Default Healthsystem
     ordered_scenarios_default = [
         "Fewer Nurses / Default Healthsystem Function",
@@ -815,9 +991,9 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
     }
 
     labels_default = [label_map_default[s] for s in ordered_scenarios_default]
-    means_default = default_df.loc[ordered_scenarios_default, "mean"].values
-    lowers_default = default_df.loc[ordered_scenarios_default, "lower"].values
-    uppers_default = default_df.loc[ordered_scenarios_default, "upper"].values
+    means_default = default_absolute.loc[ordered_scenarios_default, "mean"].values
+    lowers_default = default_absolute.loc[ordered_scenarios_default, "lower"].values
+    uppers_default = default_absolute.loc[ordered_scenarios_default, "upper"].values
 
     yerr_default = np.vstack([means_default - lowers_default, uppers_default - means_default,])
 
@@ -825,18 +1001,19 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
 
     fig_default, ax_default = plt.subplots(figsize=(7, 6))
 
-    ax_default.bar(
-        labels_default,
-        means_default,
-        yerr=yerr_default,
-        capsize=6,
-        color=colors_default,
-        width=0.55,
+    ax_default.bar(labels_default, means_default, yerr=yerr_default, capsize=6, color=colors_default, width=0.55)
+
+    annotate_averted_bars(
+        ax_default,
+        ax_default.patches,
+        default_percent.loc[ordered_scenarios_default],
+        upper_values=uppers_default,
     )
 
     ax_default.axhline(0, color="black", linewidth=1)
     # ax_default.set_title("Default Healthsystem")
-    ax_default.set_ylabel("% DALYs averted")
+    ax_default.set_ylabel("DALYs averted")
+    ax_default.margins(y=0.25)
     ax_default.grid(axis="y", alpha=0.3)
 
     # fig_default.suptitle(
@@ -872,9 +1049,9 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
     }
 
     labels_improved = [label_map_improved[s] for s in ordered_scenarios_improved]
-    means_improved = improved_df.loc[ordered_scenarios_improved, "mean"].values
-    lowers_improved = improved_df.loc[ordered_scenarios_improved, "lower"].values
-    uppers_improved = improved_df.loc[ordered_scenarios_improved, "upper"].values
+    means_improved = improved_absolute.loc[ordered_scenarios_improved, "mean"].values
+    lowers_improved = improved_absolute.loc[ordered_scenarios_improved, "lower"].values
+    uppers_improved = improved_absolute.loc[ordered_scenarios_improved, "upper"].values
 
     yerr_improved = np.vstack([means_improved - lowers_improved, uppers_improved - means_improved,])
     colors_improved = [color_map_improved[s] for s in ordered_scenarios_improved]
@@ -890,9 +1067,17 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
         width=0.55,
     )
 
+    annotate_averted_bars(
+        ax_improved,
+        ax_improved.patches,
+        improved_percent.loc[ordered_scenarios_improved],
+        upper_values=uppers_improved,
+    )
+
     ax_improved.axhline(0, color="black", linewidth=1)
     # ax_improved.set_title("Improved Healthsystem")
-    ax_improved.set_ylabel("% DALYs averted")
+    ax_improved.set_ylabel("DALYs averted")
+    ax_improved.margins(y=0.25)
     ax_improved.grid(axis="y", alpha=0.3)
     # fig_improved.suptitle(
     #     "% DALYs averted relative to baseline (2027–2034)",
@@ -902,7 +1087,7 @@ def plot_percent_dalys_averted_comparison(default_df, improved_df):
     return fig_default, ax_default, fig_improved, ax_improved
 
 
-def plot_percent_deaths_averted_comparison(default_df, improved_df):
+def plot_percent_deaths_averted_comparison(default_absolute, default_percent, improved_absolute, improved_percent):
     # Default Healthsystem
     ordered_scenarios_default = [
         "Fewer Nurses / Default Healthsystem Function",
@@ -929,27 +1114,27 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
     }
 
     labels_default = [label_map_default[s] for s in ordered_scenarios_default]
-    means_default = default_df.loc[ordered_scenarios_default, "mean"].values
-    lowers_default = default_df.loc[ordered_scenarios_default, "lower"].values
-    uppers_default = default_df.loc[ordered_scenarios_default, "upper"].values
+    means_default = default_absolute.loc[ordered_scenarios_default, "mean"].values
+    lowers_default = default_absolute.loc[ordered_scenarios_default, "lower"].values
+    uppers_default = default_absolute.loc[ordered_scenarios_default, "upper"].values
 
     yerr_default = np.vstack([means_default - lowers_default, uppers_default - means_default,])
     colors_default = [color_map_default[s] for s in ordered_scenarios_default]
 
     fig_default, ax_default = plt.subplots(figsize=(7, 6))
 
-    ax_default.bar(
-        labels_default,
-        means_default,
-        yerr=yerr_default,
-        capsize=6,
-        color=colors_default,
-        width=0.55,
+    ax_default.bar(labels_default, means_default, yerr=yerr_default, capsize=6, color=colors_default, width=0.55)
+    annotate_averted_bars(
+        ax_default,
+        ax_default.patches,
+        default_percent.loc[ordered_scenarios_default],
+        upper_values=uppers_default,
     )
 
     ax_default.axhline(0, color="black", linewidth=1)
     # ax_default.set_title("Default Healthsystem")
-    ax_default.set_ylabel("% Deaths averted")
+    ax_default.set_ylabel("Deaths averted")
+    ax_default.margins(y=0.25)
     ax_default.grid(axis="y", alpha=0.3)
 
     # fig_default.suptitle(
@@ -985,27 +1170,27 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
     }
 
     labels_improved = [label_map_improved[s] for s in ordered_scenarios_improved]
-    means_improved = improved_df.loc[ordered_scenarios_improved, "mean"].values
-    lowers_improved = improved_df.loc[ordered_scenarios_improved, "lower"].values
-    uppers_improved = improved_df.loc[ordered_scenarios_improved, "upper"].values
+    means_improved = improved_absolute.loc[ordered_scenarios_improved, "mean"].values
+    lowers_improved = improved_absolute.loc[ordered_scenarios_improved, "lower"].values
+    uppers_improved = improved_absolute.loc[ordered_scenarios_improved, "upper"].values
 
     yerr_improved = np.vstack([means_improved - lowers_improved, uppers_improved - means_improved,])
     colors_improved = [color_map_improved[s] for s in ordered_scenarios_improved]
 
     fig_improved, ax_improved = plt.subplots(figsize=(7, 6))
 
-    ax_improved.bar(
-        labels_improved,
-        means_improved,
-        yerr=yerr_improved,
-        capsize=6,
-        color=colors_improved,
-        width=0.55,
+    ax_improved.bar(labels_improved, means_improved, yerr=yerr_improved, capsize=6, color=colors_improved, width=0.55)
+    annotate_averted_bars(
+        ax_improved,
+        ax_improved.patches,
+        improved_percent.loc[ordered_scenarios_improved],
+        upper_values=uppers_improved,
     )
 
     ax_improved.axhline(0, color="black", linewidth=1)
     ax_improved.set_title("Improved Healthsystem")
-    ax_improved.set_ylabel("% Deaths averted\n")
+    ax_improved.set_ylabel("Deaths averted")
+    ax_improved.margins(y=0.25)
     ax_improved.grid(axis="y", alpha=0.3)
 
     fig_improved.suptitle(
@@ -1018,8 +1203,10 @@ def plot_percent_deaths_averted_comparison(default_df, improved_df):
 
 # Shared plotting function for percentage DALYs/deaths averted by health area
 def _plot_percent_averted_by_cause(
-    default_df,
-    improved_df,
+    default_absolute,
+    default_percent,
+    improved_absolute,
+    improved_percent,
     outcome_label,
 ):
     """
@@ -1043,10 +1230,10 @@ def _plot_percent_averted_by_cause(
             area
             for area in CAUSE_GROUP_ORDER
             if area != "Other"
-               and area in default_df[
+               and area in default_absolute[
                    "Fewer Nurses / Default Healthsystem Function"
                ].index
-               and area in improved_df[
+               and area in improved_absolute[
                    "Fewer Nurses / Improved Healthsystem Function"
                ].index
         ],
@@ -1064,22 +1251,22 @@ def _plot_percent_averted_by_cause(
 
     # Figure dimensions.
     figure_width = 15
-    figure_height = max(10, len(health_areas) * 1.8)
+    figure_height = max(12, len(health_areas) * 2.2)
 
     # Spacing between health areas.
-    group_spacing = 1.5
+    group_spacing = 1.8
 
     y = np.arange(len(health_areas)) * group_spacing
 
-    # Width/height allocated to the five scenario bars.
-    bar_height = 0.14
+    # Spacing between the five scenario bars.
+    bar_height = 0.18
 
     offsets = (
         np.arange(len(scenarios))
         - (len(scenarios) - 1) / 2
     ) * bar_height
 
-    def plot_healthsystem(data, healthsystem):
+    def plot_healthsystem(absolute_data, percent_data, healthsystem):
 
         fig, ax = plt.subplots(
             figsize=(figure_width, figure_height)
@@ -1091,20 +1278,24 @@ def _plot_percent_averted_by_cause(
                 f"{healthsystem} Healthsystem Function"
             )
 
-            # Retrieve values in the intended health-area order.
-            scenario_df = data[scenario_name].reindex(
+            # Absolute values determine bar lengths and error bars.
+            absolute_df = absolute_data[scenario_name].reindex(
                 health_areas
             )
 
-            means = scenario_df["mean"].to_numpy()
-            lower = scenario_df["lower"].to_numpy()
-            upper = scenario_df["upper"].to_numpy()
+            # Percentage values determine annotations.
+            percent_df = percent_data[scenario_name].reindex(
+                health_areas
+            )
 
-            # Position of each scenario bar.
+            means = absolute_df["mean"].to_numpy()
+            lower = absolute_df["lower"].to_numpy()
+            upper = absolute_df["upper"].to_numpy()
+
             ypos = y + offsets[i]
 
-            # Draw horizontal bars.
-            ax.barh(
+            # Draw absolute horizontal bars.
+            bars = ax.barh(
                 ypos,
                 means,
                 height=bar_height * 0.9,
@@ -1121,58 +1312,82 @@ def _plot_percent_averted_by_cause(
                 },
             )
 
+            # Annotate bars with percentage change and 95% CI
+            annotate_averted_bars(ax, bars, percent_df, upper_values=upper, horizontal=True, fontsize=6.5)
+
         # Reference line at zero.
-        ax.axvline(0, color="black", linewidth=1,)
+        ax.axvline(0, color="black", linewidth=1)
 
         # Health-area labels.
         ax.set_yticks(y)
         ax.set_yticklabels(health_areas)
 
-        # Colour health-area labels according to their groups.
-        for tick, group in zip(
-            ax.get_yticklabels(),
-            health_areas,
-        ):
-            tick.set_color(CAUSE_GROUP_COLOR[group])
+        for tick in ax.get_yticklabels():
+            tick.set_color("black")
             tick.set_fontweight("bold")
 
-        # Separate health areas with dashed horizontal lines.
+        # Separate health areas.
         for i in range(len(health_areas) - 1):
             separator_position = (
-                y[i] + y[i + 1]
-            ) / 2
+                                     y[i] + y[i + 1]
+                                 ) / 2
 
-            ax.axhline(separator_position, color="grey", linestyle="--", linewidth=1, alpha=0.7,)
+            ax.axhline(
+                separator_position,
+                color="grey",
+                linestyle="--",
+                linewidth=1,
+                alpha=0.7,
+            )
 
-        # Put the first health area at the top.
         ax.invert_yaxis()
 
-        # Axis labels.
-        ax.set_xlabel(f"% {outcome_label} averted", fontsize=12,)
-        ax.set_ylabel("Health area", fontsize=12,)
+        ax.set_xlabel(
+            f"{outcome_label} averted",
+            fontsize=12,
+        )
+        ax.set_ylabel("Health area", fontsize=12)
 
-        # Grid and formatting.
-        ax.grid(axis="x", alpha=0.3,)
-
+        ax.grid(axis="x", alpha=0.3)
         ax.set_axisbelow(True)
-        ax.tick_params(axis="y", labelsize=11, length=0, pad=12,)
-        ax.tick_params(axis="x", labelsize=10,)
-        ax.set_yticks(y)
-        ax.set_yticklabels(health_areas)
-        ax.tick_params(axis="y", labelcolor="black")
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=5, frameon=True,)
-        # Leave space for labels and legend
-        fig.subplots_adjust(left=0.20, right=0.98, top=0.97, bottom=0.15,)
+
+        ax.tick_params(
+            axis="y",
+            labelsize=11,
+            length=0,
+            pad=12,
+        )
+
+        ax.tick_params(axis="x", labelsize=10)
+
+        # Allow room for percentage annotations.
+        ax.margins(x=0.30)
+
+        ax.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.10),
+            ncol=5,
+            frameon=True,
+        )
+
+        fig.subplots_adjust(
+            left=0.20,
+            right=0.98,
+            top=0.97,
+            bottom=0.15,
+        )
+
         return fig, ax
 
-    # Produce separate figures for each healthsystem.
     fig_default, ax_default = plot_healthsystem(
-        default_df,
+        default_absolute,
+        default_percent,
         "Default",
     )
 
     fig_improved, ax_improved = plot_healthsystem(
-        improved_df,
+        improved_absolute,
+        improved_percent,
         "Improved",
     )
 
@@ -1186,229 +1401,48 @@ def _plot_percent_averted_by_cause(
 
 # Plot % DALYs averted by health area
 def plot_percent_dalys_averted_by_cause(
-    default_df,
-    improved_df,
+    default_absolute,
+    default_percent,
+    improved_absolute,
+    improved_percent,
 ):
     return _plot_percent_averted_by_cause(
-        default_df=default_df,
-        improved_df=improved_df,
+        default_absolute=default_absolute,
+        default_percent=default_percent,
+        improved_absolute=improved_absolute,
+        improved_percent=improved_percent,
         outcome_label="DALYs",
     )
 
 
 # Plot % deaths averted by health area
 def plot_percent_deaths_averted_by_cause(
-    default_df,
-    improved_df,
+    default_absolute,
+    default_percent,
+    improved_absolute,
+    improved_percent,
 ):
     return _plot_percent_averted_by_cause(
-        default_df=default_df,
-        improved_df=improved_df,
+        default_absolute=default_absolute,
+        default_percent=default_percent,
+        improved_absolute=improved_absolute,
+        improved_percent=improved_percent,
         outcome_label="Deaths",
     )
 
 
-# Plot % DALYs averted by age group
-def plot_percent_dalys_averted_by_age_group(default_df,improved_df,):
-    # Default Healthsystem
-    default_more = default_df["More Nurses / Default Healthsystem Function"]
-    default_cnp = default_df["More CNP staff / Default Healthsystem Function"]
-    default_more_district = default_df["More Nurses by District / Default Healthsystem Function"]
-    default_cnp_district = default_df["More CNP staff by District / Default Healthsystem Function"]
-    default_fewer = default_df["Fewer Nurses / Default Healthsystem Function"]
 
-    # Improved Healthsystem
-    improved_more = improved_df["More Nurses / Improved Healthsystem Function"]
-    improved_cnp = improved_df["More CNP staff / Improved Healthsystem Function"]
-    improved_more_district = improved_df["More Nurses by District / Improved Healthsystem Function"]
-    improved_cnp_district = improved_df["More CNP staff by District / Improved Healthsystem Function"]
-    improved_fewer = improved_df["Fewer Nurses / Improved Healthsystem Function"]
-
-    # Ordering age groups
-    age_order = [
-        "0-4",
-        "5-9",
-        "10-14",
-        "15-19",
-        "20-24",
-        "25-29",
-        "30-34",
-        "35-39",
-        "40-44",
-        "45-49",
-        "50-54",
-        "55-59",
-        "60-64",
-        "65-69",
-        "70-74",
-        "75-79",
-        "80+",
-    ]
-
-    for df in [default_more, default_fewer, improved_more, improved_fewer,]:
-        df = df.reindex(age_order)
-
-    default_more = default_more.reindex(age_order)
-    default_cnp = default_cnp.reindex(age_order)
-    default_more_district = default_more_district.reindex(age_order)
-    default_cnp_district = default_cnp_district.reindex(age_order)
-    default_fewer = default_fewer.reindex(age_order)
-
-    improved_more = improved_more.reindex(age_order)
-    improved_cnp = improved_cnp.reindex(age_order)
-    improved_more_district = improved_more_district.reindex(age_order)
-    improved_cnp_district = improved_cnp_district.reindex(age_order)
-    improved_fewer = improved_fewer.reindex(age_order)
-
-    # Reverse so oldest ages appear at top
-    default_more = default_more.iloc[::-1]
-    default_cnp = default_cnp.iloc[::-1]
-    default_more_district = default_more_district.iloc[::-1]
-    default_cnp_district = default_cnp_district.iloc[::-1]
-    default_fewer = default_fewer.iloc[::-1]
-
-    improved_more = improved_more.iloc[::-1]
-    improved_cnp = improved_cnp.iloc[::-1]
-    improved_more_district = improved_more_district.iloc[::-1]
-    improved_cnp_district = improved_cnp_district.iloc[::-1]
-    improved_fewer = improved_fewer.iloc[::-1]
-
-    # Plot Default Healthsystem
-    scenarios_default = [
-        ("Fewer nurses", default_fewer, "indianred"),
-        ("More nurses", default_more, "steelblue"),
-        ("More CNP", default_cnp, "darkgreen"),
-        ("More nurses by district", default_more_district, "mediumpurple"),
-        ("More CNP by district", default_cnp_district, "orange"),
-    ]
-
-    fig_default, ax_default = plt.subplots(figsize=(12, 10))
-    y_default = np.arange(len(scenarios_default[0][1]))
-
-    offsets = [0.32, 0.16, 0.0, -0.16, -0.32]
-
-    for offset, (label, df, color) in zip(offsets, scenarios_default):
-        ax_default.barh(
-            y_default + offset,
-            df["mean"],
-            height=0.20,
-            color=color,
-            label=label,
-        )
-
-        ax_default.errorbar(
-            df["mean"],
-            y_default + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
-        )
-
-    ax_default.axvline(0, color="black")
-    ax_default.set_yticks(y_default)
-    ax_default.set_yticklabels(scenarios_default[0][1].index)
-    ax_default.set_xlabel("% DALYs averted")
-    # ax_default.set_title("Default Healthsystem")
-    ax_default.grid(axis="x", alpha=0.3)
-
-    handles_default, labels_default = ax_default.get_legend_handles_labels()
-    ax_default.legend(
-        handles_default,
-        labels_default,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=5,
-        frameon=True,
-    )
-
-    # fig_default.suptitle(
-    #     "% DALYs averted by age group on national level\n"
-    #     "(2027–2034)"
-    # )
-    fig_default.tight_layout(rect=[0, 0.08, 1, 1])
-
-    # Plot Improved Healthsystem
-    scenarios_improved = [
-        ("Fewer nurses", improved_fewer, "indianred"),
-        ("More nurses", improved_more, "steelblue"),
-        ("More CNP", improved_cnp, "darkgreen"),
-        ("More nurses by district", improved_more_district, "mediumpurple"),
-        ("More CNP by district", improved_cnp_district, "orange"),
-    ]
-
-    fig_improved, ax_improved = plt.subplots(figsize=(12, 10))
-    y_improved = np.arange(len(scenarios_improved[0][1]))
-
-    for offset, (label, df, color) in zip(offsets, scenarios_improved):
-        ax_improved.barh(
-            y_improved + offset,
-            df["mean"],
-            height=0.18,
-            color=color,
-            label=label,
-        )
-
-        ax_improved.errorbar(
-            df["mean"],
-            y_improved + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
-        )
-
-    ax_improved.axvline(0, color="black")
-    ax_improved.set_yticks(y_improved)
-    ax_improved.set_yticklabels(scenarios_improved[0][1].index)
-    ax_improved.set_xlabel("% DALYs averted")
-    # ax_improved.set_title("Improved Healthsystem")
-    ax_improved.grid(axis="x", alpha=0.3)
-
-    handles_improved, labels_improved = ax_improved.get_legend_handles_labels()
-    ax_improved.legend(
-        handles_improved,
-        labels_improved,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=5,
-        frameon=True,
-    )
-
-    # fig_improved.suptitle(
-    #     "% DALYs averted by age group on national level\n"
-    #     "(2027–2034)"
-    # )
-    fig_improved.tight_layout(rect=[0, 0.08, 1, 1])
-
-    return fig_default, ax_default, fig_improved, ax_improved
-
-
-# Plot % deaths averted by age group
-def plot_percent_deaths_averted_by_age_group(default_df,improved_df,):
-    # Default Healthsystem
-    default_more = default_df["More Nurses / Default Healthsystem Function"]
-    default_cnp = default_df["More CNP staff / Default Healthsystem Function"]
-    default_more_district = default_df["More Nurses by District / Default Healthsystem Function"]
-    default_cnp_district = default_df["More CNP staff by District / Default Healthsystem Function"]
-    default_fewer = default_df["Fewer Nurses / Default Healthsystem Function"]
-
-    # Improved Healthsystem
-    improved_more = improved_df["More Nurses / Improved Healthsystem Function"]
-    improved_cnp = improved_df["More CNP staff / Improved Healthsystem Function"]
-    improved_more_district = improved_df["More Nurses by District / Improved Healthsystem Function"]
-    improved_cnp_district = improved_df["More CNP staff by District / Improved Healthsystem Function"]
-    improved_fewer = improved_df["Fewer Nurses / Improved Healthsystem Function"]
+def _plot_averted_by_age_group(
+    default_absolute,
+    default_percent,
+    improved_absolute,
+    improved_percent,
+    outcome_label,
+):
+    """
+    Plot absolute and percentage DALYs/deaths averted
+    by age group, using two subplots per healthsystem.
+    """
 
     age_order = [
         "0-4",
@@ -1430,150 +1464,201 @@ def plot_percent_deaths_averted_by_age_group(default_df,improved_df,):
         "80+",
     ]
 
-    default_more = default_more.reindex(age_order)
-    default_cnp = default_cnp.reindex(age_order)
-    default_more_district = default_more_district.reindex(age_order)
-    default_cnp_district = default_cnp_district.reindex(age_order)
-    default_fewer = default_fewer.reindex(age_order)
-
-    improved_more = improved_more.reindex(age_order)
-    improved_cnp = improved_cnp.reindex(age_order)
-    improved_more_district = improved_more_district.reindex(age_order)
-    improved_cnp_district = improved_cnp_district.reindex(age_order)
-    improved_fewer = improved_fewer.reindex(age_order)
-
-    # Reverse so oldest ages appear at top
-    default_more = default_more.iloc[::-1]
-    default_cnp = default_cnp.iloc[::-1]
-    default_more_district = default_more_district.iloc[::-1]
-    default_cnp_district = default_cnp_district.iloc[::-1]
-    default_fewer = default_fewer.iloc[::-1]
-
-    improved_more = improved_more.iloc[::-1]
-    improved_cnp = improved_cnp.iloc[::-1]
-    improved_more_district = improved_more_district.iloc[::-1]
-    improved_cnp_district = improved_cnp_district.iloc[::-1]
-    improved_fewer = improved_fewer.iloc[::-1]
-
-    # Plot Default Healthsystem
-    scenarios_default = [
-        ("Fewer nurses", default_fewer, "indianred"),
-        ("More nurses", default_more, "steelblue"),
-        ("More CNP", default_cnp, "darkgreen"),
-        ("More nurses by district", default_more_district, "mediumpurple"),
-        ("More CNP by district", default_cnp_district, "orange"),
+    scenarios = [
+        ("Fewer nurses", "Fewer Nurses", "indianred"),
+        ("More nurses", "More Nurses", "steelblue"),
+        ("More CNP", "More CNP staff", "darkgreen"),
+        ("More nurses by district", "More Nurses by District", "mediumpurple"),
+        ("More CNP by district", "More CNP staff by District", "orange"),
     ]
 
-    fig_default, ax_default = plt.subplots(figsize=(12, 10))
-    y_default = np.arange(len(scenarios_default[0][1]))
+    # Five bars per age group.
+    bar_height = 0.15
+    offsets = (
+        np.arange(len(scenarios))
+        - (len(scenarios) - 1) / 2
+    ) * bar_height
 
-    offsets = [0.32, 0.16, 0.0, -0.16, -0.32]
+    def plot_healthsystem(
+        absolute_data,
+        percent_data,
+        healthsystem,
+    ):
 
-    for offset, (label, df, color) in zip(offsets, scenarios_default):
-        ax_default.barh(
-            y_default + offset,
-            df["mean"],
-            height=0.20,
-            color=color,
-            label=label,
+        fig, axes = plt.subplots(
+            ncols=2,
+            figsize=(19, 11),
+            sharey=True,
         )
 
-        ax_default.errorbar(
-            df["mean"],
-            y_default + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
+        ax_absolute, ax_percent = axes
+
+        y = np.arange(len(age_order))
+
+        # Plot absolute and percentage values separately.
+        plot_panels = [
+            (
+                ax_absolute,
+                absolute_data,
+                "mean",
+                "lower",
+                "upper",
+                f"{outcome_label} averted",
+            ),
+            (
+                ax_percent,
+                percent_data,
+                "mean",
+                "lower",
+                "upper",
+                f"% {outcome_label} averted",
+            ),
+        ]
+
+        for panel_index, (
+            ax,
+            panel_data,
+            mean_col,
+            lower_col,
+            upper_col,
+            xlabel,
+        ) in enumerate(plot_panels):
+
+            for offset, (label, scenario_prefix, color) in zip(
+                offsets,
+                scenarios,
+            ):
+
+                scenario_name = (
+                    f"{scenario_prefix} / "
+                    f"{healthsystem} Healthsystem Function"
+                )
+
+                df = panel_data[scenario_name].reindex(
+                    age_order
+                ).iloc[::-1]
+
+                means = df[mean_col].to_numpy()
+                lowers = df[lower_col].to_numpy()
+                uppers = df[upper_col].to_numpy()
+
+                ypos = y + offset
+
+                ax.barh(
+                    ypos,
+                    means,
+                    height=bar_height * 0.9,
+                    color=color,
+                    label=label if panel_index == 0 else None,
+                )
+
+                ax.errorbar(
+                    means,
+                    ypos,
+                    xerr=np.vstack([
+                        means - lowers,
+                        uppers - means,
+                    ]),
+                    fmt="none",
+                    elinewidth=1,
+                    capsize=1.5,
+                    color="black",
+                    alpha=0.4,
+                )
+
+            ax.axvline(0, color="black", linewidth=1)
+
+            ax.set_xlabel(xlabel)
+            ax.grid(axis="x", alpha=0.3)
+            ax.set_axisbelow(True)
+
+            ax.set_yticks(y)
+            ax.set_yticklabels(age_order[::-1])
+
+        # Titles for the two panels.
+        ax_absolute.set_title(
+            f"Absolute {outcome_label} averted"
         )
 
-    ax_default.axvline(0, color="black")
-    ax_default.set_yticks(y_default)
-    ax_default.set_yticklabels(scenarios_default[0][1].index)
-    ax_default.set_xlabel("% Deaths averted")
-    # ax_default.set_title("Default Healthsystem")
-    ax_default.grid(axis="x", alpha=0.3)
+        ax_percent.set_title(
+            f"Percentage {outcome_label} averted"
+        )
 
-    handles_default, labels_default = ax_default.get_legend_handles_labels()
-    ax_default.legend(
-        handles_default,
-        labels_default,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=5,
-        frameon=True,
+        ax_absolute.set_ylabel("Age group")
+
+        # One shared legend.
+        handles, labels = ax_absolute.get_legend_handles_labels()
+
+        fig.legend(
+            handles,
+            labels,
+            loc="lower center",
+            bbox_to_anchor=(0.5, -0.01),
+            ncol=5,
+            frameon=True,
+        )
+
+        fig.subplots_adjust(
+            left=0.09,
+            right=0.98,
+            top=0.93,
+            bottom=0.12,
+            wspace=0.12,
+        )
+
+        return fig, axes
+
+    # Default Healthsystem.
+    fig_default, axes_default = plot_healthsystem(
+        default_absolute,
+        default_percent,
+        "Default",
     )
 
-    # fig_default.suptitle(
-    #     "% deaths averted by age group on national level\n"
-    #     "(2027–2034)"
-    # )
-    fig_default.tight_layout(rect=[0, 0.08, 1, 1])
-
-    # Plot Improved Healthsystem
-    scenarios_improved = [
-        ("Fewer nurses", improved_fewer, "indianred"),
-        ("More nurses", improved_more, "steelblue"),
-        ("More CNP", improved_cnp, "darkgreen"),
-        ("More nurses by district", improved_more_district, "mediumpurple"),
-        ("More CNP by district", improved_cnp_district, "orange"),
-    ]
-
-    fig_improved, ax_improved = plt.subplots(figsize=(12, 10))
-    y_improved = np.arange(len(scenarios_improved[0][1]))
-
-    for offset, (label, df, color) in zip(offsets, scenarios_improved):
-        ax_improved.barh(
-            y_improved + offset,
-            df["mean"],
-            height=0.18,
-            color=color,
-            label=label,
-        )
-
-        ax_improved.errorbar(
-            df["mean"],
-            y_improved + offset,
-            xerr=[
-                df["mean"] - df["lower"],
-                df["upper"] - df["mean"],
-            ],
-            fmt="none",
-            elinewidth=1,
-            capsize=1.5,
-            color="black",
-            alpha=0.4,
-        )
-
-    ax_improved.axvline(0, color="black")
-    ax_improved.set_yticks(y_improved)
-    ax_improved.set_yticklabels(scenarios_improved[0][1].index)
-    ax_improved.set_xlabel("% deaths averted")
-    # ax_improved.set_title("Improved Healthsystem")
-    ax_improved.grid(axis="x", alpha=0.3)
-
-    handles_improved, labels_improved = ax_improved.get_legend_handles_labels()
-    ax_improved.legend(
-        handles_improved,
-        labels_improved,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.12),
-        ncol=5,
-        frameon=True,
+    # Improved Healthsystem.
+    fig_improved, axes_improved = plot_healthsystem(
+        improved_absolute,
+        improved_percent,
+        "Improved",
     )
 
-    # fig_improved.suptitle(
-    #     "% deaths averted by age group on national level\n"
-    #     "(2027–2034)"
-    # )
-    fig_improved.tight_layout(rect=[0, 0.08, 1, 1])
+    return (
+        fig_default,
+        axes_default,
+        fig_improved,
+        axes_improved,
+    )
 
-    return fig_default, ax_default, fig_improved, ax_improved
+
+def plot_percent_dalys_averted_by_age_group(
+    default_absolute,
+    default_percent,
+    improved_absolute,
+    improved_percent,
+):
+    return _plot_averted_by_age_group(
+        default_absolute,
+        default_percent,
+        improved_absolute,
+        improved_percent,
+        outcome_label="DALYs",
+    )
+
+
+def plot_percent_deaths_averted_by_age_group(
+    default_absolute,
+    default_percent,
+    improved_absolute,
+    improved_percent,
+):
+    return _plot_averted_by_age_group(
+        default_absolute,
+        default_percent,
+        improved_absolute,
+        improved_percent,
+        outcome_label="Deaths",
+    )
+
 
 
 if __name__ == "__main__":
@@ -1681,9 +1766,34 @@ if __name__ == "__main__":
         comparison_years=range(2027, 2035),
     )
 
+    # Calculate absolute DALYs averted.
+    dalys_averted = calculate_dalys_averted(
+        annual_dalys.loc[
+        :,
+        annual_dalys.columns.get_level_values(0).isin(
+            default_hs_scenarios
+        )
+        ],
+        baseline_scenario=baseline_scenario,
+        comparison_years=range(2027, 2035),
+    )
+
+    dalys_averted_improved = calculate_dalys_averted(
+        annual_dalys.loc[
+        :,
+        annual_dalys.columns.get_level_values(0).isin(
+            improved_hs_scenarios
+        )
+        ],
+        baseline_scenario=baseline_improved_scenario,
+        comparison_years=range(2027, 2035),
+    )
+
     fig_2_default, ax_2_default, fig_2_improved, ax_2_improved = (
         plot_percent_dalys_averted_comparison(
+            dalys_averted,
             percent_dalys_averted,
+            dalys_averted_improved,
             percent_dalys_averted_improved,
         )
     )
@@ -1743,9 +1853,35 @@ if __name__ == "__main__":
         comparison_years=range(2027, 2035),
     )
 
+    # Calculate absolute deaths averted.
+    deaths_averted = calculate_deaths_averted(
+        annual_deaths.loc[
+        :,
+        annual_deaths.columns.get_level_values(0).isin(
+            default_hs_scenarios
+        )
+        ],
+        baseline_scenario=baseline_scenario,
+        comparison_years=range(2027, 2035),
+    )
+
+    deaths_averted_improved = calculate_deaths_averted(
+        annual_deaths.loc[
+        :,
+        annual_deaths.columns.get_level_values(0).isin(
+            improved_hs_scenarios
+        )
+        ],
+        baseline_scenario=baseline_improved_scenario,
+        comparison_years=range(2027, 2035),
+    )
+
+
     fig_4_default, ax_4_default, fig_4_improved, ax_4_improved = (
         plot_percent_deaths_averted_comparison(
+            deaths_averted,
             percent_deaths_averted,
+            deaths_averted_improved,
             percent_deaths_averted_improved,
         )
     )
@@ -1807,9 +1943,26 @@ if __name__ == "__main__":
         )
     )
 
+    # Absolute deaths averted by cause.
+    deaths_averted_by_cause_default = (
+        calculate_absolute_averted_by_category(
+            deaths_by_cause_default,
+            baseline_scenario=baseline_scenario,
+        )
+    )
+
+    deaths_averted_by_cause_improved = (
+        calculate_absolute_averted_by_category(
+            deaths_by_cause_improved,
+            baseline_scenario=baseline_improved_scenario,
+        )
+    )
+
     fig_10_default, ax_10_default, fig_10_improved, ax_10_improved = (
         plot_percent_deaths_averted_by_cause(
+            deaths_averted_by_cause_default,
             percent_deaths_by_cause_default,
+            deaths_averted_by_cause_improved,
             percent_deaths_by_cause_improved,
         )
     )
@@ -1859,9 +2012,26 @@ if __name__ == "__main__":
         )
     )
 
+    # Absolute deaths averted by age group.
+    deaths_averted_by_age_default = (
+        calculate_absolute_averted_by_category(
+            deaths_by_age_group_default,
+            baseline_scenario=baseline_scenario,
+        )
+    )
+
+    deaths_averted_by_age_improved = (
+        calculate_absolute_averted_by_category(
+            deaths_by_age_group_improved,
+            baseline_scenario=baseline_improved_scenario,
+        )
+    )
+
     fig_12_default, ax_12_default, fig_12_improved, ax_12_improved = (
         plot_percent_deaths_averted_by_age_group(
+            deaths_averted_by_age_default,
             percent_deaths_by_age_default,
+            deaths_averted_by_age_improved,
             percent_deaths_by_age_improved,
         )
     )
@@ -1921,9 +2091,26 @@ if __name__ == "__main__":
         )
     )
 
+    # Absolute DALYs averted by cause
+    dalys_averted_by_cause_default = (
+        calculate_absolute_averted_by_category(
+            dalys_by_cause_default,
+            baseline_scenario=baseline_scenario,
+        )
+    )
+
+    dalys_averted_by_cause_improved = (
+        calculate_absolute_averted_by_category(
+            dalys_by_cause_improved,
+            baseline_scenario=baseline_improved_scenario,
+        )
+    )
+
     fig_9_default, ax_9_default, fig_9_improved, ax_9_improved = (
         plot_percent_dalys_averted_by_cause(
+            dalys_averted_by_cause_default,
             percent_by_cause_default,
+            dalys_averted_by_cause_improved,
             percent_by_cause_improved,
         )
     )
@@ -1973,9 +2160,26 @@ if __name__ == "__main__":
         )
     )
 
+    # Absolute DALYs averted by age group.
+    dalys_averted_by_age_default = (
+        calculate_absolute_averted_by_category(
+            dalys_by_age_group_default,
+            baseline_scenario=baseline_scenario,
+        )
+    )
+
+    dalys_averted_by_age_improved = (
+        calculate_absolute_averted_by_category(
+            dalys_by_age_group_improved,
+            baseline_scenario=baseline_improved_scenario,
+        )
+    )
+
     fig_11_default, ax_11_default, fig_11_improved, ax_11_improved = (
         plot_percent_dalys_averted_by_age_group(
+            dalys_averted_by_age_default,
             percent_dalys_by_age_default,
+            dalys_averted_by_age_improved,
             percent_dalys_by_age_improved,
         )
     )
