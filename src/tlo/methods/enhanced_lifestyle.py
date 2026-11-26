@@ -52,7 +52,6 @@ class Lifestyle(Module):
         'init_or_higher_bmi_age3049': Parameter(Types.REAL, 'odds ratio higher BMI if age 30-49'),
         'init_or_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
         'init_or_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
-        'init_or_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
         'init_or_higher_bmi_per_higher_wealth_level': Parameter(
             Types.REAL, 'odds ratio for higher initial bmi category per higher wealth level'
         ),
@@ -83,26 +82,9 @@ class Lifestyle(Module):
         'init_age2030_w5_some_ed': Parameter(
             Types.REAL, 'proportions of low wealth 20-30 year olds with some education at baseline'
         ),
-        'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
-        'init_or_some_ed_age1320': Parameter(Types.REAL, 'odds ratio of some education at baseline age 13-20'),
-        'init_or_some_ed_age2030': Parameter(Types.REAL, 'odds ratio of some education at baseline age 20-30'),
-        'init_or_some_ed_age3040': Parameter(Types.REAL, 'odds ratio of some education at baseline age 30-40'),
-        'init_or_some_ed_age4050': Parameter(Types.REAL, 'odds ratio of some education at baseline age 40-50'),
-        'init_or_some_ed_age5060': Parameter(Types.REAL, 'odds ratio of some education at baseline age 50-60'),
-        'init_or_some_ed_per_higher_wealth': Parameter(
-            Types.REAL, 'odds ratio of some education at baseline per higher wealth level'
-        ),
         'init_prop_age2030_w5_some_ed_sec': Parameter(
             Types.REAL,
             'proportion of low wealth aged 20-30 with some education who have secondary education at baseline',
-        ),
-        'init_or_some_ed_sec_age1320': Parameter(Types.REAL, 'odds ratio of secondary education age 13-20'),
-        'init_or_some_ed_sec_age3040': Parameter(Types.REAL, 'odds ratio of secondary education age 30-40'),
-        'init_or_some_ed_sec_age4050': Parameter(Types.REAL, 'odds ratio of secondary education age 40-50'),
-        'init_or_some_ed_sec_age5060': Parameter(Types.REAL, 'odds ratio of secondary education age 50-60'),
-        'init_or_some_ed_sec_agege60': Parameter(Types.REAL, 'odds ratio of secondary education age 60+'),
-        'init_or_some_ed_sec_per_higher_wealth': Parameter(
-            Types.REAL, 'odds ratio of secondary education per higher wealth level'
         ),
         'init_p_unimproved_sanitation_urban': Parameter(
             Types.REAL, 'initial probability of unimproved_sanitation given urban'
@@ -791,10 +773,10 @@ class LifestyleModels:
                                                    self.params['init_or_tob_age2039_m']),
                                                Predictor().when('(sex == "M") & (age_years >= 40)',
                                                                 self.params['init_or_tob_agege40_m']),
-                                               Predictor('li_wealth').when(2, 2)
-                                               .when(3, 3)
-                                               .when(4, 4)
-                                               .when(5, 5)
+                                               Predictor('li_wealth').when(2, self.params['init_or_tob_wealth2'])
+                                                .when(3, self.params['init_or_tob_wealth3'])
+                                                .when(4, self.params['init_or_tob_wealth4'])
+                                                .when(5, self.params['init_or_tob_wealth5'])
                                                )
         # return a Linear Model object
         return tobacco_use_linear_model
