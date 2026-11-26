@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Dict, Optional
 
-import json
 import re
 
 import numpy as np
@@ -24,7 +23,6 @@ logger_summary.setLevel(logging.INFO)
 TIME_SENSITIVE_MODULES = {'Labour', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes'}
 
 # Seed TREATMENT_ID -> weather service mapping (overridable via parameter/constructor).
-# IPD and the PostnatalWard PNC/IPD overlap are intentionally unresolved — see notes.
 DEFAULT_TREATMENT_SERVICE_MAPPING = {
     "AntenatalCare_Outpatient": "ANC",
     "PostnatalCare_Maternal": "PNC",
@@ -42,7 +40,7 @@ DEFAULT_WBGT_SERVICE_INDICATORS = {
 }
 WBGT_VAR = "wbgt5x_day"
 WBGT_PRECIP_VAR = "precip_month"
-WBGT_REFERENCE_YEAR = 2024  # zone_year is held at 2024, as in the projections
+WBGT_REFERENCE_YEAR = 2025  # zone_year is held at 2025, as in the projections
 MONTH_FE_NAME = "C(month)"
 ZONE_YEAR_FE_NAME = "C(zone_year)"
 
@@ -95,7 +93,7 @@ class WeatherDisruptions(Module):
         ),
         "detailed_disruption_logging": Parameter(
             Types.BOOL,
-            "If True, each delayed/cancelled HSI is logged with district, driver, supply/demand "
+            "If True, each delayed/cancelled HSI is logged with district, weather_event, supply/demand "
             "flag, the scaled disruption probability, and the weather value and model outputs."
         ),
         "scale_factor_prob_disruption": Parameter(
@@ -108,7 +106,7 @@ class WeatherDisruptions(Module):
             Types.STRING, "Which ensemble member. Options: lowest, mean/median, highest."
         ),
         "year_effective_climate_disruptions": Parameter(
-            Types.INT, "Minimum year from which there can be climate disruptions. Minimum is 2025"
+            Types.INT, "Minimum year from which there can be climate disruptions. Minimum is 2026"
         ),
         "services_affected_precip": Parameter(
             Types.STRING, "Master switch for whether services can be affected by weather. Options: all, none"
@@ -221,10 +219,6 @@ class WeatherDisruptions(Module):
         self.arg_wbgt_service_indicators = wbgt_service_indicators
         self.arg_default_disruption_service = default_disruption_service
 
-        self._hsi_checked_count = 0
-        self._hsi_checked_by_district: Dict[str, int] = {}
-        self._hsi_checked_by_facility_treatment: Dict[str, int] = {}
-
         self._reset_monthly_counters_internal()
 
     def _reset_monthly_counters_internal(self):
@@ -246,6 +240,15 @@ class WeatherDisruptions(Module):
         self._delayed_by_facility_treatment: Dict[str, int] = {}
         self._supply_side_by_facility_treatment: Dict[str, int] = {}
         self._demand_side_by_facility_treatment: Dict[str, int] = {}
+
+        self._hsi_checked_count = 0
+        self._hsi_checked_unique_count = 0
+
+        self._hsi_checked_by_district: Dict[str, int] = {}
+        self._hsi_checked_unique_by_district: Dict[str, int] = {}
+
+        self._hsi_checked_by_facility_treatment: Dict[str, int] = {}
+        self._hsi_checked_unique_by_facility_treatment: Dict[str, int] = {}
 
     def _increment_district_counter(self, counter_dict: Dict, district: str, n: int = 1):
         counter_dict[district] = counter_dict.get(district, 0) + n
@@ -312,14 +315,14 @@ class WeatherDisruptions(Module):
         )
 
         year_param = self.parameters.get("year_effective_climate_disruptions")
-        if year_param is None or pd.isna(year_param) or year_param < 2025:
-            self.parameters["year_effective_climate_disruptions"] = 2025
+        if year_param is None or pd.isna(year_param) or year_param < 2026:
+            self.parameters["year_effective_climate_disruptions"] = 2026
 
-        driver = self.parameters.get("weather_event", "precip")
-        if driver not in ("precip", "wbgt"):
-            raise ValueError(f"weather_event must be 'precip' or 'wbgt', got {driver!r}")
+        weather_event = self.parameters.get("weather_event", "precip")
+        if weather_event not in ("precip", "wbgt"):
+            raise ValueError(f"weather_event must be 'precip' or 'wbgt', got {weather_event!r}")
 
-        if driver == "precip":
+        if weather_event == "precip":
             self._read_precip_inputs(resourcefilepath)
         else:
             self._read_wbgt_inputs(resourcefilepath)
@@ -412,6 +415,8 @@ class WeatherDisruptions(Module):
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
+                "hsi_checked": self._hsi_checked_count,
+                "hsi_checked_unique": self._hsi_checked_unique_count,
                 "hsi_total": self._disruptions_hsi_total_count,
                 "cancelled": self._disruptions_cancelled_count,
                 "delayed": self._disruptions_delayed_count,
@@ -424,6 +429,8 @@ class WeatherDisruptions(Module):
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
+                "hsi_checked_by_district": dict(self._hsi_checked_by_district),
+                "hsi_checked_unique_by_district": dict(self._hsi_checked_unique_by_district),
                 "hsi_total_by_district": dict(self._hsi_total_by_district),
                 "cancelled_by_district": dict(self._cancelled_by_district),
                 "delayed_by_district": dict(self._delayed_by_district),
@@ -436,6 +443,8 @@ class WeatherDisruptions(Module):
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
+                "hsi_checked_by_facility_treatment": dict(self._hsi_checked_by_facility_treatment),
+                "hsi_checked_unique_by_facility_treatment": dict(self._hsi_checked_unique_by_facility_treatment),
                 "hsi_total_by_facility_treatment": dict(self._hsi_total_by_facility_treatment),
                 "cancelled_by_facility_treatment": dict(self._cancelled_by_facility_treatment),
                 "delayed_by_facility_treatment": dict(self._delayed_by_facility_treatment),
@@ -448,24 +457,25 @@ class WeatherDisruptions(Module):
         self._reset_monthly_counters_internal()
 
     # ----------------------------------------------------------------------
-    # Disruption-probability build (dispatches on driver)
+    # Disruption-probability build (dispatches on weather_event)
     # ----------------------------------------------------------------------
     def build_disruption_probabilities(self):
-        driver = self.parameters.get("weather_event", "precip")
-        if driver == "precip":
+        weather_event = self.parameters.get("weather_event", "precip")
+        if weather_event == "precip":
             self._build_precip_disruptions()
         else:
             self._build_wbgt_disruptions()
         t = self.parameters["projected_precip_disruptions"]
         if "all" not in set(t["service"]):
-            all_rows = (
-                t.groupby(["RealFacility_ID", "year", "month"], as_index=False)
-                [["disruption", "pred_baseline", "pred_precip", "driver_value"]].mean()
+            keys = ["RealFacility_ID", "year", "month"]
+            all_rows = t.groupby(keys, as_index=False).agg(
+                disruption=("disruption", "mean"),
+                weather_event_value=("weather_event_value", "first"),  # same exposure for every service
             )
             all_rows["service"] = "all"
-            self.parameters["projected_precip_disruptions"] = pd.concat(
-                [t, all_rows[t.columns]], ignore_index=True
-            )
+            all_rows["pred_baseline"] = np.nan
+            all_rows["pred_precip"] = np.nan
+            self.parameters["projected_precip_disruptions"] = pd.concat([t, all_rows[t.columns]], ignore_index=True)
 
     def build_linear_models(self):
         p = self.parameters
@@ -527,7 +537,7 @@ class WeatherDisruptions(Module):
         lag_9month_monthly = precip_monthly_full.shift(9)
         lag_1_5day = precip_5day_full.shift(1)
 
-        start_idx = 12  # Skip 2024 rows; predictions run from 2025 onwards
+        start_idx = 12  # Skip  2025 rows; predictions run from 2026 onwards **UNTIL NASA FIX**
         precip_monthly = precip_monthly_full.iloc[start_idx:].reset_index(drop=True)
         precip_5day = precip_5day_full.iloc[start_idx:].reset_index(drop=True)
         lag_4month_monthly = lag_4month_monthly.iloc[start_idx:].reset_index(drop=True)
@@ -543,7 +553,7 @@ class WeatherDisruptions(Module):
         facilities = precip_monthly.columns.tolist()
         n_time = len(precip_monthly)
 
-        year, month = 2025, 1
+        year, month = 2026, 1
         time_index = []
         for _ in range(n_time):
             time_index.append((year, month))
@@ -627,14 +637,14 @@ class WeatherDisruptions(Module):
         base["disruption"] = prob_disruption
         base["pred_baseline"] = pred_baseline
         base["pred_precip"] = pred_precip
-        base["driver_value"] = facility_month_df["precip_monthly"].values
+        base["weather_event_value"] = facility_month_df["precip_monthly"].values
 
         services = self._services or [p["services_affected_precip"]]
         self.parameters["projected_precip_disruptions"] = pd.concat(
             [base.assign(service=s) for s in services], ignore_index=True
         )[[
             "RealFacility_ID", "year", "month", "service", "disruption",
-            "pred_baseline", "pred_precip", "driver_value"
+            "pred_baseline", "pred_precip", "weather_event_value"
         ]]
 
     def _build_wbgt_disruptions(self):
@@ -692,7 +702,7 @@ class WeatherDisruptions(Module):
                 "disruption": disruption,
                 "pred_baseline": mu_baseline,
                 "pred_precip": mu_wbgt,
-                "driver_value": exposure[WBGT_VAR],
+                "weather_event_value": exposure[WBGT_VAR],
             })
             results.append(out)
 
@@ -711,7 +721,7 @@ class WeatherDisruptions(Module):
         month_fe = dict(zip(month_rows["level"].astype(float).astype(int), month_rows["value"]))
         log_mu += df["month"].map(month_fe).values
 
-        # zone fixed effect, using 2024
+        # zone fixed effect, using 2025
         zone_rows = rows[rows["parameter_name"] == ZONE_YEAR_FE_NAME]
         zone_fe = dict(zip(zone_rows["level"].astype(str), zone_rows["value"]))
         zone_values = (df["zone"].astype(str) + "_" + str(WBGT_REFERENCE_YEAR)).map(zone_fe)
@@ -725,7 +735,7 @@ class WeatherDisruptions(Module):
         coefs = rows[rows["level"].isna()]
         for term, b in zip(coefs["parameter_name"], coefs["value"].astype(float)):
             if term.startswith("year_fe_") or term == "covid":
-                continue  # these are 0 in 2024
+                continue  # these are 0 in 2025
             elif term.startswith(WBGT_VAR + "_s"):
                 continue  # spline columns, added below from the lookup
             elif term == "precip_c":
@@ -780,7 +790,7 @@ class WeatherDisruptions(Module):
                                data=f"WBGT {service}: {tlo_col} treated as reference: {not_matched}")
 
     # ----------------------------------------------------------------------
-    # Runtime — shared across drivers
+    # Runtime, shared across drivers
     # ----------------------------------------------------------------------
     def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date):
         """
@@ -810,11 +820,22 @@ class WeatherDisruptions(Module):
         if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
             return False, False
 
+        fac_str, trt_str, dist_str = str(facility_used), str(treatment_id), str(district)
+
+        # every check (a rescheduled HSI is counted again when it comes back)
         self._hsi_checked_count += 1
-        self._increment_district_counter(self._hsi_checked_by_district, str(district))
-        self._increment_facility_treatment_counter(
-            self._hsi_checked_by_facility_treatment, str(facility_used), str(treatment_id)
-        )
+        self._increment_district_counter(self._hsi_checked_by_district, dist_str)
+        self._increment_facility_treatment_counter(self._hsi_checked_by_facility_treatment, fac_str, trt_str)
+
+        # first check of each HSI only
+        hsi = hsi_event_item.hsi_event
+        if not getattr(hsi, "_weather_checked", False):
+            hsi._weather_checked = True
+            self._hsi_checked_unique_count += 1
+            self._increment_district_counter(self._hsi_checked_unique_by_district, dist_str)
+            self._increment_facility_treatment_counter(
+                self._hsi_checked_unique_by_facility_treatment, fac_str, trt_str
+            )
 
         prob_disruption = self._get_disruption_probability(
             facility_id=facility_used, year=year, month=month, service=service,
@@ -870,8 +891,8 @@ class WeatherDisruptions(Module):
             return {}
         r = sub.iloc[0]
         return {
-            "driver": self.parameters.get("weather_event", "precip"),
-            "driver_value": float(r["driver_value"]) if "driver_value" in r else float("nan"),
+            "weather_event": self.parameters.get("weather_event", "precip"),
+            "weather_event_value": float(r["weather_event_value"]) if "weather_event_value" in r else float("nan"),
             "pred_baseline": float(r["pred_baseline"]) if "pred_baseline" in r else float("nan"),
             "pred_precip": float(r["pred_precip"]) if "pred_precip" in r else float("nan"),
             "base_disruption": float(r["disruption"]),
@@ -1057,6 +1078,8 @@ class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
+                "hsi_checked": m._hsi_checked_count,
+                "hsi_checked_unique": m._hsi_checked_unique_count,
                 "hsi_total": m._disruptions_hsi_total_count,
                 "cancelled": m._disruptions_cancelled_count,
                 "delayed": m._disruptions_delayed_count,
@@ -1069,6 +1092,8 @@ class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
+                "hsi_checked_by_district": dict(m._hsi_checked_by_district),
+                "hsi_checked_unique_by_district": dict(m._hsi_checked_unique_by_district),
                 "hsi_total_by_district": dict(m._hsi_total_by_district),
                 "cancelled_by_district": dict(m._cancelled_by_district),
                 "delayed_by_district": dict(m._delayed_by_district),
@@ -1081,6 +1106,8 @@ class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
+                "hsi_checked_by_facility_treatment": dict(m._hsi_checked_by_facility_treatment),
+                "hsi_checked_unique_by_facility_treatment": dict(m._hsi_checked_unique_by_facility_treatment),
                 "hsi_total_by_facility_treatment": dict(m._hsi_total_by_facility_treatment),
                 "cancelled_by_facility_treatment": dict(m._cancelled_by_facility_treatment),
                 "delayed_by_facility_treatment": dict(m._delayed_by_facility_treatment),
