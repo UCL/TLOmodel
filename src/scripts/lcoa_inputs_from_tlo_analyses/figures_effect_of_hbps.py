@@ -11,7 +11,7 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle, Rectangle
+from matplotlib.patches import Circle
 
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     make_graph_file_name,
@@ -285,129 +285,81 @@ def do_barh_plot_with_ci_by_draw(_df: pd.DataFrame, ax, draw_color_map: dict[str
 
 
 def plot_dalys_averted_by_cause_stacked_by_draw(
-    _df: pd.DataFrame,
-    additive_dalys_averted: pd.DataFrame,
-    draw_labels: list[str] | None = None,
-    plot_stat: str = "central",
+    cause_summaries: dict[str, pd.DataFrame],
+    total_summary: pd.DataFrame,
+    draw_labels: list[str],
 ):
-    """Plot jointly modelled and additive DALYs averted by draw."""
-    if "label" not in _df.index.names:
-        raise ValueError("_df index must contain a 'label' level.")
-    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
-        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
-
-    draw_level_name = "draw" if "draw" in _df.columns.names else _df.columns.names[0]
-    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
-    available_stats = pd.Index(_df.columns.get_level_values(stat_level_name).unique())
-    if plot_stat not in available_stats:
-        raise ValueError(f"Statistic '{plot_stat}' not found. Available stats: {available_stats.tolist()}")
-
-    plot_df = _df.xs(plot_stat, axis=1, level=stat_level_name)
-    plot_df = plot_df.groupby(level="label").sum().T.fillna(0.0)
-    plot_df.index.name = draw_level_name
-    ordered_causes = [
-        cause_label
-        for cause_label in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
-        if cause_label in plot_df.columns
-    ]
-    unordered_causes = sorted(
-        cause_label
-        for cause_label in plot_df.columns
-        if cause_label not in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP
-    )
-    plot_df = plot_df.loc[:, ordered_causes + unordered_causes]
-    if draw_labels is not None:
-        ordered_draws = []
-        for draw in draw_labels:
-            display_draw = draw
-            for candidate in (draw, display_draw):
-                if candidate in plot_df.index and candidate not in ordered_draws:
-                    ordered_draws.append(candidate)
-        plot_df = plot_df.reindex(ordered_draws)
-    if plot_df.empty:
-        raise ValueError("No plottable DALYs-averted data remain after reshaping by draw and cause label.")
-
-    fig_width = max(10, min(0.8 * len(plot_df.index) + 4, 24))
-    fig_height = max(6, min(0.35 * len(plot_df.index) + 3, 14))
-    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-    x = np.arange(len(plot_df.index))
-    positive_bottom = np.zeros(len(plot_df.index), dtype=float)
-    negative_bottom = np.zeros(len(plot_df.index), dtype=float)
-    for cause_label in plot_df.columns:
-        values = plot_df[cause_label].to_numpy(dtype=float)
-        if not np.any(values):
-            continue
-        bottoms = np.where(values >= 0.0, positive_bottom, negative_bottom)
-        ax.bar(
-            x,
-            values,
-            bottom=bottoms,
-            color=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_label, "grey"),
-            label=str(cause_label),
-            width=0.8,
+    """Compare cause-specific medians with totals summarised independently across runs."""
+    joint = cause_summaries["joint"].xs("central", axis=1, level="stat")
+    additive = cause_summaries["additive"].xs("central", axis=1, level="stat")
+    causes = joint.index.union(additive.index)
+    ordered = [cause for cause in CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP if cause in causes]
+    ordered += sorted(set(causes) - set(ordered))
+    fig, ax = plt.subplots(figsize=(12, 8))
+    centres = np.arange(len(draw_labels)) * 3
+    labelled_causes = set()
+    for method, offset in (("joint", -0.5), ("additive", 0.5)):
+        data = cause_summaries[method].xs("central", axis=1, level="stat").reindex(
+            index=ordered, columns=draw_labels, fill_value=0.0
         )
-        positive_bottom += np.where(values >= 0.0, values, 0.0)
-        negative_bottom += np.where(values < 0.0, values, 0.0)
-
-    missing_additive_draws = [
-        draw
-        for draw in plot_df.index
-        if draw not in additive_dalys_averted.index
-    ]
-    if missing_additive_draws:
-        raise ValueError(
-            "No additive DALYs-averted estimate found for plotted draws: "
-            f"{missing_additive_draws}"
-        )
-    for position, draw in zip(x, plot_df.index):
-        additive_estimate = additive_dalys_averted.loc[draw]
-        lower = float(additive_estimate["lower"])
-        upper = float(additive_estimate["upper"])
-        ax.add_patch(
-            Rectangle(
-                (position - 0.4, lower),
-                width=0.8,
-                height=upper - lower,
-                facecolor="black",
-                edgecolor="none",
-                alpha=0.15,
-                label="95% UI for additive estimate" if position == x[0] else None,
-                zorder=4,
+        positive = np.zeros(len(draw_labels))
+        negative = np.zeros(len(draw_labels))
+        positions = centres + offset
+        for cause, row in data.iterrows():
+            values = row.to_numpy(dtype=float)
+            if not np.any(values):
+                continue
+            ax.bar(
+                positions, values, width=0.8,
+                bottom=np.where(values >= 0, positive, negative),
+                color=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, "grey"),
+                label=cause if cause not in labelled_causes else None,
             )
+            labelled_causes.add(cause)
+            positive += np.maximum(values, 0)
+            negative += np.minimum(values, 0)
+        totals = total_summary[f"{method}_averted"].reindex(draw_labels)
+        ax.vlines(positions, totals["lower"], totals["upper"], color="black", zorder=5)
+        ax.scatter(
+            positions, totals["central"], marker="D", color="black", s=24, zorder=6,
+            label="Overall median and 95% UI" if method == "joint" else None,
         )
-        ax.hlines(
-            y=float(additive_estimate["central"]),
-            xmin=position - 0.4,
-            xmax=position + 0.4,
-            color="black",
-            linestyle="--",
-            linewidth=2.0,
-            label=(
-                "Sum of individually modelled DALYs averted (additive assumption)"
-                if position == x[0]
-                else None
-            ),
-            zorder=5,
-        )
-
-    ax.axhline(0.0, color="black", linewidth=0.8)
-    ax.set_xticks(x)
-    ax.set_xticklabels(plot_df.index)
-    ax.set_xlabel("")
+        for position, lower, upper in zip(positions, totals["lower"], totals["upper"]):
+            ax.hlines([lower, upper], position - 0.09, position + 0.09, color="black", zorder=5)
+    positions = [centre + offset for centre in centres for offset in (-0.5, 0.5)]
+    labels = [f"{draw}\n{method}" for draw in draw_labels for method in ("Jointly modelled", "Additive")]
+    ax.set_xticks(positions, labels)
     ax.set_ylabel("Discounted DALYs averted")
-    ax.grid(axis="y")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.legend(
-        title="Cause label / comparison",
-        loc="center left",
-        bbox_to_anchor=(1.02, 0.5),
-        fontsize=8,
-        title_fontsize=9,
-        frameon=True,
-    )
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.grid(axis="y", alpha=0.3)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=8)
     fig.tight_layout()
-    return (fig, ax)
+    return fig, ax
+
+
+
+def plot_additive_incremental_costs(summary: pd.DataFrame, draw_labels: list[str]):
+    """Show joint and additive discounted incremental costs with run-based intervals."""
+    fig, ax = plt.subplots(figsize=(10, 6))
+    centres = np.arange(len(draw_labels))
+    for method, offset, label, color in (
+        ("joint", -0.2, "Jointly modelled", "tab:blue"),
+        ("additive", 0.2, "Additive", "0.6"),
+    ):
+        values = summary[method].reindex(draw_labels)
+        positions = centres + offset
+        ax.bar(positions, values["central"], width=0.35, label=label, color=color)
+        ax.vlines(positions, values["lower"], values["upper"], color="black", zorder=3)
+        for position, lower, upper in zip(positions, values["lower"], values["upper"]):
+            ax.hlines([lower, upper], position - 0.05, position + 0.05, color="black", zorder=3)
+    ax.set_xticks(centres, draw_labels)
+    ax.set_ylabel("Discounted incremental cost (USD)")
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(title="Median and 95% UI")
+    fig.tight_layout()
+    return fig, ax
 
 
 def plot_dalys_costs_and_icers_by_hbp(
@@ -470,7 +422,14 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
     fig.savefig(outfile, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved: {name_of_plot}")
-    additive_dalys_averted = results["additive_dalys_summary"]["additive_averted"]
+    fig, ax = plot_additive_incremental_costs(
+        results["additive_incremental_cost_summary"], non_baseline_draw_labels
+    )
+    name_of_plot = "Joint and Additive Incremental Costs by HBP"
+    ax.set_title(name_of_plot)
+    fig.savefig(output_folder / make_graph_file_name(name_of_plot), bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {name_of_plot}")
     num_deaths_averted = results.get("num_deaths_averted")
     pc_deaths_averted = results.get("pc_deaths_averted")
     dalys_averted = results.get("dalys_averted")
@@ -555,8 +514,8 @@ def apply(results_file: Path, output_folder: Path, resourcefilepath: Path = None
     print(f"Saved: {name_of_plot}")
     print("Plotting stacked DALYs averted by cause label for each draw.")
     fig, ax = plot_dalys_averted_by_cause_stacked_by_draw(
-        results["dalys_averted_by_cause"],
-        additive_dalys_averted=additive_dalys_averted,
+        results["additive_dalys_by_cause_summary"],
+        total_summary=results["additive_dalys_summary"],
         draw_labels=non_baseline_draw_labels,
     )
     name_of_plot = "DALYs Averted by Cause for each HBP"

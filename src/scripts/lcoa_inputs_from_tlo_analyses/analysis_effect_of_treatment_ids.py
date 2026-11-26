@@ -279,21 +279,23 @@ def process_scenarios(
     )
 
     discounted_dalys = with_nothing(discounted_dalys, "discounted_dalys")
-    if nothing_by_run is not None:
+    if "Nothing" in discounted_dalys.columns.get_level_values("draw"):
         by_cause = discounted_dalys.groupby(level="label").sum(min_count=1)
         scenario_causes = by_cause.drop(columns="Nothing", level="draw")
         baseline_causes = by_cause.xs("Nothing", axis=1, level="draw")
         matched_causes = match_baseline(scenario_causes, baseline_causes)
         cause_differences = matched_causes - scenario_causes
-        results["dalys_averted_by_cause"] = compute_summary_statistics(cause_differences, "median")
-        cause_ratios = scenario_causes.div(matched_causes.where(matched_causes.ne(0)))
-        cause_differences.loc["All causes"] = cause_differences.sum(min_count=1)
-        baseline_totals = matched_causes.sum(min_count=1)
-        cause_ratios.loc["All causes"] = scenario_causes.sum(min_count=1).div(
-            baseline_totals.where(baseline_totals.ne(0))
-        )
-        results["dalys_averted_by_cause_by_run"] = cause_differences
-        results["dalys_ratio_by_cause_by_run"] = cause_ratios
+        results["discounted_dalys_averted_by_cause_by_run"] = cause_differences.copy()
+        if nothing_by_run is not None:
+            results["dalys_averted_by_cause"] = compute_summary_statistics(cause_differences, "median")
+            cause_ratios = scenario_causes.div(matched_causes.where(matched_causes.ne(0)))
+            cause_differences.loc["All causes"] = cause_differences.sum(min_count=1)
+            baseline_totals = matched_causes.sum(min_count=1)
+            cause_ratios.loc["All causes"] = scenario_causes.sum(min_count=1).div(
+                baseline_totals.where(baseline_totals.ne(0))
+            )
+            results["dalys_averted_by_cause_by_run"] = cause_differences
+            results["dalys_ratio_by_cause_by_run"] = cause_ratios
 
     results['discounted_dalys'] = (
         compute_summary_statistics(discounted_dalys, central_measure='median'))

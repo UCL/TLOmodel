@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import hypergeom, spearmanr
 
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -250,6 +251,102 @@ def plot_cost_subcategories_over_time_for_draw_pair(
 
     axes[0].legend(title='Draw', fontsize=8, title_fontsize=9)
     fig.tight_layout()
+    return fig, axes
+
+
+
+RANK_METRICS = (
+    ("DALYs averted", "overall_dalys", False),
+    ("Incremental cost", "overall_costs", True),
+    ("Net health", "net_health", False),
+)
+
+
+def prepare_rank_comparison_data(dalys, costs, net_health, literature):
+    """Rank finite paired estimates within the same matched intervention universe."""
+    models = (dalys, costs, net_health)
+    literature = literature.dropna(subset=["treatment_id"]).copy()
+    literature["treatment_id"] = literature["treatment_id"].str.removesuffix("_*")
+    literature = literature.drop_duplicates("treatment_id", keep="first").set_index("treatment_id")
+    paired = {}
+    common = None
+    for (label, column, ascending), model in zip(RANK_METRICS, models):
+        values = model[["central"]].rename(columns={"central": "tlo_value"}).copy()
+        values["treatment_id"] = values.index.astype(str).str.removesuffix("_*")
+        values["literature_value"] = values["treatment_id"].map(literature[column])
+        values = values.loc[np.isfinite(values[["tlo_value", "literature_value"]]).all(axis=1)]
+        paired[label] = values
+        common = values.index if common is None else common.intersection(values.index)
+    for label, _, ascending in RANK_METRICS:
+        values = paired[label].reindex(common).sort_values("treatment_id")
+        values["tlo_rank"] = values["tlo_value"].rank(ascending=ascending, method="average")
+        values["literature_rank"] = values["literature_value"].rank(ascending=ascending, method="average")
+        paired[label] = values
+    return paired
+
+
+def plot_rank_comparison(rank_data):
+    """Show paired ranks, ordered by the TLO DALY ranking."""
+    order = rank_data["DALYs averted"].sort_values(
+        ["tlo_rank", "treatment_id"], ascending=[False, False]
+    ).index
+    count = len(order)
+    fig, axes = plt.subplots(1, 3, figsize=(18, max(6, 0.29 * count + 2)), sharey=True)
+    positions = np.arange(count)
+    for ax, (label, _, _) in zip(axes, RANK_METRICS):
+        values = rank_data[label].reindex(order)
+        ax.hlines(positions, values["tlo_rank"], values["literature_rank"], color="0.65", linewidth=1)
+        ax.scatter(values["tlo_rank"], positions, marker="D", s=24, label="TLO", zorder=3)
+        ax.scatter(values["literature_rank"], positions, color="black", s=20, label="Literature", zorder=3)
+        ax.set_title(label)
+        ax.set_xlabel("Rank (1 = most favourable)")
+        ax.set_xlim(0.5, count + 0.5)
+        ax.set_xticks([1, *range(10, count + 1, 10)])
+        ax.grid(axis="x", alpha=0.3)
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].set_yticks(positions, order)
+    axes[0].set_ylabel("Treatment ID")
+    fig.suptitle("TLO and Literature Rankings by Treatment ID")
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2, bbox_to_anchor=(0.66, 0.97))
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    return fig, axes
+
+
+def plot_top_n_overlap(rank_data):
+    """Compare observed overlap with a hypergeometric pointwise chance envelope."""
+    count = len(rank_data["DALYs averted"])
+    n = np.arange(1, count + 1)
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+    for ax, (label, _, ascending) in zip(axes, RANK_METRICS):
+        values = rank_data[label]
+        # Break tied cutoff values by treatment ID, identically for both sources.
+        tlo = values.sort_values(["tlo_value", "treatment_id"], ascending=[ascending, True]).index
+        literature = values.sort_values(
+            ["literature_value", "treatment_id"], ascending=[ascending, True]
+        ).index
+        overlap = [len(set(tlo[:size]) & set(literature[:size])) for size in n]
+        ax.fill_between(n, hypergeom.ppf(0.025, count, n, n), hypergeom.ppf(0.975, count, n, n),
+                        color="0.9", label="Pointwise 95% chance envelope")
+        ax.plot(n, overlap, color="tab:blue", linewidth=2, label="Observed overlap")
+        ax.plot(n, n, color="0.7", label="Maximum possible overlap")
+        ax.plot(n, n * n / count, color="0.4", linestyle="--", label="Expected overlap by chance")
+        if count > 1 and values["tlo_value"].nunique() > 1 and values["literature_value"].nunique() > 1:
+            rho, p = spearmanr(values["tlo_value"], values["literature_value"])
+            p_text = "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
+            subtitle = f"Spearman ρ = {rho:.2f}, {p_text}"
+        else:
+            subtitle = "Spearman correlation undefined"
+        ax.set_title(f"{label}\n{subtitle}")
+        ax.set_xlabel("Top n treatment IDs")
+        ax.set_xlim(1, max(2, count))
+        ax.set_xticks([1, *range(10, count + 1, 10)])
+        ax.set_ylim(0, count + 1)
+        ax.grid(alpha=0.25)
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].set_ylabel("Number of treatment IDs in both top-n sets")
+    fig.suptitle("Overlap Between TLO and Literature Top-n Treatment IDs")
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2, bbox_to_anchor=(0.5, 0.95))
+    fig.tight_layout(rect=(0, 0, 1, 0.83))
     return fig, axes
 
 
@@ -559,6 +656,20 @@ def apply(
         print("Saved: Incremental Cost for Each Treatment ID")
 
     if comparison_metrics_available:
+        if isinstance(dalys_and_costs_from_lcoa, pd.DataFrame):
+            rank_data = prepare_rank_comparison_data(
+                dalys_averted, incremental_scenario_cost, net_health, dalys_and_costs_from_lcoa
+            )
+            if not rank_data["DALYs averted"].empty:
+                for plot_function, title in (
+                    (plot_rank_comparison, "TLO and Literature Rankings by Treatment ID"),
+                    (plot_top_n_overlap, "Overlap Between TLO and Literature Top-n Treatment IDs"),
+                ):
+                    rank_fig, _ = plot_function(rank_data)
+                    rank_fig.savefig(output_folder / make_graph_file_name(title), bbox_inches="tight")
+                    plt.close(rank_fig)
+                    print(f"Saved: {title}")
+
         facet_order = (
             dalys_order
             .intersection(incremental_cost_sorted.dropna().index)
