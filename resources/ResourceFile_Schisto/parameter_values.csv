@@ -49,8 +49,8 @@ beta_SAC_mansoni,1.000001,universal,0,5,vague prior,Truscott et al
 beta_Adults_mansoni,0.06,universal,0,5,vague prior,Toor 2018
 PZQ_efficacy_mansoni,0.863,universal,0,1,vague prior,Zwang 2014
 baseline_prevalence_mansoni,0.031,local,0,1,vague prior,average from LatestData 2010
-odds_ratio_health_seeking_children_schisto_low,0.01,local,0.01,100,vague prior,
-odds_ratio_health_seeking_adults_schisto_low,0.01,local,0.01,100,vague prior,
+odds_ratio_health_seeking_children_schisto_low,0,local,0.01,100,vague prior,
+odds_ratio_health_seeking_adults_schisto_low,0,local,0.01,100,vague prior,
 kato_katz_sensitivity_lowWB,0.0000001,universal,0,1,vague prior,
 kato_katz_specificity_lowWB,0.0000001,universal,0,1,vague prior,
 urine_filtration_sensitivity_noneWB,0.0000001,universal,0,1,vague prior,
