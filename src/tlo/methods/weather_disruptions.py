@@ -40,7 +40,7 @@ DEFAULT_WBGT_SERVICE_INDICATORS = {
 }
 WBGT_VAR = "wbgt5x_day"
 WBGT_PRECIP_VAR = "precip_month"
-WBGT_REFERENCE_YEAR = 2025  # zone_year is held at 2025, as in the projections
+WBGT_REFERENCE_YEAR = 2024  # zone_year is held at 2024, as in the projections
 MONTH_FE_NAME = "C(month)"
 ZONE_YEAR_FE_NAME = "C(zone_year)"
 
