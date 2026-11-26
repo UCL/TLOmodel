@@ -463,8 +463,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
                                    / "ResourceFile_Consumables_Item_Designations.csv")
     medicine_lookup = item_is_medicine.set_index("Item_Code")["is_medicine"]
     medicine_lookup.loc[2678] = True  # one missing item (Isoniazid/Rifapentine)
-    medicine_lookup.loc[160] = False  # Insecticide-treated net
-    # medicine_lookup.loc[[127, ...]] = False  # oxygen and other non-medicine items
+
+    # medicine exclusion rule A:
+    # items flagged as medicines in TLO that are not pharmaceutical products for treatment or prevention
+    # RULE_A_NOT_MEDICINE = {
+    #     160: "Insecticide-treated net",  # maternal OPD area
+    #     5: "Povidone iodine, solution, 10 %, 5 ml per injection",
+    #     74: "Chlorhexidine 1.5% solution",
+    #     1871: "Cetrimide 15% + chlorhexidine 1.5% solution for dilution",
+    #     7: "IUD, Copper T-380A",
+    #     141: "Blood, one unit",
+    #     1171: "Complementary feeding--education only drugs/supplies to service a client",
+    # }
+    # medicine_lookup.loc[[160, 5, 74, 1871, 7, 141, 1171]] = False
+    RULE_A_MATERNAL_OP = [160]
+    medicine_lookup.loc[RULE_A_MATERNAL_OP] = False
+
+    # medicine exclusion rule B: those given by staff during the visit (injections, vaccines, IV fluids, oxygen,
+    # insertions and doses given at the visit), in addition to Rule A exclusions.
+    # RULE_B_MATERNAL_OP = [2580, 68, 8, 127, 60, 130, 2606, 133, 33, 61, 32, 26, 56, 28, 99]
+    # medicine_lookup.loc[RULE_B_MATERNAL_OP] = False
 
     # TLM districts
     common_districts = sorted(TLM_DISTRICTS)
