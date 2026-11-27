@@ -808,6 +808,38 @@ def annotate_averted_bars(
             )
 
 
+def fit_annotations_in_xlim(fig, ax, pad_fraction=0.02, max_iterations=5):
+    """
+    Widen the x-axis until all text annotations fit inside the plot area.
+
+    The labels are anchored to the bars (data units) but offset in points,
+    so their width in data units changes when the axis range changes;
+    the fit is therefore repeated until it is stable.
+    """
+    for _ in range(max_iterations):
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        to_data = ax.transData.inverted()
+
+        x_min, x_max = ax.get_xlim()
+        new_min, new_max = x_min, x_max
+
+        for text in ax.texts:
+            bbox = text.get_window_extent(renderer)
+            (left, _), (right, _) = to_data.transform(
+                [[bbox.x0, bbox.y0], [bbox.x1, bbox.y1]]
+            )
+            if np.isfinite(left) and np.isfinite(right):
+                new_min = min(new_min, left)
+                new_max = max(new_max, right)
+
+        if new_min >= x_min and new_max <= x_max:
+            break  # everything fits
+
+        pad = pad_fraction * (new_max - new_min)
+        ax.set_xlim(new_min - pad, new_max + pad)
+
+
 def plot_absolute_change_with_percent_annotations(
     summarized_absolute_change,
     summarized_percent_change,
@@ -1042,6 +1074,8 @@ def plot_absolute_service_area_volume_change(
     ax.margins(x=0.40)
     ax.invert_yaxis()
     fig.tight_layout()
+    fit_annotations_in_xlim(fig, ax)
+
     return fig
 
 
