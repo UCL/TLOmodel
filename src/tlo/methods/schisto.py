@@ -1753,8 +1753,8 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                 priority=0
             )
 
-        # if test negative or test not available, second testing appt is scheduled
-        else:
+        # if test not available, second testing appt is scheduled
+        elif test_result is None:
             # The person will not test now. If this is the "first attempt", re-schedule this HSI to occur after a delay,
             if self._num_occurrences <= 1:
                 next_occurence = self.sim.date + pd.DateOffset(days=int(
@@ -1767,6 +1767,9 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                     tclose=None,
                     priority=0
                 )
+            # set blank lab appt footprint as test did not happen
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
 
 
 class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMixin):
