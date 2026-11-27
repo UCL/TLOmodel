@@ -1717,7 +1717,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                 )
 
         # otherwise perform Kato-Katz
-        else:
+        elif test == 'kato-katz':
             # sensitivity of test depends worm burden
             if df.at[person_id, 'ss_sm_infection_status'] in ['Non-infected', 'Low-infection']:
 
@@ -1738,21 +1738,26 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                 ].dx_manager.run_dx_test(
                     dx_tests_to_run="KK_schisto_test_heavyWB", hsi_event=self
                 )
+        else:
+            logger.warning(
+                key="message",
+                data="Schisto test type requested unidentified",
+            )
 
         # add equipment
         if test_result is not None:
             self.add_equipment({'Ordinary Microscope'})
 
-        if test_result:
-            self.module.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Schisto_TreatmentFollowingDiagnosis(
-                    module=self.module,
-                    person_id=person_id),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0
-            )
-
+            if test_result:
+                self.module.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Schisto_TreatmentFollowingDiagnosis(
+                        module=self.module,
+                        person_id=person_id),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
+                )
+                
         # if test not available, second testing appt is scheduled
         elif test_result is None:
             # The person will not test now. If this is the "first attempt", re-schedule this HSI to occur after a delay,
