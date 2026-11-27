@@ -14,6 +14,8 @@ from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
 from tlo.util import BitsetHandler, read_csv_files
 
 logger = logging.getLogger(__name__)
+logger_hs = logging.getLogger("tlo.methods.healthsystem")
+
 logger.setLevel(logging.INFO)
 
 
@@ -502,8 +504,12 @@ class NewbornOutcomes(Module):
             'encephalopathy_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_enceph_death, parameters=params),
 
-            # This equation is used to determine a newborns risk of death from sepsis
+            # This equation is used to determine a newborns risk of death from early onset sepsis
             'early_onset_sepsis_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
+
+            # This equation is used to determine a newborns risk of death from late onset sepsis
+            'late_onset_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
             # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
@@ -528,18 +534,20 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         nci = self.newborn_care_info
         person = df.loc[[person_id]]
+        mother_id = df.loc[person_id, 'mother_id']
 
         # Here we define all the possible external variables used in the linear model
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
-
         chorio = nci[person_id]['maternal_chorio']
+        prom_status = df.at[mother_id, 'ps_premature_rupture_of_membranes']
 
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
                                                            received_corticosteroids=steroid_status,
                                                            received_abx_for_prom=abx_for_prom,
                                                            maternal_chorioamnionitis=chorio,
+                                                           prom=prom_status
                                                            )[person_id]
 
     # ========================================= OUTCOME FUNCTIONS  ===================================================
@@ -584,11 +592,22 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
+        nci = self.newborn_care_info
+
+        # For logging purposes we differentiate between sepsis in term and preterm neonates
+        comp = "early_onset_sepsis_pt" if (df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) \
+            else "early_onset_sepsis"
 
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
         if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
+            nci[child_id]['ever_neonatal_sepsis'] = True
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[comp] += 1
+
+            if comp == 'early_onset_sepsis_pt':
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_preterm')
+            else:
+                pregnancy_helper_functions.log_need(self, 'neo_sepsis_treatment_term')
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
@@ -600,10 +619,12 @@ class NewbornOutcomes(Module):
         """
         params = self.current_parameters
         df = self.sim.population.props
+        is_preterm = df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']
 
         # We use a linear model equation to determine risk of encephalopathy on birth
         if timing == 'on_birth':
             result = self.eval(self.nb_linear_models['encephalopathy'], child_id)
+
         else:
             # Or, if we are applying risk to a non-encephalopathic newborn who was not breathing at birth
             result = self.rng.random_sample() < params['prob_enceph_no_resus']
@@ -620,7 +641,19 @@ class NewbornOutcomes(Module):
             else:
                 df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
+            # For logging purposes we differentiate between encephalopathy in term and preterm neonates
+            if is_preterm:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+                    f'{df.at[child_id, "nb_encephalopathy"]}_pt'] += 1
+
+                if df.at[child_id, "nb_preterm_respiratory_distress"]:
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['rds_enceph_dc'] += 1
+
+            else:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+                    f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
+
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'enceph_timing_{timing}'] += 1
 
             # Check all encephalopathy cases receive a grade
             if df.at[child_id, 'nb_encephalopathy'] == 'none':
@@ -653,6 +686,7 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         params = self.current_parameters
+        is_preterm = df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']
 
         # We assume all newborns with encephalopathy and respiratory distress syndrome will require some form of
         # resuscitation and will not be effectively breathing at birth
@@ -663,7 +697,18 @@ class NewbornOutcomes(Module):
         # explicitly modelled
         elif self.rng.random_sample() < params['prob_failure_to_transition']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
+
+            # For logging purposes we differentiate between failure to transition in term and preterm neonates
+            if is_preterm:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth_pt'] += 1
+            else:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
+
+        if df.at[child_id, 'nb_not_breathing_at_birth']:
+            if is_preterm:
+                pregnancy_helper_functions.log_need(self, 'neo_resus_preterm')
+            else:
+                pregnancy_helper_functions.log_need(self, 'neo_resus_term')
 
     def scheduled_week_one_postnatal_event(self, individual_id):
         """
@@ -756,11 +801,14 @@ class NewbornOutcomes(Module):
 
             self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                   cause=potential_cause_of_death), death_date)
-        # Reset variables
+        # Reset complication and treatment variables
         else:
             df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
             df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
             df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+
+            df.at[individual_id, 'nb_inj_abx_neonatal_sepsis'] = False
+            df.at[individual_id, 'nb_supp_care_neonatal_sepsis'] = False
 
         # Finally we schedule the postnatal week one event
         if individual_id in nci:
@@ -796,11 +844,15 @@ class NewbornOutcomes(Module):
             return
 
         if nci[individual_id]['ga_at_birth'] < 32:
-            if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
+            draw = self.rng.random_sample()
+            p_mild = params['prob_mild_disability_preterm_<32weeks']
+            p_mod_severe = params['prob_mod_severe_disability_preterm_<32weeks']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_disability_preterm_<32weeks'])
 
-            elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
+            elif draw < p_mild + p_mod_severe:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_disability_preterm_<32weeks'])
 
@@ -811,11 +863,15 @@ class NewbornOutcomes(Module):
                     p=params['prob_retinopathy_severity_no_treatment'])
 
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
-            if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
+            draw = self.rng.random_sample()
+            p_mild = params['prob_mild_disability_preterm_32_36weeks']
+            p_mod_severe = params['prob_mod_severe_disability_preterm_32_36weeks']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_disability_preterm_32_36weeks'])
 
-            elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
+            elif draw < p_mild + p_mod_severe:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_disability_preterm_32_36weeks'])
 
@@ -826,22 +882,35 @@ class NewbornOutcomes(Module):
                     p=params['prob_retinopathy_severity_no_treatment'])
 
         if child.nb_encephalopathy != 'none':
-            if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
+            draw = self.rng.random_sample()
+            p_mild = params['prob_mild_impairment_post_enceph']
+            p_mod_severe = params['prob_mod_severe_impairment_post_enceph']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
                     ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_enceph'])
 
-            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
+            elif draw < p_mild + p_mod_severe:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_enceph'])
 
-        if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
-            if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
-                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_sepsis'])
+        if nci[individual_id]['ever_neonatal_sepsis']:
+            draw = self.rng.random_sample()
 
-            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_sepsis']:
+            p_mild = params['prob_mild_impairment_post_sepsis']
+            p_mod_severe = params['prob_mod_severe_impairment_post_sepsis']
+
+            if draw < p_mild:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_sepsis'])
+                    ('mild_motor_and_cog', 'mild_motor'),
+                    p=params['prob_dist_mild_impairment_post_sepsis']
+                )
+
+            elif draw < p_mild + p_mod_severe:
+                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
+                    ('moderate_motor', 'severe_motor'),
+                    p=params['prob_dist_mod_severe_impairment_post_sepsis']
+                )
 
         del nci[individual_id]
 
@@ -931,8 +1000,7 @@ class NewbornOutcomes(Module):
         person_id = hsi_event.target
         params = self.current_parameters
 
-        if (df.at[person_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight') or \
-           (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
+        if df.at[person_id, 'nb_low_birth_weight_status'] not in {'normal_birth_weight', 'macrosomia'}:
 
             kmc_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='kmc', hsi_event=hsi_event, q_param=[params['prob_kmc_available']])
@@ -941,6 +1009,7 @@ class NewbornOutcomes(Module):
             if kmc_delivered:
                 # Store treatment as a property of the newborn used to apply treatment effect
                 df.at[person_id, 'nb_kangaroo_mother_care'] = True
+                pregnancy_helper_functions.log_met_need(self, 'kmc')
 
     def hiv_screening_for_at_risk_newborns(self, child_id):
         """
@@ -967,15 +1036,33 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.at[person_id, 'mother_id']
+        is_preterm = df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']
+        counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
         if mni[mother_id]['delivery_setting'] == 'home_birth':
             logger.info(key='error', data=f'Child {person_id} has received resuscitation despite their '
                                           f'mother delivering at home')
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
+
+            int_name = "neo_resus_preterm" if is_preterm else "neo_resus_term"
+            counter[f'{int_name}_req'] += 1
+
+            # Because we capture whether resus can be delivered during labour events, here we schedule a HSI to capture
+            # the required resources. This is only called if resus will be delivered.
             if mni[mother_id]['neo_will_receive_resus_if_needed']:
+
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
-                # pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
+                counter[f'{int_name}_deliv'] += 1
+                pregnancy_helper_functions.log_met_need(self, int_name)
+
+                cons_log = HSI_NewbornOutcomes_ResusConsumableLog(module=self, person_id=person_id, int_name=int_name)
+
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    cons_log, priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=1))
+
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
 
@@ -992,16 +1079,21 @@ class NewbornOutcomes(Module):
         l_params = self.sim.modules['Labour'].current_parameters
         pnc_location = 'hc' if facility_type == '1a' else 'hp'
 
+        int_name = "neo_sepsis_treatment_preterm" if (df.at[person_id, 'nb_early_preterm'] or
+                                                      df.at[person_id, 'nb_late_preterm']) else \
+            "neo_sepsis_treatment_term"
+
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
-        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
-           df.at[person_id, 'pn_sepsis_early_neonatal']:
+        if (df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or
+            df.at[person_id, 'pn_sepsis_late_neonatal'] or
+           df.at[person_id, 'pn_sepsis_early_neonatal']):
 
             if facility_type != '1a':
 
                 neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='neo_sepsis_treatment_supp_care', hsi_event=hsi_event,
+                    self, int_name=int_name, hsi_event=hsi_event,
                     q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_supportive_care_core'],
                     opt_cons=self.item_codes_nb_consumables['sepsis_supportive_care_optional'],
@@ -1009,11 +1101,12 @@ class NewbornOutcomes(Module):
 
                 if neo_sepsis_treatment_delivered:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, int_name)
 
             # The same pattern is then followed for health centre care
             else:
                 neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='neo_sepsis_treatment_abx', hsi_event=hsi_event,
+                    self, int_name=int_name, hsi_event=hsi_event,
                     q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_abx'],
                     opt_cons=self.item_codes_nb_consumables['iv_drug_equipment'],
@@ -1021,6 +1114,7 @@ class NewbornOutcomes(Module):
 
                 if neo_sepsis_treatment_delivered:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, int_name)
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1179,6 +1273,7 @@ class NewbornOutcomes(Module):
             (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
            (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['low_birth_weight'] += 1
+            pregnancy_helper_functions.log_need(self, 'kmc')
 
         elif df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['macrosomia'] += 1
@@ -1223,7 +1318,7 @@ class NewbornOutcomes(Module):
                              'corticosteroids_given': mni[mother_id]['corticosteroids_given'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'cause_of_death_after_birth': [],
-                             'sepsis_postnatal': False,
+                             'ever_neonatal_sepsis': False,
                              'passed_through_week_one': False,
                              'will_receive_pnc': 'none'}
 
@@ -1449,7 +1544,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 3})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = (
             self.make_beddays_footprint({'general_bed': self.module.parameters['neonatal_ward_beddays']}))
@@ -1468,6 +1563,59 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
                                          'this configuration')
         return False
 
+class HSI_NewbornOutcomes_ResusConsumableLog(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is HSI_NewbornOutcomes_ResusConsumableLog. This event is called for newborns who have received resuscitation
+    in order to log the relevant consumables. No other health system resources are used during this event.
+    """
+
+    def __init__(self, module, person_id, int_name):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, NewbornOutcomes)
+
+        self.int_name = int_name
+        self.TREATMENT_ID = 'PostnatalCare_Neonatal_Resus_ConsumableLog'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
+
+    def apply(self, person_id, squeeze_factor):
+        health_system = self.sim.modules["HealthSystem"]
+
+        resus_item_code = self.sim.modules['Labour'].item_codes_lab_consumables['resuscitation']
+
+        logger_hs.info(
+            key="Consumables",
+            data={
+                "TREATMENT_ID": self.TREATMENT_ID,
+                "Item_Available": str(resus_item_code),
+                "Item_NotAvailable": str({}),
+                "Item_Used": str(resus_item_code),
+            },
+            description="Record of requested and used consumable items.",
+        )
+
+        health_system.consumables._summary_counter.record_availability(
+            items_available=resus_item_code,
+            items_not_available={},
+            items_used=resus_item_code,
+        )
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: did not run')
+        return False
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_NewbornOutcomes_ResusConsumableLog: cannot not run with '
+                                         'this configuration')
+        return False
+
+    def _get_facility_level_for_pnc(self, person_id):
+        nci = self.module.newborn_care_info
+
+        if (person_id in nci) and (nci[person_id]['delivery_setting'] == 'hospital'):
+            return self.module.rng.choice(['1b', '2'])
+        else:
+            return '1a'
 
 class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
     """ This is BreastfeedingStatusUpdateEventSixMonths. It is scheduled via the breastfeeding function.
