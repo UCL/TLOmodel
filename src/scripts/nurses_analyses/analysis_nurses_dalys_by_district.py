@@ -33,6 +33,7 @@ from matplotlib.patches import Patch
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import compute_summary_statistics, extract_results
 
+
 def summarize(results):
     """Mean and 95% CI of the mean (mean ± 1.96 × SE), same layout as TLO's summarize."""
     return compute_summary_statistics(
