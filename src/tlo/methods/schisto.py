@@ -928,10 +928,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer to HSI for testing.
-        # don't include low infection as symptoms likely very mild
-        set_of_symptoms_indicative_of_schisto = {'ss_sm_moderate',
-                                                 'ss_sm_heavy',
-                                                 'ss_sh_moderate',
+        # don't include low /moderate infection as symptoms likely very mild
+        set_of_symptoms_indicative_of_schisto = {'ss_sm_heavy',
                                                  'ss_sh_heavy'}
 
         if set_of_symptoms_indicative_of_schisto.intersection(symptoms):
@@ -1719,7 +1717,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                 )
 
         # otherwise perform Kato-Katz
-        else:
+        elif test == 'kato-katz':
             # sensitivity of test depends worm burden
             if df.at[person_id, 'ss_sm_infection_status'] in ['Non-infected', 'Low-infection']:
 
@@ -1740,23 +1738,28 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                 ].dx_manager.run_dx_test(
                     dx_tests_to_run="KK_schisto_test_heavyWB", hsi_event=self
                 )
+        else:
+            logger.warning(
+                key="message",
+                data="Schisto test type requested unidentified",
+            )
 
         # add equipment
         if test_result is not None:
             self.add_equipment({'Ordinary Microscope'})
 
-        if test_result:
-            self.module.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Schisto_TreatmentFollowingDiagnosis(
-                    module=self.module,
-                    person_id=person_id),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0
-            )
-
-        # if test negative or test not available, second testing appt is scheduled
-        else:
+            if test_result:
+                self.module.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Schisto_TreatmentFollowingDiagnosis(
+                        module=self.module,
+                        person_id=person_id),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
+                )
+                
+        # if test not available, second testing appt is scheduled
+        elif test_result is None:
             # The person will not test now. If this is the "first attempt", re-schedule this HSI to occur after a delay,
             if self._num_occurrences <= 1:
                 next_occurence = self.sim.date + pd.DateOffset(days=int(
@@ -1769,6 +1772,9 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                     tclose=None,
                     priority=0
                 )
+            # set blank lab appt footprint as test did not happen
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
 
 
 class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMixin):
