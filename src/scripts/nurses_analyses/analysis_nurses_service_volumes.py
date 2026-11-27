@@ -288,9 +288,10 @@ def aggregate_treatment_volumes_by_service_area(
             "alri",
             "antenatalcare",
             "contraception",
+            "cervicalcancer",
             "deliverycare",
             "diarrhoea",
-            "epi",
+            "epi_",
             "measles",
             "postnatalcare",
             "schisto",
@@ -314,8 +315,7 @@ def aggregate_treatment_volumes_by_service_area(
 
         # Transport injuries
         elif treatment.startswith((
-            "transport",
-            "roadtraffic",
+            "rti_",
         )):
             return "Transport Injuries"
 
