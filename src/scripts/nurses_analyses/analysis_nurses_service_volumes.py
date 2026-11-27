@@ -722,11 +722,83 @@ def plot_percent_service_volume_change(
     )
 
     # ax.set_xlabel("Nurse staffing scenario")
-    ax.set_ylabel("% Services change")
+    ax.set_ylabel("% Service volume change")
     ax.set_title(title)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     return fig
+
+
+def annotate_averted_bars(
+    ax,
+    bars,
+    percent_df,
+    upper_values,
+    lower_values,
+    horizontal=False,
+    fontsize=7,
+):
+    """
+    Annotate absolute-change bars with percentage change and its 95% CI.
+    Same format as in the DALYs/deaths averted plots.
+    percent_df: rows in the same order as the bars, with mean/lower/upper
+    already in percent.
+    """
+
+    for i, (bar, (_, row)) in enumerate(
+        zip(bars, percent_df.iterrows())
+    ):
+
+        pct_mean = row["mean"]
+        pct_lower = row["lower"]
+        pct_upper = row["upper"]
+
+        if horizontal:
+            annotation = (
+                f"{pct_mean:+.1f}% "
+                f"(95% CI: {pct_lower:+.1f} to {pct_upper:+.1f})"
+            )
+        else:
+            annotation = (
+                f"{pct_mean:+.1f}%\n"
+                f"95% CI: ({pct_lower:+.1f}%, {pct_upper:+.1f}%)"
+            )
+
+        # Place the label just beyond the end of the error bar, on the side
+        # the bar points to: upper limit for positive bars, lower limit for
+        # negative bars. The bar's own length gives its sign.
+        bar_value = bar.get_width() if horizontal else bar.get_height()
+        positive = bar_value >= 0
+        limit = upper_values[i] if positive else lower_values[i]
+        offset = 6 if positive else -6
+
+        if horizontal:
+            y_position = bar.get_y() + bar.get_height() / 2
+
+            ax.annotate(
+                annotation,
+                xy=(limit, y_position),
+                xytext=(offset, 0),
+                textcoords="offset points",
+                ha="left" if positive else "right",
+                va="center",
+                fontsize=fontsize,
+                annotation_clip=False,
+            )
+
+        else:
+            x_position = bar.get_x() + bar.get_width() / 2
+
+            ax.annotate(
+                annotation,
+                xy=(x_position, limit),
+                xytext=(0, offset),
+                textcoords="offset points",
+                ha="center",
+                va="bottom" if positive else "top",
+                fontsize=fontsize,
+                annotation_clip=False,
+            )
 
 
 def plot_absolute_change_with_percent_annotations(
@@ -735,10 +807,16 @@ def plot_absolute_change_with_percent_annotations(
     scenarios,
     title,
     ylabel,
+    percent_multiplier=100,
 ):
     """
     Plot absolute change relative to baseline, with percentage
     change and 95% CI shown as annotations.
+    Same figure size and format as the DALYs/deaths averted plots.
+
+    percent_multiplier: 100 when summarized_percent_change holds
+    proportions (total service volume), 1 when it is already in
+    percent (nurse time).
     """
 
     label_map = {
@@ -784,69 +862,46 @@ def plot_absolute_change_with_percent_annotations(
         if scenario in available_scenarios
     ]
 
-    x = np.arange(len(scenarios))
-    fig, ax = plt.subplots(figsize=(10, 6))
+    labels = [label_map.get(scenario, scenario) for scenario in scenarios]
+    colors = [color_map.get(scenario, "gray") for scenario in scenarios]
 
-    for i, scenario in enumerate(scenarios):
-        # Absolute change
-        mean = float(summarized_absolute_change[scenario]["mean"].iloc[0])
-        lower = float(summarized_absolute_change[scenario]["lower"].iloc[0])
-        upper = float(summarized_absolute_change[scenario]["upper"].iloc[0])
+    # Absolute change: bar heights and error bars
+    means = np.array([float(summarized_absolute_change[s]["mean"].iloc[0]) for s in scenarios])
+    lowers = np.array([float(summarized_absolute_change[s]["lower"].iloc[0]) for s in scenarios])
+    uppers = np.array([float(summarized_absolute_change[s]["upper"].iloc[0]) for s in scenarios])
 
-        # Percentage change for annotation
-        pct_mean = float(summarized_percent_change[scenario]["mean"].iloc[0]) * 100
-        pct_lower = float(summarized_percent_change[scenario]["lower"].iloc[0]) * 100
-        pct_upper = float(summarized_percent_change[scenario]["upper"].iloc[0]) * 100
-
-        ax.bar(x[i], mean, color=color_map.get(scenario, "gray"),)
-
-        ax.errorbar(
-            x[i],
-            mean,
-            yerr=[
-                [mean - lower],
-                [upper - mean],
-            ],
-            fmt="none",
-            ecolor="black",
-            capsize=3,
-            lw=1,
-        )
-
-        annotation = (
-            f"{pct_mean:+.1f}% "
-            f"(95% CI: {pct_lower:+.1f} to {pct_upper:+.1f})"
-        )
-
-        # Place the percentage annotation beyond the upper
-        # absolute confidence limit.
-        ax.annotate(
-            annotation,
-            xy=(x[i], upper),
-            xytext=(0, 6),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            fontsize=7,
-            annotation_clip=False,
-        )
-
-    ax.axhline(0, color="black", linestyle="--", linewidth=1)
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(
-        [
-            label_map.get(scenario, scenario)
-            for scenario in scenarios
-        ],
-        rotation=0,
-        ha="center",
+    # Percentage change: annotations
+    percent_df = pd.DataFrame(
+        {
+            stat: [
+                float(summarized_percent_change[s][stat].iloc[0]) * percent_multiplier
+                for s in scenarios
+            ]
+            for stat in ["mean", "lower", "upper"]
+        },
+        index=scenarios,
     )
 
+    yerr = np.vstack([means - lowers, uppers - means])
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    bars = ax.bar(labels, means, yerr=yerr, capsize=6, color=colors, width=0.55)
+
+    annotate_averted_bars(
+        ax,
+        bars,
+        percent_df,
+        upper_values=uppers,
+        lower_values=lowers,
+    )
+
+    ax.axhline(0, color="black", linewidth=1)
+    if title:
+        ax.set_title(title)
     ax.set_ylabel(ylabel)
-    ax.set_title(title)
+    ax.margins(y=0.25)
     ax.grid(axis="y", alpha=0.3)
-    ax.margins(y=0.30)
     fig.tight_layout()
     return fig
 
@@ -929,13 +984,15 @@ def plot_absolute_service_area_volume_change(
         lower = summarized_absolute_change[scenario]["lower"].reindex(health_areas)
         upper = summarized_absolute_change[scenario]["upper"].reindex(health_areas)
 
-        pct_mean = (summarized_percent_change[scenario]["mean"].reindex(health_areas) * 100)
-        pct_lower = (summarized_percent_change[scenario]["lower"].reindex(health_areas) * 100)
-        pct_upper = (summarized_percent_change[scenario]["upper"].reindex(health_areas) * 100)
+        # Percentage change is already in percent.
+        percent_df = pd.DataFrame({
+            stat: summarized_percent_change[scenario][stat].reindex(health_areas)
+            for stat in ["mean", "lower", "upper"]
+        })
 
         ypos = y + offsets[i]
 
-        ax.barh(
+        bars = ax.barh(
             ypos,
             mean.values,
             height=height,
@@ -956,32 +1013,22 @@ def plot_absolute_service_area_volume_change(
             lw=1,
         )
 
-        for j in range(len(health_areas)):
-            # Get percentage values for the current health area.
-            pct_mean_value = pct_mean.iloc[j]
-            pct_lower_value = pct_lower.iloc[j]
-            pct_upper_value = pct_upper.iloc[j]
-
-            annotation = (
-                f"{pct_mean_value:+.1f}% "
-                f"(95% CI: {pct_lower_value:+.1f} to {pct_upper_value:+.1f})"
-            )
-
-            ax.annotate(
-                annotation,
-                xy=(upper.iloc[j], ypos[j]),
-                xytext=(5, 0),
-                textcoords="offset points",
-                ha="left",
-                va="center",
-                fontsize=6,
-                annotation_clip=False,
-            )
+        # Annotate bars with percentage change and 95% CI
+        annotate_averted_bars(
+            ax,
+            bars,
+            percent_df,
+            upper_values=upper.values,
+            lower_values=lower.values,
+            horizontal=True,
+            fontsize=8,
+        )
 
     ax.axvline(0, color="black", linestyle="--", linewidth=1)
     ax.set_yticks(y)
     ax.set_yticklabels(health_areas, color="black")
-    ax.set_xlabel("Absolute change in service volume (2027–2034)")
+    ax.set_xlabel("Absolute change in service volumes")
+    ax.set_ylabel("Health area")
     ax.set_title(title)
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
     ax.grid(axis="x", alpha=0.3)
@@ -1160,6 +1207,47 @@ def prepare_service_volume_plot_data_for_excel(
     return pd.DataFrame(rows)
 
 
+def combine_percent_and_absolute(
+    percent_data,
+    absolute_data,
+    value_multiplier,
+    category_name,
+    single_row_label,
+):
+    """
+    One table with the % columns (unchanged names) followed by the
+    absolute columns, matched on scenario and measure/service area.
+    """
+    percent_df = prepare_service_volume_plot_data_for_excel(
+        summarized_data=percent_data,
+        value_multiplier=value_multiplier,
+        category_name=category_name,
+        single_row_label=single_row_label,
+    )
+
+    absolute_df = prepare_service_volume_plot_data_for_excel(
+        summarized_data=absolute_data,
+        value_multiplier=1,
+        category_name=category_name,
+        single_row_label=single_row_label,
+    ).rename(
+        columns={
+            "Mean (%)": "Absolute mean",
+            "Lower bound (%)": "Absolute lower bound",
+            "Upper bound (%)": "Absolute upper bound",
+            "Lower error (percentage points)": "Absolute lower error",
+            "Upper error (percentage points)": "Absolute upper error",
+        }
+    )
+
+    return percent_df.merge(
+        absolute_df,
+        on=["Scenario", category_name],
+        how="left",
+        validate="one_to_one",
+    )
+
+
 def export_service_volume_plot_data_to_excel(
     results_folder,
     plot_data,
@@ -1167,13 +1255,25 @@ def export_service_volume_plot_data_to_excel(
     """
     Export the numerical data underlying the six selected plots
     to separate worksheets in one Excel workbook.
+
+    plot_data: list of (sheet_name, percent_data, absolute_data,
+    value_multiplier, category_name, single_row_label).
+    value_multiplier applies to the percent data only.
     """
     output_file = results_folder / "nurses_service_volume_plot_data.xlsx"
 
     with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        for sheet_name, data, multiplier, category_name, row_label in plot_data:
-            excel_df = prepare_service_volume_plot_data_for_excel(
-                summarized_data=data,
+        for (
+            sheet_name,
+            percent_data,
+            absolute_data,
+            multiplier,
+            category_name,
+            row_label,
+        ) in plot_data:
+            excel_df = combine_percent_and_absolute(
+                percent_data,
+                absolute_data,
                 value_multiplier=multiplier,
                 category_name=category_name,
                 single_row_label=row_label,
@@ -1448,6 +1548,7 @@ if __name__ == "__main__":
         (
             "ServiceVol_Default",
             percent_change_default,
+            absolute_service_volume_change_default,
             100,
             "Measure",
             "Total service-volume change (2027–2034)",
@@ -1455,6 +1556,7 @@ if __name__ == "__main__":
         (
             "ServiceVol_Improved",
             percent_change_improved,
+            absolute_service_volume_change_improved,
             100,
             "Measure",
             "Total service-volume change (2027–2034)",
@@ -1464,6 +1566,7 @@ if __name__ == "__main__":
         (
             "Area_Default",
             percent_service_area_volume_change_default,
+            absolute_service_area_volume_change_default,
             1,
             "Service area",
             "Total change (2027–2034)",
@@ -1471,6 +1574,7 @@ if __name__ == "__main__":
         (
             "Area_Improved",
             percent_service_area_volume_change_improved,
+            absolute_service_area_volume_change_improved,
             1,
             "Service area",
             "Total change (2027–2034)",
@@ -1480,6 +1584,7 @@ if __name__ == "__main__":
         (
             "NurseTime_Default",
             nurse_time_change_default,
+            absolute_nurse_time_change_default,
             1,
             "Measure",
             "Total nurse-time change (2027–2034)",
@@ -1487,6 +1592,7 @@ if __name__ == "__main__":
         (
             "NurseTime_Improved",
             nurse_time_change_improved,
+            absolute_nurse_time_change_improved,
             1,
             "Measure",
             "Total nurse-time change (2027–2034)",
@@ -1497,7 +1603,6 @@ if __name__ == "__main__":
         results_folder=results_folder,
         plot_data=plot_data_for_excel,
     )
-
 
 
     fig_default = plot_annual_service_volumes(
@@ -1518,7 +1623,7 @@ if __name__ == "__main__":
         percent_change_default,
         default_hs_scenarios[1:],
         "",
-        "Absolute change in service volume (2027–2034)",
+        "Absolute change in service volumes",
     )
 
     fig_improved_percent = plot_absolute_change_with_percent_annotations(
@@ -1526,7 +1631,7 @@ if __name__ == "__main__":
         percent_change_improved,
         improved_hs_scenarios[1:],
         "",
-        "Absolute change in service volume (2027–2034)",
+        "Absolute change in service volumes",
     )
 
     # Absolute service-volume changes by general health area
@@ -1534,16 +1639,14 @@ if __name__ == "__main__":
         absolute_service_area_volume_change_default,
         percent_service_area_volume_change_default,
         default_hs_scenarios[1:],
-        "Change in Service Volume by Health Area\n"
-        "(2027–2034, Default Healthsystem Function)",
+        "",
     )
 
     fig_service_area_improved = plot_absolute_service_area_volume_change(
         absolute_service_area_volume_change_improved,
         percent_service_area_volume_change_improved,
         improved_hs_scenarios[1:],
-        "Change in Service Volume by Health Area\n"
-        "(2027–2034, Improved Healthsystem Function)",
+        "",
     )
 
     # Absolute nurse time-use changes
@@ -1552,7 +1655,8 @@ if __name__ == "__main__":
         nurse_time_change_default,
         default_hs_scenarios[1:],
         "",
-        "Absolute change in nurse time use (minutes, 2027–2034)",
+        "Absolute change in nurse time used (minutes)",
+        percent_multiplier=1,  # already in percent
     )
 
     fig_nurse_time_improved = plot_absolute_change_with_percent_annotations(
@@ -1560,7 +1664,8 @@ if __name__ == "__main__":
         nurse_time_change_improved,
         improved_hs_scenarios[1:],
         "",
-        "Absolute change in nurse time use (minutes, 2027–2034)",
+        "Absolute change in nurse time used (minutes)",
+        percent_multiplier=1,  # already in percent
     )
 
     if args.save_figures:
@@ -1581,25 +1686,25 @@ if __name__ == "__main__":
         )
 
         fig_default_percent.savefig(
-            output_folder / "percent_change_service_volumes_default.pdf",
+            output_folder / "abs_and_pct_change_service_volumes_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_improved_percent.savefig(
-            output_folder / "percent_change_service_volumes_improved.pdf",
+            output_folder / "abs_and_pct_change_service_volumes_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_service_area_default.savefig(
-            output_folder / "percent_change_service_volume_by_area_default.pdf",
+            output_folder / "abs_and_pct_change_service_volume_by_area_default.pdf",
             dpi=300,
             bbox_inches="tight",
         )
 
         fig_service_area_improved.savefig(
-            output_folder / "percent_change_service_volume_by_area_improved.pdf",
+            output_folder / "abs_and_pct_change_service_volume_by_area_improved.pdf",
             dpi=300,
             bbox_inches="tight",
         )
