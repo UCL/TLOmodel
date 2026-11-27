@@ -10,7 +10,14 @@ import numpy as np
 import pandas as pd
 
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
-from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
+from tlo.analysis.utils import compute_summary_statistics, extract_results, load_pickled_dataframes
+
+
+def summarize(results):
+    """Mean and 95% CI of the mean (mean ± 1.96 × SE), same layout as TLO's summarize."""
+    return compute_summary_statistics(
+        results, central_measure="mean", use_standard_error=True
+    ).rename(columns={"central": "mean"}, level=1)
 
 
 def set_param_names_as_column_index_level_0(_df, param_names):
