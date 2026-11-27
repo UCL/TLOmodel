@@ -142,7 +142,7 @@ def maternal_anaemia(self, df, rng=None, **externals):
     if 'Malaria' in self.module.sim.modules:
         result[df.ma_is_infected] *= params['rr_anaemia_maternal_malaria']
     if 'Hiv' in self.module.sim.modules:
-        result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
+        result[df.hv_inf & (df.hv_art == 'not')] *= params['rr_anaemia_hiv_no_art']
 
     return result
 
@@ -234,8 +234,11 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
 
     result[df.ps_antepartum_haemorrhage != 'none'] *= params['rr_still_birth_aph']
     result[df.ps_chorioamnionitis] *= params['rr_still_birth_chorio']
-    result[(df.ps_gest_diab == 'controlled') & (df.ac_gest_diab_on_treatment != 'none')] *=\
-        (params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_management'])
+
+    result[df.ps_gest_diab == 'uncontrolled'] *= params['rr_still_birth_gest_diab']
+    result[df.ps_gest_diab == 'controlled'] *= (params['rr_still_birth_gest_diab'] *
+                                                params['treatment_effect_gdm_case_management'])
+
     result[df.ps_syphilis] *= params['rr_still_birth_maternal_syphilis']
 
     # Effect of malaria and NCDs only applied in the modules are registered
