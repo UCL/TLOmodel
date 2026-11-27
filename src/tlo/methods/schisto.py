@@ -928,10 +928,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer to HSI for testing.
-        # don't include low infection as symptoms likely very mild
-        set_of_symptoms_indicative_of_schisto = {'ss_sm_moderate',
-                                                 'ss_sm_heavy',
-                                                 'ss_sh_moderate',
+        # don't include low /moderate infection as symptoms likely very mild
+        set_of_symptoms_indicative_of_schisto = {'ss_sm_heavy',
                                                  'ss_sh_heavy'}
 
         if set_of_symptoms_indicative_of_schisto.intersection(symptoms):
