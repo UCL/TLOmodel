@@ -12,7 +12,14 @@ import numpy as np
 import pandas as pd
 
 from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
-from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
+from tlo.analysis.utils import compute_summary_statistics, extract_results, load_pickled_dataframes
+
+
+def summarize(results):
+    """Mean and 95% CI of the mean (mean ± 1.96 × SE), same layout as TLO's summarize."""
+    return compute_summary_statistics(
+        results, central_measure="mean", use_standard_error=True
+    ).rename(columns={"central": "mean"}, level=1)
 
 
 DALY_METADATA_COLUMNS = {"date", "year", "sex", "age_range", "li_wealth", "district_of_residence"}
@@ -130,17 +137,38 @@ def prepare_plot_data_for_excel(data, category_name="Category"):
     return result
 
 
+def combine_percent_and_absolute(percent_data, absolute_data, category_name="Category"):
+    """
+    One table with the % columns (unchanged names) followed by the
+    absolute columns, matched on scenario (and cause/age group).
+    """
+    percent_df = prepare_plot_data_for_excel(percent_data, category_name=category_name)
+    absolute_df = prepare_plot_data_for_excel(absolute_data, category_name=category_name)
+
+    keys = [col for col in ["Scenario", category_name] if col in percent_df.columns]
+    absolute_df = absolute_df.rename(
+        columns={
+            col: f"Absolute {col[0].lower()}{col[1:]}"
+            for col in absolute_df.columns if col not in keys
+        }
+    )
+
+    return percent_df.merge(absolute_df, on=keys, how="left", validate="one_to_one")
+
+
 def export_nurse_plot_data_to_excel(results_folder, plot_data):
     """
     Export the data underlying the selected nurse-scenario
     plots into separate worksheets in one Excel workbook.
+    plot_data: list of (sheet_name, percent_data, absolute_data, category_name).
     """
     output_file = results_folder / "nurses_scenario_plot_data.xlsx"
 
     with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        for sheet_name, data, category_name in plot_data:
-            excel_df = prepare_plot_data_for_excel(
-                data,
+        for sheet_name, percent_data, absolute_data, category_name in plot_data:
+            excel_df = combine_percent_and_absolute(
+                percent_data,
+                absolute_data,
                 category_name=category_name,
             )
 
@@ -865,7 +893,6 @@ def calculate_percent_deaths_averted_by_age_group(
     return results
 
 
-
 def calculate_absolute_averted_by_category(
     data,
     baseline_scenario,
@@ -899,12 +926,12 @@ def calculate_absolute_averted_by_category(
     return results
 
 
-
 def annotate_averted_bars(
     ax,
     bars,
     percent_df,
     upper_values,
+    lower_values,
     horizontal=False,
     fontsize=7,
 ):
@@ -932,18 +959,21 @@ def annotate_averted_bars(
                 f"95% CI: ({pct_lower:+.1f}%, {pct_upper:+.1f}%)"
             )
 
-        # Position at the upper absolute confidence limit.
-        upper_limit = upper_values[i]
+        # Position at the upper/lower absolute confidence limit.
+        bar_value = bar.get_width() if horizontal else bar.get_height()
+        positive = bar_value >= 0
+        limit = upper_values[i] if positive else lower_values[i]
+        offset = 6 if positive else -6
 
         if horizontal:
             y_position = bar.get_y() + bar.get_height() / 2
 
             ax.annotate(
                 annotation,
-                xy=(upper_limit, y_position),
-                xytext=(6, 0),
+                xy=(limit, y_position),
+                xytext=(offset, 0),
                 textcoords="offset points",
-                ha="left",
+                ha="left" if positive else "right",
                 va="center",
                 fontsize=fontsize,
                 annotation_clip=False,
@@ -954,11 +984,11 @@ def annotate_averted_bars(
 
             ax.annotate(
                 annotation,
-                xy=(x_position, upper_limit),
-                xytext=(0, 6),
+                xy=(x_position, limit),
+                xytext=(0, offset),
                 textcoords="offset points",
                 ha="center",
-                va="bottom",
+                va="bottom" if positive else "top",
                 fontsize=fontsize,
                 annotation_clip=False,
             )
@@ -1008,6 +1038,7 @@ def plot_percent_dalys_averted_comparison(default_absolute, default_percent, imp
         ax_default.patches,
         default_percent.loc[ordered_scenarios_default],
         upper_values=uppers_default,
+        lower_values=lowers_default,
     )
 
     ax_default.axhline(0, color="black", linewidth=1)
@@ -1072,6 +1103,7 @@ def plot_percent_dalys_averted_comparison(default_absolute, default_percent, imp
         ax_improved.patches,
         improved_percent.loc[ordered_scenarios_improved],
         upper_values=uppers_improved,
+        lower_values=lowers_improved,
     )
 
     ax_improved.axhline(0, color="black", linewidth=1)
@@ -1129,6 +1161,7 @@ def plot_percent_deaths_averted_comparison(default_absolute, default_percent, im
         ax_default.patches,
         default_percent.loc[ordered_scenarios_default],
         upper_values=uppers_default,
+        lower_values=lowers_default,
     )
 
     ax_default.axhline(0, color="black", linewidth=1)
@@ -1185,6 +1218,7 @@ def plot_percent_deaths_averted_comparison(default_absolute, default_percent, im
         ax_improved.patches,
         improved_percent.loc[ordered_scenarios_improved],
         upper_values=uppers_improved,
+        lower_values=lowers_improved,
     )
 
     ax_improved.axhline(0, color="black", linewidth=1)
@@ -1248,6 +1282,14 @@ def _plot_percent_averted_by_cause(
         ("More nurses by district", "More Nurses by District", "mediumpurple"),
         ("More CNP by district", "More CNP staff by District", "orange"),
     ]
+
+    # Font sizes, set once so labels, ticks, annotations and legend
+    # stay consistent with each other.
+    axis_label_fontsize = 16    # x- and y-axis titles
+    area_tick_fontsize = 15     # health-area names
+    value_tick_fontsize = 13    # numbers on the x-axis
+    annotation_fontsize = 10    # % change and 95% CI next to bars
+    legend_fontsize = 13
 
     # Figure dimensions.
     figure_width = 15
@@ -1313,7 +1355,9 @@ def _plot_percent_averted_by_cause(
             )
 
             # Annotate bars with percentage change and 95% CI
-            annotate_averted_bars(ax, bars, percent_df, upper_values=upper, horizontal=True, fontsize=6.5)
+            annotate_averted_bars(ax, bars, percent_df,
+                                  upper_values=upper, lower_values=lower,
+                                  horizontal=True, fontsize=annotation_fontsize)
 
         # Reference line at zero.
         ax.axvline(0, color="black", linewidth=1)
@@ -1321,10 +1365,6 @@ def _plot_percent_averted_by_cause(
         # Health-area labels.
         ax.set_yticks(y)
         ax.set_yticklabels(health_areas)
-
-        for tick in ax.get_yticklabels():
-            tick.set_color("black")
-            tick.set_fontweight("bold")
 
         # Separate health areas.
         for i in range(len(health_areas) - 1):
@@ -1344,21 +1384,24 @@ def _plot_percent_averted_by_cause(
 
         ax.set_xlabel(
             f"{outcome_label} averted",
-            fontsize=12,
+            fontsize=axis_label_fontsize,
         )
-        ax.set_ylabel("Health area", fontsize=12)
+        ax.set_ylabel(
+            "Health area",
+            fontsize=axis_label_fontsize,
+        )
 
         ax.grid(axis="x", alpha=0.3)
         ax.set_axisbelow(True)
 
         ax.tick_params(
             axis="y",
-            labelsize=11,
+            labelsize=area_tick_fontsize,
             length=0,
             pad=12,
         )
 
-        ax.tick_params(axis="x", labelsize=10)
+        ax.tick_params(axis="x", labelsize=value_tick_fontsize)
 
         # Allow room for percentage annotations.
         ax.margins(x=0.30)
@@ -1368,6 +1411,7 @@ def _plot_percent_averted_by_cause(
             bbox_to_anchor=(0.5, -0.10),
             ncol=5,
             frameon=True,
+            fontsize=legend_fontsize,
         )
 
         fig.subplots_adjust(
@@ -1431,7 +1475,6 @@ def plot_percent_deaths_averted_by_cause(
     )
 
 
-
 def _plot_averted_by_age_group(
     default_absolute,
     default_percent,
@@ -1471,6 +1514,13 @@ def _plot_averted_by_age_group(
         ("More nurses by district", "More Nurses by District", "mediumpurple"),
         ("More CNP by district", "More CNP staff by District", "orange"),
     ]
+
+    # Font sizes, set once and matching the by-cause plots.
+    axis_label_fontsize = 16    # x- and y-axis titles
+    panel_title_fontsize = 16   # "Absolute ..." / "Percentage ..." titles
+    category_tick_fontsize = 15 # age-group names
+    value_tick_fontsize = 13    # numbers on the x-axes
+    legend_fontsize = 13
 
     # Five bars per age group.
     bar_height = 0.15
@@ -1568,23 +1618,29 @@ def _plot_averted_by_age_group(
 
             ax.axvline(0, color="black", linewidth=1)
 
-            ax.set_xlabel(xlabel)
+            ax.set_xlabel(xlabel, fontsize=axis_label_fontsize)
             ax.grid(axis="x", alpha=0.3)
             ax.set_axisbelow(True)
 
             ax.set_yticks(y)
             ax.set_yticklabels(age_order[::-1])
+            ax.tick_params(axis="y", labelsize=category_tick_fontsize)
+            ax.tick_params(axis="x", labelsize=value_tick_fontsize)
+            # Size the scale factor (e.g. "1e6") with the tick numbers.
+            ax.xaxis.get_offset_text().set_fontsize(value_tick_fontsize)
 
         # Titles for the two panels.
         ax_absolute.set_title(
-            f"Absolute {outcome_label} averted"
+            f"Absolute {outcome_label} averted",
+            fontsize=panel_title_fontsize,
         )
 
         ax_percent.set_title(
-            f"Percentage {outcome_label} averted"
+            f"Percentage {outcome_label} averted",
+            fontsize=panel_title_fontsize,
         )
 
-        ax_absolute.set_ylabel("Age group")
+        ax_absolute.set_ylabel("Age group", fontsize=axis_label_fontsize)
 
         # One shared legend.
         handles, labels = ax_absolute.get_legend_handles_labels()
@@ -1596,6 +1652,7 @@ def _plot_averted_by_age_group(
             bbox_to_anchor=(0.5, -0.01),
             ncol=5,
             frameon=True,
+            fontsize=legend_fontsize,
         )
 
         fig.subplots_adjust(
@@ -1629,7 +1686,6 @@ def _plot_averted_by_age_group(
         axes_improved,
     )
 
-
 def plot_percent_dalys_averted_by_age_group(
     default_absolute,
     default_percent,
@@ -1658,7 +1714,6 @@ def plot_percent_deaths_averted_by_age_group(
         improved_percent,
         outcome_label="Deaths",
     )
-
 
 
 if __name__ == "__main__":
@@ -1875,7 +1930,6 @@ if __name__ == "__main__":
         baseline_scenario=baseline_improved_scenario,
         comparison_years=range(2027, 2035),
     )
-
 
     fig_4_default, ax_4_default, fig_4_improved, ax_4_improved = (
         plot_percent_deaths_averted_comparison(
@@ -2184,28 +2238,31 @@ if __name__ == "__main__":
         )
     )
 
-
     # Export numerical data underlying 12 selected plots.
     plot_data_for_excel = [
         # 1–4: Baseline-comparison plots
         (
             "DALYs_Base_Default",
             percent_dalys_averted,
+            dalys_averted,
             "Category",
         ),
         (
             "DALYs_Base_Improved",
             percent_dalys_averted_improved,
+            dalys_averted_improved,
             "Category",
         ),
         (
             "Deaths_Base_Default",
             percent_deaths_averted,
+            deaths_averted,
             "Category",
         ),
         (
             "Deaths_Base_Improved",
             percent_deaths_averted_improved,
+            deaths_averted_improved,
             "Category",
         ),
 
@@ -2213,21 +2270,25 @@ if __name__ == "__main__":
         (
             "DALYs_Cause_Default",
             percent_by_cause_default,
+            dalys_averted_by_cause_default,
             "Cause",
         ),
         (
             "DALYs_Cause_Improved",
             percent_by_cause_improved,
+            dalys_averted_by_cause_improved,
             "Cause",
         ),
         (
             "Deaths_Cause_Default",
             percent_deaths_by_cause_default,
+            deaths_averted_by_cause_default,
             "Cause",
         ),
         (
             "Deaths_Cause_Improved",
             percent_deaths_by_cause_improved,
+            deaths_averted_by_cause_improved,
             "Cause",
         ),
 
@@ -2235,21 +2296,25 @@ if __name__ == "__main__":
         (
             "DALYs_Age_Default",
             percent_dalys_by_age_default,
+            dalys_averted_by_age_default,
             "Age group",
         ),
         (
             "DALYs_Age_Improved",
             percent_dalys_by_age_improved,
+            dalys_averted_by_age_improved,
             "Age group",
         ),
         (
             "Deaths_Age_Default",
             percent_deaths_by_age_default,
+            deaths_averted_by_age_default,
             "Age group",
         ),
         (
             "Deaths_Age_Improved",
             percent_deaths_by_age_improved,
+            deaths_averted_by_age_improved,
             "Age group",
         ),
     ]
@@ -2258,9 +2323,6 @@ if __name__ == "__main__":
         results_folder=results_folder,
         plot_data=plot_data_for_excel,
     )
-
-    # Showing figures
-
 
     # Showing figures
     if args.show_figures:
@@ -2275,13 +2337,13 @@ if __name__ == "__main__":
 
         fig_2_default.savefig(
             results_folder /
-            "percent_dalys_averted_vs_baseline_2027_2034_default_healthsystem.pdf",
+            "abs_and_pct_dalys_averted_vs_baseline_2027_2034_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_2_improved.savefig(
             results_folder /
-            "percent_dalys_averted_vs_baseline_2027_2034_improved_healthsystem.pdf",
+            "abs_and_pct_dalys_averted_vs_baseline_2027_2034_improved_healthsystem.pdf",
             bbox_inches="tight",
         )
 
@@ -2292,13 +2354,13 @@ if __name__ == "__main__":
 
         fig_4_default.savefig(
             results_folder /
-            "percent_deaths_averted_vs_baseline_2027_2034_default_healthsystem.pdf",
+            "abs_and_pct_deaths_averted_vs_baseline_2027_2034_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_4_improved.savefig(
             results_folder /
-            "percent_deaths_averted_vs_baseline_2027_2034_improved_healthsystem.pdf",
+            "abs_and_pct_deaths_averted_vs_baseline_2027_2034_improved_healthsystem.pdf",
             bbox_inches="tight",
         )
 
@@ -2330,48 +2392,48 @@ if __name__ == "__main__":
 
         fig_9_default.savefig(
             results_folder /
-            "percent_dalys_averted_by_cause_national_level_default_healthsystem.pdf",
+            "abs_and_pct_dalys_averted_by_cause_national_level_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_9_improved.savefig(
             results_folder /
-            "percent_dalys_averted_by_cause_national_level_improved_healthsystem.pdf",
+            "abs_and_pct_dalys_averted_by_cause_national_level_improved_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_10_default.savefig(
             results_folder /
-            "percent_deaths_averted_by_cause_national_level_default_healthsystem.pdf",
+            "abs_and_pct_deaths_averted_by_cause_national_level_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_10_improved.savefig(
             results_folder /
-            "percent_deaths_averted_by_cause_national_level_improved_healthsystem.pdf",
+            "abs_and_pct_deaths_averted_by_cause_national_level_improved_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_11_default.savefig(
             results_folder /
-            "percent_dalys_averted_by_age_group_national_level_default_healthsystem.pdf",
+            "abs_and_pct_dalys_averted_by_age_group_national_level_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_11_improved.savefig(
             results_folder /
-            "percent_dalys_averted_by_age_group_national_level_improved_healthsystem.pdf",
+            "abs_and_pct_dalys_averted_by_age_group_national_level_improved_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_12_default.savefig(
             results_folder /
-            "percent_deaths_averted_by_age_group_national_level_default_healthsystem.pdf",
+            "abs_and_pct_deaths_averted_by_age_group_national_level_default_healthsystem.pdf",
             bbox_inches="tight",
         )
 
         fig_12_improved.savefig(
             results_folder /
-            "percent_deaths_averted_by_age_group_national_level_improved_healthsystem.pdf",
+            "abs_and_pct_deaths_averted_by_age_group_national_level_improved_healthsystem.pdf",
             bbox_inches="tight",
         )
