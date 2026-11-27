@@ -21,6 +21,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
+    syphilis,
 )
 
 start_date = Date(2010, 1, 1)
@@ -58,6 +59,7 @@ def register_modules(sim):
                  healthsystem.HealthSystem(service_availability=['*'], cons_availability='all'),
                  newborn_outcomes.NewbornOutcomes(),
                  pregnancy_supervisor.PregnancySupervisor(),
+                 syphilis.Syphilis(),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
                  symptommanager.SymptomManager(),
                  labour.Labour(),
@@ -123,6 +125,33 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     # Check the event is scheduled
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
     assert newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck in hsi_events
+
+
+def test_congenital_syphilis_status_is_transferred_to_liveborn_newborn(seed):
+    """Test that fetal congenital syphilis status survives live birth as a newborn property."""
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+    mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
+
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'ps_congenital_syphilis'] = True
+
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+    mni[mother_id]['delivery_setting'] = 'home_birth'
+
+    child_id = sim.do_birth(mother_id)
+    df = sim.population.props
+
+    assert df.at[child_id, 'nb_congenital_syphilis']
+    assert sim.modules['PregnancySupervisor'].mnh_outcome_counter['congenital_syphilis_live_birth'] == 1
 
 
 def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
