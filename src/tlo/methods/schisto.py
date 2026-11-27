@@ -609,7 +609,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Register the symptoms with the `SymptomManager`.
         :params symptoms: The symptoms that are used by this module in a dictionary of the form, {<symptom>:
         <generic_symptom_similar>}. Each symptom is associated with the average healthcare seeking behaviour
-        unless otherwise specified."""
+        unless otherwise specified.
+        Assume light and moderate infections will not cause significant disability and therefore
+        will not prompt healthseeking behaviour
+        """
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
         p = self.parameters
@@ -620,13 +623,19 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         )
 
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='ss_sm_moderate'))
+            Symptom(name='ss_sm_moderate',
+            odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_children_schisto_low'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_adults_schisto_low'])
+        )
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='ss_sm_heavy'))
 
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='ss_sh_moderate'))
+            Symptom(name='ss_sh_moderate',
+            odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_children_schisto_low'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_adults_schisto_low'])
+        )
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='ss_sh_heavy'))
@@ -918,14 +927,14 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         **kwargs,
     ) -> None:
         # Do when person presents to the GenericFirstAppt.
-        # If the person has certain set of symptoms, refer ta HSI for testing.
+        # If the person has certain set of symptoms, refer to HSI for testing.
         # don't include low infection as symptoms likely very mild
         set_of_symptoms_indicative_of_schisto = {'ss_sm_moderate',
                                                  'ss_sm_heavy',
                                                  'ss_sh_moderate',
-                                                 'ss_sm_heavy'}
+                                                 'ss_sh_heavy'}
 
-        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
+        if set_of_symptoms_indicative_of_schisto.intersection(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
                 module=self, person_id=person_id
             )
@@ -967,7 +976,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         n_to_reduce = int(p['rr_WASH'] * len(susceptible_no_sanitation))
 
         if n_to_reduce > 0:
-            selected_change_susceptibility = np.random.choice(susceptible_no_sanitation, size=n_to_reduce,
+            selected_change_susceptibility = self.rng.choice(susceptible_no_sanitation, size=n_to_reduce,
                                                               replace=False)
             df.loc[selected_change_susceptibility, species_column] = 0
 
