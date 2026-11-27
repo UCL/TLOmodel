@@ -963,7 +963,7 @@ def annotate_averted_bars(
         bar_value = bar.get_width() if horizontal else bar.get_height()
         positive = bar_value >= 0
         limit = upper_values[i] if positive else lower_values[i]
-        offset = 6 if positive else -6
+        offset = 3 if positive else -3
 
         if horizontal:
             y_position = bar.get_y() + bar.get_height() / 2
@@ -992,6 +992,38 @@ def annotate_averted_bars(
                 fontsize=fontsize,
                 annotation_clip=False,
             )
+
+
+def fit_annotations_in_xlim(fig, ax, pad_fraction=0.02, max_iterations=5):
+    """
+    Widen the x-axis until all text annotations fit inside the plot area.
+
+    The labels are anchored to the bars (data units) but offset in points,
+    so their width in data units changes when the axis range changes;
+    the fit is therefore repeated until it is stable.
+    """
+    for _ in range(max_iterations):
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        to_data = ax.transData.inverted()
+
+        x_min, x_max = ax.get_xlim()
+        new_min, new_max = x_min, x_max
+
+        for text in ax.texts:
+            bbox = text.get_window_extent(renderer)
+            (left, _), (right, _) = to_data.transform(
+                [[bbox.x0, bbox.y0], [bbox.x1, bbox.y1]]
+            )
+            if np.isfinite(left) and np.isfinite(right):
+                new_min = min(new_min, left)
+                new_max = max(new_max, right)
+
+        if new_min >= x_min and new_max <= x_max:
+            break  # everything fits
+
+        pad = pad_fraction * (new_max - new_min)
+        ax.set_xlim(new_min - pad, new_max + pad)
 
 
 def plot_percent_dalys_averted_comparison(default_absolute, default_percent, improved_absolute, improved_percent):
@@ -1421,6 +1453,8 @@ def _plot_percent_averted_by_cause(
             bottom=0.15,
         )
 
+        fit_annotations_in_xlim(fig, ax)
+
         return fig, ax
 
     fig_default, ax_default = plot_healthsystem(
@@ -1630,15 +1664,15 @@ def _plot_averted_by_age_group(
             ax.xaxis.get_offset_text().set_fontsize(value_tick_fontsize)
 
         # Titles for the two panels.
-        ax_absolute.set_title(
-            f"Absolute {outcome_label} averted",
-            fontsize=panel_title_fontsize,
-        )
-
-        ax_percent.set_title(
-            f"Percentage {outcome_label} averted",
-            fontsize=panel_title_fontsize,
-        )
+        # ax_absolute.set_title(
+        #     f"Absolute {outcome_label} averted",
+        #     fontsize=panel_title_fontsize,
+        # )
+        #
+        # ax_percent.set_title(
+        #     f"Percentage {outcome_label} averted",
+        #     fontsize=panel_title_fontsize,
+        # )
 
         ax_absolute.set_ylabel("Age group", fontsize=axis_label_fontsize)
 
