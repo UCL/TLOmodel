@@ -105,6 +105,10 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     :return: A dict of the form {<index>:<outcome>} where an outcome is selected.
     """
 
+    # No eligible individuals: no outcomes to sample.
+    if len(probs.index) == 0:
+        return {}
+
     # Scaling to ensure that the sum in each row not exceed 1.0
     probs = probs.apply(lambda row: (row / row.sum() if row.sum() >= 1.0 else row), axis=1)
     assert (probs.sum(axis=1) < (1.0 + 1e-6)).all(), "Probabilities across columns cannot sum to more than 1.0"
