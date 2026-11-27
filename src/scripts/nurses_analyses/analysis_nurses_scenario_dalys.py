@@ -577,7 +577,6 @@ def aggregate_causes_by_health_area(data):
     return data
 
 
-
 # Extract DALYs by age group
 def extract_dalys_by_age_group(results_folder):
 
