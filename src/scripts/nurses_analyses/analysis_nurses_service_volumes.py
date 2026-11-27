@@ -247,48 +247,88 @@ def aggregate_treatment_volumes_by_service_area(
     comparison_years=range(2027, 2035),
 ):
     """
-    Aggregate treatment volumes into broad service areas.
-    The service area is defined as everything before the first
-    underscore in the treatment_id.
+    Aggregate treatment volumes into the general health areas
+    used in the nurse-shortages DALYs cause plots.
     """
 
-    # Select the comparison years
     years = annual_treatment_volumes.index.get_level_values("year").astype(int)
 
-    year_mask = np.isin(
-        years,
-        list(comparison_years),
-    )
-
+    year_mask = np.isin(years, list(comparison_years))
     selected = annual_treatment_volumes.loc[year_mask].copy()
 
-    # Get treatment IDs
-    treatment_ids = selected.index.get_level_values(
-        "treatment_id"
+    treatment_ids = (
+        selected.index.get_level_values("treatment_id")
+        .astype(str)
     )
 
-    # Create service-area names
-    service_areas = treatment_ids.to_series().str.split(
-        "_",
-        n=1,
-        expand=True,
-    )[0].values
+    def map_to_health_area(treatment_id):
+        treatment = treatment_id.lower()
 
-    # Add service area as another index level
+        # HIV/AIDS
+        if treatment.startswith("hiv"):
+            return "HIV/AIDS"
+
+        # TB
+        elif treatment.startswith("tb"):
+            return "TB"
+
+        # Malaria
+        elif treatment.startswith("malaria"):
+            return "Malaria"
+
+        # RMNCH
+        elif treatment.startswith((
+            "alri",
+            "antenatalcare",
+            "contraception",
+            "deliverycare",
+            "diarrhoea",
+            "epi",
+            "measles",
+            "postnatalcare",
+            "schisto",
+            "undernutrition",
+        )):
+            return "RMNCH"
+
+        # NCDs
+        elif treatment.startswith((
+            "bladdercancer",
+            "breastcancer",
+            "cardiometabolicdisorders",
+            "copd",
+            "depression",
+            "epilepsy",
+            "oesophagealcancer",
+            "otheradultcancer",
+            "prostatecancer",
+        )):
+            return "NCDs"
+
+        # Transport injuries
+        elif treatment.startswith((
+            "transport",
+            "roadtraffic",
+        )):
+            return "Transport Injuries"
+
+        return "Other"
+
+    health_areas = [
+        map_to_health_area(treatment_id)
+        for treatment_id in treatment_ids
+    ]
+
     selected.index = pd.MultiIndex.from_arrays(
         [
             selected.index.get_level_values("year"),
-            service_areas,
+            health_areas,
         ],
         names=["year", "service_area"],
     )
 
-    # Sum across years and treatment types within each service area
-    service_area_volumes = selected.groupby(
-        level="service_area"
-    ).sum()
-
-    return service_area_volumes
+    health_area_volumes = selected.groupby(level="service_area").sum()
+    return health_area_volumes
 
 
 def plot_annual_service_volumes(
@@ -484,6 +524,67 @@ def calculate_service_area_volume_percent_change(
     return summarized
 
 
+def calculate_absolute_service_volume_change(
+    annual_service_volumes,
+    baseline_scenario,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Calculate the absolute change in total service volumes
+    relative to baseline over 2027-2034.
+    """
+    years = annual_service_volumes.index.astype(int)
+    year_mask = np.isin(years, list(comparison_years))
+    selected = annual_service_volumes.loc[year_mask]
+
+    total_service_volumes = selected.sum(axis=0).to_frame().T
+
+    absolute_diff = find_difference_relative_to_comparison_series_dataframe(
+        total_service_volumes,
+        comparison=baseline_scenario,
+        scaled=False,
+    )
+    return summarize(absolute_diff)
+
+
+def calculate_absolute_service_area_volume_change(
+    service_area_volumes,
+    baseline_scenario,
+):
+    """
+    Calculate absolute changes in service volumes by health area
+    relative to baseline.
+    """
+    absolute_diff = find_difference_relative_to_comparison_series_dataframe(
+        service_area_volumes,
+        comparison=baseline_scenario,
+        scaled=False,
+    )
+    return summarize(absolute_diff)
+
+
+def calculate_absolute_nurse_time_change(
+    annual_nurse_time,
+    baseline_scenario,
+    comparison_years=range(2027, 2035),
+):
+    """
+    Calculate absolute change in nurse time use relative to baseline
+    over 2027-2034.
+    """
+    years = annual_nurse_time.index.astype(int)
+    year_mask = np.isin(years, list(comparison_years))
+    selected = annual_nurse_time.loc[year_mask]
+
+    total_nurse_time = selected.sum(axis=0).to_frame().T
+
+    absolute_diff = find_difference_relative_to_comparison_series_dataframe(
+        total_nurse_time,
+        comparison=baseline_scenario,
+        scaled=False,
+    )
+    return summarize(absolute_diff)
+
 
 def calculate_nurse_time_percent_change(
     annual_nurse_time,
@@ -628,41 +729,153 @@ def plot_percent_service_volume_change(
     return fig
 
 
-def plot_percent_service_area_volume_change(
+def plot_absolute_change_with_percent_annotations(
+    summarized_absolute_change,
+    summarized_percent_change,
+    scenarios,
+    title,
+    ylabel,
+):
+    """
+    Plot absolute change relative to baseline, with percentage
+    change and 95% CI shown as annotations.
+    """
+
+    label_map = {
+        "Fewer Nurses / Default Healthsystem Function": "Fewer\nnurses",
+        "More Nurses / Default Healthsystem Function": "More\nnurses",
+        "More CNP staff / Default Healthsystem Function": "More\nCNP",
+        "More Nurses by District / Default Healthsystem Function":
+            "More nurses\nby district",
+        "More CNP staff by District / Default Healthsystem Function":
+            "More CNP\nby district",
+
+        "Fewer Nurses / Improved Healthsystem Function": "Fewer\nnurses",
+        "More Nurses / Improved Healthsystem Function": "More\nnurses",
+        "More CNP staff / Improved Healthsystem Function": "More\nCNP",
+        "More Nurses by District / Improved Healthsystem Function":
+            "More nurses\nby district",
+        "More CNP staff by District / Improved Healthsystem Function":
+            "More CNP\nby district",
+    }
+
+    color_map = {
+        "Fewer Nurses / Default Healthsystem Function": "indianred",
+        "More Nurses / Default Healthsystem Function": "steelblue",
+        "More CNP staff / Default Healthsystem Function": "darkgreen",
+        "More Nurses by District / Default Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Default Healthsystem Function": "orange",
+
+        "Fewer Nurses / Improved Healthsystem Function": "indianred",
+        "More Nurses / Improved Healthsystem Function": "steelblue",
+        "More CNP staff / Improved Healthsystem Function": "darkgreen",
+        "More Nurses by District / Improved Healthsystem Function": "mediumpurple",
+        "More CNP staff by District / Improved Healthsystem Function": "orange",
+    }
+
+    available_scenarios = (
+        summarized_absolute_change.columns
+        .get_level_values(0)
+        .unique()
+    )
+
+    scenarios = [
+        scenario for scenario in scenarios
+        if scenario in available_scenarios
+    ]
+
+    x = np.arange(len(scenarios))
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for i, scenario in enumerate(scenarios):
+        # Absolute change
+        mean = float(summarized_absolute_change[scenario]["mean"].iloc[0])
+        lower = float(summarized_absolute_change[scenario]["lower"].iloc[0])
+        upper = float(summarized_absolute_change[scenario]["upper"].iloc[0])
+
+        # Percentage change for annotation
+        pct_mean = float(summarized_percent_change[scenario]["mean"].iloc[0]) * 100
+        pct_lower = float(summarized_percent_change[scenario]["lower"].iloc[0]) * 100
+        pct_upper = float(summarized_percent_change[scenario]["upper"].iloc[0]) * 100
+
+        ax.bar(x[i], mean, color=color_map.get(scenario, "gray"),)
+
+        ax.errorbar(
+            x[i],
+            mean,
+            yerr=[
+                [mean - lower],
+                [upper - mean],
+            ],
+            fmt="none",
+            ecolor="black",
+            capsize=3,
+            lw=1,
+        )
+
+        annotation = (
+            f"{pct_mean:+.1f}% "
+            f"(95% CI: {pct_lower:+.1f} to {pct_upper:+.1f})"
+        )
+
+        # Place the percentage annotation beyond the upper
+        # absolute confidence limit.
+        ax.annotate(
+            annotation,
+            xy=(x[i], upper),
+            xytext=(0, 6),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            annotation_clip=False,
+        )
+
+    ax.axhline(0, color="black", linestyle="--", linewidth=1)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [
+            label_map.get(scenario, scenario)
+            for scenario in scenarios
+        ],
+        rotation=0,
+        ha="center",
+    )
+
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(axis="y", alpha=0.3)
+    ax.margins(y=0.30)
+    fig.tight_layout()
+    return fig
+
+
+def plot_absolute_service_area_volume_change(
+    summarized_absolute_change,
     summarized_percent_change,
     scenarios,
     title,
 ):
     """
-    Plot percentage change in service volume by service area
-    relative to baseline for 2027-2034.
-
-    Values are calculated using run-to-run comparisons and
-    summarized across simulation draws.
+    Plot absolute change in service volume by general health area,
+    with percentage change and 95% CI as annotations.
     """
 
     label_map = {
-        "Baseline Nurses / Default Healthsystem Function":
-            "Baseline",
-        "Fewer Nurses / Default Healthsystem Function":
-            "Fewer nurses",
-        "More Nurses / Default Healthsystem Function":
-            "More nurses",
-        "More CNP staff / Default Healthsystem Function":
-            "More CNP",
+        "Baseline Nurses / Default Healthsystem Function": "Baseline",
+        "Fewer Nurses / Default Healthsystem Function": "Fewer nurses",
+        "More Nurses / Default Healthsystem Function": "More nurses",
+        "More CNP staff / Default Healthsystem Function": "More CNP",
         "More Nurses by District / Default Healthsystem Function":
             "More nurses by district",
         "More CNP staff by District / Default Healthsystem Function":
             "More CNP by district",
 
-        "Baseline Nurses / Improved Healthsystem Function":
-            "Baseline",
-        "Fewer Nurses / Improved Healthsystem Function":
-            "Fewer nurses",
-        "More Nurses / Improved Healthsystem Function":
-            "More nurses",
-        "More CNP staff / Improved Healthsystem Function":
-            "More CNP",
+        "Baseline Nurses / Improved Healthsystem Function": "Baseline",
+        "Fewer Nurses / Improved Healthsystem Function": "Fewer nurses",
+        "More Nurses / Improved Healthsystem Function": "More nurses",
+        "More CNP staff / Improved Healthsystem Function": "More CNP",
         "More Nurses by District / Improved Healthsystem Function":
             "More nurses by district",
         "More CNP staff by District / Improved Healthsystem Function":
@@ -670,7 +883,6 @@ def plot_percent_service_area_volume_change(
     }
 
     color_map = {
-        "Baseline Nurses / Default Healthsystem Function": "black",
         "Fewer Nurses / Default Healthsystem Function": "indianred",
         "More Nurses / Default Healthsystem Function": "steelblue",
         "More CNP staff / Default Healthsystem Function": "darkgreen",
@@ -679,7 +891,6 @@ def plot_percent_service_area_volume_change(
         "More CNP staff by District / Default Healthsystem Function":
             "orange",
 
-        "Baseline Nurses / Improved Healthsystem Function": "black",
         "Fewer Nurses / Improved Healthsystem Function": "indianred",
         "More Nurses / Improved Healthsystem Function": "steelblue",
         "More CNP staff / Improved Healthsystem Function": "darkgreen",
@@ -689,61 +900,53 @@ def plot_percent_service_area_volume_change(
             "orange",
     }
 
-    # Get service areas
-    summarized_percent_change = summarized_percent_change.drop(
-        index=["DeliveryCare", "PostnatalCare"],
-        errors="ignore",
-    )
-    service_areas = summarized_percent_change.index
+    health_areas = sorted(summarized_absolute_change.index)
 
-    # Get scenario names
-    scenarios = [
-        scenario
-        for scenario in scenarios
-        if scenario in summarized_percent_change.columns
+    available_scenarios = (
+        summarized_absolute_change.columns
         .get_level_values(0)
         .unique()
-    ]
-
-    x = np.arange(len(service_areas))
-
-    n_scenarios = len(scenarios)
-
-    width = 0.8 / n_scenarios
-
-    offsets = (
-        np.arange(n_scenarios)
-        - (n_scenarios - 1) / 2
-    ) * width
-
-    fig, ax = plt.subplots(
-        figsize=(18, 8)
     )
 
-    for i, scenario in enumerate(scenarios):
-        mean = (summarized_percent_change[scenario]["mean"])
-        lower = (summarized_percent_change[scenario]["lower"])
-        upper = (summarized_percent_change[scenario]["upper"])
-        xpos = x + offsets[i]
+    scenarios = [
+        scenario for scenario in scenarios
+        if scenario in available_scenarios
+    ]
 
-        ax.bar(
-            xpos,
+    y = np.arange(len(health_areas))
+
+    n_scenarios = len(scenarios)
+    height = 0.8 / n_scenarios
+
+    offsets = (
+        np.arange(n_scenarios) - (n_scenarios - 1) / 2
+    ) * height
+
+    fig, ax = plt.subplots(figsize=(16, 9))
+
+    for i, scenario in enumerate(scenarios):
+        mean = summarized_absolute_change[scenario]["mean"].reindex(health_areas)
+        lower = summarized_absolute_change[scenario]["lower"].reindex(health_areas)
+        upper = summarized_absolute_change[scenario]["upper"].reindex(health_areas)
+
+        pct_mean = (summarized_percent_change[scenario]["mean"].reindex(health_areas) * 100)
+        pct_lower = (summarized_percent_change[scenario]["lower"].reindex(health_areas) * 100)
+        pct_upper = (summarized_percent_change[scenario]["upper"].reindex(health_areas) * 100)
+
+        ypos = y + offsets[i]
+
+        ax.barh(
+            ypos,
             mean.values,
-            width=width,
-            color=color_map.get(
-                scenario,
-                "gray",
-            ),
-            label=label_map.get(
-                scenario,
-                scenario,
-            ),
+            height=height,
+            color=color_map.get(scenario, "gray"),
+            label=label_map.get(scenario, scenario),
         )
 
         ax.errorbar(
-            xpos,
             mean.values,
-            yerr=[
+            ypos,
+            xerr=[
                 mean.values - lower.values,
                 upper.values - mean.values,
             ],
@@ -753,14 +956,37 @@ def plot_percent_service_area_volume_change(
             lw=1,
         )
 
-    ax.axhline(0, color="black", linestyle="--", linewidth=1,)
-    # ax.set_xlabel("Service area")
-    ax.set_ylabel("% change in service volume\n(2027–2034)")
+        for j in range(len(health_areas)):
+            # Get percentage values for the current health area.
+            pct_mean_value = pct_mean.iloc[j]
+            pct_lower_value = pct_lower.iloc[j]
+            pct_upper_value = pct_upper.iloc[j]
+
+            annotation = (
+                f"{pct_mean_value:+.1f}% "
+                f"(95% CI: {pct_lower_value:+.1f} to {pct_upper_value:+.1f})"
+            )
+
+            ax.annotate(
+                annotation,
+                xy=(upper.iloc[j], ypos[j]),
+                xytext=(5, 0),
+                textcoords="offset points",
+                ha="left",
+                va="center",
+                fontsize=6,
+                annotation_clip=False,
+            )
+
+    ax.axvline(0, color="black", linestyle="--", linewidth=1)
+    ax.set_yticks(y)
+    ax.set_yticklabels(health_areas, color="black")
+    ax.set_xlabel("Absolute change in service volume (2027–2034)")
     ax.set_title(title)
-    ax.set_xticks(x)
-    ax.set_xticklabels(service_areas, rotation=45, ha="right",)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=5,)
-    ax.grid(axis="y", alpha=0.3,)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
+    ax.grid(axis="x", alpha=0.3)
+    ax.margins(x=0.40)
+    ax.invert_yaxis()
     fig.tight_layout()
     return fig
 
@@ -1091,6 +1317,21 @@ if __name__ == "__main__":
         )
     )
 
+    # Absolute service-volume change by general health area
+    absolute_service_area_volume_change_default = (
+        calculate_absolute_service_area_volume_change(
+            service_area_treatment_volumes[default_hs_scenarios],
+            baseline_scenario=baseline_scenario,
+        )
+    )
+
+    absolute_service_area_volume_change_improved = (
+        calculate_absolute_service_area_volume_change(
+            service_area_treatment_volumes[improved_hs_scenarios],
+            baseline_scenario=baseline_improved_scenario,
+        )
+    )
+
     # Aggregate treatment volumes into broader disease/service areas
     annual_treatment_volumes_by_service_area = (
         aggregate_treatment_volumes_by_service_area(
@@ -1129,41 +1370,6 @@ if __name__ == "__main__":
         )
     )
 
-
-    # percent_change_default = calculate_percent_service_volume_change(
-    #     summarized_annual_service_volumes,
-    #     default_hs_scenarios,
-    #     baseline_scenario,
-    # )
-    #
-    # percent_change_improved = calculate_percent_service_volume_change(
-    #     summarized_annual_service_volumes,
-    #     improved_hs_scenarios,
-    #     baseline_improved_scenario,
-    # )
-
-    # percent_change_default = calculate_percent_service_volume_change(
-    #     annual_service_volumes[default_hs_scenarios],
-    #     baseline_scenario,
-    # )
-
-    # percent_change_default = calculate_percent_service_volume_change(
-    #     annual_service_volumes[default_hs_scenarios],
-    #     baseline_scenario=baseline_scenario,
-    #     comparison_years=range(2027, 2035),
-    # )
-
-    # percent_change_improved = calculate_percent_service_volume_change(
-    #     annual_service_volumes[improved_hs_scenarios],
-    #     baseline_improved_scenario,
-    # )
-
-    # percent_change_improved = calculate_percent_service_volume_change(
-    #     annual_service_volumes[improved_hs_scenarios],
-    #     baseline_scenario=baseline_improved_scenario,
-    #     comparison_years=range(2027, 2035),
-    # )
-
     percent_change_default = calculate_percent_service_volume_change(
         annual_service_volumes[default_hs_scenarios],
         baseline_scenario,
@@ -1174,6 +1380,23 @@ if __name__ == "__main__":
         annual_service_volumes[improved_hs_scenarios],
         baseline_improved_scenario,
         comparison_years=range(2027, 2035),
+    )
+
+    # Absolute service-volume change relative to baseline
+    absolute_service_volume_change_default = (
+        calculate_absolute_service_volume_change(
+            annual_service_volumes[default_hs_scenarios],
+            baseline_scenario=baseline_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+    absolute_service_volume_change_improved = (
+        calculate_absolute_service_volume_change(
+            annual_service_volumes[improved_hs_scenarios],
+            baseline_scenario=baseline_improved_scenario,
+            comparison_years=range(2027, 2035),
+        )
     )
 
     # Nurse time use relative to baseline
@@ -1192,6 +1415,23 @@ if __name__ == "__main__":
             annual_nurse_time[
                 improved_hs_scenarios
             ],
+            baseline_scenario=baseline_improved_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+    # Absolute nurse time-use change relative to baseline
+    absolute_nurse_time_change_default = (
+        calculate_absolute_nurse_time_change(
+            annual_nurse_time[default_hs_scenarios],
+            baseline_scenario=baseline_scenario,
+            comparison_years=range(2027, 2035),
+        )
+    )
+
+    absolute_nurse_time_change_improved = (
+        calculate_absolute_nurse_time_change(
+            annual_nurse_time[improved_hs_scenarios],
             baseline_scenario=baseline_improved_scenario,
             comparison_years=range(2027, 2035),
         )
@@ -1272,51 +1512,55 @@ if __name__ == "__main__":
         "Annual Service Volumes (Improved Healthsystem Function)",
     )
 
-
-    fig_default_percent = plot_percent_service_volume_change(
+    # Overall absolute service-volume changes
+    fig_default_percent = plot_absolute_change_with_percent_annotations(
+        absolute_service_volume_change_default,
         percent_change_default,
         default_hs_scenarios[1:],
         "",
+        "Absolute change in service volume (2027–2034)",
     )
 
-    fig_improved_percent = plot_percent_service_volume_change(
+    fig_improved_percent = plot_absolute_change_with_percent_annotations(
+        absolute_service_volume_change_improved,
         percent_change_improved,
         improved_hs_scenarios[1:],
         "",
+        "Absolute change in service volume (2027–2034)",
     )
 
-    fig_service_area_default = (
-        plot_percent_service_area_volume_change(
-            percent_service_area_volume_change_default,
-            default_hs_scenarios[1:],
-            "% Change in Service Volume by Area vs Baseline\n"
-            "(2027–2034, Default Healthsystem Function)",
-        )
+    # Absolute service-volume changes by general health area
+    fig_service_area_default = plot_absolute_service_area_volume_change(
+        absolute_service_area_volume_change_default,
+        percent_service_area_volume_change_default,
+        default_hs_scenarios[1:],
+        "Change in Service Volume by Health Area\n"
+        "(2027–2034, Default Healthsystem Function)",
     )
 
-    fig_service_area_improved = (
-        plot_percent_service_area_volume_change(
-            percent_service_area_volume_change_improved,
-            improved_hs_scenarios[1:],
-            "% Change in Service Volume by Area vs Baseline\n"
-            "(2027–2034, Improved Healthsystem Function)",
-        )
+    fig_service_area_improved = plot_absolute_service_area_volume_change(
+        absolute_service_area_volume_change_improved,
+        percent_service_area_volume_change_improved,
+        improved_hs_scenarios[1:],
+        "Change in Service Volume by Health Area\n"
+        "(2027–2034, Improved Healthsystem Function)",
     )
 
-    fig_nurse_time_default = (
-        plot_nurse_time_use_percent_change(
-            nurse_time_change_default,
-            default_hs_scenarios[1:],
-            "",
-        )
+    # Absolute nurse time-use changes
+    fig_nurse_time_default = plot_absolute_change_with_percent_annotations(
+        absolute_nurse_time_change_default,
+        nurse_time_change_default,
+        default_hs_scenarios[1:],
+        "",
+        "Absolute change in nurse time use (minutes, 2027–2034)",
     )
 
-    fig_nurse_time_improved = (
-        plot_nurse_time_use_percent_change(
-            nurse_time_change_improved,
-            improved_hs_scenarios[1:],
-            "",
-        )
+    fig_nurse_time_improved = plot_absolute_change_with_percent_annotations(
+        absolute_nurse_time_change_improved,
+        nurse_time_change_improved,
+        improved_hs_scenarios[1:],
+        "",
+        "Absolute change in nurse time use (minutes, 2027–2034)",
     )
 
     if args.save_figures:
