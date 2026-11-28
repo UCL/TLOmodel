@@ -347,7 +347,7 @@ class Consumables:
                         "Item_NotAvailable": str(items_not_available),
                         "Item_Used": str(items_used),
                         "person_id": target,
-                        "facility_id": facility_info.id,
+                        "facility_id": facility_info.id if facility_info is not None else -99,
                         "event_name": event_name or "",
                         "appointment": appt_footprint or "",
                     },

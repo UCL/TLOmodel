@@ -1825,10 +1825,14 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
         """
-        [the_age, the_wealth, the_sex, the_education] = self.sim.population.props.loc[
-            hsi_event.target,
-            ["age_years", "li_wealth", "sex", "li_ed_lev"]
-        ]
+        df = self.sim.population.props
+        person_id = hsi_event.target
+        the_age = df.at[person_id, "age_years"]
+        the_sex = df.at[person_id, "sex"]
+        # Wealth and education come from the Lifestyle module, which may not be registered
+        # (e.g. in tests): log -1 when it is not, as for in-patient records.
+        the_wealth = df.at[person_id, "li_wealth"] if "li_wealth" in df.columns else -1
+        the_education = df.at[person_id, "li_ed_lev"] if "li_ed_lev" in df.columns else -1
 
         # HSI-Event
         self.write_to_hsi_log(
