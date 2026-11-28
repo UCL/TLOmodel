@@ -1827,7 +1827,7 @@ class HealthSystem(Module):
         """
         [the_age, the_wealth, the_sex, the_education] = self.sim.population.props.loc[
             hsi_event.target,
-            ["age_range", "li_wealth", "sex", "li_ed_lev"]
+            ["age_years", "li_wealth", "sex", "li_ed_lev"]
         ]
 
         # HSI-Event
@@ -1852,7 +1852,7 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
         clinic: str,
-        age_of_person: str,
+        age_of_person: int,
         wealth_of_person: int,
         sex_of_person: str,
         edu_of_person: int,
@@ -1872,7 +1872,7 @@ class HealthSystem(Module):
             "Facility_ID": facility_id if facility_id is not None else -99,
             "Equipment": sorted(event_details.equipment),
             "Clinic": clinic if clinic is not None else "None",
-            "Age_Range": age_of_person,
+            "Age_Years": age_of_person,
             "Sex": sex_of_person,
             "Wealth": wealth_of_person,
             "Education": edu_of_person,
@@ -2713,17 +2713,17 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     priority=-1,
                     clinic=str(None),
                     did_run=True,
-                    age_of_person=str(None),
+                    age_of_person=-1,
                     sex_of_person=str(None),
-                    wealth_of_person=None,
-                    edu_of_person=None,
+                    wealth_of_person=-1,
+                    edu_of_person=-1,
                 )
 
         # Restart the total footprint of all calls - and across all clinics - today.
         # Important: Here we assign all inpatient bed-days to the GenericClinic
         self.module.running_total_footprint = defaultdict(Counter)
         self.module.running_total_footprint["GenericClinic"] = inpatient_footprints
-        
+
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
@@ -3091,10 +3091,10 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
 
         # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
         if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
-        
+
             # Switch ignore_priority back to False
             health_system.ignore_priority = False
-        
+
             # A place to store events with updated priority
             updated_events: List[HSIEventQueueItem | None] = [None] * len(health_system.HSI_EVENT_QUEUE)
             offset = 0
