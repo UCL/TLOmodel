@@ -616,6 +616,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path,
         service area and day, consistent with the TLM daily data collection."""
         _df = add_loc_cat(restrict_to_tlm(filter_hsi(_df)))
         _df = _df.drop_duplicates(subset=["date", "Person_ID", "Facility_ID", "loc_cat"])  # check if appropriate
+        # todo: create Age_Range column based on Age_Years; Age_Years will be used to determin Adult or not
         labels = {
             "Sex": _df["Sex"].map(SEX_LABELS),
             "Age group": _df["Age_Range"].map(age_label),
