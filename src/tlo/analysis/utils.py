@@ -490,7 +490,7 @@ def compute_summary_statistics(
     results: pd.DataFrame,
     central_measure: Union[Literal["mean", "median"], None] = None,
     width_of_range: float = 0.95,
-    use_standard_error: bool = True,
+    use_standard_error: bool = False,
     only_central: bool = False,
     collapse_columns: bool = False,
 ) -> pd.DataFrame:
@@ -538,10 +538,9 @@ def compute_summary_statistics(
         std_deviation = grouped_results.std()
         num_runs_per_draw = grouped_results.size().T
         std_error = std_deviation.div(np.sqrt(num_runs_per_draw))
-        dof = num_runs_per_draw - 1
-        t_value = st.t.ppf(1 - (1. - width_of_range) / 2., dof)
-        stats["lower"] = stats['central'] - t_value * std_error
-        stats["upper"] = stats['central'] + t_value * std_error
+        z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)
+        stats["lower"] = stats['central'] - z_value * std_error
+        stats["upper"] = stats['central'] + z_value * std_error
 
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
