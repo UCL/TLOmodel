@@ -133,6 +133,10 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         "Facility_ID",
         "Event_Name",
         "Equipment",
+        "Age_Years",
+        "Sex",
+        "Wealth",
+        "Education",
     } == set(detailed_hsi_event.columns)
     assert {
         "date",
