@@ -133,6 +133,10 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         "Facility_ID",
         "Event_Name",
         "Equipment",
+        "Age_Years",
+        "Sex",
+        "Wealth",
+        "Education",
     } == set(detailed_hsi_event.columns)
     assert {
         "date",
@@ -141,7 +145,8 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         "Frac_Time_Used_By_Facility_ID",
         "Frac_Time_Used_By_OfficerType",
     } == set(detailed_capacity.columns)
-    assert {"date", "TREATMENT_ID", "Item_Available", "Item_NotAvailable", "Item_Used"} == set(
+    assert {"date", "TREATMENT_ID", "Item_Available", "Item_NotAvailable", "Item_Used",
+            "person_id", "event_name", "facility_id", "appointment"} == set(
         detailed_consumables.columns
     )
 

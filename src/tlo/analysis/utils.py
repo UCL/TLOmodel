@@ -386,7 +386,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-    
+
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 

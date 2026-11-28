@@ -1825,6 +1825,14 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
         """
+        df = self.sim.population.props
+        person_id = hsi_event.target
+        the_age = df.at[person_id, "age_years"]
+        the_sex = df.at[person_id, "sex"]
+        # Wealth and education come from the Lifestyle module, which may not be registered
+        # (e.g. in tests): log -1 when it is not, as for in-patient records.
+        the_wealth = df.at[person_id, "li_wealth"] if "li_wealth" in df.columns else -1
+        the_education = df.at[person_id, "li_ed_lev"] if "li_ed_lev" in df.columns else -1
 
         # HSI-Event
         self.write_to_hsi_log(
@@ -1834,6 +1842,10 @@ class HealthSystem(Module):
             did_run=did_run,
             priority=priority,
             clinic=clinic,
+            age_of_person=the_age,
+            wealth_of_person=the_wealth,
+            sex_of_person=the_sex,
+            edu_of_person=the_education,
         )
 
     def write_to_hsi_log(
@@ -1844,6 +1856,10 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
         clinic: str,
+        age_of_person: int,
+        wealth_of_person: int,
+        sex_of_person: str,
+        edu_of_person: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
@@ -1860,6 +1876,10 @@ class HealthSystem(Module):
             "Facility_ID": facility_id if facility_id is not None else -99,
             "Equipment": sorted(event_details.equipment),
             "Clinic": clinic if clinic is not None else "None",
+            "Age_Years": age_of_person,
+            "Sex": sex_of_person,
+            "Wealth": wealth_of_person,
+            "Education": edu_of_person,
         }
 
         logger.debug(key="HSI_Event", data=hsi_record, description="record of each HSI event")
@@ -2697,13 +2717,17 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     priority=-1,
                     clinic=str(None),
                     did_run=True,
+                    age_of_person=-1,
+                    sex_of_person=str(None),
+                    wealth_of_person=-1,
+                    edu_of_person=-1,
                 )
 
         # Restart the total footprint of all calls - and across all clinics - today.
         # Important: Here we assign all inpatient bed-days to the GenericClinic
         self.module.running_total_footprint = defaultdict(Counter)
         self.module.running_total_footprint["GenericClinic"] = inpatient_footprints
-        
+
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
@@ -3071,10 +3095,10 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
 
         # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
         if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
-        
+
             # Switch ignore_priority back to False
             health_system.ignore_priority = False
-        
+
             # A place to store events with updated priority
             updated_events: List[HSIEventQueueItem | None] = [None] * len(health_system.HSI_EVENT_QUEUE)
             offset = 0
